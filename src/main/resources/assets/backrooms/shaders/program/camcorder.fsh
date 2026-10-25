@@ -5,8 +5,8 @@
 // Order of operations (each numbered step is below):
 //  1. Lens: strong barrel distortion (k = 0.20 in half-height units), cropped exactly so the
 //     corners of the screen land on the corners of the picture: no black corners, no vignette.
-//  2. VHS tape transport (wobble, line jitter, tracking bar, tears) - ONLY in glitch moments:
-//     danger, level transitions, low battery. Normally the picture is clean.
+//  2. VHS tape transport: always a little line jitter (sawtooth edges) and a head-switching strip
+//     at the bottom; wobble, tracking bar and tears only in glitch moments (danger, transitions, low battery).
 //  3. Rotational motion blur along the camera's turn this frame, with mild radial chromatic
 //     aberration (red and green pushed apart toward the screen sides).
 //  4. Fallback flashlight (only when Veil's real lights are not running): a dim, flat disc with a
@@ -57,6 +57,9 @@ out vec4 fragColor;
 const float LENS_K = 0.20;
 // Chromatic aberration: offset = CA_STRENGTH * |x - 0.5| (so 0 in the middle, 0.15% at the sides).
 const float CA_STRENGTH = 0.003;
+// Worn tape, always on: every scanline band is nudged sideways a few pixels (sawtooth edges),
+// stronger red/green colour fringes and a thin head-switching noise strip at the bottom.
+const float TAPE_BASE = 0.35;
 // How much of each of the three bloom sizes is added back.
 const float BLOOM_STRENGTH = 0.45;
 // Unlit black is not pure black on the tape, it is a very dark blue-violet.
@@ -110,6 +113,9 @@ void main() {
     // A monster nearby only roughs the tape up a little (max ~0.3): enough to warn you, not enough
     // to hide what you're looking at. Level transitions keep the full-strength glitch.
     float glitch = clamp(Danger * 0.3 + Transition * 1.2 + lowBattery * 0.35 - Signal * 0.15, 0.0, 1.5);
+    // The worn-tape look (line jitter, colour fringes, head-switching strip, grain) never goes away;
+    // glitch moments add to it. The big tracking bar, tears and scanlines stay glitch-only.
+    float tape = clamp(TAPE_BASE + glitch, 0.0, 1.5);
 
     // 1. Lens. p is the output pixel in half-height units (y -1..1, x -aspect..aspect).
     //    Barrel: sample from p * (1 + k|p|^2). Dividing by the corner's factor (1 + k(aspect^2+1))
@@ -119,16 +125,17 @@ void main() {
     vec2 src = p * (1.0 + LENS_K * dot(p, p)) * crop;
     vec2 uv = src / vec2(aspect, 1.0) * 0.5 + 0.5;
 
-    // 2. Tape transport, glitch moments only.
+    // 2. Tape transport. Line jitter and the head-switching strip are always there (tape);
+    //    the rolling tracking bar and tears only show in glitch moments.
+    float band = floor(uv.y * 300.0);
+    uv.y += (noise1(t * 0.8) - 0.5) * 0.002 * glitch;
+    uv.x += (hash12(vec2(band, floor(t * 30.0))) - 0.5) * 0.0015 * tape * (1.0 + tape * 6.0);
+    if (texCoord.y < 0.02 * tape) {
+        uv.x += 0.015 * sin(texCoord.y * 900.0 + t * 40.0) + 0.01; // head-switching noise
+    }
     if (glitch > 0.001) {
-        float band = floor(uv.y * 300.0);
-        uv.y += (noise1(t * 0.8) - 0.5) * 0.002 * glitch;
-        uv.x += (hash12(vec2(band, floor(t * 30.0))) - 0.5) * 0.0015 * glitch * (1.0 + glitch * 6.0);
         float bar = smoothstep(0.06, 0.0, abs(uv.y - fract(t * 0.11))) * glitch;
         uv.x += bar * 0.02 * (hash12(vec2(band, t)) - 0.3);
-        if (texCoord.y < 0.02 * glitch) {
-            uv.x += 0.015 * sin(texCoord.y * 900.0 + t * 40.0) + 0.01; // head-switching noise
-        }
         if (glitch > 0.25) {
             float tearRow = floor(uv.y * 36.0);
             float tear = step(1.0 - glitch * 0.09, hash12(vec2(tearRow, floor(t * 14.0))));
@@ -162,7 +169,7 @@ void main() {
     vec2 fromCentre = uv - 0.5;
     float centreDist = length(fromCentre);
     vec2 radial = centreDist > 1.0e-5 ? fromCentre / centreDist : vec2(0.0);
-    vec2 caOffset = radial * CA_STRENGTH * abs(uv.x - 0.5) * (1.0 + glitch * 2.0);
+    vec2 caOffset = radial * CA_STRENGTH * abs(uv.x - 0.5) * (1.0 + tape * 2.0);
     if (dream > 0.0) {
         // Dream: soft chromatic shimmer, the colour fringes slowly breathe and wander.
         caOffset += radial * 0.0025 * dream * (0.6 + 0.4 * sin(t * 1.3 + centreDist * 12.0))
@@ -265,19 +272,19 @@ void main() {
     // Lightning: the whole frame blows out white for an instant.
     col = mix(col, vec3(1.0), clamp(Flash, 0.0, 1.0) * 0.85);
 
-    // 7. Grain and tape damage: off on a clean picture.
-    float grainAmount = Grain + glitch * 0.10 + NightShot * 0.06 + Wake * 0.03;
+    // 7. Grain and tape damage.
+    float grainAmount = Grain + tape * 0.10 + NightShot * 0.06 + Wake * 0.03;
     if (grainAmount > 0.0) {
         float scale = max(InSize.y / 720.0, 1.0);
         float grain = hash12(floor(gl_FragCoord.xy / scale) + fract(t * 7.13) * vec2(431.0, 177.0)) - 0.5;
         col += grain * grainAmount * (0.4 + luma(col));
     }
+    col += step(0.9997, hash12(gl_FragCoord.xy + floor(t * 30.0) * 17.0)) * tape; // white dropout specks
+    if (texCoord.y < 0.02 * tape) {
+        col = mix(col, vec3(hash12(gl_FragCoord.xy + t)), 0.3); // head-switching static strip
+    }
     if (glitch > 0.001) {
         col *= 1.0 - 0.06 * glitch * (0.5 + 0.5 * sin(uv.y * 300.0 * 6.2831853)); // scanlines
-        col += step(0.9997, hash12(gl_FragCoord.xy + floor(t * 30.0) * 17.0)) * glitch; // white dropout specks
-        if (texCoord.y < 0.02 * glitch) {
-            col = mix(col, vec3(hash12(gl_FragCoord.xy + t)), 0.3);
-        }
     }
     // Watcher interference: burnt colours, coloured static and whole lines dropping out.
     if (Interference > 0.0) {
