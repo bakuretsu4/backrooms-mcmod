@@ -5,6 +5,7 @@ import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.world.layout.Level0Layout;
 import com.rickr.backrooms.world.layout.Level1Layout;
 import com.rickr.backrooms.world.layout.Level2Layout;
+import com.rickr.backrooms.world.layout.Level9Layout;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import com.rickr.backrooms.world.layout.PoolroomsLayout;
 import net.minecraft.core.registries.Registries;
@@ -18,14 +19,19 @@ import org.jetbrains.annotations.Nullable;
  * using {@link BackroomsChunkGenerator} with a different {@link LevelLayout}.
  *
  * <p>Order of escape: Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2
- * --exit door--> Poolrooms --the drain--> Overworld.
+ * --exit door--> Poolrooms --the drain--> Level 9 --the underpass--> Overworld.
  */
 public enum BackroomsLevel implements StringRepresentable {
     LEVEL_0("level_0", new Level0Layout(), 30, 1, 90),
     LEVEL_1("level_1", new Level1Layout(), 30, 2, 45),
     LEVEL_2("level_2", new Level2Layout(), Integer.MIN_VALUE, 2, 60),
     /** No monsters here (cap 0): the danger is the water itself, which makes you hallucinate. */
-    POOLROOMS("poolrooms", new PoolroomsLayout(), 30, 0, 1);
+    POOLROOMS("poolrooms", new PoolroomsLayout(), 30, 0, 1),
+    /**
+     * The Suburbs. No Bacteria (cap 0): the Neighborhood Watch patrols here instead. You leave by
+     * walking deep into a highway underpass ({@code Level9Rules}), never by falling.
+     */
+    LEVEL_9("level_9", new Level9Layout(), Integer.MIN_VALUE, 0, 1);
 
     public static final Codec<BackroomsLevel> CODEC = StringRepresentable.fromEnum(BackroomsLevel::values);
 
@@ -79,7 +85,8 @@ public enum BackroomsLevel implements StringRepresentable {
             case LEVEL_0 -> LEVEL_1;
             case LEVEL_1 -> LEVEL_2;
             case LEVEL_2 -> POOLROOMS;
-            case POOLROOMS -> null;
+            case POOLROOMS -> LEVEL_9;
+            case LEVEL_9 -> null;
         };
     }
 

@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/dust_pile"
+      },
+      {
+        "model": "backrooms:block/dust_pile",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/dust_pile",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/dust_pile",
+        "y": 270
+      }
+    ]
+  }
+}

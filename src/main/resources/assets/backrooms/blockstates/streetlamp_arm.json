@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/streetlamp_arm"
+    },
+    "facing=east": {
+      "model": "backrooms:block/streetlamp_arm",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/streetlamp_arm",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/streetlamp_arm",
+      "y": 270
+    }
+  }
+}

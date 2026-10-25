@@ -1,6 +1,300 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "ambientocclusion": false,
   "textures": {
-    "all": "backrooms:block/pale_duct"
-  }
+    "particle": "backrooms:block/pale_duct",
+    "duct": "backrooms:block/pale_duct",
+    "flange": "backrooms:block/pale_duct_flange"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        1.0,
+        7.222
+      ],
+      "to": [
+        16,
+        12.0,
+        11.778
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "south": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "up": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "down": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            4.556,
+            11.0
+          ],
+          "texture": "#duct"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            4.556,
+            11.0
+          ],
+          "texture": "#duct"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        1.0,
+        7.222
+      ],
+      "to": [
+        16,
+        12.0,
+        11.778
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "south": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "up": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "down": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            4.556,
+            11.0
+          ],
+          "texture": "#duct"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            4.556,
+            11.0
+          ],
+          "texture": "#duct"
+        }
+      },
+      "rotation": {
+        "angle": 45,
+        "axis": "x",
+        "origin": [
+          8,
+          6.5,
+          9.5
+        ]
+      }
+    },
+    {
+      "from": [
+        0,
+        4.222,
+        4.0
+      ],
+      "to": [
+        16,
+        8.778,
+        15.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "south": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "up": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "down": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            11.0,
+            4.556
+          ],
+          "texture": "#duct"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            11.0,
+            4.556
+          ],
+          "texture": "#duct"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        4.222,
+        4.0
+      ],
+      "to": [
+        16,
+        8.778,
+        15.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "south": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "up": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "down": {
+          "uv": [
+            0,
+            5,
+            16,
+            16
+          ],
+          "texture": "#duct"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            11.0,
+            4.556
+          ],
+          "texture": "#duct"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            11.0,
+            4.556
+          ],
+          "texture": "#duct"
+        }
+      },
+      "rotation": {
+        "angle": 45,
+        "axis": "x",
+        "origin": [
+          8,
+          6.5,
+          9.5
+        ]
+      }
+    }
+  ]
 }

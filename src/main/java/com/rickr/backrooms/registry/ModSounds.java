@@ -15,11 +15,23 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL1_AMBIENCE = register("ambient.level1_ambience");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL2_AMBIENCE = register("ambient.level2_ambience");
     public static final DeferredHolder<SoundEvent, SoundEvent> POOLROOMS_AMBIENCE = register("ambient.poolrooms_ambience");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL9_AMBIENCE = register("ambient.level9_ambience");
 
     // The Poolrooms: the dreamy hum of a hallucination, the fake friend fading away, the drain.
     public static final DeferredHolder<SoundEvent, SoundEvent> HALLUCINATION_LOOP = register("poolrooms.hallucination_loop");
     public static final DeferredHolder<SoundEvent, SoundEvent> PHANTOM_VANISH = register("poolrooms.phantom_vanish");
     public static final DeferredHolder<SoundEvent, SoundEvent> DRAIN_PULL = register("poolrooms.drain_pull");
+
+    // Level 9, the Suburbs: buzzing sodium streetlamps, lamps stuttering, The Mangled moving far off.
+    public static final DeferredHolder<SoundEvent, SoundEvent> LIGHT_SODIUM_HUM = register("light.sodium_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL9_LAMP_FLICKER = register("level9.lamp_flicker");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL9_DISTANT_RUMBLE = register("level9.distant_rumble");
+    // The Neighborhood Watch (Watchers) and the Observer.
+    public static final DeferredHolder<SoundEvent, SoundEvent> WATCHER_HUM = register("entity.watcher.hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> WATCHER_SPOT = register("entity.watcher.spot");
+    public static final DeferredHolder<SoundEvent, SoundEvent> WATCHER_BEAM = register("entity.watcher.beam");
+    public static final DeferredHolder<SoundEvent, SoundEvent> WATCHER_DUST = register("entity.watcher.dust");
+    public static final DeferredHolder<SoundEvent, SoundEvent> OBSERVER_VANISH = register("entity.observer.vanish");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> BACTERIA_AMBIENT = register("entity.bacteria.ambient");
     public static final DeferredHolder<SoundEvent, SoundEvent> BACTERIA_SCREECH = register("entity.bacteria.screech");
@@ -56,6 +68,12 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> STEP_CARPET_RUN = register("step.carpet_run");
     public static final DeferredHolder<SoundEvent, SoundEvent> STEP_CONCRETE_WALK = register("step.concrete_walk");
     public static final DeferredHolder<SoundEvent, SoundEvent> STEP_CONCRETE_RUN = register("step.concrete_run");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STEP_GRASS_WALK = register("step.grass_walk");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STEP_GRASS_RUN = register("step.grass_run");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STEP_WOOD_WALK = register("step.wood_walk");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STEP_WOOD_RUN = register("step.wood_run");
+    /** Dry dead leaves underfoot (one sound for walking and running; it is played louder when running). */
+    public static final DeferredHolder<SoundEvent, SoundEvent> STEP_LEAVES = register("step.leaves");
 
     // Noclip intro: reality glitching apart, the rush of falling, crashing through the ceiling.
     public static final DeferredHolder<SoundEvent, SoundEvent> INTRO_GLITCH = register("intro.glitch");

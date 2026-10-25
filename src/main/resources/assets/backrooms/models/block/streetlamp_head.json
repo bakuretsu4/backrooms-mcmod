@@ -1,0 +1,7 @@
+{
+  "parent": "backrooms:block/streetlamp_head_template",
+  "textures": {
+    "housing": "backrooms:block/streetlamp_housing",
+    "lens": "backrooms:block/streetlamp_head"
+  }
+}

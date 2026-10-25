@@ -3,6 +3,7 @@ package com.rickr.backrooms.player;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.network.EnergyPayload;
 import com.rickr.backrooms.registry.ModAttachments;
+import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.Travel;
 import java.util.Map;
@@ -22,6 +23,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -154,19 +156,34 @@ public final class PlayerGameplay {
             return;
         }
         track[2] = 0;
-        boolean carpet = isCarpet(player.getBlockStateOn());
-        SoundEvent sound;
-        if (carpet) {
-            sound = running ? ModSounds.STEP_CARPET_RUN.get() : ModSounds.STEP_CARPET_WALK.get();
-        } else {
-            sound = running ? ModSounds.STEP_CONCRETE_RUN.get() : ModSounds.STEP_CONCRETE_WALK.get();
-        }
+        SoundEvent sound = stepSound(player, running);
         float volume = running ? RUN_VOLUME : WALK_VOLUME;
         if (player.isCrouching()) {
             volume *= 0.5f;
         }
         float pitch = 0.92f + player.getRandom().nextFloat() * 0.16f;
         player.level().playSound(player, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, volume, pitch);
+    }
+
+    /**
+     * Which footstep sound fits the ground: dead leaves you walk through, the lawn or the wooden
+     * floors of the Suburbs, the Lobby's carpet, or (everywhere else) concrete.
+     */
+    private static SoundEvent stepSound(Player player, boolean running) {
+        if (player.level().getBlockState(player.blockPosition()).is(ModBlocks.LEAF_LITTER.get())) {
+            return ModSounds.STEP_LEAVES.get(); // the litter layer sits in the same block as your feet
+        }
+        BlockState on = player.getBlockStateOn();
+        if (isCarpet(on)) {
+            return running ? ModSounds.STEP_CARPET_RUN.get() : ModSounds.STEP_CARPET_WALK.get();
+        }
+        if (on.is(ModBlocks.LAWN_GRASS.get())) {
+            return running ? ModSounds.STEP_GRASS_RUN.get() : ModSounds.STEP_GRASS_WALK.get();
+        }
+        if (on.is(ModBlocks.WOOD_FLOOR.get()) || on.is(ModBlocks.PORCH_PLANKS.get()) || on.is(Blocks.DARK_OAK_STAIRS)) {
+            return running ? ModSounds.STEP_WOOD_RUN.get() : ModSounds.STEP_WOOD_WALK.get();
+        }
+        return running ? ModSounds.STEP_CONCRETE_RUN.get() : ModSounds.STEP_CONCRETE_WALK.get();
     }
 
     private static boolean isCarpet(BlockState state) {

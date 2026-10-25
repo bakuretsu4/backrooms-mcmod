@@ -644,28 +644,56 @@ def tex_pipe_light() -> None:
     save_png(_tube(_pipe_ceiling(), False), TEX / "block" / "pipe_light.png")
 
 
-def _bolts(img, spacing=32, r=2.6, off=(16, 16), col=(150, 150, 156)) -> np.ndarray:
-    """Round bolt heads on a regular grid (spacing divides 128 -> seamless) with a highlight."""
-    X, Y = grid()
-    dx, dy = wrapd(X - off[0], spacing), wrapd(Y - off[1], spacing)
-    d = np.hypot(dx, dy)
-    img = add_lum(img, -20 * smoothstep(r + 1.6, r, d) * (d > r))            # contact shadow
-    img = over(img, np.array(col), np.clip(r - d + 0.5, 0, 1))
-    return add_lum(img, 40 * np.clip(r * 0.45 - np.hypot(dx + 0.8, dy + 0.8) + 0.5, 0, 1))
+def _round_shade(Y, y0, y1, hl=-0.3, outside=1.0) -> np.ndarray:
+    """Brightness multiplier across a band [y0, y1): a lit round pipe seen side-on.
+
+    Darker towards both edges (surface turns away), soft highlight line slightly above the
+    centre (hl in -1..1 band units). Rows outside the band get `outside` (None = keep the
+    band-edge value, so there is no step where the full texture is shown, e.g. end caps).
+    """
+    u = np.clip((Y - (y0 + y1) / 2) / ((y1 - y0) / 2), -1, 1)
+    shade = 0.62 + 0.38 * np.sqrt(1 - u ** 2) + 0.22 * np.exp(-((u - hl) / 0.16) ** 2)
+    if outside is None:
+        return shade
+    return np.where((Y >= y0) & (Y < y1), shade, outside)
+
+
+# PoolWorld's pipe-rack model maps pipe k onto texture rows [32k, 32k+24) (u = along the pipe)
+PIPE_BANDS = tuple((32 * k, 32 * k + 24) for k in range(4))
 
 
 def tex_rusty_pipe() -> None:
-    """Thin rusty pipe surface (axis = x): red-brown, darker rust patches, worn light streaks."""
+    """Thin rusty metal pipes: 4 round-shaded bands, blotchy rust, pitting, drip runs.
+
+    Rust is isotropic (round patches) so it doesn't read as wood grain; every feature is
+    built from wrap-around noise, so each band tiles along x.
+    """
     rng = rng_for(111)
-    img = fill((136, 74, 56), (S, S))   # between #7A3E2E and #9A5A44
-    img = add_lum(img, fnoise(rng, beta=1.6, aniso=(6, 1), kmin=2) * 6, (1.0, 0.75, 0.6))  # streaks along x
-    patches = smoothstep(0.3, 1.3, fnoise(rng, beta=2.2, aniso=(3, 1)))      # stretched along the pipe
-    img = over(img, np.array([92, 46, 34]), patches * 0.7)                   # dark rust
-    flakes = smoothstep(1.4, 2.2, fnoise(rng, beta=1.0, kmin=8))
-    img = over(img, np.array([168, 96, 60]), flakes * 0.6)                   # orange flaking
-    worn = smoothstep(1.0, 2.2, fnoise(rng, beta=1.4, aniso=(10, 1), kmin=2))
-    img = over(img, np.array([160, 120, 104]), worn * 0.45)                  # rubbed-bare streaks
-    save_png(add_lum(img, rng.normal(0, 3.0, (S, S))), TEX / "block" / "rusty_pipe.png")
+    X, Y = grid()
+    img = fill((140, 76, 58), (S, S))                                       # #8C4C3A base rust
+    img = add_lum(img, fnoise(rng, beta=2.4) * 7, (1.0, 0.8, 0.65))        # broad tone changes
+    blotch = smoothstep(0.2, 1.1, fnoise(rng, beta=2.2, kmin=2))
+    img = over(img, np.array([104, 54, 40]), blotch * 0.75)                # dark round rust patches
+    orange = smoothstep(1.0, 1.8, fnoise(rng, beta=1.6, kmin=4))
+    img = over(img, np.array([164, 94, 58]), orange * 0.6)                 # fresh orange rust spots
+    worn = smoothstep(0.9, 1.7, fnoise(rng, beta=1.8, kmin=3))
+    img = over(img, np.array([74, 58, 54]), worn * 0.7)                    # iron-grey bare metal #4A3A36
+    pits = blur((rng.random((S, S)) < 0.018) * rng.uniform(0.5, 1, (S, S)), 0.5)
+    img = add_lum(img, -pits * 60)                                         # pitting
+    # a few short drip runs around the pipe (across the band = texture y)
+    runs = np.zeros((S, S))
+    for _ in range(10):
+        cx, cy, ln = rng.uniform(0, S), rng.uniform(0, S), rng.uniform(6, 14)
+        dy = (Y - cy) % S
+        runs = np.maximum(runs, np.exp(-(wrapd(X - cx, S) / 0.9) ** 2) * (dy < ln) * (1 - dy / ln))
+    img = over(img, np.array([96, 46, 32]), runs * 0.8)
+    img = add_lum(img, rng.normal(0, 2.0, (S, S)))
+    shade = np.ones((S, S))
+    for y0, y1 in PIPE_BANDS:
+        shade *= _round_shade(Y, y0, y1)
+    sheen = 60 * np.clip(shade - 0.98, 0, None)                            # metallic glint on the highlight
+    img = img * shade[..., None] + sheen[..., None]
+    save_png(img, TEX / "block" / "rusty_pipe.png")
 
 
 def _galvanised(rng, base=(84, 86, 92)) -> np.ndarray:
@@ -676,12 +704,11 @@ def _galvanised(rng, base=(84, 86, 92)) -> np.ndarray:
 
 
 def tex_pipe_bracket() -> None:
-    """Dark grey galvanised steel shelf bracket with bolts (32 px grid)."""
+    """Dark grey galvanised steel; the whole texture is squeezed onto thin plates, so no bolts."""
     rng = rng_for(127)
     img = _galvanised(rng)
     rust = smoothstep(1.5, 2.3, fnoise(rng, beta=1.6))
-    img = over(img, np.array([110, 64, 44]), rust * 0.5)
-    save_png(_bolts(img, col=(128, 130, 136)), TEX / "block" / "pipe_bracket.png")
+    save_png(over(img, np.array([110, 64, 44]), rust * 0.5), TEX / "block" / "pipe_bracket.png")
 
 
 def tex_pale_duct() -> None:
@@ -692,18 +719,30 @@ def tex_pale_duct() -> None:
     X, Y = grid()
     seam = np.abs(Y - 64)
     img = add_lum(img, -14 * smoothstep(1.2, 0.3, seam) + 6 * smoothstep(2.6, 1.6, seam) * (Y < 63))
+    # gentle roundness across the band the duct model uses (rows 40..80), softer than the pipes
+    img = img * (1 + 0.55 * (_round_shade(Y, 40, 80, hl=-0.35, outside=None) - 1))[..., None]
     dirt = smoothstep(0.5, 1.8, fnoise(rng, beta=2.6, aniso=(3, 1)))
     img = over(img, np.array([120, 114, 128]), dirt * 0.3)
     save_png(img, TEX / "block" / "pale_duct.png")
 
 
 def tex_pale_duct_flange() -> None:
-    """Duct flange ring: slightly darker painted metal with a bolt every 32 px."""
+    """Duct flange ring: darker painted metal with one column of bolts.
+
+    The model squeezes the full width onto ~4 units along the duct (4x), so the bolts are
+    drawn 4x wider than tall and come out round in game.
+    """
     rng = rng_for(128)
     img = _smooth_concrete(rng, (140, 136, 154), mottle=2.5, fine=0.8)
     dirt = smoothstep(0.5, 1.8, fnoise(rng, beta=2.4))
     img = over(img, np.array([100, 96, 110]), dirt * 0.3)
-    save_png(_bolts(img, r=3.0, col=(116, 114, 124)), TEX / "block" / "pale_duct_flange.png")
+    X, Y = grid()
+    dx, dy = (X - 64) / 4.0, wrapd(Y - 16, 32)
+    d = np.hypot(dx, dy)
+    img = add_lum(img, -20 * smoothstep(4.6, 3.0, d) * (d > 3.0))                # contact shadow
+    img = over(img, np.array([116, 114, 124]), np.clip(3.0 - d + 0.5, 0, 1))
+    img = add_lum(img, 40 * np.clip(1.4 - np.hypot(dx + 0.8, dy + 0.8) + 0.5, 0, 1))
+    save_png(img, TEX / "block" / "pale_duct_flange.png")
 
 
 def tex_pipe_valve() -> None:
@@ -767,13 +806,10 @@ def tex_bulkhead_lamp() -> None:
 
 
 def tex_bulkhead_cage() -> None:
-    """Dark painted metal for the lamp's wire cage and back plate (screws near the corners)."""
+    """Fairly uniform dark painted metal for the lamp's thin cage bars and small back plate."""
     rng = rng_for(132)
     img = _smooth_concrete(rng, (46, 46, 52), mottle=2.0, fine=0.8)
-    img = add_lum(img, 6 * np.clip(1 - grid()[1] / S * 2, -1, 1))   # soft top highlight
-    for cx, cy in ((14, 14), (S - 14, 14), (14, S - 14), (S - 14, S - 14)):
-        img = _bolts(img, spacing=S, r=3.0, off=(cx, cy), col=(110, 110, 116))
-    save_png(img, TEX / "block" / "bulkhead_cage.png")
+    save_png(add_lum(img, rng.normal(0, 1.5, (S, S))), TEX / "block" / "bulkhead_cage.png")
 
 
 # -------------------------------------------------------------- Stairwell ---
@@ -988,6 +1024,880 @@ def tex_pool_lamp() -> None:
     col = lerp(np.array([191, 246, 255]), np.array([63, 217, 240]), t)
     img = lerp(img, col, lens[..., None])
     save_png(img, TEX / "block" / "pool_lamp.png")
+
+
+# ---------------------------------------------------------------- Level 9 ---
+# "The Suburbs": wet midnight streets, clapboard houses, dark yards and eerie signs.
+# Albedos are realistic-but-readable: the level is lit only by sparse sodium lamps.
+
+def _blk(name: str):
+    return TEX / "block" / f"{name}.png"
+
+
+def _cutout_scatter(rng, count, draw_one, ss=4) -> np.ndarray:
+    """RGBA cutout made of many small drawn shapes, wrapped so the texture tiles.
+
+    draw_one(draw, rng, x, y, k) draws ONE shape centred at (x, y) (already scaled by k).
+    Each shape is drawn at the 9 wrap offsets so pieces crossing an edge continue on the
+    opposite side. Colours are averaged over covered sub-pixels only (no dark fringes);
+    alpha is thresholded to strictly 0/255 (Minecraft cutout).
+    """
+    canvas = Image.new("RGBA", (S * ss, S * ss), (0, 0, 0, 0))
+    d = ImageDraw.Draw(canvas)
+    for _ in range(count):
+        x, y = rng.uniform(0, S), rng.uniform(0, S)
+        state = rng.bit_generator.state                    # same shape for every wrap copy
+        for ox in (-S, 0, S):
+            for oy in (-S, 0, S):
+                rng.bit_generator.state = state
+                draw_one(d, rng, (x + ox) * ss, (y + oy) * ss, ss)
+    a = np.asarray(canvas, float).reshape(S, ss, S, ss, 4)
+    cov = a[..., 3].mean(axis=(1, 3)) / 255.0
+    w = a[..., 3:4] / 255.0
+    rgb = (a[..., :3] * w).sum(axis=(1, 3)) / np.maximum(w.sum(axis=(1, 3)), 1e-6)
+    out = np.zeros((S, S, 4))
+    out[..., :3] = rgb
+    out[..., 3] = np.where(cov >= 0.5, 255, 0)
+    return out
+
+
+def _fit_font_px(text: str, px: int, maxw: float) -> int:
+    """Largest font size <= px whose rendered width fits in maxw pixels."""
+    probe = ImageDraw.Draw(Image.new("L", (1, 1)))
+    while px > 6 and probe.textlength(text, font=font(px)) > maxw:
+        px -= 1
+    return px
+
+
+def _text(text, cx, cy, px, maxw=118.0, shape=(S, S)) -> np.ndarray:
+    """Anti-aliased mask of bold text centred at (cx, cy), shrunk to fit maxw."""
+    px = _fit_font_px(text, px, maxw)
+    return pil_mask(lambda d, k: d.text((cx * k, cy * k), text, fill=255, font=font(px * k), anchor="mm"),
+                    shape)
+
+
+def _weather(img, rng, dirt=0.25, scratches=6) -> np.ndarray:
+    """Grime, faint streaks and a few scratches for outdoor painted surfaces."""
+    X, Y = grid(img.shape[:2])
+    g = smoothstep(0.2, 1.8, fnoise(rng, img.shape[:2], beta=2.4))
+    img = over(img, np.array([60, 56, 50]), g * dirt)
+    img = add_lum(img, fnoise(rng, img.shape[:2], beta=1.3, aniso=(1, 10), kmin=2) * 3)   # rain streaks
+    for _ in range(scratches):
+        x0, y0 = rng.uniform(10, S - 10, 2)
+        ang = rng.uniform(0, np.pi)
+        ln = rng.uniform(6, 20)
+        dist_ = np.abs((X - x0) * np.sin(ang) - (Y - y0) * np.cos(ang))
+        along = np.abs((X - x0) * np.cos(ang) + (Y - y0) * np.sin(ang))
+        img = add_lum(img, 22 * np.exp(-(dist_ / 0.5) ** 2) * (along < ln / 2))
+    return img
+
+
+# ----- ground & street -----
+
+def _asphalt(seed, base=(70, 70, 74)) -> np.ndarray:
+    """Dark grainy asphalt: aggregate grain, pale pebbles, tar patches, patchy wet sheen."""
+    rng = rng_for(seed)
+    img = fill(base, (S, S))
+    img = add_lum(img, rng.normal(0, 7, (S, S)) + blur(rng.normal(0, 6, (S, S)), 0.7)
+                  + fnoise(rng, beta=2.8) * 5)
+    peb = (rng.random((S, S)) < 0.025) * rng.uniform(0.5, 1, (S, S))
+    img = add_lum(img, blur(peb, 0.45) * 95, (1.0, 0.98, 0.94))          # pale stone chips
+    tar = smoothstep(0.6, 1.6, fnoise(rng, beta=2.6))
+    img = over(img, np.array([40, 40, 44]), tar * 0.45)                   # patched / oily areas
+    wet = smoothstep(-0.2, 1.2, fnoise(rng, beta=3.2))
+    img = img * (1 - 0.18 * wet[..., None])                               # damp = darker
+    glint = (rng.random((S, S)) < 0.01) * wet
+    return add_lum(img, blur(glint, 0.4) * 60, (0.95, 0.97, 1.0))        # wet glints
+
+
+def tex_asphalt() -> None:
+    save_png(_asphalt(901), _blk("asphalt"))
+
+
+def tex_asphalt_wet() -> None:
+    """Asphalt with a big shallow puddle: very dark, smooth, faint sky reflection."""
+    rng = rng_for(902)
+    img = _asphalt(902) * 0.85
+    pud = smoothstep(0.1, 0.6, blur(fnoise(rng, beta=4.0), 2.0))           # one or two smooth puddles
+    water = blur(img, 2.0) * 0.45 + np.array([6, 8, 12])
+    sheen = 0.5 + 0.5 * np.sin(2 * np.pi * (grid()[1] / S) + fnoise(rng, beta=3.0))   # soft sky reflection
+    water = add_lum(water, sheen * 22, (0.9, 0.95, 1.05))
+    img = lerp(img, water, pud[..., None])
+    rim = np.clip(smoothstep(0.0, 0.15, pud) - smoothstep(0.15, 0.5, pud), 0, 1)
+    save_png(add_lum(img, rim * 10), _blk("asphalt_wet"))
+
+
+def tex_asphalt_marking() -> None:
+    """Faded, worn white road paint: one 32 px stripe along y through the centre."""
+    rng = rng_for(903)
+    img = _asphalt(903)
+    X, Y = grid()
+    stripe = box((S, S), 48, -1, 80, S + 1, soft=0.8)
+    wear = smoothstep(-1.2, 0.3, fnoise(rng, beta=1.8)) * (0.85 + 0.15 * blur(rng.normal(0, 1, (S, S)), 0.8))
+    paint = add_lum(fill((206, 204, 194), (S, S)), rng.normal(0, 6, (S, S)))
+    img = over(img, paint, stripe * wear * 0.8)
+    save_png(img, _blk("asphalt_marking"))
+
+
+def _sidewalk(seed, base=(150, 148, 144)) -> np.ndarray:
+    """Concrete slab: fine aggregate, stains, a hairline crack, tooled joints at the block edges."""
+    rng = rng_for(seed)
+    img = _smooth_concrete(rng, base, mottle=5.0, fine=1.6)
+    img = add_lum(img, rng.normal(0, 3.0, (S, S)))
+    stain = smoothstep(0.6, 1.8, fnoise(rng, beta=2.8))
+    img = over(img, np.array([92, 88, 80]), stain * 0.35)
+    crack = smoothstep(0.03, 0.0, np.abs(fnoise(rng, beta=2.6, kmin=2))) * smoothstep(0.5, 1.2, fnoise(rng, beta=3))
+    img = add_lum(img, -40 * crack)
+    X, Y = grid()
+    joint = np.minimum(np.abs(wrapd(X, S)), np.abs(wrapd(Y, S)))         # joints on block borders
+    img = add_lum(img, -38 * smoothstep(2.2, 0.8, joint) + 10 * smoothstep(3.8, 2.6, joint) * (joint > 2.2))
+    return _pores(img, rng, density=0.006, depth=8)
+
+
+def tex_sidewalk_slab() -> None:
+    save_png(_sidewalk(904), _blk("sidewalk_slab"))
+
+
+def _curb_concrete(rng) -> np.ndarray:
+    """Darker curb concrete with tyre scuffs running along x (shared by the curb face and top)."""
+    curb = _smooth_concrete(rng, (118, 116, 112), mottle=4.0, fine=1.4)
+    return add_lum(curb, -smoothstep(0.6, 1.6, fnoise(rng, beta=1.6, aniso=(6, 1))) * 14)
+
+
+def tex_sidewalk_curb() -> None:
+    """Curb side face: sidewalk with a darker, rounded curb band along the top edge.
+
+    The curb model shows the top half (v 0..8), so the band + lip sit at the curb's top edge.
+    """
+    img = _sidewalk(904)
+    rng = rng_for(905)
+    X, Y = grid()
+    band = box((S, S), -1, -1, S + 1, 22)
+    img = over(img, _curb_concrete(rng), band)
+    img = add_lum(img, 22 * np.exp(-((Y - 19) / 1.6) ** 2) - 18 * np.exp(-((Y - 23) / 1.2) ** 2))  # rounded lip
+    save_png(img, _blk("sidewalk_curb"))
+
+
+def tex_sidewalk_curb_top() -> None:
+    """Curb top (plain slab, no facing): darker curb concrete over the whole tile, edge joints."""
+    img = _sidewalk(906, base=(118, 116, 112))
+    rng = rng_for(907)
+    scuffs = smoothstep(0.6, 1.6, fnoise(rng, beta=1.6, aniso=(6, 1)))
+    save_png(add_lum(img, -scuffs * 12), _blk("sidewalk_curb_top"))
+
+
+def tex_storm_drain() -> None:
+    """Curb inlet: concrete with a dark slot and a cast-iron grate of vertical bars."""
+    rng = rng_for(906)
+    img = _sidewalk(906)
+    X, Y = grid()
+    img = add_lum(img, -26 * (box((S, S), 10, 34, S - 10, 106) - box((S, S), 14, 38, S - 14, 102)))
+    iron = _galvanised(rng, (54, 50, 48))
+    iron = over(iron, np.array([96, 54, 36]), smoothstep(0.8, 2.0, fnoise(rng, beta=1.6)) * 0.6)
+    img = over(img, iron, box((S, S), 14, 38, S - 14, 102))
+    slots = np.zeros((S, S))
+    for x0 in range(22, S - 22, 10):
+        slots = np.maximum(slots, box((S, S), x0, 46, x0 + 5, 94))
+    depth = 0.25 + 0.75 * np.clip((Y - 46) / 48, 0, 1)
+    img = over(img, np.array([10, 10, 12]), slots * (1 - 0.3 * depth))
+    leaves = smoothstep(0.9, 1.6, fnoise(rng, beta=1.4)) * (Y > 80)
+    img = over(img, np.array([92, 60, 34]), leaves * 0.6)               # leaves caught in the grate
+    save_png(img, _blk("storm_drain"))
+
+
+def tex_manhole() -> None:
+    """Round cast-iron manhole cover with raised grid studs and SEWER lettering, in asphalt."""
+    rng = rng_for(907)
+    img = _asphalt(907)
+    X, Y = grid()
+    r = np.hypot(X - 64, Y - 64)
+    img = over(img, np.array([58, 56, 54]), np.clip(60 - r, 0, 1))      # frame ring
+    cover = np.clip(55 - r, 0, 1)
+    iron = _galvanised(rng, (64, 60, 58))
+    iron = over(iron, np.array([90, 56, 40]), smoothstep(0.9, 2.0, fnoise(rng, beta=1.8)) * 0.5)
+    studs = (np.abs(wrapd(X - 4, 8)) < 1.6) & (np.abs(wrapd(Y - 4, 8)) < 1.6)
+    iron = add_lum(iron, 14 * studs - 6 * ~studs)
+    img = lerp(img, iron, cover[..., None])
+    img = add_lum(img, -30 * np.exp(-((r - 55.5) / 0.9) ** 2))          # gap between cover and frame
+    img = over(img, iron * 0.95, np.clip(22 - r, 0, 1))                 # smooth centre disc for the lettering
+    txt = _text("SEWER", 64, 64, 13, maxw=38)
+    img = add_lum(img, 40 * txt - 20 * np.roll(txt, (1, 1), axis=(0, 1)))  # raised cast letters
+    save_png(img, _blk("manhole"))
+
+
+def _grass_layer(rng) -> np.ndarray:
+    """Dark damp night grass: dense short blades, clumps, a few dead patches. Seamless."""
+    img = fill((50, 62, 42), (S, S))
+    blades = rng.normal(0, 1, (S, S))
+    blades = (blades + np.roll(blades, 1, 0) + np.roll(blades, 2, 0)) / 1.7   # short vertical blades
+    img = add_lum(img, blades * 9 + np.kron(rng.normal(0, 4, (S // 4, S // 4)), np.ones((4, 4))),
+                  (0.85, 1.0, 0.7))
+    img = add_lum(img, fnoise(rng, beta=2.6) * 6)
+    dead = smoothstep(0.8, 1.8, fnoise(rng, beta=2.4))
+    img = over(img, np.array([88, 76, 52]), dead * 0.5)
+    return add_lum(img, (rng.random((S, S)) < 0.06) * -22.0)             # dark gaps between blades
+
+
+def tex_lawn_grass_top() -> None:
+    save_png(_grass_layer(rng_for(908)), _blk("lawn_grass_top"))
+
+
+def tex_lawn_grass_side() -> None:
+    """Dirt with a ragged dark grass fringe hanging over the top edge (tiles in x)."""
+    rng = rng_for(909)
+    img = _smooth_concrete(rng, (82, 66, 50), mottle=5.0, fine=1.5)
+    img = add_lum(img, rng.normal(0, 6, (S, S)))
+    stones = blur((rng.random((S, S)) < 0.01) * 1.0, 0.7)
+    img = add_lum(img, stones * 60, (1, 0.95, 0.85))
+    grass = _grass_layer(rng_for(908))
+    X, Y = grid()
+    fringe = 22 + 9 * np.clip(fnoise(rng, (1, S), beta=0.6), -1.5, 1.5)
+    img = lerp(img, grass, (Y < fringe).astype(float)[..., None])
+    img = add_lum(img, -14 * np.exp(-((Y - fringe) / 2.0) ** 2) * (Y >= fringe))
+    save_png(img, _blk("lawn_grass_side"))
+
+
+LEAF_COLS = ((122, 70, 34), (140, 92, 40), (104, 52, 30), (150, 110, 52), (86, 58, 36), (128, 60, 34))
+
+
+def _leaf(d, rng, x, y, k, size=(5.0, 9.0), cols=LEAF_COLS) -> None:
+    """One dead leaf: lobed outline (maple-ish or oval), random turn, darker midrib."""
+    L = rng.uniform(*size)
+    ang = rng.uniform(0, 2 * np.pi)
+    lobes = rng.choice([0, 5])
+    th = np.linspace(0, 2 * np.pi, 28, endpoint=False)
+    rr = L * (0.55 + 0.45 * np.abs(np.cos(th / 2))) * (1 + (0.28 * np.cos(lobes * th) if lobes else 0))
+    rr *= np.where(np.cos(th) > 0, 1.0, 0.6)
+    pts = [(x + k * rr[i] * np.cos(th[i] + ang), y + k * rr[i] * 0.62 * np.sin(th[i] + ang)) for i in range(len(th))]
+    c = np.array(cols[rng.integers(len(cols))]) * rng.uniform(0.8, 1.1)
+    d.polygon(pts, fill=tuple(int(v) for v in np.clip(c, 0, 255)) + (255,))
+    ex, ey = np.cos(ang) * L * k, np.sin(ang) * L * k * 0.62
+    d.line((x - ex, y - ey, x + ex, y + ey), fill=tuple(int(v * 0.65) for v in c) + (255,), width=max(1, k // 2))
+
+
+def tex_leaf_litter() -> None:
+    """Cutout carpet of dead leaves (browns/oranges) with transparent gaps."""
+    rng = rng_for(910)
+    img = _cutout_scatter(rng, 210, lambda d, r, x, y, k: _leaf(d, r, x, y, k, size=(6.0, 11.0)))
+    lum = rng.normal(0, 5, (S, S)) + fnoise(rng, beta=2.2) * 8
+    img[..., :3] = np.clip(img[..., :3] + lum[..., None], 0, 255)
+    save_png(img, _blk("leaf_litter"))
+
+
+def tex_dust_pile() -> None:
+    """Fine grey dust / sand: grain, soft ripples, darker specks."""
+    rng = rng_for(911)
+    X, Y = grid()
+    img = fill((140, 138, 134), (S, S))
+    img = add_lum(img, rng.normal(0, 9, (S, S)) + fnoise(rng, beta=2.6) * 7)
+    ripple = np.sin(2 * np.pi * (Y + 6 * fnoise(rng, beta=2.5)) / 16)
+    img = add_lum(img, ripple * 4)
+    img = add_lum(img, (rng.random((S, S)) < 0.02) * -40.0)              # darker specks
+    save_png(img, _blk("dust_pile"))
+
+
+# ----- houses -----
+
+SIDING = {"green": (104, 124, 102), "grey": (128, 130, 128), "blue": (108, 124, 142),
+          "yellow": (172, 160, 116), "white": (196, 194, 186)}
+
+
+def _clapboard(seed, col) -> np.ndarray:
+    """Horizontal lap siding, 8 boards per block: lit top edge, shadow under each lap, grime."""
+    rng = rng_for(seed)
+    X, Y = grid()
+    img = add_lum(fill(col, (S, S)), fnoise(rng, beta=1.6, aniso=(10, 1), kmin=2) * 4)   # wood grain
+    v = (Y % 16) / 16
+    img = img * (0.86 + 0.16 * v)[..., None]                        # each board tilts out toward the bottom
+    img = add_lum(img, -34 * smoothstep(1.6, 0.4, Y % 16))            # shadow line under the lap above
+    img = add_lum(img, 10 * smoothstep(13, 15.5, Y % 16) * (Y % 16 < 15.5))
+    chips = smoothstep(1.7, 2.3, fnoise(rng, beta=1.2, kmin=4))
+    img = over(img, np.array([120, 112, 98]), chips * 0.8)           # peeling paint, grey wood below
+    mildew = smoothstep(0.4, 1.6, fnoise(rng, beta=2.4)) * (0.4 + 0.6 * v)
+    img = over(img, np.array([70, 74, 60]), mildew * 0.22)
+    return add_lum(img, fnoise(rng, beta=1.2, aniso=(1, 10), kmin=2) * 3)   # rain streaks
+
+
+def tex_sidings() -> None:
+    for i, (name, col) in enumerate(SIDING.items()):
+        save_png(_clapboard(920 + i, col), _blk(f"siding_{name}"))
+
+
+def _painted_wood(seed, col=(200, 198, 190), vertical=True) -> np.ndarray:
+    """Painted boards: visible grain through the paint, a few peeled patches, light grime."""
+    rng = rng_for(seed)
+    aniso = (1, 12) if vertical else (12, 1)
+    img = add_lum(fill(col, (S, S)), fnoise(rng, beta=1.6, aniso=aniso, kmin=2) * 6
+                  + fnoise(rng, beta=0.8, aniso=aniso, kmin=8) * 2)
+    chips = smoothstep(1.9, 2.4, blur(fnoise(rng, beta=1.3, kmin=3), 0.8))
+    img = over(img, np.array([118, 110, 96]), chips * 0.8)
+    return _weather(img, rng, dirt=0.18, scratches=0)
+
+
+def tex_house_trim() -> None:
+    save_png(_painted_wood(930), _blk("house_trim"))
+
+
+def tex_brick_foundation() -> None:
+    """Dull red-brown bricks 32x16 in running bond with grey mortar; seamless."""
+    rng = rng_for(931)
+    X, Y = grid()
+    row = np.floor(Y / 16)
+    bx = (X + 16 * (row % 2)) % S
+    col_idx = np.floor(bx / 32)
+    tone = rng.normal(0, 10, (8, 4))
+    t = tone[row.astype(int) % 8, col_idx.astype(int) % 4]
+    img = fill((124, 70, 56), (S, S)) + t[..., None] * np.array([1.0, 0.7, 0.6])
+    img = add_lum(img, rng.normal(0, 6, (S, S)) + fnoise(rng, beta=2.0, kmin=4) * 6)
+    mortar = np.minimum(np.abs(wrapd(Y, 16)), np.abs(wrapd(bx, 32)))
+    img = over(img, add_lum(fill((126, 122, 114), (S, S)), rng.normal(0, 5, (S, S))), smoothstep(1.6, 0.8, mortar))
+    img = add_lum(img, -12 * smoothstep(3.0, 1.6, mortar) * (mortar > 1.6))
+    save_png(_weather(img, rng, dirt=0.25, scratches=0), _blk("brick_foundation"))
+
+
+def tex_roof_shingles() -> None:
+    """Dark asphalt shingles: rows of 32 px tabs offset by half a tab, granules, row shadows."""
+    rng = rng_for(932)
+    X, Y = grid()
+    row = np.floor(Y / 16).astype(int)
+    bx = (X + 16 * (row % 2)) % S
+    tab = np.floor(bx / 32).astype(int)
+    tone = rng.normal(0, 7, (8, 4))[row % 8, tab % 4]
+    img = fill((62, 60, 62), (S, S)) + tone[..., None]
+    img = add_lum(img, rng.normal(0, 8, (S, S)) + blur(rng.normal(0, 5, (S, S)), 0.6))   # granules
+    v = (Y % 16) / 16
+    img = img * (0.8 + 0.25 * v)[..., None]
+    img = add_lum(img, -30 * smoothstep(2.0, 0.4, Y % 16))                 # overlap shadow
+    img = add_lum(img, -24 * smoothstep(1.4, 0.4, np.abs(wrapd(bx, 32))) * (v > 0.2))   # tab slots
+    moss = smoothstep(1.0, 2.0, fnoise(rng, beta=2.0))
+    img = over(img, np.array([60, 70, 46]), moss * 0.4)
+    save_png(img, _blk("roof_shingles"))
+
+
+def tex_house_window() -> None:
+    """Blacked-out window: white wooden frame + muntin cross, dark glass, faint reflection."""
+    rng = rng_for(933)
+    X, Y = grid()
+    img = _painted_wood(934)
+    glass = fill((14, 16, 20), (S, S))
+    refl = np.exp(-((X - Y * 0.8 - 20) / 9) ** 2) * 18 + np.exp(-((X - Y * 0.8 - 52) / 4) ** 2) * 10
+    glass = add_lum(glass, refl + fnoise(rng, beta=2.8) * 2, (0.85, 0.9, 1.0))
+    panes = np.zeros((S, S))
+    for x0, x1 in ((12, 61), (67, 116)):
+        for y0, y1 in ((12, 61), (67, 116)):
+            panes = np.maximum(panes, box((S, S), x0, y0, x1, y1))
+    img = add_lum(img, -26 * np.clip(blur(panes, 1.2) - panes, 0, 1) * 2)   # frame shadow into glass
+    img = over(img, glass, panes)
+    img = add_lum(img, -16 * box((S, S), 6, S - 10, S - 6, S - 6))          # sill shadow line
+    save_png(img, _blk("house_window"))
+
+
+def tex_house_door() -> None:
+    """Painted panel door (muted oxblood) with brass knob, 2 blocks tall, split top/bottom."""
+    rng = rng_for(935)
+    shp = (2 * S, S)
+    X, Y = grid(shp)
+    col = np.array([104, 44, 40])
+    img = _wood(rng, col, horizontal=False, shape=shp) * 0.4 + fill(col, shp) * 0.6
+    for x0, x1 in ((18, 58), (70, 110)):
+        for y0, y1 in ((20, 108), (132, 236)):
+            outer, inner = box(shp, x0, y0, x1, y1), box(shp, x0 + 6, y0 + 6, x1 - 6, y1 - 6)
+            bevel = outer - inner
+            lit = ((X < x0 + 6) | (Y < y0 + 6)) & ~((X > x1 - 6) | (Y > y1 - 6))
+            img = add_lum(img, bevel * np.where(lit, 22, -30) - 10 * inner)
+    chips = smoothstep(1.7, 2.3, fnoise(rng, shp, beta=1.2, kmin=4))
+    img = over(img, np.array([96, 82, 66]), chips * 0.7)
+    img = _weather(img, rng, dirt=0.2, scratches=4)
+    knob = supersample(shp, lambda x, y: np.hypot(x - 104, y - 146) < 5.5)
+    img = over(img, np.array([170, 140, 70]), knob)
+    img = over(img, np.array([240, 220, 160]), supersample(shp, lambda x, y: np.hypot(x - 102.5, y - 144.5) < 1.8))
+    save_png(img[:S], _blk("house_door_top"))
+    save_png(img[S:], _blk("house_door_bottom"))
+
+
+def tex_garage_door() -> None:
+    """Sectional garage door: 4 horizontal sections, 2 raised panels per block (tiles in x)."""
+    rng = rng_for(936)
+    X, Y = grid()
+    img = _smooth_concrete(rng, (182, 180, 172), mottle=2.5, fine=0.8)
+    for s in range(4):
+        y0 = s * 32
+        img = add_lum(img, -34 * smoothstep(1.4, 0.3, np.abs(Y - y0)))      # section joints
+        for x0 in (8, 72):
+            outer, inner = box((S, S), x0, y0 + 7, x0 + 48, y0 + 25), box((S, S), x0 + 3, y0 + 10, x0 + 45, y0 + 22)
+            img = add_lum(img, (outer - inner) * np.where(Y < y0 + 16, 14, -16))
+    img = over(img, np.array([90, 84, 70]), smoothstep(0.5, 1.0, Y / S) * smoothstep(0.2, 1.6, fnoise(rng, beta=2.0)) * 0.4)
+    save_png(_weather(img, rng, dirt=0.15, scratches=5), _blk("garage_door"))
+
+
+def tex_porch_planks() -> None:
+    """Grey-painted porch floorboards along x (16 px), worn paint, dark gaps, staggered joints."""
+    rng = rng_for(937)
+    X, Y = grid()
+    wood = _wood(rng, np.array([132, 104, 76]), horizontal=True)
+    paint = add_lum(fill((128, 130, 132), (S, S)), fnoise(rng, beta=1.6, aniso=(10, 1)) * 4)
+    worn = smoothstep(0.2, 1.4, fnoise(rng, beta=1.8, aniso=(4, 1)))
+    img = over(paint, wood, worn * 0.7)
+    board = np.floor(Y / 16).astype(int)
+    img = add_lum(img, rng.normal(0, 5, 8)[board % 8])                    # per-board tone
+    img = add_lum(img, -40 * smoothstep(1.4, 0.4, np.abs(wrapd(Y, 16))))
+    offs = rng.integers(0, S, 8)
+    for b in range(8):
+        jx = np.abs(wrapd(X - offs[b], S))
+        img = add_lum(img, -30 * smoothstep(1.2, 0.3, jx) * (board == b))
+    save_png(img, _blk("porch_planks"))
+
+
+def tex_porch_post() -> None:
+    img = _painted_wood(938)
+    X, Y = grid()
+    img = add_lum(img, -14 * (smoothstep(4, 1, X) + smoothstep(S - 4, S - 1, X)))   # chamfered edges
+    save_png(img, _blk("porch_post"))
+
+
+def tex_porch_light() -> None:
+    """Small porch lantern: frosted warm glass with bronze cap (top) and base (bottom)."""
+    rng = rng_for(939)
+    X, Y = grid()
+    r = np.hypot((X - 64) / 64, (Y - 64) / 80)
+    glass = lerp(np.array([255, 232, 180]), np.array([236, 190, 120]), np.clip(r, 0, 1)[..., None] ** 1.4)
+    glass = add_lum(glass, fnoise(rng, beta=2.2) * 2 + rng.normal(0, 1, (S, S)))
+    metal = _galvanised(rng, (62, 52, 40))
+    img = glass
+    img = over(img, metal, np.clip(box((S, S), -1, -1, S + 1, 18) + box((S, S), -1, S - 16, S + 1, S + 1), 0, 1))
+    for x0 in (40, 84):                                                    # thin lantern frame bars
+        img = over(img, metal, box((S, S), x0, 18, x0 + 4, S - 16) * 0.85)
+    save_png(img, _blk("porch_light"))
+
+
+# ----- interiors -----
+
+def tex_beige_carpet() -> None:
+    rng = rng_for(940)
+    X, Y = grid()
+    img = fill((168, 152, 122), (S, S))
+    img = add_lum(img, rng.normal(0, 6, (S, S)) + np.kron(rng.normal(0, 4, (S // 2, S // 2)), np.ones((2, 2)))
+                  + fnoise(rng, beta=3.0) * 5, (1.0, 0.95, 0.82))
+    worn = smoothstep(0.6, 1.8, fnoise(rng, beta=3.0))
+    img = over(img, np.array([120, 108, 86]), worn * 0.35)
+    save_png(img, _blk("beige_carpet"))
+
+
+def tex_dim_wallpaper() -> None:
+    """Faded dusty-rose wallpaper: soft stripes, small floral sprigs, water stains."""
+    rng = rng_for(941)
+    X, Y = grid()
+    img = fill((150, 130, 116), (S, S))
+    img = add_lum(img, 6 * np.cos(2 * np.pi * X / 32) + 3 * np.cos(2 * np.pi * X / 8), (1.0, 0.92, 0.88))
+    sprig = np.zeros((S, S))
+    for cx, cy in ((16, 16), (48, 48), (80, 16), (112, 48), (16, 80), (48, 112), (80, 80), (112, 112)):
+        d = np.hypot(wrapd(X - cx, S), wrapd(Y - cy, S))
+        th = np.arctan2(wrapd(Y - cy, S), wrapd(X - cx, S))
+        sprig = np.maximum(sprig, smoothstep(5.5, 3.5, d / (0.6 + 0.4 * np.abs(np.cos(2.5 * th)))))
+    img = over(img, np.array([118, 92, 86]), sprig * 0.5)
+    img = add_lum(img, fnoise(rng, beta=3.0) * 5 + rng.normal(0, 1.5, (S, S)))
+    stain = smoothstep(0.7, 1.9, fnoise(rng, beta=3.2))
+    img = over(img, np.array([120, 100, 72]), stain * 0.3)
+    save_png(img, _blk("dim_wallpaper"))
+
+
+def _planks(rng, col, joints=True) -> np.ndarray:
+    """Varnished boards along x, 16 px wide, per-board tone and staggered end joints."""
+    X, Y = grid()
+    img = _wood(rng, np.array(col), horizontal=True)
+    board = np.floor(Y / 16).astype(int)
+    img = add_lum(img, rng.normal(0, 7, 8)[board % 8], (1.0, 0.8, 0.6))   # per-board tone
+    img = add_lum(img, -30 * smoothstep(1.2, 0.3, np.abs(wrapd(Y, 16))))
+    if joints:
+        offs = rng.integers(0, S, 8)
+        for b in range(8):
+            img = add_lum(img, -24 * smoothstep(1.0, 0.3, np.abs(wrapd(X - offs[b], S))) * (board == b))
+    return add_lum(img, 8 * smoothstep(0.8, 2.0, fnoise(rng, beta=2.0, aniso=(4, 1))))   # varnish sheen
+
+
+def tex_wood_floor() -> None:
+    save_png(_planks(rng_for(942), (118, 84, 56)), _blk("wood_floor"))
+
+
+def tex_sofa_fabric() -> None:
+    """Faded 70s rust-brown upholstery: tight weave, pile wear."""
+    rng = rng_for(943)
+    X, Y = grid()
+    img = fill((126, 88, 62), (S, S))
+    weave = ((X.astype(int) + Y.astype(int)) % 2) * 2 - 1
+    img = add_lum(img, weave * 4 + rng.normal(0, 4, (S, S)) + fnoise(rng, beta=2.8) * 6)
+    worn = smoothstep(0.6, 1.8, fnoise(rng, beta=2.6))
+    img = over(img, np.array([150, 120, 96]), worn * 0.3)
+    save_png(img, _blk("sofa_fabric"))
+
+
+def _walnut(seed, horizontal=True) -> np.ndarray:
+    return _wood(rng_for(seed), np.array([92, 62, 40]), horizontal=horizontal)
+
+
+def tex_tv() -> None:
+    """tv_screen: dead CRT (grey-green glass, curved highlight) + knobs on walnut; tv_cabinet: walnut."""
+    rng = rng_for(944)
+    X, Y = grid()
+    img = _walnut(945)
+    bez = supersample((S, S), lambda x, y: (np.abs(x - 50) < 42) & (np.abs(y - 62) < 46))
+    img = over(img, np.array([40, 38, 36]), bez)
+    scr = supersample((S, S), lambda x, y: ((np.abs(x - 50) / 36) ** 4 + (np.abs(y - 62) / 40) ** 4) < 1)
+    glass = fill((44, 52, 48), (S, S))
+    glass = add_lum(glass, -16 * ((X - 50) ** 2 / 1600 + (Y - 62) ** 2 / 1800) + fnoise(rng, beta=2) * 2)
+    glass = add_lum(glass, 30 * np.exp(-(((X - 34) / 10) ** 2 + ((Y - 36) / 6) ** 2)), (0.9, 1.0, 0.95))
+    img = lerp(img, glass, scr[..., None])
+    for cy in (34, 62):                                                    # knobs
+        k = supersample((S, S), lambda x, y, cy=cy: np.hypot(x - 110, y - cy) < 7)
+        img = over(img, np.array([170, 164, 150]), k)
+        img = add_lum(img, -30 * supersample((S, S), lambda x, y, cy=cy: (np.abs(x - 110) < 1) & (np.abs(y - cy) < 6)))
+    grille = (np.abs(X - 110) < 10) & (Y > 80) & (Y < 116) & ((Y.astype(int) % 4) < 2)
+    img = add_lum(img, -26 * grille)
+    save_png(img, _blk("tv_screen"))
+    save_png(_walnut(946), _blk("tv_cabinet"))
+
+
+def tex_bed() -> None:
+    """bed_quilt: muted patchwork squares with stitching; bed_pillow: off-white soft fabric."""
+    rng = rng_for(947)
+    X, Y = grid()
+    pal = np.array([(132, 100, 84), (104, 112, 96), (150, 134, 104), (96, 92, 110), (140, 116, 98)])
+    idx = rng.integers(0, len(pal), (8, 8))
+    img = pal[idx[(Y // 16).astype(int), (X // 16).astype(int)]].astype(float)
+    img = add_lum(img, rng.normal(0, 4, (S, S)) + fnoise(rng, beta=2.6) * 6)
+    stitch = np.minimum(np.abs(wrapd(X, 16)), np.abs(wrapd(Y, 16)))
+    img = add_lum(img, -20 * smoothstep(1.2, 0.4, stitch))
+    dash = ((X + Y).astype(int) % 4 < 2) & (np.abs(wrapd(X - 8, 16)) < 0.6)
+    img = add_lum(img, 18 * dash)
+    img = img * (0.9 + 0.1 * np.cos(2 * np.pi * fnoise(rng, beta=3.5) * 0.15))[..., None]   # puffy shading
+    save_png(img, _blk("bed_quilt"))
+    pil = fill((200, 194, 180), (S, S))
+    pil = add_lum(pil, fnoise(rng, beta=3.0) * 10 + rng.normal(0, 2, (S, S)))
+    wrinkle = smoothstep(0.04, 0.0, np.abs(fnoise(rng, beta=2.4, kmin=2)))
+    save_png(add_lum(pil, -18 * wrinkle), _blk("bed_pillow"))
+
+
+def tex_fridge() -> None:
+    """Off-white enamel fridge front (freezer split, chrome handle) and plain side."""
+    rng = rng_for(948)
+    X, Y = grid()
+    base = _smooth_concrete(rng, (210, 204, 186), mottle=2.0, fine=0.5)
+    base = _weather(base, rng, dirt=0.12, scratches=3)
+    save_png(base, _blk("fridge_side"))
+    img = base.copy()
+    img = add_lum(img, -40 * smoothstep(1.6, 0.4, np.abs(Y - 40)))         # freezer door gap
+    img = add_lum(img, -20 * (smoothstep(3, 0.5, X) + smoothstep(S - 3, S - 0.5, X)))
+    for y0, y1 in ((10, 32), (50, 110)):
+        h = box((S, S), 108, y0, 116, y1)
+        img = over(img, np.array([186, 190, 196]), h)
+        img = add_lum(img, 40 * box((S, S), 109, y0, 111, y1) - 20 * box((S, S), 114, y0, 116, y1))
+    badge = _text("FROSTKING", 52, 24, 11, maxw=60)
+    img = over(img, np.array([140, 136, 130]), badge)
+    save_png(img, _blk("fridge"))
+
+
+def tex_kitchen_counter() -> None:
+    """kitchen_counter_top: speckled pale laminate; kitchen_counter_front: wood cabinet doors."""
+    rng = rng_for(949)
+    X, Y = grid()
+    top = fill((196, 190, 168), (S, S))
+    top = add_lum(top, rng.normal(0, 3, (S, S)) + fnoise(rng, beta=3.0) * 3)
+    spk = (rng.random((S, S)) < 0.05)
+    top = over(top, np.array([120, 112, 96]), spk * 0.6)
+    save_png(top, _blk("kitchen_counter_top"))
+    img = _wood(rng, np.array([134, 98, 62]), horizontal=False)
+    img = over(img, top, box((S, S), -1, -1, S + 1, 12))                  # counter edge strip
+    img = add_lum(img, -30 * box((S, S), -1, 12, S + 1, 14))
+    for x0 in (6, 68):
+        outer, inner = box((S, S), x0, 22, x0 + 54, 112), box((S, S), x0 + 7, 29, x0 + 47, 105)
+        img = add_lum(img, (outer - inner) * np.where(X < x0 + 27, 14, -14) - 26 * np.clip(box((S, S), x0 - 2, 20, x0 + 56, 114) - outer, 0, 1))
+    for hx in (52, 76):
+        img = over(img, np.array([176, 170, 156]), box((S, S), hx, 30, hx + 3, 48))
+    img = over(img, np.array([28, 24, 22]), box((S, S), -1, 116, S + 1, S + 1))   # toe kick
+    save_png(img, _blk("kitchen_counter_front"))
+
+
+def tex_dining_table() -> None:
+    save_png(_planks(rng_for(950), (100, 70, 44), joints=False), _blk("dining_table"))
+
+
+# ----- yards & nature -----
+
+def tex_picket_fence() -> None:
+    """Weathered white fence wood: peeling paint showing grey wood, dirt near the ground."""
+    rng = rng_for(951)
+    X, Y = grid()
+    img = _painted_wood(951, (190, 188, 180))
+    peel = smoothstep(0.9, 1.7, fnoise(rng, beta=1.4, aniso=(1, 4)))
+    img = over(img, np.array([110, 104, 94]), peel * 0.75)
+    img = over(img, np.array([70, 64, 52]), smoothstep(0.7, 1.0, Y / S) * 0.35)
+    save_png(img, _blk("picket_fence"))
+
+
+def tex_mailbox() -> None:
+    """Painted dark metal mailbox with rust spots and a faded white house number."""
+    rng = rng_for(952)
+    img = _galvanised(rng, (52, 56, 60))
+    img = over(img, np.array([104, 58, 38]), smoothstep(1.2, 2.0, fnoise(rng, beta=1.8)) * 0.6)
+    img = over(img, np.array([180, 178, 170]), _text("1313", 64, 64, 26, maxw=80) * 0.7)
+    save_png(img, _blk("mailbox"))
+
+
+def tex_night_log() -> None:
+    """night_log: dark furrowed bark (vertical); night_log_top: dark rings."""
+    rng = rng_for(953)
+    X, Y = grid()
+    img = fill((54, 46, 40), (S, S))
+    furrow = fnoise(rng, beta=1.6, aniso=(1, 10), kmin=3)
+    img = add_lum(img, furrow * 10 - smoothstep(0.5, 1.4, -furrow) * 18 + rng.normal(0, 4, (S, S)))
+    img = over(img, np.array([60, 66, 52]), smoothstep(0.9, 1.8, fnoise(rng, beta=2.0)) * 0.4)   # lichen
+    save_png(img, _blk("night_log"))
+    r = np.hypot(X - 64, Y - 64)
+    top = fill((96, 78, 58), (S, S))
+    top = add_lum(top, 10 * np.sin(r / 3.2 + fnoise(rng, beta=2.5) * 1.5) + rng.normal(0, 4, (S, S)))
+    top = over(top, img, smoothstep(58, 62, r))
+    save_png(top, _blk("night_log_top"))
+
+
+def _needle(d, rng, x, y, k) -> None:
+    """A small spray of dark conifer needles."""
+    ang = rng.uniform(0, 2 * np.pi)
+    c = (np.array([24, 36, 26]) * rng.uniform(0.75, 1.3)).astype(int)
+    for j in range(7):
+        a = ang + rng.uniform(-0.5, 0.5)
+        L = rng.uniform(4, 8) * k
+        sx, sy = x + rng.normal(0, 1.5) * k, y + rng.normal(0, 1.5) * k
+        d.line((sx, sy, sx + L * np.cos(a), sy + L * np.sin(a)), fill=tuple(c) + (255,), width=int(1.2 * k))
+
+
+def tex_night_leaves() -> None:
+    rng = rng_for(954)
+    img = _cutout_scatter(rng, 260, _needle)
+    img[..., :3] = np.clip(img[..., :3] + (fnoise(rng, beta=2.0) * 4)[..., None], 0, 255)
+    save_png(img, _blk("night_leaves"))
+
+
+def tex_dead_branch() -> None:
+    rng = rng_for(955)
+    img = fill((78, 70, 62), (S, S))
+    img = add_lum(img, fnoise(rng, beta=1.4, aniso=(1, 8), kmin=3) * 9 + rng.normal(0, 4, (S, S)))
+    img = over(img, np.array([110, 108, 98]), smoothstep(1.0, 1.8, fnoise(rng, beta=1.8)) * 0.4)   # dry grey wood
+    save_png(img, _blk("dead_branch"))
+
+
+def tex_hedge() -> None:
+    """Dense dark privet hedge: small leaf clumps with deep gaps (opaque)."""
+    rng = rng_for(956)
+    img = fill((16, 22, 14), (S, S))
+    leaves = _cutout_scatter(rng, 360, lambda d, r, x, y, k: _leaf(d, r, x, y, k, size=(2.5, 4.5),
+                                                                   cols=((40, 58, 34), (48, 66, 38), (34, 50, 30), (56, 70, 42))))
+    a = leaves[..., 3:4] / 255
+    img = img * (1 - a) + leaves[..., :3] * a
+    save_png(add_lum(img, fnoise(rng, beta=2.4) * 5), _blk("hedge"))
+
+
+# ----- street furniture -----
+
+def _pole_metal(seed, along_x=False) -> np.ndarray:
+    rng = rng_for(seed)
+    img = _smooth_concrete(rng, (112, 114, 116), mottle=3.0, fine=0.8)
+    aniso = (10, 1) if along_x else (1, 10)
+    img = add_lum(img, fnoise(rng, beta=1.4, aniso=aniso, kmin=2) * 4)
+    drips = np.clip(fnoise(rng, beta=1.2, aniso=(1, 14), kmin=2), 0, None)
+    return over(img, np.array([104, 66, 46]), np.clip(drips * 0.15, 0, 0.3))
+
+
+def tex_streetlamp_parts() -> None:
+    save_png(_pole_metal(960), _blk("streetlamp_pole"))
+    save_png(_pole_metal(961, along_x=True), _blk("streetlamp_arm"))
+
+
+def _lamp_glass(seed, centre, edge, lit=True) -> np.ndarray:
+    """Prismatic lamp glass: radial glow, faint ribs, thin metal rim."""
+    rng = rng_for(seed)
+    X, Y = grid()
+    r = np.hypot((X - 64) / 64, (Y - 64) / 64)
+    img = lerp(np.array(centre), np.array(edge), np.clip(r, 0, 1)[..., None] ** 1.3)
+    ribs = np.cos(2 * np.pi * X / 8)
+    img = add_lum(img, ribs * (3 if lit else 5) + fnoise(rng, beta=2.2) * (2 if lit else 5))
+    if not lit:
+        img = over(img, np.array([70, 62, 50]), smoothstep(0.3, 1.6, fnoise(rng, beta=2.6)) * 0.5)  # dirt, dead bugs
+    rim = 1 - box((S, S), 5, 5, S - 5, S - 5)
+    return over(img, np.array([70, 70, 72]), rim)
+
+
+def tex_streetlamp_heads() -> None:
+    save_png(_lamp_glass(962, (255, 214, 150), (244, 150, 66)), _blk("streetlamp_head"))
+    save_png(_lamp_glass(963, (64, 56, 46), (40, 36, 32), lit=False), _blk("streetlamp_head_dead"))
+    save_png(_lamp_glass(964, (226, 248, 232), (150, 214, 186)), _blk("streetlamp_head_mercury"))
+    save_png(_lamp_glass(965, (52, 62, 58), (34, 40, 38), lit=False), _blk("streetlamp_head_mercury_dead"))
+    save_png(_galvanised(rng_for(966), (78, 80, 84)), _blk("streetlamp_housing"))
+
+
+def tex_sign_post() -> None:
+    """Galvanised U-channel post with the punched hole row down the middle."""
+    rng = rng_for(967)
+    X, Y = grid()
+    img = _pole_metal(967)
+    holes = np.hypot(X - 64, wrapd(Y - 8, 16)) < 3.2
+    img = over(img, np.array([12, 12, 14]), holes.astype(float))
+    img = add_lum(img, -14 * (smoothstep(8, 2, np.abs(X - 40)) + smoothstep(8, 2, np.abs(X - 88))))   # channel folds
+    save_png(img, _blk("sign_post"))
+    # sign backs: grey galvanised, cut out to the sign outlines (rounded rect r=9 / diamond)
+    back = _weather(_galvanised(rng, (150, 152, 154)), rng, 0.2, 4)
+    for name, mask in (
+            ("sign_back", pil_mask(lambda d, k: d.rounded_rectangle((2 * k, 2 * k, 126 * k, 126 * k), 9 * k, fill=255))),
+            ("sign_back_diamond", pil_mask(lambda d, k: d.polygon(
+                [(64 * k, 2 * k), (126 * k, 64 * k), (64 * k, 126 * k), (2 * k, 64 * k)], fill=255)))):
+        out = np.zeros((S, S, 4))
+        out[..., :3] = back
+        out[..., 3] = np.where(mask >= 0.5, 255, 0)
+        save_png(out, _blk(name))
+
+
+def _sign_base(rng, bg, border, radius=12, shape="rect") -> tuple[np.ndarray, np.ndarray]:
+    """Sign face (RGB) + coverage mask: rounded rectangle or diamond with an inset border."""
+    if shape == "diamond":
+        m = pil_mask(lambda d, k: d.polygon([(64 * k, 2 * k), (126 * k, 64 * k), (64 * k, 126 * k), (2 * k, 64 * k)], fill=255))
+        inner = pil_mask(lambda d, k: d.polygon([(64 * k, 10 * k), (118 * k, 64 * k), (64 * k, 118 * k), (10 * k, 64 * k)], fill=255))
+    else:
+        m = pil_mask(lambda d, k: d.rounded_rectangle((2 * k, 2 * k, 126 * k, 126 * k), radius * k, fill=255))
+        inner = pil_mask(lambda d, k: d.rounded_rectangle((6 * k, 6 * k, 122 * k, 122 * k), (radius - 3) * k, fill=255))
+    img = lerp(np.array(border, float), np.array(bg, float), inner[..., None])
+    img = img * np.ones((S, S, 1))
+    return img, m
+
+
+def _finish_sign(img, m, rng, name) -> None:
+    """Weathering + cutout alpha outside the sign outline, then save."""
+    img = _weather(img, rng, dirt=0.22, scratches=7)
+    img = add_lum(img, -10 * smoothstep(0.3, 1.0, np.hypot(*(g - 64 for g in grid())) / 90))
+    out = np.zeros((S, S, 4))
+    out[..., :3] = img
+    out[..., 3] = np.where(m >= 0.5, 255, 0)
+    save_png(out, _blk(f"street_sign_{name}"))
+
+
+def _eye_mask(cx, cy, w, h) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Almond eye outline, iris and pupil masks."""
+    X, Y = grid()
+    u = (X - cx) / w
+    lid = h * np.clip(1 - u ** 2, 0, None)
+    eye = np.clip((lid - np.abs(Y - cy)) + 0.5, 0, 1) * (np.abs(u) < 1)
+    iris = np.clip(h * 0.85 - np.hypot(X - cx, Y - cy) + 0.5, 0, 1) * eye
+    pupil = np.clip(h * 0.38 - np.hypot(X - cx, Y - cy) + 0.5, 0, 1)
+    return eye, iris, pupil
+
+
+def tex_street_signs() -> None:
+    rng = rng_for(970)
+    green, white, black, red = (30, 98, 64), (228, 228, 220), (20, 20, 22), (168, 30, 28)
+    # arrows: green street-sign style, big white arrow + EXIT
+    for name, pts in (("arrow_left", [(104, 52), (52, 52), (52, 34), (20, 60), (52, 86), (52, 68), (104, 68)]),
+                      ("arrow_right", [(24, 52), (76, 52), (76, 34), (108, 60), (76, 86), (76, 68), (24, 68)]),
+                      ("arrow_ahead", [(56, 96), (56, 46), (38, 46), (64, 14), (90, 46), (72, 46), (72, 96)])):
+        img, m = _sign_base(rng, green, white)
+        arrow = pil_mask(lambda d, k, pts=pts: d.polygon([(x * k, y * k) for x, y in pts], fill=255))
+        img = over(img, np.array(white), arrow)
+        ty = 108 if name == "arrow_ahead" else 102
+        img = over(img, np.array(white), _text("EXIT", 64, ty, 18, maxw=80))
+        _finish_sign(img, m, rng, name)
+    # neighborhood watch notice
+    img, m = _sign_base(rng, white, black, radius=6)
+    img = over(img, np.array(black), box((S, S), 6, 6, S - 6, 36))
+    eye, iris, pupil = _eye_mask(22, 21, 13, 8)
+    img = over(img, np.array(white), eye)
+    img = over(img, np.array(red), iris)
+    img = over(img, np.array(black), pupil)
+    img = over(img, np.array(white), _text("NEIGHBORHOOD", 78, 15, 12, maxw=82))
+    img = over(img, np.array(white), _text("WATCH", 78, 28, 13, maxw=82))
+    for text, y, col in (("BE A MODEL", 46, black), ("CITIZEN", 58, black), ("KEEP QUIET", 72, black),
+                         ("AFTER DARK", 84, black), ("WE ARE", 99, red), ("WATCHING", 112, red)):
+        img = over(img, np.array(col), _text(text, 64, y, 13, maxw=110))
+    _finish_sign(img, m, rng, "watch_notice")
+    # quiet zone
+    img, m = _sign_base(rng, white, black, radius=6)
+    img = over(img, np.array(black), _text("QUIET", 64, 34, 36, maxw=112))
+    img = over(img, np.array(black), _text("ZONE", 64, 68, 36, maxw=112))
+    img = over(img, np.array(red), box((S, S), 12, 86, S - 12, 88))
+    img = over(img, np.array(red), _text("NO NOISE", 64, 103, 20, maxw=108))
+    _finish_sign(img, m, rng, "quiet_notice")
+    # warning diamond with an eye: black almond outline, black iris, yellow pupil, white glint
+    img, m = _sign_base(rng, (222, 182, 36), black, shape="diamond")
+    eye, iris, pupil = _eye_mask(64, 64, 34, 20)
+    outline = np.clip(_eye_mask(64, 64, 38, 24)[0] - eye, 0, 1)
+    img = over(img, np.array(black), outline)
+    img = over(img, np.array(black), iris)
+    img = over(img, np.array((222, 182, 36)), pupil)
+    X, Y = grid()
+    img = over(img, np.array(white), np.clip(3.5 - np.hypot(X - 57, Y - 57), 0, 1))
+    _finish_sign(img, m, rng, "warning")
+    # nonsense: a regulatory sign gone wrong (scrambled words, warped letters)
+    img, m = _sign_base(rng, white, black, radius=6)
+    txt = _text("SPEDE", 64, 30, 30, maxw=110) + _text("LIMTI", 64, 62, 30, maxw=110)
+    num = _text("-3", 64, 100, 40, maxw=80)
+    X, Y = grid()
+    shift = (4 * np.sin(Y / 5.0) + 3 * np.sin(Y / 2.3 + 1)).astype(int)
+    warped = np.stack([np.roll(np.clip(txt + num, 0, 1)[y], shift[y, 0]) for y in range(S)])
+    img = over(img, np.array(black), warped)
+    img = over(img, np.array(red), np.fliplr(_text("?", 104, 100, 22, maxw=30)))
+    _finish_sign(img, m, rng, "nonsense")
+
+
+def tex_highway_sign_exit() -> None:
+    """512x256 green highway sign split into 8 tiles highway_sign_exit_0..7 (row*4+col, row 0 top).
+
+    White rounded border inset 10 px around the WHOLE sign, big "EXIT" across the top row,
+    a down arrow (toward the tunnel) in the bottom row. Opaque, crisp edges.
+    """
+    rng = rng_for(973)
+    H, W = 2 * S, 4 * S
+    shp = (H, W)
+    X, Y = grid(shp)
+    green, white = np.array([11, 107, 58]), np.array([232, 236, 230])
+    # reflective sheeting: faint fine grain + broad sheen, a little darker toward the bottom
+    img = fill(green, shp)
+    img = add_lum(img, rng.normal(0, 2.0, shp) + fnoise(rng, shp, beta=2.6) * 4 - 6 * (Y / H))
+    border = pil_mask(lambda d, k: d.rounded_rectangle((10 * k, 10 * k, (W - 10) * k, (H - 10) * k),
+                                                       22 * k, outline=255, width=7 * k), shp)
+    img = over(img, white, border)
+    img = over(img, white, _text("EXIT", W / 2, 70, 104, maxw=330, shape=shp))
+    cx = W / 2
+    arrow = [(cx - 14, 132), (cx + 14, 132), (cx + 14, 178), (cx + 40, 178), (cx, 224),
+             (cx - 40, 178), (cx - 14, 178)]
+    img = over(img, white, pil_mask(lambda d, k: d.polygon([(x * k, y * k) for x, y in arrow], fill=255), shp))
+    # wear: light grime and rain streaks, kept subtle so the sign stays legible from afar
+    img = over(img, np.array([60, 56, 50]), smoothstep(0.6, 2.0, fnoise(rng, shp, beta=2.4)) * 0.22)
+    img = add_lum(img, fnoise(rng, shp, beta=1.3, aniso=(1, 10), kmin=2) * 3)
+    for i in range(8):
+        row, col = divmod(i, 4)
+        save_png(img[row * S:(row + 1) * S, col * S:(col + 1) * S], _blk(f"highway_sign_exit_{i}"))
+
+
+def tex_tunnel_concrete() -> None:
+    """Board-formed underpass concrete: form-board lines every 32 px, water stains, pores."""
+    rng = rng_for(971)
+    X, Y = grid()
+    img = _smooth_concrete(rng, (128, 126, 122), mottle=6.0, fine=1.8)
+    img = add_lum(img, fnoise(rng, beta=1.4, aniso=(10, 1), kmin=2) * 4)
+    img = add_lum(img, -12 * smoothstep(1.2, 0.3, np.abs(wrapd(Y, 32))))
+    stains = np.clip(fnoise(rng, beta=1.2, aniso=(1, 12), kmin=2), 0, None)
+    img = over(img, np.array([70, 70, 64]), np.clip(stains * 0.22, 0, 0.35))
+    save_png(_pores(img, rng), _blk("tunnel_concrete"))
+
+
+def tex_exit_tunnel_marker() -> None:
+    """Road surface deep in the exit underpass: dark worn wet concrete, tyre wear, paint flecks."""
+    rng = rng_for(972)
+    img = _smooth_concrete(rng, (84, 82, 80), mottle=6.0, fine=1.8)
+    img = add_lum(img, rng.normal(0, 3, (S, S)))
+    tyre = smoothstep(0.8, 2.0, fnoise(rng, beta=1.6, aniso=(1, 10), kmin=2))
+    img = add_lum(img, -14 * tyre)
+    wet = smoothstep(0.0, 1.4, fnoise(rng, beta=3.2))
+    img = img * (1 - 0.22 * wet[..., None])
+    flecks = smoothstep(1.9, 2.4, fnoise(rng, beta=0.8, kmin=8))
+    img = over(img, np.array([190, 180, 120]), flecks * 0.5)            # faded yellow paint flecks
+    save_png(_pores(img, rng, density=0.008, depth=10), _blk("exit_tunnel_marker"))
 
 
 def remove_stale() -> None:
@@ -1977,11 +2887,12 @@ def snd_footsteps() -> None:
     Walk: lowpassed ~4 kHz, quieter (-6 dB), slight pitch/level variation.
     Run:  full band, a little low-end thump under the impact, louder.
     """
-    for surface in ("carpet", "concrete"):
+    # per-surface seed offsets keep the older carpet/concrete files byte-identical
+    for surface, seed_off in (("carpet", 0), ("concrete", 20), ("grass", 40), ("wood", 60)):
         for i in range(1, 6):
             src = _trim(_load_mono(VENDOR / "kenney_impact" / f"footstep_{surface}_{i - 1:03d}.ogg"))
             for run in (False, True):
-                rng = rng_for(1400 + (20 if surface == "concrete" else 0) + (10 if run else 0) + i)
+                rng = rng_for(1400 + seed_off + (10 if run else 0) + i)
                 x = _repitch(src, rng.uniform(0.95, 1.04))
                 if run:
                     x = np.concatenate([x, np.zeros(int(0.05 * SR))])
@@ -2355,6 +3266,194 @@ def snd_drain_pull() -> None:
 
 
 # =============================================================================
+# Level 9 sounds: near-silent suburb, sodium lamps, the Neighborhood Watch
+# =============================================================================
+
+def snd_level9_ambience() -> None:
+    """12 s loop: oppressive near-silence. Very faint cold air bed + barely-there far buzz."""
+    rng = rng_for(2401)
+    T = 12.0
+    n = int(T * SR)
+    t = np.arange(n) / SR
+    air = periodic_noise(n, rng, lambda f: hp_gain(f, 30, 2) * lp_gain(f, 500, 2) / np.maximum(f, 30) ** 0.5)
+    air *= drift(n, rng, 0.25, 0.05, 0.2)
+    room = periodic_noise(n, rng, lambda f: bp_gain(f, 25, 90, 3))                     # distant city-less rumble
+    buzz = mains_hum(t, levels_db=(0, -14, -26, -36)) * drift(n, rng, 0.3, 0.06, 0.2)
+    buzz = fft_filter(buzz, lambda f: lp_gain(f, 400, 2), circular=True)              # far away = dull
+    air, room, buzz = norm(air), norm(room), norm(buzz)
+    rms = np.sqrt(np.mean(air ** 2))
+    x = air + 0.5 * room + buzz / np.sqrt(np.mean(buzz ** 2)) * rms * 10 ** (-24 / 20)
+    save_ogg(x, SND / "ambient" / "level9_ambience.ogg", peak=0.35, loop=True)
+
+
+def snd_sodium_hum() -> None:
+    """4 s loop: old sodium streetlamp. Low 120 Hz hum + soft, steady ballast harmonics.
+
+    The 'rasp' is a fixed harmonic series of 120 Hz rolling off above ~400 Hz and cut at
+    ~1.6 kHz, with only a very slow level drift: buzzy in tone, but no flutter/grit."""
+    rng = rng_for(2402)
+    T = 4.0
+    n = int(T * SR)
+    t = np.arange(n) / SR
+    hum = mains_hum(t, levels_db=(0, -9, -16, -22))
+    rasp = sum((400 / (120 * h)) ** 1.4 * np.sin(2 * np.pi * 120 * h * t + 1.3 * h) for h in range(3, 14))
+    rasp = fft_filter(rasp, lambda f: lp_gain(f, 1600, 3), circular=True)
+    x = (norm(hum) + 0.18 * norm(rasp)) * drift(n, rng, 0.08, 0.2, 0.5)
+    save_ogg(x, SND / "light" / "sodium_hum.ogg", peak=0.55, loop=True)
+
+
+def snd_lamp_flicker() -> None:
+    """Short electrical tick + two ragged buzz bursts of a failing streetlamp."""
+    rng = rng_for(2403)
+    dur = 0.7
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    x = np.zeros(n)
+    k = int(0.004 * SR)
+    add_at(x, rng.normal(size=k) * np.exp(-np.arange(k) / (0.0008 * SR)), 0.01, False)   # relay tick
+    add_at(x, 0.4 * ring([2900, 4100], [0.02, 0.012], [1, 0.6], 0.1), 0.01, False)
+    s = np.sin(2 * np.pi * 120 * t)
+    buzz = fft_filter(np.sign(s) * np.abs(s) ** 0.3, lambda f: bp_gain(f, 100, 2500, 1))[:n]
+    gate = np.zeros(n)
+    for st, ln in ((0.06, 0.12), (0.26, 0.05), (0.36, 0.18)):
+        gate += box((1, n), st * SR, -1, (st + ln) * SR, 2, soft=200)[0] * rng.uniform(0.6, 1.0)
+    x += 0.5 * norm(buzz) * gate
+    x = x + 0.2 * conv(x, reverb_ir(rng, 0.6, 0.15, lp=4000))[:n]
+    save_ogg(x, SND / "level9" / "lamp_flicker.ogg", peak=0.75, fade_in=0.001, fade_out=0.05)
+
+
+def snd_distant_rumble() -> None:
+    """~6 s deep far-away rumble with heavy thuds: something enormous moving in the fog."""
+    rng = rng_for(2404)
+    dur = 6.0
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    env = np.zeros(n)
+    for c, w, a in ((1.6, 0.9, 0.8), (3.0, 1.2, 1.0), (4.4, 0.9, 0.7)):
+        env += a * np.exp(-0.5 * ((t - c) / w) ** 2)
+    rumble = fft_filter(rng.normal(size=n), lambda f: lp_gain(f, 90, 3) * hp_gain(f, 18, 2))[:n]
+    x = norm(rumble) * env * (1 + smooth_jitter(rng, n, 4, 0.3))
+    for st in (1.2, 2.9, 4.5):                                            # giant footfalls
+        tt = t_axis(1.2)
+        thud = np.sin(2 * np.pi * np.cumsum(28 + 30 * np.exp(-tt / 0.08)) / SR) * np.exp(-tt / 0.35)
+        add_at(x, 0.9 * thud, st, False)
+    x = fft_filter(x, lambda f: lp_gain(f, 250, 2))[:n]
+    x = x + 0.5 * conv(x, reverb_ir(rng, 3.0, 1.2, lp=400))[:n]
+    save_ogg(x, SND / "level9" / "distant_rumble.ogg", peak=0.89, fade_in=0.3, fade_out=1.0)
+
+
+def snd_watcher_hum() -> None:
+    """6 s loop: deep wet electrical drone with slow vibrato, swelling 'wet' resonances and faint static."""
+    rng = rng_for(2405)
+    T = 6.0
+    n = int(T * SR)
+    t = np.arange(n) / SR
+    # 2 Hz vibrato as a periodic time warp (integral of 0.006*sin) -> loops exactly
+    warp = -0.006 / (2 * np.pi * 2.0) * np.cos(2 * np.pi * 2.0 * t)
+    drone = sum(10 ** (db / 20) * np.sin(2 * np.pi * 50 * h * (t + warp) + h)
+                for h, db in ((1, 0), (2, -4), (3, -8), (4, -12), (5, -16), (6, -20), (8, -26)))
+    beat = np.sin(2 * np.pi * (50 + 1 / T * 2) * t)                      # slow beating partner
+    wet = np.zeros(n)
+    for fc in (180.0, 260.0, 410.0):
+        band = periodic_noise(n, rng, lambda f, fc=fc: np.exp(-0.5 * ((f - fc) / 14) ** 2))
+        wet += band * drift(n, rng, 0.9, 1 / T, 0.6)
+    static = periodic_noise(n, rng, lambda f: bp_gain(f, 800, 3500, 2))
+    crack = np.zeros(n)
+    for _ in range(40):
+        m = int(rng.uniform(0.0005, 0.003) * SR)
+        add_at(crack, rng.normal(size=m) * rng.uniform(0.3, 1), rng.uniform(0, T), True)
+    crack = fft_filter(crack, lambda f: bp_gain(f, 600, 3500, 1), circular=True)
+    x = norm(drone) * 0.7 + 0.25 * beat + norm(wet) * 0.3 + norm(static) * 0.03 + norm(crack) * 0.08
+    x = fft_filter(x, lambda f: lp_gain(f, 2500, 2), circular=True)
+    save_ogg(x, SND / "entity" / "watcher_hum.ogg", peak=0.55, loop=True)
+
+
+def snd_watcher_spot() -> None:
+    """~1.5 s: sharp dissonant tonal sting + static burst, in a big outdoor space."""
+    rng = rng_for(2406)
+    dur = 1.5
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    env = smoothstep(0, 0.01, t) * np.exp(-t / 0.45)
+    tone = sum(np.sin(2 * np.pi * f * t * (1 + 0.004 * np.sin(2 * np.pi * 7 * t))) for f in (740.0, 784.0, 1046.5, 1108.7))
+    tone = dist(norm(tone) * 1.2, 2.0) * env
+    sub = np.sin(2 * np.pi * 55 * t) * np.exp(-t / 0.5)
+    stat = bitcrush(fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 900, 5000, 1))[:n] * 0.6, 4, 6)
+    stat *= smoothstep(0, 0.005, t) * np.exp(-t / 0.18)
+    x = 0.7 * tone + 0.5 * norm(sub) + 0.45 * norm(stat)
+    x = x + 0.4 * conv(x, reverb_ir(rng, 1.5, 0.6, lp=5000))[:n]
+    save_ogg(x, SND / "entity" / "watcher_spot.ogg", peak=0.88, fade_in=0.001, fade_out=0.3)
+
+
+def snd_watcher_beam() -> None:
+    """~2.5 s: rising whine charging up, then a searing hiss."""
+    rng = rng_for(2407)
+    dur = 2.5
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    tc = 1.7
+    f = 300 * (2400 / 300) ** np.clip(t / tc, 0, 1)
+    vib = 1 + 0.01 * (t / tc) * np.sin(2 * np.pi * (5 + 10 * t / tc) * t)
+    whine = np.sin(2 * np.pi * np.cumsum(f * vib) / SR) + 0.4 * np.sin(2 * np.pi * np.cumsum(1.5 * f * vib) / SR)
+    whine *= smoothstep(0, 0.2, t) * (0.3 + 0.7 * np.clip(t / tc, 0, 1)) * (1 - smoothstep(tc, tc + 0.1, t))
+    hiss = fft_filter(rng.normal(size=n), lambda fr: hp_gain(fr, 1500, 2) * lp_gain(fr, 9000, 1))[:n]
+    hiss *= smoothstep(tc - 0.05, tc + 0.03, t) * (1 - smoothstep(dur - 0.5, dur, t)) * (1 + smooth_jitter(rng, n, 30, 0.3))
+    crackle = _crackle(rng, dur, 400) * smoothstep(tc - 0.05, tc + 0.03, t)
+    x = 0.6 * norm(whine) + 0.6 * norm(hiss) + 0.25 * norm(crackle)
+    save_ogg(x, SND / "entity" / "watcher_beam.ogg", peak=0.85, fade_in=0.01, fade_out=0.2)
+
+
+def snd_watcher_dust() -> None:
+    """~2 s dry crumbling cascade: a soft collapse thump, then thousands of sand grains."""
+    rng = rng_for(2408)
+    dur = 2.0
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    density = 6000 * np.exp(-t / 0.5) * smoothstep(0, 0.05, t)
+    grains = (rng.random(n) < density / SR) * rng.uniform(-1, 1, n)
+    grains = fft_filter(grains, lambda f: bp_gain(f, 1200, 8000, 1))[:n]
+    hush = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 400, 3000, 1))[:n] * np.exp(-t / 0.6) * smoothstep(0, 0.05, t)
+    thump = fft_filter(rng.normal(size=n) * np.exp(-t / 0.06), lambda f: lp_gain(f, 300, 2))[:n]
+    x = norm(grains) * 0.7 + norm(hush) * 0.35 + norm(thump) * 0.5
+    x = x + 0.2 * conv(x, reverb_ir(rng, 1.2, 0.4, lp=4000))[:n]
+    save_ogg(x, SND / "entity" / "watcher_dust.ogg", peak=0.85, fade_in=0.002, fade_out=0.3)
+
+
+def snd_observer_vanish() -> None:
+    """~1.2 s soft airy exhale: band-passed breath noise sweeping down, swell and fade."""
+    rng = rng_for(2409)
+    dur = 1.2
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    fc = 1800 * np.exp(-t / 0.6) + 300
+    breath = svf(rng.normal(size=n), fc, 1.5)
+    env = smoothstep(0, 0.25, t) * (1 - smoothstep(0.35, dur, t))
+    x = norm(breath) * env + 0.2 * norm(fft_filter(rng.normal(size=n), lambda f: lp_gain(f, 300, 2))[:n]) * env
+    x = x + 0.35 * conv(x, reverb_ir(rng, 1.5, 0.5, lp=3000))[:n]
+    save_ogg(x, SND / "entity" / "observer_vanish.ogg", peak=0.75, fade_in=0.02, fade_out=0.15)
+
+
+def snd_leaf_steps() -> None:
+    """4 dry dead-leaf crunches: dense crackle bursts with a soft step thud underneath."""
+    for i in range(1, 5):
+        rng = rng_for(2410 + i)
+        dur = 0.4
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        x = np.zeros(n)
+        for c, a in ((0.02, 1.0), (rng.uniform(0.06, 0.12), rng.uniform(0.5, 0.8))):
+            dens = 9000 * np.exp(-np.clip(t - c, 0, None) / 0.06) * (t >= c)
+            cr = (rng.random(n) < dens / SR) * rng.uniform(-1, 1, n)
+            x += a * fft_filter(cr, lambda f: bp_gain(f, 1500, 9000, 1))[:n]
+        rustle = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 800, 5000, 1))[:n] * np.exp(-t / 0.1) * smoothstep(0, 0.01, t)
+        thud = fft_filter(rng.normal(size=n) * np.exp(-t / 0.03), lambda f: lp_gain(f, 400, 2))[:n]
+        x = norm(x) + 0.3 * norm(rustle) + 0.4 * norm(thud)
+        save_ogg(x, SND / "step" / f"leaves{i}.ogg", peak=0.6 * 10 ** (rng.uniform(-1, 1) / 20),
+                 fade_in=0.001, fade_out=0.05)
+
+
+
+# =============================================================================
 
 TEXTURES = [
     remove_stale,
@@ -2369,6 +3468,15 @@ TEXTURES = [
     tex_stairwell_wall, tex_chain_link, tex_stair_tread, tex_exit_sign, tex_exit_door,
     tex_supply_crate, tex_supply_crate_top,
     tex_pool_tile, tex_pool_tile_dark, tex_pool_floor, tex_pool_skylight, tex_pool_lamp,
+    tex_asphalt, tex_asphalt_wet, tex_asphalt_marking, tex_sidewalk_slab, tex_sidewalk_curb, tex_sidewalk_curb_top,
+    tex_storm_drain, tex_manhole, tex_lawn_grass_top, tex_lawn_grass_side, tex_leaf_litter, tex_dust_pile,
+    tex_sidings, tex_house_trim, tex_brick_foundation, tex_roof_shingles, tex_house_window, tex_house_door,
+    tex_garage_door, tex_porch_planks, tex_porch_post, tex_porch_light,
+    tex_beige_carpet, tex_dim_wallpaper, tex_wood_floor, tex_sofa_fabric, tex_tv, tex_bed, tex_fridge,
+    tex_kitchen_counter, tex_dining_table,
+    tex_picket_fence, tex_mailbox, tex_night_log, tex_night_leaves, tex_dead_branch, tex_hedge,
+    tex_streetlamp_parts, tex_streetlamp_heads, tex_sign_post, tex_street_signs, tex_tunnel_concrete,
+    tex_exit_tunnel_marker, tex_highway_sign_exit,
     tex_camcorder_battery, tex_almond_water, tex_canned_food, tex_backshroom, tex_bacteria,
 ]
 SOUNDS = [
@@ -2380,6 +3488,8 @@ SOUNDS = [
     snd_distant_creak, snd_thunder, snd_radio_static, snd_death_sting,
     snd_intro_glitch, snd_intro_impact, snd_intro_wind,
     snd_poolrooms_ambience, snd_hallucination_loop, snd_phantom_vanish, snd_drain_pull,
+    snd_level9_ambience, snd_sodium_hum, snd_lamp_flicker, snd_distant_rumble, snd_watcher_hum,
+    snd_watcher_spot, snd_watcher_beam, snd_watcher_dust, snd_observer_vanish, snd_leaf_steps,
 ]
 
 

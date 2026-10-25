@@ -1,0 +1,200 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/streetlamp_arm",
+    "metal": "backrooms:block/streetlamp_arm"
+  },
+  "elements": [
+    {
+      "from": [
+        7,
+        12,
+        0
+      ],
+      "to": [
+        9,
+        14,
+        22
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7,
+            2,
+            9,
+            4
+          ],
+          "texture": "#metal"
+        },
+        "east": {
+          "uv": [
+            0,
+            2,
+            16,
+            4
+          ],
+          "texture": "#metal"
+        },
+        "west": {
+          "uv": [
+            0,
+            2,
+            16,
+            4
+          ],
+          "texture": "#metal"
+        },
+        "up": {
+          "uv": [
+            0,
+            7,
+            16,
+            9
+          ],
+          "texture": "#metal",
+          "rotation": 90
+        },
+        "down": {
+          "uv": [
+            0,
+            7,
+            16,
+            9
+          ],
+          "texture": "#metal",
+          "rotation": 90
+        }
+      }
+    },
+    {
+      "from": [
+        6.5,
+        11.5,
+        20.5
+      ],
+      "to": [
+        9.5,
+        14.5,
+        21.6
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            1.5,
+            9.5,
+            4.5
+          ],
+          "texture": "#metal"
+        },
+        "east": {
+          "uv": [
+            0,
+            1.5,
+            1.1,
+            4.5
+          ],
+          "texture": "#metal"
+        },
+        "west": {
+          "uv": [
+            14.9,
+            1.5,
+            16,
+            4.5
+          ],
+          "texture": "#metal"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            14.9,
+            9.5,
+            16
+          ],
+          "texture": "#metal"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            0,
+            9.5,
+            1.1
+          ],
+          "texture": "#metal"
+        }
+      }
+    },
+    {
+      "from": [
+        7.5,
+        6,
+        9
+      ],
+      "to": [
+        8.5,
+        7,
+        22
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7,
+            7,
+            8,
+            8
+          ],
+          "texture": "#metal"
+        },
+        "east": {
+          "uv": [
+            0,
+            7,
+            16,
+            8
+          ],
+          "texture": "#metal"
+        },
+        "west": {
+          "uv": [
+            0,
+            7,
+            16,
+            8
+          ],
+          "texture": "#metal"
+        },
+        "up": {
+          "uv": [
+            0,
+            7,
+            16,
+            8
+          ],
+          "texture": "#metal",
+          "rotation": 90
+        },
+        "down": {
+          "uv": [
+            0,
+            7,
+            16,
+            8
+          ],
+          "texture": "#metal",
+          "rotation": 90
+        }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          6.5,
+          22
+        ],
+        "axis": "x",
+        "angle": 22.5
+      }
+    }
+  ]
+}

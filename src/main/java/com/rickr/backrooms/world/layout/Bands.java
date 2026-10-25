@@ -7,8 +7,7 @@ import com.rickr.backrooms.world.Hash;
  * widths, as a pure function of (seed, coordinate).
  *
  * <p>Level 0 uses it twice: bands along X are walls running north-south, bands along Z are walls
- * running east-west, and the gaps between them are rooms. Level 2 uses it the other way round:
- * the bands are the corridors and the gaps are solid rock.
+ * running east-west, and the gaps between them are rooms.
  *
  * <p>How it stays a pure function: the axis is split into fixed-length "macro" blocks. Each macro
  * block always starts with a band, and its sequence of widths comes only from a hash of the macro

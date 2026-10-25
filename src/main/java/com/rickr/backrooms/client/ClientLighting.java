@@ -29,6 +29,9 @@ import org.jetbrains.annotations.Nullable;
  * <p>The Poolrooms follow the same rules (dim rooms, bright pools of light) with a cool tint; their
  * glowing blocks are capped a little below white because the big atrium skylights would otherwise
  * clip and the bloom would haze the whole picture.
+ *
+ * <p>Level 9 (the Suburbs) is a blue-black night with a soft orange bounce around the sodium
+ * streetlamps (cold green-white near mercury ones); see {@link #applyLevel9Fill}.
  */
 public final class ClientLighting {
     private static final float FLOOR = 0.07f;
@@ -47,6 +50,40 @@ public final class ClientLighting {
     /** Poolrooms fill: stronger and softer than the other levels (light level 12 ~ 22%, 9 ~ 9%). */
     private static final float POOLROOMS_MAX_FILL = 0.45f;
     private static final float POOLROOMS_FILL_FALLOFF = 3.0f;
+    /** Level 2 fill: pale walls in narrow corridors bounce the lamp light along (level 10 ~ 13%). */
+    private static final float LEVEL2_MAX_FILL = 0.40f;
+    private static final float LEVEL2_FILL_FALLOFF = 3.5f;
+
+    // Level 9 (the Suburbs at midnight).
+    /**
+     * "No light at all" outdoors: a very dark blue-black night (#020305-ish), a touch bluer than
+     * the indoor levels so it reads as night air rather than a dark room.
+     */
+    private static final float LEVEL9_UNLIT_R = 0.006f;
+    private static final float LEVEL9_UNLIT_G = 0.009f;
+    private static final float LEVEL9_UNLIT_B = 0.020f;
+    /**
+     * Fill near the lamps. Lit heads give vanilla block light 15 about 6 blocks over the road, so
+     * the road right under one sits around level 9 and the edge of the pool around 5. A soft
+     * curve (exponent 2) makes that whole area pick up a little orange bounce: level 9 ~ 0.11,
+     * level 5 ~ 0.04. Kept low so wet asphalt stays dark and glossy (Veil's pool sits on top)
+     * instead of turning flat grey, and nothing gets near white.
+     */
+    private static final float LEVEL9_MAX_FILL = 0.30f;
+    private static final float LEVEL9_FILL_FALLOFF = 2.0f;
+    /** Sodium bounce: deep orange (no blue, so dark surfaces never turn grey). */
+    private static final float SODIUM_R = 1.0f;
+    private static final float SODIUM_G = 0.55f;
+    private static final float SODIUM_B = 0.16f;
+    /** Mercury bounce: cold green-white. */
+    private static final float MERCURY_R = 0.62f;
+    private static final float MERCURY_G = 0.95f;
+    private static final float MERCURY_B = 0.80f;
+    /**
+     * Level 9 lamp heads glow just past the bloom threshold (~0.92) for a faint halo in the fog;
+     * they're small, so this doesn't haze the picture the way a big skylight would.
+     */
+    private static final float LEVEL9_EMISSIVE_MAX = 0.95f;
 
     private static int activeEvent() {
         return System.currentTimeMillis() < CameraClientState.eventEndMs ? CameraClientState.eventKind : LevelEventPayload.NONE;
@@ -87,6 +124,8 @@ public final class ClientLighting {
                 float v = Math.max(0.05f, power);
                 if (floor == BackroomsLevel.POOLROOMS) {
                     v = Math.min(v, POOLROOMS_EMISSIVE_MAX);
+                } else if (floor == BackroomsLevel.LEVEL_9) {
+                    v = Math.min(v, LEVEL9_EMISSIVE_MAX);
                 }
                 colors.set(v, v, v);
             } else {
@@ -98,6 +137,8 @@ public final class ClientLighting {
             float falloff = floor == BackroomsLevel.LEVEL_1 ? 1.0f
                     : floor == BackroomsLevel.LEVEL_2 ? 1.35f
                     : floor == BackroomsLevel.POOLROOMS ? 1.25f
+                    // Level 9: tall lamps put little block light on the ground, so a gentler curve.
+                    : floor == BackroomsLevel.LEVEL_9 ? 1.3f
                     : 1.8f;
             applyFallback(colors, falloff);
         }
@@ -106,19 +147,33 @@ public final class ClientLighting {
 
     /** Veil mode: just a dim, steep fill; Veil does the real lighting. */
     private static void applyVeilFill(Vector3f colors, int blockLight, @Nullable BackroomsLevel floor) {
+        if (floor == BackroomsLevel.LEVEL_9) {
+            applyLevel9Fill(colors, blockLight);
+            return;
+        }
         float b = Mth.clamp(blockLight / 15.0f, 0.0f, 1.0f);
         // White tile bounces light around, so the Poolrooms get a stronger, softer fill: rooms with
         // a tube read bright, and the water (which Veil's lights don't touch) still glows cyan near
-        // lamps. Rooms far from any light stay dark (block light 0 = no fill).
-        boolean pool = floor == BackroomsLevel.POOLROOMS;
-        float fill = (pool ? POOLROOMS_MAX_FILL : MAX_FILL) * (float) Math.pow(b, pool ? POOLROOMS_FILL_FALLOFF : FILL_FALLOFF);
+        // lamps. Level 2's narrow pale corridors bounce light the same way, a little less strongly.
+        // Places far from any light stay dark (block light 0 = no fill).
+        float maxFill = MAX_FILL;
+        float falloff = FILL_FALLOFF;
+        if (floor == BackroomsLevel.POOLROOMS) {
+            maxFill = POOLROOMS_MAX_FILL;
+            falloff = POOLROOMS_FILL_FALLOFF;
+        } else if (floor == BackroomsLevel.LEVEL_2) {
+            maxFill = LEVEL2_MAX_FILL;
+            falloff = LEVEL2_FILL_FALLOFF;
+        }
+        float fill = maxFill * (float) Math.pow(b, falloff);
         // The fill dies with the lights (blackout fade) and dims with the alarm; a flicker halves it.
         fill *= FixturePower.mainsPower() * FixturePower.alarmDim();
         if (FixturePower.flickering(System.currentTimeMillis())) {
             fill *= 0.5f;
         }
-        // Warm yellow in the Lobby, neutral grey concrete in the garage, cool in the pipes and a
-        // cool lavender-blue in the Poolrooms (shaded white tile in the footage reads ~#A9A3A8).
+        // Warm yellow in the Lobby, neutral grey concrete in the garage, a neutral cool white in
+        // the pipes (no purple wash: the lavender is in the wall paint already) and a cool
+        // lavender-blue in the Poolrooms (shaded white tile in the footage reads ~#A9A3A8).
         float tr = 1.0f;
         float tg = 0.92f;
         float tb = 0.55f;
@@ -127,8 +182,8 @@ public final class ClientLighting {
             tg = 0.96f;
             tb = 1.0f;
         } else if (floor == BackroomsLevel.LEVEL_2) {
-            tr = 0.82f;
-            tg = 0.84f;
+            tr = 0.90f;
+            tg = 0.90f;
             tb = 1.0f;
         } else if (floor == BackroomsLevel.POOLROOMS) {
             tr = 0.80f;
@@ -141,6 +196,26 @@ public final class ClientLighting {
         tg = Mth.lerp(alarm, tg, 0.12f);
         tb = Mth.lerp(alarm, tb, 0.10f);
         colors.set(UNLIT_R + fill * tr, UNLIT_G + fill * tg, UNLIT_B + fill * tb);
+    }
+
+    /**
+     * Level 9: a gentle coloured bounce around the streetlamps on a blue-black night. The colour
+     * is orange sodium, shifted toward cold mercury green-white by how much of the lamp light
+     * around you is mercury ({@link BackroomsLights#mercuryShare()}): the lightmap has one colour
+     * for the whole screen, and the pool you're standing in matters most.
+     */
+    private static void applyLevel9Fill(Vector3f colors, int blockLight) {
+        float b = Mth.clamp(blockLight / 15.0f, 0.0f, 1.0f);
+        float fill = LEVEL9_MAX_FILL * (float) Math.pow(b, LEVEL9_FILL_FALLOFF);
+        // Lamps that die in the wave or flicker keep their vanilla block light (that only changes
+        // when the block does), so the fill can't follow single lamps; it is faint enough that a
+        // dead lamp's patch just reads as the last of the bounce. A blackout would still kill it.
+        fill *= FixturePower.mainsPower();
+        float m = BackroomsLights.mercuryShare();
+        float tr = Mth.lerp(m, SODIUM_R, MERCURY_R);
+        float tg = Mth.lerp(m, SODIUM_G, MERCURY_G);
+        float tb = Mth.lerp(m, SODIUM_B, MERCURY_B);
+        colors.set(LEVEL9_UNLIT_R + fill * tr, LEVEL9_UNLIT_G + fill * tg, LEVEL9_UNLIT_B + fill * tb);
     }
 
     /** Fallback (no Veil): the vanilla lightmap does all the lighting. */

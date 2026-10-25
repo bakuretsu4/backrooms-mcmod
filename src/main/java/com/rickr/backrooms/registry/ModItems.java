@@ -65,12 +65,65 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.PALE_DUCT);
         ITEMS.registerSimpleBlockItem(ModBlocks.PIPE_CEILING);
         ITEMS.registerSimpleBlockItem(ModBlocks.BULKHEAD_LAMP);
+        ITEMS.registerSimpleBlockItem(ModBlocks.PIPE_VALVE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.FLOOR_GRATE);
         // The Poolrooms.
         ITEMS.registerSimpleBlockItem(ModBlocks.POOL_TILE);
         ITEMS.registerSimpleBlockItem(ModBlocks.POOL_TILE_DARK);
         ITEMS.registerSimpleBlockItem(ModBlocks.POOL_FLOOR);
         ITEMS.registerSimpleBlockItem(ModBlocks.POOL_SKYLIGHT);
         ITEMS.registerSimpleBlockItem(ModBlocks.POOL_LAMP);
+        // Level 9: The Suburbs.
+        ITEMS.registerSimpleBlockItem(ModBlocks.ASPHALT);
+        ITEMS.registerSimpleBlockItem(ModBlocks.ASPHALT_WET);
+        ITEMS.registerSimpleBlockItem(ModBlocks.ASPHALT_MARKING);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SIDEWALK_SLAB);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SIDEWALK_CURB);
+        ITEMS.registerSimpleBlockItem(ModBlocks.STORM_DRAIN);
+        ITEMS.registerSimpleBlockItem(ModBlocks.MANHOLE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.LAWN_GRASS);
+        ITEMS.registerSimpleBlockItem(ModBlocks.LEAF_LITTER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.DUST_PILE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SIDING_GREEN);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SIDING_GREY);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SIDING_BLUE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SIDING_YELLOW);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SIDING_WHITE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.HOUSE_TRIM);
+        ITEMS.registerSimpleBlockItem(ModBlocks.BRICK_FOUNDATION);
+        ITEMS.registerSimpleBlockItem(ModBlocks.ROOF_SHINGLES);
+        ITEMS.registerSimpleBlockItem(ModBlocks.ROOF_SHINGLES_STAIRS);
+        ITEMS.registerSimpleBlockItem(ModBlocks.ROOF_SHINGLES_SLAB);
+        ITEMS.registerSimpleBlockItem(ModBlocks.HOUSE_WINDOW);
+        ITEMS.registerItem("house_door", props -> new DoubleHighBlockItem(ModBlocks.HOUSE_DOOR.get(), props), new Item.Properties());
+        ITEMS.registerSimpleBlockItem(ModBlocks.GARAGE_DOOR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.PORCH_PLANKS);
+        ITEMS.registerSimpleBlockItem(ModBlocks.PORCH_POST);
+        ITEMS.registerSimpleBlockItem(ModBlocks.PORCH_LIGHT);
+        ITEMS.registerSimpleBlockItem(ModBlocks.BEIGE_CARPET);
+        ITEMS.registerSimpleBlockItem(ModBlocks.DIM_WALLPAPER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.WOOD_FLOOR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SOFA);
+        ITEMS.registerSimpleBlockItem(ModBlocks.TV);
+        ITEMS.registerSimpleBlockItem(ModBlocks.FRIDGE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.KITCHEN_COUNTER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.DINING_TABLE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.BED);
+        ITEMS.registerSimpleBlockItem(ModBlocks.PICKET_FENCE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.MAILBOX);
+        ITEMS.registerSimpleBlockItem(ModBlocks.NIGHT_LOG);
+        ITEMS.registerSimpleBlockItem(ModBlocks.NIGHT_LEAVES);
+        ITEMS.registerSimpleBlockItem(ModBlocks.DEAD_BRANCH);
+        ITEMS.registerSimpleBlockItem(ModBlocks.HEDGE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.STREETLAMP_POLE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.STREETLAMP_ARM);
+        ITEMS.registerSimpleBlockItem(ModBlocks.STREETLAMP_HEAD);
+        ITEMS.registerSimpleBlockItem(ModBlocks.STREETLAMP_HEAD_MERCURY);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SIGN_POST);
+        ITEMS.registerSimpleBlockItem(ModBlocks.STREET_SIGN);
+        ITEMS.registerSimpleBlockItem(ModBlocks.TUNNEL_CONCRETE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.EXIT_TUNNEL_MARKER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.HIGHWAY_SIGN_EXIT);
     }
 
     private ModItems() {}

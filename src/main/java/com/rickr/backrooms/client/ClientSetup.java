@@ -33,6 +33,9 @@ public final class ClientSetup {
         event.registerEntityRenderer(ModEntities.BACTERIA.get(), BacteriaRenderer::new);
         // Uses vanilla's player model layers (PLAYER / PLAYER_SLIM), so no layer definition of its own.
         event.registerEntityRenderer(ModEntities.PHANTOM_FRIEND.get(), PhantomFriendRenderer::new);
+        // Level 9: both are drawn from code-built geometry (no layer definitions, no textures).
+        event.registerEntityRenderer(ModEntities.WATCHER.get(), WatcherRenderer::new);
+        event.registerEntityRenderer(ModEntities.OBSERVER.get(), ObserverRenderer::new);
     }
 
     @SubscribeEvent

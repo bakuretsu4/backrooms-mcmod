@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=z": {
+      "model": "backrooms:block/asphalt_marking"
+    },
+    "axis=x": {
+      "model": "backrooms:block/asphalt_marking",
+      "y": 90
+    }
+  }
+}

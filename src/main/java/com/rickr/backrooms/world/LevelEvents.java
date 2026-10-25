@@ -25,6 +25,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *
  * <p>The Poolrooms are the calm exception: no random events and no knocks, just the water. An
  * operator can still force an event there with the command (it then runs and ends normally).
+ *
+ * <p>Level 9 (the Suburbs) has its own two events and no knocks (its horror is the silence):
+ * LAMP_WAVE, a stutter rolling down the streetlamps that leaves some of them dead for a while,
+ * and FOG_ROLL, the fog closing in to ~12 blocks while something huge rumbles far away in it.
+ * The clients render both (lamps, fog, rumble sounds and shake) from the event payload alone.
  */
 public final class LevelEvents {
     /** The first event comes about a minute and a half after someone arrives on a floor. */
@@ -66,7 +71,8 @@ public final class LevelEvents {
 
         // The Poolrooms are a quiet dream: no power cuts, alarms or footsteps-in-the-dark there.
         boolean calm = floor == BackroomsLevel.POOLROOMS;
-        if (!calm) {
+        // Knocks and creaks are indoor sounds; the Suburbs stay silent between their own events.
+        if (!calm && floor != BackroomsLevel.LEVEL_9) {
             tickAmbience(level, random);
         }
 
@@ -113,6 +119,10 @@ public final class LevelEvents {
                 else if (roll < 60) { kind = LevelEventPayload.BLACKOUT; duration = (20 + random.nextInt(20)) * 20; }
                 else if (roll < 85) { kind = LevelEventPayload.FLICKER; duration = (6 + random.nextInt(6)) * 20; }
                 else { kind = LevelEventPayload.INTERCOM; duration = INTERCOM_TICKS; }
+            }
+            case LEVEL_9 -> {
+                if (roll < 55) { kind = LevelEventPayload.LAMP_WAVE; duration = (20 + random.nextInt(15)) * 20; }
+                else { kind = LevelEventPayload.FOG_ROLL; duration = (40 + random.nextInt(31)) * 20; }
             }
             default -> {
                 if (roll < 35) { kind = LevelEventPayload.TWIST; duration = TWIST_TICKS; }
@@ -187,6 +197,7 @@ public final class LevelEvents {
             case LEVEL_2 -> (30 + random.nextInt(21)) * 20;
             // Never starts events by itself; this only matters after an operator forced one.
             case POOLROOMS -> (60 + random.nextInt(30)) * 20;
+            case LEVEL_9 -> (40 + random.nextInt(31)) * 20;
         };
     }
 

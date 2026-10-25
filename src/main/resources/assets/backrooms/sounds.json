@@ -287,5 +287,115 @@
         "stream": true
       }
     ]
+  },
+  "ambient.level9_ambience": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/level9_ambience",
+        "stream": true
+      }
+    ]
+  },
+  "light.sodium_hum": {
+    "sounds": [
+      {
+        "name": "backrooms:light/sodium_hum",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.sodium_hum"
+  },
+  "level9.lamp_flicker": {
+    "sounds": [
+      "backrooms:level9/lamp_flicker"
+    ],
+    "subtitle": "subtitles.backrooms.lamp_flicker"
+  },
+  "level9.distant_rumble": {
+    "sounds": [
+      {
+        "name": "backrooms:level9/distant_rumble",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant_rumble"
+  },
+  "entity.watcher.hum": {
+    "sounds": [
+      "backrooms:entity/watcher_hum"
+    ],
+    "subtitle": "subtitles.backrooms.watcher_hum"
+  },
+  "entity.watcher.spot": {
+    "sounds": [
+      "backrooms:entity/watcher_spot"
+    ],
+    "subtitle": "subtitles.backrooms.watcher_spot"
+  },
+  "entity.watcher.beam": {
+    "sounds": [
+      "backrooms:entity/watcher_beam"
+    ],
+    "subtitle": "subtitles.backrooms.watcher_beam"
+  },
+  "entity.watcher.dust": {
+    "sounds": [
+      "backrooms:entity/watcher_dust"
+    ],
+    "subtitle": "subtitles.backrooms.watcher_dust"
+  },
+  "entity.observer.vanish": {
+    "sounds": [
+      "backrooms:entity/observer_vanish"
+    ]
+  },
+  "step.grass_walk": {
+    "sounds": [
+      "backrooms:step/grass_walk1",
+      "backrooms:step/grass_walk2",
+      "backrooms:step/grass_walk3",
+      "backrooms:step/grass_walk4",
+      "backrooms:step/grass_walk5"
+    ],
+    "subtitle": "subtitles.backrooms.step"
+  },
+  "step.grass_run": {
+    "sounds": [
+      "backrooms:step/grass_run1",
+      "backrooms:step/grass_run2",
+      "backrooms:step/grass_run3",
+      "backrooms:step/grass_run4",
+      "backrooms:step/grass_run5"
+    ],
+    "subtitle": "subtitles.backrooms.step"
+  },
+  "step.wood_walk": {
+    "sounds": [
+      "backrooms:step/wood_walk1",
+      "backrooms:step/wood_walk2",
+      "backrooms:step/wood_walk3",
+      "backrooms:step/wood_walk4",
+      "backrooms:step/wood_walk5"
+    ],
+    "subtitle": "subtitles.backrooms.step"
+  },
+  "step.wood_run": {
+    "sounds": [
+      "backrooms:step/wood_run1",
+      "backrooms:step/wood_run2",
+      "backrooms:step/wood_run3",
+      "backrooms:step/wood_run4",
+      "backrooms:step/wood_run5"
+    ],
+    "subtitle": "subtitles.backrooms.step"
+  },
+  "step.leaves": {
+    "sounds": [
+      "backrooms:step/leaves1",
+      "backrooms:step/leaves2",
+      "backrooms:step/leaves3",
+      "backrooms:step/leaves4"
+    ],
+    "subtitle": "subtitles.backrooms.step"
   }
 }

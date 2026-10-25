@@ -1,0 +1,248 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/fridge_side",
+    "front": "backrooms:block/fridge",
+    "side": "backrooms:block/fridge_side",
+    "toe": "backrooms:block/streetlamp_housing"
+  },
+  "elements": [
+    {
+      "from": [
+        1,
+        0.5,
+        2
+      ],
+      "to": [
+        15,
+        16,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#front"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            1,
+            2,
+            15,
+            16
+          ],
+          "texture": "#side"
+        },
+        "down": {
+          "uv": [
+            1,
+            0,
+            15,
+            14
+          ],
+          "texture": "#side"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        0,
+        3
+      ],
+      "to": [
+        14,
+        0.5,
+        15
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            15.5,
+            14,
+            16
+          ],
+          "texture": "#toe"
+        },
+        "south": {
+          "uv": [
+            2,
+            15.5,
+            14,
+            16
+          ],
+          "texture": "#toe"
+        },
+        "east": {
+          "uv": [
+            1,
+            15.5,
+            13,
+            16
+          ],
+          "texture": "#toe"
+        },
+        "west": {
+          "uv": [
+            3,
+            15.5,
+            15,
+            16
+          ],
+          "texture": "#toe"
+        }
+      }
+    },
+    {
+      "from": [
+        2.3,
+        2.7,
+        1.2
+      ],
+      "to": [
+        3.2,
+        9.9,
+        2
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            2,
+            8
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            1,
+            1,
+            2,
+            8
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            1,
+            1,
+            2,
+            8
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            1,
+            1,
+            2,
+            8
+          ],
+          "texture": "#side"
+        },
+        "down": {
+          "uv": [
+            1,
+            1,
+            2,
+            8
+          ],
+          "texture": "#side"
+        }
+      }
+    },
+    {
+      "from": [
+        2.3,
+        12.1,
+        1.2
+      ],
+      "to": [
+        3.2,
+        14.8,
+        2
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            2,
+            4
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            1,
+            1,
+            2,
+            4
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            1,
+            1,
+            2,
+            4
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            1,
+            1,
+            2,
+            4
+          ],
+          "texture": "#side"
+        },
+        "down": {
+          "uv": [
+            1,
+            1,
+            2,
+            4
+          ],
+          "texture": "#side"
+        }
+      }
+    }
+  ]
+}

@@ -126,8 +126,8 @@ final class FixtureClusters {
                 yield new Direction[] {Direction.UP, Direction.DOWN, facing.getClockWise(), facing.getCounterClockWise()};
             }
             case CUBE -> Direction.values();
-            // Pool lamps sit alone in their wall (maxRun 1), so this is never reached in practice.
-            case INSET -> new Direction[0];
+            // Pool lamps and streetlamp heads sit alone (maxRun 1), so this is never reached in practice.
+            case INSET, LAMP_HEAD -> new Direction[0];
         };
     }
 
@@ -168,13 +168,15 @@ final class FixtureClusters {
         }
         Direction facing = type.mount == FixtureType.Mount.WALL || type.mount == FixtureType.Mount.INSET
                 ? facingOf(state) : null;
+        // A Level 9 lamp with mode=flicker stutters on its own all the time, not just in events.
+        boolean broken = FixtureType.modeOf(state) == FixtureType.LampMode.FLICKER;
         for (LongArrayList blocks : runs.values()) {
-            out.add(makeLight(type, facing, blocks, world, cursor));
+            out.add(makeLight(type, facing, broken, blocks, world, cursor));
         }
     }
 
-    private static FixtureLight makeLight(FixtureType type, @Nullable Direction facing, LongArrayList blocks,
-                                          BlockGetter world, BlockPos.MutableBlockPos cursor) {
+    private static FixtureLight makeLight(FixtureType type, @Nullable Direction facing, boolean broken,
+                                          LongArrayList blocks, BlockGetter world, BlockPos.MutableBlockPos cursor) {
         long key = Long.MAX_VALUE;
         double sx = 0;
         double sy = 0;
@@ -222,8 +224,11 @@ final class FixtureClusters {
                     lz += facing.getStepZ() * 0.75;
                 }
             }
+            // Streetlamp head: a quarter block under its bottom face, in the open air below it.
+            // (cy is the middle of the head block, so its bottom face is at cy - 0.5.)
+            case LAMP_HEAD -> ly = cy - 0.75;
         }
-        return new FixtureLight(key, type, lx, ly, lz, cx, cy, cz, facing);
+        return new FixtureLight(key, type, lx, ly, lz, cx, cy, cz, facing, broken);
     }
 
     private static Direction openSide(BlockPos pos, BlockGetter world, BlockPos.MutableBlockPos cursor) {

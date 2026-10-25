@@ -1,0 +1,49 @@
+{
+  "variants": {
+    "facing=north,mode=lit": {
+      "model": "backrooms:block/streetlamp_head_mercury"
+    },
+    "facing=north,mode=flicker": {
+      "model": "backrooms:block/streetlamp_head_mercury"
+    },
+    "facing=north,mode=dead": {
+      "model": "backrooms:block/streetlamp_head_mercury_dead"
+    },
+    "facing=east,mode=lit": {
+      "model": "backrooms:block/streetlamp_head_mercury",
+      "y": 90
+    },
+    "facing=east,mode=flicker": {
+      "model": "backrooms:block/streetlamp_head_mercury",
+      "y": 90
+    },
+    "facing=east,mode=dead": {
+      "model": "backrooms:block/streetlamp_head_mercury_dead",
+      "y": 90
+    },
+    "facing=south,mode=lit": {
+      "model": "backrooms:block/streetlamp_head_mercury",
+      "y": 180
+    },
+    "facing=south,mode=flicker": {
+      "model": "backrooms:block/streetlamp_head_mercury",
+      "y": 180
+    },
+    "facing=south,mode=dead": {
+      "model": "backrooms:block/streetlamp_head_mercury_dead",
+      "y": 180
+    },
+    "facing=west,mode=lit": {
+      "model": "backrooms:block/streetlamp_head_mercury",
+      "y": 270
+    },
+    "facing=west,mode=flicker": {
+      "model": "backrooms:block/streetlamp_head_mercury",
+      "y": 270
+    },
+    "facing=west,mode=dead": {
+      "model": "backrooms:block/streetlamp_head_mercury_dead",
+      "y": 270
+    }
+  }
+}

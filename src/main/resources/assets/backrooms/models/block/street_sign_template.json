@@ -1,0 +1,266 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "#back",
+    "post": "backrooms:block/sign_post"
+  },
+  "elements": [
+    {
+      "from": [
+        7,
+        0,
+        7
+      ],
+      "to": [
+        9,
+        15,
+        9
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4,
+            1,
+            12,
+            16
+          ],
+          "texture": "#post"
+        },
+        "south": {
+          "uv": [
+            4,
+            1,
+            12,
+            16
+          ],
+          "texture": "#post"
+        },
+        "east": {
+          "uv": [
+            4,
+            1,
+            12,
+            16
+          ],
+          "texture": "#post"
+        },
+        "west": {
+          "uv": [
+            4,
+            1,
+            12,
+            16
+          ],
+          "texture": "#post"
+        },
+        "up": {
+          "uv": [
+            4,
+            4,
+            12,
+            12
+          ],
+          "texture": "#post"
+        },
+        "down": {
+          "uv": [
+            4,
+            4,
+            12,
+            12
+          ],
+          "texture": "#post",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        1,
+        1.5,
+        6.5
+      ],
+      "to": [
+        15,
+        15.5,
+        7
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#face"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#back"
+        },
+        "east": {
+          "uv": [
+            8,
+            1,
+            8.5,
+            15
+          ],
+          "texture": "#back"
+        },
+        "west": {
+          "uv": [
+            8,
+            1,
+            8.5,
+            15
+          ],
+          "texture": "#back"
+        },
+        "up": {
+          "uv": [
+            1,
+            8,
+            15,
+            8.5
+          ],
+          "texture": "#back"
+        },
+        "down": {
+          "uv": [
+            1,
+            8,
+            15,
+            8.5
+          ],
+          "texture": "#back"
+        }
+      }
+    },
+    {
+      "from": [
+        7.625,
+        14,
+        6.2
+      ],
+      "to": [
+        8.375,
+        14.75,
+        6.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            2,
+            2
+          ],
+          "texture": "#post"
+        },
+        "east": {
+          "uv": [
+            1,
+            1,
+            2,
+            2
+          ],
+          "texture": "#post"
+        },
+        "west": {
+          "uv": [
+            1,
+            1,
+            2,
+            2
+          ],
+          "texture": "#post"
+        },
+        "up": {
+          "uv": [
+            1,
+            1,
+            2,
+            2
+          ],
+          "texture": "#post"
+        },
+        "down": {
+          "uv": [
+            1,
+            1,
+            2,
+            2
+          ],
+          "texture": "#post"
+        }
+      }
+    },
+    {
+      "from": [
+        7.625,
+        2.25,
+        6.2
+      ],
+      "to": [
+        8.375,
+        3,
+        6.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1,
+            1,
+            2,
+            2
+          ],
+          "texture": "#post"
+        },
+        "east": {
+          "uv": [
+            1,
+            1,
+            2,
+            2
+          ],
+          "texture": "#post"
+        },
+        "west": {
+          "uv": [
+            1,
+            1,
+            2,
+            2
+          ],
+          "texture": "#post"
+        },
+        "up": {
+          "uv": [
+            1,
+            1,
+            2,
+            2
+          ],
+          "texture": "#post"
+        },
+        "down": {
+          "uv": [
+            1,
+            1,
+            2,
+            2
+          ],
+          "texture": "#post"
+        }
+      }
+    }
+  ]
+}

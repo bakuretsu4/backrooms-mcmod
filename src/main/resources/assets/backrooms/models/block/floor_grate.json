@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "backrooms:block/floor_grate",
+    "side": "backrooms:block/pipe_floor",
+    "bottom": "backrooms:block/pipe_floor"
+  }
+}

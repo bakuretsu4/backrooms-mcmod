@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/highway_sign_exit_1",
+    "north": "backrooms:block/highway_sign_exit_1",
+    "south": "backrooms:block/sign_back",
+    "east": "backrooms:block/sign_back",
+    "west": "backrooms:block/sign_back",
+    "up": "backrooms:block/sign_back",
+    "down": "backrooms:block/sign_back"
+  }
+}

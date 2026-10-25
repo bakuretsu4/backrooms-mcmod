@@ -43,6 +43,8 @@ uniform float BlurY;
 uniform float Grain;      // base film grain (0 = none, like the reference)
 uniform float Dream;      // 0..1 Poolrooms hallucination (0 = picture exactly unchanged)
 uniform float PoolWater;  // 1 in the Poolrooms: make pool water vivid cyan
+uniform float Interference; // 0..1 Level 9: a Watcher frying the electronics (0 = no change at all)
+uniform float FogDrain;   // 1 in Level 9: colour drains out of distant things (0 = no change at all)
 uniform float Near;
 uniform float Far;
 
@@ -144,6 +146,14 @@ void main() {
     }
     // Waking up: everything swims.
     uv += vec2(sin(t * 1.7 + uv.y * 6.0), cos(t * 1.3 + uv.x * 5.0)) * 0.006 * Wake;
+    // Watcher interference: horizontal bands of the picture tear sideways, more the closer it is.
+    if (Interference > 0.0) {
+        float row = floor(texCoord.y * 90.0);
+        float slot = floor(t * 20.0);
+        float tearOn = step(1.0 - Interference * 0.3, hash12(vec2(row, slot)));
+        uv.x += tearOn * (hash12(vec2(slot, row + 7.0)) - 0.5) * 0.12 * Interference;
+        uv.x += (noise1(t * 3.0 + texCoord.y * 40.0) - 0.5) * 0.004 * Interference; // fine wobble
+    }
     uv = clamp(uv, vec2(0.0), vec2(1.0));
 
     // 3. Motion blur + chromatic aberration.
@@ -211,6 +221,13 @@ void main() {
     col = clamp(col, 0.0, 1.0);
 
     // 6. Grade.
+    // Level 9 fog drains the colour: near things keep it, beyond ~25 blocks they fade toward grey.
+    if (FogDrain > 0.0) {
+        float sceneDepth = texture(DepthSampler, uv).r;
+        float dist = sceneDepth >= 0.99999 ? 1000.0 : linearDepth(sceneDepth);
+        float drain = FogDrain * smoothstep(8.0, 28.0, dist) * 0.92;
+        col = mix(col, vec3(luma(col)), drain);
+    }
     if (Alarm > 0.0) {
         float l = luma(col);
         col = mix(col, vec3(l * 1.2 + 0.02, l * 0.25, l * 0.22), Alarm * 0.35);
@@ -259,6 +276,21 @@ void main() {
         if (texCoord.y < 0.02 * glitch) {
             col = mix(col, vec3(hash12(gl_FragCoord.xy + t)), 0.3);
         }
+    }
+    // Watcher interference: burnt colours, coloured static and whole lines dropping out.
+    if (Interference > 0.0) {
+        float k = Interference;
+        // Colour burn: reds blow out, blues sink, the picture tints sick orange-magenta.
+        vec3 burnt = vec3(col.r * 1.3 + 0.03, col.g * 0.78, col.b * 0.55 + col.r * 0.2);
+        col = mix(col, burnt, k * 0.6);
+        // Coloured static: each channel gets its own noise, so it sparkles red/green/blue.
+        vec2 cell = floor(gl_FragCoord.xy / max(InSize.y / 360.0, 1.0)) + fract(t * 11.3) * vec2(173.0, 311.0);
+        vec3 staticRgb = vec3(hash12(cell), hash12(cell + 17.0), hash12(cell + 41.0)) - 0.5;
+        col += staticRgb * 0.45 * k * k;
+        // Dropouts: a few whole lines flash white or black for a frame.
+        float line = floor(texCoord.y * 240.0);
+        float drop = step(1.0 - 0.05 * k, hash12(vec2(line, floor(t * 24.0))));
+        col = mix(col, vec3(step(0.5, hash12(vec2(line, t)))), drop * 0.85);
     }
 
     // Eyelids: opening slowly, with a couple of heavy blinks.

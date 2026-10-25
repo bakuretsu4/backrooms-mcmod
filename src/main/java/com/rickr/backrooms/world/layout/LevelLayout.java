@@ -83,6 +83,30 @@ public abstract class LevelLayout {
         return isWalkable(seed, x, z);
     }
 
+    /**
+     * Exact height of a player's feet in column (x, z). Usually {@link #standY}; Level 9 overrides
+     * it because its sidewalks are half slabs (you stand at y + 0.5).
+     */
+    public double feetY(long seed, int x, int z) {
+        return standY(seed, x, z);
+    }
+
+    /**
+     * True when an arrival spot also needs its four neighbours to be safe (room to move, not
+     * squeezed against a wall). Level 9 arrives on a 2-wide sidewalk, where that can never hold.
+     */
+    public boolean arrivalNeedsSpace() {
+        return true;
+    }
+
+    /**
+     * The {x, z} of the exit nearest to (x, z), as a player would find it (used by /backrooms
+     * locate). Usually the exit locator's point; Level 9 moves it onto the street it belongs to.
+     */
+    public int[] exitPosition(long seed, int x, int z) {
+        return exits.nearest(seed, x, z);
+    }
+
     /** Low-frequency "zone" value in [0, 1) shared by blocks within the same zone. */
     protected static double zone(long seed, int x, int z, int zoneSize, int salt) {
         return Hash.unit(seed, Math.floorDiv(x, zoneSize), Math.floorDiv(z, zoneSize), salt);

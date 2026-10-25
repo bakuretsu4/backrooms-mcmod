@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/asphalt",
+    "up": "backrooms:block/manhole",
+    "down": "backrooms:block/asphalt",
+    "north": "backrooms:block/asphalt",
+    "south": "backrooms:block/asphalt",
+    "east": "backrooms:block/asphalt",
+    "west": "backrooms:block/asphalt"
+  }
+}

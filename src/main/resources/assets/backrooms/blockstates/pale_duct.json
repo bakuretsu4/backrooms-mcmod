@@ -1,7 +1,34 @@
 {
   "variants": {
-    "": {
+    "facing=north,flange=false": {
       "model": "backrooms:block/pale_duct"
+    },
+    "facing=east,flange=false": {
+      "model": "backrooms:block/pale_duct",
+      "y": 90
+    },
+    "facing=south,flange=false": {
+      "model": "backrooms:block/pale_duct",
+      "y": 180
+    },
+    "facing=west,flange=false": {
+      "model": "backrooms:block/pale_duct",
+      "y": 270
+    },
+    "facing=north,flange=true": {
+      "model": "backrooms:block/pale_duct_flange"
+    },
+    "facing=east,flange=true": {
+      "model": "backrooms:block/pale_duct_flange",
+      "y": 90
+    },
+    "facing=south,flange=true": {
+      "model": "backrooms:block/pale_duct_flange",
+      "y": 180
+    },
+    "facing=west,flange=true": {
+      "model": "backrooms:block/pale_duct_flange",
+      "y": 270
     }
   }
 }

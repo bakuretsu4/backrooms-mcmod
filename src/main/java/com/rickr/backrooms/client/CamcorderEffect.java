@@ -90,6 +90,8 @@ public final class CamcorderEffect {
                 float value = Mth.clamp(closeness, 0.0f, 1.0f) * bacteria.dangerWeight();
                 dangerTarget = Math.max(dangerTarget, value);
             }
+            // Level 9: Watchers (near / staring / charging) and Observers (a little unease).
+            dangerTarget = Math.max(dangerTarget, WatcherInterference.danger());
         }
         danger += (dangerTarget - danger) * (dangerTarget > danger ? 0.25f : 0.05f);
     }
@@ -143,6 +145,9 @@ public final class CamcorderEffect {
         // Poolrooms hallucination (0 = picture exactly unchanged).
         chain.setUniform("Dream", HallucinationClientEvents.shaderDream());
         chain.setUniform("PoolWater", BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.POOLROOMS ? 1.0f : 0.0f);
+        // Level 9: electronics going haywire near a Watcher, and the fog draining colour with distance.
+        chain.setUniform("Interference", WatcherInterference.interference());
+        chain.setUniform("FogDrain", BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_9 ? 1.0f : 0.0f);
         chain.setUniform("Near", GameRenderer.PROJECTION_Z_NEAR);
         chain.setUniform("Far", mc.gameRenderer.getDepthFar());
     }

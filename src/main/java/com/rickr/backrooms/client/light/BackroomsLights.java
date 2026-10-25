@@ -132,23 +132,69 @@ public final class BackroomsLights {
         // Event state for every light, and the blink click when a flickering one toggles.
         long now = System.currentTimeMillis();
         boolean flickering = FixturePower.flickering(now);
+        boolean lampWave = FixturePower.lampWave(now);
         Vec3 eye = mc.gameRenderer.getMainCamera().getPosition();
         for (FixtureLight light : lights) {
             light.distSq = sq(light.x - eye.x) + sq(light.y - eye.y) + sq(light.z - eye.z);
-            boolean on = !flickering || !light.type.flickers || FixturePower.flickerOn(light.key, now);
-            if (on != light.on && flickering) {
-                FixtureSounds.blink(light);
+            boolean on = true;
+            if (light.type.flickers) {
+                if (flickering) {
+                    on = FixturePower.flickerOn(light.key, now);
+                } else if (lampWave) {
+                    on = FixturePower.waveOn(light, now);
+                }
+            }
+            if (light.broken) {
+                // A broken Level 9 lamp stutters on top of whatever the event does.
+                on = on && FixturePower.brokenLampOn(light.key, now);
+            }
+            if (on != light.on && (flickering || lampWave || light.broken)) {
+                FixtureSounds.blink(light, on);
             }
             light.on = on;
             light.level = FixturePower.levelOf(light);
         }
 
         lights.sort(BY_DISTANCE);
+        updateMercuryShare();
         FixtureSounds.tick(lights);
         if (veil) {
-            select();
+            select(floor);
             VeilFixtures.sync(SELECTED, CameraClientState.battery <= 0.0f ? 0.25f : 1.0f, floor);
         }
+    }
+
+    /**
+     * 0..1: how much of the lamp light around you (within {@value #TINT_RANGE} blocks) comes from
+     * cold mercury lamps instead of orange sodium ones. The lightmap fill can only have ONE colour
+     * for the whole screen, so {@code ClientLighting} tints it by this: under a mercury lamp the
+     * soft bounce turns cold green-white, under sodium it stays orange.
+     */
+    public static float mercuryShare() {
+        return mercuryShare;
+    }
+
+    private static final double TINT_RANGE = 16.0;
+    private static float mercuryShare;
+
+    private static void updateMercuryShare() {
+        double sodium = 0.0;
+        double mercury = 0.0;
+        for (FixtureLight light : lights) {
+            if (light.distSq > TINT_RANGE * TINT_RANGE) {
+                break; // sorted nearest first
+            }
+            // Nearer, brighter lamps count more (light falls off with distance squared).
+            double weight = light.level / (1.0 + light.distSq);
+            if (light.type == FixtureType.MERCURY_LAMP) {
+                mercury += weight;
+            } else if (light.type == FixtureType.SODIUM_LAMP || light.type == FixtureType.PORCH_LIGHT) {
+                sodium += weight;
+            }
+        }
+        float target = mercury + sodium <= 1e-6 ? mercuryShare : (float) (mercury / (mercury + sodium));
+        // Ease toward it so the tint doesn't jump when a lamp flickers.
+        mercuryShare += (target - mercuryShare) * 0.2f;
     }
 
     /** Per-frame: flashlights follow the view smoothly, beacons spin. Runs before Veil draws its lights. */
@@ -251,8 +297,13 @@ public final class BackroomsLights {
         builtZ = center.getZ();
     }
 
-    /** Picks the nearest MAX_LIGHTS within LIGHT_RANGE (lights already shown get a small bonus). */
-    private static void select() {
+    /**
+     * Picks the nearest lights within LIGHT_RANGE (lights already shown get a small bonus). In
+     * Level 9 a few slots of the MAX_LIGHTS budget are kept free for the streetlamps' glow cones
+     * ({@link VeilFixtures#LAMP_CONES}), so the total never exceeds MAX_LIGHTS.
+     */
+    private static void select(BackroomsLevel floor) {
+        int budget = floor == BackroomsLevel.LEVEL_9 ? MAX_LIGHTS - VeilFixtures.LAMP_CONES : MAX_LIGHTS;
         SHOWN.clear();
         for (FixtureLight light : SELECTED) {
             SHOWN.add(light.key);
@@ -272,7 +323,7 @@ public final class BackroomsLights {
             CANDIDATES.add(light);
         }
         CANDIDATES.sort(BY_RANK);
-        for (int i = 0; i < CANDIDATES.size() && i < MAX_LIGHTS; i++) {
+        for (int i = 0; i < CANDIDATES.size() && i < budget; i++) {
             SELECTED.add(CANDIDATES.get(i));
         }
         CANDIDATES.clear();

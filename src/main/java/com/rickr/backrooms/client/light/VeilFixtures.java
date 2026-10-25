@@ -13,7 +13,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * The Veil lights for the fixtures picked by {@link BackroomsLights}: one occluded point light
- * per fixture, plus two rotating red cones on each alarm beacon while the alarm runs.
+ * per fixture, plus two rotating red cones on each alarm beacon while the alarm runs, plus (Level
+ * 9) a faint downward "glow cone" under the nearest few streetlamps so they shine into the fog.
  *
  * <p>Handles are kept per fixture key and only re-created when a fixture appears, moves or
  * Veil threw its renderer away (resource reload), because changing the set of lights makes Veil
@@ -27,6 +28,22 @@ final class VeilFixtures {
     private static final float BEACON_DISTANCE = 15.0f;
     private static final float BEACON_BRIGHTNESS = 1.1f;
 
+    /**
+     * How many of the nearest streetlamps get a glow cone. These count against
+     * {@link BackroomsLights#MAX_LIGHTS} (that many point-light slots are kept free in Level 9).
+     * Set to 0 to switch the cones off.
+     */
+    static final int LAMP_CONES = 4;
+    /** Half-angle of the cone (about 50 degrees): a wide bell of light down to the road. */
+    private static final float LAMP_CONE_HALF_ANGLE = 0.87f;
+    private static final float LAMP_CONE_SOFT_EDGE = 0.5f;
+    /** The head hangs ~6.5 blocks over the road; the cone reaches a little past it. */
+    private static final float LAMP_CONE_DISTANCE = 9.0f;
+    /** Kept low: the point light already makes the pool, the cone mostly adds the haze in the air. */
+    private static final float LAMP_CONE_BRIGHTNESS = 0.3f;
+    /** How visible the beam is in the air (the flashlight uses 0.3). */
+    private static final float LAMP_CONE_INSCATTER = 0.45f;
+
     private static final class Entry {
         FixtureLight light;
         LightRenderHandle<PointLightData> point;
@@ -34,8 +51,12 @@ final class VeilFixtures {
         LightRenderHandle<SpotLightData> coneA;
         @Nullable
         LightRenderHandle<SpotLightData> coneB;
+        /** Level 9 streetlamps only: the downward glow cone (null when this lamp has none). */
+        @Nullable
+        LightRenderHandle<SpotLightData> lampCone;
         float lastBrightness = -1.0f;
         float lastConeBrightness = -1.0f;
+        float lastLampConeBrightness = -1.0f;
         boolean seen;
 
         Entry(FixtureLight light, LightRenderHandle<PointLightData> point) {
@@ -44,7 +65,8 @@ final class VeilFixtures {
         }
 
         boolean valid() {
-            return point.isValid() && (coneA == null || coneA.isValid()) && (coneB == null || coneB.isValid());
+            return point.isValid() && (coneA == null || coneA.isValid()) && (coneB == null || coneB.isValid())
+                    && (lampCone == null || lampCone.isValid());
         }
 
         void freeCones() {
@@ -59,9 +81,18 @@ final class VeilFixtures {
             lastConeBrightness = -1.0f;
         }
 
+        void freeLampCone() {
+            if (lampCone != null) {
+                lampCone.free();
+                lampCone = null;
+            }
+            lastLampConeBrightness = -1.0f;
+        }
+
         void free() {
             point.free();
             freeCones();
+            freeLampCone();
         }
     }
 
@@ -84,6 +115,7 @@ final class VeilFixtures {
         for (Entry entry : ACTIVE.values()) {
             entry.seen = false;
         }
+        int conesLeft = floor == BackroomsLevel.LEVEL_9 ? LAMP_CONES : 0;
         for (FixtureLight light : selected) {
             Entry entry = ACTIVE.get(light.key);
             if (entry != null && (!entry.valid() || !entry.light.samePlace(light))) {
@@ -100,6 +132,20 @@ final class VeilFixtures {
             entry.seen = true;
             if (light.type != FixtureType.RED_ALARM_LAMP) {
                 setBrightness(entry, light.type.brightnessOn(floor) * light.level * scale);
+            }
+            // The nearest few streetlamps (selected is nearest first) get their glow cone.
+            if (light.type.isStreetlamp() && conesLeft > 0) {
+                conesLeft--;
+                if (entry.lampCone == null) {
+                    entry.lampCone = lights.addLight(newLampCone(light));
+                }
+                float coneBrightness = LAMP_CONE_BRIGHTNESS * light.level * scale;
+                if (coneBrightness != entry.lastLampConeBrightness) {
+                    entry.lampCone.getLightData().setBrightness(coneBrightness);
+                    entry.lastLampConeBrightness = coneBrightness;
+                }
+            } else {
+                entry.freeLampCone();
             }
         }
         var it = ACTIVE.values().iterator();
@@ -193,6 +239,24 @@ final class VeilFixtures {
                 .setOcclusionEnabled(true)
                 .setInscatteringStrength(0.2f); // faint red beams in the dust
         cone.getPositionMutable().set(light.x, light.y, light.z);
+        return cone;
+    }
+
+    /** A cone hanging under a streetlamp head, pointing straight down, in the lamp's colour. */
+    private static SpotLightData newLampCone(FixtureLight light) {
+        FixtureType type = light.type;
+        SpotLightData cone = new SpotLightData()
+                .setSize(LAMP_CONE_HALF_ANGLE)
+                .setAngle(LAMP_CONE_SOFT_EDGE)
+                .setDistance(LAMP_CONE_DISTANCE)
+                .setColor(type.red, type.green, type.blue)
+                .setBrightness(0.0f)
+                .setOcclusionEnabled(true)
+                .setInscatteringStrength(LAMP_CONE_INSCATTER);
+        cone.getPositionMutable().set(light.x, light.y, light.z);
+        // Veil cones shine along local +Z; lookAlong makes -Z face the direction given, so pass
+        // "up" to make +Z face down. The up hint must not be parallel to that, hence +Z.
+        cone.getOrientationMutable().identity().lookAlong(0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
         return cone;
     }
 

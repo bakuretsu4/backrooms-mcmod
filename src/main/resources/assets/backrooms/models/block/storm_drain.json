@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/sidewalk_slab",
+    "up": "backrooms:block/storm_drain",
+    "down": "backrooms:block/sidewalk_slab",
+    "north": "backrooms:block/sidewalk_slab",
+    "south": "backrooms:block/sidewalk_slab",
+    "east": "backrooms:block/sidewalk_slab",
+    "west": "backrooms:block/sidewalk_slab"
+  }
+}

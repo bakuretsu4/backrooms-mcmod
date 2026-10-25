@@ -22,6 +22,11 @@ public final class FixtureLight {
     /** Wall lamps: the direction pointing into the room. Null for ceiling lights. */
     @Nullable
     public final Direction facing;
+    /**
+     * A Level 9 lamp whose block says mode=flicker: it stutters on its own broken rhythm all the
+     * time (see {@link FixturePower#brokenLampOn}).
+     */
+    public final boolean broken;
 
     // Runtime state, updated every client tick by BackroomsLights.
     /** 0..1 power from events (blackout fade, flicker, alarm dimming). */
@@ -32,7 +37,7 @@ public final class FixtureLight {
     public double distSq;
 
     public FixtureLight(long key, FixtureType type, double x, double y, double z,
-                        double soundX, double soundY, double soundZ, @Nullable Direction facing) {
+                        double soundX, double soundY, double soundZ, @Nullable Direction facing, boolean broken) {
         this.key = key;
         this.type = type;
         this.x = x;
@@ -42,6 +47,7 @@ public final class FixtureLight {
         this.soundY = soundY;
         this.soundZ = soundZ;
         this.facing = facing;
+        this.broken = broken;
     }
 
     /** Same light (same key) but rebuilt at a different spot, e.g. after its strip grew. */

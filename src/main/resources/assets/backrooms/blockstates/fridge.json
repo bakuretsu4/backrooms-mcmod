@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/fridge"
+    },
+    "facing=east": {
+      "model": "backrooms:block/fridge",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/fridge",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/fridge",
+      "y": 270
+    }
+  }
+}

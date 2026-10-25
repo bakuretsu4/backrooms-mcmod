@@ -1,0 +1,109 @@
+{
+  "variants": {
+    "facing=north,kind=arrow_left": {
+      "model": "backrooms:block/street_sign_arrow_left"
+    },
+    "facing=east,kind=arrow_left": {
+      "model": "backrooms:block/street_sign_arrow_left",
+      "y": 90
+    },
+    "facing=south,kind=arrow_left": {
+      "model": "backrooms:block/street_sign_arrow_left",
+      "y": 180
+    },
+    "facing=west,kind=arrow_left": {
+      "model": "backrooms:block/street_sign_arrow_left",
+      "y": 270
+    },
+    "facing=north,kind=arrow_right": {
+      "model": "backrooms:block/street_sign_arrow_right"
+    },
+    "facing=east,kind=arrow_right": {
+      "model": "backrooms:block/street_sign_arrow_right",
+      "y": 90
+    },
+    "facing=south,kind=arrow_right": {
+      "model": "backrooms:block/street_sign_arrow_right",
+      "y": 180
+    },
+    "facing=west,kind=arrow_right": {
+      "model": "backrooms:block/street_sign_arrow_right",
+      "y": 270
+    },
+    "facing=north,kind=arrow_ahead": {
+      "model": "backrooms:block/street_sign_arrow_ahead"
+    },
+    "facing=east,kind=arrow_ahead": {
+      "model": "backrooms:block/street_sign_arrow_ahead",
+      "y": 90
+    },
+    "facing=south,kind=arrow_ahead": {
+      "model": "backrooms:block/street_sign_arrow_ahead",
+      "y": 180
+    },
+    "facing=west,kind=arrow_ahead": {
+      "model": "backrooms:block/street_sign_arrow_ahead",
+      "y": 270
+    },
+    "facing=north,kind=watch_notice": {
+      "model": "backrooms:block/street_sign_watch_notice"
+    },
+    "facing=east,kind=watch_notice": {
+      "model": "backrooms:block/street_sign_watch_notice",
+      "y": 90
+    },
+    "facing=south,kind=watch_notice": {
+      "model": "backrooms:block/street_sign_watch_notice",
+      "y": 180
+    },
+    "facing=west,kind=watch_notice": {
+      "model": "backrooms:block/street_sign_watch_notice",
+      "y": 270
+    },
+    "facing=north,kind=quiet_notice": {
+      "model": "backrooms:block/street_sign_quiet_notice"
+    },
+    "facing=east,kind=quiet_notice": {
+      "model": "backrooms:block/street_sign_quiet_notice",
+      "y": 90
+    },
+    "facing=south,kind=quiet_notice": {
+      "model": "backrooms:block/street_sign_quiet_notice",
+      "y": 180
+    },
+    "facing=west,kind=quiet_notice": {
+      "model": "backrooms:block/street_sign_quiet_notice",
+      "y": 270
+    },
+    "facing=north,kind=warning": {
+      "model": "backrooms:block/street_sign_warning"
+    },
+    "facing=east,kind=warning": {
+      "model": "backrooms:block/street_sign_warning",
+      "y": 90
+    },
+    "facing=south,kind=warning": {
+      "model": "backrooms:block/street_sign_warning",
+      "y": 180
+    },
+    "facing=west,kind=warning": {
+      "model": "backrooms:block/street_sign_warning",
+      "y": 270
+    },
+    "facing=north,kind=nonsense": {
+      "model": "backrooms:block/street_sign_nonsense"
+    },
+    "facing=east,kind=nonsense": {
+      "model": "backrooms:block/street_sign_nonsense",
+      "y": 90
+    },
+    "facing=south,kind=nonsense": {
+      "model": "backrooms:block/street_sign_nonsense",
+      "y": 180
+    },
+    "facing=west,kind=nonsense": {
+      "model": "backrooms:block/street_sign_nonsense",
+      "y": 270
+    }
+  }
+}

@@ -2,7 +2,9 @@ package com.rickr.backrooms.registry;
 
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.entity.Bacteria;
+import com.rickr.backrooms.entity.Observer;
 import com.rickr.backrooms.entity.PhantomFriend;
+import com.rickr.backrooms.entity.Watcher;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -15,7 +17,7 @@ public final class ModEntities {
 
     /**
      * Kane Pixels' "Bacteria": very tall, wire-thin, black. The hitbox is only 2.9 blocks tall so it
-     * fits through the 3-block doorways of Levels 0 and 1 and the 3-block corridors of Level 2; the
+     * fits through the 3-block doorways of Levels 0 and 1 and the corridors of Level 2; the
      * model stands about 3.4 blocks tall in open rooms and stoops under anything lower.
      */
     public static final DeferredHolder<EntityType<?>, EntityType<Bacteria>> BACTERIA = ENTITIES.register("bacteria",
@@ -40,9 +42,38 @@ public final class ModEntities {
                     .noSummon()
                     .build(Backrooms.id("phantom_friend").toString()));
 
+    /**
+     * Level 9's Neighborhood Watch: a car-sized floating eyeball (3.8 blocks across, "eyes" in its centre).
+     * Tracked from far away (10 chunks) so its searchlight shows up down long streets. Not saved:
+     * {@code Level9Spawner} keeps the streets watched.
+     */
+    public static final DeferredHolder<EntityType<?>, EntityType<Watcher>> WATCHER = ENTITIES.register("watcher",
+            () -> EntityType.Builder.<Watcher>of(Watcher::new, MobCategory.MONSTER)
+                    .sized(Watcher.SIZE, Watcher.SIZE)
+                    .eyeHeight(Watcher.HALF_SIZE)
+                    .clientTrackingRange(10)
+                    .updateInterval(2)
+                    .noSave()
+                    .build(Backrooms.id("watcher").toString()));
+
+    /**
+     * Level 9's Observer: a tall thin silhouette that only one player can see. Taller than a player
+     * (2.7 blocks). Never saved; summoned only by the spawner or /backrooms spawn observer.
+     */
+    public static final DeferredHolder<EntityType<?>, EntityType<Observer>> OBSERVER = ENTITIES.register("observer",
+            () -> EntityType.Builder.<Observer>of(Observer::new, MobCategory.MISC)
+                    .sized(0.5f, 2.7f)
+                    .eyeHeight((float) Observer.HEAD_HEIGHT)
+                    .clientTrackingRange(4)
+                    .noSave()
+                    .noSummon()
+                    .build(Backrooms.id("observer").toString()));
+
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(BACTERIA.get(), Bacteria.createAttributes().build());
         event.put(PHANTOM_FRIEND.get(), PhantomFriend.createAttributes().build());
+        event.put(WATCHER.get(), Watcher.createAttributes().build());
+        event.put(OBSERVER.get(), Observer.createAttributes().build());
     }
 
     private ModEntities() {}

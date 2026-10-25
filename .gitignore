@@ -38,3 +38,8 @@ run/
 **/src/generated/**/.cache/
 repo/
 !**/src/**/repo/
+
+### This project ###
+# Built mod jars / CurseForge pack (share those separately) and the local test client
+dist/
+run-client/

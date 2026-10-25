@@ -27,6 +27,16 @@ public record LevelEventPayload(int kind, int remainingTicks, int elapsedTicks) 
     public static final int LIGHTNING = 5;
     /** Level 2 only: the world tilts (camera roll) for ~20 s while radios hiss. */
     public static final int TWIST = 6;
+    /**
+     * Level 9 only: thick fog rolls in over ~6 s (you see ~12 blocks), something huge rumbles
+     * far away in it a few times, then it clears again before the event ends.
+     */
+    public static final int FOG_ROLL = 7;
+    /**
+     * Level 9 only: a wave of stuttering runs down the streetlamps; some lamps behind it die and
+     * only come back near the end.
+     */
+    public static final int LAMP_WAVE = 8;
 
     public static final Type<LevelEventPayload> TYPE = new Type<>(Backrooms.id("level_event"));
     public static final StreamCodec<ByteBuf, LevelEventPayload> STREAM_CODEC = StreamCodec.composite(

@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/leaf_litter"
+      },
+      {
+        "model": "backrooms:block/leaf_litter",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/leaf_litter",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/leaf_litter",
+        "y": 270
+      }
+    ]
+  }
+}

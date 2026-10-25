@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/house_trim",
+    "north": "backrooms:block/garage_door",
+    "south": "backrooms:block/house_trim",
+    "east": "backrooms:block/house_trim",
+    "west": "backrooms:block/house_trim",
+    "up": "backrooms:block/house_trim",
+    "down": "backrooms:block/house_trim"
+  }
+}

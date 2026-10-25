@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "backrooms:block/night_log"
+    },
+    "axis=z": {
+      "model": "backrooms:block/night_log_horizontal",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "backrooms:block/night_log_horizontal",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

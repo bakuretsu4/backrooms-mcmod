@@ -26,11 +26,11 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Operator tools for hosting sessions with friends:
  * <pre>
- * /backrooms enter [targets] [level]   noclip players into a level: 0-2, or 3 = the Poolrooms (default: Level 0)
+ * /backrooms enter [targets] [level]   noclip players into a level: 0-2, 3 = the Poolrooms, 4 = Level 9 (default: Level 0)
  * /backrooms escape [targets]          send players back to reality
  * /backrooms battery [targets] [pct]   set camcorder batteries (default: full)
  * /backrooms locate                    distance/direction to the nearest exit (for testing)
- * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|end> [seconds]   start/stop an event on this floor
+ * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|end> [seconds]   start/stop an event on this floor
  * /backrooms spawn bacteria [count]   spawn Bacteria about 12 blocks in front of you (for testing)
  * </pre>
  */
@@ -62,6 +62,8 @@ public final class BackroomsCommand {
                         .then(eventNode("intercom", LevelEventPayload.INTERCOM, 8))
                         .then(eventNode("lightning", LevelEventPayload.LIGHTNING, 2))
                         .then(eventNode("twist", LevelEventPayload.TWIST, 20))
+                        .then(eventNode("fog", LevelEventPayload.FOG_ROLL, 50))
+                        .then(eventNode("lampwave", LevelEventPayload.LAMP_WAVE, 25))
                         .then(Commands.literal("end").executes(ctx -> event(ctx, LevelEventPayload.NONE, 0))))
                 .then(Commands.literal("spawn")
                         .then(Commands.literal("bacteria")
@@ -144,7 +146,7 @@ public final class BackroomsCommand {
             return 0;
         }
         ServerLevel serverLevel = player.serverLevel();
-        int[] exit = level.layout().exits().nearest(BackroomsSeeds.layoutSeed(serverLevel, level), player.getBlockX(), player.getBlockZ());
+        int[] exit = level.layout().exitPosition(BackroomsSeeds.layoutSeed(serverLevel, level), player.getBlockX(), player.getBlockZ());
         int dist = (int) Math.sqrt(player.distanceToSqr(exit[0], player.getY(), exit[1]));
         ctx.getSource().sendSuccess(() -> Component.literal("Nearest exit: " + exit[0] + ", " + exit[1] + " (" + dist + " blocks)"), false);
         return dist;

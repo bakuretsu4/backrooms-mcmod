@@ -26,7 +26,7 @@ mod falls back to simpler lighting.
 ### The way out
 
 ```
-Overworld --suffocate--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Poolrooms --drain--> Overworld
+Overworld --suffocate--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Poolrooms --drain--> Level 9 --underpass--> Overworld
 ```
 
 - **Level 0 (the Lobby):** thick-walled yellow maze, lit rooms and dark corridors. Arrows drawn on
@@ -35,12 +35,19 @@ Overworld --suffocate--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 -
 - **Level 1 (the garage):** a grey concrete maze of closed-off rooms, narrow corridors and dead
   ends, opening now and then into wide parking halls with numbered pillars, tube lights,
   chain-link fences and puddles. Another white stairwell leads down.
-- **Level 2 (the pipes):** narrow lavender corridors full of rusty pipes. Find the emergency EXIT
-  door; opening it takes everyone within 6 blocks with you.
+- **Level 2 (the pipes):** long, narrow pale maintenance corridors with racks of rusty pipes and
+  big ducts along one wall, caged lamps far apart and long pitch-dark stretches, junction rooms
+  and small dark utility rooms. Find the emergency EXIT door; opening it takes everyone within
+  6 blocks with you.
 - **The Poolrooms:** dim white-tiled rooms and long water channels lit by a few tubes, glowing
   cyan pools with underwater lamps and moving light ripples, and now and then a tall atrium full
   of daylight. No monsters. The way out is the drain: a dark-tiled shaft in the middle of a deep
   pool, lit by lamps around its edge. Swim into it and it pulls you down.
+- **Level 9 (the Suburbs):** an endless suburb at midnight in thick fog that drains the colour
+  from everything. Wet roads covered in leaves, old sodium streetlamps (most dead, some
+  flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark
+  forest behind the yards. Follow the green EXIT arrow signs (a few lie) to a highway underpass
+  and walk into the dark.
 
 Every floor is endless; exits are spread out a few hundred blocks apart.
 
@@ -61,6 +68,15 @@ Every floor is endless; exits are spread out a few hundred blocks apart.
   you see your friend (or yourself, if you're alone) waving at you. Only you can see them. They
   walk away and want you to follow... always away from the drain. Get out of the water and dry
   off, or drink Almond Water, to clear your head.
+- **The Neighborhood Watch (Level 9):** huge floating veined eyes that drift over the streets,
+  sweeping a searchlight. If one sees you, it stares, then charges a beam: stay in sight and you
+  are turned to dust. Break line of sight (houses, trees, going indoors). They come to look when
+  you sprint nearby or shine your flashlight, and they ruin your camcorder picture and battery
+  when close. Keep quiet.
+- **Something watching (Level 9):** a tall dark figure that stands where the light doesn't reach.
+  Look straight at it and it's gone.
+- **Level 9 events:** streetlamps die in waves; the fog rolls in thick while something enormous
+  rumbles somewhere out in it.
 - **Battery:** lasts 40 minutes; flashlight and NightShot drain it faster. It recharges in the
   real world.
 - Dying in the Backrooms: *you can't escape.*
@@ -68,13 +84,14 @@ Every floor is endless; exits are spread out a few hundred blocks apart.
 ## Operator commands
 
 ```
-/backrooms enter [players] [level]      send players in (0-2 = Levels, 3 = Poolrooms)
+/backrooms enter [players] [level]      send players in (0-2 = Levels, 3 = Poolrooms, 4 = Level 9)
 /backrooms escape [players]             send players back to reality
 /backrooms battery [players] [percent]  set camcorder battery
 /backrooms locate                       where is the nearest exit?
-/backrooms event <blackout|flicker|alarm|intercom|lightning|twist|end> [seconds]
+/backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|end> [seconds]
 /backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
 /backrooms spawn bacteria [count]       spawn Bacteria ~12 blocks in front of you (they only hunt survival players)
+/backrooms spawn <watcher|observer> [players]   Level 9 test spawns
 ```
 
 ## Building

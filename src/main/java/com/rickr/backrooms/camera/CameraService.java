@@ -1,5 +1,6 @@
 package com.rickr.backrooms.camera;
 
+import com.rickr.backrooms.entity.Watcher;
 import com.rickr.backrooms.network.CameraSyncPayload;
 import com.rickr.backrooms.network.CameraTogglePayload;
 import com.rickr.backrooms.registry.ModAttachments;
@@ -39,6 +40,10 @@ public final class CameraService {
 
         if (level != null) {
             float multiplier = 1.0f + (data.nightShot() ? NIGHT_SHOT_EXTRA : 0.0f) + (data.flashlight() ? FLASHLIGHT_EXTRA : 0.0f);
+            // Level 9: a Watcher nearby fries electronics, the battery drains 3x faster.
+            if (level == BackroomsLevel.LEVEL_9 && Watcher.interferesWith(player)) {
+                multiplier *= Watcher.BATTERY_DRAIN_MULTIPLIER;
+            }
             data.setBattery(data.battery() - DRAIN_PER_TICK * multiplier);
             data.setTapeTicks(data.tapeTicks() + 1);
             if (data.battery() <= 15.0f && !data.warned15) {

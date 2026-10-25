@@ -52,8 +52,10 @@ public final class Travel {
             return false;
         }
         BlockPos spot = findSafeSpot(level, target, x, z);
+        // Feet exactly on the surface: Level 9's sidewalks are half slabs (feet at y + 0.5).
+        double feet = target.layout().feetY(BackroomsSeeds.layoutSeed(level, target), spot.getX(), spot.getZ());
         CameraService.startTape(player);
-        teleport(player, level, Vec3.atBottomCenterOf(spot));
+        teleport(player, level, new Vec3(spot.getX() + 0.5, feet, spot.getZ() + 0.5));
         return true;
     }
 
@@ -108,12 +110,14 @@ public final class Travel {
     }
 
     /**
-     * Spiral search for a column that is a safe arrival spot along with its four neighbours (so
-     * you never land squeezed against a wall or at the edge of a pool). Returns the position of
-     * the player's feet there, which on the Poolrooms' raised walkways is one block higher.
+     * Spiral search for a safe arrival column. Most levels also want its four neighbours safe (so
+     * you never land squeezed against a wall or at the edge of a pool); Level 9 picks a spot on a
+     * narrow sidewalk, where that can't hold ({@link LevelLayout#arrivalNeedsSpace()}). Returns the
+     * block the player's feet are in, which on the Poolrooms' raised walkways is one block higher.
      */
     @Nullable
     public static BlockPos searchWalkable(LevelLayout layout, long seed, int x, int z, int radius) {
+        boolean needsSpace = layout.arrivalNeedsSpace();
         for (int r = 0; r <= radius; r++) {
             for (int ox = -r; ox <= r; ox++) {
                 for (int oz = -r; oz <= r; oz++) {
@@ -122,9 +126,9 @@ public final class Travel {
                     }
                     int cx = x + ox;
                     int cz = z + oz;
-                    if (layout.isSafeArrival(seed, cx, cz)
-                            && layout.isSafeArrival(seed, cx + 1, cz) && layout.isSafeArrival(seed, cx - 1, cz)
-                            && layout.isSafeArrival(seed, cx, cz + 1) && layout.isSafeArrival(seed, cx, cz - 1)) {
+                    if (layout.isSafeArrival(seed, cx, cz) && (!needsSpace
+                            || layout.isSafeArrival(seed, cx + 1, cz) && layout.isSafeArrival(seed, cx - 1, cz)
+                            && layout.isSafeArrival(seed, cx, cz + 1) && layout.isSafeArrival(seed, cx, cz - 1))) {
                         return new BlockPos(cx, layout.standY(seed, cx, cz), cz);
                     }
                 }

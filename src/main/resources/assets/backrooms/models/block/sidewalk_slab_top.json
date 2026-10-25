@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "backrooms:block/sidewalk_slab",
+    "top": "backrooms:block/sidewalk_slab",
+    "side": "backrooms:block/sidewalk_slab"
+  }
+}

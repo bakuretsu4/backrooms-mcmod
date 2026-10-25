@@ -136,8 +136,10 @@ final class Flashlights {
             if (!localOn) {
                 LOCAL.aimed = false; // switching on: start pointing where we look
             }
+            // Near a Neighborhood Watcher the beam also drops out (Level 9 electronics interference).
+            long nowMs = System.currentTimeMillis();
             LOCAL.update(lights, pos.x - up.x * DROP, pos.y - up.y * DROP, pos.z - up.z * DROP, LOOK, follow,
-                    batteryFlicker(System.currentTimeMillis()));
+                    batteryFlicker(nowMs) * com.rickr.backrooms.client.WatcherInterference.flashlightFactor(nowMs));
         } else if (localOn) {
             LOCAL.free();
         }

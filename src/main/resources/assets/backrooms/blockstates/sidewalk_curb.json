@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "backrooms:block/sidewalk_curb"
+    },
+    "type=top": {
+      "model": "backrooms:block/sidewalk_curb_top"
+    },
+    "type=double": {
+      "model": "backrooms:block/sidewalk_curb_double"
+    }
+  }
+}

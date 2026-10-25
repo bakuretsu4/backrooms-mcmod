@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "backrooms:block/night_log_top",
+    "side": "backrooms:block/night_log"
+  }
+}
