@@ -107,7 +107,9 @@ void main() {
     float aspect = InSize.x / InSize.y;
     float lowBattery = Battery < 0.15 ? 1.0 : 0.0;
     // 0 = clean picture. Danger, transitions and a dying battery make the tape misbehave.
-    float glitch = clamp(Danger * 0.9 + Transition * 1.2 + lowBattery * 0.35 - Signal * 0.15, 0.0, 1.5);
+    // A monster nearby only roughs the tape up a little (max ~0.3): enough to warn you, not enough
+    // to hide what you're looking at. Level transitions keep the full-strength glitch.
+    float glitch = clamp(Danger * 0.3 + Transition * 1.2 + lowBattery * 0.35 - Signal * 0.15, 0.0, 1.5);
 
     // 1. Lens. p is the output pixel in half-height units (y -1..1, x -aspect..aspect).
     //    Barrel: sample from p * (1 + k|p|^2). Dividing by the corner's factor (1 + k(aspect^2+1))
@@ -150,8 +152,8 @@ void main() {
     if (Interference > 0.0) {
         float row = floor(texCoord.y * 90.0);
         float slot = floor(t * 20.0);
-        float tearOn = step(1.0 - Interference * 0.3, hash12(vec2(row, slot)));
-        uv.x += tearOn * (hash12(vec2(slot, row + 7.0)) - 0.5) * 0.12 * Interference;
+        float tearOn = step(1.0 - Interference * 0.12, hash12(vec2(row, slot)));
+        uv.x += tearOn * (hash12(vec2(slot, row + 7.0)) - 0.5) * 0.05 * Interference;
         uv.x += (noise1(t * 3.0 + texCoord.y * 40.0) - 0.5) * 0.004 * Interference; // fine wobble
     }
     uv = clamp(uv, vec2(0.0), vec2(1.0));
@@ -282,15 +284,15 @@ void main() {
         float k = Interference;
         // Colour burn: reds blow out, blues sink, the picture tints sick orange-magenta.
         vec3 burnt = vec3(col.r * 1.3 + 0.03, col.g * 0.78, col.b * 0.55 + col.r * 0.2);
-        col = mix(col, burnt, k * 0.6);
+        col = mix(col, burnt, k * 0.35);
         // Coloured static: each channel gets its own noise, so it sparkles red/green/blue.
         vec2 cell = floor(gl_FragCoord.xy / max(InSize.y / 360.0, 1.0)) + fract(t * 11.3) * vec2(173.0, 311.0);
         vec3 staticRgb = vec3(hash12(cell), hash12(cell + 17.0), hash12(cell + 41.0)) - 0.5;
-        col += staticRgb * 0.45 * k * k;
+        col += staticRgb * 0.15 * k * k;
         // Dropouts: a few whole lines flash white or black for a frame.
         float line = floor(texCoord.y * 240.0);
-        float drop = step(1.0 - 0.05 * k, hash12(vec2(line, floor(t * 24.0))));
-        col = mix(col, vec3(step(0.5, hash12(vec2(line, t)))), drop * 0.85);
+        float drop = step(1.0 - 0.015 * k, hash12(vec2(line, floor(t * 24.0))));
+        col = mix(col, vec3(step(0.5, hash12(vec2(line, t)))), drop * 0.45);
     }
 
     // Eyelids: opening slowly, with a couple of heavy blinks.
