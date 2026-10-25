@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/wall_handprint"
+    },
+    "facing=east": {
+      "model": "backrooms:block/wall_handprint",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/wall_handprint",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/wall_handprint",
+      "y": 270
+    }
+  }
+}

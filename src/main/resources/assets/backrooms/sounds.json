@@ -1,0 +1,291 @@
+{
+  "ambient.level0_hum": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/level0_hum",
+        "stream": true
+      }
+    ]
+  },
+  "ambient.level1_ambience": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/level1_ambience",
+        "stream": true
+      }
+    ]
+  },
+  "ambient.level2_ambience": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/level2_ambience",
+        "stream": true
+      }
+    ]
+  },
+  "ambient.poolrooms_ambience": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/poolrooms_ambience",
+        "stream": true
+      }
+    ]
+  },
+  "poolrooms.hallucination_loop": {
+    "sounds": [
+      "backrooms:poolrooms/hallucination_loop"
+    ]
+  },
+  "poolrooms.phantom_vanish": {
+    "sounds": [
+      "backrooms:poolrooms/phantom_vanish"
+    ]
+  },
+  "poolrooms.drain_pull": {
+    "sounds": [
+      "backrooms:poolrooms/drain_pull"
+    ],
+    "subtitle": "subtitles.backrooms.drain_pull"
+  },
+  "entity.bacteria.ambient": {
+    "sounds": [
+      "backrooms:entity/bacteria_ambient1",
+      "backrooms:entity/bacteria_ambient2",
+      "backrooms:entity/bacteria_ambient3"
+    ],
+    "subtitle": "subtitles.backrooms.bacteria.ambient"
+  },
+  "entity.bacteria.screech": {
+    "sounds": [
+      "backrooms:entity/bacteria_screech1",
+      "backrooms:entity/bacteria_screech2"
+    ],
+    "subtitle": "subtitles.backrooms.bacteria.screech"
+  },
+  "entity.bacteria.step": {
+    "sounds": [
+      "backrooms:entity/bacteria_step1",
+      "backrooms:entity/bacteria_step2",
+      "backrooms:entity/bacteria_step3"
+    ],
+    "subtitle": "subtitles.backrooms.bacteria.step"
+  },
+  "entity.bacteria.hurt": {
+    "sounds": [
+      "backrooms:entity/bacteria_hurt"
+    ],
+    "subtitle": "subtitles.backrooms.bacteria.hurt"
+  },
+  "entity.bacteria.death": {
+    "sounds": [
+      "backrooms:entity/bacteria_death"
+    ],
+    "subtitle": "subtitles.backrooms.bacteria.death"
+  },
+  "entity.bacteria.search": {
+    "sounds": [
+      "backrooms:entity/bacteria_search1",
+      "backrooms:entity/bacteria_search2"
+    ],
+    "subtitle": "subtitles.backrooms.bacteria.search"
+  },
+  "entity.bacteria.lost": {
+    "sounds": [
+      "backrooms:entity/bacteria_lost"
+    ],
+    "subtitle": "subtitles.backrooms.bacteria.lost"
+  },
+  "camcorder.rec_beep": {
+    "sounds": [
+      "backrooms:camcorder/rec_beep"
+    ]
+  },
+  "camcorder.battery_low": {
+    "sounds": [
+      "backrooms:camcorder/battery_low"
+    ],
+    "subtitle": "subtitles.backrooms.battery_low"
+  },
+  "camcorder.noclip": {
+    "sounds": [
+      "backrooms:camcorder/noclip"
+    ]
+  },
+  "camcorder.escape": {
+    "sounds": [
+      "backrooms:camcorder/escape"
+    ]
+  },
+  "camcorder.flashlight_click": {
+    "sounds": [
+      "backrooms:camcorder/flashlight_click"
+    ]
+  },
+  "camcorder.wake_up": {
+    "sounds": [
+      "backrooms:camcorder/wake_up"
+    ]
+  },
+  "intro.glitch": {
+    "sounds": [
+      "backrooms:intro/glitch"
+    ]
+  },
+  "intro.wind": {
+    "sounds": [
+      "backrooms:intro/wind"
+    ]
+  },
+  "intro.impact": {
+    "sounds": [
+      "backrooms:intro/impact"
+    ]
+  },
+  "event.power_down": {
+    "sounds": [
+      "backrooms:event/power_down"
+    ],
+    "subtitle": "subtitles.backrooms.power_down"
+  },
+  "event.power_up": {
+    "sounds": [
+      "backrooms:event/power_up"
+    ],
+    "subtitle": "subtitles.backrooms.power_up"
+  },
+  "event.alarm": {
+    "sounds": [
+      {
+        "name": "backrooms:event/alarm",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.alarm"
+  },
+  "light.hum": {
+    "sounds": [
+      "backrooms:light/hum"
+    ],
+    "subtitle": "subtitles.backrooms.light_hum"
+  },
+  "light.blink": {
+    "sounds": [
+      "backrooms:light/blink1",
+      "backrooms:light/blink2",
+      "backrooms:light/blink3",
+      "backrooms:light/blink4",
+      "backrooms:light/blink5",
+      "backrooms:light/blink6",
+      "backrooms:light/blink7",
+      "backrooms:light/blink8"
+    ],
+    "subtitle": "subtitles.backrooms.light_blink"
+  },
+  "step.carpet_walk": {
+    "sounds": [
+      "backrooms:step/carpet_walk1",
+      "backrooms:step/carpet_walk2",
+      "backrooms:step/carpet_walk3",
+      "backrooms:step/carpet_walk4",
+      "backrooms:step/carpet_walk5"
+    ],
+    "subtitle": "subtitles.backrooms.step"
+  },
+  "step.carpet_run": {
+    "sounds": [
+      "backrooms:step/carpet_run1",
+      "backrooms:step/carpet_run2",
+      "backrooms:step/carpet_run3",
+      "backrooms:step/carpet_run4",
+      "backrooms:step/carpet_run5"
+    ],
+    "subtitle": "subtitles.backrooms.step_run"
+  },
+  "step.concrete_walk": {
+    "sounds": [
+      "backrooms:step/concrete_walk1",
+      "backrooms:step/concrete_walk2",
+      "backrooms:step/concrete_walk3",
+      "backrooms:step/concrete_walk4",
+      "backrooms:step/concrete_walk5"
+    ],
+    "subtitle": "subtitles.backrooms.step"
+  },
+  "step.concrete_run": {
+    "sounds": [
+      "backrooms:step/concrete_run1",
+      "backrooms:step/concrete_run2",
+      "backrooms:step/concrete_run3",
+      "backrooms:step/concrete_run4",
+      "backrooms:step/concrete_run5"
+    ],
+    "subtitle": "subtitles.backrooms.step_run"
+  },
+  "event.intercom": {
+    "sounds": [
+      {
+        "name": "backrooms:event/intercom1",
+        "stream": true
+      },
+      {
+        "name": "backrooms:event/intercom2",
+        "stream": true
+      },
+      {
+        "name": "backrooms:event/intercom3",
+        "stream": true
+      },
+      {
+        "name": "backrooms:event/intercom4",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.intercom"
+  },
+  "event.distant_knock": {
+    "sounds": [
+      "backrooms:event/distant_knock1",
+      "backrooms:event/distant_knock2",
+      "backrooms:event/distant_knock3"
+    ],
+    "subtitle": "subtitles.backrooms.distant_knock"
+  },
+  "event.distant_creak": {
+    "sounds": [
+      "backrooms:event/distant_creak1",
+      "backrooms:event/distant_creak2",
+      "backrooms:event/distant_creak3"
+    ],
+    "subtitle": "subtitles.backrooms.distant_creak"
+  },
+  "event.thunder": {
+    "sounds": [
+      {
+        "name": "backrooms:event/thunder1",
+        "stream": true
+      },
+      {
+        "name": "backrooms:event/thunder2",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.thunder"
+  },
+  "event.radio_static": {
+    "sounds": [
+      {
+        "name": "backrooms:event/radio_static",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.radio_static"
+  },
+  "death.sting": {
+    "sounds": [
+      {
+        "name": "backrooms:death/sting",
+        "stream": true
+      }
+    ]
+  }
+}

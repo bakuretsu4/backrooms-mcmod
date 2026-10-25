@@ -1,0 +1,71 @@
+package com.rickr.backrooms.client;
+
+import com.mojang.blaze3d.platform.InputConstants;
+import com.rickr.backrooms.Backrooms;
+import com.rickr.backrooms.registry.ModEntities;
+import net.minecraft.client.KeyMapping;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import com.rickr.backrooms.client.hud.EnergyBoltLayer;
+import com.rickr.backrooms.client.intro.IntroCutscene;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import org.lwjgl.glfw.GLFW;
+
+/** Client-only registration (mod-bus events, routed automatically). Never loaded on a dedicated server. */
+@EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
+public final class ClientSetup {
+    public static final KeyMapping NIGHT_SHOT_KEY = new KeyMapping("key.backrooms.night_shot",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_N, "key.categories.backrooms");
+    public static final KeyMapping FLASHLIGHT_KEY = new KeyMapping("key.backrooms.flashlight",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "key.categories.backrooms");
+    public static final KeyMapping OSD_KEY = new KeyMapping("key.backrooms.osd",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, "key.categories.backrooms");
+
+    @SubscribeEvent
+    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.BACTERIA.get(), BacteriaRenderer::new);
+        // Uses vanilla's player model layers (PLAYER / PLAYER_SLIM), so no layer definition of its own.
+        event.registerEntityRenderer(ModEntities.PHANTOM_FRIEND.get(), PhantomFriendRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        event.registerLayerDefinition(BacteriaModel.LAYER, BacteriaModel::createBodyLayer);
+    }
+
+    @SubscribeEvent
+    public static void registerKeys(RegisterKeyMappingsEvent event) {
+        event.register(NIGHT_SHOT_KEY);
+        event.register(FLASHLIGHT_KEY);
+        event.register(OSD_KEY);
+    }
+
+    @SubscribeEvent
+    public static void registerGuiLayers(RegisterGuiLayersEvent event) {
+        event.registerAboveAll(Backrooms.id("camcorder_hud"), new CamcorderHud());
+        // Black frames of the noclip intro, over everything.
+        event.registerAboveAll(IntroCutscene.LAYER_ID, new IntroCutscene());
+        // Faint sprint-energy bolt where the (hidden) crosshair would be.
+        event.registerAbove(VanillaGuiLayers.CROSSHAIR, Backrooms.id("energy_bolt"), new EnergyBoltLayer());
+    }
+
+    @SubscribeEvent
+    public static void registerDimensionEffects(RegisterDimensionSpecialEffectsEvent event) {
+        // Matches "effects": "backrooms:backrooms" in data/backrooms/dimension_type/backrooms.json.
+        event.register(Backrooms.id("backrooms"), new BackroomsDimensionEffects());
+    }
+
+    @SubscribeEvent
+    public static void registerReloadListeners(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener((ResourceManagerReloadListener) manager -> CamcorderEffect.onResourcesReloaded());
+    }
+
+    private ClientSetup() {}
+}

@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/exit_door_bottom",
+    "north": "backrooms:block/exit_door_bottom",
+    "south": "backrooms:block/exit_door_bottom",
+    "east": "backrooms:block/pipe_wall",
+    "west": "backrooms:block/pipe_wall",
+    "up": "backrooms:block/pipe_wall",
+    "down": "backrooms:block/pipe_wall"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/lobby_carpet_arrow"
+    },
+    "facing=east": {
+      "model": "backrooms:block/lobby_carpet_arrow",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/lobby_carpet_arrow",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/lobby_carpet_arrow",
+      "y": 270
+    }
+  }
+}

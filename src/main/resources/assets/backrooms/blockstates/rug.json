@@ -1,0 +1,31 @@
+{
+  "variants": {
+    "part=0": {
+      "model": "backrooms:block/rug_0"
+    },
+    "part=1": {
+      "model": "backrooms:block/rug_1"
+    },
+    "part=2": {
+      "model": "backrooms:block/rug_2"
+    },
+    "part=3": {
+      "model": "backrooms:block/rug_3"
+    },
+    "part=4": {
+      "model": "backrooms:block/rug_4"
+    },
+    "part=5": {
+      "model": "backrooms:block/rug_5"
+    },
+    "part=6": {
+      "model": "backrooms:block/rug_6"
+    },
+    "part=7": {
+      "model": "backrooms:block/rug_7"
+    },
+    "part=8": {
+      "model": "backrooms:block/rug_8"
+    }
+  }
+}

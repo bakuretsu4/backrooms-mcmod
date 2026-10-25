@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/bulkhead_lamp"
+    },
+    "facing=east": {
+      "model": "backrooms:block/bulkhead_lamp",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/bulkhead_lamp",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/bulkhead_lamp",
+      "y": 270
+    }
+  }
+}

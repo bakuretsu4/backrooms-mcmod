@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/iron_bars_side",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/chain_link",
+    "bars": "backrooms:block/chain_link",
+    "edge": "backrooms:block/chain_link"
+  }
+}

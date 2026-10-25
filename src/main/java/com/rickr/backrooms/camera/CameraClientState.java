@@ -1,0 +1,28 @@
+package com.rickr.backrooms.camera;
+
+/**
+ * The local player's camcorder state as last sent by the server. Plain fields with no client
+ * imports, so packet handlers can write to it without loading client classes on a server.
+ */
+public final class CameraClientState {
+    public static volatile float battery = CameraData.MAX_BATTERY;
+    public static volatile boolean nightShot;
+    public static volatile boolean flashlight;
+    public static volatile float exitSignal;
+    public static volatile long tapeTicks;
+    /** System time (ms) when {@link #tapeTicks} arrived, so the HUD counter keeps running between syncs. */
+    public static volatile long tapeSyncMs;
+    /** System time (ms) when the last transition started, or 0. */
+    public static volatile long transitionStartMs;
+    public static volatile int transitionKind;
+    /** Current floor event ({@code LevelEventPayload} constant) and when it ends (system ms). */
+    public static volatile int eventKind;
+    public static volatile long eventEndMs;
+    /** When the current event started (system ms), for fade-ins like the blackout or the twist roll. */
+    public static volatile long eventStartMs;
+    /** Last noclip intro step ({@code IntroCutscenePayload} constant) and when it arrived (system ms, 0 = none). */
+    public static volatile int introPhase;
+    public static volatile long introStartMs;
+
+    private CameraClientState() {}
+}

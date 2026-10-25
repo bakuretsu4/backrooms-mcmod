@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "half=lower": {
+      "model": "backrooms:block/exit_door_bottom"
+    },
+    "half=upper": {
+      "model": "backrooms:block/exit_door_top"
+    }
+  }
+}

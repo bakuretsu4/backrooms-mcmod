@@ -1,0 +1,36 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="rickr"
+description='''
+Noclip out of reality into the Backrooms. Found-footage camcorder POV, an endless Level 0,
+the wire-thin Bacteria, and exits down through Level 1 and Level 2 back to the real world.
+Every player and the server need this mod installed.
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# Veil draws the real dynamic lights (bundled inside our jar via Jar-in-Jar).
+[[dependencies.${mod_id}]]
+    modId="veil"
+    type="required"
+    versionRange="[4.5.2,5.0.0)"
+    ordering="NONE"
+    side="BOTH"

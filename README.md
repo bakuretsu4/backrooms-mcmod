@@ -1,0 +1,109 @@
+# The Backrooms: Found Footage
+
+A NeoForge 1.21.1 mod: noclip out of reality into an endless Backrooms lit by real dynamic
+lights, seen through a found-footage camera. Built for multiplayer: play it with friends on a
+server or LAN.
+
+## Playing
+
+**Everyone (server and every player) needs the same mod jar** in their `mods` folder, with
+NeoForge 1.21.1 installed. The jar already contains the Veil rendering library.
+
+Not compatible with Embeddium/Rubidium. Sodium must be 0.8.12 or newer. With Iris installed the
+mod falls back to simpler lighting.
+
+| Action | How |
+|---|---|
+| Get in | Suffocate inside a block in the real world (let sand/gravel fall on you). Your camcorder starts recording, the footage breaks up, and you fall through the dark into Level 0. |
+| Flashlight | `R`. Everyone sees your beam. Uses the camcorder battery. |
+| NightShot (infrared) | `N` (drains the battery 3x faster) |
+| Camcorder REC overlay | `H` (off by default) |
+| Sprint | Limited by energy (the faint bolt in the middle of the screen). Rest to refill it. |
+| Jump | Not possible in the Backrooms (except in water, to swim and climb out) |
+| Loot | Right-click Wooden Crates: canned food, backshrooms, almond water, batteries |
+| New battery | Right-click a Camcorder Battery |
+
+### The way out
+
+```
+Overworld --suffocate--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Poolrooms --drain--> Overworld
+```
+
+- **Level 0 (the Lobby):** thick-walled yellow maze, lit rooms and dark corridors. Arrows drawn on
+  the walls point to the exit stairwell, but some of them lie. Look for the EXIT sign over a
+  wooden door.
+- **Level 1 (the garage):** a grey concrete maze of closed-off rooms, narrow corridors and dead
+  ends, opening now and then into wide parking halls with numbered pillars, tube lights,
+  chain-link fences and puddles. Another white stairwell leads down.
+- **Level 2 (the pipes):** narrow lavender corridors full of rusty pipes. Find the emergency EXIT
+  door; opening it takes everyone within 6 blocks with you.
+- **The Poolrooms:** dim white-tiled rooms and long water channels lit by a few tubes, glowing
+  cyan pools with underwater lamps and moving light ripples, and now and then a tall atrium full
+  of daylight. No monsters. The way out is the drain: a dark-tiled shaft in the middle of a deep
+  pool, lit by lamps around its edge. Swim into it and it pulls you down.
+
+Every floor is endless; exits are spread out a few hundred blocks apart.
+
+### Things that happen
+
+- **Bacteria:** tall black wire figure. It only knows where you are if it sees you or hears you
+  sprint. In a lit room it spots you from about 24 blocks; in the dark only from about 8 (crouching
+  makes both shorter, your flashlight doesn't matter). When it spots you it freezes for a moment and
+  screams, then chases. Break line of sight: it runs to where it *last saw* you, searches for a few
+  seconds (you hear its wires ticking), and when it gives up you hear a long falling creak. With
+  NightShot on you can see it even in total darkness.
+- **Blackouts:** the lights fade out over two seconds. Only flashlights work, and the Bacteria come
+  out three times as often, but they can't use the lamps to spot you either.
+- **Flicker**, **alarm** (red rotating emergency lamps), **intercom** announcements that get
+  creepier, **lightning** in the garage, the **twist** in the pipes (the corridor tilts), distant
+  knocks and creaks.
+- **Hallucinations (Poolrooms):** stay in the water too long and the picture starts to swim. Then
+  you see your friend (or yourself, if you're alone) waving at you. Only you can see them. They
+  walk away and want you to follow... always away from the drain. Get out of the water and dry
+  off, or drink Almond Water, to clear your head.
+- **Battery:** lasts 40 minutes; flashlight and NightShot drain it faster. It recharges in the
+  real world.
+- Dying in the Backrooms: *you can't escape.*
+
+## Operator commands
+
+```
+/backrooms enter [players] [level]      send players in (0-2 = Levels, 3 = Poolrooms)
+/backrooms escape [players]             send players back to reality
+/backrooms battery [players] [percent]  set camcorder battery
+/backrooms locate                       where is the nearest exit?
+/backrooms event <blackout|flicker|alarm|intercom|lightning|twist|end> [seconds]
+/backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
+/backrooms spawn bacteria [count]       spawn Bacteria ~12 blocks in front of you (they only hunt survival players)
+```
+
+## Building
+
+Requires a Java 21 JDK (`org.gradle.java.home` in `gradle.properties` points at the one bundled
+with CurseForge on this machine; change it if you build elsewhere).
+
+```
+gradlew build            -> build/libs/backrooms-1.0.0.jar (give this to your friends)
+gradlew runClient        -> test in a dev client
+gradlew runServer        -> test on a dev dedicated server (run/)
+```
+
+Textures and sounds are generated by `tools/gen_assets.py` (Python 3 with numpy, Pillow,
+soundfile; Windows speech synthesis for the intercom voices).
+
+## Code map
+
+| Package | What lives there |
+|---|---|
+| `world` | Level definitions, the infinite chunk generator, exits, travel, floor events |
+| `world/layout` | One floor plan per level (pure functions of seed + x/z) |
+| `entity` | The Bacteria and its spawner |
+| `camera` | Camcorder battery/flashlight/NightShot server rules, flashlight sync |
+| `player` | Energy (stamina), movement limits, footsteps |
+| `block`, `item` | Decals, lamps, crates, doors, food |
+| `network` | Packets between server and clients |
+| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, flashlights, hum sounds |
+| `client/camera` | Handheld camera shake, roll, smoothing |
+| `client/hud` | Minimal HUD, energy bolt |
+| `client` | Camcorder post-shader control, overlay, Bacteria model/renderer, keys |
+| `assets/backrooms/shaders` | Lens, bloom, motion blur and grade post-processing |

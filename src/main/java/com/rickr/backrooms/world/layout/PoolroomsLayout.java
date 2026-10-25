@@ -1,0 +1,791 @@
+package com.rickr.backrooms.world.layout;
+
+import com.rickr.backrooms.block.CeilingTubeBlock;
+import com.rickr.backrooms.block.PoolLampBlock;
+import com.rickr.backrooms.registry.ModBlocks;
+import com.rickr.backrooms.world.ExitLocator;
+import com.rickr.backrooms.world.Hash;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * The Poolrooms: white tile rooms, corridors and long water channels, mostly dim, lit by sparse
+ * fluorescent tubes, with cyan water glowing from lamps in the pool walls. Now and then a tall
+ * atrium opens up under daylight skylights: a dazzling white court around a big pool. The
+ * contrast between the dim halls and the bright courts is the whole look.
+ *
+ * <p><b>Floor plan.</b> A grid of 14x14 cells, each one a room. The wall between two cells (on a
+ * cell's west and north edge, 1 block thick) is open, has a rectangular doorway (2-4 wide, 4-5
+ * tall) or is solid (dead ends). Every cell is guaranteed one way out to the west or north, so no
+ * room is ever sealed. Kinds of room:
+ * <ul>
+ *   <li><b>channel</b>: the iconic one. A 3-wide water channel (5 deep or ankle deep) between two
+ *       2-wide dry walkways, running through thick walls. Channel cells come in runs of up to 5 in
+ *       a row, so the channels go on and on; side doorways cut through the walls.</li>
+ *   <li><b>corridor</b>: the same shape, all dry.</li>
+ *   <li><b>pool</b>: a deep pool with dark lane lines on its floor and a lamp at each end, in a 2-3
+ *       wide dry deck, sometimes with a shallow step around it.</li>
+ *   <li><b>shallow</b>: ankle-deep water everywhere, with a 1-2 wide dry rim.</li>
+ *   <li><b>dry</b>: a plain tiled room.</li>
+ *   <li><b>pillared hall</b>: zones of 3x3 cells with no walls inside: shallow water and a square
+ *       column every 7 blocks.</li>
+ *   <li><b>atrium</b> (rare): zones of 2x2 cells with a ceiling 8 blocks higher, full of daylight
+ *       skylights, around a 19x19 deep pool with four tall pillars standing in it.</li>
+ * </ul>
+ * Top view, generated from this class (# wall, . dry tile, ~ shallow water, D deep water, blank =
+ * doorway): a deep channel running east-west through thick walls (side doorways cut through
+ * them), ending in an opening on the right; below it a pool room (no step) open to a shallow room.
+ * <pre>
+ *   #####   ###########  ########.
+ *   #####...###########..########.
+ *   ............................#.
+ *   ............................#.
+ *   DDDDDDDDDDDDDDDDDDDDDDDDDDD. .
+ *   DDDDDDDDDDDDDDDDDDDDDDDDDDD. .
+ *   DDDDDDDDDDDDDDDDDDDDDDDDDDD. .
+ *   ............................ .
+ *   ............................#.
+ *   ####....###########....######.
+ *   ####    ###########    #######
+ *   #...........................#.
+ *   #...............~~~~~~~~~~~.#.
+ *   #..DDDDDDDDD....~~~~~~~~~~~.#.
+ *   #..DDDDDDDDD....~~~~~~~~~~~. .
+ *   #..DDDDDDDDD....~~~~~~~~~~~.#.
+ *   #...............~~~~~~~~~~~.#.
+ *   #...........................#.
+ *   ########  #############  #####
+ * </pre>
+ * (Shortened top to bottom; the real rooms are 13x13 inside.)
+ *
+ * <p><b>Heights</b> (the floor layer is y40 as on every level):
+ * <ul>
+ *   <li>y41 is the "surface" layer: shallow water (you wade, feet at y41) or a solid tile walkway
+ *       (you stand on top, feet at y42). Jumping is allowed in water so you can climb out; a
+ *       walkway is exactly at water level, so every deep pool can be climbed out of.</li>
+ *   <li>Deep water: floor at y36, water from y37 to y41. Everything under water is
+ *       {@code pool_floor} (animated light ripples).</li>
+ *   <li>Ceiling layer y48 (atriums: y56). Tubes hang just under it.</li>
+ * </ul>
+ *
+ * <p><b>The exit: the drain.</b> One per 384x384 region, in the middle of its own dim square room:
+ * a 13x13 deep pool on a dry deck, inside a wall with a doorway on each side and a dry walkway
+ * ring outside. Dark tile bands on the deck lead from each doorway to the pool, four lamps in the
+ * pool's edge light the water, and at the very centre a 5x5 shaft lined with dark tile drops from
+ * the pool floor down to y24. Sink into it and the current ({@code PoolroomsRules}) pulls you
+ * below y30: you have escaped.
+ *
+ * <p><b>Water never leaks.</b> Every column is solid from the deep-pool floor (y36) up to y40
+ * unless it holds water there, and at y41 every column is either water or solid tile: there is no
+ * air anywhere at the water's level. Below y36 only the drain shaft holds water, and its dark
+ * lining surrounds it all the way down. Lamps are full blocks that replace solid wall blocks. So
+ * no water block ever touches air at its side or below, and nothing flows when the chunk loads.
+ */
+public final class PoolroomsLayout extends LevelLayout {
+    // ---- Heights -----------------------------------------------------------------------------
+    /** The water's level: shallow water and dry walkways both sit in this layer. */
+    public static final int SURFACE_Y = FLOOR_Y + 1;
+    /** Floor of the deep water; it fills the five layers above it. */
+    public static final int DEEP_FLOOR_Y = FLOOR_Y - 4;
+    /** Bottom of the drain shaft (dark tile); its water starts one block above. */
+    public static final int DRAIN_FLOOR_Y = 23;
+    /** Pool lamps sit in the pool wall here, two blocks under the water's surface. */
+    private static final int LAMP_Y = FLOOR_Y - 1;
+    /** Air from y41 to y47, ceiling layer at y48. */
+    private static final int INTERIOR_HEIGHT = 7;
+    /** Ceiling layer of the tall atriums. */
+    public static final int ATRIUM_CEILING_Y = 56;
+
+    // ---- Room grid ---------------------------------------------------------------------------
+    /** One room per CELL x CELL square; walls on the cell's west and north edges. */
+    private static final int CELL = 14;
+    /** Pillared halls cover zones of this many cells on a side ... */
+    private static final int HALL_ZONE_CELLS = 3;
+    /** ... and this fraction of all zones. */
+    private static final double HALL_SHARE = 0.15;
+    /** Atriums cover zones of 2x2 cells (28x28 blocks) ... */
+    private static final int ATRIUM_ZONE_CELLS = 2;
+    private static final int ATRIUM_SIZE = ATRIUM_ZONE_CELLS * CELL;
+    /** ... and this fraction of all atrium zones. */
+    private static final double ATRIUM_SHARE = 0.10;
+    /** Columns in the pillared halls stand on this grid. */
+    private static final int PILLAR_GRID = 7;
+    /** Channels come in runs: rows (or columns) of cells are split into stretches this long ... */
+    private static final int RUN = 5;
+    /** ... and this fraction of the stretches are channels. */
+    private static final double RUN_SHARE = 0.16;
+    /** Rooms without any tube (dark). */
+    private static final double DARK_ROOM_SHARE = 0.30;
+    /** Lit rooms with two tube strips instead of one. */
+    private static final double TWO_TUBES_SHARE = 0.35;
+
+    // ---- The drain room, in square "rings" around the exit centre ----------------------------
+    /** Rings 0-2: the 5x5 shaft. */
+    public static final int SHAFT_RADIUS = 2;
+    /** Rings 3-4 have a dark tile pool floor; ring 3 also lines the shaft all the way down. */
+    private static final int DARK_RING = 4;
+    /** Rings up to here are deep pool. */
+    private static final int DRAIN_POOL_RADIUS = 6;
+    /** One ring of shallow step around the deep pool (with the four pool lamps in it). */
+    private static final int DRAIN_LEDGE_RING = 7;
+    /** The room's wall (rings 8-10 are the dry deck inside it). */
+    private static final int DRAIN_WALL_RING = 11;
+    /** Doorways in the middle of each side are 5 wide ... */
+    private static final int DRAIN_DOOR_HALF_WIDTH = 2;
+    /** ... and 5 tall. */
+    private static final int DRAIN_DOOR_HEIGHT = 5;
+    /** Ring 12 is a dry walkway all around the room, so every doorway leads somewhere. */
+    private static final int CLEARING_RADIUS = 12;
+
+    // ---- Room kinds --------------------------------------------------------------------------
+    private static final int ROOM_DRY = 0;
+    private static final int ROOM_SHALLOW = 1;
+    private static final int ROOM_POOL = 2;
+    private static final int ROOM_HALL = 3;
+    private static final int ROOM_ATRIUM = 4;
+    /** A water channel between two walkways. */
+    private static final int ROOM_CHANNEL = 5;
+    /** The same shape as a channel, but dry. */
+    private static final int ROOM_CORRIDOR = 6;
+
+    /** Channels run along X (east-west) ... */
+    private static final int AXIS_X = 0;
+    /** ... or along Z (north-south). */
+    private static final int AXIS_Z = 1;
+
+    // ---- Wall states between two cells -------------------------------------------------------
+    private static final int EDGE_OPEN = 0;
+    private static final int EDGE_DOORWAY = 1;
+    private static final int EDGE_SOLID = 2;
+    /** Two channels meeting end to end: the channel and walkways run straight on. */
+    private static final int EDGE_JOIN = 3;
+    /** A channel ending at a room: an opening as wide as the channel and its walkways. */
+    private static final int EDGE_OPENING = 4;
+    /** Inside one atrium: no wall at all. */
+    private static final int EDGE_ATRIUM = 5;
+
+    /** The wall on a cell's west edge (runs along Z) ... */
+    private static final int WEST = 0;
+    /** ... and the one on its north edge (runs along X). */
+    private static final int NORTH = 1;
+
+    // ---- Channel cross-section, counted across the cell (1..13) ------------------------------
+    /** Walkways and channel together span across = 4..10; the rest is thick wall. */
+    private static final int CHANNEL_FROM = 4;
+    private static final int CHANNEL_TO = 10;
+    /** The water itself is across = 6..8. */
+    private static final int WATER_FROM = 6;
+    private static final int WATER_TO = 8;
+    /** The middle of a cell (tubes, lamps, lane lines line up on it). */
+    private static final int MIDDLE = 7;
+
+    // ---- What one column looks like ----------------------------------------------------------
+    /** Tile from y41 to the ceiling (walls, posts, pillars). */
+    private static final int WALL = 0;
+    /** Tile threshold at y41, then an opening, then tile up to the ceiling. */
+    private static final int DOORWAY = 1;
+    /** Dry tile walkway at y41: you stand at y42. */
+    private static final int DRY = 2;
+    /** 1-deep water at y41 over the y40 floor. */
+    private static final int SHALLOW = 3;
+    /** Deep water: floor y36, water y37-y41. */
+    private static final int DEEP = 4;
+    /** The drain shaft: water from y41 down to y24. */
+    private static final int SHAFT = 5;
+
+    public PoolroomsLayout() {
+        super(INTERIOR_HEIGHT, new ExitLocator(384, 48, 5000));
+    }
+
+    // ==========================================================================================
+    // Public queries
+    // ==========================================================================================
+
+    /** Dry walkways, doorways and shallow water: anywhere you can stand without swimming. */
+    @Override
+    public boolean isWalkable(long seed, int x, int z) {
+        int kind = columnKind(seed, x, z);
+        return kind == DRY || kind == DOORWAY || kind == SHALLOW;
+    }
+
+    /** Only dry walkways: nobody should arrive in the water. */
+    @Override
+    public boolean isSafeArrival(long seed, int x, int z) {
+        return columnKind(seed, x, z) == DRY;
+    }
+
+    /** Feet at y41 when wading in shallow water, y42 on the raised dry tiles (and swimming). */
+    @Override
+    public int standY(long seed, int x, int z) {
+        return columnKind(seed, x, z) == SHALLOW ? SURFACE_Y : SURFACE_Y + 1;
+    }
+
+    @Override
+    public int highestCeilingY() {
+        return ATRIUM_CEILING_Y;
+    }
+
+    // ==========================================================================================
+    // Floor plan
+    // ==========================================================================================
+
+    private int columnKind(long seed, int x, int z) {
+        int dx = exits().dx(seed, x, z);
+        int dz = exits().dz(seed, x, z);
+        int ring = Math.max(Math.abs(dx), Math.abs(dz));
+        if (ring <= CLEARING_RADIUS) {
+            return drainRoomColumn(dx, dz, ring);
+        }
+        return gridColumn(seed, x, z);
+    }
+
+    /** The square drain room around an exit (see the class comment). */
+    private static int drainRoomColumn(int dx, int dz, int ring) {
+        if (ring <= SHAFT_RADIUS) {
+            return SHAFT;
+        }
+        if (ring <= DRAIN_POOL_RADIUS) {
+            return DEEP;
+        }
+        if (ring == DRAIN_LEDGE_RING) {
+            return SHALLOW;
+        }
+        if (ring == DRAIN_WALL_RING) {
+            boolean corner = Math.abs(dx) == Math.abs(dz);
+            int along = Math.abs(dx) == DRAIN_WALL_RING ? dz : dx; // position along this side
+            return !corner && Math.abs(along) <= DRAIN_DOOR_HALF_WIDTH ? DOORWAY : WALL;
+        }
+        return DRY; // the deck inside the room, and the walkway ring around it
+    }
+
+    private static int gridColumn(long seed, int x, int z) {
+        int cx = Math.floorDiv(x, CELL);
+        int cz = Math.floorDiv(z, CELL);
+        if (isAtrium(seed, cx, cz)) {
+            int ax = Math.floorMod(x, ATRIUM_SIZE);
+            int az = Math.floorMod(z, ATRIUM_SIZE);
+            if (ax != 0 && az != 0) {
+                return atriumColumn(ax, az); // inside the atrium; its outer walls are handled below
+            }
+        }
+        int mx = Math.floorMod(x, CELL);
+        int mz = Math.floorMod(z, CELL);
+        if (mx == 0 && mz == 0) {
+            return WALL; // the post at the grid corner
+        }
+        if (mx == 0) {
+            return edgeColumn(seed, cx, cz, WEST, mz);
+        }
+        if (mz == 0) {
+            return edgeColumn(seed, cx, cz, NORTH, mx);
+        }
+        int room = room(seed, cx, cz);
+        // How far this column is from the nearest edge of its room (1 = right next to a wall).
+        int depth = Math.min(Math.min(mx, CELL - mx), Math.min(mz, CELL - mz));
+        long details = Hash.of(seed, cx, cz, 73);
+        switch (kindOf(room)) {
+            case ROOM_HALL:
+                return hallColumn(seed, cx, cz, mx, mz);
+            case ROOM_CHANNEL:
+            case ROOM_CORRIDOR:
+                return channelColumn(seed, cx, cz, room, mx, mz);
+            case ROOM_SHALLOW: {
+                int rim = 1 + Hash.range(details, 2);
+                return depth <= rim ? DRY : SHALLOW;
+            }
+            case ROOM_POOL: {
+                int deck = poolDeck(details);
+                if (depth <= deck) {
+                    return DRY;
+                }
+                return depth < poolStart(details) ? SHALLOW : DEEP; // the optional shallow step
+            }
+            default:
+                return DRY;
+        }
+    }
+
+    /**
+     * Atrium: (ax, az) are 1..27 inside the 28x28 zone. A 3-wide dry deck, a shallow step, and a
+     * 19x19 deep pool with four tall square pillars standing in the water.
+     */
+    private static int atriumColumn(int ax, int az) {
+        if ((ax == 9 || ax == 19) && (az == 9 || az == 19)) {
+            return WALL;
+        }
+        int depth = Math.min(Math.min(ax, ATRIUM_SIZE - ax), Math.min(az, ATRIUM_SIZE - az));
+        if (depth <= 3) {
+            return DRY;
+        }
+        return depth == 4 ? SHALLOW : DEEP;
+    }
+
+    /**
+     * Pillared hall: shallow water everywhere with a square column every 7 blocks. Where the hall
+     * meets an ordinary room there is a wall with a doorway, with a 1-wide dry rim in front of it.
+     */
+    private static int hallColumn(long seed, int cx, int cz, int mx, int mz) {
+        if (mx % PILLAR_GRID == 0 && mz % PILLAR_GRID == 0) {
+            return WALL;
+        }
+        boolean rim = (mx == 1 && !isHall(seed, cx - 1, cz)) || (mx == CELL - 1 && !isHall(seed, cx + 1, cz))
+                || (mz == 1 && !isHall(seed, cx, cz - 1)) || (mz == CELL - 1 && !isHall(seed, cx, cz + 1));
+        return rim ? DRY : SHALLOW;
+    }
+
+    /**
+     * Channel or dry corridor. {@code along} runs with the channel, {@code across} over it:
+     * across 4-5 and 9-10 are walkways, 6-8 the water, the rest thick wall (with a passage cut
+     * through it wherever the wall line beside it has a doorway).
+     */
+    private static int channelColumn(long seed, int cx, int cz, int room, int mx, int mz) {
+        boolean alongX = axisOf(room) == AXIS_X;
+        int along = alongX ? mx : mz;
+        int across = alongX ? mz : mx;
+        if (across >= CHANNEL_FROM && across <= CHANNEL_TO) {
+            if (across >= WATER_FROM && across <= WATER_TO && kindOf(room) == ROOM_CHANNEL) {
+                // Where the channel doesn't run on into the next cell it ends in a dry step.
+                int endSide = alongX ? WEST : NORTH;
+                if (along == 1 && !channelContinues(seed, cx, cz, endSide)) {
+                    return DRY;
+                }
+                if (along == CELL - 1 && !channelContinues(seed, alongX ? cx + 1 : cx, alongX ? cz : cz + 1, endSide)) {
+                    return DRY;
+                }
+                return isDeep(room) ? DEEP : SHALLOW;
+            }
+            return DRY;
+        }
+        // Thick wall beside the channel. The wall line on this side belongs to this cell (low side)
+        // or to the next cell over (high side).
+        int sideSide = alongX ? NORTH : WEST;
+        int wallLine = across < CHANNEL_FROM
+                ? edgeColumn(seed, cx, cz, sideSide, along)
+                : edgeColumn(seed, alongX ? cx : cx + 1, alongX ? cz + 1 : cz, sideSide, along);
+        return wallLine == DOORWAY ? DRY : WALL;
+    }
+
+    /** True when the water of two joined channels flows on through the wall line between them. */
+    private static boolean channelContinues(long seed, int cx, int cz, int side) {
+        return edgeState(seed, cx, cz, side) == EDGE_JOIN && joinedWater(seed, cx, cz, side) != DRY;
+    }
+
+    /** The water on the wall line between two joined channels: deep only if both are deep. */
+    private static int joinedWater(long seed, int cx, int cz, int side) {
+        int here = room(seed, cx, cz);
+        int there = room(seed, side == WEST ? cx - 1 : cx, side == WEST ? cz : cz - 1);
+        if (kindOf(here) != ROOM_CHANNEL || kindOf(there) != ROOM_CHANNEL) {
+            return DRY; // a dry corridor on one side: the walkway just carries on
+        }
+        return isDeep(here) && isDeep(there) ? DEEP : SHALLOW;
+    }
+
+    /** A column on the wall line of cell (cx, cz); {@code along} = 1..13 along the wall. */
+    private static int edgeColumn(long seed, int cx, int cz, int side, int along) {
+        switch (edgeState(seed, cx, cz, side)) {
+            case EDGE_OPEN: {
+                boolean bothHalls = isHall(seed, cx, cz) && isHall(seed, side == WEST ? cx - 1 : cx, side == WEST ? cz : cz - 1);
+                if (bothHalls) {
+                    // Inside a hall the water runs on across the old wall line, between the columns.
+                    return along == PILLAR_GRID ? WALL : SHALLOW;
+                }
+                return DRY; // a dry walkway joining the two rooms' rims
+            }
+            case EDGE_JOIN:
+                if (along >= WATER_FROM && along <= WATER_TO) {
+                    return joinedWater(seed, cx, cz, side);
+                }
+                return along >= CHANNEL_FROM && along <= CHANNEL_TO ? DRY : WALL;
+            case EDGE_OPENING:
+                return along >= CHANNEL_FROM && along <= CHANNEL_TO ? DOORWAY : WALL;
+            case EDGE_DOORWAY:
+                return isDoorway(seed, cx, cz, side, along) ? DOORWAY : WALL;
+            default:
+                return WALL;
+        }
+    }
+
+    /** The wall between cell (cx, cz) and its neighbour to the west or north. */
+    private static int edgeState(long seed, int cx, int cz, int side) {
+        int ncx = side == WEST ? cx - 1 : cx;
+        int ncz = side == WEST ? cz : cz - 1;
+        boolean atriumHere = isAtrium(seed, cx, cz);
+        boolean atriumThere = isAtrium(seed, ncx, ncz);
+        if (atriumHere && atriumThere && sameAtrium(cx, cz, ncx, ncz)) {
+            return EDGE_ATRIUM;
+        }
+        if (atriumHere || atriumThere) {
+            return EDGE_DOORWAY; // atriums are walled off, with doorways
+        }
+        boolean hallHere = isHall(seed, cx, cz);
+        boolean hallThere = isHall(seed, ncx, ncz);
+        if (hallHere && hallThere) {
+            return EDGE_OPEN;
+        }
+        if (hallHere || hallThere) {
+            return EDGE_DOORWAY;
+        }
+        int here = room(seed, cx, cz);
+        int there = room(seed, ncx, ncz);
+        // A west wall is where a channel along X starts or ends; a north wall, one along Z.
+        int endAxis = side == WEST ? AXIS_X : AXIS_Z;
+        boolean channelEndsHere = isChannelLike(here) && axisOf(here) == endAxis;
+        boolean channelEndsThere = isChannelLike(there) && axisOf(there) == endAxis;
+        if (channelEndsHere && channelEndsThere) {
+            return EDGE_JOIN;
+        }
+        if (channelEndsHere || channelEndsThere) {
+            return EDGE_OPENING;
+        }
+        double r = Hash.unit(seed, cx, cz, 60 + side);
+        int state = r < 0.25 ? EDGE_OPEN : r < 0.78 ? EDGE_DOORWAY : EDGE_SOLID;
+        if (state == EDGE_OPEN && (isChannelLike(here) || isChannelLike(there))) {
+            state = EDGE_DOORWAY; // the long side of a channel only ever gets doorways
+        }
+        // Every cell keeps one way out to the west or the north, so no room is ever sealed off
+        // (follow those and you always reach the rest of the level).
+        if (state == EDGE_SOLID && forcedSide(seed, cx, cz) == side) {
+            state = EDGE_DOORWAY;
+        }
+        return state;
+    }
+
+    private static int forcedSide(long seed, int cx, int cz) {
+        return Hash.unit(seed, cx, cz, 64) < 0.5 ? WEST : NORTH;
+    }
+
+    private static long doorwayHash(long seed, int cx, int cz, int side) {
+        return Hash.of(seed, cx, cz, 62 + side);
+    }
+
+    /** A rectangular doorway 2-4 wide, somewhere in the middle part of the wall (along = 3..10). */
+    private static boolean isDoorway(long seed, int cx, int cz, int side, int along) {
+        long h = doorwayHash(seed, cx, cz, side);
+        int width = 2 + Hash.range(h, 3);
+        int start = 3 + Hash.range(Hash.mix(h), 9 - width);
+        return along >= start && along < start + width;
+    }
+
+    /** Height of the opening in a doorway column: 4 or 5 blocks (above the y41 threshold). */
+    private static int doorwayHeight(long seed, int x, int z, boolean inDrainRoom) {
+        if (inDrainRoom) {
+            return DRAIN_DOOR_HEIGHT;
+        }
+        int side = Math.floorMod(x, CELL) == 0 ? WEST : NORTH;
+        long h = doorwayHash(seed, Math.floorDiv(x, CELL), Math.floorDiv(z, CELL), side);
+        return Hash.unit(Hash.mix(h ^ 0x51ED)) < 0.5 ? 4 : 5;
+    }
+
+    private static boolean isAtrium(long seed, int cx, int cz) {
+        return Hash.unit(seed, Math.floorDiv(cx, ATRIUM_ZONE_CELLS), Math.floorDiv(cz, ATRIUM_ZONE_CELLS), 75) < ATRIUM_SHARE;
+    }
+
+    private static boolean sameAtrium(int cx, int cz, int ncx, int ncz) {
+        return Math.floorDiv(cx, ATRIUM_ZONE_CELLS) == Math.floorDiv(ncx, ATRIUM_ZONE_CELLS)
+                && Math.floorDiv(cz, ATRIUM_ZONE_CELLS) == Math.floorDiv(ncz, ATRIUM_ZONE_CELLS);
+    }
+
+    private static boolean isHall(long seed, int cx, int cz) {
+        return !isAtrium(seed, cx, cz)
+                && Hash.unit(seed, Math.floorDiv(cx, HALL_ZONE_CELLS), Math.floorDiv(cz, HALL_ZONE_CELLS), 71) < HALL_SHARE;
+    }
+
+    // ---- Rooms are packed into one int: bits 0-3 the kind, bit 4 the axis, bit 5 "deep" ------
+
+    private static int room(long seed, int cx, int cz) {
+        if (isAtrium(seed, cx, cz)) {
+            return ROOM_ATRIUM;
+        }
+        if (isHall(seed, cx, cz)) {
+            return ROOM_HALL;
+        }
+        // Runs of channel cells: a stretch of RUN cells in a row (along X) or a column (along Z).
+        boolean xRun = Hash.unit(seed, Math.floorDiv(cx, RUN), cz, 84) < RUN_SHARE;
+        boolean zRun = Hash.unit(seed, cx, Math.floorDiv(cz, RUN), 85) < RUN_SHARE;
+        if (xRun || zRun) {
+            int axis = xRun && zRun ? (Hash.unit(seed, cx, cz, 88) < 0.5 ? AXIS_X : AXIS_Z) : xRun ? AXIS_X : AXIS_Z;
+            // The whole run shares one look: wet or dry, deep or shallow.
+            int a = axis == AXIS_X ? Math.floorDiv(cx, RUN) : cx;
+            int b = axis == AXIS_X ? cz : Math.floorDiv(cz, RUN);
+            int salt = axis == AXIS_X ? 0 : 10;
+            boolean wet = Hash.unit(seed, a, b, 86 + salt) < 0.75;
+            boolean deep = Hash.unit(seed, a, b, 87 + salt) < 0.6;
+            return pack(wet ? ROOM_CHANNEL : ROOM_CORRIDOR, axis, deep);
+        }
+        double r = Hash.unit(seed, cx, cz, 70);
+        if (r < 0.20) {
+            return pack(ROOM_CHANNEL, Hash.unit(seed, cx, cz, 88) < 0.5 ? AXIS_X : AXIS_Z, Hash.unit(seed, cx, cz, 89) < 0.6);
+        }
+        return r < 0.48 ? ROOM_POOL : r < 0.74 ? ROOM_SHALLOW : ROOM_DRY;
+    }
+
+    private static int pack(int kind, int axis, boolean deep) {
+        return kind | (axis << 4) | (deep ? 1 << 5 : 0);
+    }
+
+    private static int kindOf(int room) {
+        return room & 15;
+    }
+
+    private static int axisOf(int room) {
+        return (room >> 4) & 1;
+    }
+
+    private static boolean isDeep(int room) {
+        return (room & (1 << 5)) != 0;
+    }
+
+    private static boolean isChannelLike(int room) {
+        return kindOf(room) == ROOM_CHANNEL || kindOf(room) == ROOM_CORRIDOR;
+    }
+
+    /** Pool rooms: width of the dry deck (2 or 3). */
+    private static int poolDeck(long details) {
+        return 2 + Hash.range(details, 2);
+    }
+
+    /** Pool rooms: the depth (distance from the wall) where the deep water starts. */
+    private static int poolStart(long details) {
+        boolean step = Hash.unit(Hash.mix(details)) < 0.5;
+        return poolDeck(details) + (step ? 2 : 1);
+    }
+
+    /** Pool rooms: the lane lines (and the lamps at their ends) run along X or along Z. */
+    private static int laneAxis(long seed, int cx, int cz) {
+        return Hash.unit(seed, cx, cz, 94) < 0.5 ? AXIS_X : AXIS_Z;
+    }
+
+    // ==========================================================================================
+    // Blocks
+    // ==========================================================================================
+
+    @Override
+    public void fillColumn(long seed, int x, int z, Column out) {
+        BlockState tile = ModBlocks.POOL_TILE.get().defaultBlockState();
+        BlockState dark = ModBlocks.POOL_TILE_DARK.get().defaultBlockState();
+        BlockState underWater = ModBlocks.POOL_FLOOR.get().defaultBlockState();
+        BlockState water = Blocks.WATER.defaultBlockState();
+        int floor = floorY();
+        int dx = exits().dx(seed, x, z);
+        int dz = exits().dz(seed, x, z);
+        int ring = Math.max(Math.abs(dx), Math.abs(dz));
+        boolean inDrainRoom = ring <= CLEARING_RADIUS;
+        int kind = inDrainRoom ? drainRoomColumn(dx, dz, ring) : gridColumn(seed, x, z);
+        boolean tall = isTall(seed, x, z);
+        int ceiling = tall ? ATRIUM_CEILING_Y : ceilingY();
+
+        // Ceiling: plain tile, or daylight skylights in an atrium (never over the dim drain room).
+        boolean skylight = tall && !inDrainRoom && kind != WALL && kind != DOORWAY && isSkylight(seed, x, z);
+        out.set(ceiling, skylight ? ModBlocks.POOL_SKYLIGHT.get().defaultBlockState() : tile);
+        if (inDrainRoom && !tall && hasTallNeighbour(seed, x, z)) {
+            // A drain room cut into an atrium: wall off the step between the two ceiling heights.
+            for (int y = ceiling + 1; y <= ATRIUM_CEILING_Y; y++) {
+                out.set(y, tile);
+            }
+        }
+
+        if (kind == SHAFT) {
+            out.set(DRAIN_FLOOR_Y, dark);
+            for (int y = DRAIN_FLOOR_Y + 1; y <= SURFACE_Y; y++) {
+                out.set(y, water);
+            }
+            return;
+        }
+        if (kind == DEEP) {
+            boolean darkFloor = inDrainRoom ? ring <= DARK_RING : isLaneLine(seed, x, z);
+            out.set(DEEP_FLOOR_Y, darkFloor ? dark : underWater);
+            for (int y = DEEP_FLOOR_Y + 1; y <= SURFACE_Y; y++) {
+                out.set(y, water);
+            }
+            if (inDrainRoom && ring == SHAFT_RADIUS + 1) {
+                // The shaft's dark lining, from its bottom up to the pool floor.
+                for (int y = DRAIN_FLOOR_Y; y < DEEP_FLOOR_Y; y++) {
+                    out.set(y, dark);
+                }
+            }
+            tube(seed, x, z, kind, inDrainRoom, tall, ceiling, out);
+            return;
+        }
+
+        // Every other column stands on solid tile from the deep-water floor up to the floor layer,
+        // so the water in a neighbouring pool or channel always meets a wall, never air.
+        for (int y = DEEP_FLOOR_Y; y < floor; y++) {
+            out.set(y, tile);
+        }
+        out.set(floor, kind == SHALLOW ? underWater : tile);
+        if (kind == SHALLOW) {
+            out.set(SURFACE_Y, water);
+        } else {
+            // Dark tile bands on the drain room's deck lead from each doorway to the pool.
+            boolean band = inDrainRoom && (dx == 0 || dz == 0);
+            out.set(SURFACE_Y, band ? dark : tile); // walkway, doorway threshold or base of a wall
+        }
+        if (kind == DOORWAY) {
+            int top = SURFACE_Y + doorwayHeight(seed, x, z, inDrainRoom); // last air block
+            for (int y = top + 1; y < ceiling; y++) {
+                out.set(y, tile);
+            }
+        } else if (kind == WALL) {
+            for (int y = SURFACE_Y + 1; y < ceiling; y++) {
+                out.set(y, tile);
+            }
+        }
+
+        Direction lamp = poolLampFacing(seed, x, z, kind, inDrainRoom, dx, dz, ring);
+        if (lamp != null) {
+            out.set(LAMP_Y, ModBlocks.POOL_LAMP.get().defaultBlockState().setValue(PoolLampBlock.FACING, lamp));
+        }
+        tube(seed, x, z, kind, inDrainRoom, tall, ceiling, out);
+    }
+
+    /** A tube hanging just under the ceiling, if this column is part of a tube strip. */
+    private static void tube(long seed, int x, int z, int kind, boolean inDrainRoom, boolean tall, int ceiling, Column out) {
+        if (inDrainRoom || tall || kind == WALL || kind == DOORWAY) {
+            return; // the drain room stays dim; atriums have skylights instead
+        }
+        Direction.Axis axis = tubeAxis(seed, x, z);
+        if (axis != null) {
+            out.set(ceiling - 1, ModBlocks.CEILING_TUBE.get().defaultBlockState().setValue(CeilingTubeBlock.AXIS, axis));
+        }
+    }
+
+    /**
+     * Sparse fluorescent tubes: about 30% of rooms are dark, most of the others get one 4-5 block
+     * strip down the middle, some two. Returns the direction of the strip here, or null.
+     */
+    @Nullable
+    private static Direction.Axis tubeAxis(long seed, int x, int z) {
+        int cx = Math.floorDiv(x, CELL);
+        int cz = Math.floorDiv(z, CELL);
+        int mx = Math.floorMod(x, CELL);
+        int mz = Math.floorMod(z, CELL);
+        int room = room(seed, cx, cz);
+        if (kindOf(room) == ROOM_ATRIUM || Hash.unit(seed, cx, cz, 90) < DARK_ROOM_SHARE) {
+            return null;
+        }
+        boolean two = kindOf(room) != ROOM_HALL && Hash.unit(seed, cx, cz, 91) < TWO_TUBES_SHARE;
+        if (isChannelLike(room)) {
+            boolean alongX = axisOf(room) == AXIS_X;
+            int along = alongX ? mx : mz;
+            int across = alongX ? mz : mx;
+            boolean on = across == MIDDLE && (two
+                    ? (along >= 2 && along <= 5) || (along >= 9 && along <= 12)
+                    : along >= 5 && along <= 9);
+            return on ? (alongX ? Direction.Axis.X : Direction.Axis.Z) : null;
+        }
+        boolean row = kindOf(room) == ROOM_HALL ? mz == 3 : two ? (mz == 4 || mz == 10) : mz == MIDDLE;
+        return row && mx >= 5 && mx <= 9 ? Direction.Axis.X : null;
+    }
+
+    /**
+     * Underwater lamps, set into the wall of deep water facing into it. Returns the lens direction,
+     * or null for no lamp here.
+     */
+    @Nullable
+    private Direction poolLampFacing(long seed, int x, int z, int kind, boolean inDrainRoom, int dx, int dz, int ring) {
+        if (kind != DRY && kind != SHALLOW) {
+            return null;
+        }
+        if (inDrainRoom) {
+            // The drain room: one lamp in the middle of each side of the pool, facing the shaft.
+            if (ring != DRAIN_LEDGE_RING || (dx != 0 && dz != 0)) {
+                return null;
+            }
+            if (dx == 0) {
+                return dz < 0 ? Direction.SOUTH : Direction.NORTH;
+            }
+            return dx < 0 ? Direction.EAST : Direction.WEST;
+        }
+        Direction facing = gridLampFacing(seed, x, z);
+        if (facing == null) {
+            return null;
+        }
+        // Only where the water in front really is deep (a drain room may have cut the pool away).
+        return columnKind(seed, x + facing.getStepX(), z + facing.getStepZ()) == DEEP ? facing : null;
+    }
+
+    @Nullable
+    private static Direction gridLampFacing(long seed, int x, int z) {
+        int cx = Math.floorDiv(x, CELL);
+        int cz = Math.floorDiv(z, CELL);
+        int mx = Math.floorMod(x, CELL);
+        int mz = Math.floorMod(z, CELL);
+        int room = room(seed, cx, cz);
+        if (kindOf(room) == ROOM_POOL) {
+            // One lamp at each end of the lane lines, in the last block before the deep water.
+            int edge = poolStart(Hash.of(seed, cx, cz, 73)) - 1;
+            if (laneAxis(seed, cx, cz) == AXIS_X && mz == MIDDLE) {
+                return mx == edge ? Direction.EAST : mx == CELL - edge ? Direction.WEST : null;
+            }
+            if (laneAxis(seed, cx, cz) == AXIS_Z && mx == MIDDLE) {
+                return mz == edge ? Direction.SOUTH : mz == CELL - edge ? Direction.NORTH : null;
+            }
+            return null;
+        }
+        if (kindOf(room) == ROOM_CHANNEL && isDeep(room)) {
+            // One lamp per channel cell, in the middle, on one walkway or the other.
+            boolean alongX = axisOf(room) == AXIS_X;
+            int along = alongX ? mx : mz;
+            int across = alongX ? mz : mx;
+            if (along != MIDDLE) {
+                return null;
+            }
+            boolean lowSide = Hash.unit(seed, cx, cz, 93) < 0.5;
+            if (lowSide && across == WATER_FROM - 1) {
+                return alongX ? Direction.SOUTH : Direction.EAST;
+            }
+            if (!lowSide && across == WATER_TO + 1) {
+                return alongX ? Direction.NORTH : Direction.WEST;
+            }
+        }
+        return null;
+    }
+
+    /** Dark lane lines on the floor of pool rooms and atrium pools. */
+    private static boolean isLaneLine(long seed, int x, int z) {
+        int cx = Math.floorDiv(x, CELL);
+        int cz = Math.floorDiv(z, CELL);
+        if (isAtrium(seed, cx, cz)) {
+            // Three lanes running north-south, stopping short of the pool's ends.
+            int ax = Math.floorMod(x, ATRIUM_SIZE);
+            int az = Math.floorMod(z, ATRIUM_SIZE);
+            return (ax == 11 || ax == 14 || ax == 17) && az >= 7 && az <= 21;
+        }
+        int room = room(seed, cx, cz);
+        if (kindOf(room) != ROOM_POOL) {
+            return false;
+        }
+        int mx = Math.floorMod(x, CELL);
+        int mz = Math.floorMod(z, CELL);
+        boolean alongX = laneAxis(seed, cx, cz) == AXIS_X;
+        int along = alongX ? mx : mz;
+        int across = alongX ? mz : mx;
+        int start = poolStart(Hash.of(seed, cx, cz, 73));
+        return across == MIDDLE && Math.min(along, CELL - along) > start;
+    }
+
+    /** Atrium columns, and the walls around them, reach up to the atrium ceiling. */
+    private static boolean isTall(long seed, int x, int z) {
+        int cx = Math.floorDiv(x, CELL);
+        int cz = Math.floorDiv(z, CELL);
+        int westCx = Math.floorDiv(x - 1, CELL);
+        int northCz = Math.floorDiv(z - 1, CELL);
+        return isAtrium(seed, cx, cz) || isAtrium(seed, westCx, cz) || isAtrium(seed, cx, northCz) || isAtrium(seed, westCx, northCz);
+    }
+
+    private static boolean hasTallNeighbour(long seed, int x, int z) {
+        return isTall(seed, x + 1, z) || isTall(seed, x - 1, z) || isTall(seed, x, z + 1) || isTall(seed, x, z - 1);
+    }
+
+    /** Atrium skylights: nine 5x5 panels in a 3x3 grid (atrium-local 3-7, 12-16 and 21-25). */
+    private static boolean isSkylight(long seed, int x, int z) {
+        if (!isAtrium(seed, Math.floorDiv(x, CELL), Math.floorDiv(z, CELL))) {
+            return false; // the atrium's surrounding walls
+        }
+        int px = Math.floorMod(x, ATRIUM_SIZE) % 9;
+        int pz = Math.floorMod(z, ATRIUM_SIZE) % 9;
+        return px >= 3 && px <= 7 && pz >= 3 && pz <= 7;
+    }
+}

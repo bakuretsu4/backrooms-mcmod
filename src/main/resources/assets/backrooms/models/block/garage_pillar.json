@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "backrooms:block/concrete_wall",
+    "side": "backrooms:block/garage_pillar"
+  }
+}

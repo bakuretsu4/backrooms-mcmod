@@ -1,0 +1,37 @@
+{
+    "blend": { "func": "add", "srcrgb": "one", "dstrgb": "zero" },
+    "vertex": "sobel",
+    "fragment": "backrooms:camcorder",
+    "attributes": [ "Position" ],
+    "samplers": [
+        { "name": "DiffuseSampler" },
+        { "name": "DepthSampler" },
+        { "name": "Bloom1Sampler" },
+        { "name": "Bloom2Sampler" },
+        { "name": "Bloom3Sampler" }
+    ],
+    "uniforms": [
+        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "InSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+        { "name": "OutSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+        { "name": "Seconds", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Danger", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Battery", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "NightShot", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Flashlight", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "FlashX", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "FlashY", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Signal", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Transition", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Wake", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Alarm", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Flash", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "BlurX", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "BlurY", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Grain", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Dream", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "PoolWater", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Near", "type": "float", "count": 1, "values": [ 0.05 ] },
+        { "name": "Far", "type": "float", "count": 1, "values": [ 256.0 ] }
+    ]
+}

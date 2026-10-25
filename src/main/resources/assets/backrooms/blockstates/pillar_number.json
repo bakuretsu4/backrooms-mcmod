@@ -1,0 +1,124 @@
+{
+  "variants": {
+    "facing=north,number=0": {
+      "model": "backrooms:block/pillar_number_1"
+    },
+    "facing=east,number=0": {
+      "model": "backrooms:block/pillar_number_1",
+      "y": 90
+    },
+    "facing=south,number=0": {
+      "model": "backrooms:block/pillar_number_1",
+      "y": 180
+    },
+    "facing=west,number=0": {
+      "model": "backrooms:block/pillar_number_1",
+      "y": 270
+    },
+    "facing=north,number=1": {
+      "model": "backrooms:block/pillar_number_2"
+    },
+    "facing=east,number=1": {
+      "model": "backrooms:block/pillar_number_2",
+      "y": 90
+    },
+    "facing=south,number=1": {
+      "model": "backrooms:block/pillar_number_2",
+      "y": 180
+    },
+    "facing=west,number=1": {
+      "model": "backrooms:block/pillar_number_2",
+      "y": 270
+    },
+    "facing=north,number=2": {
+      "model": "backrooms:block/pillar_number_3"
+    },
+    "facing=east,number=2": {
+      "model": "backrooms:block/pillar_number_3",
+      "y": 90
+    },
+    "facing=south,number=2": {
+      "model": "backrooms:block/pillar_number_3",
+      "y": 180
+    },
+    "facing=west,number=2": {
+      "model": "backrooms:block/pillar_number_3",
+      "y": 270
+    },
+    "facing=north,number=3": {
+      "model": "backrooms:block/pillar_number_5"
+    },
+    "facing=east,number=3": {
+      "model": "backrooms:block/pillar_number_5",
+      "y": 90
+    },
+    "facing=south,number=3": {
+      "model": "backrooms:block/pillar_number_5",
+      "y": 180
+    },
+    "facing=west,number=3": {
+      "model": "backrooms:block/pillar_number_5",
+      "y": 270
+    },
+    "facing=north,number=4": {
+      "model": "backrooms:block/pillar_number_6"
+    },
+    "facing=east,number=4": {
+      "model": "backrooms:block/pillar_number_6",
+      "y": 90
+    },
+    "facing=south,number=4": {
+      "model": "backrooms:block/pillar_number_6",
+      "y": 180
+    },
+    "facing=west,number=4": {
+      "model": "backrooms:block/pillar_number_6",
+      "y": 270
+    },
+    "facing=north,number=5": {
+      "model": "backrooms:block/pillar_number_9"
+    },
+    "facing=east,number=5": {
+      "model": "backrooms:block/pillar_number_9",
+      "y": 90
+    },
+    "facing=south,number=5": {
+      "model": "backrooms:block/pillar_number_9",
+      "y": 180
+    },
+    "facing=west,number=5": {
+      "model": "backrooms:block/pillar_number_9",
+      "y": 270
+    },
+    "facing=north,number=6": {
+      "model": "backrooms:block/pillar_number_12"
+    },
+    "facing=east,number=6": {
+      "model": "backrooms:block/pillar_number_12",
+      "y": 90
+    },
+    "facing=south,number=6": {
+      "model": "backrooms:block/pillar_number_12",
+      "y": 180
+    },
+    "facing=west,number=6": {
+      "model": "backrooms:block/pillar_number_12",
+      "y": 270
+    },
+    "facing=north,number=7": {
+      "model": "backrooms:block/pillar_number_99"
+    },
+    "facing=east,number=7": {
+      "model": "backrooms:block/pillar_number_99",
+      "y": 90
+    },
+    "facing=south,number=7": {
+      "model": "backrooms:block/pillar_number_99",
+      "y": 180
+    },
+    "facing=west,number=7": {
+      "model": "backrooms:block/pillar_number_99",
+      "y": 270
+    }
+  }
+}

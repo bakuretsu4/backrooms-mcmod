@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/lobby_carpet",
+    "up": "backrooms:block/lobby_carpet_arrow",
+    "down": "backrooms:block/lobby_carpet",
+    "north": "backrooms:block/lobby_carpet",
+    "south": "backrooms:block/lobby_carpet",
+    "east": "backrooms:block/lobby_carpet",
+    "west": "backrooms:block/lobby_carpet"
+  }
+}

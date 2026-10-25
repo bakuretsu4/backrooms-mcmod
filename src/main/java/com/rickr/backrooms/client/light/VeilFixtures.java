@@ -1,0 +1,208 @@
+package com.rickr.backrooms.client.light;
+
+import com.rickr.backrooms.world.BackroomsLevel;
+import foundry.veil.api.client.render.VeilRenderSystem;
+import foundry.veil.api.client.render.VeilRenderer;
+import foundry.veil.api.client.render.light.data.PointLightData;
+import foundry.veil.api.client.render.light.data.SpotLightData;
+import foundry.veil.api.client.render.light.renderer.LightRenderHandle;
+import foundry.veil.api.client.render.light.renderer.LightRenderer;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import java.util.List;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * The Veil lights for the fixtures picked by {@link BackroomsLights}: one occluded point light
+ * per fixture, plus two rotating red cones on each alarm beacon while the alarm runs.
+ *
+ * <p>Handles are kept per fixture key and only re-created when a fixture appears, moves or
+ * Veil threw its renderer away (resource reload), because changing the set of lights makes Veil
+ * re-upload all of them. Brightness is only pushed when it changed, for the same reason.
+ */
+final class VeilFixtures {
+    /** Beacon cones: 20 degrees per tick = 400 degrees per second. */
+    private static final double BEACON_RAD_PER_MS = Math.toRadians(20.0) / 50.0;
+    private static final float BEACON_HALF_ANGLE = 0.45f;
+    private static final float BEACON_SOFT_EDGE = 0.3f;
+    private static final float BEACON_DISTANCE = 15.0f;
+    private static final float BEACON_BRIGHTNESS = 1.1f;
+
+    private static final class Entry {
+        FixtureLight light;
+        LightRenderHandle<PointLightData> point;
+        @Nullable
+        LightRenderHandle<SpotLightData> coneA;
+        @Nullable
+        LightRenderHandle<SpotLightData> coneB;
+        float lastBrightness = -1.0f;
+        float lastConeBrightness = -1.0f;
+        boolean seen;
+
+        Entry(FixtureLight light, LightRenderHandle<PointLightData> point) {
+            this.light = light;
+            this.point = point;
+        }
+
+        boolean valid() {
+            return point.isValid() && (coneA == null || coneA.isValid()) && (coneB == null || coneB.isValid());
+        }
+
+        void freeCones() {
+            if (coneA != null) {
+                coneA.free();
+                coneA = null;
+            }
+            if (coneB != null) {
+                coneB.free();
+                coneB = null;
+            }
+            lastConeBrightness = -1.0f;
+        }
+
+        void free() {
+            point.free();
+            freeCones();
+        }
+    }
+
+    private static final Long2ObjectOpenHashMap<Entry> ACTIVE = new Long2ObjectOpenHashMap<>();
+    /** Battery dimming applied to every fixture light (a dead camcorder sees almost nothing). */
+    private static float scale = 1.0f;
+
+    /**
+     * Makes the Veil lights match {@code selected}: adds the new ones, frees the ones no longer
+     * picked, and updates brightness. {@code floor} lets a fixture shine differently per level
+     * (see {@link FixtureType#brightnessOn}).
+     */
+    static void sync(List<FixtureLight> selected, float batteryScale, @Nullable BackroomsLevel floor) {
+        VeilRenderer renderer = VeilRenderSystem.renderer();
+        if (renderer == null) {
+            return;
+        }
+        LightRenderer lights = renderer.getLightRenderer();
+        scale = batteryScale;
+        for (Entry entry : ACTIVE.values()) {
+            entry.seen = false;
+        }
+        for (FixtureLight light : selected) {
+            Entry entry = ACTIVE.get(light.key);
+            if (entry != null && (!entry.valid() || !entry.light.samePlace(light))) {
+                // Veil dropped it (resource reload) or the strip changed shape: start over.
+                entry.free();
+                ACTIVE.remove(light.key);
+                entry = null;
+            }
+            if (entry == null) {
+                entry = new Entry(light, lights.addLight(newPoint(light)));
+                ACTIVE.put(light.key, entry);
+            }
+            entry.light = light;
+            entry.seen = true;
+            if (light.type != FixtureType.RED_ALARM_LAMP) {
+                setBrightness(entry, light.type.brightnessOn(floor) * light.level * scale);
+            }
+        }
+        var it = ACTIVE.values().iterator();
+        while (it.hasNext()) {
+            Entry entry = it.next();
+            if (!entry.seen) {
+                entry.free();
+                it.remove();
+            }
+        }
+    }
+
+    /** Per-frame work: spin the alarm beacons smoothly (per tick would look steppy). */
+    static void frame(long nowMs) {
+        float alarm = FixturePower.alarm();
+        LightRenderer lights = null;
+        for (Entry entry : ACTIVE.values()) {
+            FixtureLight light = entry.light;
+            if (light.type != FixtureType.RED_ALARM_LAMP) {
+                continue;
+            }
+            // Steady dim glow normally; during the alarm the glow pulses with the sweep.
+            double phase = ((FixturePower.mix(light.key) >>> 11) & 0xFFFF) / 65535.0 * Math.PI * 2.0;
+            double angle = (nowMs % 3_600_000L) * BEACON_RAD_PER_MS + phase;
+            float pulse = 0.5f + 0.5f * (float) Math.sin(angle * 2.0);
+            setBrightness(entry, (light.type.brightness + 0.45f * alarm * pulse) * light.level * scale);
+
+            float coneBrightness = BEACON_BRIGHTNESS * alarm * light.level * scale;
+            if (coneBrightness <= 0.001f) {
+                entry.freeCones();
+                continue;
+            }
+            if (entry.coneA == null || entry.coneB == null) {
+                if (lights == null) {
+                    VeilRenderer renderer = VeilRenderSystem.renderer();
+                    if (renderer == null) {
+                        return;
+                    }
+                    lights = renderer.getLightRenderer();
+                }
+                entry.freeCones();
+                entry.coneA = lights.addLight(newCone(light));
+                entry.coneB = lights.addLight(newCone(light));
+            }
+            // Two cones back to back, sweeping round the vertical axis like a police beacon.
+            float dx = (float) Math.cos(angle);
+            float dz = (float) Math.sin(angle);
+            aim(entry.coneA.getLightData(), dx, dz);
+            aim(entry.coneB.getLightData(), -dx, -dz);
+            if (coneBrightness != entry.lastConeBrightness) {
+                entry.coneA.getLightData().setBrightness(coneBrightness);
+                entry.coneB.getLightData().setBrightness(coneBrightness);
+                entry.lastConeBrightness = coneBrightness;
+            }
+        }
+    }
+
+    /** Frees every fixture light (dimension change, logout, leaving the Backrooms). */
+    static void freeAll() {
+        for (Entry entry : ACTIVE.values()) {
+            entry.free();
+        }
+        ACTIVE.clear();
+    }
+
+    private static void setBrightness(Entry entry, float brightness) {
+        if (brightness != entry.lastBrightness) {
+            entry.point.getLightData().setBrightness(brightness);
+            entry.lastBrightness = brightness;
+        }
+    }
+
+    private static PointLightData newPoint(FixtureLight light) {
+        FixtureType type = light.type;
+        return new PointLightData()
+                .setPosition(light.x, light.y, light.z)
+                .setRadius(type.radius)
+                .setColor(type.red, type.green, type.blue)
+                .setBrightness(0.0f)
+                // Shadows: without this a lamp lights the far side of the wall into the next room.
+                .setOcclusionEnabled(true);
+    }
+
+    private static SpotLightData newCone(FixtureLight light) {
+        SpotLightData cone = new SpotLightData()
+                .setSize(BEACON_HALF_ANGLE)
+                .setAngle(BEACON_SOFT_EDGE)
+                .setDistance(BEACON_DISTANCE)
+                .setColor(1.0f, 0.04f, 0.02f)
+                .setBrightness(0.0f)
+                .setOcclusionEnabled(true)
+                .setInscatteringStrength(0.2f); // faint red beams in the dust
+        cone.getPositionMutable().set(light.x, light.y, light.z);
+        return cone;
+    }
+
+    /** Points a cone along (dx, -0.2, dz). Veil cones shine along their local +Z axis. */
+    private static void aim(SpotLightData cone, float dx, float dz) {
+        float dy = -0.2f;
+        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        // lookAlong makes -Z face the given direction, so pass the reverse to get +Z facing it.
+        cone.getOrientationMutable().identity().lookAlong(-dx / len, -dy / len, -dz / len, 0.0f, 1.0f, 0.0f);
+    }
+
+    private VeilFixtures() {}
+}
