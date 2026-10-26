@@ -6,6 +6,7 @@ import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.client.camera.HandheldCamera;
 import com.rickr.backrooms.client.intro.IntroCutscene;
 import com.rickr.backrooms.client.light.BackroomsLights;
+import com.rickr.backrooms.client.water.UnderwaterView;
 import com.rickr.backrooms.entity.Bacteria;
 import com.rickr.backrooms.network.LevelEventPayload;
 import com.rickr.backrooms.network.TransitionPayload;
@@ -144,7 +145,8 @@ public final class CamcorderEffect {
         chain.setUniform("Grain", BASE_GRAIN);
         // Poolrooms hallucination (0 = picture exactly unchanged).
         chain.setUniform("Dream", HallucinationClientEvents.shaderDream());
-        chain.setUniform("PoolWater", BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.POOLROOMS ? 1.0f : 0.0f);
+        // Eyes under the pool water (Poolrooms / Level 37): gentle sway (0 = picture exactly unchanged).
+        chain.setUniform("Underwater", UnderwaterView.shaderUnderwater());
         // Level 9: electronics going haywire near a Watcher, and the fog draining colour with distance.
         chain.setUniform("Interference", WatcherInterference.interference());
         chain.setUniform("FogDrain", BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_9 ? 1.0f : 0.0f);

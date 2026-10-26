@@ -1,0 +1,94 @@
+{
+  "variants": {
+    "facing=north,part=lower,right=false": {
+      "model": "backrooms:block/elevator_door_lower_left"
+    },
+    "facing=east,part=lower,right=false": {
+      "model": "backrooms:block/elevator_door_lower_left",
+      "y": 90
+    },
+    "facing=south,part=lower,right=false": {
+      "model": "backrooms:block/elevator_door_lower_left",
+      "y": 180
+    },
+    "facing=west,part=lower,right=false": {
+      "model": "backrooms:block/elevator_door_lower_left",
+      "y": 270
+    },
+    "facing=north,part=lower,right=true": {
+      "model": "backrooms:block/elevator_door_lower_right"
+    },
+    "facing=east,part=lower,right=true": {
+      "model": "backrooms:block/elevator_door_lower_right",
+      "y": 90
+    },
+    "facing=south,part=lower,right=true": {
+      "model": "backrooms:block/elevator_door_lower_right",
+      "y": 180
+    },
+    "facing=west,part=lower,right=true": {
+      "model": "backrooms:block/elevator_door_lower_right",
+      "y": 270
+    },
+    "facing=north,part=upper,right=false": {
+      "model": "backrooms:block/elevator_door_upper_left"
+    },
+    "facing=east,part=upper,right=false": {
+      "model": "backrooms:block/elevator_door_upper_left",
+      "y": 90
+    },
+    "facing=south,part=upper,right=false": {
+      "model": "backrooms:block/elevator_door_upper_left",
+      "y": 180
+    },
+    "facing=west,part=upper,right=false": {
+      "model": "backrooms:block/elevator_door_upper_left",
+      "y": 270
+    },
+    "facing=north,part=upper,right=true": {
+      "model": "backrooms:block/elevator_door_upper_right"
+    },
+    "facing=east,part=upper,right=true": {
+      "model": "backrooms:block/elevator_door_upper_right",
+      "y": 90
+    },
+    "facing=south,part=upper,right=true": {
+      "model": "backrooms:block/elevator_door_upper_right",
+      "y": 180
+    },
+    "facing=west,part=upper,right=true": {
+      "model": "backrooms:block/elevator_door_upper_right",
+      "y": 270
+    },
+    "facing=north,part=header,right=false": {
+      "model": "backrooms:block/elevator_door_header_left"
+    },
+    "facing=east,part=header,right=false": {
+      "model": "backrooms:block/elevator_door_header_left",
+      "y": 90
+    },
+    "facing=south,part=header,right=false": {
+      "model": "backrooms:block/elevator_door_header_left",
+      "y": 180
+    },
+    "facing=west,part=header,right=false": {
+      "model": "backrooms:block/elevator_door_header_left",
+      "y": 270
+    },
+    "facing=north,part=header,right=true": {
+      "model": "backrooms:block/elevator_door_header_right"
+    },
+    "facing=east,part=header,right=true": {
+      "model": "backrooms:block/elevator_door_header_right",
+      "y": 90
+    },
+    "facing=south,part=header,right=true": {
+      "model": "backrooms:block/elevator_door_header_right",
+      "y": 180
+    },
+    "facing=west,part=header,right=true": {
+      "model": "backrooms:block/elevator_door_header_right",
+      "y": 270
+    }
+  }
+}

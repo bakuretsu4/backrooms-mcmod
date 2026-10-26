@@ -1,0 +1,366 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/desk_top",
+    "top": "backrooms:block/desk_top",
+    "side": "backrooms:block/desk_side",
+    "paper": "backrooms:block/desk_paper"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        11.5,
+        0
+      ],
+      "to": [
+        16,
+        13,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            3,
+            16,
+            4.5
+          ],
+          "texture": "#side"
+        },
+        "south": {
+          "uv": [
+            0,
+            3,
+            16,
+            4.5
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            0,
+            3,
+            16,
+            4.5
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            0,
+            3,
+            16,
+            4.5
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#top"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#side"
+        }
+      }
+    },
+    {
+      "from": [
+        0.5,
+        0,
+        1
+      ],
+      "to": [
+        1.5,
+        11.5,
+        15
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            16
+          ],
+          "texture": "#side"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            16
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            1,
+            4.5,
+            15,
+            16
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            1,
+            4.5,
+            15,
+            16
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            1,
+            1.5,
+            15
+          ],
+          "texture": "#side"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            1,
+            1.5,
+            15
+          ],
+          "texture": "#side"
+        }
+      }
+    },
+    {
+      "from": [
+        14.5,
+        0,
+        1
+      ],
+      "to": [
+        15.5,
+        11.5,
+        15
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            16
+          ],
+          "texture": "#side"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            16
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            1,
+            4.5,
+            15,
+            16
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            1,
+            4.5,
+            15,
+            16
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            1,
+            15.5,
+            15
+          ],
+          "texture": "#side"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            1,
+            15.5,
+            15
+          ],
+          "texture": "#side"
+        }
+      }
+    },
+    {
+      "from": [
+        1.5,
+        3,
+        13.5
+      ],
+      "to": [
+        14.5,
+        11.5,
+        14.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.5,
+            4.5,
+            14.5,
+            13
+          ],
+          "texture": "#side"
+        },
+        "south": {
+          "uv": [
+            1.5,
+            4.5,
+            14.5,
+            13
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            1.5,
+            4.5,
+            2.5,
+            13
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            13.5,
+            4.5,
+            14.5,
+            13
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            1.5,
+            13.5,
+            14.5,
+            14.5
+          ],
+          "texture": "#side"
+        },
+        "down": {
+          "uv": [
+            1.5,
+            1.5,
+            14.5,
+            2.5
+          ],
+          "texture": "#side"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        13,
+        3
+      ],
+      "to": [
+        7.5,
+        13.1,
+        9.5
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            2,
+            3,
+            7.5,
+            9.5
+          ],
+          "texture": "#paper"
+        }
+      }
+    },
+    {
+      "from": [
+        9,
+        13,
+        7
+      ],
+      "to": [
+        13,
+        13.2,
+        12
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3,
+            2.8,
+            7,
+            3
+          ],
+          "texture": "#paper"
+        },
+        "south": {
+          "uv": [
+            9,
+            2.8,
+            13,
+            3
+          ],
+          "texture": "#paper"
+        },
+        "east": {
+          "uv": [
+            4,
+            2.8,
+            9,
+            3
+          ],
+          "texture": "#paper"
+        },
+        "west": {
+          "uv": [
+            7,
+            2.8,
+            12,
+            3
+          ],
+          "texture": "#paper"
+        },
+        "up": {
+          "uv": [
+            9,
+            7,
+            13,
+            12
+          ],
+          "texture": "#paper"
+        }
+      }
+    }
+  ]
+}

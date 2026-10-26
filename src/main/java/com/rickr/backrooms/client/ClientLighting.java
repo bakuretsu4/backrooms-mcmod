@@ -32,6 +32,9 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>Level 9 (the Suburbs) is a blue-black night with a soft orange bounce around the sodium
  * streetlamps (cold green-white near mercury ones); see {@link #applyLevel9Fill}.
+ *
+ * <p>Level 4 (the Abandoned Office) has its own cold fill, which also carries the lightning flash
+ * of its storm; see {@link Level4Atmosphere}.
  */
 public final class ClientLighting {
     private static final float FLOOR = 0.07f;
@@ -139,8 +142,15 @@ public final class ClientLighting {
                     : floor == BackroomsLevel.POOLROOMS ? 1.25f
                     // Level 9: tall lamps put little block light on the ground, so a gentler curve.
                     : floor == BackroomsLevel.LEVEL_9 ? 1.3f
+                    // Level 4: dim windows and panel islands; a softer curve keeps both readable.
+                    : floor == BackroomsLevel.LEVEL_4 ? 1.5f
+                    // Level 37: daylight bounced around white tile; soft and bright.
+                    : floor == BackroomsLevel.LEVEL_37 ? 1.1f
                     : 1.8f;
             applyFallback(colors, falloff);
+            if (floor == BackroomsLevel.LEVEL_4) {
+                Level4Atmosphere.adjustFallback(colors, blockLight);
+            }
         }
         applyCamcorder(colors);
     }
@@ -151,10 +161,18 @@ public final class ClientLighting {
             applyLevel9Fill(colors, blockLight);
             return;
         }
+        if (floor == BackroomsLevel.LEVEL_4) {
+            Level4Atmosphere.applyFill(colors, blockLight); // cold window glow + lightning flashes
+            return;
+        }
+        if (floor == BackroomsLevel.LEVEL_37) {
+            Level37Atmosphere.applyFill(colors, blockLight); // warm daylight bounce off white tile
+            return;
+        }
         float b = Mth.clamp(blockLight / 15.0f, 0.0f, 1.0f);
         // White tile bounces light around, so the Poolrooms get a stronger, softer fill: rooms with
-        // a tube read bright, and the water (which Veil's lights don't touch) still glows cyan near
-        // lamps. Level 2's narrow pale corridors bounce light the same way, a little less strongly.
+        // a tube read bright (and so does the pool water, which client/water draws from the lit
+        // room behind it). Level 2's narrow pale corridors bounce light the same way, a little less strongly.
         // Places far from any light stay dark (block light 0 = no fill).
         float maxFill = MAX_FILL;
         float falloff = FILL_FALLOFF;

@@ -1,7 +1,10 @@
 package com.rickr.backrooms.world.layout;
 
 import com.rickr.backrooms.block.CeilingTubeBlock;
+import com.rickr.backrooms.block.CurveOrientation;
+import com.rickr.backrooms.block.CurveShape;
 import com.rickr.backrooms.block.PoolLampBlock;
+import com.rickr.backrooms.block.SunlitVoidBlock;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
@@ -88,6 +91,12 @@ import org.jetbrains.annotations.Nullable;
  * safe room: a dry walkway runs around the inside of the cell, and in the middle stands a small
  * carpeted, tiled room (dark tile dado band) with one doorway onto that walkway. No water inside.
  * Elsewhere, backpacks and the odd supply crate lie on dry walkways (never in the water).
+ *
+ * <p><b>The sunlit archway.</b> About once per 308 x 308 blocks one ordinary room (never an atrium,
+ * a hall, a safe room or near a drain) is dry and dim, with a 5-deep block of wall across its north
+ * side. Through it runs a 4-wide round-arched passage tiled in Level 37's fine white mosaic, ending
+ * in a wall of dazzling warm daylight that spills out into the room. Walk into the light (the back
+ * half of the passage) and {@code Level37Rules} takes you to Level 37.
  */
 public final class PoolroomsLayout extends LevelLayout {
     // ---- Heights -----------------------------------------------------------------------------
@@ -157,6 +166,22 @@ public final class PoolroomsLayout extends LevelLayout {
     private static final int ROOM_CORRIDOR = 6;
     /** A safe room standing on a dry walkway that runs around the inside of the cell. */
     private static final int ROOM_SAFE = 7;
+    /**
+     * The secret way to Level 37: a dim, dry room whose north wall holds a round-arched passage
+     * lined with Level 37's fine white tile, warm daylight pouring out of it (see the class comment).
+     */
+    private static final int ROOM_SUNLIT = 8;
+
+    // ---- The sunlit archway --------------------------------------------------------------------
+    /** One archway per this many cells on a side (22 x 14 = 308 blocks) ... */
+    private static final int SUNLIT_REGION_CELLS = 22;
+    /** ... in a thick block of wall across the north side of its room, rows 1..5 of the cell. */
+    private static final int ARCH_DEPTH = 5;
+    /** The passage is 4 wide (cells 5..8), a half circle of radius 2 around this corner. */
+    private static final int ARCH_MIDDLE = 7;
+    private static final int ARCH_RADIUS = 2;
+    /** Straight sides from the walkway (y42) up to here, then the round top. */
+    private static final int ARCH_SPRING_Y = 45;
 
     // ---- Safe rooms --------------------------------------------------------------------------
     /** Safe rooms: at most one per this many cells on a side (9 x 14 = 126 blocks). */
@@ -210,6 +235,12 @@ public final class PoolroomsLayout extends LevelLayout {
     private static final int SHAFT = 5;
     /** A dry walkway with a backpack or supply crate standing on it. */
     private static final int CONTAINER = 6;
+    /** The sunlit archway's passage: a dry walkway under a round arch of fine white tile. */
+    private static final int ARCHWAY = 7;
+    /** The back of the archway: a wall of overexposed daylight (Level 37's sunlit void). */
+    private static final int SUNLIGHT = 8;
+    /** Wall beside the archway, faced with Level 37's fine tile: it frames the arch. */
+    private static final int LINING = 9;
 
     /** The exits, kept in a static field so the static floor-plan helpers can reach them. */
     private static final ExitLocator EXITS = new ExitLocator(384, 48, 5000);
@@ -226,7 +257,7 @@ public final class PoolroomsLayout extends LevelLayout {
     @Override
     public boolean isWalkable(long seed, int x, int z) {
         int kind = columnKind(seed, x, z);
-        return kind == DRY || kind == DOORWAY || kind == SHALLOW;
+        return kind == DRY || kind == DOORWAY || kind == SHALLOW || kind == ARCHWAY;
     }
 
     /** Only dry walkways: nobody should arrive in the water. */
@@ -338,6 +369,8 @@ public final class PoolroomsLayout extends LevelLayout {
                 }
                 return depth < poolStart(details) ? SHALLOW : DEEP; // the optional shallow step
             }
+            case ROOM_SUNLIT:
+                return sunlitColumn(mx, mz);
             case ROOM_SAFE:
                 if (depth <= 1) {
                     return DRY; // the walkway around the safe room
@@ -397,6 +430,111 @@ public final class PoolroomsLayout extends LevelLayout {
                         ModBlocks.POOL_TILE_DARK.get().defaultBlockState(), // a dark tile band below the dado line
                         tile,
                         null), out);
+    }
+
+    // ---- The sunlit archway (the secret way to Level 37) ----------------------------------------
+
+    /**
+     * True when cell (cx, cz) holds the sunlit archway of its 22 x 22-cell region. The region
+     * picks a cell away from its edges; if that one is an atrium, a pillared hall, a safe room or
+     * near a drain, the next of up to four cells beside it gets it instead (in the rare case none
+     * fits, the region has no archway).
+     */
+    private static boolean isSunlitCell(long seed, int cx, int cz) {
+        int rx = Math.floorDiv(cx, SUNLIT_REGION_CELLS);
+        int rz = Math.floorDiv(cz, SUNLIT_REGION_CELLS);
+        long h = Hash.of(seed, rx, rz, 5100);
+        int bx = rx * SUNLIT_REGION_CELLS + 2 + Hash.range(h, SUNLIT_REGION_CELLS - 4);
+        int bz = rz * SUNLIT_REGION_CELLS + 2 + Hash.range(Hash.mix(h), SUNLIT_REGION_CELLS - 4);
+        if (cx < bx || cx > bx + 1 || cz < bz || cz > bz + 1) {
+            return false; // quick answer for almost every cell
+        }
+        for (int k = 0; k < 4; k++) {
+            int sx = bx + (k & 1);
+            int sz = bz + (k >> 1);
+            if (sunlitAllowed(seed, sx, sz)) {
+                return sx == cx && sz == cz;
+            }
+        }
+        return false;
+    }
+
+    private static boolean sunlitAllowed(long seed, int cx, int cz) {
+        if (isAtrium(seed, cx, cz) || isHall(seed, cx, cz) || isSafeCell(seed, cx, cz)) {
+            return false;
+        }
+        int centerX = cx * CELL + CELL / 2;
+        int centerZ = cz * CELL + CELL / 2;
+        int[] exit = EXITS.nearest(seed, centerX, centerZ);
+        return Math.max(Math.abs(exit[0] - centerX), Math.abs(exit[1] - centerZ)) >= SAFE_EXIT_DISTANCE;
+    }
+
+    /**
+     * The sunlit room: dry tile, with a 5-deep block of wall across its north side. Through the
+     * middle of it runs the archway (cells 5..8), ending in a wall of daylight.
+     */
+    private static int sunlitColumn(int mx, int mz) {
+        if (mz > ARCH_DEPTH) {
+            return DRY;
+        }
+        if (mx >= ARCH_MIDDLE - ARCH_RADIUS && mx < ARCH_MIDDLE + ARCH_RADIUS) {
+            return mz == 1 ? SUNLIGHT : ARCHWAY;
+        }
+        return mx == ARCH_MIDDLE - ARCH_RADIUS - 1 || mx == ARCH_MIDDLE + ARCH_RADIUS ? LINING : WALL;
+    }
+
+    /**
+     * True in the back half of a sunlit archway, right in front of the light: walking in there
+     * takes you to Level 37 ({@code Level37Rules}).
+     */
+    public boolean isSunlitThreshold(long seed, int x, int z) {
+        int cx = Math.floorDiv(x, CELL);
+        int cz = Math.floorDiv(z, CELL);
+        int mx = Math.floorMod(x, CELL);
+        int mz = Math.floorMod(z, CELL);
+        return mz >= 2 && mz <= 3 && mx >= ARCH_MIDDLE - ARCH_RADIUS && mx < ARCH_MIDDLE + ARCH_RADIUS
+                && exits().distance(seed, x, z) > CLEARING_RADIUS && isSunlitCell(seed, cx, cz);
+    }
+
+    /**
+     * One column of the archway. Its floor and the arch are Level 37's fine mosaic and its curved
+     * tile pieces, so the passage already looks like the place it leads to; the back is a wall of
+     * sunlit void (light travelling south, out into the Poolrooms).
+     */
+    private static void fillArchway(int x, int kind, int ceiling, Column out) {
+        BlockState tile = ModBlocks.POOL_TILE.get().defaultBlockState();
+        for (int y = DEEP_FLOOR_Y; y < SURFACE_Y; y++) {
+            out.set(y, tile);
+        }
+        out.set(SURFACE_Y, ModBlocks.L37_TILE_FLOOR.get().defaultBlockState());
+        out.set(ceiling, tile);
+        if (kind == LINING) {
+            BlockState fine = ModBlocks.L37_TILE_WALL.get().defaultBlockState();
+            for (int y = SURFACE_Y + 1; y < ceiling; y++) {
+                out.set(y, fine);
+            }
+            return;
+        }
+        if (kind == SUNLIGHT) {
+            BlockState light = ModBlocks.L37_SUNLIT_VOID.get().defaultBlockState().setValue(SunlitVoidBlock.FACING, Direction.SOUTH);
+            for (int y = SURFACE_Y + 1; y < ceiling; y++) {
+                out.set(y, y <= ARCH_SPRING_Y + ARCH_RADIUS - 1 ? light : tile);
+            }
+            return;
+        }
+        BlockState fineWall = ModBlocks.L37_TILE_WALL.get().defaultBlockState();
+        int a = Math.floorMod(x, CELL) - ARCH_MIDDLE;
+        int i = a >= 0 ? a : -a - 1;
+        for (int y = ARCH_SPRING_Y; y < ceiling; y++) {
+            int j = y - ARCH_SPRING_Y;
+            if (Math.hypot(i + 1, j + 1) <= ARCH_RADIUS) {
+                continue; // open
+            }
+            CurveShape shape = Math.hypot(i, j) < ARCH_RADIUS ? CurveShape.of(false, ARCH_RADIUS, i, j) : null;
+            out.set(y, shape != null
+                    ? ModBlocks.L37_TILE_CURVE.get().piece(shape, CurveOrientation.arch(false, a >= 0))
+                    : j < ARCH_RADIUS ? fineWall : tile);
+        }
     }
 
     // ---- Backpacks and crates on the dry walkways -----------------------------------------------
@@ -564,6 +702,9 @@ public final class PoolroomsLayout extends LevelLayout {
     private static int edgeState(long seed, int cx, int cz, int side) {
         int ncx = side == WEST ? cx - 1 : cx;
         int ncz = side == WEST ? cz : cz - 1;
+        if (side == NORTH && isSunlitCell(seed, cx, cz)) {
+            return EDGE_SOLID; // the archway is built against this wall
+        }
         boolean atriumHere = isAtrium(seed, cx, cz);
         boolean atriumThere = isAtrium(seed, ncx, ncz);
         if (atriumHere && atriumThere && sameAtrium(cx, cz, ncx, ncz)) {
@@ -606,6 +747,9 @@ public final class PoolroomsLayout extends LevelLayout {
     }
 
     private static int forcedSide(long seed, int cx, int cz) {
+        if (isSunlitCell(seed, cx, cz)) {
+            return WEST; // its north wall holds the archway, so the way out must be west
+        }
         return Hash.unit(seed, cx, cz, 64) < 0.5 ? WEST : NORTH;
     }
 
@@ -656,6 +800,9 @@ public final class PoolroomsLayout extends LevelLayout {
         }
         if (isSafeCell(seed, cx, cz)) {
             return ROOM_SAFE;
+        }
+        if (isSunlitCell(seed, cx, cz)) {
+            return ROOM_SUNLIT;
         }
         // Runs of channel cells: a stretch of RUN cells in a row (along X) or a column (along Z).
         boolean xRun = Hash.unit(seed, Math.floorDiv(cx, RUN), cz, 84) < RUN_SHARE;
@@ -746,6 +893,10 @@ public final class PoolroomsLayout extends LevelLayout {
             }
         }
 
+        if (kind == ARCHWAY || kind == SUNLIGHT || kind == LINING) {
+            fillArchway(x, kind, ceiling, out);
+            return;
+        }
         if (kind == SHAFT) {
             out.set(DRAIN_FLOOR_Y, dark);
             for (int y = DRAIN_FLOOR_Y + 1; y <= SURFACE_Y; y++) {
@@ -824,7 +975,8 @@ public final class PoolroomsLayout extends LevelLayout {
         int mx = Math.floorMod(x, CELL);
         int mz = Math.floorMod(z, CELL);
         int room = room(seed, cx, cz);
-        if (kindOf(room) == ROOM_ATRIUM || kindOf(room) == ROOM_SAFE || Hash.unit(seed, cx, cz, 90) < DARK_ROOM_SHARE) {
+        if (kindOf(room) == ROOM_ATRIUM || kindOf(room) == ROOM_SAFE || kindOf(room) == ROOM_SUNLIT
+                || Hash.unit(seed, cx, cz, 90) < DARK_ROOM_SHARE) {
             return null; // atriums have skylights, safe rooms their own lamp
         }
         boolean two = kindOf(room) != ROOM_HALL && Hash.unit(seed, cx, cz, 91) < TWO_TUBES_SHARE;

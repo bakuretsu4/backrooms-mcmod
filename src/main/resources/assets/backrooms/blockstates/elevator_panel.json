@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/elevator_panel"
+    },
+    "facing=east": {
+      "model": "backrooms:block/elevator_panel",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/elevator_panel",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/elevator_panel",
+      "y": 270
+    }
+  }
+}

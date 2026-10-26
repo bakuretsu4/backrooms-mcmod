@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/dead_plant"
+    },
+    "facing=east": {
+      "model": "backrooms:block/dead_plant",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/dead_plant",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/dead_plant",
+      "y": 270
+    }
+  }
+}

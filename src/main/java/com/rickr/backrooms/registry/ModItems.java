@@ -83,6 +83,17 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.POOL_FLOOR);
         ITEMS.registerSimpleBlockItem(ModBlocks.POOL_SKYLIGHT);
         ITEMS.registerSimpleBlockItem(ModBlocks.POOL_LAMP);
+        // Ankle-deep water (Level 37 floods its floors with it); invisible once placed.
+        ITEMS.registerSimpleBlockItem(ModBlocks.SHALLOW_WATER);
+        // Level 37 "Sublimity" (the curved tile pieces have no item: the layout places them).
+        ITEMS.registerSimpleBlockItem(ModBlocks.L37_TILE_WALL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L37_TILE_FLOOR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L37_TILE_CEILING);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L37_TILE_DEEP);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L37_TILE_SLAB);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L37_SUNLIT_VOID);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L37_POOL_LADDER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L37_HANDRAIL);
         // Level 9: The Suburbs.
         ITEMS.registerSimpleBlockItem(ModBlocks.ASPHALT);
         ITEMS.registerSimpleBlockItem(ModBlocks.ASPHALT_WET);
@@ -141,6 +152,49 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.CHECKPOINT_RADIO);
         ITEMS.registerSimpleBlockItem(ModBlocks.SAFE_ROOM_LAMP);
         ITEMS.registerSimpleBlockItem(ModBlocks.SAFE_ROOM_SIGN);
+        // Level 4: The Abandoned Office.
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CARPET);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CARPET_BLUE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CARPET_INDENT);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CARPET_BLUE_INDENT);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_WALL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_WALL_BASE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_WALL_RAIL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_COLUMN);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_COLUMN_BASE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CEILING);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CEILING_MISSING);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CEILING_HATCH);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_PANEL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_WINDOW);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_GLASS);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_GLASS_BLINDS);
+        ITEMS.registerSimpleBlockItem(ModBlocks.STAGE_CURTAIN);
+        ITEMS.registerItem("office_door", props -> new DoubleHighBlockItem(ModBlocks.OFFICE_DOOR.get(), props), new Item.Properties());
+        ITEMS.registerItem("office_door_six", props -> new DoubleHighBlockItem(ModBlocks.OFFICE_DOOR_SIX.get(), props), new Item.Properties());
+        ITEMS.registerItem("office_glass_door", props -> new DoubleHighBlockItem(ModBlocks.OFFICE_GLASS_DOOR.get(), props), new Item.Properties());
+        ITEMS.registerItem("fire_door", props -> new DoubleHighBlockItem(ModBlocks.FIRE_DOOR.get(), props), new Item.Properties());
+        ITEMS.registerSimpleBlockItem(ModBlocks.ELEVATOR_DOOR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.CUBICLE_PARTITION);
+        ITEMS.registerSimpleBlockItem(ModBlocks.RADIATOR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_DESK);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_DESK_PC);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CHAIR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.FILING_CABINET);
+        ITEMS.registerSimpleBlockItem(ModBlocks.COPIER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.DEAD_PLANT);
+        ITEMS.registerSimpleBlockItem(ModBlocks.CARDBOARD_BOXES);
+        ITEMS.registerSimpleBlockItem(ModBlocks.STEP_LADDER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.CONFERENCE_TABLE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SERVER_RACK);
+        ITEMS.registerSimpleBlockItem(ModBlocks.MICROWAVE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.WHITEBOARD);
+        ITEMS.registerSimpleBlockItem(ModBlocks.ELEVATOR_PANEL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.CCTV_CAMERA);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_PLAQUE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.VENDING_MACHINE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.WATER_COOLER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SUPPLY_CABINET);
     }
 
     private ModItems() {}

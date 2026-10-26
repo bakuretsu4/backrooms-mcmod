@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/radiator"
+    },
+    "facing=east": {
+      "model": "backrooms:block/radiator",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/radiator",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/radiator",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/whiteboard"
+    },
+    "facing=east": {
+      "model": "backrooms:block/whiteboard",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/whiteboard",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/whiteboard",
+      "y": 270
+    }
+  }
+}

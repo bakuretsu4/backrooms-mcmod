@@ -47,6 +47,20 @@
     ],
     "subtitle": "subtitles.backrooms.drain_pull"
   },
+  "ambient.level37_ambience": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/level37_ambience",
+        "stream": true
+      }
+    ]
+  },
+  "level37.arrive": {
+    "sounds": [
+      "backrooms:level37/arrive"
+    ],
+    "subtitle": "subtitles.backrooms.level37_arrive"
+  },
   "entity.bacteria.ambient": {
     "sounds": [
       "backrooms:entity/bacteria_ambient1",
@@ -398,6 +412,32 @@
     ],
     "subtitle": "subtitles.backrooms.step"
   },
+  "step.water_wade_walk": {
+    "sounds": [
+      "backrooms:water/wade_walk1",
+      "backrooms:water/wade_walk2",
+      "backrooms:water/wade_walk3",
+      "backrooms:water/wade_walk4"
+    ],
+    "subtitle": "subtitles.backrooms.wade"
+  },
+  "step.water_wade_run": {
+    "sounds": [
+      "backrooms:water/wade_run1",
+      "backrooms:water/wade_run2",
+      "backrooms:water/wade_run3",
+      "backrooms:water/wade_run4"
+    ],
+    "subtitle": "subtitles.backrooms.wade"
+  },
+  "water.splash": {
+    "sounds": [
+      "backrooms:water/splash1",
+      "backrooms:water/splash2",
+      "backrooms:water/splash3"
+    ],
+    "subtitle": "subtitles.backrooms.water_splash"
+  },
   "sanity.whisper": {
     "sounds": [
       "backrooms:sanity/whisper1",
@@ -459,5 +499,59 @@
       "backrooms:safe_room/checkpoint_save"
     ],
     "subtitle": "subtitles.backrooms.checkpoint_save"
+  },
+  "ambient.level4_rain": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/level4_rain",
+        "stream": true
+      }
+    ]
+  },
+  "ambient.level4_pipes": {
+    "sounds": [
+      "backrooms:level4/pipes1",
+      "backrooms:level4/pipes2",
+      "backrooms:level4/pipes3"
+    ],
+    "subtitle": "subtitles.backrooms.level4_pipes"
+  },
+  "level4.thunder": {
+    "sounds": [
+      {
+        "name": "backrooms:level4/thunder1",
+        "stream": true
+      },
+      {
+        "name": "backrooms:level4/thunder2",
+        "stream": true
+      },
+      {
+        "name": "backrooms:level4/thunder3",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.thunder"
+  },
+  "level4.door_music": {
+    "sounds": [
+      {
+        "name": "backrooms:level4/door_music",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level4_door_music"
+  },
+  "block.vending_machine.vend": {
+    "sounds": [
+      "backrooms:level4/vending_vend"
+    ],
+    "subtitle": "subtitles.backrooms.vending_machine"
+  },
+  "block.water_cooler.glug": {
+    "sounds": [
+      "backrooms:level4/water_cooler_glug"
+    ],
+    "subtitle": "subtitles.backrooms.water_cooler"
   }
 }

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/microwave"
+    },
+    "facing=east": {
+      "model": "backrooms:block/microwave",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/microwave",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/microwave",
+      "y": 270
+    }
+  }
+}

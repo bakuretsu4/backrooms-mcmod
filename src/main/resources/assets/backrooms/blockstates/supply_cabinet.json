@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/supply_cabinet"
+    },
+    "facing=east": {
+      "model": "backrooms:block/supply_cabinet",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/supply_cabinet",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/supply_cabinet",
+      "y": 270
+    }
+  }
+}

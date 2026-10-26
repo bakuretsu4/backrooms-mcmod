@@ -1,0 +1,23 @@
+{
+    "vertex": "backrooms:pool_underwater",
+    "fragment": "backrooms:pool_underwater",
+    "samplers": [
+        { "name": "SceneColor" },
+        { "name": "SceneDepth" },
+        { "name": "Ripples" },
+        { "name": "Caustics" }
+    ],
+    "uniforms": [
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "InvProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+        { "name": "CameraLow", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+        { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "WaterLevel", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "SunDir", "type": "float", "count": 3, "values": [ 0.0, -1.0, 0.0 ] },
+        { "name": "SunColor", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
+        { "name": "ShallowColor", "type": "float", "count": 3, "values": [ 0.27, 0.78, 0.85 ] },
+        { "name": "CausticStrength", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "ShaftStrength", "type": "float", "count": 1, "values": [ 1.0 ] }
+    ]
+}

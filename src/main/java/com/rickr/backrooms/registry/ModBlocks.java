@@ -4,28 +4,41 @@ import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.block.CeilingTubeBlock;
 import com.rickr.backrooms.block.CheckpointRadioBlock;
 import com.rickr.backrooms.block.DuctBlock;
+import com.rickr.backrooms.block.CubiclePartitionBlock;
 import com.rickr.backrooms.block.ExitDoorBlock;
+import com.rickr.backrooms.block.ElevatorDoorBlock;
+import com.rickr.backrooms.block.FloodableSlabBlock;
 import com.rickr.backrooms.block.FloorArrowBlock;
 import com.rickr.backrooms.block.FurnitureBlock;
+import com.rickr.backrooms.block.HandrailBlock;
 import com.rickr.backrooms.block.HighwaySignBlock;
 import com.rickr.backrooms.block.HouseBedBlock;
 import com.rickr.backrooms.block.HouseDoorBlock;
 import com.rickr.backrooms.block.LampMode;
 import com.rickr.backrooms.block.MarkingBlock;
 import com.rickr.backrooms.block.PillarNumberBlock;
+import com.rickr.backrooms.block.MusicDoorBlock;
+import com.rickr.backrooms.block.OfficePanelBlock;
+import com.rickr.backrooms.block.OfficeWindowBlock;
 import com.rickr.backrooms.block.PipeRackBlock;
 import com.rickr.backrooms.block.PoleBlock;
+import com.rickr.backrooms.block.PoolLadderBlock;
 import com.rickr.backrooms.block.PoolLampBlock;
 import com.rickr.backrooms.block.RugBlock;
+import com.rickr.backrooms.block.ShallowWaterBlock;
 import com.rickr.backrooms.block.StreetSignBlock;
 import com.rickr.backrooms.block.StreetlampHeadBlock;
+import com.rickr.backrooms.block.SunlitVoidBlock;
 import com.rickr.backrooms.block.SupplyContainerBlock;
 import com.rickr.backrooms.block.SupplyKind;
 import com.rickr.backrooms.block.ThinLayerBlock;
+import com.rickr.backrooms.block.TileCurveBlock;
+import com.rickr.backrooms.block.VendingMachineBlock;
 import com.rickr.backrooms.block.WallDecalBlock;
 import com.rickr.backrooms.block.WallDoorDrawingBlock;
 import com.rickr.backrooms.block.WallLampBlock;
 import com.rickr.backrooms.block.WallMountBlock;
+import com.rickr.backrooms.block.WaterCoolerBlock;
 import java.util.function.Function;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoorBlock;
@@ -35,6 +48,7 @@ import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.TransparentBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.material.MapColor;
@@ -142,6 +156,39 @@ public final class ModBlocks {
     /** Underwater lamp set into a pool wall; FACING is the lens side, pointing into the water. */
     public static final DeferredBlock<PoolLampBlock> POOL_LAMP = BLOCKS.registerBlock("pool_lamp", PoolLampBlock::new,
             fixture(MapColor.COLOR_CYAN, SoundType.GLASS, 14));
+    /**
+     * Ankle-deep water (Level 37's flooded floors): an invisible, walk-through marker in the
+     * feet-level cell; the pool water renderer draws its surface 0.375 above the floor.
+     */
+    public static final DeferredBlock<ShallowWaterBlock> SHALLOW_WATER = BLOCKS.registerBlock(
+            "shallow_water", ShallowWaterBlock::new,
+            BlockBehaviour.Properties.of().mapColor(MapColor.WATER).noCollission().noOcclusion().replaceable()
+                    .strength(-1.0f, 3_600_000.0f).sound(SoundType.EMPTY).noLootTable()
+                    .isValidSpawn((state, level, pos, type) -> false).pushReaction(PushReaction.DESTROY));
+
+    // Level 37 "Sublimity": fine cream-white mosaic tile on every surface (wall, floor, ceiling
+    // and a dark sea-green tile for the deep pit shafts), smooth curved tile pieces for pillars,
+    // round rooms and arches, floating stair treads, chrome ladders and rails, and the glowing
+    // "sunlit void" seen through every skylight and window.
+    public static final DeferredBlock<Block> L37_TILE_WALL = structural("l37_tile_wall", MapColor.QUARTZ, SoundType.STONE);
+    public static final DeferredBlock<Block> L37_TILE_FLOOR = structural("l37_tile_floor", MapColor.QUARTZ, SoundType.STONE);
+    public static final DeferredBlock<Block> L37_TILE_CEILING = structural("l37_tile_ceiling", MapColor.QUARTZ, SoundType.STONE);
+    public static final DeferredBlock<Block> L37_TILE_DEEP = structural("l37_tile_deep", MapColor.COLOR_GREEN, SoundType.STONE);
+    /** Curved tile: one piece of a circle (see block/CurveShape). OBJ models; lets light through. */
+    public static final DeferredBlock<TileCurveBlock> L37_TILE_CURVE = BLOCKS.registerBlock("l37_tile_curve",
+            TileCurveBlock::new, unbreakable(MapColor.QUARTZ, SoundType.STONE).noOcclusion());
+    /** Tile slab; the floating treads of the spiral stairs. Can stand in the shallows (FLOODED). */
+    public static final DeferredBlock<FloodableSlabBlock> L37_TILE_SLAB = BLOCKS.registerBlock("l37_tile_slab",
+            FloodableSlabBlock::new, unbreakable(MapColor.QUARTZ, SoundType.STONE));
+    /** Overexposed warm-white daylight behind every opening: full-bright, light 15, never casts a shadow. */
+    public static final DeferredBlock<SunlitVoidBlock> L37_SUNLIT_VOID = BLOCKS.registerBlock("l37_sunlit_void",
+            SunlitVoidBlock::new, fixture(MapColor.SNOW, SoundType.GLASS, 15).noOcclusion());
+    /** Chrome pool ladder at a pool's edge, in the water; FACING points toward the deck. */
+    public static final DeferredBlock<PoolLadderBlock> L37_POOL_LADDER = BLOCKS.registerBlock("l37_pool_ladder",
+            PoolLadderBlock::new, unbreakable(MapColor.METAL, SoundType.METAL).noCollission().noOcclusion());
+    /** Chrome handrail on a wall, a metre above the floor; FACING points away from the wall. */
+    public static final DeferredBlock<HandrailBlock> L37_HANDRAIL = BLOCKS.registerBlock("l37_handrail",
+            HandrailBlock::new, unbreakable(MapColor.METAL, SoundType.METAL).noCollission().noOcclusion());
 
     // Level 9: The Suburbs. A night-time 1960s suburb: wet asphalt, sidewalks, lawns, houses,
     // streetlamps and signs. Block models are drawn for FACING = NORTH and turned by the blockstates.
@@ -287,6 +334,127 @@ public final class ModBlocks {
     public static final DeferredBlock<HighwaySignBlock> HIGHWAY_SIGN_EXIT = BLOCKS.registerBlock(
             "highway_sign_exit", HighwaySignBlock::new, unbreakable(MapColor.COLOR_GREEN, SoundType.METAL));
 
+    // Level 4: The Abandoned Office. Commercial loop-pile carpet, off-white drywall, a suspended
+    // ceiling with 1x2 fluorescent troffers (most of them dead), ribbon windows streaming with rain,
+    // and the furniture of an office everyone left at once. Furniture FACING = the way its front
+    // looks; wall-mounted things FACING = away from the wall. Models are drawn facing north.
+    public static final DeferredBlock<Block> OFFICE_CARPET = structural("office_carpet", MapColor.COLOR_GRAY, SoundType.WOOL);
+    public static final DeferredBlock<Block> OFFICE_CARPET_BLUE = structural("office_carpet_blue", MapColor.COLOR_BLUE, SoundType.WOOL);
+    /** Darker, unfaded carpet where furniture stood for years: the "dents" left behind. */
+    public static final DeferredBlock<Block> OFFICE_CARPET_INDENT = structural("office_carpet_indent", MapColor.COLOR_GRAY, SoundType.WOOL);
+    public static final DeferredBlock<Block> OFFICE_CARPET_BLUE_INDENT = structural("office_carpet_blue_indent", MapColor.COLOR_BLUE, SoundType.WOOL);
+    public static final DeferredBlock<Block> OFFICE_WALL = structural("office_wall", MapColor.SAND, SoundType.STONE);
+    /** Bottom wall block with the dark vinyl base strip. */
+    public static final DeferredBlock<Block> OFFICE_WALL_BASE = structural("office_wall_base", MapColor.SAND, SoundType.STONE);
+    /** Bottom wall block of the lobbies: base strip, darker paint and a wooden chair rail on top. */
+    public static final DeferredBlock<Block> OFFICE_WALL_RAIL = structural("office_wall_rail", MapColor.SAND, SoundType.STONE);
+    public static final DeferredBlock<Block> OFFICE_COLUMN = structural("office_column", MapColor.QUARTZ, SoundType.STONE);
+    public static final DeferredBlock<Block> OFFICE_COLUMN_BASE = structural("office_column_base", MapColor.QUARTZ, SoundType.STONE);
+    public static final DeferredBlock<Block> OFFICE_CEILING = structural("office_ceiling", MapColor.SAND, SoundType.WOOD);
+    /** A ceiling tile that fell out: a dark hole into the plenum (ducts, cables). */
+    public static final DeferredBlock<Block> OFFICE_CEILING_MISSING = structural("office_ceiling_missing", MapColor.COLOR_BLACK, SoundType.WOOD);
+    public static final DeferredBlock<Block> OFFICE_CEILING_HATCH = structural("office_ceiling_hatch", MapColor.SAND, SoundType.METAL);
+    /** Half of a 1x2 fluorescent troffer; MODE dead = tubes out (no light, grey lens). */
+    public static final DeferredBlock<OfficePanelBlock> OFFICE_PANEL = BLOCKS.registerBlock("office_panel", OfficePanelBlock::new,
+            unbreakable(MapColor.SNOW, SoundType.GLASS)
+                    .lightLevel(state -> state.getValue(OfficePanelBlock.MODE) == LampMode.DEAD ? 0 : 11)
+                    .emissiveRendering((state, level, pos) -> state.getValue(OfficePanelBlock.MODE) != LampMode.DEAD));
+    /** Rainy window pane; its block light is the cold night glow (and the lightning flash). */
+    public static final DeferredBlock<OfficeWindowBlock> OFFICE_WINDOW = BLOCKS.registerBlock("office_window", OfficeWindowBlock::new,
+            unbreakable(MapColor.COLOR_GRAY, SoundType.GLASS).lightLevel(state -> 15));
+    /** Conference-room glass wall on thin black mullions; the second one has its blinds half down. */
+    public static final DeferredBlock<TransparentBlock> OFFICE_GLASS = BLOCKS.registerBlock("office_glass", TransparentBlock::new, glass());
+    public static final DeferredBlock<TransparentBlock> OFFICE_GLASS_BLINDS = BLOCKS.registerBlock("office_glass_blinds", TransparentBlock::new, glass());
+    /** Heavy red velvet stage curtain, floor to ceiling (the curtain room). */
+    public static final DeferredBlock<Block> STAGE_CURTAIN = structural("stage_curtain", MapColor.COLOR_RED, SoundType.WOOL);
+    /** Wood-veneer office door; LOCKED ones (closets) only rattle. */
+    public static final DeferredBlock<HouseDoorBlock> OFFICE_DOOR = BLOCKS.registerBlock("office_door",
+            props -> new HouseDoorBlock(BlockSetType.OAK, props), unbreakable(MapColor.WOOD, SoundType.WOOD).noOcclusion());
+    /** The locked door with the brass "6" and the faint music behind it. */
+    public static final DeferredBlock<MusicDoorBlock> OFFICE_DOOR_SIX = BLOCKS.registerBlock("office_door_six",
+            props -> new MusicDoorBlock(BlockSetType.OAK, props), unbreakable(MapColor.WOOD, SoundType.WOOD).noOcclusion());
+    /** Aluminium-framed glass door of the conference rooms. */
+    public static final DeferredBlock<DoorBlock> OFFICE_GLASS_DOOR = BLOCKS.registerBlock("office_glass_door",
+            props -> new DoorBlock(BlockSetType.COPPER, props), unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** Grey steel fire door with a push bar: the way into the emergency stairwell. */
+    public static final DeferredBlock<DoorBlock> FIRE_DOOR = BLOCKS.registerBlock("fire_door",
+            props -> new DoorBlock(BlockSetType.COPPER, props), unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    public static final DeferredBlock<ElevatorDoorBlock> ELEVATOR_DOOR = BLOCKS.registerBlock("elevator_door",
+            ElevatorDoorBlock::new, unbreakable(MapColor.METAL, SoundType.METAL));
+    /** Grey cubicle partition, 1.5 blocks tall, joining its neighbours like a pane. */
+    public static final DeferredBlock<CubiclePartitionBlock> CUBICLE_PARTITION = BLOCKS.registerBlock("cubicle_partition",
+            CubiclePartitionBlock::new, unbreakable(MapColor.COLOR_GRAY, SoundType.WOOL).noOcclusion());
+    /** Cast-iron radiator under the window sill, its back against the wall. */
+    public static final DeferredBlock<FurnitureBlock> RADIATOR = furniture("radiator", MapColor.QUARTZ, SoundType.METAL,
+            Block.box(0.5, 0, 10.5, 15.5, 11, 16));
+    /** Grey laminate office desk; FACING = the side you sit at. */
+    public static final DeferredBlock<FurnitureBlock> OFFICE_DESK = furniture("office_desk", MapColor.COLOR_LIGHT_GRAY, SoundType.WOOD, Shapes.or(
+            Block.box(0, 11.5, 0, 16, 13, 16),
+            Block.box(0.5, 0, 1, 1.5, 11.5, 15),
+            Block.box(14.5, 0, 1, 15.5, 11.5, 15),
+            Block.box(1.5, 3, 13.5, 14.5, 11.5, 14.5)));
+    /** The same desk with a beige CRT monitor and a keyboard on it. */
+    public static final DeferredBlock<FurnitureBlock> OFFICE_DESK_PC = furniture("office_desk_pc", MapColor.COLOR_LIGHT_GRAY, SoundType.WOOD, Shapes.or(
+            Block.box(0, 11.5, 0, 16, 13, 16),
+            Block.box(0.5, 0, 1, 1.5, 11.5, 15),
+            Block.box(14.5, 0, 1, 15.5, 11.5, 15),
+            Block.box(1.5, 3, 13.5, 14.5, 11.5, 14.5),
+            Block.box(3.5, 13, 5, 12.5, 22, 14)));
+    /** Blue fabric swivel chair on a five-star base; FACING = the way you'd sit. */
+    public static final DeferredBlock<FurnitureBlock> OFFICE_CHAIR = furniture("office_chair", MapColor.COLOR_BLUE, SoundType.WOOL, Shapes.or(
+            Block.box(3, 6.5, 3, 13, 8.5, 13),
+            Block.box(3.5, 8.5, 11.5, 12.5, 18, 13.5),
+            Block.box(7, 0, 7, 9, 6.5, 9),
+            Block.box(2, 0, 2, 14, 1.5, 14)));
+    public static final DeferredBlock<FurnitureBlock> FILING_CABINET = furniture("filing_cabinet", MapColor.COLOR_GRAY, SoundType.METAL,
+            Block.box(1.5, 0, 2, 14.5, 16, 16));
+    public static final DeferredBlock<FurnitureBlock> COPIER = furniture("copier", MapColor.QUARTZ, SoundType.METAL, Shapes.or(
+            Block.box(0.5, 0, 2, 15.5, 13, 16),
+            Block.box(1, 13, 3, 15, 14.5, 15.5)));
+    /** A potted office plant that died long ago. */
+    public static final DeferredBlock<FurnitureBlock> DEAD_PLANT = furniture("dead_plant", MapColor.COLOR_BROWN, SoundType.GRASS, Shapes.or(
+            Block.box(4.5, 0, 4.5, 11.5, 7, 11.5),
+            Block.box(5, 7, 5, 11, 20, 11)));
+    public static final DeferredBlock<FurnitureBlock> CARDBOARD_BOXES = furniture("cardboard_boxes", MapColor.COLOR_BROWN, SoundType.WOOL, Shapes.or(
+            Block.box(1, 0, 1.5, 15, 9, 14.5),
+            Block.box(2.5, 9, 3, 12, 16, 12)));
+    /** Aluminium step ladder left standing where the work stopped. */
+    public static final DeferredBlock<FurnitureBlock> STEP_LADDER = furniture("step_ladder", MapColor.METAL, SoundType.METAL,
+            Block.box(3, 0, 2, 13, 16, 14));
+    /** One block of a long dark-wood conference table (the tops join up seamlessly). */
+    public static final DeferredBlock<FurnitureBlock> CONFERENCE_TABLE = furniture("conference_table", MapColor.COLOR_BROWN, SoundType.WOOD, Shapes.or(
+            Block.box(0, 11.5, 0, 16, 13, 16),
+            Block.box(6, 0, 6, 10, 11.5, 10)));
+    /** Black server rack with dead status lights; two stacked make a full-height cabinet. */
+    public static final DeferredBlock<FurnitureBlock> SERVER_RACK = furniture("server_rack", MapColor.COLOR_BLACK, SoundType.METAL,
+            Block.box(1, 0, 1, 15, 16, 15));
+    /** Break-room microwave, standing on a counter. */
+    public static final DeferredBlock<FurnitureBlock> MICROWAVE = furniture("microwave", MapColor.QUARTZ, SoundType.METAL,
+            Block.box(2, 0, 4, 14, 7.5, 14));
+    /** Whiteboard on the wall, ghosts of old meetings still on it. You walk past it, not into it. */
+    public static final DeferredBlock<WallMountBlock> WHITEBOARD = BLOCKS.registerBlock("whiteboard",
+            props -> new WallMountBlock(props, 0, 1, 15, 16, 15, 16), unbreakable(MapColor.SNOW, SoundType.WOOD).noCollission().noOcclusion());
+    /** Up/down call buttons beside an elevator. */
+    public static final DeferredBlock<WallMountBlock> ELEVATOR_PANEL = BLOCKS.registerBlock("elevator_panel",
+            props -> new WallMountBlock(props, 5.5, 3, 15, 10.5, 12, 16), unbreakable(MapColor.METAL, SoundType.METAL).noCollission().noOcclusion());
+    /** A dome-less security camera on a wall bracket, high up. */
+    public static final DeferredBlock<WallMountBlock> CCTV_CAMERA = BLOCKS.registerBlock("cctv_camera",
+            props -> new WallMountBlock(props, 5, 6, 3, 11, 12, 16), unbreakable(MapColor.SNOW, SoundType.METAL).noCollission().noOcclusion());
+    /** Lobby directory board. */
+    public static final DeferredBlock<WallMountBlock> OFFICE_PLAQUE = BLOCKS.registerBlock("office_plaque",
+            props -> new WallMountBlock(props, 1, 2, 15, 15, 14, 16), unbreakable(MapColor.COLOR_BLACK, SoundType.WOOD).noCollission().noOcclusion());
+    /** Break-room vending machine (two tall, glowing front): right-click for Almond Water or an Energy Bar while stock lasts. */
+    public static final DeferredBlock<VendingMachineBlock> VENDING_MACHINE = BLOCKS.registerBlock("vending_machine",
+            VendingMachineBlock::new, unbreakable(MapColor.COLOR_RED, SoundType.METAL).lightLevel(state -> 6).noOcclusion());
+    /** Water cooler: right-click with an empty hand for Almond Water, three times. */
+    public static final DeferredBlock<WaterCoolerBlock> WATER_COOLER = BLOCKS.registerBlock("water_cooler",
+            WaterCoolerBlock::new, unbreakable(MapColor.SNOW, SoundType.METAL).noOcclusion());
+    /** A filing cabinet that is really a supply locker (filled from the locker loot table). */
+    public static final DeferredBlock<SupplyContainerBlock> SUPPLY_CABINET = BLOCKS.registerBlock("supply_cabinet",
+            props -> new SupplyContainerBlock(props, SupplyKind.LOCKER, Block.box(1.5, 0, 2, 14.5, 16, 16)),
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(3.0f).sound(SoundType.METAL)
+                    .pushReaction(PushReaction.BLOCK).noOcclusion().noLootTable());
+
     // Exits and loot
     public static final DeferredBlock<Block> EXIT_SIGN = BLOCKS.registerBlock("exit_sign", Block::new,
             fixture(MapColor.COLOR_GREEN, SoundType.GLASS, 9));
@@ -361,6 +529,15 @@ public final class ModBlocks {
     /** A glowing wall-mounted fixture that sits in the air in front of a wall. */
     private static BlockBehaviour.Properties wallFixture(MapColor color, int light) {
         return fixture(color, SoundType.METAL, light).noCollission().noOcclusion();
+    }
+
+    /** See-through wall glass: lets light through, never suffocates, doesn't hide the blocks behind it. */
+    private static BlockBehaviour.Properties glass() {
+        return unbreakable(MapColor.NONE, SoundType.GLASS)
+                .noOcclusion()
+                .isViewBlocking((state, level, pos) -> false)
+                .isSuffocating((state, level, pos) -> false)
+                .isRedstoneConductor((state, level, pos) -> false);
     }
 
     private static BlockBehaviour.Properties unbreakable(MapColor color, SoundType sound) {

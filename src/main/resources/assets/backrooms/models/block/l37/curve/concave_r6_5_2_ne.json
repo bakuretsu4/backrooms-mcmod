@@ -1,0 +1,13 @@
+{
+  "loader": "neoforge:obj",
+  "model": "backrooms:models/block/l37/curve/concave_r6_5_2_ne.obj",
+  "flip_v": true,
+  "shade_quads": false,
+  "emissive_ambient": false,
+  "automatic_culling": true,
+  "ambientocclusion": false,
+  "textures": {
+    "tile": "backrooms:block/l37_tile_wall",
+    "particle": "backrooms:block/l37_tile_wall"
+  }
+}

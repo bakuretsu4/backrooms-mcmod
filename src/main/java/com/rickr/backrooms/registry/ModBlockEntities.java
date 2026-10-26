@@ -19,9 +19,11 @@ public final class ModBlockEntities {
     @SuppressWarnings("DataFlowIssue")
     public static final Supplier<BlockEntityType<SupplyContainerBlockEntity>> BACKPACK = BLOCK_ENTITIES.register("backpack",
             () -> BlockEntityType.Builder.of(SupplyContainerBlockEntity::new, ModBlocks.BACKPACK.get()).build(null));
+    // Level 4's filing-cabinet locker is a LOCKER too, so it shares this type (and its loot tables).
     @SuppressWarnings("DataFlowIssue")
     public static final Supplier<BlockEntityType<SupplyContainerBlockEntity>> SUPPLY_LOCKER = BLOCK_ENTITIES.register("supply_locker",
-            () -> BlockEntityType.Builder.of(SupplyContainerBlockEntity::new, ModBlocks.SUPPLY_LOCKER.get()).build(null));
+            () -> BlockEntityType.Builder.of(SupplyContainerBlockEntity::new,
+                    ModBlocks.SUPPLY_LOCKER.get(), ModBlocks.SUPPLY_CABINET.get()).build(null));
 
     private ModBlockEntities() {}
 }

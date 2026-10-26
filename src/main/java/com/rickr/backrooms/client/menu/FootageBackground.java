@@ -23,8 +23,8 @@ import org.lwjgl.opengl.GL11;
  * motion is smooth at any frame rate.
  */
 public final class FootageBackground {
-    /** Screenshots: 0 = Level 0, 1 = Level 1, 2 = Level 2, 3 = the Poolrooms, 4 = Level 9. */
-    public static final int SCENE_COUNT = 5;
+    /** Screenshots: 0 = Level 0, 1 = Level 1, 2 = Level 2, 3 = the Poolrooms, 4 = Level 9, 5 = Level 4, 6 = Level 37. */
+    public static final int SCENE_COUNT = 7;
     private static final ResourceLocation[] SCENES = new ResourceLocation[SCENE_COUNT];
     static {
         for (int i = 0; i < SCENE_COUNT; i++) {

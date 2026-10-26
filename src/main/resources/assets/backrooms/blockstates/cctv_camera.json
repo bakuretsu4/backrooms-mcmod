@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/cctv_camera"
+    },
+    "facing=east": {
+      "model": "backrooms:block/cctv_camera",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/cctv_camera",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/cctv_camera",
+      "y": 270
+    }
+  }
+}

@@ -166,10 +166,15 @@ public final class PlayerGameplay {
     }
 
     /**
-     * Which footstep sound fits the ground: dead leaves you walk through, the lawn or the wooden
-     * floors of the Suburbs, the Lobby's carpet, or (everywhere else) concrete.
+     * Which footstep sound fits the ground: wading through shallow water (Level 37, the
+     * Poolrooms' shallows), dead leaves you walk through, the lawn or the wooden floors of the
+     * Suburbs, the Lobby's carpet, or (everywhere else) concrete.
      */
     private static SoundEvent stepSound(Player player, boolean running) {
+        SoundEvent wade = PoolWaterSounds.wadeStep(player, running);
+        if (wade != null) {
+            return wade; // the water is louder than whatever floor is under it
+        }
         if (player.level().getBlockState(player.blockPosition()).is(ModBlocks.LEAF_LITTER.get())) {
             return ModSounds.STEP_LEAVES.get(); // the litter layer sits in the same block as your feet
         }

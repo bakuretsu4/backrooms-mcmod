@@ -30,6 +30,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * LAMP_WAVE, a stutter rolling down the streetlamps that leaves some of them dead for a while,
  * and FOG_ROLL, the fog closing in to ~12 blocks while something huge rumbles far away in it.
  * The clients render both (lamps, fog, rumble sounds and shake) from the event payload alone.
+ *
+ * <p>Level 4 (the Abandoned Office) has no scares, only its storm: every 1-3 minutes lightning
+ * strikes outside (STORM). The clients flash the windows ({@code Level4Atmosphere}); the server
+ * sends the thunder a second or two later.
  */
 public final class LevelEvents {
     /** The first event comes about a minute and a half after someone arrives on a floor. */
@@ -40,6 +44,8 @@ public final class LevelEvents {
     private static final int TWIST_TICKS = 20 * 20;
     /** The PA line repeats as a fainter echo this many ticks later, from a different direction. */
     private static final int INTERCOM_ECHO_DELAY = 7;
+    /** Level 4 storm: the flashes take ~2 s, the thunder comes 1-3.5 s after the first one. */
+    private static final int STORM_TICKS = 6 * 20;
 
     private static final class State {
         int kind = LevelEventPayload.NONE;
@@ -52,6 +58,8 @@ public final class LevelEvents {
         long echoTick = -1;
         /** The worst (third) announcement is followed straight away by flickering lights. */
         boolean flickerAfter;
+        /** Level 4: when the thunder of the current lightning strike arrives. */
+        long thunderTick = -1;
     }
 
     private static final Map<BackroomsLevel, State> STATES = new EnumMap<>(BackroomsLevel.class);
@@ -66,11 +74,14 @@ public final class LevelEvents {
             return;
         }
         if (state.nextTick < 0) {
-            state.nextTick = now + FIRST_DELAY + random.nextInt(20 * 20) - 10 * 20;
+            // Level 4's storm starts soon after you arrive: the rain should not keep you waiting.
+            int first = floor == BackroomsLevel.LEVEL_4 ? 25 * 20 : FIRST_DELAY;
+            state.nextTick = now + first + random.nextInt(20 * 20) - 10 * 20;
         }
 
-        // The Poolrooms are a quiet dream: no power cuts, alarms or footsteps-in-the-dark there.
-        boolean calm = floor == BackroomsLevel.POOLROOMS;
+        // The Poolrooms are a quiet dream, Level 4 a safe haven and Level 37 pure calm: no power
+        // cuts, alarms or footsteps-in-the-dark there. (Level 4's only events are its storms.)
+        boolean calm = floor == BackroomsLevel.POOLROOMS || floor == BackroomsLevel.LEVEL_4 || floor == BackroomsLevel.LEVEL_37;
         // Knocks and creaks are indoor sounds; the Suburbs stay silent between their own events.
         if (!calm && floor != BackroomsLevel.LEVEL_9) {
             tickAmbience(level, random);
@@ -84,7 +95,7 @@ public final class LevelEvents {
             return;
         }
 
-        if (!calm && now >= state.nextTick) {
+        if ((!calm || floor == BackroomsLevel.LEVEL_4) && now >= state.nextTick) {
             startRandom(level, floor, state, random);
         }
     }
@@ -99,6 +110,12 @@ public final class LevelEvents {
             // Echo: same line, quieter, from further away, as if bouncing down the halls.
             for (ServerPlayer player : level.players()) {
                 playDistant(player, ModSounds.INTERCOM, 34, 2.0f, state.intercomPitch, level.getRandom());
+            }
+        }
+        if (state.kind == LevelEventPayload.STORM && now == state.thunderTick) {
+            // Thunder after the flash: light is faster than sound. Far off, from a random side.
+            for (ServerPlayer player : level.players()) {
+                playDistant(player, ModSounds.LEVEL4_THUNDER, 30, 4.0f, 0.85f + level.getRandom().nextFloat() * 0.25f, level.getRandom());
             }
         }
     }
@@ -123,6 +140,10 @@ public final class LevelEvents {
             case LEVEL_9 -> {
                 if (roll < 55) { kind = LevelEventPayload.LAMP_WAVE; duration = (20 + random.nextInt(15)) * 20; }
                 else { kind = LevelEventPayload.FOG_ROLL; duration = (40 + random.nextInt(31)) * 20; }
+            }
+            case LEVEL_4 -> {
+                kind = LevelEventPayload.STORM;
+                duration = STORM_TICKS;
             }
             default -> {
                 if (roll < 35) { kind = LevelEventPayload.TWIST; duration = TWIST_TICKS; }
@@ -164,6 +185,7 @@ public final class LevelEvents {
                     playDistant(player, ModSounds.THUNDER, 28, 4.0f, 0.8f + random.nextFloat() * 0.3f, random);
                 }
             }
+            case LevelEventPayload.STORM -> state.thunderTick = now + 20 + random.nextInt(50);
             case LevelEventPayload.TWIST ->
                     level.players().forEach(p -> p.playNotifySound(ModSounds.RADIO_STATIC.get(), SoundSource.AMBIENT, 0.6f, 1.0f));
             default -> {}
@@ -196,7 +218,9 @@ public final class LevelEvents {
             case LEVEL_1 -> (45 + random.nextInt(26)) * 20;
             case LEVEL_2 -> (30 + random.nextInt(21)) * 20;
             // Never starts events by itself; this only matters after an operator forced one.
-            case POOLROOMS -> (60 + random.nextInt(30)) * 20;
+            case POOLROOMS, LEVEL_37 -> (60 + random.nextInt(30)) * 20;
+            // Level 4: a lightning strike outside every 1-3 minutes.
+            case LEVEL_4 -> (60 + random.nextInt(121)) * 20;
             case LEVEL_9 -> (40 + random.nextInt(31)) * 20;
         };
     }

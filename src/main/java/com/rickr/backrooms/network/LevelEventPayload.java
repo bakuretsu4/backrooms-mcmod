@@ -37,6 +37,11 @@ public record LevelEventPayload(int kind, int remainingTicks, int elapsedTicks) 
      * only come back near the end.
      */
     public static final int LAMP_WAVE = 8;
+    /**
+     * Level 4 only: lightning outside the office windows. The windows (and everything near them)
+     * flash cold white a couple of times, and the thunder rolls in a second or two later.
+     */
+    public static final int STORM = 9;
 
     public static final Type<LevelEventPayload> TYPE = new Type<>(Backrooms.id("level_event"));
     public static final StreamCodec<ByteBuf, LevelEventPayload> STREAM_CODEC = StreamCodec.composite(

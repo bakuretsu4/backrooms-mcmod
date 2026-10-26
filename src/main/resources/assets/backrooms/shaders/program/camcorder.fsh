@@ -21,6 +21,9 @@
 //  Sanity (uniform Sanity 0..1, 0 = sane) adds a little tape jitter (step 2), a slight
 //  desaturation and edge darkening that pulses with the heartbeat (step 6). Sanity = 0, SanityPulse
 //  and SanityGlitch = 0 change nothing at all.
+//  Underwater (uniform 0..1, eyes in the pool water of the Poolrooms / Level 37) makes the picture
+//  sway gently (step 2) and flicker faintly with the light on the surface (step 6); 0 = unchanged.
+//  The pool water itself is drawn by the mod's own water renderer before this effect runs.
 
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;
@@ -45,7 +48,7 @@ uniform float BlurX;      // motion blur streak for this frame, texture units
 uniform float BlurY;
 uniform float Grain;      // base film grain (0 = none, like the reference)
 uniform float Dream;      // 0..1 Poolrooms hallucination (0 = picture exactly unchanged)
-uniform float PoolWater;  // 1 in the Poolrooms: make pool water vivid cyan
+uniform float Underwater; // 0..1 eyes under the pool water (0 = picture exactly unchanged)
 uniform float Interference; // 0..1 Level 9: a Watcher frying the electronics (0 = no change at all)
 uniform float FogDrain;   // 1 in Level 9: colour drains out of distant things (0 = no change at all)
 uniform float Sanity;     // 0..1 how broken your mind is (0 = picture exactly unchanged)
@@ -163,6 +166,14 @@ void main() {
     }
     // Waking up: everything swims.
     uv += vec2(sin(t * 1.7 + uv.y * 6.0), cos(t * 1.3 + uv.x * 5.0)) * 0.006 * Wake;
+    // Under water: the picture sways gently, as if seen through moving water. A tiny zoom-in
+    // first, so the sway never pulls an edge into view.
+    float under = clamp(Underwater, 0.0, 1.0);
+    if (under > 0.0) {
+        uv = (uv - 0.5) * (1.0 - 0.006 * under) + 0.5;
+        uv += vec2(sin(uv.y * 11.0 + t * 1.7) + 0.5 * sin(uv.y * 23.0 - t * 2.3),
+                   cos(uv.x * 9.0 + t * 1.4) + 0.5 * cos(uv.x * 19.0 + t * 2.1)) * 0.0011 * under;
+    }
     // Watcher interference: horizontal bands of the picture tear sideways, more the closer it is.
     if (Interference > 0.0) {
         float row = floor(texCoord.y * 90.0);
@@ -249,13 +260,9 @@ void main() {
         float l = luma(col);
         col = mix(col, vec3(l * 1.2 + 0.02, l * 0.25, l * 0.22), Alarm * 0.35);
     }
-    if (PoolWater > 0.0) {
-        // Poolrooms: pool water reads vivid cyan in the footage even in dim rooms (Veil's lights
-        // don't reach translucent water). Only pixels that are already cyan-ish get lifted.
-        float cyan = clamp((min(col.g, col.b) - col.r) * 3.0, 0.0, 1.0)
-                * (1.0 - clamp(abs(col.g - col.b) * 3.0, 0.0, 1.0));
-        vec3 vivid = vec3(col.r * 0.55, col.g * 1.45 + 0.025, col.b * 1.45 + 0.035);
-        col = clamp(mix(col, vivid, cyan * PoolWater), 0.0, 1.0);
+    if (under > 0.0) {
+        // Under water: the light from the rippling surface breathes a little.
+        col *= 1.0 + under * 0.035 * (noise1(t * 2.6) - 0.5 + 0.5 * (noise1(t * 5.3 + 11.0) - 0.5));
     }
     if (NightShot > 0.5) {
         float l = pow(luma(col), 0.85) * 1.1;

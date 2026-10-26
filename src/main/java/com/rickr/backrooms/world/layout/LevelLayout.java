@@ -5,12 +5,14 @@ import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoorHingeSide;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A floor plan for one Backrooms level, expressed as pure functions of (seed, x, z).
@@ -123,7 +125,7 @@ public abstract class LevelLayout {
     }
 
     // ------------------------------------------------------------------------------------------
-    // Exit stairwell (Level 0 and Level 1)
+    // Exit stairwell (Level 0, Level 1 and Level 4)
     // ------------------------------------------------------------------------------------------
 
     /** Columns with chessboard distance <= this from the exit belong to the stairwell. */
@@ -155,6 +157,18 @@ public abstract class LevelLayout {
      */
     protected boolean stairwell(long seed, int dx, int dz, int exitX, int exitZ,
                                 BlockState levelWall, BlockState levelWallBase, boolean woodenDoor, Column out) {
+        return stairwell(seed, dx, dz, exitX, exitZ, levelWall, levelWallBase,
+                woodenDoor ? ModBlocks.LOBBY_DOOR.get() : null, true, out);
+    }
+
+    /**
+     * Same stairwell with any door (Level 4 uses a steel fire door with a push bar).
+     *
+     * @param door     the door block in the doorway, or null for an open doorway
+     * @param doorOpen whether that door starts open
+     */
+    protected boolean stairwell(long seed, int dx, int dz, int exitX, int exitZ, BlockState levelWall,
+                                BlockState levelWallBase, @Nullable Block door, boolean doorOpen, Column out) {
         int ring = Math.max(Math.abs(dx), Math.abs(dz));
         if (ring > STAIRWELL_RADIUS) {
             return false;
@@ -181,13 +195,13 @@ public abstract class LevelLayout {
             out.set(floor, landing);
             out.set(ceiling, levelWall);
             if (lx == 0 && lz == -5) {
-                if (woodenDoor) {
-                    BlockState door = ModBlocks.LOBBY_DOOR.get().defaultBlockState()
+                if (door != null) {
+                    BlockState state = door.defaultBlockState()
                             .setValue(DoorBlock.FACING, doorSide)
                             .setValue(DoorBlock.HINGE, DoorHingeSide.LEFT)
-                            .setValue(DoorBlock.OPEN, true);
-                    out.set(floor + 1, door.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
-                    out.set(floor + 2, door.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+                            .setValue(DoorBlock.OPEN, doorOpen);
+                    out.set(floor + 1, state.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+                    out.set(floor + 2, state.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
                 }
                 out.set(floor + 3, ModBlocks.EXIT_SIGN.get().defaultBlockState());
                 for (int y = floor + 4; y < ceiling; y++) {

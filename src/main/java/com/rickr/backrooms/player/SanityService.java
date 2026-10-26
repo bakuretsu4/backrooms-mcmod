@@ -51,6 +51,8 @@ public final class SanityService {
     private static final float SAFE_ROOM_RECOVERY = 1.0f;
     private static final float COMPANY_RECOVERY = 0.15f;
     private static final float OUTSIDE_RECOVERY = 0.5f;
+    /** Level 37 ("Sublimity") is calming everywhere: warm light, still water, nothing hunting you. */
+    private static final float LEVEL_37_RECOVERY = 0.6f;
 
     // ---- Distances (blocks) ----------------------------------------------------------------
     private static final double ALONE_RANGE = 24.0;
@@ -129,6 +131,9 @@ public final class SanityService {
     private static float changePerSecond(ServerPlayer player) {
         if (SafeRooms.isSafe(player)) {
             return SAFE_ROOM_RECOVERY; // the hum stops, the lamp is warm: you can breathe
+        }
+        if (BackroomsLevel.fromDimension(player.level().dimension()) == BackroomsLevel.LEVEL_37) {
+            return LEVEL_37_RECOVERY; // even in its dark tunnels: the whole level is calm
         }
         boolean dark = isDark(player);
         boolean company = !dark && otherPlayerWithin(player, COMPANY_RANGE);

@@ -1,0 +1,215 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/conference_table",
+    "top": "backrooms:block/conference_table",
+    "metal": "backrooms:block/chair_base"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        11.5,
+        0
+      ],
+      "to": [
+        16,
+        13,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            3,
+            16,
+            4.5
+          ],
+          "texture": "#top"
+        },
+        "south": {
+          "uv": [
+            0,
+            3,
+            16,
+            4.5
+          ],
+          "texture": "#top"
+        },
+        "east": {
+          "uv": [
+            0,
+            3,
+            16,
+            4.5
+          ],
+          "texture": "#top"
+        },
+        "west": {
+          "uv": [
+            0,
+            3,
+            16,
+            4.5
+          ],
+          "texture": "#top"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#top"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#top"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        0,
+        6
+      ],
+      "to": [
+        10,
+        11.5,
+        10
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6,
+            4.5,
+            10,
+            16
+          ],
+          "texture": "#metal"
+        },
+        "south": {
+          "uv": [
+            6,
+            4.5,
+            10,
+            16
+          ],
+          "texture": "#metal"
+        },
+        "east": {
+          "uv": [
+            6,
+            4.5,
+            10,
+            16
+          ],
+          "texture": "#metal"
+        },
+        "west": {
+          "uv": [
+            6,
+            4.5,
+            10,
+            16
+          ],
+          "texture": "#metal"
+        },
+        "up": {
+          "uv": [
+            6,
+            6,
+            10,
+            10
+          ],
+          "texture": "#metal"
+        },
+        "down": {
+          "uv": [
+            6,
+            6,
+            10,
+            10
+          ],
+          "texture": "#metal"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        0,
+        4
+      ],
+      "to": [
+        12,
+        0.8,
+        12
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4,
+            15.2,
+            12,
+            16
+          ],
+          "texture": "#metal"
+        },
+        "south": {
+          "uv": [
+            4,
+            15.2,
+            12,
+            16
+          ],
+          "texture": "#metal"
+        },
+        "east": {
+          "uv": [
+            4,
+            15.2,
+            12,
+            16
+          ],
+          "texture": "#metal"
+        },
+        "west": {
+          "uv": [
+            4,
+            15.2,
+            12,
+            16
+          ],
+          "texture": "#metal"
+        },
+        "up": {
+          "uv": [
+            4,
+            4,
+            12,
+            12
+          ],
+          "texture": "#metal"
+        },
+        "down": {
+          "uv": [
+            4,
+            4,
+            12,
+            12
+          ],
+          "texture": "#metal"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/cubicle_fabric",
+    "fabric": "backrooms:block/cubicle_fabric",
+    "cap": "backrooms:block/cubicle_cap",
+    "foot": "backrooms:block/chair_base"
+  },
+  "elements": [
+    {
+      "from": [
+        7,
+        0,
+        0
+      ],
+      "to": [
+        9,
+        24,
+        7
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7,
+            0,
+            9,
+            16
+          ],
+          "texture": "#fabric"
+        },
+        "east": {
+          "uv": [
+            9,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fabric"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            7,
+            16
+          ],
+          "texture": "#fabric"
+        },
+        "up": {
+          "uv": [
+            7,
+            0,
+            9,
+            7
+          ],
+          "texture": "#cap"
+        },
+        "down": {
+          "uv": [
+            7,
+            9,
+            9,
+            16
+          ],
+          "texture": "#fabric"
+        }
+      }
+    },
+    {
+      "from": [
+        6.75,
+        23,
+        0
+      ],
+      "to": [
+        9.25,
+        24.5,
+        7
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.75,
+            0,
+            9.25,
+            1.5
+          ],
+          "texture": "#cap"
+        },
+        "east": {
+          "uv": [
+            9,
+            0,
+            16,
+            1.5
+          ],
+          "texture": "#cap"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            7,
+            1.5
+          ],
+          "texture": "#cap"
+        },
+        "up": {
+          "uv": [
+            6.75,
+            0,
+            9.25,
+            7
+          ],
+          "texture": "#cap"
+        },
+        "down": {
+          "uv": [
+            6.75,
+            9,
+            9.25,
+            16
+          ],
+          "texture": "#cap"
+        }
+      }
+    },
+    {
+      "from": [
+        6.5,
+        0,
+        0
+      ],
+      "to": [
+        9.5,
+        1,
+        7
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            15,
+            9.5,
+            16
+          ],
+          "texture": "#foot"
+        },
+        "east": {
+          "uv": [
+            9,
+            15,
+            16,
+            16
+          ],
+          "texture": "#foot"
+        },
+        "west": {
+          "uv": [
+            0,
+            15,
+            7,
+            16
+          ],
+          "texture": "#foot"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            0,
+            9.5,
+            7
+          ],
+          "texture": "#foot"
+        }
+      }
+    }
+  ]
+}

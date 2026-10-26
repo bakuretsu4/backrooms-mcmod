@@ -26,8 +26,11 @@ mod falls back to simpler lighting.
 ### The way out
 
 ```
-Overworld --suffocate--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Poolrooms --drain--> Level 9 --underpass--> Overworld
+Overworld --suffocate--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Poolrooms --drain--> Level 9 --underpass--> Overworld
 ```
+
+Secret branch: a rare sunlit archway in the Poolrooms leads to **Level 37**, whose deep pits lead
+on to Level 9.
 
 - **Level 0 (the Lobby):** thick-walled yellow maze, lit rooms and dark corridors. Arrows drawn on
   the walls point to the exit stairwell, but some of them lie. Look for the EXIT sign over a
@@ -39,10 +42,40 @@ Overworld --suffocate--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 -
   big ducts along one wall, caged lamps far apart and long pitch-dark stretches, junction rooms
   and small dark utility rooms. Find the emergency EXIT door; opening it takes everyone within
   6 blocks with you.
+- **Level 4 (the Abandoned Office):** you arrive here through Level 2's EXIT door. Endless empty
+  office floors on a stormy night: huge open-plan floors with square white columns, cubicle
+  fields, corridors of wooden doors into small offices, glass conference rooms, break rooms,
+  copy and server rooms, elevator lobbies whose elevators never come. A drop ceiling with
+  fluorescent panels, most of them dead in the big open areas; long walls of dark rainy windows
+  with radiators under the sills. Rain drums on the glass everywhere, the pipes rumble now and
+  then, and every minute or two lightning flashes through the windows before the thunder rolls
+  in. No monsters: it is a safe haven. Break rooms have **vending machines** (right-click: Almond
+  Water or an Energy Bar until sold out) and **water coolers** (empty hand: Almond Water, three
+  times each). Some filing cabinets marked SUPPLIES are lockers. Safe rooms stand as little
+  office boxes in the open floors. Behind one locked door with a brass "6", faint music plays.
+  The way out is an **emergency stairwell**: look for the glowing EXIT sign over a grey steel fire
+  door in a bright, cleared area; go down the stairs to reach the Poolrooms.
 - **The Poolrooms:** dim white-tiled rooms and long water channels lit by a few tubes, glowing
   cyan pools with underwater lamps and moving light ripples, and now and then a tall atrium full
   of daylight. No monsters. The way out is the drain: a dark-tiled shaft in the middle of a deep
   pool, lit by lamps around its edge. Swim into it and it pulls you down.
+  Somewhere (about once every 300 x 300 blocks) a dim, dry room has a **sunlit archway** in its
+  north wall: a round arch lined with fine white mosaic, warm daylight pouring out of it. Walk
+  into the light.
+- **Level 37 ("Sublimity"):** reached only through the Poolrooms' sunlit archway (the screen
+  whitens and fades in, no tape glitch). Pristine cream-white mosaic on every surface, floors
+  flooded ankle-deep in clear sea-green water, deep pools with no ledge and chrome ladders,
+  forests of round pillars standing in the water, wavy walls and rounded corners, round arches
+  and circular tunnels fading into darkness, domed rotundas with an oculus and glowing arched
+  alcoves, a spiral stair of floating treads climbing a light well toward the sun. Warm daylight
+  comes from nowhere: skylights and tall slit windows open onto a dazzling white void and throw
+  sharp bright rectangles and stripes across the tile and water, while the long tunnels stay dark.
+  Calm and quiet: gentle lapping, distant drips, no monsters, no events, and your **sanity slowly
+  comes back** (+0.6/s) anywhere on the level. Backpacks on the dry pool decks and at the top of
+  the spiral stairs hold almond water and calm pills. The way on is down: a round rotunda with a
+  **pit of deep, dark water** in its middle (one every ~170 blocks; `/backrooms locate` points to
+  it). Walk down the floating treads into the water and dive; a gentle current draws you down
+  the shaft and out into Level 9.
 - **Level 9 (the Suburbs):** an endless suburb at midnight in thick fog that drains the colour
   from everything. Wet roads covered in leaves, old sodium streetlamps (most dead, some
   flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark
@@ -50,6 +83,16 @@ Overworld --suffocate--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 -
   and walk into the dark.
 
 Every floor is endless; exits are spread out a few hundred blocks apart.
+
+**Pool water (Poolrooms and Level 37)** is drawn by the mod itself instead of vanilla's flat blue
+water: it takes the colour of the lit room behind it, tinted from clear shallow mint/cyan to deep
+green/teal the more water you look through, bends the tile floor with slow ripples, throws moving
+caustic light patterns onto the floor and lower walls, mirrors the walls and pillars (Fresnel:
+clear looking down, mirror-like at grazing angles) and catches sun glints in Level 37. Under water
+the view stays clear and tinted, with caustics and soft light shafts. Level 37's ankle-deep
+flooding is the `shallow_water` block: you wade through it (wading steps, a little drag) instead
+of swimming. With an Iris shader pack active, vanilla water is kept (the pack draws its own).
+Sodium/Embeddium-style renderers that skip vanilla's fluid renderer are not covered.
 
 ### Supplies
 
@@ -150,7 +193,7 @@ the Level 0 hum replaces the menu music. **FIELD NOTES** is a short in-game guid
 ## Operator commands
 
 ```
-/backrooms enter [players] [level]      send players in (0-2 = Levels, 3 = Poolrooms, 4 = Level 9)
+/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9
 /backrooms escape [players]             send players back to reality
 /backrooms battery [players] [percent]  set camcorder battery
 /backrooms locate                       where is the nearest exit?
@@ -181,13 +224,15 @@ soundfile; Windows speech synthesis for the intercom voices).
 | Package | What lives there |
 |---|---|
 | `world` | Level definitions, the infinite chunk generator, exits, travel, floor events, safe rooms (`SafeRooms`) |
-| `world/layout` | One floor plan per level (pure functions of seed + x/z) |
+| `world/layout` | One floor plan per level (pure functions of seed + x/z); Level 37's plan is integer codes (`Level37Plan`) turned into blocks by `Level37Layout` |
 | `entity` | The Bacteria and its spawner |
 | `camera` | Camcorder battery/flashlight/NightShot server rules, flashlight sync |
-| `player` | Energy (stamina), movement limits, footsteps, checkpoints and respawning (`Checkpoints`) |
+| `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`) |
 | `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages |
 | `network` | Packets between server and clients |
-| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, flashlights, hum sounds |
+| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
+| `client/water` | Pool water: surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), underwater fog (`UnderwaterView`) |
+| `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes |
 | `client/camera` | Handheld camera shake, roll, smoothing |
 | `client/hud` | Minimal HUD, energy bolt |
 | `client` | Camcorder post-shader control, overlay, Bacteria model/renderer, keys |

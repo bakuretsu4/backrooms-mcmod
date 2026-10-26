@@ -75,7 +75,7 @@ public final class Travel {
         long seed = BackroomsSeeds.layoutSeed(current, from);
         int[] exit = from.layout().exits().nearest(seed, player.getBlockX(), player.getBlockZ());
         sendTo(player, next, exit[0], exit[1]);
-        player.sendSystemMessage(Component.translatable("message.backrooms.level_" + next.number()).withStyle(s -> s.withItalic(true)));
+        player.sendSystemMessage(Component.translatable("message.backrooms.arrive." + next.getSerializedName()).withStyle(s -> s.withItalic(true)));
     }
 
     /** Back to reality at world spawn. "...or did you?" */

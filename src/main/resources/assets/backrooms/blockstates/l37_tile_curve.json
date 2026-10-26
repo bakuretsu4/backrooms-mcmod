@@ -1,0 +1,868 @@
+{
+  "variants": {
+    "orientation=se,shape=convex_r1_0_0": {
+      "model": "backrooms:block/l37/curve/convex_r1_0_0_se"
+    },
+    "orientation=sw,shape=convex_r1_0_0": {
+      "model": "backrooms:block/l37/curve/convex_r1_0_0_sw"
+    },
+    "orientation=nw,shape=convex_r1_0_0": {
+      "model": "backrooms:block/l37/curve/convex_r1_0_0_nw"
+    },
+    "orientation=ne,shape=convex_r1_0_0": {
+      "model": "backrooms:block/l37/curve/convex_r1_0_0_ne"
+    },
+    "orientation=z_east,shape=convex_r1_0_0": {
+      "model": "backrooms:block/l37/curve/convex_r1_0_0_z_east"
+    },
+    "orientation=x_south,shape=convex_r1_0_0": {
+      "model": "backrooms:block/l37/curve/convex_r1_0_0_x_south"
+    },
+    "orientation=z_west,shape=convex_r1_0_0": {
+      "model": "backrooms:block/l37/curve/convex_r1_0_0_z_west"
+    },
+    "orientation=x_north,shape=convex_r1_0_0": {
+      "model": "backrooms:block/l37/curve/convex_r1_0_0_x_north"
+    },
+    "orientation=se,shape=convex_r2_0_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_0_1_se"
+    },
+    "orientation=sw,shape=convex_r2_0_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_0_1_sw"
+    },
+    "orientation=nw,shape=convex_r2_0_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_0_1_nw"
+    },
+    "orientation=ne,shape=convex_r2_0_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_0_1_ne"
+    },
+    "orientation=z_east,shape=convex_r2_0_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_0_1_z_east"
+    },
+    "orientation=x_south,shape=convex_r2_0_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_0_1_x_south"
+    },
+    "orientation=z_west,shape=convex_r2_0_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_0_1_z_west"
+    },
+    "orientation=x_north,shape=convex_r2_0_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_0_1_x_north"
+    },
+    "orientation=se,shape=convex_r2_1_0": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_0_se"
+    },
+    "orientation=sw,shape=convex_r2_1_0": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_0_sw"
+    },
+    "orientation=nw,shape=convex_r2_1_0": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_0_nw"
+    },
+    "orientation=ne,shape=convex_r2_1_0": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_0_ne"
+    },
+    "orientation=z_east,shape=convex_r2_1_0": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_0_z_east"
+    },
+    "orientation=x_south,shape=convex_r2_1_0": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_0_x_south"
+    },
+    "orientation=z_west,shape=convex_r2_1_0": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_0_z_west"
+    },
+    "orientation=x_north,shape=convex_r2_1_0": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_0_x_north"
+    },
+    "orientation=se,shape=convex_r2_1_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_1_se"
+    },
+    "orientation=sw,shape=convex_r2_1_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_1_sw"
+    },
+    "orientation=nw,shape=convex_r2_1_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_1_nw"
+    },
+    "orientation=ne,shape=convex_r2_1_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_1_ne"
+    },
+    "orientation=z_east,shape=convex_r2_1_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_1_z_east"
+    },
+    "orientation=x_south,shape=convex_r2_1_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_1_x_south"
+    },
+    "orientation=z_west,shape=convex_r2_1_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_1_z_west"
+    },
+    "orientation=x_north,shape=convex_r2_1_1": {
+      "model": "backrooms:block/l37/curve/convex_r2_1_1_x_north"
+    },
+    "orientation=se,shape=convex_r3_0_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_0_2_se"
+    },
+    "orientation=sw,shape=convex_r3_0_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_0_2_sw"
+    },
+    "orientation=nw,shape=convex_r3_0_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_0_2_nw"
+    },
+    "orientation=ne,shape=convex_r3_0_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_0_2_ne"
+    },
+    "orientation=z_east,shape=convex_r3_0_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_0_2_z_east"
+    },
+    "orientation=x_south,shape=convex_r3_0_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_0_2_x_south"
+    },
+    "orientation=z_west,shape=convex_r3_0_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_0_2_z_west"
+    },
+    "orientation=x_north,shape=convex_r3_0_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_0_2_x_north"
+    },
+    "orientation=se,shape=convex_r3_1_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_1_2_se"
+    },
+    "orientation=sw,shape=convex_r3_1_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_1_2_sw"
+    },
+    "orientation=nw,shape=convex_r3_1_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_1_2_nw"
+    },
+    "orientation=ne,shape=convex_r3_1_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_1_2_ne"
+    },
+    "orientation=z_east,shape=convex_r3_1_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_1_2_z_east"
+    },
+    "orientation=x_south,shape=convex_r3_1_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_1_2_x_south"
+    },
+    "orientation=z_west,shape=convex_r3_1_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_1_2_z_west"
+    },
+    "orientation=x_north,shape=convex_r3_1_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_1_2_x_north"
+    },
+    "orientation=se,shape=convex_r3_2_0": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_0_se"
+    },
+    "orientation=sw,shape=convex_r3_2_0": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_0_sw"
+    },
+    "orientation=nw,shape=convex_r3_2_0": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_0_nw"
+    },
+    "orientation=ne,shape=convex_r3_2_0": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_0_ne"
+    },
+    "orientation=z_east,shape=convex_r3_2_0": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_0_z_east"
+    },
+    "orientation=x_south,shape=convex_r3_2_0": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_0_x_south"
+    },
+    "orientation=z_west,shape=convex_r3_2_0": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_0_z_west"
+    },
+    "orientation=x_north,shape=convex_r3_2_0": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_0_x_north"
+    },
+    "orientation=se,shape=convex_r3_2_1": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_1_se"
+    },
+    "orientation=sw,shape=convex_r3_2_1": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_1_sw"
+    },
+    "orientation=nw,shape=convex_r3_2_1": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_1_nw"
+    },
+    "orientation=ne,shape=convex_r3_2_1": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_1_ne"
+    },
+    "orientation=z_east,shape=convex_r3_2_1": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_1_z_east"
+    },
+    "orientation=x_south,shape=convex_r3_2_1": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_1_x_south"
+    },
+    "orientation=z_west,shape=convex_r3_2_1": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_1_z_west"
+    },
+    "orientation=x_north,shape=convex_r3_2_1": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_1_x_north"
+    },
+    "orientation=se,shape=convex_r3_2_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_2_se"
+    },
+    "orientation=sw,shape=convex_r3_2_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_2_sw"
+    },
+    "orientation=nw,shape=convex_r3_2_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_2_nw"
+    },
+    "orientation=ne,shape=convex_r3_2_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_2_ne"
+    },
+    "orientation=z_east,shape=convex_r3_2_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_2_z_east"
+    },
+    "orientation=x_south,shape=convex_r3_2_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_2_x_south"
+    },
+    "orientation=z_west,shape=convex_r3_2_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_2_z_west"
+    },
+    "orientation=x_north,shape=convex_r3_2_2": {
+      "model": "backrooms:block/l37/curve/convex_r3_2_2_x_north"
+    },
+    "orientation=se,shape=concave_r1_0_0": {
+      "model": "backrooms:block/l37/curve/concave_r1_0_0_se"
+    },
+    "orientation=sw,shape=concave_r1_0_0": {
+      "model": "backrooms:block/l37/curve/concave_r1_0_0_sw"
+    },
+    "orientation=nw,shape=concave_r1_0_0": {
+      "model": "backrooms:block/l37/curve/concave_r1_0_0_nw"
+    },
+    "orientation=ne,shape=concave_r1_0_0": {
+      "model": "backrooms:block/l37/curve/concave_r1_0_0_ne"
+    },
+    "orientation=z_east,shape=concave_r1_0_0": {
+      "model": "backrooms:block/l37/curve/concave_r1_0_0_z_east"
+    },
+    "orientation=x_south,shape=concave_r1_0_0": {
+      "model": "backrooms:block/l37/curve/concave_r1_0_0_x_south"
+    },
+    "orientation=z_west,shape=concave_r1_0_0": {
+      "model": "backrooms:block/l37/curve/concave_r1_0_0_z_west"
+    },
+    "orientation=x_north,shape=concave_r1_0_0": {
+      "model": "backrooms:block/l37/curve/concave_r1_0_0_x_north"
+    },
+    "orientation=se,shape=concave_r2_0_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_0_1_se"
+    },
+    "orientation=sw,shape=concave_r2_0_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_0_1_sw"
+    },
+    "orientation=nw,shape=concave_r2_0_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_0_1_nw"
+    },
+    "orientation=ne,shape=concave_r2_0_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_0_1_ne"
+    },
+    "orientation=z_east,shape=concave_r2_0_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_0_1_z_east"
+    },
+    "orientation=x_south,shape=concave_r2_0_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_0_1_x_south"
+    },
+    "orientation=z_west,shape=concave_r2_0_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_0_1_z_west"
+    },
+    "orientation=x_north,shape=concave_r2_0_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_0_1_x_north"
+    },
+    "orientation=se,shape=concave_r2_1_0": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_0_se"
+    },
+    "orientation=sw,shape=concave_r2_1_0": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_0_sw"
+    },
+    "orientation=nw,shape=concave_r2_1_0": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_0_nw"
+    },
+    "orientation=ne,shape=concave_r2_1_0": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_0_ne"
+    },
+    "orientation=z_east,shape=concave_r2_1_0": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_0_z_east"
+    },
+    "orientation=x_south,shape=concave_r2_1_0": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_0_x_south"
+    },
+    "orientation=z_west,shape=concave_r2_1_0": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_0_z_west"
+    },
+    "orientation=x_north,shape=concave_r2_1_0": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_0_x_north"
+    },
+    "orientation=se,shape=concave_r2_1_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_1_se"
+    },
+    "orientation=sw,shape=concave_r2_1_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_1_sw"
+    },
+    "orientation=nw,shape=concave_r2_1_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_1_nw"
+    },
+    "orientation=ne,shape=concave_r2_1_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_1_ne"
+    },
+    "orientation=z_east,shape=concave_r2_1_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_1_z_east"
+    },
+    "orientation=x_south,shape=concave_r2_1_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_1_x_south"
+    },
+    "orientation=z_west,shape=concave_r2_1_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_1_z_west"
+    },
+    "orientation=x_north,shape=concave_r2_1_1": {
+      "model": "backrooms:block/l37/curve/concave_r2_1_1_x_north"
+    },
+    "orientation=se,shape=concave_r3_0_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_0_2_se"
+    },
+    "orientation=sw,shape=concave_r3_0_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_0_2_sw"
+    },
+    "orientation=nw,shape=concave_r3_0_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_0_2_nw"
+    },
+    "orientation=ne,shape=concave_r3_0_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_0_2_ne"
+    },
+    "orientation=z_east,shape=concave_r3_0_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_0_2_z_east"
+    },
+    "orientation=x_south,shape=concave_r3_0_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_0_2_x_south"
+    },
+    "orientation=z_west,shape=concave_r3_0_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_0_2_z_west"
+    },
+    "orientation=x_north,shape=concave_r3_0_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_0_2_x_north"
+    },
+    "orientation=se,shape=concave_r3_1_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_1_2_se"
+    },
+    "orientation=sw,shape=concave_r3_1_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_1_2_sw"
+    },
+    "orientation=nw,shape=concave_r3_1_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_1_2_nw"
+    },
+    "orientation=ne,shape=concave_r3_1_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_1_2_ne"
+    },
+    "orientation=z_east,shape=concave_r3_1_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_1_2_z_east"
+    },
+    "orientation=x_south,shape=concave_r3_1_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_1_2_x_south"
+    },
+    "orientation=z_west,shape=concave_r3_1_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_1_2_z_west"
+    },
+    "orientation=x_north,shape=concave_r3_1_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_1_2_x_north"
+    },
+    "orientation=se,shape=concave_r3_2_0": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_0_se"
+    },
+    "orientation=sw,shape=concave_r3_2_0": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_0_sw"
+    },
+    "orientation=nw,shape=concave_r3_2_0": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_0_nw"
+    },
+    "orientation=ne,shape=concave_r3_2_0": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_0_ne"
+    },
+    "orientation=z_east,shape=concave_r3_2_0": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_0_z_east"
+    },
+    "orientation=x_south,shape=concave_r3_2_0": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_0_x_south"
+    },
+    "orientation=z_west,shape=concave_r3_2_0": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_0_z_west"
+    },
+    "orientation=x_north,shape=concave_r3_2_0": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_0_x_north"
+    },
+    "orientation=se,shape=concave_r3_2_1": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_1_se"
+    },
+    "orientation=sw,shape=concave_r3_2_1": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_1_sw"
+    },
+    "orientation=nw,shape=concave_r3_2_1": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_1_nw"
+    },
+    "orientation=ne,shape=concave_r3_2_1": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_1_ne"
+    },
+    "orientation=z_east,shape=concave_r3_2_1": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_1_z_east"
+    },
+    "orientation=x_south,shape=concave_r3_2_1": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_1_x_south"
+    },
+    "orientation=z_west,shape=concave_r3_2_1": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_1_z_west"
+    },
+    "orientation=x_north,shape=concave_r3_2_1": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_1_x_north"
+    },
+    "orientation=se,shape=concave_r3_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_2_se"
+    },
+    "orientation=sw,shape=concave_r3_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_2_sw"
+    },
+    "orientation=nw,shape=concave_r3_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_2_nw"
+    },
+    "orientation=ne,shape=concave_r3_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_2_ne"
+    },
+    "orientation=z_east,shape=concave_r3_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_2_z_east"
+    },
+    "orientation=x_south,shape=concave_r3_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_2_x_south"
+    },
+    "orientation=z_west,shape=concave_r3_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_2_z_west"
+    },
+    "orientation=x_north,shape=concave_r3_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r3_2_2_x_north"
+    },
+    "orientation=se,shape=concave_r4_0_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_0_3_se"
+    },
+    "orientation=sw,shape=concave_r4_0_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_0_3_sw"
+    },
+    "orientation=nw,shape=concave_r4_0_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_0_3_nw"
+    },
+    "orientation=ne,shape=concave_r4_0_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_0_3_ne"
+    },
+    "orientation=z_east,shape=concave_r4_0_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_0_3_z_east"
+    },
+    "orientation=x_south,shape=concave_r4_0_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_0_3_x_south"
+    },
+    "orientation=z_west,shape=concave_r4_0_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_0_3_z_west"
+    },
+    "orientation=x_north,shape=concave_r4_0_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_0_3_x_north"
+    },
+    "orientation=se,shape=concave_r4_1_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_1_3_se"
+    },
+    "orientation=sw,shape=concave_r4_1_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_1_3_sw"
+    },
+    "orientation=nw,shape=concave_r4_1_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_1_3_nw"
+    },
+    "orientation=ne,shape=concave_r4_1_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_1_3_ne"
+    },
+    "orientation=z_east,shape=concave_r4_1_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_1_3_z_east"
+    },
+    "orientation=x_south,shape=concave_r4_1_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_1_3_x_south"
+    },
+    "orientation=z_west,shape=concave_r4_1_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_1_3_z_west"
+    },
+    "orientation=x_north,shape=concave_r4_1_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_1_3_x_north"
+    },
+    "orientation=se,shape=concave_r4_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_2_se"
+    },
+    "orientation=sw,shape=concave_r4_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_2_sw"
+    },
+    "orientation=nw,shape=concave_r4_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_2_nw"
+    },
+    "orientation=ne,shape=concave_r4_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_2_ne"
+    },
+    "orientation=z_east,shape=concave_r4_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_2_z_east"
+    },
+    "orientation=x_south,shape=concave_r4_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_2_x_south"
+    },
+    "orientation=z_west,shape=concave_r4_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_2_z_west"
+    },
+    "orientation=x_north,shape=concave_r4_2_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_2_x_north"
+    },
+    "orientation=se,shape=concave_r4_2_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_3_se"
+    },
+    "orientation=sw,shape=concave_r4_2_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_3_sw"
+    },
+    "orientation=nw,shape=concave_r4_2_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_3_nw"
+    },
+    "orientation=ne,shape=concave_r4_2_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_3_ne"
+    },
+    "orientation=z_east,shape=concave_r4_2_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_3_z_east"
+    },
+    "orientation=x_south,shape=concave_r4_2_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_3_x_south"
+    },
+    "orientation=z_west,shape=concave_r4_2_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_3_z_west"
+    },
+    "orientation=x_north,shape=concave_r4_2_3": {
+      "model": "backrooms:block/l37/curve/concave_r4_2_3_x_north"
+    },
+    "orientation=se,shape=concave_r4_3_0": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_0_se"
+    },
+    "orientation=sw,shape=concave_r4_3_0": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_0_sw"
+    },
+    "orientation=nw,shape=concave_r4_3_0": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_0_nw"
+    },
+    "orientation=ne,shape=concave_r4_3_0": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_0_ne"
+    },
+    "orientation=z_east,shape=concave_r4_3_0": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_0_z_east"
+    },
+    "orientation=x_south,shape=concave_r4_3_0": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_0_x_south"
+    },
+    "orientation=z_west,shape=concave_r4_3_0": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_0_z_west"
+    },
+    "orientation=x_north,shape=concave_r4_3_0": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_0_x_north"
+    },
+    "orientation=se,shape=concave_r4_3_1": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_1_se"
+    },
+    "orientation=sw,shape=concave_r4_3_1": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_1_sw"
+    },
+    "orientation=nw,shape=concave_r4_3_1": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_1_nw"
+    },
+    "orientation=ne,shape=concave_r4_3_1": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_1_ne"
+    },
+    "orientation=z_east,shape=concave_r4_3_1": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_1_z_east"
+    },
+    "orientation=x_south,shape=concave_r4_3_1": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_1_x_south"
+    },
+    "orientation=z_west,shape=concave_r4_3_1": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_1_z_west"
+    },
+    "orientation=x_north,shape=concave_r4_3_1": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_1_x_north"
+    },
+    "orientation=se,shape=concave_r4_3_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_2_se"
+    },
+    "orientation=sw,shape=concave_r4_3_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_2_sw"
+    },
+    "orientation=nw,shape=concave_r4_3_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_2_nw"
+    },
+    "orientation=ne,shape=concave_r4_3_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_2_ne"
+    },
+    "orientation=z_east,shape=concave_r4_3_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_2_z_east"
+    },
+    "orientation=x_south,shape=concave_r4_3_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_2_x_south"
+    },
+    "orientation=z_west,shape=concave_r4_3_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_2_z_west"
+    },
+    "orientation=x_north,shape=concave_r4_3_2": {
+      "model": "backrooms:block/l37/curve/concave_r4_3_2_x_north"
+    },
+    "orientation=se,shape=concave_r6_0_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_0_5_se"
+    },
+    "orientation=sw,shape=concave_r6_0_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_0_5_sw"
+    },
+    "orientation=nw,shape=concave_r6_0_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_0_5_nw"
+    },
+    "orientation=ne,shape=concave_r6_0_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_0_5_ne"
+    },
+    "orientation=z_east,shape=concave_r6_0_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_0_5_z_east"
+    },
+    "orientation=x_south,shape=concave_r6_0_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_0_5_x_south"
+    },
+    "orientation=z_west,shape=concave_r6_0_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_0_5_z_west"
+    },
+    "orientation=x_north,shape=concave_r6_0_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_0_5_x_north"
+    },
+    "orientation=se,shape=concave_r6_1_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_1_5_se"
+    },
+    "orientation=sw,shape=concave_r6_1_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_1_5_sw"
+    },
+    "orientation=nw,shape=concave_r6_1_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_1_5_nw"
+    },
+    "orientation=ne,shape=concave_r6_1_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_1_5_ne"
+    },
+    "orientation=z_east,shape=concave_r6_1_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_1_5_z_east"
+    },
+    "orientation=x_south,shape=concave_r6_1_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_1_5_x_south"
+    },
+    "orientation=z_west,shape=concave_r6_1_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_1_5_z_west"
+    },
+    "orientation=x_north,shape=concave_r6_1_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_1_5_x_north"
+    },
+    "orientation=se,shape=concave_r6_2_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_2_5_se"
+    },
+    "orientation=sw,shape=concave_r6_2_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_2_5_sw"
+    },
+    "orientation=nw,shape=concave_r6_2_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_2_5_nw"
+    },
+    "orientation=ne,shape=concave_r6_2_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_2_5_ne"
+    },
+    "orientation=z_east,shape=concave_r6_2_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_2_5_z_east"
+    },
+    "orientation=x_south,shape=concave_r6_2_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_2_5_x_south"
+    },
+    "orientation=z_west,shape=concave_r6_2_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_2_5_z_west"
+    },
+    "orientation=x_north,shape=concave_r6_2_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_2_5_x_north"
+    },
+    "orientation=se,shape=concave_r6_3_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_4_se"
+    },
+    "orientation=sw,shape=concave_r6_3_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_4_sw"
+    },
+    "orientation=nw,shape=concave_r6_3_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_4_nw"
+    },
+    "orientation=ne,shape=concave_r6_3_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_4_ne"
+    },
+    "orientation=z_east,shape=concave_r6_3_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_4_z_east"
+    },
+    "orientation=x_south,shape=concave_r6_3_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_4_x_south"
+    },
+    "orientation=z_west,shape=concave_r6_3_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_4_z_west"
+    },
+    "orientation=x_north,shape=concave_r6_3_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_4_x_north"
+    },
+    "orientation=se,shape=concave_r6_3_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_5_se"
+    },
+    "orientation=sw,shape=concave_r6_3_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_5_sw"
+    },
+    "orientation=nw,shape=concave_r6_3_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_5_nw"
+    },
+    "orientation=ne,shape=concave_r6_3_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_5_ne"
+    },
+    "orientation=z_east,shape=concave_r6_3_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_5_z_east"
+    },
+    "orientation=x_south,shape=concave_r6_3_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_5_x_south"
+    },
+    "orientation=z_west,shape=concave_r6_3_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_5_z_west"
+    },
+    "orientation=x_north,shape=concave_r6_3_5": {
+      "model": "backrooms:block/l37/curve/concave_r6_3_5_x_north"
+    },
+    "orientation=se,shape=concave_r6_4_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_3_se"
+    },
+    "orientation=sw,shape=concave_r6_4_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_3_sw"
+    },
+    "orientation=nw,shape=concave_r6_4_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_3_nw"
+    },
+    "orientation=ne,shape=concave_r6_4_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_3_ne"
+    },
+    "orientation=z_east,shape=concave_r6_4_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_3_z_east"
+    },
+    "orientation=x_south,shape=concave_r6_4_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_3_x_south"
+    },
+    "orientation=z_west,shape=concave_r6_4_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_3_z_west"
+    },
+    "orientation=x_north,shape=concave_r6_4_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_3_x_north"
+    },
+    "orientation=se,shape=concave_r6_4_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_4_se"
+    },
+    "orientation=sw,shape=concave_r6_4_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_4_sw"
+    },
+    "orientation=nw,shape=concave_r6_4_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_4_nw"
+    },
+    "orientation=ne,shape=concave_r6_4_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_4_ne"
+    },
+    "orientation=z_east,shape=concave_r6_4_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_4_z_east"
+    },
+    "orientation=x_south,shape=concave_r6_4_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_4_x_south"
+    },
+    "orientation=z_west,shape=concave_r6_4_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_4_z_west"
+    },
+    "orientation=x_north,shape=concave_r6_4_4": {
+      "model": "backrooms:block/l37/curve/concave_r6_4_4_x_north"
+    },
+    "orientation=se,shape=concave_r6_5_0": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_0_se"
+    },
+    "orientation=sw,shape=concave_r6_5_0": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_0_sw"
+    },
+    "orientation=nw,shape=concave_r6_5_0": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_0_nw"
+    },
+    "orientation=ne,shape=concave_r6_5_0": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_0_ne"
+    },
+    "orientation=z_east,shape=concave_r6_5_0": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_0_z_east"
+    },
+    "orientation=x_south,shape=concave_r6_5_0": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_0_x_south"
+    },
+    "orientation=z_west,shape=concave_r6_5_0": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_0_z_west"
+    },
+    "orientation=x_north,shape=concave_r6_5_0": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_0_x_north"
+    },
+    "orientation=se,shape=concave_r6_5_1": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_1_se"
+    },
+    "orientation=sw,shape=concave_r6_5_1": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_1_sw"
+    },
+    "orientation=nw,shape=concave_r6_5_1": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_1_nw"
+    },
+    "orientation=ne,shape=concave_r6_5_1": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_1_ne"
+    },
+    "orientation=z_east,shape=concave_r6_5_1": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_1_z_east"
+    },
+    "orientation=x_south,shape=concave_r6_5_1": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_1_x_south"
+    },
+    "orientation=z_west,shape=concave_r6_5_1": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_1_z_west"
+    },
+    "orientation=x_north,shape=concave_r6_5_1": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_1_x_north"
+    },
+    "orientation=se,shape=concave_r6_5_2": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_2_se"
+    },
+    "orientation=sw,shape=concave_r6_5_2": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_2_sw"
+    },
+    "orientation=nw,shape=concave_r6_5_2": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_2_nw"
+    },
+    "orientation=ne,shape=concave_r6_5_2": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_2_ne"
+    },
+    "orientation=z_east,shape=concave_r6_5_2": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_2_z_east"
+    },
+    "orientation=x_south,shape=concave_r6_5_2": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_2_x_south"
+    },
+    "orientation=z_west,shape=concave_r6_5_2": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_2_z_west"
+    },
+    "orientation=x_north,shape=concave_r6_5_2": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_2_x_north"
+    },
+    "orientation=se,shape=concave_r6_5_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_3_se"
+    },
+    "orientation=sw,shape=concave_r6_5_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_3_sw"
+    },
+    "orientation=nw,shape=concave_r6_5_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_3_nw"
+    },
+    "orientation=ne,shape=concave_r6_5_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_3_ne"
+    },
+    "orientation=z_east,shape=concave_r6_5_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_3_z_east"
+    },
+    "orientation=x_south,shape=concave_r6_5_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_3_x_south"
+    },
+    "orientation=z_west,shape=concave_r6_5_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_3_z_west"
+    },
+    "orientation=x_north,shape=concave_r6_5_3": {
+      "model": "backrooms:block/l37/curve/concave_r6_5_3_x_north"
+    }
+  }
+}

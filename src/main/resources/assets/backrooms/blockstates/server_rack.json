@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/server_rack"
+    },
+    "facing=east": {
+      "model": "backrooms:block/server_rack",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/server_rack",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/server_rack",
+      "y": 270
+    }
+  }
+}

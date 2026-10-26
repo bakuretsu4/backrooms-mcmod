@@ -13,6 +13,10 @@ the wire-thin Bacteria, and exits down through Level 1 and Level 2 back to the r
 Every player and the server need this mod installed.
 '''
 
+# Client mixins for the pool water (hide vanilla water faces in the Poolrooms / Level 37).
+[[mixins]]
+config="${mod_id}.mixins.json"
+
 [[dependencies.${mod_id}]]
     modId="neoforge"
     type="required"

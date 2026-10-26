@@ -30,7 +30,7 @@
         { "name": "BlurY", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Grain", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Dream", "type": "float", "count": 1, "values": [ 0.0 ] },
-        { "name": "PoolWater", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Underwater", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Interference", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "FogDrain", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Sanity", "type": "float", "count": 1, "values": [ 0.0 ] },

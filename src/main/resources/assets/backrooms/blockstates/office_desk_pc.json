@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/office_desk_pc"
+    },
+    "facing=east": {
+      "model": "backrooms:block/office_desk_pc",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/office_desk_pc",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/office_desk_pc",
+      "y": 270
+    }
+  }
+}

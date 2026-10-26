@@ -8,6 +8,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.Property;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,7 +70,19 @@ public enum FixtureType {
      * Safe-room ceiling lamp: a warm incandescent bulb, steady and silent. Battery-backed like the
      * exit signs (see FixturePower): it stays on in blackouts and never flickers.
      */
-    SAFE_LAMP("safe_room_lamp", Mount.CEILING_BLOCK, 1, 1.0f, 0.82f, 0.60f, 2.4f, 11.0f, Hum.NONE, false);
+    SAFE_LAMP("safe_room_lamp", Mount.CEILING_BLOCK, 1, 1.0f, 0.82f, 0.60f, 2.4f, 11.0f, Hum.NONE, false),
+    /**
+     * Level 4 ceiling troffer (two blocks make one 1x2 panel, so maxRun 2 = one light per panel):
+     * cool office white (~4500 K fluorescent) in a pool about 10 blocks across, so lit islands
+     * stand out against the dark open floors. Buzzes like every tube; panels in mode=flicker are
+     * failing tubes that stutter now and then.
+     */
+    OFFICE_PANEL("office_panel", Mount.CEILING_BLOCK, 2, 0.93f, 0.96f, 1.0f, 1.0f, 10.0f, Hum.FLUORESCENT, true),
+    /**
+     * Level 4 vending machine: the glowing front throws a small cold glow into the dark break room.
+     * Only the upper half counts (see {@link #of}), so a machine is one light.
+     */
+    VENDING_MACHINE("vending_machine", Mount.INSET, 1, 0.80f, 0.90f, 1.0f, 0.45f, 6.0f, Hum.NONE, false);
 
     /** Which looping buzz a fixture makes (positional, the nearest few lit ones play). */
     public enum Hum {
@@ -194,6 +208,11 @@ public enum FixtureType {
         }
         FixtureType type = map.get(state.getBlock());
         if (type != null && modeOf(state) == LampMode.DEAD) {
+            return null;
+        }
+        // A two-tall vending machine glows once, from its upper half.
+        if (type == VENDING_MACHINE && state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
+                && state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER) {
             return null;
         }
         return type;

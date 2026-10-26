@@ -4114,6 +4114,1483 @@ def tex_menu_note() -> None:
         paper[band] = paper[band] * 0.7 + np.array([235, 235, 225]) * 0.3
     save_png(np.concatenate([paper, alpha[..., None]], axis=2), MENU / "note.png")
 
+# =============================================================================
+# Pool water (client/water): ripple normal map, caustic network, shallow-water item
+# icon, wading steps and a soft splash. Run: python tools/gen_assets.py tex_water_ snd_water_
+# =============================================================================
+
+WATER_TEX = TEX / "water"
+# Linear filtering and repeat wrap: the water shader tiles these across the pools.
+WATER_TEX_META = '{"texture": {"blur": true, "clamp": false}}\n'
+
+
+def tex_water_ripples() -> None:
+    """Tileable ripple normal map, 256 px (= 8 blocks in the shader's first layer).
+
+    Height = band-limited fractal noise (wavelengths ~0.4-3 blocks) plus a finer chop.
+    R/G = slope along x/z mapped to 0..1 (0.5 = flat), scaled so the steepest 1% reach the ends;
+    B = height. Rows are z, columns are x (texture v / u).
+    """
+    n = 256
+    rng = rng_for(4100)
+    h = fnoise(rng, (n, n), beta=3.0, kmin=2.5, kmax=20.0)
+    h += 0.35 * fnoise(rng, (n, n), beta=2.0, kmin=14.0, kmax=40.0)
+    h = blur(h, 1.0)
+    gx = (np.roll(h, -1, axis=1) - np.roll(h, 1, axis=1)) * 0.5
+    gz = (np.roll(h, -1, axis=0) - np.roll(h, 1, axis=0)) * 0.5
+    scale = np.percentile(np.hypot(gx, gz), 99.0) + 1e-9
+    gx = np.clip(gx / scale, -1.0, 1.0)
+    gz = np.clip(gz / scale, -1.0, 1.0)
+    hh = (h - h.min()) / (h.max() - h.min() + 1e-9)
+    img = np.stack([(gx * 0.5 + 0.5) * 255, (gz * 0.5 + 0.5) * 255, hh * 255], axis=-1)
+    save_png(img, WATER_TEX / "ripples.png")
+    (WATER_TEX / "ripples.png.mcmeta").write_text(WATER_TEX_META)
+
+
+def _water_caustic_net(n, cells, seed, line_px, glow_px, warp_px) -> np.ndarray:
+    """Seamless caustic web (0..1): the walls of Voronoi cells (where the nearest and second
+    nearest seed are almost equally far), made wavy by a smooth domain warp. Seeds sit on a
+    jittered grid so the cells have similar sizes, like real pool caustics."""
+    rng = rng_for(seed)
+    X, Y = grid((n, n))
+    X = X + fnoise(rng, (n, n), beta=3.0, kmin=1.0, kmax=6.0) * warp_px
+    Y = Y + fnoise(rng, (n, n), beta=3.0, kmin=1.0, kmax=6.0) * warp_px
+    g = int(round(np.sqrt(cells)))
+    d1 = np.full((n, n), 1e9)
+    d2 = np.full((n, n), 1e9)
+    for i in range(g):
+        for j in range(g):
+            px = (i + rng.uniform(0.15, 0.85)) * n / g
+            py = (j + rng.uniform(0.15, 0.85)) * n / g
+            d = np.hypot(wrapd(X - px, n), wrapd(Y - py, n))
+            d2 = np.where(d < d1, d1, np.minimum(d2, d))
+            d1 = np.minimum(d1, d)
+    edge = d2 - d1
+    web = np.exp(-(edge / line_px) ** 2) + 0.35 * np.exp(-(edge / glow_px) ** 2)
+    # Some stretches of the web are brighter than others (focus varies across the pool).
+    web *= 0.75 + 0.25 * np.clip(fnoise(rng, (n, n), beta=2.5, kmin=1.0, kmax=5.0), -1.5, 1.5) / 1.5
+    return np.clip(blur(web, 0.6), 0.0, 1.0)
+
+
+def tex_water_caustics() -> None:
+    """Tileable caustic network, 256 px (= 4 blocks in the shader): ~0.5-block cells."""
+    c = _water_caustic_net(256, 64, 4110, line_px=2.4, glow_px=9.0, warp_px=6.0)
+    save_png(np.repeat(c[..., None] * 255, 3, axis=2), WATER_TEX / "caustics.png")
+    (WATER_TEX / "caustics.png.mcmeta").write_text(WATER_TEX_META)
+
+
+def tex_water_shallow_item() -> None:
+    """16x16 icon for the shallow water block item: a flat sea-green puddle with ripple rings."""
+    n = 16
+    X, Y = grid((n, n))
+    r = np.hypot((X - 8.0) / 7.3, (Y - 9.0) / 4.4)
+    body = smoothstep(1.0, 0.9, r)
+    shade = smoothstep(0.0, 1.0, r)[..., None]
+    col = np.array([88.0, 214.0, 178.0]) * (1 - shade) + np.array([22.0, 122.0, 98.0]) * shade
+    rings = np.exp(-((r - 0.45) / 0.08) ** 2) * 0.6 + np.exp(-((r - 0.78) / 0.07) ** 2) * 0.45
+    col = col + rings[..., None] * np.array([150.0, 120.0, 100.0])
+    glint = np.exp(-(((X - 5.0) / 1.6) ** 2 + ((Y - 7.5) / 0.9) ** 2))
+    col = col + glint[..., None] * 140.0
+    img = np.concatenate([np.clip(col, 0, 255), (body * 235.0)[..., None]], axis=2)
+    save_png(img, TEX / "item" / "shallow_water.png")
+
+
+def _water_bubble(rng, f0, dur) -> np.ndarray:
+    """One small bubble / drip: a sine whose pitch rises as it decays (the classic 'plip')."""
+    t = t_axis(dur)
+    f = f0 * (1.0 + 1.3 * t / dur)
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / (dur / 3)) * smoothstep(0, 0.002, t)
+
+
+def _water_slosh(rng, dur, lo, hi, attack, decay) -> np.ndarray:
+    """Band-passed noise burst: water pushed aside / running off."""
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    x = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, lo, hi, 2))[:n]
+    return norm(x) * smoothstep(0, attack, t) * np.exp(-np.maximum(t - attack, 0) / decay)
+
+
+def _water_step(rng, run: bool) -> np.ndarray:
+    dur = 0.6 if run else 0.5
+    n = int(dur * SR)
+    out = np.zeros(n)
+    # 1. The foot pushing into the water: a soft, dull slap and a low "plop".
+    add_at(out, _water_slosh(rng, 0.2, 300, 3200 if run else 2200, 0.004, 0.05 if run else 0.04)
+           * (1.0 if run else 0.8), 0.0, False)
+    pt = t_axis(0.12)
+    sweep = np.linspace(rng.uniform(170, 220), rng.uniform(80, 100), pt.size)
+    add_at(out, np.sin(2 * np.pi * np.cumsum(sweep) / SR) * np.exp(-pt / 0.035) * 0.5, 0.003, False)
+    # 2. The foot lifting out: a longer, airier swish of water running off it.
+    add_at(out, _water_slosh(rng, 0.25, 800, 5000 if run else 3800, 0.03, 0.07) * (0.7 if run else 0.45),
+           rng.uniform(0.14, 0.2), False)
+    # 3. Drips and small bubbles.
+    for _ in range(int(rng.integers(6, 11)) if run else int(rng.integers(3, 7))):
+        b = _water_bubble(rng, rng.uniform(600, 1700), rng.uniform(0.012, 0.03))
+        add_at(out, b * rng.uniform(0.08, 0.25), rng.uniform(0.02, dur - 0.08), False)
+    out = fft_filter(out, lambda f: lp_gain(f, 7000 if run else 5000, 2))[:n]
+    # A tiled room: short, bright reverb.
+    return out + 0.22 * conv(out, reverb_ir(rng, 0.6, 0.18, lp=4500, predelay=0.008))[:n]
+
+
+def snd_water_wade() -> None:
+    """Wading steps through shallow water, 4 walk + 4 run: plunge, lift, drips, tiled reverb."""
+    for i in range(1, 5):
+        for run in (False, True):
+            rng = rng_for(4200 + (10 if run else 0) + i)
+            kind = "run" if run else "walk"
+            save_ogg(_water_step(rng, run), SND / "water" / f"wade_{kind}{i}.ogg",
+                     peak=0.85 if run else 0.9, fade_in=0.002, fade_out=0.04)
+
+
+def snd_water_splash() -> None:
+    """Soft splash when dropping into a pool, 3 variants (~1.4 s): muffled impact, low whump,
+    a burst of bubbles, drops falling back, tiled-room reverb."""
+    for i in range(1, 4):
+        rng = rng_for(4300 + i)
+        dur = 1.4
+        n = int(dur * SR)
+        out = np.zeros(n)
+        add_at(out, _water_slosh(rng, 0.5, 200, 3000, 0.006, 0.12), 0.0, False)
+        wt = t_axis(0.25)
+        sweep = np.linspace(rng.uniform(110, 140), rng.uniform(55, 70), wt.size)
+        add_at(out, np.sin(2 * np.pi * np.cumsum(sweep) / SR) * np.exp(-wt / 0.07) * 0.6, 0.004, False)
+        for _ in range(int(rng.integers(25, 40))):
+            st = 0.03 + 0.67 * rng.uniform(0, 1) ** 1.8          # most bubbles right after the impact
+            b = _water_bubble(rng, rng.uniform(300, 1300), rng.uniform(0.02, 0.07))
+            add_at(out, b * rng.uniform(0.1, 0.35) * np.exp(-st / 0.4), st, False)
+        for _ in range(int(rng.integers(10, 18))):
+            d = _water_bubble(rng, rng.uniform(900, 2200), rng.uniform(0.01, 0.025))
+            add_at(out, d * rng.uniform(0.05, 0.15), rng.uniform(0.25, 1.15), False)
+        out = fft_filter(out, lambda f: lp_gain(f, 4500, 2))[:n]
+        out = out + 0.3 * conv(out, reverb_ir(rng, 1.0, 0.3, lp=3500, predelay=0.012))[:n]
+        save_ogg(out, SND / "water" / f"splash{i}.ogg", peak=0.8, fade_in=0.002, fade_out=0.2)
+
+
+# =============================================================================
+# Level 4: The Abandoned Office. Albedos are chosen so that, under the cool-white
+# Veil panel light, lit surfaces land near the reference samples (refs REPORT):
+# lit greige carpet ~#867E77, cream walls ~#D8CFC1, ceiling tile ~#A09F9C..#C9C6BD,
+# partitions ~#74706A. Run only these with:  python tools/gen_assets.py _l4_
+# =============================================================================
+
+L4_CARPET = (124, 116, 110)        # greige-taupe loop pile
+L4_CARPET_BLUE = (70, 82, 106)     # blue-grey commercial carpet
+L4_WALL = (216, 207, 193)          # off-white / cream drywall
+L4_TILE = (201, 198, 189)          # acoustic ceiling tile
+L4_TBAR = (236, 235, 230)          # ceiling grid
+L4_FABRIC = (116, 112, 106)        # cubicle partition fabric
+L4_VINYL = (44, 42, 40)            # vinyl base strip
+
+
+def _l4_carpet(seed, col, indent=False) -> np.ndarray:
+    """Commercial loop-pile carpet: tight rows of loops, fine two-tone fleck, soft traffic wear.
+
+    The indent version is the patch that sat under furniture for years: darker, a touch more
+    saturated (not sun-faded), with less wear.
+    """
+    rng = rng_for(seed)
+    X, Y = grid()
+    base = np.array(col, float)
+    if indent:
+        # Unfaded: darker, and a little more saturated (pushed away from its own grey).
+        grey = base.mean()
+        base = (grey + (base - grey) * 1.25) * 0.80
+    img = fill(base, (S, S))
+    # Loops: rows of tiny bumps every 4 px, offset by half a loop every other row (4 divides 128: seamless).
+    loops = 0.5 + 0.5 * np.cos(2 * np.pi * X / 4 + np.pi * (np.floor(Y / 4) % 2)) * np.cos(2 * np.pi * Y / 4)
+    lum = (loops - 0.5) * 9.0
+    lum += rng.normal(0, 7.0, (S, S))                                 # fibre noise
+    lum += np.kron(rng.normal(0, 4.0, (S // 2, S // 2)), np.ones((2, 2)))
+    lum += fnoise(rng, beta=2.8) * (3.0 if indent else 5.5)           # soft mottle
+    img = add_lum(img, lum, (1.0, 1.0, 1.02))
+    # Two-tone fleck: dark and light fibres.
+    dark = rng.random((S, S)) < 0.06
+    light = rng.random((S, S)) < 0.035
+    img = over(img, base * 0.55, dark * 0.8)
+    img = over(img, np.minimum(base * 1.35 + 12, 255), light * 0.7)
+    if not indent:
+        # Traffic wear: lighter, flattened streaks.
+        wear = smoothstep(0.6, 2.0, fnoise(rng, beta=3.0, aniso=(1.0, 2.5)))
+        img = add_lum(img, wear * 9.0)
+    return img
+
+
+def tex_l4_carpet() -> None:
+    save_png(_l4_carpet(4101, L4_CARPET), _blk("office_carpet"))
+    save_png(_l4_carpet(4101, L4_CARPET, indent=True), _blk("office_carpet_indent"))
+    save_png(_l4_carpet(4102, L4_CARPET_BLUE), _blk("office_carpet_blue"))
+    save_png(_l4_carpet(4102, L4_CARPET_BLUE, indent=True), _blk("office_carpet_blue_indent"))
+
+
+def _l4_drywall(seed, col=L4_WALL) -> np.ndarray:
+    """Painted drywall: fine orange-peel roller texture, faint patching, very slight grime."""
+    rng = rng_for(seed)
+    img = fill(col, (S, S))
+    peel = blur(rng.normal(0, 1, (S, S)), 0.9) * 5.0 + blur(rng.normal(0, 1, (S, S)), 2.0) * 3.0
+    img = add_lum(img, peel + fnoise(rng, beta=3.0) * 3.0, (1.0, 0.99, 0.97))
+    patch = smoothstep(1.4, 2.4, fnoise(rng, beta=2.6))              # spackle patches, a touch whiter
+    img = add_lum(img, patch * 5.0)
+    grime = smoothstep(1.0, 2.6, fnoise(rng, beta=2.0)) * 0.12
+    return over(img, np.array(col) * 0.8, grime)
+
+
+def _l4_base_strip(img, height=11) -> np.ndarray:
+    """Dark vinyl cove base along the bottom, with a highlight on its rounded top and scuffs."""
+    rng = rng_for(4110)
+    X, Y = grid()
+    top = S - height
+    strip = box((S, S), -1, top, S + 1, S + 1)
+    vinyl = add_lum(fill(L4_VINYL, (S, S)), rng.normal(0, 2.0, (S, S)) + fnoise(rng, beta=2.0, aniso=(6, 1)) * 2.5)
+    img = over(img, vinyl, strip)
+    img = add_lum(img, 26 * box((S, S), -1, top, S + 1, top + 1.5) - 8 * box((S, S), -1, S - 2, S + 1, S + 1))
+    img = add_lum(img, -14 * box((S, S), -1, top - 3, S + 1, top) * 0.6)   # shadow above the lip
+    scuff = smoothstep(1.0, 2.2, fnoise(rng, beta=1.8, aniso=(5, 1))) * smoothstep(top - 14, top, Y) * (Y < top)
+    return over(img, (120, 114, 104), scuff * 0.35)
+
+
+def tex_l4_walls() -> None:
+    wall = _l4_drywall(4103)
+    save_png(wall, _blk("office_wall"))
+    save_png(_l4_base_strip(wall.copy()), _blk("office_wall_base"))
+    # Lobby wall: darker two-tone paint under a wooden chair rail at ~0.9 m (rows 9-17 from the top).
+    rng = rng_for(4104)
+    X, Y = grid()
+    rail_top, rail_bot = 9, 17
+    low = _l4_drywall(4105, (176, 164, 148))
+    img = over(wall.copy(), low, (Y > rail_bot))
+    rail = _wood(rng, np.array([112, 78, 52]), horizontal=True)
+    img = over(img, rail, box((S, S), -1, rail_top, S + 1, rail_bot))
+    img = add_lum(img, 24 * box((S, S), -1, rail_top, S + 1, rail_top + 1.5) - 28 * box((S, S), -1, rail_bot - 1.5, S + 1, rail_bot))
+    img = add_lum(img, -16 * box((S, S), -1, rail_bot, S + 1, rail_bot + 3))   # shadow under the rail
+    img = _l4_base_strip(img)
+    save_png(img, _blk("office_wall_rail"))
+
+
+def tex_l4_column() -> None:
+    """Square column: the same paint, darker at the edges (corner bead catches less light) and dinged."""
+    rng = rng_for(4106)
+    X, Y = grid()
+    img = _l4_drywall(4106, (220, 212, 199))
+    img = add_lum(img, -10 * smoothstep(10, 0, X) - 10 * smoothstep(S - 10, S, X))
+    img = add_lum(img, 14 * box((S, S), 1, -1, 3, S + 1) * 0.5)      # bead highlight
+    dings = (rng.random((S, S)) < 0.0015) * rng.uniform(0.5, 1, (S, S))
+    img = add_lum(img, -blur(dings, 0.8) * 120)
+    save_png(img, _blk("office_column"))
+    save_png(_l4_base_strip(img.copy(), height=14), _blk("office_column_base"))
+
+
+def _l4_ceiling_tile(seed) -> np.ndarray:
+    """One 2x2 ft acoustic tile per block: fissured, pitted mineral fibre in a thin white T-bar grid."""
+    rng = rng_for(seed)
+    X, Y = grid()
+    img = fill(L4_TILE, (S, S))
+    pits = blur((rng.random((S, S)) < 0.08) * rng.uniform(0.3, 1, (S, S)), 0.45)
+    fiss = smoothstep(0.06, 0.0, np.abs(fnoise(rng, beta=2.2, kmin=4)))
+    lum = -pits * 34 - fiss * 10 + fnoise(rng, beta=3.0) * 3.5 + rng.normal(0, 1.8, (S, S))
+    img = add_lum(img, lum, (1.0, 0.99, 0.96))
+    # Sagging tiles darken toward the middle; a faint water stain now and then.
+    img = add_lum(img, -7 * blob((S, S), 64, 64, 40, 40))
+    stain = smoothstep(0.35, 0.6, blob((S, S), rng.uniform(20, 108), rng.uniform(20, 108), 22, 16)
+                       * (1 + 0.5 * fnoise(rng, beta=2.0))) * (rng.random() < 0.6)
+    img = over(img, np.array([170, 150, 112]), stain * 0.28)
+    # T-bar: 2 px on every edge (two neighbours make a 4 px bar), with a shadow line inside.
+    d = np.minimum.reduce([X, Y, S - X, S - Y])
+    img = add_lum(img, -16 * ((d > 2) & (d < 4.5)))
+    img = over(img, np.array(L4_TBAR), np.clip(2.6 - d, 0, 1))
+    return img
+
+
+def tex_l4_ceiling() -> None:
+    save_png(_l4_ceiling_tile(4107), _blk("office_ceiling"))
+    # Missing tile: the dark plenum above the grid, a duct and a sagging cable barely visible.
+    rng = rng_for(4108)
+    X, Y = grid()
+    hole = add_lum(fill((10, 10, 12), (S, S)), fnoise(rng, beta=2.5) * 3)
+    duct = box((S, S), 30, -1, 74, S + 1)
+    hole = over(hole, np.array([30, 31, 34]), duct)
+    hole = add_lum(hole, 8 * box((S, S), 30, -1, 34, S + 1) - 6 * box((S, S), 70, -1, 74, S + 1))
+    for yy in range(8, S, 24):
+        hole = add_lum(hole, 6 * box((S, S), 30, yy, 74, yy + 2))          # duct seams
+    cable = np.abs(Y - (40 + 30 * np.sin((X + 10) / 40))) < 1.6
+    hole = over(hole, np.array([22, 22, 24]), cable)
+    d = np.minimum.reduce([X, Y, S - X, S - Y])
+    hole = over(hole, np.array([150, 150, 148]), (d < 2.6) * 1.0)    # the T-bar grid still frames the hole
+    hole = add_lum(hole, -20 * ((d >= 2.6) & (d < 5)))
+    save_png(hole, _blk("office_ceiling_missing"))
+    # Access hatch: a tile in a hinged metal frame with a cam latch.
+    img = _l4_ceiling_tile(4109)
+    frame = box((S, S), 10, 10, S - 10, S - 10) - box((S, S), 14, 14, S - 14, S - 14)
+    img = over(img, np.array([214, 214, 210]), frame)
+    img = add_lum(img, -22 * (box((S, S), 14, 14, S - 14, 16)))
+    latch = supersample((S, S), lambda x, y: np.hypot(x - 64, y - 24) < 4)
+    img = over(img, np.array([120, 120, 124]), latch)
+    img = over(img, np.array([60, 60, 64]), box((S, S), 62.5, 21, 65.5, 27) * latch)
+    save_png(img, _blk("office_ceiling_hatch"))
+
+
+def _l4_panel(on: bool) -> np.ndarray:
+    """Half a 2x4 ft troffer seen from below. Its partner is at the texture's bottom edge (north,
+    for an unrotated down face): that edge has no frame, so the two halves read as one long lens."""
+    rng = rng_for(4111)
+    X, Y = grid()
+    img = add_lum(fill((226, 226, 228), (S, S)), rng.normal(0, 1.5, (S, S)))   # painted steel frame
+    lens = box((S, S), 12, 12, S - 12, S + 4)
+    groove = box((S, S), 9, 9, S - 9, S + 4) - lens
+    img = over(img, np.array([150, 150, 154]), groove)
+    prism = (np.abs(((X + Y) % 6) - 3) + np.abs(((X - Y) % 6) - 3)) / 6.0
+    if on:
+        # Prismatic lens: a fine diamond grid, two brighter tube bands showing through.
+        lit = add_lum(fill((246, 249, 255), (S, S)), -prism * 10)
+        for tx in (44, 84):
+            lit = add_lum(lit, 9 * np.exp(-((X - tx) / 9) ** 2))
+        lit = np.minimum(lit, 255)
+    else:
+        lit = add_lum(fill((150, 153, 158), (S, S)), -prism * 8 + fnoise(rng, beta=2.5) * 3)
+        for tx in (44, 84):           # dead tubes as darker shadows behind the lens, blackened ends
+            tube = np.exp(-((X - tx) / 6) ** 2)
+            lit = add_lum(lit, -tube * 14 - tube * smoothstep(30, 14, Y) * 30)
+        dead_bugs = smoothstep(0.75, 0.9, blob((S, S), 60, 96, 26, 10)) * 0.35
+        lit = over(lit, np.array([70, 66, 60]), dead_bugs)
+    img = over(img, lit, lens)
+    img = add_lum(img, -10 * (box((S, S), 12, 12, S - 12, 14)))   # shadow of the frame on the lens
+    return img
+
+
+def tex_l4_panel() -> None:
+    save_png(_l4_panel(True), _blk("office_panel"))
+    save_png(_l4_panel(False), _blk("office_panel_off"))
+
+
+L4_WINDOW_FRAMES = 32
+
+
+def _l4_rain_sheet(frame: int, frames: int, rng_seed=4120) -> np.ndarray:
+    """One frame of the two-block-tall window glass (128 x 256): wet night glass with a faint fog
+    glow, beaded droplets and a few runnels sliding down. Every moving thing travels a whole
+    number of sheet heights per loop, so the animation loops seamlessly."""
+    rng = rng_for(rng_seed)
+    H, W = 2 * S, S
+    X, Y = grid((H, W))
+    # Lit by the window's own "glass" lightmap cell (see Level4Atmosphere), so it can be fairly light.
+    bg = lerp(np.array([92, 102, 116]), np.array([116, 126, 140]), smoothstep(0, H, Y)[..., None])
+    bg = add_lum(bg, blur(fnoise(rng, (H, W), beta=3.2), 3) * 7)
+    for _ in range(3):   # blurry distant lights in the fog
+        bx, by = rng.uniform(0, W), rng.uniform(H * 0.4, H)
+        bg = add_lum(bg, 18 * blob((H, W), bx, by, rng.uniform(8, 18), rng.uniform(6, 12)), (0.9, 0.95, 1.0))
+    img = bg
+    t = frame / frames
+    # Beaded drops: a light body (they refract the sky) with a dark rim.
+    beads = np.zeros((H, W))
+    rims = np.zeros((H, W))
+    n_beads = 260
+    bx = rng.uniform(0, W, n_beads)
+    by = rng.uniform(0, H, n_beads)
+    br = rng.uniform(0.8, 2.6, n_beads)
+    for i in range(n_beads):
+        dx = wrapd(X - bx[i], W)
+        dy = wrapd(Y - by[i], H)
+        r = np.hypot(dx, dy * 0.85)
+        beads = np.maximum(beads, np.clip(br[i] - r + 0.5, 0, 1))
+        rims = np.maximum(rims, np.clip(1.2 - np.abs(r - br[i]), 0, 1) * (dy > -0.3 * br[i]))
+    img = over(img, np.array([150, 160, 172]), beads * 0.55)
+    img = add_lum(img, -26 * rims)
+    # Runnels: drops racing down, leaving a thin wet trail that fades behind them.
+    n_run = 9
+    rx = rng.uniform(4, W - 4, n_run)
+    phase = rng.uniform(0, 1, n_run)
+    speed = rng.integers(1, 3, n_run)        # sheet heights per loop
+    wig = rng.uniform(0.5, 2.0, n_run)
+    trail = np.zeros((H, W))
+    head = np.zeros((H, W))
+    for i in range(n_run):
+        hy = ((phase[i] + speed[i] * t) % 1.0) * H
+        xpath = rx[i] + wig[i] * np.sin(Y / 9.0 + i)
+        dxp = np.abs(X - xpath)
+        behind = wrapd(hy - Y, H)            # > 0: above the head (already passed)
+        tr = np.clip(1.0 - dxp / 1.3, 0, 1) * np.exp(-np.clip(behind, 0, None) / 70.0) * (behind > 0)
+        trail = np.maximum(trail, tr)
+        hd = np.clip(2.6 - np.hypot(dxp, wrapd(Y - hy, H) * 0.7), 0, 1)
+        head = np.maximum(head, hd)
+    img = over(img, np.array([118, 128, 140]), trail * 0.6)
+    img = add_lum(img, -18 * np.clip(blur(trail, 0.8) - trail, 0, 1) * 3)
+    img = over(img, np.array([190, 198, 208]), head * 0.85)
+    return img
+
+
+def _l4_window_frame(img, lower: bool) -> np.ndarray:
+    """Dark bronze anodised aluminium: mullions on both sides, sill (lower) or head rail (upper)."""
+    rng = rng_for(4121)
+    X, Y = grid()
+    alu = add_lum(fill((58, 56, 54), (S, S)), fnoise(rng, beta=1.0, aniso=(1, 8)) * 3 + rng.normal(0, 1.5, (S, S)))
+    side = box((S, S), -1, -1, 5, S + 1) + box((S, S), S - 5, -1, S + 1, S + 1)
+    rail = box((S, S), -1, S - 12, S + 1, S + 1) if lower else box((S, S), -1, -1, S + 1, 10)
+    frame = np.clip(side + rail, 0, 1)
+    img = over(img, alu, frame)
+    img = add_lum(img, 20 * (box((S, S), 4, -1, 5, S + 1) + box((S, S), S - 5, -1, S - 4, S + 1)) * (1 - rail))
+    if lower:
+        img = add_lum(img, 26 * box((S, S), 5, S - 12, S - 5, S - 11))   # sill lip catches light
+        img = add_lum(img, -24 * box((S, S), 5, S - 15, S - 5, S - 12))  # wet gasket shadow
+    else:
+        img = add_lum(img, -26 * box((S, S), 5, 10, S - 5, 13))
+    return img
+
+
+def tex_l4_window() -> None:
+    """Animated rainy window panes (upper and lower half of one tall window), 32 frames."""
+    lower_frames = []
+    upper_frames = []
+    for f in range(L4_WINDOW_FRAMES):
+        sheet = _l4_rain_sheet(f, L4_WINDOW_FRAMES)
+        upper_frames.append(_l4_window_frame(sheet[:S], lower=False))
+        lower_frames.append(_l4_window_frame(sheet[S:], lower=True))
+    for name, frames in (("office_window_upper", upper_frames), ("office_window_lower", lower_frames)):
+        save_png(np.concatenate(frames, axis=0), _blk(name))
+        _blk(name).with_suffix(".png.mcmeta").write_text(
+            '{\n  "animation": {\n    "frametime": 2,\n    "interpolate": false\n  }\n}\n')
+
+
+def tex_l4_glass() -> None:
+    """Conference-room glass on black mullions (translucent), and the same with venetian blinds."""
+    rng = rng_for(4122)
+    X, Y = grid()
+    glass = np.concatenate([fill((150, 170, 176), (S, S)), np.full((S, S, 1), 46.0)], axis=2)
+    glass[..., :3] = add_lum(glass[..., :3], fnoise(rng, beta=3.0) * 5)
+    streak = smoothstep(0.85, 1.0, np.sin((X + Y * 0.6) / 14.0)) * 30   # faint reflection bands
+    glass[..., 3] += streak * 0.6
+    mull = np.clip(box((S, S), -1, -1, 4, S + 1) + box((S, S), S - 4, -1, S + 1, S + 1), 0, 1)
+    glass[..., :3] = over(glass[..., :3], np.array([24, 24, 26]), mull)
+    glass[..., 3] = np.maximum(glass[..., 3], mull * 255)
+    save_png(glass, _blk("office_glass"))
+    blinds = glass.copy()
+    slat = ((Y % 8) < 5.5) & (mull < 0.5)
+    shade = 0.55 + 0.45 * ((Y % 8) / 5.5)
+    col = np.stack([196 * shade, 192 * shade, 184 * shade], axis=-1)
+    blinds[..., :3] = np.where(slat[..., None], col, blinds[..., :3])
+    blinds[..., 3] = np.where(slat, 250, blinds[..., 3])
+    cord = (np.abs(X - 40) < 0.8) | (np.abs(X - 88) < 0.8)
+    blinds[..., :3] = np.where((cord & ~slat)[..., None], np.array([210, 206, 196]), blinds[..., :3])
+    blinds[..., 3] = np.where(cord & ~slat, 255, blinds[..., 3])
+    save_png(blinds, _blk("office_glass_blinds"))
+
+
+def tex_l4_curtain() -> None:
+    """Heavy red velvet stage curtain hanging in deep vertical folds."""
+    rng = rng_for(4123)
+    X, Y = grid()
+    folds = 0.5 + 0.5 * np.sin(2 * np.pi * X / 32 + 0.6 * np.sin(2 * np.pi * X / 64))
+    img = fill((122, 18, 24), (S, S))
+    img = img * (0.45 + 0.75 * folds[..., None])
+    img = add_lum(img, rng.normal(0, 3, (S, S)) + fnoise(rng, beta=1.5, aniso=(1, 6)) * 4, (1.0, 0.35, 0.35))
+    img = add_lum(img, 30 * smoothstep(0.92, 1.0, folds), (1.0, 0.5, 0.5))   # velvet sheen on the crests
+    save_png(img, _blk("stage_curtain"))
+
+
+def _l4_door_sheet(seed, base, plaque=False):
+    """Wood-veneer office door (2 blocks tall) in a light painted frame, vision panel, lever, kick plate."""
+    rng = rng_for(seed)
+    shp = (2 * S, S)
+    X, Y = grid(shp)
+    img = _wood(rng, base, horizontal=False, shape=shp)
+    img = add_lum(img, fnoise(rng, shp, beta=1.2, aniso=(1, 14)) * 5, (1.0, 0.8, 0.6))   # veneer figure
+    frame_col = np.array([206, 200, 188])
+    jamb = 1 - box(shp, 9, 9, S - 9, 2 * S + 20)
+    img = over(img, add_lum(fill(frame_col, shp), rng.normal(0, 1.5, shp)), jamb)
+    img = add_lum(img, -26 * (box(shp, 7, 7, S - 7, 2 * S + 20) - box(shp, 9, 9, S - 9, 2 * S + 20)))
+    vis = box(shp, 84, 40, 100, 120)              # narrow vision panel (dark glass) on the latch side
+    img = over(img, np.array([34, 38, 42]), vis)
+    img = add_lum(img, 22 * box(shp, 84, 40, 100, 44) + 10 * vis * smoothstep(120, 40, Y))
+    img = over(img, np.array([150, 146, 140]), box(shp, 82, 38, 102, 40) + box(shp, 82, 120, 102, 122))
+    rose = supersample(shp, lambda x, y: np.hypot(x - 96, y - 142) < 5)   # lever handle + rose
+    img = over(img, np.array([168, 166, 160]), rose)
+    img = over(img, np.array([186, 184, 178]), box(shp, 78, 139, 97, 144))
+    img = add_lum(img, 30 * box(shp, 78, 139, 97, 140) - 30 * box(shp, 78, 143, 97, 144))
+    img = over(img, np.array([150, 148, 142]), box(shp, 12, 2 * S - 28, S - 12, 2 * S - 9))   # kick plate
+    img = add_lum(img, fnoise(rng, shp, beta=0.8, aniso=(8, 1)) * 5 * box(shp, 12, 2 * S - 28, S - 12, 2 * S - 9))
+    if plaque:
+        # A brass "6".
+        img = over(img, np.array([176, 140, 64]), box(shp, 50, 64, 78, 98) * 0.9)
+        img = add_lum(img, 24 * box(shp, 50, 64, 78, 66) - 20 * box(shp, 50, 96, 78, 98))
+        six = pil_mask(lambda d, k: d.text((64 * k, 82 * k), "6", fill=255, font=font(30 * k), anchor="mm"), shp)
+        img = over(img, np.array([92, 66, 22]), six)
+    return img
+
+
+def tex_l4_doors() -> None:
+    wood = np.array([138, 92, 58])
+    sheet = _l4_door_sheet(4130, wood)
+    save_png(sheet[:S], _blk("office_door_top"))
+    save_png(sheet[S:], _blk("office_door_bottom"))
+    six = _l4_door_sheet(4130, wood, plaque=True)
+    save_png(six[:S], _blk("office_door_six_top"))
+    # Glass door: thin aluminium frame, big glass panel (translucent), push bar.
+    rng = rng_for(4131)
+    shp = (2 * S, S)
+    X, Y = grid(shp)
+    rgb = add_lum(fill((172, 174, 176), shp), fnoise(rng, shp, beta=1.0, aniso=(1, 10)) * 4)
+    alpha = np.full(shp, 255.0)
+    pane = box(shp, 12, 12, S - 12, 2 * S - 22)
+    rgb = over(rgb, np.array([150, 172, 178]), pane)
+    alpha = alpha * (1 - pane) + pane * (52 + 30 * smoothstep(0.85, 1.0, np.sin((X + Y * 0.5) / 13.0)))
+    bar = box(shp, 18, 132, S - 18, 138)
+    rgb = over(rgb, np.array([200, 200, 198]), bar)
+    alpha = np.maximum(alpha, bar * 255)
+    sheet = np.concatenate([rgb, alpha[..., None]], axis=2)
+    save_png(sheet[:S], _blk("office_glass_door_top"))
+    save_png(sheet[S:], _blk("office_glass_door_bottom"))
+    # Fire door: grey steel, red push bar, small wired window.
+    rng = rng_for(4132)
+    img = _smooth_concrete(rng, (118, 122, 126), mottle=3.0, fine=0.8, shape=shp)
+    img = over(img, np.array([196, 190, 178]), 1 - box(shp, 8, 8, S - 8, 2 * S + 20))
+    img = add_lum(img, -22 * (box(shp, 6, 6, S - 6, 2 * S + 20) - box(shp, 8, 8, S - 8, 2 * S + 20)))
+    win = box(shp, 46, 32, 82, 82)
+    img = over(img, np.array([38, 44, 48]), win)
+    wire = ((np.abs((X - Y) % 9) < 0.7) | (np.abs((X + Y) % 9) < 0.7)) * win
+    img = over(img, np.array([92, 96, 98]), wire * 0.8)
+    img = add_lum(img, 14 * win * smoothstep(82, 32, Y))
+    img = over(img, np.array([168, 34, 30]), box(shp, 16, 140, S - 16, 152))
+    img = add_lum(img, 34 * box(shp, 16, 140, S - 16, 142) - 34 * box(shp, 16, 150, S - 16, 152))
+    img = over(img, np.array([60, 60, 62]), box(shp, 12, 138, 18, 154) + box(shp, S - 18, 138, S - 12, 154))
+    img = over(img, np.array([150, 150, 152]), box(shp, 12, 2 * S - 30, S - 12, 2 * S - 9))
+    save_png(img[:S], _blk("fire_door_top"))
+    save_png(img[S:], _blk("fire_door_bottom"))
+
+
+def tex_l4_elevator() -> None:
+    """Closed brushed-steel elevator doors, 2 wide x 3 tall (lower/upper leaves + header)."""
+    rng = rng_for(4140)
+    W, H = 2 * S, 3 * S
+    shp = (H, W)
+    X, Y = grid(shp)
+    wall = np.tile(_l4_drywall(4141), (3, 2, 1))
+    steel = add_lum(fill((150, 152, 156), shp), fnoise(rng, shp, beta=0.6, aniso=(1, 30)) * 9 + rng.normal(0, 2, shp))
+    steel = add_lum(steel, 14 * smoothstep(H, 0, Y))                  # a soft sheen higher up
+    frame_out = box(shp, 14, 18, W - 14, H + 20)
+    img = over(wall, add_lum(fill((122, 124, 128), shp), fnoise(rng, shp, beta=0.6, aniso=(1, 20)) * 6), frame_out)
+    leaves = box(shp, 26, S + 10, W - 26, H + 20)
+    img = over(img, steel, leaves)
+    img = add_lum(img, -40 * box(shp, W / 2 - 1, S + 10, W / 2 + 1, H + 20))     # the seam
+    img = add_lum(img, -26 * (box(shp, 26, S + 10, W - 26, S + 13)))
+    img = add_lum(img, -30 * box(shp, 24, S + 8, 26, H) - 30 * box(shp, W - 26, S + 8, W - 24, H))
+    # Header: a dead floor indicator (dark glass with a faint arrow and a "4").
+    ind = box(shp, W / 2 - 34, 46, W / 2 + 34, 78)
+    img = over(img, np.array([18, 16, 16]), ind)
+    arrow = pil_mask(lambda d, k: d.polygon([((W / 2 - 22) * k, 70 * k), ((W / 2 - 12) * k, 54 * k), ((W / 2 - 2) * k, 70 * k)], fill=255), shp)
+    img = over(img, np.array([70, 30, 24]), arrow * 0.8)
+    four = pil_mask(lambda d, k: d.text(((W / 2 + 16) * k, 62 * k), "4", fill=255, font=font(24 * k), anchor="mm"), shp)
+    img = over(img, np.array([72, 30, 22]), four * 0.8)
+    smudge = smoothstep(1.2, 2.4, fnoise(rng, shp, beta=2.2)) * leaves     # finger smudges
+    img = over(img, np.array([118, 116, 112]), smudge * 0.3)
+    img = add_lum(img, -20 * smoothstep(H - 30, H, Y) * leaves)
+    for part, (y0, y1) in (("header", (0, S)), ("upper", (S, 2 * S)), ("lower", (2 * S, 3 * S))):
+        save_png(img[y0:y1, :S], _blk(f"elevator_door_{part}_left"))
+        save_png(img[y0:y1, S:], _blk(f"elevator_door_{part}_right"))
+
+
+def tex_l4_partition() -> None:
+    rng = rng_for(4150)
+    X, Y = grid()
+    weave = 0.5 + 0.25 * np.cos(np.pi * X) * np.cos(np.pi * Y)
+    img = add_lum(fill(L4_FABRIC, (S, S)), (weave - 0.5) * 8 + rng.normal(0, 4, (S, S)) + fnoise(rng, beta=2.6) * 4)
+    img = over(img, np.array(L4_FABRIC) * 0.75, smoothstep(1.2, 2.6, fnoise(rng, beta=2.0)) * 0.3)   # stains
+    save_png(img, _blk("cubicle_fabric"))
+    cap = add_lum(fill((176, 178, 180), (S, S)), fnoise(rng, beta=0.6, aniso=(1, 20)) * 6 + rng.normal(0, 2, (S, S)))
+    save_png(cap, _blk("cubicle_cap"))
+
+
+def tex_l4_radiator() -> None:
+    rng = rng_for(4151)
+    X, Y = grid()
+    img = add_lum(fill((222, 216, 204), (S, S)), fnoise(rng, beta=2.4) * 4 + rng.normal(0, 2, (S, S)))
+    img = add_lum(img, -18 * smoothstep(0.4, 1.0, np.cos(2 * np.pi * X / 16) ** 8))   # fin gaps
+    rust = smoothstep(1.6, 2.6, fnoise(rng, beta=2.2)) * smoothstep(S * 0.5, S, Y)
+    img = over(img, np.array([132, 92, 60]), rust * 0.5)
+    save_png(img, _blk("radiator"))
+
+
+def tex_l4_desk() -> None:
+    rng = rng_for(4152)
+    X, Y = grid()
+    top = _wood(rng, np.array([150, 112, 80]), horizontal=True)
+    top = add_lum(top, -10 * smoothstep(1.2, 2.4, fnoise(rng, beta=2.0)))       # wear
+    ring = np.abs(np.hypot(X - 90, Y - 40) - 10) < 1.2                          # a coffee ring
+    top = over(top, np.array([110, 78, 52]), ring * 0.5)
+    save_png(top, _blk("desk_top"))
+    side = _wood(rng, np.array([132, 98, 70]), horizontal=False)
+    side = add_lum(side, -12 * smoothstep(S - 20, S, Y))
+    save_png(side, _blk("desk_side"))
+    paper = add_lum(fill((232, 230, 222), (S, S)), rng.normal(0, 2, (S, S)))
+    for yy in range(20, 110, 10):
+        paper = over(paper, np.array([120, 120, 126]), box((S, S), 18, yy, 18 + rng.uniform(50, 92), yy + 2) * 0.6)
+    save_png(paper, _blk("desk_paper"))
+
+
+def tex_l4_computer() -> None:
+    rng = rng_for(4153)
+    X, Y = grid()
+    plastic = add_lum(fill((196, 188, 166), (S, S)), rng.normal(0, 2, (S, S)) + fnoise(rng, beta=2.4) * 4)
+    plastic = over(plastic, np.array([170, 160, 132]), smoothstep(1.0, 2.4, fnoise(rng, beta=2.0)) * 0.4)   # yellowed
+    save_png(plastic, _blk("crt_plastic"))
+    screen = plastic.copy()                 # bezel, dark curved glass with a dull reflection, power LED
+    glass = box((S, S), 14, 14, S - 14, S - 26, soft=2.0)
+    scr = add_lum(fill((26, 30, 30), (S, S)), 22 * blob((S, S), 44, 40, 34, 24) - 8 * (1 - blob((S, S), 64, 52, 60, 46)))
+    screen = over(screen, scr, glass)
+    screen = add_lum(screen, -20 * (box((S, S), 10, 10, S - 10, S - 22) - box((S, S), 14, 14, S - 14, S - 26)))
+    screen = over(screen, np.array([40, 60, 40]), supersample((S, S), lambda x, y: np.hypot(x - 108, y - 114) < 3))
+    save_png(screen, _blk("crt_screen"))
+    kb = add_lum(fill((180, 172, 152), (S, S)), rng.normal(0, 2, (S, S)))
+    inside = (X > 4) * (X < S - 4) * (Y > 8) * (Y < S - 8)
+    keys = (((X - 6) % 10) < 8) & (((Y - 10) % 18) < 14) & (inside > 0)
+    kb = over(kb, np.array([212, 206, 190]), keys)
+    kb = add_lum(kb, -18 * ((((X - 6) % 10) >= 8) | (((Y - 10) % 18) >= 14)) * inside)
+    save_png(kb, _blk("keyboard"))
+
+
+def tex_l4_chair() -> None:
+    rng = rng_for(4154)
+    X, Y = grid()
+    weave = 0.5 + 0.25 * np.cos(np.pi * X / 1.5) * np.cos(np.pi * Y / 1.5)
+    fab = add_lum(fill((44, 62, 112), (S, S)), (weave - 0.5) * 10 + rng.normal(0, 4, (S, S)) + fnoise(rng, beta=2.4) * 5)
+    fab = over(fab, np.array([60, 70, 96]), smoothstep(1.0, 2.2, fnoise(rng, beta=2.0)) * 0.35)   # worn, faded
+    save_png(fab, _blk("chair_fabric"))
+    base = add_lum(fill((30, 30, 32), (S, S)), rng.normal(0, 2, (S, S)) + fnoise(rng, beta=2.0) * 3)
+    save_png(base, _blk("chair_base"))
+
+
+def _l4_metal(seed, col, scratches=10) -> np.ndarray:
+    """Painted sheet steel with a few bright scratches."""
+    rng = rng_for(seed)
+    X, Y = grid()
+    img = _smooth_concrete(rng, col, mottle=2.0, fine=0.6)
+    for _ in range(scratches):
+        x0, y0 = rng.uniform(0, S, 2)
+        ang = rng.uniform(-0.4, 0.4)
+        L = rng.uniform(6, 24)
+        d = np.abs((X - x0) * np.sin(ang) - (Y - y0) * np.cos(ang))
+        t = (X - x0) * np.cos(ang) + (Y - y0) * np.sin(ang)
+        img = over(img, np.minimum(np.array(col) * 1.25 + 10, 255), ((d < 0.6) & (t > 0) & (t < L)) * 0.6)
+    return img
+
+
+def tex_l4_cabinet() -> None:
+    X, Y = grid()
+    side = _l4_metal(4155, (132, 134, 132))
+    save_png(add_lum(side, 10 * smoothstep(4, 0, X) - 10 * smoothstep(S - 4, S, X)), _blk("filing_cabinet_side"))
+    front = side.copy()
+    for i in range(4):   # four drawers with recessed pulls and label holders
+        y0 = 4 + i * 31
+        front = add_lum(front, 18 * box((S, S), 6, y0, S - 6, y0 + 2) - 22 * box((S, S), 6, y0 + 27, S - 6, y0 + 29))
+        front = over(front, np.array([40, 40, 42]), box((S, S), 44, y0 + 14, 84, y0 + 19))
+        front = add_lum(front, -14 * box((S, S), 44, y0 + 19, 84, y0 + 21))
+        front = over(front, np.array([200, 198, 186]), box((S, S), 54, y0 + 6, 74, y0 + 12))
+        front = over(front, np.array([150, 150, 150]), box((S, S), 52, y0 + 5, 76, y0 + 6) + box((S, S), 52, y0 + 12, 76, y0 + 13))
+    save_png(front, _blk("filing_cabinet_front"))
+    # The supply filing cabinet: same cabinet, an orange "SUPPLIES" label so it can be spotted.
+    supply = over(front.copy(), np.array([214, 112, 40]), box((S, S), 30, 38, 98, 58))
+    supply = over(supply, np.array([250, 244, 230]), _text("SUPPLIES", 64, 48, 13, maxw=62))
+    save_png(supply, _blk("supply_cabinet_front"))
+
+
+def tex_l4_copier() -> None:
+    rng = rng_for(4156)
+    X, Y = grid()
+    body = add_lum(fill((206, 204, 196), (S, S)), rng.normal(0, 2, (S, S)) + fnoise(rng, beta=2.4) * 4)
+    save_png(body, _blk("copier_side"))
+    front = body.copy()
+    for y0 in (52, 84):          # paper trays
+        front = add_lum(front, -26 * box((S, S), 8, y0, S - 8, y0 + 2) + 10 * box((S, S), 8, y0 + 2, S - 8, y0 + 3))
+        front = over(front, np.array([110, 110, 112]), box((S, S), 54, y0 + 12, 74, y0 + 16))
+    front = over(front, np.array([70, 72, 78]), box((S, S), 8, 8, S - 8, 30))
+    front = over(front, np.array([30, 52, 40]), box((S, S), 16, 12, 46, 26))      # dead LCD
+    for i, c in enumerate(((40, 120, 60), (60, 60, 64), (60, 60, 64), (160, 40, 30))):
+        front = over(front, np.array(c), supersample((S, S), lambda x, y, i=i: np.hypot(x - (66 + i * 13), y - 19) < 4))
+    save_png(front, _blk("copier_front"))
+    top = add_lum(fill((60, 62, 66), (S, S)), rng.normal(0, 2, (S, S)))
+    top = over(top, np.array([214, 212, 206]), box((S, S), 6, 6, S - 6, S - 6))
+    top = over(top, np.array([238, 236, 228]), box((S, S), 30, 40, 98, 104) * 0.8)   # a forgotten sheet
+    save_png(top, _blk("copier_top"))
+
+
+def tex_l4_plant() -> None:
+    rng = rng_for(4157)
+    X, Y = grid()
+    pot = add_lum(fill((62, 60, 58), (S, S)), rng.normal(0, 2.5, (S, S)) + fnoise(rng, beta=2.0) * 4)
+    pot = add_lum(pot, 14 * box((S, S), -1, 0, S + 1, 10))
+    save_png(pot, _blk("plant_pot"))
+    soil = add_lum(fill((58, 46, 36), (S, S)), rng.normal(0, 8, (S, S)))
+    save_png(soil, _blk("plant_soil"))
+    # Dead leaves: drooping brown blades on a transparent background (crossed planes in the model).
+    m = np.zeros((S, S))
+    col = np.zeros((S, S, 3))
+    for i in range(16):
+        x0 = 64 + rng.normal(0, 8)
+        ang = rng.uniform(-1.2, 1.2)
+        L = rng.uniform(40, 100)
+        droop = rng.uniform(0.002, 0.012)
+        t = np.linspace(0, 1, 120)
+        px = x0 + np.sin(ang) * L * t
+        py = S - 2 - np.cos(ang) * L * t + droop * (L * t) ** 2
+        w = 3.2 * (1 - t) + 0.6
+        c = np.array([112, 86, 52]) * rng.uniform(0.7, 1.15)
+        for k in range(0, 120, 2):
+            d = np.hypot(X - px[k], Y - py[k]) < w[k]
+            m = np.maximum(m, d)
+            col = np.where(d[..., None], c * (0.85 + 0.15 * t[k]), col)
+    col = add_lum(col, rng.normal(0, 6, (S, S)))
+    save_png(np.concatenate([col, (m * 255)[..., None]], axis=2), _blk("dead_plant"))
+
+
+def tex_l4_boxes() -> None:
+    rng = rng_for(4158)
+    card = add_lum(fill((168, 128, 84), (S, S)), rng.normal(0, 3, (S, S)) + fnoise(rng, beta=1.2, aniso=(10, 1)) * 4)
+    card = add_lum(card, -14 * smoothstep(1.2, 2.4, fnoise(rng, beta=2.2)))
+    side = over(card.copy(), np.array([60, 52, 44]), _text("FILES", 64, 70, 22, maxw=70) * 0.55)
+    side = add_lum(side, -16 * box((S, S), -1, 60, S + 1, 62))
+    save_png(side, _blk("cardboard_box"))
+    top = add_lum(card.copy(), -24 * box((S, S), -1, 63, S + 1, 65))          # flap seam
+    top = over(top, np.array([186, 170, 130]), box((S, S), -1, 54, S + 1, 74) * 0.75)   # packing tape
+    save_png(top, _blk("cardboard_box_top"))
+
+
+def tex_l4_ladder() -> None:
+    rng = rng_for(4159)
+    img = add_lum(fill((182, 184, 186), (S, S)), fnoise(rng, beta=0.6, aniso=(1, 24)) * 8 + rng.normal(0, 2, (S, S)))
+    img = add_lum(img, -16 * smoothstep(1.2, 2.4, fnoise(rng, beta=2.0)))
+    save_png(img, _blk("step_ladder"))
+
+
+def tex_l4_conference() -> None:
+    rng = rng_for(4160)
+    X, Y = grid()
+    top = _wood(rng, np.array([84, 56, 38]), horizontal=True)
+    top = add_lum(top, 10 * smoothstep(0.9, 1.0, np.sin(X / 20.0 + Y / 60.0)))   # polish
+    save_png(top, _blk("conference_table"))
+
+
+def tex_l4_server() -> None:
+    rng = rng_for(4161)
+    X, Y = grid()
+    side = add_lum(fill((34, 34, 36), (S, S)), rng.normal(0, 2, (S, S)) + fnoise(rng, beta=2.0) * 3)
+    save_png(side, _blk("server_rack_side"))
+    front = side.copy()
+    for y0 in range(6, S - 6, 14):   # rack units with vents
+        front = add_lum(front, 16 * box((S, S), 8, y0, S - 8, y0 + 1) - 12 * box((S, S), 8, y0 + 12, S - 8, y0 + 13))
+        vents = (((X - 30) % 4) < 2) & (X > 30) & (X < 110) & (Y > y0 + 4) & (Y < y0 + 9)
+        front = add_lum(front, -12 * vents)
+        front = over(front, np.array([60, 60, 62]), supersample((S, S), lambda x, y, y0=y0: np.hypot(x - 18, y - (y0 + 6.5)) < 2.2))
+    save_png(front, _blk("server_rack_front"))
+    leds = np.zeros((S, S, 4))          # status lights (an emissive overlay strip in the model)
+    for i, c in enumerate(((60, 255, 90), (60, 255, 90), (255, 170, 40), (60, 255, 90))):
+        m = supersample((S, S), lambda x, y, i=i: np.hypot(x - (20 + i * 26), y - 64) < 9)
+        leds[..., :3] += m[..., None] * np.array(c)
+        leds[..., 3] = np.maximum(leds[..., 3], m * 255)
+    save_png(leds, _blk("server_leds"))
+
+
+def tex_l4_microwave() -> None:
+    rng = rng_for(4162)
+    X, Y = grid()
+    side = add_lum(fill((214, 212, 206), (S, S)), rng.normal(0, 2, (S, S)))
+    save_png(side, _blk("microwave_side"))
+    front = side.copy()
+    door = box((S, S), 6, 14, 92, 114)
+    front = over(front, np.array([30, 30, 32]), door)
+    mesh = (((X % 4) < 1.2) | ((Y % 4) < 1.2)) * box((S, S), 14, 22, 84, 106)
+    front = over(front, np.array([60, 60, 60]), mesh * 0.6)
+    front = over(front, np.array([60, 62, 66]), box((S, S), 98, 14, 122, 114))
+    front = over(front, np.array([20, 40, 30]), box((S, S), 101, 20, 119, 32))
+    for r in range(4):
+        for c2 in range(2):
+            front = over(front, np.array([150, 150, 154]), box((S, S), 101 + c2 * 10, 40 + r * 14, 108 + c2 * 10, 48 + r * 14))
+    save_png(front, _blk("microwave_front"))
+
+
+def tex_l4_whiteboard() -> None:
+    rng = rng_for(4163)
+    img = add_lum(fill((236, 238, 236), (S, S)), fnoise(rng, beta=2.6) * 2.5)
+    ghost = marker(np.zeros((S, S, 3)), rng, [[(16, 30), (60, 34), (98, 28)], [(20, 50), (40, 70), (80, 64), (100, 80)],
+                                               [(24, 92), (56, 92)], [(70, 96), (90, 100), (110, 92)]], width=3)
+    img = over(img, np.array([150, 160, 180]), (ghost.sum(axis=2) > 0) * 0.18)   # ghosts of erased writing
+    squiggle = marker(np.zeros((S, S, 3)), rng, [[(30, 60), (44, 52), (58, 62), (72, 50)]], width=3)
+    img = over(img, np.array([40, 80, 160]), squiggle.sum(axis=2) > 0)
+    img = over(img, np.array([170, 172, 176]), 1 - box((S, S), 6, 8, S - 6, S - 8))
+    img = over(img, np.array([150, 152, 156]), box((S, S), 4, S - 12, S - 4, S - 6))   # marker tray
+    save_png(img, _blk("whiteboard"))
+
+
+def tex_l4_wall_bits() -> None:
+    """Elevator call buttons, the security camera and its lens, the lobby directory board."""
+    rng = rng_for(4164)
+    X, Y = grid()
+    plate = add_lum(fill((170, 170, 168), (S, S)), fnoise(rng, beta=0.6, aniso=(1, 20)) * 6)
+    for cy in (40, 88):
+        plate = over(plate, np.array([110, 110, 112]), supersample((S, S), lambda x, y, cy=cy: np.hypot(x - 64, y - cy) < 16))
+        plate = over(plate, np.array([190, 190, 188]), supersample((S, S), lambda x, y, cy=cy: np.hypot(x - 64, y - cy) < 12))
+    arrows = pil_mask(lambda d, k: (d.polygon([(64 * k, 32 * k), (56 * k, 46 * k), (72 * k, 46 * k)], fill=255),
+                                    d.polygon([(64 * k, 96 * k), (56 * k, 82 * k), (72 * k, 82 * k)], fill=255)))
+    plate = over(plate, np.array([60, 60, 62]), arrows)
+    save_png(plate, _blk("elevator_panel"))
+    cam = add_lum(fill((228, 228, 224), (S, S)), rng.normal(0, 2, (S, S)))
+    cam = add_lum(cam, -18 * smoothstep(S - 40, S, Y))
+    save_png(cam, _blk("cctv_camera"))
+    lens = add_lum(fill((20, 20, 24), (S, S)), 40 * blob((S, S), 48, 48, 12, 12))
+    lens = over(lens, np.array([150, 20, 20]), supersample((S, S), lambda x, y: np.hypot(x - 100, y - 100) < 6) * 0.6)
+    save_png(lens, _blk("cctv_lens"))
+    board = add_lum(fill((26, 26, 28), (S, S)), rng.normal(0, 2, (S, S)))
+    board = over(board, np.array([186, 168, 120]), 1 - box((S, S), 5, 5, S - 5, S - 5))
+    board = over(board, np.array([214, 212, 204]), _text("DIRECTORY", 64, 18, 12, maxw=90))
+    for i, line in enumerate(("ACCOUNTS  .....  4", "LEGAL  ..........  4", "ARCHIVE  .......  4",
+                              "PERSONNEL  ....  4", "STAIRS  ......  END")):
+        board = over(board, np.array([200, 198, 190]), _text(line, 64, 40 + i * 17, 10, maxw=104) * 0.9)
+    save_png(board, _blk("office_plaque"))
+
+
+def tex_l4_vending() -> None:
+    """Vending machine: red painted steel body; a glowing display of Almond Water bottles and
+    energy bars behind glass (upper half), selection panel and dark delivery flap (lower half).
+    The emissive overlay ("glow") textures hold only the glowing parts (alpha 0 elsewhere)."""
+    side = _l4_metal(4170, (150, 34, 32), scratches=14)
+    save_png(side, _blk("vending_side"))
+    W, H = S, 2 * S
+    shp = (H, W)
+    X, Y = grid(shp)
+    body = np.tile(side, (2, 1, 1))
+    win = box(shp, 8, 10, 92, 170)
+    glow = np.zeros((H, W, 4))
+    disp = fill((210, 226, 236), shp)
+    for row, y0 in enumerate(range(16, 160, 24)):
+        disp = over(disp, np.array([110, 112, 116]), box(shp, 8, y0 + 18, 92, y0 + 21))   # shelf
+        for col in range(5):
+            x0 = 13 + col * 16
+            if row % 2 == 0:   # almond water bottles: pale, with a tan label
+                bottle = box(shp, x0, y0 + 2, x0 + 9, y0 + 18) + box(shp, x0 + 3, y0 - 2, x0 + 6, y0 + 2)
+                disp = over(disp, np.array([226, 232, 226]), bottle)
+                disp = over(disp, np.array([196, 168, 120]), box(shp, x0, y0 + 8, x0 + 9, y0 + 13))
+            else:              # energy bars: wrapped, blue and orange
+                c = (40, 90, 170) if col % 2 == 0 else (220, 120, 40)
+                disp = over(disp, np.array(c), box(shp, x0 - 1, y0 + 6, x0 + 11, y0 + 18))
+                disp = over(disp, np.array([240, 240, 230]), box(shp, x0 + 1, y0 + 10, x0 + 9, y0 + 13))
+    disp = add_lum(disp, 18 * smoothstep(0.9, 1.0, np.sin((X + Y * 0.4) / 16.0)))      # glass glare
+    glow[..., :3] = disp
+    glow[..., 3] = win * 255
+    panel = box(shp, 98, 40, 120, 150)          # selection panel: lit buttons and a price display
+    pcol = fill((40, 40, 44), shp)
+    for i in range(6):
+        pcol = over(pcol, np.array([236, 230, 200]), box(shp, 101, 70 + i * 12, 117, 78 + i * 12))
+    pcol = over(pcol, np.array([90, 240, 120]), box(shp, 101, 46, 117, 58))
+    glow[..., :3] = np.where(panel[..., None] > 0.5, pcol, glow[..., :3])
+    glow[..., 3] = np.maximum(glow[..., 3], panel * 255)
+    front = add_lum(body, -26 * (box(shp, 6, 8, 94, 172) - win))
+    front = over(front, np.array([24, 24, 26]), box(shp, 14, 196, 86, 232))          # delivery flap
+    front = add_lum(front, 22 * box(shp, 14, 196, 86, 198))
+    front = over(front, np.array([200, 200, 196]), _text("PUSH", 50, 226, 9, maxw=40, shape=shp) * 0.8)
+    front = over(front, np.array([30, 30, 32]), box(shp, 104, 160, 112, 172))          # coin slot
+    front = over(front, np.array([240, 236, 220]), _text("ALMOND WATER", 50, 182, 10, maxw=80, shape=shp))
+    save_png(front[:S], _blk("vending_front_upper"))
+    save_png(front[S:], _blk("vending_front_lower"))
+    save_png(glow[:S], _blk("vending_glow_upper"))
+    save_png(glow[S:], _blk("vending_glow_lower"))
+
+
+def tex_l4_cooler() -> None:
+    rng = rng_for(4171)
+    X, Y = grid()
+    body = add_lum(fill((226, 226, 222), (S, S)), rng.normal(0, 2, (S, S)) + fnoise(rng, beta=2.4) * 3)
+    body = add_lum(body, -18 * smoothstep(S - 30, S, Y))
+    save_png(body, _blk("cooler_body"))
+    front = body.copy()
+    front = over(front, np.array([60, 60, 64]), box((S, S), 30, 34, 98, 70))          # tap recess
+    front = over(front, np.array([40, 90, 200]), box((S, S), 40, 40, 54, 54))          # cold tap
+    front = over(front, np.array([200, 50, 40]), box((S, S), 74, 40, 88, 54))          # hot tap
+    front = over(front, np.array([150, 150, 152]), box((S, S), 34, 64, 94, 70))        # drip tray
+    save_png(front, _blk("cooler_front"))
+    water = np.concatenate([fill((96, 156, 214), (S, S)), np.full((S, S, 1), 200.0)], axis=2)
+    water[..., :3] = add_lum(water[..., :3], 20 * smoothstep(0.85, 1.0, np.sin(X / 10.0)) + rng.normal(0, 2, (S, S)))
+    save_png(water, _blk("cooler_water"))
+    glass = np.concatenate([fill((196, 214, 226), (S, S)), np.full((S, S, 1), 70.0)], axis=2)
+    glass[..., 3] += 60 * smoothstep(0.9, 1.0, np.sin(X / 9.0))
+    save_png(glass, _blk("cooler_glass"))
+
+
+L4_TEXTURES = [
+    tex_l4_carpet, tex_l4_walls, tex_l4_column, tex_l4_ceiling, tex_l4_panel, tex_l4_window, tex_l4_glass,
+    tex_l4_curtain, tex_l4_doors, tex_l4_elevator, tex_l4_partition, tex_l4_radiator, tex_l4_desk,
+    tex_l4_computer, tex_l4_chair, tex_l4_cabinet, tex_l4_copier, tex_l4_plant, tex_l4_boxes, tex_l4_ladder,
+    tex_l4_conference, tex_l4_server, tex_l4_microwave, tex_l4_whiteboard, tex_l4_wall_bits, tex_l4_vending,
+    tex_l4_cooler,
+]
+
+
+def _l4_impulses(rng, n, rate, amp_lo=0.2, amp_hi=1.0, power=2.0) -> np.ndarray:
+    """A sparse train of random impulses (Poisson, `rate` per second) for circular convolution."""
+    buf = np.zeros(n)
+    count = rng.poisson(rate * n / SR)
+    idx = rng.integers(0, n, count)
+    np.add.at(buf, idx, rng.uniform(amp_lo, amp_hi, count) ** power)
+    return buf
+
+
+def snd_l4_rain() -> None:
+    """16 s seamless loop: heavy rain streaming down big office windows, heard from inside.
+
+    A dense hiss of rain on glass that swells with the gusts, thousands of tiny drop ticks, now and
+    then a fat drop smacking the pane, water gurgling down the frame, the building's low rumble,
+    and a light echo of the empty floor on all of it. Everything is periodic over the loop.
+    """
+    rng = rng_for(4201)
+    T = 16.0
+    n = int(T * SR)
+    gust = drift(n, rng, 0.35, 0.06, 0.25)
+    hiss = periodic_noise(n, rng, lambda f: bp_gain(f, 500, 6500, 2) * lp_gain(f, 3500, 1))
+    hiss2 = periodic_noise(n, rng, lambda f: bp_gain(f, 1500, 9000, 2))
+    # Fine drops: an impulse train shaped by two short click kernels (bright and dull).
+    k = int(0.004 * SR)
+    kt = np.arange(k) / SR
+    bright = fft_filter(rng.normal(size=k) * np.exp(-kt / 0.0008), lambda f: bp_gain(f, 2500, 9000, 1))[:k]
+    dull = fft_filter(rng.normal(size=k) * np.exp(-kt / 0.0015), lambda f: bp_gain(f, 700, 3000, 1))[:k]
+    ticks = circ_conv(_l4_impulses(rng, n, 260), bright) + 0.8 * circ_conv(_l4_impulses(rng, n, 160), dull)
+    ticks *= gust
+    # Fat drops hitting the pane: a short glassy "tink" each, ~5 per second.
+    smacks = np.zeros(n)
+    for _ in range(int(5 * T)):
+        f0 = rng.uniform(1800, 4200)
+        d = rng.uniform(0.006, 0.02)
+        c = ring([f0, f0 * 2.31, f0 * 0.62], [d, d * 0.5, d * 1.6], [1.0, 0.35, 0.5], d * 5)
+        c[:30] += rng.normal(size=30) * 0.8
+        add_at(smacks, c * rng.uniform(0.15, 1.0) ** 2, rng.uniform(0, T), circular=True)
+    # Water running down the frame and gurgling in a downpipe somewhere.
+    trickle = periodic_noise(n, rng, lambda f: bp_gain(f, 250, 1100, 2))
+    trickle *= 0.6 + 0.4 * drift(n, rng, 0.9, 2.0, 6.0)
+    rumble = periodic_noise(n, rng, lambda f: bp_gain(f, 25, 140, 2))
+    x = (norm(hiss) * 0.55 * gust + norm(hiss2) * 0.18 * gust + norm(ticks) * 0.32 + norm(smacks) * 0.22
+         + norm(trickle) * 0.09 + norm(rumble) * 0.30)
+    # Heard through the glass from inside the room: softened highs, a light echo of the empty floor.
+    x = fft_filter(x, lambda f: lp_gain(f, 6000, 2), circular=True)
+    ir = reverb_ir(rng, 1.4, 0.32, lp=3200, predelay=0.012, early=((0.021, 0.5), (0.037, 0.35), (0.063, 0.2)))
+    x = x + 0.45 * circ_conv(x, ir)
+    save_ogg(x, SND / "ambient" / "level4_rain.ogg", peak=0.5, loop=True)
+
+
+def snd_l4_pipes() -> None:
+    """Three distant pipe rumbles in the walls: rushing water swelling up, a knock or two, a groan."""
+    for i in range(1, 4):
+        rng = rng_for(4210 + i)
+        dur = 5.0 + i * 0.7
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        swell = np.exp(-0.5 * ((t - dur * 0.38) / (dur * 0.2)) ** 2)
+        rush = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 60, 500, 2))[:n] * swell
+        rumble = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 25, 110, 3))[:n] * (0.4 + swell)
+        x = norm(rumble) * 0.7 + norm(rush) * 0.35
+        for _ in range(rng.integers(1, 4)):       # water hammer knocks in old pipes
+            f0 = rng.uniform(140, 260)
+            knock = ring([f0, f0 * 2.76, f0 * 5.4], [0.25, 0.09, 0.03], [1.0, 0.45, 0.2], 1.2)
+            knock[:60] += rng.normal(size=60) * 0.5
+            add_at(x, 0.7 * norm(knock), rng.uniform(0.4, dur * 0.7), circular=False)
+        if i == 2:
+            # A long groan as a pipe settles.
+            f = 70 + 18 * np.sin(2 * np.pi * 0.35 * t) + smooth_jitter(rng, n, 4, 6)
+            groan = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-0.5 * ((t - dur * 0.6) / 0.9) ** 2)
+            x = x + 0.35 * fft_filter(groan + 0.3 * np.sign(groan) * groan ** 2, lambda ff: lp_gain(ff, 400, 2))[:n]
+        x = fft_filter(x, lambda f: lp_gain(f, 900, 2))[:n]          # it's behind the drywall
+        x = x + 0.5 * conv(x, reverb_ir(rng, 2.0, 0.6, lp=900))[:n]
+        save_ogg(x, SND / "level4" / f"pipes{i}.ogg", peak=0.75, fade_in=0.3, fade_out=1.2)
+
+
+def snd_l4_thunder() -> None:
+    """Three thunder claps heard from inside the office: muffled by the glass, rattling the panes."""
+    for i in range(1, 4):
+        rng = rng_for(4220 + i)
+        dur = 7.0 + i
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        env = np.zeros(n)
+        for _ in range(6 + i):
+            c = rng.uniform(0.2, dur * 0.5)
+            env += rng.uniform(0.4, 1.0) * np.exp(-0.5 * ((t - c) / rng.uniform(0.15, 0.8)) ** 2)
+        env *= np.exp(-t / (dur * 0.42)) * (1 + smooth_jitter(rng, n, 18, 0.5))
+        rumble = fft_filter(rng.normal(size=n), lambda f: lp_gain(f, 140, 3) * hp_gain(f, 22, 2))[:n]
+        mid = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 180, 700, 2))[:n]
+        x = norm(rumble) * env + 0.22 * norm(mid) * env ** 2
+        if i != 2:
+            # The first crack, softened by the windows.
+            k = int(0.5 * SR)
+            crack = rng.normal(size=k) * np.exp(-np.arange(k) / (0.07 * SR))
+            crack = fft_filter(crack, lambda f: bp_gain(f, 200, 2200, 1))[:k]
+            add_at(x, (0.55 if i == 1 else 0.35) * norm(crack), 0.05, False)
+        # Window panes buzzing in their frames with the low end.
+        rattle = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 600, 1600, 3))[:n]
+        rattle *= (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 31 * t)))      # chattering at ~31 Hz
+        x = x + 0.06 * norm(rattle) * np.clip(env, 0, None) ** 1.5
+        x = x + 0.35 * conv(x, reverb_ir(rng, 3.0, 0.9, lp=1300))[:n]
+        save_ogg(x, SND / "level4" / f"thunder{i}.ogg", peak=0.89, fade_in=0.02, fade_out=1.0)
+
+
+def _l4_piano_note(freq, dur, vel, rng) -> np.ndarray:
+    """A soft upright-piano note: a few slightly stretched partials, a felt-hammer thump, decay."""
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    x = np.zeros(n)
+    for k in range(1, 9):
+        fk = freq * k * np.sqrt(1 + 0.0004 * k * k)          # piano strings are a little inharmonic
+        if fk > 6000:
+            break
+        decay = 1.6 / (1 + 0.35 * k) * (220.0 / freq) ** 0.3
+        x += (0.7 ** (k - 1)) * np.sin(2 * np.pi * fk * t + rng.uniform(0, 6.28)) * np.exp(-t / decay)
+    x *= 1 - np.exp(-t / 0.004)
+    thump = fft_filter(rng.normal(size=n) * np.exp(-t / 0.01), lambda f: bp_gain(f, 80, 900, 1))[:n]
+    return vel * (x + 0.15 * norm(thump))
+
+
+def snd_l4_door_music() -> None:
+    """~11 s of a melancholy waltz on an old piano, heard faintly through a closed door (door 6).
+
+    An original little piece in A minor (3/4, ~84 bpm): Am | Am | F | E, the melody falling from E5.
+    Then muffled (the door takes the highs), a room's reverb, a slow warble and a little crackle,
+    as if a record were playing in an empty office.
+    """
+    rng = rng_for(4230)
+    beat = 60 / 84.0
+    total = 12 * beat + 3.0
+    n = int(total * SR)
+    x = np.zeros(n)
+
+    def hz(note):
+        names = {"C": -9, "D": -7, "E": -5, "F": -4, "G": -2, "A": 0, "B": 2}
+        acc = 1 if "#" in note else 0
+        return 440.0 * 2 ** ((names[note[0]] + acc + 12 * (int(note[-1]) - 4)) / 12)
+
+    bars = [("A2", ["E3", "A3", "C4"]), ("A2", ["E3", "A3", "C4"]), ("F2", ["C3", "F3", "A3"]), ("E2", ["B2", "E3", "G#3"])]
+    melody = [("E5", 0, 1.0), ("D5", 1, 1.0), ("C5", 2, 1.0),
+              ("B4", 3, 1.0), ("C5", 4, 0.5), ("A4", 4.5, 1.5),
+              ("F4", 6, 1.0), ("A4", 7, 1.0), ("C5", 8, 1.0),
+              ("B4", 9, 2.0), ("G#4", 11, 1.0)]
+    for b, (bass, chord) in enumerate(bars):
+        add_at(x, _l4_piano_note(hz(bass), 3.2, 0.55, rng), b * 3 * beat, circular=False)
+        for j, c in enumerate(chord[:2]):
+            add_at(x, _l4_piano_note(hz(c), 1.6, 0.25, rng), (b * 3 + 1 + j) * beat, circular=False)
+            add_at(x, _l4_piano_note(hz(chord[2]), 1.6, 0.2, rng), (b * 3 + 1 + j) * beat + 0.02, circular=False)
+    for note, at, length in melody:
+        start = max(0.0, at * beat + rng.uniform(-0.01, 0.02))   # a slightly human, uneven touch
+        add_at(x, _l4_piano_note(hz(note), length * beat + 1.2, 0.5, rng), start, circular=False)
+    # Old record: a slow pitch warble (resampled), surface crackle.
+    t = np.arange(n) / SR
+    warp = t + 0.0025 * np.sin(2 * np.pi * 0.55 * t) / (2 * np.pi * 0.55)
+    x = np.interp(warp * SR, np.arange(n), x)
+    crackle = clicks(rng, np.sort(rng.uniform(0, total, int(total * 9))), total, 1500, 5000, amp_pow=3.0)
+    x = norm(x) + 0.05 * norm(crackle[:n])
+    # Behind a closed door and across a room.
+    x = fft_filter(x, lambda f: lp_gain(f, 700, 2) * hp_gain(f, 90, 1))[:n]
+    x = x + 0.6 * conv(x, reverb_ir(rng, 2.2, 0.6, lp=1200, predelay=0.02))[:n]
+    save_ogg(x, SND / "level4" / "door_music.ogg", peak=0.6, fade_in=0.4, fade_out=2.5)
+
+
+def snd_l4_vend() -> None:
+    """Vending machine: a motor whirs, the spiral turns, the item drops into the flap with a thud."""
+    rng = rng_for(4240)
+    dur = 2.2
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    motor_env = smoothstep(0.0, 0.12, t) * smoothstep(1.35, 1.15, t)
+    f = 92 + 12 * smoothstep(0, 0.4, t)
+    saw = 2 * ((np.cumsum(f) / SR) % 1.0) - 1
+    motor = fft_filter(saw, lambda ff: bp_gain(ff, 80, 1400, 2))[:n] * motor_env
+    whine = np.sin(2 * np.pi * np.cumsum(f * 9.0) / SR) * motor_env * 0.15
+    spiral = clicks(rng, np.arange(0.2, 1.2, 0.11) + rng.uniform(0, 0.01, 10), dur, 900, 2600, 0.003, 0.008)
+    x = norm(motor) * 0.5 + whine + 0.3 * norm(spiral)
+    thud = ring([78, 131, 210], [0.07, 0.05, 0.03], [1.0, 0.5, 0.3], 0.5)
+    thud[:200] += fft_filter(rng.normal(size=200), lambda ff: bp_gain(ff, 200, 3000, 1))[:200] * 0.6
+    add_at(x, 0.9 * norm(thud), 1.42, circular=False)
+    clatter = clicks(rng, 1.45 + np.sort(rng.uniform(0, 0.25, 5)), dur, 1200, 3500, 0.004, 0.012)
+    x = x + 0.25 * norm(clatter)
+    x = x + 0.2 * conv(x, reverb_ir(rng, 0.8, 0.18, lp=4000))[:n]
+    save_ogg(x, SND / "level4" / "vending_vend.ogg", peak=0.8, fade_out=0.2)
+
+
+def snd_l4_cooler() -> None:
+    """Water cooler: water pours into the bottle, two or three big air bubbles glug up the jug."""
+    rng = rng_for(4241)
+    dur = 1.8
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    pour_env = smoothstep(0.02, 0.1, t) * smoothstep(1.3, 1.0, t)
+    pour = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 600, 3500, 2))[:n] * pour_env
+    pour *= 1 + 0.5 * smooth_jitter(rng, n, 30, 1.0)
+    x = 0.25 * norm(pour)
+    for at in (0.35, 0.75, 1.15)[: rng.integers(2, 4)]:
+        k = int(0.12 * SR)
+        kt = np.arange(k) / SR
+        fq = 260 + 900 * (kt / 0.12) ** 0.7                     # a bubble's pitch rises as it grows
+        bub = np.sin(2 * np.pi * np.cumsum(fq) / SR) * np.exp(-kt / 0.035) * (1 - np.exp(-kt / 0.003))
+        add_at(x, 0.8 * bub, at + rng.uniform(-0.03, 0.03), circular=False)
+    x = x + 0.25 * conv(x, reverb_ir(rng, 0.5, 0.1, lp=5000))[:n]
+    save_ogg(x, SND / "level4" / "water_cooler_glug.ogg", peak=0.8, fade_out=0.15)
+
+
+L4_SOUNDS = [snd_l4_rain, snd_l4_pipes, snd_l4_thunder, snd_l4_door_music, snd_l4_vend, snd_l4_cooler]
+
+
+# =============================================================================
+# Level 37 "Sublimity": fine cream-white mosaic (8 x 8 small tiles per block),
+# the overexposed "sunlit void", chrome for the ladders and rails, the curved
+# tile models, and the calm ambience. Run: python tools/gen_assets.py tex_l37_ snd_l37_
+# =============================================================================
+
+L37_TILE = 16                    # 8 x 8 small tiles per 128 px face
+L37_WHITE = (238, 234, 216)      # #EEEAD8, lit tile ~#f7f5ee .. #dcd9b6 in the references
+L37_GROUT = (150, 146, 126)      # #96927E: blended half into the two pixels at each joint, the grout reads ~#c2beab lit
+
+
+def _l37_tiles(seed, tile_col, grout_col, var=1.6, glaze=1.6, grout_mix=0.5) -> np.ndarray:
+    """Pristine small square mosaic: 16 px tiles with a thin, light grout line on the joints (seamless).
+
+    The joint falls between two pixels; each gets about half grout, so the line reads ~1 px wide
+    and pale grey like the references (the shading darkens it in shadow), never "graph paper".
+
+    Barely any variation (it is new, clean tile): a whisper of per-tile tone, a soft glaze sheen
+    toward each tile's upper left, slightly pillowed edges and a fine speckle in the grout.
+    """
+    rng = rng_for(seed)
+    T = L37_TILE
+    n = S // T
+    X, Y = grid()
+    u, v = (X % T) / T, (Y % T) / T
+    tone = np.kron(rng.normal(0, var, (n, n)), np.ones((T, T)))
+    img = add_lum(fill(tile_col, (S, S)), tone + rng.normal(0, 0.5, (S, S)) + fnoise(rng, beta=3.2) * 0.6)
+    img = add_lum(img, (0.5 - 0.5 * (u + v)) * glaze * 2.0)                    # glaze sheen
+    du = np.minimum(X % T, T - X % T)
+    dv = np.minimum(Y % T, T - Y % T)
+    edge = np.minimum(du, dv)
+    img = add_lum(img, -1.5 * smoothstep(3.0, 1.0, edge))                         # pillowed edges
+    g = np.minimum(np.abs(wrapd(X, T)), np.abs(wrapd(Y, T)))                     # distance to a joint
+    grout = add_lum(fill(grout_col, (S, S)), rng.normal(0, 2.0, (S, S)))
+    return lerp(img, grout, (grout_mix * smoothstep(1.2, 0.2, g))[..., None])
+
+
+def tex_l37_tiles() -> None:
+    save_png(_l37_tiles(3701, L37_WHITE, L37_GROUT), _blk("l37_tile_wall"))
+    # Floor: a touch warmer and darker (it reads #b2b19b dry in the references).
+    save_png(_l37_tiles(3702, (230, 225, 204), (142, 137, 116), var=1.8), _blk("l37_tile_floor"))
+    # Ceiling: the same tile, a hair cooler.
+    save_png(_l37_tiles(3703, (236, 234, 220), (148, 146, 130), var=1.4), _blk("l37_tile_ceiling"))
+    # Deep pit lining: dark sea-green glazed tile.
+    save_png(_l37_tiles(3704, (46, 96, 80), (22, 46, 38), var=2.5, glaze=2.4), _blk("l37_tile_deep"))
+
+
+def tex_l37_sunlit_void() -> None:
+    """Overexposed warm daylight seen through an opening: almost flat warm white with a whisper
+    of haze, so a wall of it tiles without seams (drawn full-bright)."""
+    rng = rng_for(3705)
+    img = add_lum(fill((255, 248, 228), (S, S)), fnoise(rng, beta=3.5) * 1.2)
+    save_png(np.clip(img, 0, 255), _blk("l37_sunlit_void"))
+
+
+def tex_l37_chrome() -> None:
+    """Polished chrome tube: dark and bright bands across the face (it reads as a round tube on
+    the thin model elements), a little cool blue in the shadows."""
+    rng = rng_for(3706)
+    X, Y = grid()
+    t = X / S
+    band = (0.30 + 0.55 * np.exp(-((t - 0.38) / 0.09) ** 2) + 0.35 * np.exp(-((t - 0.75) / 0.05) ** 2)
+            - 0.18 * np.exp(-((t - 0.58) / 0.08) ** 2))
+    base = np.stack([band * 236 + 16, band * 238 + 18, band * 242 + 24], axis=-1)
+    img = add_lum(base, fnoise(rng, beta=2.0, aniso=(1.0, 6.0)) * 2.0)
+    save_png(np.clip(img, 0, 255), _blk("l37_chrome"))
+
+
+# ---- Curved tile pieces ------------------------------------------------------------
+# Smooth curved tile (pillars, rounded corners, wavy walls, arches, round rooms and
+# pools). Each piece is the part of ONE block cell that a circle of radius R (centred on
+# a block corner) cuts: "convex" = solid inside the circle (pillars, bulges), "concave" =
+# solid outside it (rounded rooms, arches, pools). Written as NeoForge OBJ models: true
+# curved surfaces with smooth per-vertex normals (the dynamic lights shade them like real
+# cylinders), already turned into each of the 8 orientations, with the vanilla side
+# shading baked into the vertex colours so a curve meets a flat wall without a brightness
+# jump. Must match block/CurveShape.java and block/CurveOrientation.java.
+
+L37_CONVEX_RADII = (1, 2, 3)
+L37_CONCAVE_RADII = (1, 2, 3, 4, 6)
+# name, lying on its side?, quarter turns: see CurveOrientation.java
+L37_ORIENTATIONS = (("se", False, 0), ("sw", False, 1), ("nw", False, 2), ("ne", False, 3),
+                    ("z_east", True, 0), ("x_south", True, 1), ("z_west", True, 2), ("x_north", True, 3))
+
+
+def l37_curve_shapes():
+    """(convex, R, i, j) for every cell a quarter circle of radius R crosses (cell (i, j) of
+    the quarter x >= 0, z >= 0 around the centre). Order = the CurveShape enum."""
+    import math
+
+    def crossed(r):
+        return [(i, j) for i in range(r + 1) for j in range(r + 1)
+                if math.hypot(i, j) < r < math.hypot(i + 1, j + 1)]
+    return ([(True, r, i, j) for r in L37_CONVEX_RADII for (i, j) in crossed(r)]
+            + [(False, r, i, j) for r in L37_CONCAVE_RADII for (i, j) in crossed(r)])
+
+
+def l37_curve_name(shape) -> str:
+    convex, r, i, j = shape
+    return f"{'convex' if convex else 'concave'}_r{r}_{i}_{j}"
+
+
+def _l37_curve_obj(shape, orient) -> str:
+    """One curve piece as OBJ text in its orientation (block units 0..1). The piece is closed:
+    curved skin, its cross-section at both ends of its axis, and flat sides wherever it is
+    solid on the cell's boundary (hidden against neighbours, closing it where a passage cuts)."""
+    import math
+    convex, R, ci, cj = shape
+    _, horizontal, turns = orient
+    eps = 1e-9
+
+    def solid(lx, lz):
+        d = math.hypot(ci + lx, cj + lz)
+        return d <= R + eps if convex else d >= R - eps
+
+    # ---- solid cross-section polygon (lx, lz), counter-clockwise -------------------------
+    corners = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
+    pts = []
+    for k in range(4):
+        a, b = corners[k], corners[(k + 1) % 4]
+        sa, sb = solid(*a), solid(*b)
+        if sa:
+            pts.append((a[0], a[1], "c"))
+        if sa != sb:
+            lo, hi = 0.0, 1.0
+            for _ in range(60):
+                m = (lo + hi) / 2
+                if solid(a[0] + (b[0] - a[0]) * m, a[1] + (b[1] - a[1]) * m) == sa:
+                    lo = m
+                else:
+                    hi = m
+            t = (lo + hi) / 2
+            pts.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, "x" if sa else "n"))
+
+    def ang(p):
+        return math.atan2(cj + p[1], ci + p[0])
+    poly, arc = [], []
+    for idx, p in enumerate(pts):
+        poly.append((p[0], p[1]))
+        if p[2] == "x":
+            e = next(pts[(idx + k) % len(pts)] for k in range(1, len(pts) + 1) if pts[(idx + k) % len(pts)][2] == "n")
+            ta, tb = ang(p), ang(e)
+            # arc points ~0.1 block apart: with smooth normals that already reads perfectly round
+            steps = max(2, int(math.ceil(abs(tb - ta) * R / 0.1)))
+            arc = [ta + (tb - ta) * s / steps for s in range(steps + 1)]
+            for t in arc[1:-1]:
+                poly.append((R * math.cos(t) - ci, R * math.sin(t) - cj))
+    clean = []
+    for p in poly:
+        if not clean or math.hypot(p[0] - clean[-1][0], p[1] - clean[-1][1]) > 1e-6:
+            clean.append(p)
+    if len(clean) > 2 and math.hypot(clean[0][0] - clean[-1][0], clean[0][1] - clean[-1][1]) < 1e-6:
+        clean.pop()
+    poly = clean
+
+    def tris(pg):
+        """Ear clipping of a simple counter-clockwise polygon."""
+        idx = list(range(len(pg)))
+        out = []
+
+        def cross(o, a, b):
+            return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+        guard = 0
+        while len(idx) > 3 and guard < 10000:
+            guard += 1
+            for k in range(len(idx)):
+                i0, i1, i2 = idx[k - 1], idx[k], idx[(k + 1) % len(idx)]
+                a, b, c = pg[i0], pg[i1], pg[i2]
+                if cross(a, b, c) <= 1e-12:
+                    continue
+                if any(cross(a, b, pg[m]) > 0 and cross(b, c, pg[m]) > 0 and cross(c, a, pg[m]) > 0
+                       for m in idx if m not in (i0, i1, i2)):
+                    continue
+                out.append((i0, i1, i2))
+                idx.pop(k)
+                break
+            else:
+                break
+        if len(idx) == 3:
+            out.append(tuple(idx))
+        return out
+
+    faces = []
+
+    def face(ps, ns, uvs, want):
+        """Adds a face, flipping its winding so it faces along `want`."""
+        a, b, c = (np.array(p) for p in ps[:3])
+        if np.dot(np.cross(b - a, c - a), want) < 0:
+            ps, ns, uvs = ps[::-1], ns[::-1], uvs[::-1]
+        faces.append((ps, ns, uvs))
+
+    # ends of the axis (y = 0 facing down, y = 1 facing up): planar tile mapping
+    for (i0, i1, i2) in tris(poly):
+        tri = [poly[i0], poly[i1], poly[i2]]
+        for y, ny in ((0.0, -1.0), (1.0, 1.0)):
+            face([(p[0], y, p[1]) for p in tri], [(0.0, ny, 0.0)] * 3, [(p[0], p[1]) for p in tri], (0, ny, 0))
+    # flat sides on the cell boundary where the piece is solid
+    for axis, val in (("x", 0.0), ("x", 1.0), ("z", 0.0), ("z", 1.0)):
+        def on(a):
+            return solid(val, a) if axis == "x" else solid(a, val)
+        inside = [k / 64 for k in range(65) if on(k / 64)]
+        if len(inside) < 2:
+            continue
+        a0, a1 = inside[0], inside[-1]
+
+        def refine(a_in, a_out):
+            lo, hi = a_in, a_out
+            for _ in range(50):
+                m = (lo + hi) / 2
+                lo, hi = (m, hi) if on(m) else (lo, m)
+            return lo
+        if a0 > 0:
+            a0 = refine(a0, a0 - 1 / 64)
+        if a1 < 1:
+            a1 = refine(a1, a1 + 1 / 64)
+        if a1 - a0 < 1e-4:
+            continue
+        sign = 1.0 if val == 1.0 else -1.0
+        if axis == "x":
+            ps = [(val, 0.0, a0), (val, 0.0, a1), (val, 1.0, a1), (val, 1.0, a0)]
+            nrm = (sign, 0.0, 0.0)
+        else:
+            ps = [(a0, 0.0, val), (a1, 0.0, val), (a1, 1.0, val), (a0, 1.0, val)]
+            nrm = (0.0, 0.0, sign)
+        face(ps, [nrm] * 4, [(a0, 0.0), (a1, 0.0), (a1, 1.0), (a0, 1.0)], nrm)
+    # the curved skin: smooth radial normals; u runs along the arc, a whole number of tiles
+    # (8 per block) per quarter circle so the grout meets the flat walls on a joint
+    tiles = max(1, round(R * math.pi / 2 * 8))
+    u_per_rad = tiles / 8 / (math.pi / 2)
+    out_sign = 1.0 if convex else -1.0
+    cuts = list(arc)
+    if len(cuts) >= 2:
+        u_lo, u_hi = min(cuts) * u_per_rad, max(cuts) * u_per_rad
+        for k in range(int(math.floor(u_lo)) + 1, int(math.ceil(u_hi))):
+            cuts.append(k / u_per_rad)                 # split where u crosses a whole block of texture
+        cuts = sorted(set(round(c, 12) for c in cuts))
+        for t0, t1 in zip(cuts, cuts[1:]):
+            if t1 - t0 < 1e-9:
+                continue
+            base = math.floor((t0 + t1) / 2 * u_per_rad)
+            u0, u1 = t0 * u_per_rad - base, t1 * u_per_rad - base
+            p0 = (R * math.cos(t0) - ci, R * math.sin(t0) - cj)
+            p1 = (R * math.cos(t1) - ci, R * math.sin(t1) - cj)
+            n0 = (out_sign * math.cos(t0), 0.0, out_sign * math.sin(t0))
+            n1 = (out_sign * math.cos(t1), 0.0, out_sign * math.sin(t1))
+            mid = (t0 + t1) / 2
+            face([(p0[0], 0.0, p0[1]), (p1[0], 0.0, p1[1]), (p1[0], 1.0, p1[1]), (p0[0], 1.0, p0[1])],
+                 [n0, n1, n1, n0], [(u0, 0.0), (u1, 0.0), (u1, 1.0), (u0, 1.0)],
+                 (out_sign * math.cos(mid), 0.0, out_sign * math.sin(mid)))
+
+    def turn(v, is_normal):
+        x, y, z = v
+        c = 0.0 if is_normal else 0.5
+        if horizontal:          # lying down (blockstate x = 90): +z -> +y, +y -> -z
+            y, z = c + (z - c), c - (y - c)
+        for _ in range(turns):  # each quarter turn (blockstate y = 90): (dx, dz) -> (-dz, dx)
+            x, z = c - (z - c), c + (x - c)
+        return (x, y, z)
+
+    def shade(n):
+        # vanilla face shading (down .5, up 1, north/south .8, east/west .6), blended smoothly
+        nx, ny, nz = n
+        return 0.6 * nx * nx + 0.8 * nz * nz + (1.0 if ny > 0 else 0.5) * ny * ny
+
+    lines = ["# generated by tools/gen_assets.py (tex_l37_curve_models)", "mtllib l37_curve.mtl", "usemtl tile"]
+    body = []
+    vi = 1
+    for ps, ns, uvs in faces:
+        refs = []
+        for pnt, nrm, uv in zip(ps, ns, uvs):
+            wp, wn = turn(pnt, False), turn(nrm, True)
+            s = shade(wn)
+            lines.append(f"v {wp[0]:.5f} {wp[1]:.5f} {wp[2]:.5f}")
+            lines.append(f"vt {uv[0]:.5f} {uv[1]:.5f}")
+            lines.append(f"vn {wn[0]:.5f} {wn[1]:.5f} {wn[2]:.5f}")
+            lines.append(f"vc {s:.4f} {s:.4f} {s:.4f} 1.0")
+            refs.append(f"{vi}/{vi}/{vi}/{vi}")
+            vi += 1
+        body.append("f " + " ".join(refs))
+    return "\n".join(lines + body) + "\n"
+
+
+def tex_l37_curve_models() -> None:
+    """OBJ models, block models and the blockstate of backrooms:l37_tile_curve."""
+    import json
+    folder = ROOT / "models" / "block" / "l37" / "curve"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "l37_curve.mtl").write_text("newmtl tile\nKd 1.0 1.0 1.0\nmap_Kd #tile\n")
+    variants = {}
+    for shape in l37_curve_shapes():
+        name = l37_curve_name(shape)
+        for orient in L37_ORIENTATIONS:
+            model = f"{name}_{orient[0]}"
+            (folder / f"{model}.obj").write_text(_l37_curve_obj(shape, orient))
+            (folder / f"{model}.json").write_text(json.dumps({
+                "loader": "neoforge:obj",
+                "model": f"backrooms:models/block/l37/curve/{model}.obj",
+                "flip_v": True,
+                "shade_quads": False,
+                "emissive_ambient": False,
+                "automatic_culling": True,
+                # Flat lighting: each piece takes the light of its own cell (smooth lighting
+                # sampled inside pillars and made the blocks band). Level 37's fill is flat across
+                # lit rooms (Level37Atmosphere.applyFill), so neighbouring pieces match.
+                "ambientocclusion": False,
+                "textures": {"tile": "backrooms:block/l37_tile_wall", "particle": "backrooms:block/l37_tile_wall"},
+            }, indent=2) + "\n")
+            variants[f"orientation={orient[0]},shape={name}"] = {"model": f"backrooms:block/l37/curve/{model}"}
+    (ROOT / "blockstates" / "l37_tile_curve.json").write_text(json.dumps({"variants": variants}, indent=2) + "\n")
+
+
+def snd_l37_ambience() -> None:
+    """16 s loop: a huge, calm, tiled pool hall. Soft lapping close by, slow sloshing further off,
+    three distant drips with a long bright tail, and a damped room tone. No machinery.
+    (16 s rather than longer: libsndfile 1.2.2's Vorbis encoder crashes on longer one-shot writes.)"""
+    rng = rng_for(3710)
+    T = 16.0
+    n = int(T * SR)
+    t = np.arange(n) / SR
+    lap = periodic_noise(n, rng, lambda f: bp_gain(f, 150, 900, 2))
+    env = np.zeros(n)
+    for _ in range(11):
+        c, w = rng.uniform(0, T), rng.uniform(0.35, 0.9)
+        env += rng.uniform(0.3, 0.9) * np.exp(-0.5 * (wrapd(t - c, T) / w) ** 2)
+    lap = lap * (0.1 + env)
+    slosh = periodic_noise(n, rng, lambda f: bp_gain(f, 50, 220, 2)) * drift(n, rng, 0.45, 0.06, 0.25)
+    room = periodic_noise(n, rng, lambda f: hp_gain(f, 20, 2) * lp_gain(f, 260, 2) / np.maximum(f, 20))
+    drips = np.zeros(n)
+    for start, f0 in ((2.9, 1250.0), (8.6, 980.0), (13.1, 1420.0)):
+        dt = t_axis(0.14)
+        d = np.sin(2 * np.pi * np.cumsum(f0 * (1 + 0.5 * np.clip(dt / 0.04, 0, 1))) / SR)
+        add_at(drips, d * np.exp(-dt / 0.03) * smoothstep(0, 0.003, dt) * rng.uniform(0.5, 1.0), start, circular=True)
+    drips = fft_filter(drips, lambda f: lp_gain(f, 2200, 2), circular=True)
+    events = norm(lap) * 0.5 + norm(drips) * 0.35
+    ir = reverb_ir(rng, 5.5, 2.0, lp=2800, predelay=0.05, early=((0.06, 0.5), (0.13, 0.35), (0.21, 0.25)))
+    wet = circ_conv(events, ir)
+    x = norm(lap) * 0.16 + norm(slosh) * 0.12 + norm(wet) * 0.62 + norm(room) * 0.22
+    x = fft_filter(x, lambda f: lp_gain(f, 3200, 1), circular=True)       # muted, damped
+    save_ogg(x, SND / "ambient" / "level37_ambience.ogg", peak=0.5, loop=True)
+
+
+def snd_l37_arrive() -> None:
+    """3.5 s: walking into the light. A soft airy swell and a warm, slowly blooming chord that
+    dissolves into a long reverb (no glitch, no hiss: the calm opposite of the noclip)."""
+    rng = rng_for(3711)
+    dur = 3.5
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    swell = np.sin(np.pi * np.clip(t / 2.6, 0, 1)) ** 2
+    air = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 300, 2600, 2)) * swell
+    chord = sum(a * np.sin(2 * np.pi * f * t + p) for f, a, p in
+                ((220.0, 1.0, 0.0), (277.18, 0.7, 1.1), (329.63, 0.6, 2.3), (440.0, 0.35, 0.7)))
+    chord *= np.clip(t / 1.4, 0, 1) ** 2 * np.exp(-np.maximum(t - 1.6, 0) / 0.9)
+    chord *= 1 + 0.004 * np.sin(2 * np.pi * 4.5 * t)
+    dry = norm(air) * 0.45 + norm(chord) * 0.55
+    wet = conv(dry, reverb_ir(rng, 2.5, 1.0, lp=4000, predelay=0.03))[:n]
+    x = norm(dry) * 0.5 + norm(wet) * 0.5
+    save_ogg(x, SND / "level37" / "arrive.ogg", peak=0.6, fade_out=0.6)
+
+
+L37_TEXTURES = [tex_l37_tiles, tex_l37_sunlit_void, tex_l37_chrome, tex_l37_curve_models]
+L37_SOUNDS = [snd_l37_ambience, snd_l37_arrive]
 
 
 # =============================================================================
@@ -4146,6 +5623,9 @@ TEXTURES = [
     tex_backpack_strap, tex_supply_locker, tex_supply_locker_top, tex_supply_locker_front,
     tex_checkpoint_radio_case, tex_checkpoint_radio_front, tex_safe_room_lamp, tex_safe_room_sign,
     tex_menu_logo, tex_menu_noise, tex_menu_vignette, tex_menu_note,
+    tex_water_ripples, tex_water_caustics, tex_water_shallow_item,
+    *L4_TEXTURES,
+    *L37_TEXTURES,
 ]
 SOUNDS = [
     snd_level0_hum, snd_level1_ambience, snd_level2_ambience,
@@ -4161,6 +5641,9 @@ SOUNDS = [
     snd_sanity_whisper, snd_sanity_heartbeat, snd_sanity_knock,
     snd_zipper_open, snd_zipper_close, snd_locker_open, snd_locker_close, snd_pills_rattle, snd_bandage_wrap,
     snd_checkpoint_save,
+    snd_water_wade, snd_water_splash,
+    *L4_SOUNDS,
+    *L37_SOUNDS,
 ]
 
 

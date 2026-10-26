@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/cardboard_boxes"
+    },
+    "facing=east": {
+      "model": "backrooms:block/cardboard_boxes",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/cardboard_boxes",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/cardboard_boxes",
+      "y": 270
+    }
+  }
+}

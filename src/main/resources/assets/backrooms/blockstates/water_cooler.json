@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "facing=north,uses=0": {
+      "model": "backrooms:block/water_cooler_0"
+    },
+    "facing=east,uses=0": {
+      "model": "backrooms:block/water_cooler_0",
+      "y": 90
+    },
+    "facing=south,uses=0": {
+      "model": "backrooms:block/water_cooler_0",
+      "y": 180
+    },
+    "facing=west,uses=0": {
+      "model": "backrooms:block/water_cooler_0",
+      "y": 270
+    },
+    "facing=north,uses=1": {
+      "model": "backrooms:block/water_cooler_1"
+    },
+    "facing=east,uses=1": {
+      "model": "backrooms:block/water_cooler_1",
+      "y": 90
+    },
+    "facing=south,uses=1": {
+      "model": "backrooms:block/water_cooler_1",
+      "y": 180
+    },
+    "facing=west,uses=1": {
+      "model": "backrooms:block/water_cooler_1",
+      "y": 270
+    },
+    "facing=north,uses=2": {
+      "model": "backrooms:block/water_cooler_2"
+    },
+    "facing=east,uses=2": {
+      "model": "backrooms:block/water_cooler_2",
+      "y": 90
+    },
+    "facing=south,uses=2": {
+      "model": "backrooms:block/water_cooler_2",
+      "y": 180
+    },
+    "facing=west,uses=2": {
+      "model": "backrooms:block/water_cooler_2",
+      "y": 270
+    },
+    "facing=north,uses=3": {
+      "model": "backrooms:block/water_cooler_3"
+    },
+    "facing=east,uses=3": {
+      "model": "backrooms:block/water_cooler_3",
+      "y": 90
+    },
+    "facing=south,uses=3": {
+      "model": "backrooms:block/water_cooler_3",
+      "y": 180
+    },
+    "facing=west,uses=3": {
+      "model": "backrooms:block/water_cooler_3",
+      "y": 270
+    }
+  }
+}

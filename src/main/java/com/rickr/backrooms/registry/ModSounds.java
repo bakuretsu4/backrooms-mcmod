@@ -22,6 +22,10 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> PHANTOM_VANISH = register("poolrooms.phantom_vanish");
     public static final DeferredHolder<SoundEvent, SoundEvent> DRAIN_PULL = register("poolrooms.drain_pull");
 
+    // Level 37, Sublimity: the calm tiled-pool ambience, and the soft swell as you walk into the light.
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL37_AMBIENCE = register("ambient.level37_ambience");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL37_ARRIVE = register("level37.arrive");
+
     // Level 9, the Suburbs: buzzing sodium streetlamps, lamps stuttering, The Mangled moving far off.
     public static final DeferredHolder<SoundEvent, SoundEvent> LIGHT_SODIUM_HUM = register("light.sodium_hum");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL9_LAMP_FLICKER = register("level9.lamp_flicker");
@@ -74,6 +78,11 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> STEP_WOOD_RUN = register("step.wood_run");
     /** Dry dead leaves underfoot (one sound for walking and running; it is played louder when running). */
     public static final DeferredHolder<SoundEvent, SoundEvent> STEP_LEAVES = register("step.leaves");
+    /** Wading through shallow water (Level 37's flooded floors, the Poolrooms' 1-deep shallows). */
+    public static final DeferredHolder<SoundEvent, SoundEvent> STEP_WATER_WADE_WALK = register("step.water_wade_walk");
+    public static final DeferredHolder<SoundEvent, SoundEvent> STEP_WATER_WADE_RUN = register("step.water_wade_run");
+    /** Soft splash that replaces vanilla's loud one when you drop into the pools of the Poolrooms / Level 37. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> WATER_SPLASH = register("water.splash");
 
     // Noclip intro: reality glitching apart, the rush of falling, crashing through the ceiling.
     public static final DeferredHolder<SoundEvent, SoundEvent> INTRO_GLITCH = register("intro.glitch");
@@ -93,6 +102,15 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> BANDAGE_WRAP = register("item.bandage.wrap");
     // Safe rooms: the field radio crackling to life and chiming when you save a checkpoint.
     public static final DeferredHolder<SoundEvent, SoundEvent> CHECKPOINT_SAVE = register("block.checkpoint_radio.save");
+    // Level 4, the Abandoned Office: heavy rain on the windows (biome loop), now and then a rumble
+    // in the pipes (biome additions), thunder after the lightning, the music behind door 6, and the
+    // vending machine and water cooler.
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_RAIN = register("ambient.level4_rain");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_PIPES = register("ambient.level4_pipes");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_THUNDER = register("level4.thunder");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_DOOR_MUSIC = register("level4.door_music");
+    public static final DeferredHolder<SoundEvent, SoundEvent> VENDING_MACHINE_VEND = register("block.vending_machine.vend");
+    public static final DeferredHolder<SoundEvent, SoundEvent> WATER_COOLER_GLUG = register("block.water_cooler.glug");
 
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name) {
         return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(Backrooms.id(name)));

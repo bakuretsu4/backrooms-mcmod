@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/step_ladder"
+    },
+    "facing=east": {
+      "model": "backrooms:block/step_ladder",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/step_ladder",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/step_ladder",
+      "y": 270
+    }
+  }
+}

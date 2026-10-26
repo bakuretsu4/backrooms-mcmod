@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "backrooms:block/l37_sunlit_void"
+    },
+    "facing=up": {
+      "model": "backrooms:block/l37_sunlit_void"
+    },
+    "facing=north": {
+      "model": "backrooms:block/l37_sunlit_void"
+    },
+    "facing=south": {
+      "model": "backrooms:block/l37_sunlit_void"
+    },
+    "facing=west": {
+      "model": "backrooms:block/l37_sunlit_void"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l37_sunlit_void"
+    }
+  }
+}

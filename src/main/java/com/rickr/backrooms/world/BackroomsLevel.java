@@ -5,6 +5,8 @@ import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.world.layout.Level0Layout;
 import com.rickr.backrooms.world.layout.Level1Layout;
 import com.rickr.backrooms.world.layout.Level2Layout;
+import com.rickr.backrooms.world.layout.Level37Layout;
+import com.rickr.backrooms.world.layout.Level4Layout;
 import com.rickr.backrooms.world.layout.Level9Layout;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import com.rickr.backrooms.world.layout.PoolroomsLayout;
@@ -19,7 +21,12 @@ import org.jetbrains.annotations.Nullable;
  * using {@link BackroomsChunkGenerator} with a different {@link LevelLayout}.
  *
  * <p>Order of escape: Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2
- * --exit door--> Poolrooms --the drain--> Level 9 --the underpass--> Overworld.
+ * --exit door--> Level 4 --emergency stairwell--> Poolrooms --the drain--> Level 9 --the underpass-->
+ * Overworld. Secret branch: a rare sunlit archway in the Poolrooms leads to Level 37 ("Sublimity"),
+ * and diving into one of its deep pools brings you out in Level 9.
+ *
+ * <p>New floors are added at the END of this enum: saved data and commands refer to floors by name,
+ * but keeping the order stable avoids surprises.
  */
 public enum BackroomsLevel implements StringRepresentable {
     LEVEL_0("level_0", new Level0Layout(), 30, 1, 90),
@@ -31,7 +38,14 @@ public enum BackroomsLevel implements StringRepresentable {
      * The Suburbs. No Bacteria (cap 0): the Neighborhood Watch patrols here instead. You leave by
      * walking deep into a highway underpass ({@code Level9Rules}), never by falling.
      */
-    LEVEL_9("level_9", new Level9Layout(), Integer.MIN_VALUE, 0, 1);
+    LEVEL_9("level_9", new Level9Layout(), Integer.MIN_VALUE, 0, 1),
+    /** The Abandoned Office: a safe haven, no monsters. Leave down an emergency stairwell. */
+    LEVEL_4("level_4", new Level4Layout(), 30, 0, 1),
+    /**
+     * "Sublimity": bright, pristine, calm. No monsters. Diving down a deep pool shaft (below
+     * {@link Level37Layout#TRANSFER_BELOW_Y}) takes you on to Level 9.
+     */
+    LEVEL_37("level_37", new Level37Layout(), Level37Layout.TRANSFER_BELOW_Y, 0, 1);
 
     public static final Codec<BackroomsLevel> CODEC = StringRepresentable.fromEnum(BackroomsLevel::values);
 
@@ -84,14 +98,22 @@ public enum BackroomsLevel implements StringRepresentable {
         return switch (this) {
             case LEVEL_0 -> LEVEL_1;
             case LEVEL_1 -> LEVEL_2;
-            case LEVEL_2 -> POOLROOMS;
-            case POOLROOMS -> LEVEL_9;
+            case LEVEL_2 -> LEVEL_4;
+            case LEVEL_4 -> POOLROOMS;
+            case POOLROOMS, LEVEL_37 -> LEVEL_9;
             case LEVEL_9 -> null;
         };
     }
 
-    public int number() {
-        return ordinal();
+    /** Looks a floor up by its name (e.g. "level_37"), or null. Used by /backrooms enter. */
+    @Nullable
+    public static BackroomsLevel byName(String name) {
+        for (BackroomsLevel level : values()) {
+            if (level.name.equals(name)) {
+                return level;
+            }
+        }
+        return null;
     }
 
     @Nullable

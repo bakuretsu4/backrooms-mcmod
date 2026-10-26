@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "backrooms:block/l37_tile_slab"
+    },
+    "type=top": {
+      "model": "backrooms:block/l37_tile_slab_top"
+    },
+    "type=double": {
+      "model": "backrooms:block/l37_tile_wall"
+    }
+  }
+}

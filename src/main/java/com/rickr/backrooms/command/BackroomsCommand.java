@@ -2,6 +2,10 @@ package com.rickr.backrooms.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import net.minecraft.commands.SharedSuggestionProvider;
+import java.util.Arrays;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.rickr.backrooms.camera.CameraService;
@@ -27,12 +31,12 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Operator tools for hosting sessions with friends:
  * <pre>
- * /backrooms enter [targets] [level]   noclip players into a level: 0-2, 3 = the Poolrooms, 4 = Level 9 (default: Level 0)
+ * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9 (default: level_0)
  * /backrooms escape [targets]          send players back to reality
  * /backrooms battery [targets] [pct]   set camcorder batteries (default: full)
  * /backrooms sanity [targets] <0-100>   set sanity (for testing the low-sanity effects)
  * /backrooms locate                    distance/direction to the nearest exit (for testing)
- * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|end> [seconds]   start/stop an event on this floor
+ * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|end> [seconds]   start/stop an event on this floor
  * /backrooms spawn bacteria [count]   spawn Bacteria about 12 blocks in front of you (for testing)
  * /backrooms locate saferoom          distance/direction to the nearest safe room (for testing)
  * </pre>
@@ -42,11 +46,13 @@ public final class BackroomsCommand {
         dispatcher.register(Commands.literal("backrooms")
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("enter")
-                        .executes(ctx -> enter(ctx, java.util.List.of(ctx.getSource().getPlayerOrException()), 0))
+                        .executes(ctx -> enter(ctx, java.util.List.of(ctx.getSource().getPlayerOrException()), BackroomsLevel.LEVEL_0))
                         .then(Commands.argument("targets", EntityArgument.players())
-                                .executes(ctx -> enter(ctx, EntityArgument.getPlayers(ctx, "targets"), 0))
-                                .then(Commands.argument("level", IntegerArgumentType.integer(0, BackroomsLevel.values().length - 1))
-                                        .executes(ctx -> enter(ctx, EntityArgument.getPlayers(ctx, "targets"), IntegerArgumentType.getInteger(ctx, "level"))))))
+                                .executes(ctx -> enter(ctx, EntityArgument.getPlayers(ctx, "targets"), BackroomsLevel.LEVEL_0))
+                                .then(Commands.argument("level", StringArgumentType.word())
+                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                Arrays.stream(BackroomsLevel.values()).map(BackroomsLevel::getSerializedName), builder))
+                                        .executes(ctx -> enter(ctx, EntityArgument.getPlayers(ctx, "targets"), levelArgument(ctx))))))
                 .then(Commands.literal("escape")
                         .executes(ctx -> escape(java.util.List.of(ctx.getSource().getPlayerOrException())))
                         .then(Commands.argument("targets", EntityArgument.players())
@@ -74,6 +80,7 @@ public final class BackroomsCommand {
                         .then(eventNode("twist", LevelEventPayload.TWIST, 20))
                         .then(eventNode("fog", LevelEventPayload.FOG_ROLL, 50))
                         .then(eventNode("lampwave", LevelEventPayload.LAMP_WAVE, 25))
+                        .then(eventNode("storm", LevelEventPayload.STORM, 6))
                         .then(Commands.literal("end").executes(ctx -> event(ctx, LevelEventPayload.NONE, 0))))
                 .then(Commands.literal("spawn")
                         .then(Commands.literal("bacteria")
@@ -100,8 +107,18 @@ public final class BackroomsCommand {
         return 1;
     }
 
-    private static int enter(CommandContext<CommandSourceStack> ctx, Collection<ServerPlayer> players, int levelNumber) {
-        BackroomsLevel level = BackroomsLevel.values()[levelNumber];
+    private static final SimpleCommandExceptionType UNKNOWN_LEVEL = new SimpleCommandExceptionType(
+            Component.literal("Unknown level. Try level_0, level_1, level_2, level_4, poolrooms, level_37 or level_9."));
+
+    private static BackroomsLevel levelArgument(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        BackroomsLevel level = BackroomsLevel.byName(StringArgumentType.getString(ctx, "level"));
+        if (level == null) {
+            throw UNKNOWN_LEVEL.create();
+        }
+        return level;
+    }
+
+    private static int enter(CommandContext<CommandSourceStack> ctx, Collection<ServerPlayer> players, BackroomsLevel level) {
         for (ServerPlayer player : players) {
             if (level == BackroomsLevel.LEVEL_0 && !Travel.inBackrooms(player.level())) {
                 Travel.enterBackrooms(player); // the full noclip intro
