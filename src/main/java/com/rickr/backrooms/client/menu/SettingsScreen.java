@@ -81,10 +81,16 @@ public class SettingsScreen extends Screen {
         y = this.slider(rowX, y, rowW, sliderH, "motion_blur", ClientSettings.MOTION_BLUR, 0, 200, 10);
         y = this.toggle(rowX, y, rowW, toggleH, "wide_lens", ClientSettings.WIDE_LENS);
 
-        // --- HUD -----------------------------------------------------------------------------
+        // --- Screen: graphics quality and HUD ------------------------------------------------
         y += compact ? 2 : 4;
         this.headings.add(new Heading(VhsText.translatable("menu.backrooms.settings.hud"), y));
         y += headingH;
+        this.addRenderableWidget(new VhsChoice<>(rowX, y, rowW, toggleH, this.textScale,
+                VhsText.translatable("menu.backrooms.settings.quality"),
+                Component.translatable("menu.backrooms.settings.quality.info"),
+                ClientSettings.Quality.values(), ClientSettings.QUALITY::get, ClientSettings.QUALITY::set,
+                q -> VhsText.translatable("menu.backrooms.settings.quality." + q.name().toLowerCase(java.util.Locale.ROOT))));
+        y += toggleH;
         y = this.toggle(rowX, y, rowW, toggleH, "stamina_bar", ClientSettings.STAMINA_BAR);
 
         // Room for a description of up to three lines under the rows.
@@ -119,6 +125,7 @@ public class SettingsScreen extends Screen {
         return y + h;
     }
 
+    /** Back to the default camera feel and HUD. QUALITY is left alone: it's about your computer, not taste. */
     private void resetToDefaults() {
         ClientSettings.CAMERA_SMOOTHING.set(ClientSettings.CAMERA_SMOOTHING.getDefault());
         ClientSettings.HANDHELD_SHAKE.set(ClientSettings.HANDHELD_SHAKE.getDefault());

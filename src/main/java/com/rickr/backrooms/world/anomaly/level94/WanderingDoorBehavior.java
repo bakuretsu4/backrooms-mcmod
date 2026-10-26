@@ -106,6 +106,11 @@ public final class WanderingDoorBehavior implements AnomalyBehavior {
         }
         long now = level.getGameTime();
         long[] times = TIMES.computeIfAbsent(site.salt(), k -> new long[] {now, now});
+        if (TIMES.size() > 256) {
+            // A long session visits many doors: forget the ones nobody has been near for 5 minutes.
+            // (A forgotten door just starts over as "seen now", so it waits a little before moving.)
+            TIMES.values().removeIf(t -> now - Math.max(t[0], t[1]) > 6000);
+        }
         List<Integer> found = new ArrayList<>();
         for (int i = 0; i < spots.size(); i++) {
             if (hasDoor(level, spots.get(i))) {

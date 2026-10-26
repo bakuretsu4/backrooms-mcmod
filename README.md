@@ -24,7 +24,22 @@ Lithium, FerriteCore, ModernFix, Entity Culling, ImmediatelyFast and Dynamic FPS
 | Jump | Not possible in the Backrooms (except in water, to swim and climb out) |
 | Loot | Right-click Wooden Crates, Backpacks and Supply Lockers (see Supplies below) |
 | New battery | Right-click a Camcorder Battery |
-| Settings | **SETTINGS** on the main menu, **Backrooms Settings...** in the pause menu, or Config in the Mods list: camera smoothing (default 35%; the original feel was 88%), handheld shake, view tilt, motion blur, wide lens, stamina line. Changes apply immediately and are saved per player in `config/backrooms-client.toml`. |
+| Settings | **SETTINGS** on the main menu, **Backrooms Settings...** in the pause menu, or Config in the Mods list: camera smoothing (default 35%; the original feel was 88%), handheld shake, view tilt, motion blur, wide lens, stamina line, and **QUALITY** for weaker computers (see Performance below). Changes apply immediately and are saved per player in `config/backrooms-client.toml`. |
+
+### Performance
+
+**QUALITY** (on the SETTINGS screen) turns down the three things that cost the most graphics-card
+time. HIGH is the full look; try MEDIUM or LOW if the game stutters.
+
+| | HIGH | MEDIUM | LOW |
+|---|---|---|---|
+| Dynamic lamp lights (shadowed) | 32, within 28 blocks | 20, within 24 | 12, within 20 |
+| Glow around lamps (blur passes) | 6 | 4 | none |
+| Pool water reflections | full | shorter | none (plain mirror colour) |
+| Sun beams (Level 37, Poolrooms) | 20 | 12 | 6 |
+
+Measured at 1920x1080 on a fast graphics card, LOW takes about 15% less time per frame than HIGH
+in Level 0 and about 40% less in Level 37; slower cards gain more.
 
 ### The way out
 

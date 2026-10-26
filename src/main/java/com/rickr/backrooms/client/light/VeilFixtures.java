@@ -30,7 +30,7 @@ final class VeilFixtures {
 
     /**
      * How many of the nearest streetlamps get a glow cone. These count against
-     * {@link BackroomsLights#MAX_LIGHTS} (that many point-light slots are kept free in Level 9).
+     * the quality's light budget (ClientSettings.Quality#maxLights; that many slots are kept free in Level 9).
      * Set to 0 to switch the cones off.
      */
     static final int LAMP_CONES = 4;

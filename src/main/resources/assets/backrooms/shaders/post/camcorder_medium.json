@@ -1,0 +1,125 @@
+{
+    "targets": [
+        "scenedepth",
+        "bright",
+        "blurtmp",
+        "bloom1",
+        "bloom3",
+        "graded"
+    ],
+    "passes": [
+        {
+            "name": "backrooms:bloom_extract",
+            "intarget": "minecraft:main",
+            "outtarget": "bright"
+        },
+        {
+            "name": "backrooms:bloom_blur",
+            "intarget": "bright",
+            "outtarget": "blurtmp",
+            "uniforms": [
+                {
+                    "name": "BlurDir",
+                    "values": [
+                        1.0,
+                        0.0
+                    ]
+                },
+                {
+                    "name": "Spacing",
+                    "values": [
+                        1.5
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "backrooms:bloom_blur",
+            "intarget": "blurtmp",
+            "outtarget": "bloom1",
+            "uniforms": [
+                {
+                    "name": "BlurDir",
+                    "values": [
+                        0.0,
+                        1.0
+                    ]
+                },
+                {
+                    "name": "Spacing",
+                    "values": [
+                        1.5
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "backrooms:bloom_blur",
+            "intarget": "bloom1",
+            "outtarget": "blurtmp",
+            "uniforms": [
+                {
+                    "name": "BlurDir",
+                    "values": [
+                        1.0,
+                        0.0
+                    ]
+                },
+                {
+                    "name": "Spacing",
+                    "values": [
+                        12.0
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "backrooms:bloom_blur",
+            "intarget": "blurtmp",
+            "outtarget": "bloom3",
+            "uniforms": [
+                {
+                    "name": "BlurDir",
+                    "values": [
+                        0.0,
+                        1.0
+                    ]
+                },
+                {
+                    "name": "Spacing",
+                    "values": [
+                        12.0
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "backrooms:camcorder",
+            "intarget": "minecraft:main",
+            "outtarget": "graded",
+            "auxtargets": [
+                {
+                    "name": "DepthSampler",
+                    "id": "scenedepth:depth"
+                },
+                {
+                    "name": "Bloom1Sampler",
+                    "id": "bloom1"
+                },
+                {
+                    "name": "Bloom2Sampler",
+                    "id": "bloom3"
+                },
+                {
+                    "name": "Bloom3Sampler",
+                    "id": "bloom3"
+                }
+            ]
+        },
+        {
+            "name": "blit",
+            "intarget": "graded",
+            "outtarget": "minecraft:main"
+        }
+    ]
+}

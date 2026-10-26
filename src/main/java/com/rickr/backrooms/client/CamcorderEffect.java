@@ -1,5 +1,6 @@
 package com.rickr.backrooms.client;
 
+import com.rickr.backrooms.config.ClientSettings;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraClientState;
@@ -34,7 +35,8 @@ import net.minecraft.util.Mth;
  * the effect's "scenedepth" buffer ({@link #captureDepth}).
  */
 public final class CamcorderEffect {
-    public static final ResourceLocation CHAIN = Backrooms.id("shaders/post/camcorder.json");
+    /** All our chains live here: camcorder.json (HIGH), camcorder_medium.json, camcorder_low.json. */
+    private static final String CHAIN_PREFIX = Backrooms.id("shaders/post/camcorder").toString();
     private static final float TRANSITION_MS = 2500.0f;
     /** Waking up on the carpet after the fall (eyes opening, sitting up). */
     public static final float WAKE_MS = 4500.0f;
@@ -52,7 +54,8 @@ public final class CamcorderEffect {
     private static float dangerTarget;
     /** Smoothed 0..1 colour fringing from a nearby Smiler (the shader's Chroma uniform). */
     private static float chroma;
-    private static boolean loadFailed;
+    /** The chain that failed to load (bad shader edit): not retried every tick until resources reload. */
+    private static String failedChain;
 
     public static float danger() {
         return danger;
@@ -72,21 +75,27 @@ public final class CamcorderEffect {
         return since < 0 || since > WAKE_MS ? 0.0f : 1.0f - since / WAKE_MS;
     }
 
-    private static PostChain activeChain(Minecraft mc) {
-        PostChain chain = mc.gameRenderer.currentEffect();
-        return chain != null && CHAIN.toString().equals(chain.getName()) ? chain : null;
+    /** The post chain for the QUALITY setting; they differ only in how many glow (blur) passes they run. */
+    private static ResourceLocation wantedChain() {
+        return Backrooms.id("shaders/post/" + ClientSettings.quality().postChain + ".json");
     }
 
-    /** Once per client tick: make sure the effect is on exactly when we're in the Backrooms. */
+    private static PostChain activeChain(Minecraft mc) {
+        PostChain chain = mc.gameRenderer.currentEffect();
+        return chain != null && chain.getName().startsWith(CHAIN_PREFIX) ? chain : null;
+    }
+
+    /** Once per client tick: make sure the right effect is on exactly when we're in the Backrooms. */
     public static void tick(Minecraft mc) {
         boolean want = wanted(mc);
-        boolean active = activeChain(mc) != null;
-        if (want && !active && !loadFailed) {
+        PostChain active = activeChain(mc);
+        String chain = wantedChain().toString();
+        if (want && (active == null || !active.getName().equals(chain)) && !chain.equals(failedChain)) {
             // Vanilla clears post effects whenever the camera entity changes (respawn, dimension
-            // change), so re-apply whenever it's missing.
-            mc.gameRenderer.loadEffect(CHAIN);
-            loadFailed = activeChain(mc) == null;
-        } else if (!want && active) {
+            // change), so re-apply whenever it's missing; a QUALITY change swaps the chain.
+            mc.gameRenderer.loadEffect(wantedChain());
+            failedChain = activeChain(mc) == null ? chain : null;
+        } else if (!want && active != null) {
             mc.gameRenderer.shutdownEffect();
         }
 
@@ -115,7 +124,7 @@ public final class CamcorderEffect {
 
     /** Resource reloads (F3+T) rebuild shaders, so allow another attempt. */
     public static void onResourcesReloaded() {
-        loadFailed = false;
+        failedChain = null;
     }
 
     /** Called right after the world is drawn, before vanilla clears depth for the hand. */

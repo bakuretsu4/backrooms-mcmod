@@ -35,7 +35,7 @@ public final class Level2Sites {
     /**
      * The void repeats every this many blocks each way: crossing an edge quietly moves you back by
      * this much. Small enough that you are never more than ~28 blocks from the doorway's lamp,
-     * the furthest a fixture still shines (client/light/BackroomsLights.LIGHT_RANGE): the lit
+     * the furthest a fixture still shines on HIGH quality (ClientSettings.Quality#lightRange): the lit
      * doorway stays in sight from anywhere in front of it.
      */
     public static final int VOID_WRAP = 40;

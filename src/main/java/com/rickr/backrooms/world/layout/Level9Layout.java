@@ -302,7 +302,7 @@ public final class Level9Layout extends LevelLayout {
         for (int ox = -1; ox <= 1; ox++) {
             for (int oz = -1; oz <= 1; oz++) {
                 int ex = exits().exitX(seed, rx + ox, rz + oz);
-                int street = exitStreet(seed, exits().exitZ(seed, rx + ox, rz + oz));
+                int street = regionExitStreet(seed, rx + ox, rz + oz);
                 int ez = streetZ(seed, street, ex);
                 long d = (long) (ex - x) * (ex - x) + (long) (ez - z) * (ez - z);
                 if (d < bestDist) {
@@ -390,6 +390,39 @@ public final class Level9Layout extends LevelLayout {
         return u < 0.12 ? NONE : u < 0.30 ? STUB : FULL;
     }
 
+    /**
+     * {@link #exitStreet} of exit region (rx, rz). World generation asks this for the same few
+     * regions thousands of times per chunk (every side street checks whether it would block an
+     * underpass), and it was the single most expensive thing in Level 9's generator, so each
+     * worker thread remembers the last answers in a small table.
+     */
+    private int regionExitStreet(long seed, int rx, int rz) {
+        RegionStreetCache cache = REGION_STREETS.get();
+        int slot = (int) (Hash.mix(((long) rx << 32) ^ (rz & 0xFFFFFFFFL)) & (RegionStreetCache.SIZE - 1));
+        if (cache.filled[slot] && cache.rx[slot] == rx && cache.rz[slot] == rz && cache.seed[slot] == seed) {
+            return cache.street[slot];
+        }
+        int street = exitStreet(seed, exits().exitZ(seed, rx, rz));
+        cache.filled[slot] = true;
+        cache.rx[slot] = rx;
+        cache.rz[slot] = rz;
+        cache.seed[slot] = seed;
+        cache.street[slot] = street;
+        return street;
+    }
+
+    private static final ThreadLocal<RegionStreetCache> REGION_STREETS = ThreadLocal.withInitial(RegionStreetCache::new);
+
+    /** A tiny per-thread table: exit region -> its main street. Old entries are simply overwritten. */
+    private static final class RegionStreetCache {
+        static final int SIZE = 64;
+        final boolean[] filled = new boolean[SIZE];
+        final int[] rx = new int[SIZE];
+        final int[] rz = new int[SIZE];
+        final long[] seed = new long[SIZE];
+        final int[] street = new int[SIZE];
+    }
+
     /** The exit's main street: the one whose base line is nearest the exit point's z. */
     private static int exitStreet(long seed, int ez) {
         int r = Math.floorDiv(ez + ROW / 2, ROW);
@@ -412,7 +445,7 @@ public final class Level9Layout extends LevelLayout {
             int rx = Math.floorDiv(sx, EXIT_REGION);
             int rz = Math.floorDiv(z + dz, EXIT_REGION);
             int ex = exits().exitX(seed, rx, rz);
-            int street = exitStreet(seed, exits().exitZ(seed, rx, rz));
+            int street = regionExitStreet(seed, rx, rz);
             if ((r == street || r == street - 1) && Math.abs(sx - ex) < EXIT_CLEAR) {
                 return true;
             }
@@ -485,7 +518,7 @@ public final class Level9Layout extends LevelLayout {
         if (Math.abs(x - ex) > EXIT_HALF) {
             return Integer.MIN_VALUE;
         }
-        int street = exitStreet(seed, exits().exitZ(seed, rx, rz));
+        int street = regionExitStreet(seed, rx, rz);
         int cz = streetZ(seed, street, ex);
         int reach = roadHalf(seed, street) + SW + 1 + LD;
         return Math.abs(z - cz) <= reach ? cz : Integer.MIN_VALUE;
@@ -500,7 +533,7 @@ public final class Level9Layout extends LevelLayout {
         }
         int cz = exitStreetZ(seed, x, z);
         if (cz != Integer.MIN_VALUE) {
-            int street = exitStreet(seed, exits().exitZ(seed, Math.floorDiv(x, EXIT_REGION), Math.floorDiv(z, EXIT_REGION)));
+            int street = regionExitStreet(seed, Math.floorDiv(x, EXIT_REGION), Math.floorDiv(z, EXIT_REGION));
             int rh = roadHalf(seed, street);
             int d = Math.abs(z - cz);
             if (d <= rh) return TUNNEL_ROAD;
@@ -645,7 +678,7 @@ public final class Level9Layout extends LevelLayout {
         int rx = Math.floorDiv(mid, EXIT_REGION);
         int rz = Math.floorDiv(streetZ0(seed, street), EXIT_REGION);
         int ex = exits().exitX(seed, rx, rz);
-        if (exitStreet(seed, exits().exitZ(seed, rx, rz)) == street && x0 - 2 <= ex + EXIT_HALF && x1 + 2 >= ex - EXIT_HALF) {
+        if (regionExitStreet(seed, rx, rz) == street && x0 - 2 <= ex + EXIT_HALF && x1 + 2 >= ex - EXIT_HALF) {
             return false;
         }
         return true;
@@ -966,7 +999,7 @@ public final class Level9Layout extends LevelLayout {
     private boolean lampDarkZone(long seed, int x, int z, int street) {
         int rx = Math.floorDiv(x, EXIT_REGION);
         int rz = Math.floorDiv(z, EXIT_REGION);
-        return exitStreet(seed, exits().exitZ(seed, rx, rz)) == street && Math.abs(x - exits().exitX(seed, rx, rz)) <= EXIT_HALF + 12;
+        return regionExitStreet(seed, rx, rz) == street && Math.abs(x - exits().exitX(seed, rx, rz)) <= EXIT_HALF + 12;
     }
 
     /**
@@ -1299,7 +1332,7 @@ public final class Level9Layout extends LevelLayout {
 
     /** The main street that runs through the underpass of the region containing (x, z). */
     private int exitStreetOf(long seed, int x, int z) {
-        return exitStreet(seed, exits().exitZ(seed, Math.floorDiv(x, EXIT_REGION), Math.floorDiv(z, EXIT_REGION)));
+        return regionExitStreet(seed, Math.floorDiv(x, EXIT_REGION), Math.floorDiv(z, EXIT_REGION));
     }
 
     /**

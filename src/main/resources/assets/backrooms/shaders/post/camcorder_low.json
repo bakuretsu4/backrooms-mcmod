@@ -1,0 +1,44 @@
+{
+    "targets": [
+        "scenedepth",
+        "graded"
+    ],
+    "passes": [
+        {
+            "name": "backrooms:camcorder",
+            "intarget": "minecraft:main",
+            "outtarget": "graded",
+            "auxtargets": [
+                {
+                    "name": "DepthSampler",
+                    "id": "scenedepth:depth"
+                },
+                {
+                    "name": "Bloom1Sampler",
+                    "id": "scenedepth"
+                },
+                {
+                    "name": "Bloom2Sampler",
+                    "id": "scenedepth"
+                },
+                {
+                    "name": "Bloom3Sampler",
+                    "id": "scenedepth"
+                }
+            ],
+            "uniforms": [
+                {
+                    "name": "BloomStrength",
+                    "values": [
+                        0.0
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "blit",
+            "intarget": "graded",
+            "outtarget": "minecraft:main"
+        }
+    ]
+}

@@ -1,5 +1,6 @@
 package com.rickr.backrooms.client.water;
 
+import com.rickr.backrooms.config.ClientSettings;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -196,6 +197,8 @@ public final class WaterRenderer {
             set(surface, "MeshOffset").set((float) (originX - eye.x), (float) (originY - eye.y), (float) (originZ - eye.z));
             set(surface, "CameraLow").set(lowX, lowY, lowZ);
             set(surface, "Time").set(seconds);
+            // QUALITY setting: how far the reflection is traced (0 = just the mirror colour).
+            set(surface, "ReflectionSteps").set(ClientSettings.quality().reflectionSteps);
             set(surface, "ShallowColor").set(WaterStyle.red(look.shallowColor()), WaterStyle.green(look.shallowColor()),
                     WaterStyle.blue(look.shallowColor()), look.shallowAlpha());
             set(surface, "DeepColor").set(WaterStyle.red(look.deepColor()), WaterStyle.green(look.deepColor()),

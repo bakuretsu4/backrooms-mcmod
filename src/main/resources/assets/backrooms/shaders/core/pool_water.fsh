@@ -63,7 +63,7 @@ const float CAUSTIC_TILE = 4.0;
 const float CAUSTIC_WARP_TILE = 8.0;
 // How steep the ripples are at RippleStrength 1.
 const float RIPPLE_SLOPE = 0.22;
-const int SSR_STEPS = 18;
+uniform int ReflectionSteps; // set from the QUALITY setting: 18 HIGH, 10 MEDIUM, 0 LOW (no traced reflection)
 const int SSR_REFINE = 5;
 
 float luma(vec3 c) {
@@ -133,7 +133,7 @@ vec3 causticsOn(vec3 world, vec3 n, float depth) {
 vec4 traceReflection(vec3 origin, vec3 dir) {
     float stepLen = 0.12 + 0.02 * length(origin);
     vec3 pos = origin;
-    for (int i = 0; i < SSR_STEPS; i++) {
+    for (int i = 0; i < ReflectionSteps; i++) {
         vec3 prev = pos;
         pos += dir * stepLen;
         vec4 clip = ProjMat * vec4(pos, 1.0);
@@ -165,7 +165,7 @@ vec4 traceReflection(vec3 origin, vec3 dir) {
             vec4 hc = ProjMat * vec4(b, 1.0);
             vec2 huv = clamp(hc.xy / hc.w * 0.5 + 0.5, 0.0, 1.0);
             float edge = smoothstep(0.0, 0.07, min(min(huv.x, 1.0 - huv.x), min(huv.y, 1.0 - huv.y)));
-            float far = 1.0 - smoothstep(0.55, 1.0, float(i) / float(SSR_STEPS));
+            float far = 1.0 - smoothstep(0.55, 1.0, float(i) / float(max(ReflectionSteps, 1)));
             return vec4(textureLod(SceneColor, huv, 1.0).rgb, edge * far);
         }
         stepLen *= 1.25;

@@ -50,6 +50,51 @@ public final class ClientSettings {
 
     static {
         BUILDER.pop();
+        BUILDER.push("graphics");
+    }
+
+    public static final ModConfigSpec.EnumValue<Quality> QUALITY = BUILDER
+            .comment("Graphics quality: HIGH = everything; MEDIUM and LOW are for weaker computers",
+                    "(fewer dynamic lamp lights, less glow around lamps, simpler pool water reflections).")
+            .defineEnum("quality", Quality.HIGH);
+
+    static {
+        BUILDER.pop();
+    }
+
+    /**
+     * What each quality level turns down. The costly parts, measured: every Veil lamp light is a
+     * shadowed light the graphics card draws each frame; the glow is extra full-screen blur passes;
+     * the pool water traces a reflection for every water pixel.
+     */
+    public enum Quality {
+        //   lamp lights, light range, glow chain,          water reflection steps, sun beams
+        LOW(12, 20, "camcorder_low", 0, 6),
+        MEDIUM(20, 24, "camcorder_medium", 10, 12),
+        HIGH(32, 28, "camcorder", 18, 20);
+
+        /** Most Veil lamp lights at once. */
+        public final int maxLights;
+        /** Furthest lamp that gets a Veil light (blocks). */
+        public final int lightRange;
+        /** The camcorder post-processing chain (assets/backrooms/shaders/post/NAME.json); they differ only in the glow passes. */
+        public final String postChain;
+        /** Ray-march steps of the pool water reflection; 0 = no traced reflection, just the mirror colour. */
+        public final int reflectionSteps;
+        /** Most Level 37 / Poolrooms sun beams (shadowed area lights) at once. */
+        public final int maxSunBeams;
+
+        Quality(int maxLights, int lightRange, String postChain, int reflectionSteps, int maxSunBeams) {
+            this.maxLights = maxLights;
+            this.lightRange = lightRange;
+            this.postChain = postChain;
+            this.reflectionSteps = reflectionSteps;
+            this.maxSunBeams = maxSunBeams;
+        }
+    }
+
+    public static Quality quality() {
+        return QUALITY.get();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();

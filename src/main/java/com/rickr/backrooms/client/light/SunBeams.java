@@ -1,5 +1,6 @@
 package com.rickr.backrooms.client.light;
 
+import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.block.SunlitVoidBlock;
 import com.rickr.backrooms.camera.CameraClientState;
@@ -61,8 +62,8 @@ import org.joml.Vector3f;
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class SunBeams {
-    /** Most beams at once (each is a shadowed area light). */
-    private static final int MAX_BEAMS = 20;
+    // How many beams at once (each is a shadowed area light) comes from the QUALITY setting:
+    // ClientSettings.Quality#maxSunBeams (20 on HIGH).
     /** Beams whose opening is further than this aren't drawn. */
     private static final double BEAM_RANGE = 44.0;
     /** Rebuild the beam list after walking this far, or when openings appeared or vanished. */
@@ -424,8 +425,9 @@ public final class SunBeams {
         appliedScale = scale;
         LongOpenHashSet wanted = new LongOpenHashSet();
         double maxSq = BEAM_RANGE * BEAM_RANGE;
+        int maxBeams = ClientSettings.quality().maxSunBeams;
         for (Beam beam : beams) {
-            if (wanted.size() >= MAX_BEAMS || beam.distSq(eye) > maxSq) {
+            if (wanted.size() >= maxBeams || beam.distSq(eye) > maxSq) {
                 break; // nearest first
             }
             wanted.add(beam.key());

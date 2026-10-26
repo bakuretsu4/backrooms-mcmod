@@ -61,6 +61,7 @@ uniform float Sanity;     // 0..1 how broken your mind is (0 = picture exactly u
 uniform float SanityPulse;  // 0..1 heartbeat pulse for the edge darkening (only matters when Sanity > 0)
 uniform float SanityGlitch; // 0..1 a tiny tape glitch when a hallucination vanishes (0 = no change)
 uniform float Chroma;       // 0..1 a Smiler close by: strong colour fringing (0 = no change at all)
+uniform float BloomStrength; // 1 = glow on; 0 on LOW quality, whose post chain skips the blur passes
 // The level's mood (AtmosphereGrade). Defaults leave the picture as it was.
 uniform float Exposure;     // overall brightness multiplier
 uniform float Contrast;     // around mid-grey
@@ -318,7 +319,7 @@ void main() {
     }
 
     // 5. Bloom from the three blur sizes. Only light fixtures made it into these buffers.
-    col += (texture(Bloom1Sampler, uv).rgb + texture(Bloom2Sampler, uv).rgb + texture(Bloom3Sampler, uv).rgb) * BLOOM_STRENGTH;
+    col += (texture(Bloom1Sampler, uv).rgb + texture(Bloom2Sampler, uv).rgb + texture(Bloom3Sampler, uv).rgb) * BLOOM_STRENGTH * BloomStrength;
     col = clamp(col, 0.0, 1.0);
 
     // 6b. Glow: bright areas bleed softly into their neighbourhood (old, slightly hazy optics), and

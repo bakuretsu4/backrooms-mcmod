@@ -20,6 +20,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
+import com.rickr.backrooms.config.ClientSettings;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
@@ -35,8 +36,9 @@ import org.jetbrains.annotations.Nullable;
  *   <li>keep {@link LightIndex} (all fixture blocks in loaded chunks) up to date,</li>
  *   <li>turn the fixtures around you into lights ({@link FixtureClusters}: a strip emits once),</li>
  *   <li>apply the floor event to each one ({@link FixturePower}: blackout, flicker, alarm),</li>
- *   <li>hand the nearest {@value #MAX_LIGHTS} within {@value #LIGHT_RANGE} blocks to Veil as shadowed
- *       point lights ({@link VeilFixtures}) and let the nearest few hum ({@link FixtureSounds}).</li>
+ *   <li>hand the nearest lights (how many, and how far out, depends on the QUALITY setting: 32
+ *       within 28 blocks on HIGH) to Veil as shadowed point lights ({@link VeilFixtures}) and let
+ *       the nearest few hum ({@link FixtureSounds}).</li>
  * </ol>
  * Every frame we also aim the flashlights ({@link Flashlights}) and spin the alarm beacons.
  *
@@ -50,12 +52,12 @@ import org.jetbrains.annotations.Nullable;
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class BackroomsLights {
-    /** Most Veil fixture lights at once: shadowed lights are costly on the GPU. */
-    public static final int MAX_LIGHTS = 32;
-    /** Furthest fixture that gets a Veil light (blocks). */
-    public static final int LIGHT_RANGE = 28;
-    /** Lights are clustered this far around the player, a bit beyond LIGHT_RANGE. */
-    private static final int BUILD_RANGE = LIGHT_RANGE + 10;
+    /**
+     * Lights are clustered this far around the player: a bit beyond the longest light range (HIGH
+     * quality, {@link ClientSettings.Quality#lightRange}). The per-frame budget and range come from
+     * the QUALITY setting: every shadowed Veil light costs graphics-card time each frame.
+     */
+    private static final int BUILD_RANGE = ClientSettings.Quality.HIGH.lightRange + 10;
     /** Rebuild the cluster list after walking this far (or when fixtures changed). */
     private static final int REBUILD_MOVE = 6;
     /** Lights already on get this much "closer" when ranking, so they don't swap at the edge. */
@@ -324,19 +326,20 @@ public final class BackroomsLights {
     }
 
     /**
-     * Picks the nearest lights within LIGHT_RANGE (lights already shown get a small bonus). In
-     * Level 9 a few slots of the MAX_LIGHTS budget are kept free for the streetlamps' glow cones
-     * ({@link VeilFixtures#LAMP_CONES}), so the total never exceeds MAX_LIGHTS.
+     * Picks the nearest lights within the quality's light range (lights already shown get a small
+     * bonus). In Level 9 a few slots of the budget are kept free for the streetlamps' glow cones
+     * ({@link VeilFixtures#LAMP_CONES}), so the total never exceeds the quality's maxLights.
      */
     private static void select(BackroomsLevel floor) {
-        int budget = floor == BackroomsLevel.LEVEL_9 ? MAX_LIGHTS - VeilFixtures.LAMP_CONES : MAX_LIGHTS;
+        ClientSettings.Quality quality = ClientSettings.quality();
+        int budget = floor == BackroomsLevel.LEVEL_9 ? quality.maxLights - VeilFixtures.LAMP_CONES : quality.maxLights;
         SHOWN.clear();
         for (FixtureLight light : SELECTED) {
             SHOWN.add(light.key);
         }
         SELECTED.clear();
         CANDIDATES.clear();
-        double maxSq = (double) LIGHT_RANGE * LIGHT_RANGE;
+        double maxSq = (double) quality.lightRange * quality.lightRange;
         boolean blackedOut = FixturePower.mainsPower() <= 0.0f;
         for (FixtureLight light : lights) {
             if (light.distSq > maxSq) {

@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -54,34 +55,67 @@ public final class BackroomsChunkGenerator extends ChunkGenerator {
         return CODEC;
     }
 
+    /**
+     * Writes the layout's blocks straight into the chunk's sections, the way vanilla's own terrain
+     * generator does. Going through {@code chunk.setBlockState} for every block was half of all
+     * generation time: it locks the section for each block, loops over the heightmaps, and on the
+     * very first block scans the whole empty chunk to "prime" them. Here each section is locked
+     * once, and the two heightmaps this stage keeps (WG = world generation) are updated directly;
+     * they start unprimed, which is exact because the chunk starts out as nothing but air.
+     */
     @Override
     public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState randomState, StructureManager structures, ChunkAccess chunk) {
         long seed = BackroomsSeeds.layoutSeed(randomState, level);
         LevelLayout layout = level.layout();
         ChunkPos chunkPos = chunk.getPos();
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-        for (int lx = 0; lx < 16; lx++) {
-            for (int lz = 0; lz < 16; lz++) {
-                int x = chunkPos.getMinBlockX() + lx;
-                int z = chunkPos.getMinBlockZ() + lz;
-                // Surfaces get their stained/cracked versions everywhere except in anomalous areas,
-                // which may loop or copy their rooms (see block/SurfaceBlock).
-                boolean plain = layout.anomalyAt(seed, x, z) != null;
-                layout.fillColumn(seed, x, z, (y, state) -> {
-                    if (!plain && state.getBlock() instanceof SurfaceBlock surface) {
-                        state = surface.withVariant(state, seed, x, y, z);
-                    }
-                    chunk.setBlockState(pos.set(x, y, z), state, false);
-                    // Level 94 props: blocks with a block entity (siren horns, parked vehicles) need it
-                    // made here. Writing straight into the chunk skips that, and without one a siren
-                    // never sings and a vehicle is never drawn (vanilla world generation does the same).
-                    if (state.hasBlockEntity() && state.getBlock() instanceof EntityBlock entityBlock) {
-                        BlockEntity blockEntity = entityBlock.newBlockEntity(pos.immutable(), state);
-                        if (blockEntity != null) {
-                            chunk.setBlockEntity(blockEntity);
+        Heightmap oceanFloor = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.OCEAN_FLOOR_WG);
+        Heightmap worldSurface = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.WORLD_SURFACE_WG);
+        LevelChunkSection[] sections = chunk.getSections();
+        int minY = chunk.getMinBuildHeight();
+        int maxY = chunk.getMaxBuildHeight();
+        for (LevelChunkSection section : sections) {
+            section.acquire();
+        }
+        try {
+            for (int lx = 0; lx < 16; lx++) {
+                for (int lz = 0; lz < 16; lz++) {
+                    int x = chunkPos.getMinBlockX() + lx;
+                    int z = chunkPos.getMinBlockZ() + lz;
+                    int cellX = lx;
+                    int cellZ = lz;
+                    // Surfaces get their stained/cracked versions everywhere except in anomalous areas,
+                    // which may loop or copy their rooms (see block/SurfaceBlock).
+                    boolean plain = layout.anomalyAt(seed, x, z) != null;
+                    layout.fillColumn(seed, x, z, (y, state) -> {
+                        if (y < minY || y >= maxY) {
+                            return;
                         }
-                    }
-                });
+                        if (!plain && state.getBlock() instanceof SurfaceBlock surface) {
+                            state = surface.withVariant(state, seed, x, y, z);
+                        }
+                        LevelChunkSection section = sections[chunk.getSectionIndex(y)];
+                        if (state.isAir() && section.hasOnlyAir()) {
+                            return; // air into an empty section: nothing to do
+                        }
+                        section.setBlockState(cellX, y & 15, cellZ, state, false);
+                        oceanFloor.update(cellX, y, cellZ, state);
+                        worldSurface.update(cellX, y, cellZ, state);
+                        // Level 94 props: blocks with a block entity (siren horns, parked vehicles) need it
+                        // made here, or a siren never sings and a vehicle is never drawn (vanilla
+                        // world generation does the same).
+                        if (state.hasBlockEntity() && state.getBlock() instanceof EntityBlock entityBlock) {
+                            BlockEntity blockEntity = entityBlock.newBlockEntity(pos.set(x, y, z).immutable(), state);
+                            if (blockEntity != null) {
+                                chunk.setBlockEntity(blockEntity);
+                            }
+                        }
+                    });
+                }
+            }
+        } finally {
+            for (LevelChunkSection section : sections) {
+                section.release();
             }
         }
         return CompletableFuture.completedFuture(chunk);
