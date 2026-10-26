@@ -7,8 +7,8 @@
 //     corners of the screen land on the corners of the picture: no black corners, no vignette.
 //     (Stronger barrel magnified the middle and stretched the edges, so everything seemed to
 //     happen in the centre of the screen.)
-//  2. VHS tape transport: always a little line jitter (sawtooth edges) and a head-switching strip
-//     at the bottom; wobble, tracking bar and tears only in glitch moments (danger, transitions, low battery).
+//  2. VHS tape transport: a barely-there line jitter; wobble, tracking bar and tears in glitch moments
+//     (danger, transitions, low battery); white dropout specks and the head-switching strip only in heavy ones.
 //  3. Rotational motion blur along the camera's turn this frame, with mild radial chromatic
 //     aberration (red and green pushed apart toward the screen sides).
 //  4. Fallback flashlight (only when Veil's real lights are not running): a dim, flat disc with a
@@ -96,9 +96,9 @@ const float LENS_K = 0.04;
 // Chromatic aberration: a faint fringe everywhere, a little more toward the sides (never zero in
 // the middle, so the whole picture shares the same slightly-soft camcorder feel).
 const float CA_STRENGTH = 0.0016;
-// Worn tape, always on: every scanline band is nudged sideways a few pixels (sawtooth edges),
-// stronger red/green colour fringes and a thin head-switching noise strip at the bottom.
-const float TAPE_BASE = 0.35;
+// Worn tape, always on but faint: a hint of sideways line jitter, a touch more colour fringing and
+// faint grain. (Stronger made the picture look busy and smeared.)
+const float TAPE_BASE = 0.12;
 // How much of each of the three bloom sizes is added back.
 const float BLOOM_STRENGTH = 0.45;
 // (The darkest colour now comes from the level's Lift: by default the tape's blue-violet #020005.)
@@ -161,11 +161,14 @@ void main() {
     // A monster nearby only roughs the tape up a little (max ~0.3): enough to warn you, not enough
     // to hide what you're looking at. Level transitions keep the full-strength glitch.
     float glitch = clamp(Danger * 0.3 + Transition * 1.2 + lowBattery * 0.35 - Signal * 0.15 + SanityGlitch * 0.6, 0.0, 1.5);
-    // The worn-tape look (line jitter, colour fringes, head-switching strip, grain) never goes away;
-    // glitch moments add to it. The big tracking bar, tears and scanlines stay glitch-only.
+    // The worn-tape look (faint line jitter, colour fringes, grain) never goes away; glitch moments
+    // add to it. The head-switching strip, tracking bar, tears, specks and scanlines are glitch-only.
     // Low sanity wears the tape a little more (adds to tape only, never to the glitch extras).
     float sanity = clamp(Sanity, 0.0, 1.0);
     float tape = clamp(TAPE_BASE + glitch + sanity * 0.2, 0.0, 1.5);
+    // Only the big glitches (noclip transitions, a dying battery) get the noisy extras: white
+    // dropout specks and the head-switching strip. A monster nearby (glitch up to 0.3) does not.
+    float heavy = max(glitch - 0.3, 0.0);
 
     // 1. Lens. p is the output pixel in half-height units (y -1..1, x -aspect..aspect).
     //    Barrel: sample from p * (1 + k|p|^2). Dividing by the corner's factor (1 + k(aspect^2+1))
@@ -175,12 +178,12 @@ void main() {
     vec2 src = p * (1.0 + LENS_K * dot(p, p)) * crop;
     vec2 uv = src / vec2(aspect, 1.0) * 0.5 + 0.5;
 
-    // 2. Tape transport. Line jitter and the head-switching strip are always there (tape);
-    //    the rolling tracking bar and tears only show in glitch moments.
+    // 2. Tape transport. A faint line jitter is always there (tape); the head-switching strip at
+    //    the bottom, the rolling tracking bar and tears only show in glitch moments.
     float band = floor(uv.y * 300.0);
     uv.y += (noise1(t * 0.8) - 0.5) * 0.002 * glitch;
     uv.x += (hash12(vec2(band, floor(t * 30.0))) - 0.5) * 0.0015 * tape * (1.0 + tape * 6.0);
-    if (texCoord.y < 0.02 * tape) {
+    if (texCoord.y < 0.02 * heavy) {
         uv.x += 0.015 * sin(texCoord.y * 900.0 + t * 40.0) + 0.01; // head-switching noise
     }
     if (glitch > 0.001) {
@@ -404,8 +407,9 @@ void main() {
         float grain = hash12(floor(gl_FragCoord.xy / scale) + fract(t * 7.13) * vec2(431.0, 177.0)) - 0.5;
         col += grain * grainAmount * (0.4 + luma(col));
     }
-    col += step(0.9997, hash12(gl_FragCoord.xy + floor(t * 30.0) * 17.0)) * tape; // white dropout specks
-    if (texCoord.y < 0.02 * tape) {
+    // White dropout specks: only in heavy glitches (a clean picture has none).
+    col += step(0.9998, hash12(gl_FragCoord.xy + floor(t * 30.0) * 17.0)) * heavy;
+    if (texCoord.y < 0.02 * heavy) {
         col = mix(col, vec3(hash12(gl_FragCoord.xy + t)), 0.3); // head-switching static strip
     }
     if (glitch > 0.001) {
