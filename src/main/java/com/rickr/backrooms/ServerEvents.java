@@ -3,6 +3,7 @@ package com.rickr.backrooms;
 import com.rickr.backrooms.camera.CameraService;
 import com.rickr.backrooms.command.BackroomsCommand;
 import com.rickr.backrooms.entity.BacteriaSpawner;
+import com.rickr.backrooms.entity.SmilerSpawner;
 import com.rickr.backrooms.player.PlayerGameplay;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.LevelEvents;
@@ -55,6 +56,7 @@ public final class ServerEvents {
     public static void onLevelTick(LevelTickEvent.Post event) {
         if (event.getLevel() instanceof ServerLevel level) {
             BacteriaSpawner.tick(level);
+            SmilerSpawner.tick(level);
             BackroomsLevel floor = BackroomsLevel.fromDimension(level.dimension());
             if (floor != null) {
                 LevelEvents.tick(level, floor);
@@ -98,6 +100,7 @@ public final class ServerEvents {
     public static void onServerStopped(ServerStoppedEvent event) {
         LevelEvents.reset();
         BacteriaSpawner.reset();
+        SmilerSpawner.reset();
     }
 
     @SubscribeEvent

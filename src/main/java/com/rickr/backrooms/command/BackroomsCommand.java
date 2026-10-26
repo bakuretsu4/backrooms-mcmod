@@ -10,6 +10,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.rickr.backrooms.camera.CameraService;
 import com.rickr.backrooms.player.SanityService;
+import com.rickr.backrooms.entity.SmilerSpawner;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
 import com.rickr.backrooms.world.LevelEvents;
@@ -38,6 +39,7 @@ import net.minecraft.world.phys.Vec3;
  * /backrooms locate                    distance/direction to the nearest exit (for testing)
  * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|end> [seconds]   start/stop an event on this floor
  * /backrooms spawn bacteria [count]   spawn Bacteria about 12 blocks in front of you (for testing)
+ * /backrooms spawn smiler [count|bold]  spawn Smilers about 16 blocks in front of you (start a blackout first)
  * /backrooms locate saferoom          distance/direction to the nearest safe room (for testing)
  * </pre>
  */
@@ -86,7 +88,12 @@ public final class BackroomsCommand {
                         .then(Commands.literal("bacteria")
                                 .executes(ctx -> spawnBacteria(ctx, 1))
                                 .then(Commands.argument("count", IntegerArgumentType.integer(1, 10))
-                                        .executes(ctx -> spawnBacteria(ctx, IntegerArgumentType.getInteger(ctx, "count")))))));
+                                        .executes(ctx -> spawnBacteria(ctx, IntegerArgumentType.getInteger(ctx, "count")))))
+                        .then(Commands.literal("smiler")
+                                .executes(ctx -> spawnSmilers(ctx, 1, false))
+                                .then(Commands.literal("bold").executes(ctx -> spawnSmilers(ctx, 1, true)))
+                                .then(Commands.argument("count", IntegerArgumentType.integer(1, 10))
+                                        .executes(ctx -> spawnSmilers(ctx, IntegerArgumentType.getInteger(ctx, "count"), false))))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> eventNode(String name, int kind, int defaultSeconds) {
@@ -146,13 +153,7 @@ public final class BackroomsCommand {
     private static int spawnBacteria(CommandContext<CommandSourceStack> ctx, int count) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         ServerLevel level = player.serverLevel();
-        Vec3 ahead = player.position().add(Vec3.directionFromRotation(0.0f, player.getYRot()).scale(12.0));
-        BlockPos spot = BlockPos.containing(ahead);
-        BackroomsLevel floor = BackroomsLevel.fromDimension(level.dimension());
-        if (floor != null) {
-            BlockPos walkable = Travel.searchWalkable(floor.layout(), BackroomsSeeds.layoutSeed(level, floor), spot.getX(), spot.getZ(), 6);
-            spot = walkable != null ? walkable : player.blockPosition();
-        }
+        BlockPos spot = spotAhead(player, 12.0);
         int spawned = 0;
         for (int i = 0; i < count; i++) {
             if (ModEntities.BACTERIA.get().spawn(level, spot, MobSpawnType.COMMAND) != null) {
@@ -163,6 +164,38 @@ public final class BackroomsCommand {
         BlockPos at = spot;
         ctx.getSource().sendSuccess(() -> Component.literal("Spawned " + done + " Bacteria at " + at.toShortString()), true);
         return spawned;
+    }
+
+    /**
+     * Spawns Smilers about 16 blocks in front of you. They behave like blackout ones, except that
+     * they don't need a blackout: they fade after 90 s, or burn away at once in a lit spot. For a
+     * proper test start a blackout first: {@code /backrooms event blackout 60}.
+     */
+    private static int spawnSmilers(CommandContext<CommandSourceStack> ctx, int count, boolean bold) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        BlockPos spot = spotAhead(player, 16.0);
+        int spawned = 0;
+        for (int i = 0; i < count; i++) {
+            if (SmilerSpawner.spawn(player.serverLevel(), spot, false, bold) != null) {
+                spawned++;
+            }
+        }
+        int done = spawned;
+        ctx.getSource().sendSuccess(() -> Component.literal("Spawned " + done + (bold ? " bold" : "") + " Smiler(s) at " + spot.toShortString()), true);
+        return spawned;
+    }
+
+    /** A walkable spot about {@code distance} blocks in front of the player (their feet if none). */
+    private static BlockPos spotAhead(ServerPlayer player, double distance) {
+        ServerLevel level = player.serverLevel();
+        Vec3 ahead = player.position().add(Vec3.directionFromRotation(0.0f, player.getYRot()).scale(distance));
+        BlockPos spot = BlockPos.containing(ahead);
+        BackroomsLevel floor = BackroomsLevel.fromDimension(level.dimension());
+        if (floor != null) {
+            BlockPos walkable = Travel.searchWalkable(floor.layout(), BackroomsSeeds.layoutSeed(level, floor), spot.getX(), spot.getZ(), 6);
+            spot = walkable != null ? walkable : player.blockPosition();
+        }
+        return spot;
     }
 
     private static int locate(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {

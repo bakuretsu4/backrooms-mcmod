@@ -4,6 +4,7 @@ import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraData;
 import com.rickr.backrooms.entity.Bacteria;
 import com.rickr.backrooms.entity.Observer;
+import com.rickr.backrooms.entity.Smiler;
 import com.rickr.backrooms.entity.Watcher;
 import com.rickr.backrooms.network.SanityPayload;
 import com.rickr.backrooms.registry.ModAttachments;
@@ -45,6 +46,7 @@ public final class SanityService {
     private static final float BACTERIA_CHASE_DRAIN = 1.2f;
     private static final float WATCHER_DRAIN = 0.8f;
     private static final float OBSERVER_DRAIN = 0.3f;
+    private static final float SMILER_DRAIN = 1.0f;
     private static final float BLACKOUT_DRAIN = 0.2f;
 
     // ---- Recovery per second ---------------------------------------------------------------
@@ -60,6 +62,7 @@ public final class SanityService {
     private static final double BACTERIA_RANGE = 16.0;
     private static final double WATCHER_RANGE = 24.0;
     private static final double OBSERVER_RANGE = 16.0;
+    private static final double SMILER_RANGE = 24.0;
     /** "Dark" = the brighter of block light and sky light at your eyes is this or less. */
     private static final int DARK_LIGHT = 3;
 
@@ -205,6 +208,13 @@ public final class SanityService {
         if (!level.getEntitiesOfClass(Observer.class, observerBox,
                 o -> o.distanceToSqr(player) <= OBSERVER_RANGE * OBSERVER_RANGE).isEmpty()) {
             drain += OBSERVER_DRAIN;
+        }
+
+        // A Smiler's face in view (it glows, so seeing it is all it takes).
+        AABB smilerBox = player.getBoundingBox().inflate(SMILER_RANGE);
+        if (!level.getEntitiesOfClass(Smiler.class, smilerBox,
+                s -> s.distanceToSqr(player) <= SMILER_RANGE * SMILER_RANGE && player.hasLineOfSight(s)).isEmpty()) {
+            drain += SMILER_DRAIN;
         }
         return drain;
     }

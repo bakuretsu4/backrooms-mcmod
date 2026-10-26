@@ -54,6 +54,7 @@ uniform float FogDrain;   // 1 in Level 9: colour drains out of distant things (
 uniform float Sanity;     // 0..1 how broken your mind is (0 = picture exactly unchanged)
 uniform float SanityPulse;  // 0..1 heartbeat pulse for the edge darkening (only matters when Sanity > 0)
 uniform float SanityGlitch; // 0..1 a tiny tape glitch when a hallucination vanishes (0 = no change)
+uniform float Chroma;       // 0..1 a Smiler close by: strong colour fringing (0 = no change at all)
 uniform float Near;
 uniform float Far;
 
@@ -189,6 +190,10 @@ void main() {
     float centreDist = length(fromCentre);
     vec2 radial = centreDist > 1.0e-5 ? fromCentre / centreDist : vec2(0.0);
     vec2 caOffset = radial * CA_STRENGTH * abs(uv.x - 0.5) * (1.0 + tape * 2.0);
+    if (Chroma > 0.0) {
+        // Smiler close by: the colours tear apart, worst at the edges, wobbling a little.
+        caOffset += radial * Chroma * (0.003 + 0.012 * centreDist) * (0.85 + 0.15 * sin(t * 17.0));
+    }
     if (dream > 0.0) {
         // Dream: soft chromatic shimmer, the colour fringes slowly breathe and wander.
         caOffset += radial * 0.0025 * dream * (0.6 + 0.4 * sin(t * 1.3 + centreDist * 12.0))

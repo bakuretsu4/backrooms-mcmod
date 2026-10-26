@@ -2067,6 +2067,28 @@ def tex_bacteria() -> None:
     save_png(np.clip(np.stack([ir, ir, ir], axis=-1), 0, 255), TEX / "entity" / "bacteria_ir.png")
 
 
+def tex_smiler() -> None:
+    """Smiler face (smiler.png) and its NightShot body (smiler_body.png), 32x32 each.
+
+    The face is drawn full-bright and additively, so it only needs to be nearly white: a faint warm
+    mottle keeps it from looking like flat UI paint. The body is black smoke with ragged holes
+    (fully transparent pixels): the model's flat body parts drawn with cutout come out torn and
+    flame-like instead of as clean rectangles.
+    """
+    rng = rng_for(2701)
+    N = 32
+    mott = blur(fnoise(rng, (N, N), beta=2.0), 0.7)
+    v = np.clip(238.0 + 10.0 * mott, 215, 255)
+    save_png(np.stack([v + 2.0, v, v - 6.0], axis=-1), TEX / "entity" / "smiler.png")
+
+    rng = rng_for(2702)
+    smoke = blur(fnoise(rng, (N, N), beta=1.6, aniso=(1.0, 2.5)), 0.5)
+    dark = np.clip(9.0 + 6.0 * smoke, 3, 20)
+    alpha = np.where(smoke > -1.1, 255.0, 0.0)  # about 1 pixel in 7 is a hole
+    save_png(np.stack([dark, dark, dark + 1.0, alpha], axis=-1), TEX / "entity" / "smiler_body.png")
+
+
+
 def tex_sanity_silhouette() -> None:
     """64x128 black cut-out of a tall, gaunt Bacteria-like figure for the low-sanity hallucination.
     Only the alpha matters: the client draws it pitch black as a billboard (it isn't really there)."""
@@ -3462,6 +3484,123 @@ def snd_observer_vanish() -> None:
     x = norm(breath) * env + 0.2 * norm(fft_filter(rng.normal(size=n), lambda f: lp_gain(f, 300, 2))[:n]) * env
     x = x + 0.35 * conv(x, reverb_ir(rng, 1.5, 0.5, lp=3000))[:n]
     save_ogg(x, SND / "entity" / "observer_vanish.ogg", peak=0.75, fade_in=0.02, fade_out=0.15)
+
+
+# =============================================================================
+# Smiler sounds
+# =============================================================================
+
+def _giggle(rng, dur, f0_base, syllables, gap, far=True) -> np.ndarray:
+    """Breathy "heh-heh-heh": short voiced syllables with a lot of breath, each falling in pitch,
+    doubled an octave below so it sounds wrong, not like a person."""
+    n = int(dur * SR)
+    x = np.zeros(n)
+    start = 0.04
+    for i in range(syllables):
+        length = rng.uniform(0.08, 0.12)
+        m = int(length * SR)
+        tt = np.arange(m) / SR
+        f0_s = f0_base * (1.0 - 0.035 * i) * rng.uniform(0.95, 1.06)
+        f0 = f0_s * (1.15 - 0.3 * tt / length) * (1 + smooth_jitter(rng, m, 30, 0.03))
+        forms = [(560, 130, 1.0), (1850, 220, 0.6), (2800, 320, 0.3)]
+        v = voice(f0, forms, rng, nh=30) + 0.45 * voice(f0 * 0.5, [(450, 150, 1.0), (1300, 250, 0.4)], rng, nh=24)
+        breath = svf(rng.normal(size=m), 1900.0, 1.8)
+        env = np.sin(np.pi * tt / length) ** 1.5
+        add_at(x, (0.55 * norm(v) + 0.45 * norm(breath)) * env * (1.0 - 0.06 * i), start, circular=False)
+        start += gap * rng.uniform(0.8, 1.2)
+        if start > dur - 0.15:
+            break
+    if far:
+        x = fft_filter(x, lambda f: lp_gain(f, 3200, 2))[:n]
+        x = x + 0.45 * norm(conv(x, reverb_ir(rng, 1.3, 0.45, lp=2800))[:n]) * np.abs(x).max()
+    return x
+
+
+def snd_smiler_giggle() -> None:
+    """3 giggles heard when a Smiler appears: far off, breathy, pitched a little too high."""
+    for i, (f0, syl, gap, dur) in enumerate(((340, 6, 0.15, 1.9), (300, 5, 0.18, 1.9), (390, 7, 0.13, 2.0)), 1):
+        rng = rng_for(2710 + i)
+        x = _giggle(rng, dur, f0, syl, gap)
+        save_ogg(x, SND / "entity" / f"smiler_giggle{i}.ogg", peak=0.8, fade_in=0.01, fade_out=0.3)
+
+
+def snd_smiler_breath() -> None:
+    """~2.4 s slow, wet breathing close by: a long inhale, a rattling exhale with a low growl."""
+    rng = rng_for(2720)
+    dur = 2.4
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    inhale = svf(rng.normal(size=n), 900 + 1400 * smoothstep(0.0, 0.9, t), 2.2) * (smoothstep(0.0, 0.5, t) * (1 - smoothstep(0.8, 1.0, t)))
+    ex_env = smoothstep(1.05, 1.3, t) * (1 - smoothstep(1.9, dur, t))
+    exhale = svf(rng.normal(size=n), 1300 - 500 * smoothstep(1.1, dur, t), 1.6) * ex_env
+    growl = voice(np.full(n, 68.0) * (1 + smooth_jitter(rng, n, 8, 0.06)), [(380, 120, 1.0), (900, 200, 0.4)], rng, nh=40) * ex_env
+    wet = clicks(rng, np.sort(rng.uniform(1.1, 1.9, 9)), dur, 600, 1500, 0.004, 0.01)
+    x = norm(inhale) * 0.8 + norm(exhale) + 0.35 * norm(growl) + 0.25 * norm(wet)
+    x = x + 0.2 * norm(conv(x, reverb_ir(rng, 0.6, 0.15, lp=4000))[:n]) * np.abs(x).max()
+    save_ogg(x, SND / "entity" / "smiler_breath.ogg", peak=0.75, fade_in=0.02, fade_out=0.15)
+
+
+def snd_smiler_flinch() -> None:
+    """~0.7 s: a sharp hiss like water on a hot plate, with a short pained squeal."""
+    rng = rng_for(2730)
+    dur = 0.7
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    hiss = fft_filter(rng.normal(size=n), lambda f: hp_gain(f, 2500, 2))[:n] * np.exp(-t / 0.25)
+    sizzle = _crackle(rng, dur, 900, f_lo=3000) * np.exp(-t / 0.35)
+    squeal = _scream(rng, dur, f_pts=[(0, 900), (0.08, 1400), (0.3, 1100), (dur, 700)],
+                     f1_pts=[(0, 900), (dur, 800)], f2_pts=[(0, 2600), (dur, 2200)],
+                     env_pts=[(0, 0), (0.02, 1.0), (0.2, 0.5), (0.45, 0.0), (dur, 0.0)], drive=4.0, bits=7, hold=1)
+    x = norm(hiss) + 0.6 * norm(sizzle) + 0.45 * norm(squeal)
+    save_ogg(x, SND / "entity" / "smiler_flinch.ogg", peak=0.82, fade_out=0.08)
+
+
+def snd_smiler_dispel() -> None:
+    """~1.6 s: it burns away. Dense crackling fire, a shriek falling to nothing, a rush of air."""
+    rng = rng_for(2740)
+    dur = 1.6
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    fire = _crackle(rng, dur, 2500, f_lo=1800) * (1 - smoothstep(0.6, dur, t))
+    shriek = _scream(rng, dur, f_pts=[(0, 1300), (0.15, 1600), (0.6, 800), (1.1, 260), (dur, 120)],
+                     f1_pts=[(0, 1000), (dur, 500)], f2_pts=[(0, 2900), (dur, 1300)],
+                     env_pts=[(0, 0), (0.03, 1.0), (0.5, 0.8), (1.1, 0.25), (1.4, 0.0), (dur, 0.0)],
+                     drive=6.0, bits=6, hold=2, detune=1.12, sub=0.4)
+    rush = svf(rng.normal(size=n), 2500 * np.exp(-t / 0.5) + 200, 1.2) * smoothstep(0, 0.1, t) * (1 - smoothstep(0.4, dur, t))
+    x = 0.7 * norm(fire) + norm(shriek) + 0.5 * norm(rush)
+    x = x + 0.3 * norm(conv(x, reverb_ir(rng, 1.2, 0.4, lp=3500))[:n]) * np.abs(x).max()
+    save_ogg(x, SND / "entity" / "smiler_dispel.ogg", peak=0.85, fade_out=0.2)
+
+
+def snd_smiler_lunge() -> None:
+    """~0.6 s: a sharp, rising breath in, then teeth snapping together."""
+    rng = rng_for(2750)
+    dur = 0.6
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    inhale = svf(rng.normal(size=n), 800 + 3000 * smoothstep(0.0, 0.35, t), 2.0) * smoothstep(0.0, 0.3, t) * (1 - smoothstep(0.34, 0.38, t))
+    snap = clicks(rng, [0.38, 0.385, 0.41], dur, 2200, 4200, 0.003, 0.008)
+    thud = np.sin(2 * np.pi * 90 * t) * np.exp(-np.clip(t - 0.38, 0, None) / 0.05) * (t >= 0.38)
+    x = norm(inhale) + 0.9 * norm(snap) + 0.4 * norm(thud)
+    save_ogg(x, SND / "entity" / "smiler_lunge.ogg", peak=0.86, fade_out=0.05)
+
+
+def snd_smiler_kill() -> None:
+    """~1.8 s: a wet crunch, then a low, slow laugh."""
+    rng = rng_for(2760)
+    dur = 1.8
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    thump = np.sin(2 * np.pi * np.cumsum(np.interp(t, [0, 0.08], [120, 45])) / SR) * np.exp(-t / 0.08)
+    crack = clicks(rng, np.sort(rng.uniform(0.0, 0.18, 10)), dur, 1500, 4500, 0.002, 0.006)
+    squelch = svf(rng.normal(size=n), 700.0, 1.5) * np.exp(-t / 0.15)
+    laugh = np.zeros(n)
+    add_at(laugh, _giggle(rng, 1.4, 160, 6, 0.2, far=False), 0.35, circular=False)
+    laugh = dist(norm(laugh), 2.5)
+    x = norm(thump) + 0.7 * norm(crack) + 0.4 * norm(squelch) + 0.8 * norm(laugh)
+    x = x + 0.25 * norm(conv(x, reverb_ir(rng, 0.9, 0.3, lp=3500))[:n]) * np.abs(x).max()
+    save_ogg(x, SND / "entity" / "smiler_kill.ogg", peak=0.88, fade_out=0.2)
+
 
 
 def snd_leaf_steps() -> None:
@@ -5617,7 +5756,7 @@ TEXTURES = [
     tex_picket_fence, tex_mailbox, tex_night_log, tex_night_leaves, tex_dead_branch, tex_hedge,
     tex_streetlamp_parts, tex_streetlamp_heads, tex_sign_post, tex_street_signs, tex_tunnel_concrete,
     tex_exit_tunnel_marker, tex_highway_sign_exit,
-    tex_camcorder_battery, tex_almond_water, tex_canned_food, tex_backshroom, tex_bacteria,
+    tex_camcorder_battery, tex_almond_water, tex_canned_food, tex_backshroom, tex_bacteria, tex_smiler,
     tex_sanity_silhouette,
     tex_energy_bar, tex_calm_pills, tex_bandage, tex_backpack, tex_backpack_flap, tex_backpack_pocket,
     tex_backpack_strap, tex_supply_locker, tex_supply_locker_top, tex_supply_locker_front,
@@ -5638,6 +5777,7 @@ SOUNDS = [
     snd_poolrooms_ambience, snd_hallucination_loop, snd_phantom_vanish, snd_drain_pull,
     snd_level9_ambience, snd_sodium_hum, snd_lamp_flicker, snd_distant_rumble, snd_watcher_hum,
     snd_watcher_spot, snd_watcher_beam, snd_watcher_dust, snd_observer_vanish, snd_leaf_steps,
+    snd_smiler_giggle, snd_smiler_breath, snd_smiler_flinch, snd_smiler_dispel, snd_smiler_lunge, snd_smiler_kill,
     snd_sanity_whisper, snd_sanity_heartbeat, snd_sanity_knock,
     snd_zipper_open, snd_zipper_close, snd_locker_open, snd_locker_close, snd_pills_rattle, snd_bandage_wrap,
     snd_checkpoint_save,

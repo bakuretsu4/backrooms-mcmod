@@ -125,7 +125,7 @@ Your heart rate (top-right, always shown in the Backrooms) is your sanity: 70 BP
 
 - **Drains** slowly all the time in the Backrooms, faster in the dark (with your flashlight off),
   when nobody is within 24 blocks, when you see a Bacteria (much faster if it's chasing you), a
-  Watcher or an Observer, and during blackouts.
+  Watcher, an Observer or a Smiler, and during blackouts.
 - **Restores** in a safe room (fast), next to a friend in the light (slowly), out in the real world,
   and with Almond Water (+35) or Calm Pills (+25). Creative/spectator players aren't affected.
 - **When it's low** (only you notice): below 70 you hear whispers, knocks and footsteps right behind
@@ -163,6 +163,13 @@ light on and the sign over the front door.
   NightShot on you can see it even in total darkness.
 - **Blackouts:** the lights fade out over two seconds. Only flashlights work, and the Bacteria come
   out three times as often, but they can't use the lamps to spot you either.
+- **Smilers (blackouts, Levels 0-2):** a glowing grin and two glowing eyes in the dark, no body (NightShot
+  shows a black, smoky shape under the face). One comes when the lights go out, sometimes a second
+  from the other side 10 seconds later. It giggles when it appears, creeps toward you and breathes
+  when it's close; if it reaches you, you die. Hold your flashlight on its face: it squints, backs
+  off and burns away after about 1.5 seconds of light in total (bursts add up). About one in six
+  has a wider grin and takes twice as long. Weapons go straight through it. When the lights come
+  back on, or you reach a safe room, they're gone.
 - **Flicker**, **alarm** (red rotating emergency lamps), **intercom** announcements that get
   creepier, **lightning** in the garage, the **twist** in the pipes (the corridor tilts), distant
   knocks and creaks.
@@ -202,6 +209,7 @@ the Level 0 hum replaces the menu music. **FIELD NOTES** is a short in-game guid
 /backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
 /backrooms sanity [players] <0-100>     set sanity (test the low-sanity effects)
 /backrooms spawn bacteria [count]       spawn Bacteria ~12 blocks in front of you (they only hunt survival players)
+/backrooms spawn smiler [count|bold]    spawn Smilers ~16 blocks in front of you (start a blackout first)
 /backrooms spawn <watcher|observer> [players]   Level 9 test spawns
 ```
 

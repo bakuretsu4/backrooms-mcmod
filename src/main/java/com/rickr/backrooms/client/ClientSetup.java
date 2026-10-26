@@ -36,11 +36,14 @@ public final class ClientSetup {
         // Level 9: both are drawn from code-built geometry (no layer definitions, no textures).
         event.registerEntityRenderer(ModEntities.WATCHER.get(), WatcherRenderer::new);
         event.registerEntityRenderer(ModEntities.OBSERVER.get(), ObserverRenderer::new);
+        // Blackouts on Levels 0-2: a glowing face drawn as a billboard.
+        event.registerEntityRenderer(ModEntities.SMILER.get(), SmilerRenderer::new);
     }
 
     @SubscribeEvent
     public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(BacteriaModel.LAYER, BacteriaModel::createBodyLayer);
+        event.registerLayerDefinition(SmilerModel.LAYER, SmilerModel::createLayer);
     }
 
     @SubscribeEvent

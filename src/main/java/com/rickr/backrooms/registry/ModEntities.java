@@ -4,6 +4,7 @@ import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.entity.Bacteria;
 import com.rickr.backrooms.entity.Observer;
 import com.rickr.backrooms.entity.PhantomFriend;
+import com.rickr.backrooms.entity.Smiler;
 import com.rickr.backrooms.entity.Watcher;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
@@ -69,11 +70,25 @@ public final class ModEntities {
                     .noSummon()
                     .build(Backrooms.id("observer").toString()));
 
+    /**
+     * Smilers: a glowing face in the dark during blackouts (Levels 0-2). Player-sized hitbox with the
+     * face at eye height, so it walks the same corridors you do. Tracked from 6 chunks away because
+     * the glow is visible from far off in the dark. Not saved: they only live for one blackout.
+     */
+    public static final DeferredHolder<EntityType<?>, EntityType<Smiler>> SMILER = ENTITIES.register("smiler",
+            () -> EntityType.Builder.<Smiler>of(Smiler::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.9f)
+                    .eyeHeight(Smiler.FACE_HEIGHT)
+                    .clientTrackingRange(6)
+                    .noSave()
+                    .build(Backrooms.id("smiler").toString()));
+
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(BACTERIA.get(), Bacteria.createAttributes().build());
         event.put(PHANTOM_FRIEND.get(), PhantomFriend.createAttributes().build());
         event.put(WATCHER.get(), Watcher.createAttributes().build());
         event.put(OBSERVER.get(), Observer.createAttributes().build());
+        event.put(SMILER.get(), Smiler.createAttributes().build());
     }
 
     private ModEntities() {}

@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "backrooms:dust"
+    "backrooms:dust",
+    "backrooms:smiler"
   ]
 }

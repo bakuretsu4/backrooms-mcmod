@@ -8,6 +8,7 @@ import com.rickr.backrooms.client.intro.IntroCutscene;
 import com.rickr.backrooms.client.light.BackroomsLights;
 import com.rickr.backrooms.client.water.UnderwaterView;
 import com.rickr.backrooms.entity.Bacteria;
+import com.rickr.backrooms.entity.Smiler;
 import com.rickr.backrooms.network.LevelEventPayload;
 import com.rickr.backrooms.network.TransitionPayload;
 import com.rickr.backrooms.world.BackroomsLevel;
@@ -38,6 +39,9 @@ public final class CamcorderEffect {
     /** Waking up on the carpet after the fall (eyes opening, sitting up). */
     public static final float WAKE_MS = 4500.0f;
     private static final double DANGER_RANGE = 32.0;
+    /** Smilers feed danger from this far, and the colour fringing starts at the closer range. */
+    private static final double SMILER_RANGE = 24.0;
+    private static final double SMILER_CHROMA_RANGE = 12.0;
     /** Film grain when nothing is going wrong. The reference footage has none; try 0.01 for "very faint". */
     private static final float BASE_GRAIN = 0.0f;
     /** Lightning: how long the white flash takes to die away (ms). */
@@ -46,6 +50,8 @@ public final class CamcorderEffect {
     /** Smoothed 0..1 "something is near" value; also read by the HUD and camera shake. */
     private static float danger;
     private static float dangerTarget;
+    /** Smoothed 0..1 colour fringing from a nearby Smiler (the shader's Chroma uniform). */
+    private static float chroma;
     private static boolean loadFailed;
 
     public static float danger() {
@@ -85,6 +91,7 @@ public final class CamcorderEffect {
         }
 
         dangerTarget = 0.0f;
+        float chromaTarget = 0.0f;
         if (want) {
             for (Bacteria bacteria : mc.level.getEntitiesOfClass(Bacteria.class, mc.player.getBoundingBox().inflate(DANGER_RANGE))) {
                 float closeness = (float) (1.0 - bacteria.distanceTo(mc.player) / DANGER_RANGE);
@@ -93,8 +100,17 @@ public final class CamcorderEffect {
             }
             // Level 9: Watchers (near / staring / charging) and Observers (a little unease).
             dangerTarget = Math.max(dangerTarget, WatcherInterference.danger());
+            // Smilers: the usual danger, plus colour fringing that gets strong when one is close.
+            for (Smiler smiler : mc.level.getEntitiesOfClass(Smiler.class, mc.player.getBoundingBox().inflate(SMILER_RANGE))) {
+                float distance = smiler.distanceTo(mc.player);
+                float closeness = Mth.clamp(1.0f - distance / (float) SMILER_RANGE, 0.0f, 1.0f);
+                dangerTarget = Math.max(dangerTarget, closeness * smiler.dangerWeight());
+                float near = Mth.clamp(1.0f - distance / (float) SMILER_CHROMA_RANGE, 0.0f, 1.0f);
+                chromaTarget = Math.max(chromaTarget, near * near * smiler.dangerWeight());
+            }
         }
         danger += (dangerTarget - danger) * (dangerTarget > danger ? 0.25f : 0.05f);
+        chroma += (chromaTarget - chroma) * (chromaTarget > chroma ? 0.3f : 0.08f);
     }
 
     /** Resource reloads (F3+T) rebuild shaders, so allow another attempt. */
@@ -154,6 +170,8 @@ public final class CamcorderEffect {
         chain.setUniform("Sanity", SanityClientEffects.shaderSanity());
         chain.setUniform("SanityPulse", SanityClientEffects.heartbeatPulse());
         chain.setUniform("SanityGlitch", SanityClientEffects.vanishGlitch());
+        // Smilers: strong colour fringing when one is close (0 = picture exactly unchanged).
+        chain.setUniform("Chroma", chroma);
         chain.setUniform("Near", GameRenderer.PROJECTION_Z_NEAR);
         chain.setUniform("Far", mc.gameRenderer.getDepthFar());
     }

@@ -36,6 +36,13 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> WATCHER_BEAM = register("entity.watcher.beam");
     public static final DeferredHolder<SoundEvent, SoundEvent> WATCHER_DUST = register("entity.watcher.dust");
     public static final DeferredHolder<SoundEvent, SoundEvent> OBSERVER_VANISH = register("entity.observer.vanish");
+    // Smilers (blackouts on Levels 0-2).
+    public static final DeferredHolder<SoundEvent, SoundEvent> SMILER_GIGGLE = register("entity.smiler.giggle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SMILER_BREATH = register("entity.smiler.breath");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SMILER_FLINCH = register("entity.smiler.flinch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SMILER_DISPEL = register("entity.smiler.dispel");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SMILER_LUNGE = register("entity.smiler.lunge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SMILER_KILL = register("entity.smiler.kill");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> BACTERIA_AMBIENT = register("entity.bacteria.ambient");
     public static final DeferredHolder<SoundEvent, SoundEvent> BACTERIA_SCREECH = register("entity.bacteria.screech");
