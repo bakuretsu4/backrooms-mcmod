@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "side": "backrooms:block/yellow_wallpaper_baseboard_v1",
+    "top": "backrooms:block/yellow_wallpaper",
+    "bottom": "backrooms:block/yellow_wallpaper"
+  }
+}

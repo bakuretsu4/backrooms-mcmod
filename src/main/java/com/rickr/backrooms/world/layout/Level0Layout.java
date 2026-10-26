@@ -514,10 +514,13 @@ public final class Level0Layout extends LevelLayout {
         return zone == 3 ? isUnlitZone(seed, x, z) : zoneKind(seed, x, z) == zone;
     }
 
-    /** True in the half of the level where hardly any ceiling panel works (see {@link #ceilingLight}). */
+    /** True in the dark fifth of the level where hardly any ceiling panel works (see {@link #ceilingLight}). */
     public boolean isUnlitZone(long seed, int x, int z) {
-        return zone(seed, x, z, 32, 13) >= 0.5;
+        return zone(seed, x, z, 32, 13) >= UNLIT_ZONE_FROM;
     }
+
+    /** Zone noise at or above this is a dark zone (about a fifth of the level). */
+    private static final double UNLIT_ZONE_FROM = 0.8;
 
     private void fillStructure(AnomalySite site, int x, int z, Column out) {
         switch (site.kind()) {
@@ -838,8 +841,10 @@ public final class Level0Layout extends LevelLayout {
     }
 
     /**
-     * Ceiling panels: 8x8 patches, each with four 1x2 panels 4 blocks apart. In "lit" zones 40% of
-     * patches are on; in dark zones almost none, but dead panels still show under the flashlight.
+     * Ceiling panels: 8x8 patches, each with four 1x2 panels 4 blocks apart. Level 0 is known for
+     * its endless buzzing fluorescent light, so most of it is lit: in "lit" zones (about 80% of the
+     * level) two patches in three are on; the rare dark zones have almost none, but dead panels
+     * still show under the flashlight. Real darkness is left to the Blackout Zones (world/anomaly).
      * A panel is dropped whenever either of its two blocks would hang over a wall.
      */
     @Nullable
@@ -856,8 +861,8 @@ public final class Level0Layout extends LevelLayout {
         int partnerZ = alongZ ? z + partnerStep : z;
         if (!isMazeRoom(seed, partnerX, partnerZ)) return null;
 
-        boolean litZone = zone(seed, x, z, 32, 13) < 0.5;
-        boolean patchLit = Hash.unit(seed, px, pz, 17) < (litZone ? 0.4 : 0.03);
+        boolean litZone = !isUnlitZone(seed, x, z);
+        boolean patchLit = Hash.unit(seed, px, pz, 17) < (litZone ? 0.65 : 0.05);
         int panel = (across == 6 ? 2 : 0) + (along >= 5 ? 1 : 0);
         boolean dead = Hash.unit(seed, px * 4 + panel, pz, 21) < 0.08;
         if (patchLit) {

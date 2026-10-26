@@ -59,8 +59,8 @@ final class Level2AnomalyPlan {
 
     /** Out of 1: share of the bulkhead lamps in a brownout that still work. */
     private static final double BROWNOUT_LAMP_SURVIVES = 0.15;
-    /** Out of 1: share of the emergency-light spots in a brownout that have one. */
-    private static final double EMERGENCY_LIGHT_CHANCE = 0.6;
+    /** Out of 1: share of the emergency-light spots in a brownout that have one (most: they are its only light). */
+    private static final double EMERGENCY_LIGHT_CHANCE = 0.9;
     /** Out of 1: share of a brownout's corridor stretches with a burst pipe and a pool of ooze. */
     private static final double BURST_CHANCE = 0.55;
 

@@ -38,6 +38,7 @@ import com.rickr.backrooms.block.SunlitVoidBlock;
 import com.rickr.backrooms.block.SirenBlock;
 import com.rickr.backrooms.block.SupplyContainerBlock;
 import com.rickr.backrooms.block.SupplyKind;
+import com.rickr.backrooms.block.SurfaceBlock;
 import com.rickr.backrooms.block.ThinLayerBlock;
 import com.rickr.backrooms.block.TileCurveBlock;
 import com.rickr.backrooms.block.VehicleBlock;
@@ -82,15 +83,17 @@ public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Backrooms.MOD_ID);
 
     // Level 0: the Lobby
-    public static final DeferredBlock<Block> YELLOW_WALLPAPER = structural("yellow_wallpaper", MapColor.COLOR_YELLOW, SoundType.WOOD);
+    // The big surfaces come in a few texture versions (plain first; the numbers are relative
+    // chances, see block/SurfaceBlock). The counts must match tools/gen_assets.py SURFACE_VARIANTS.
+    public static final DeferredBlock<SurfaceBlock> YELLOW_WALLPAPER = surface("yellow_wallpaper", MapColor.COLOR_YELLOW, SoundType.WOOD, 6, 2, 1, 1);
     /** The bottom wall block, with the thin light-grey baseboard strip. */
-    public static final DeferredBlock<Block> YELLOW_WALLPAPER_BASEBOARD = structural("yellow_wallpaper_baseboard", MapColor.COLOR_YELLOW, SoundType.WOOD);
-    public static final DeferredBlock<Block> LOBBY_CARPET = structural("lobby_carpet", MapColor.TERRACOTTA_YELLOW, SoundType.WOOL);
+    public static final DeferredBlock<SurfaceBlock> YELLOW_WALLPAPER_BASEBOARD = surface("yellow_wallpaper_baseboard", MapColor.COLOR_YELLOW, SoundType.WOOD, 6, 2, 1, 1);
+    public static final DeferredBlock<SurfaceBlock> LOBBY_CARPET = surface("lobby_carpet", MapColor.TERRACOTTA_YELLOW, SoundType.WOOL, 5, 1, 1, 1);
     public static final DeferredBlock<FloorArrowBlock> LOBBY_CARPET_ARROW = BLOCKS.registerBlock("lobby_carpet_arrow", FloorArrowBlock::new,
             unbreakable(MapColor.TERRACOTTA_YELLOW, SoundType.WOOL));
     public static final DeferredBlock<RugBlock> RUG = BLOCKS.registerBlock("rug", RugBlock::new,
             unbreakable(MapColor.COLOR_RED, SoundType.WOOL));
-    public static final DeferredBlock<Block> CEILING_TILE = structural("ceiling_tile", MapColor.SAND, SoundType.WOOD);
+    public static final DeferredBlock<SurfaceBlock> CEILING_TILE = surface("ceiling_tile", MapColor.SAND, SoundType.WOOD, 6, 2, 1, 1);
     public static final DeferredBlock<Block> FLUORESCENT_LIGHT = BLOCKS.registerBlock("fluorescent_light", Block::new,
             fixture(MapColor.SNOW, SoundType.GLASS, 12));
     public static final DeferredBlock<Block> FLUORESCENT_LIGHT_OFF = structural("fluorescent_light_off", MapColor.COLOR_LIGHT_GRAY, SoundType.GLASS);
@@ -113,8 +116,8 @@ public final class ModBlocks {
             unbreakable(MapColor.METAL, SoundType.CHAIN).noOcclusion());
 
     // Level 1: Habitable Zone (underground parking garage)
-    public static final DeferredBlock<Block> CONCRETE_WALL = structural("concrete_wall", MapColor.STONE, SoundType.STONE);
-    public static final DeferredBlock<Block> CONCRETE_FLOOR = structural("concrete_floor", MapColor.STONE, SoundType.STONE);
+    public static final DeferredBlock<SurfaceBlock> CONCRETE_WALL = surface("concrete_wall", MapColor.STONE, SoundType.STONE, 5, 1, 1);
+    public static final DeferredBlock<SurfaceBlock> CONCRETE_FLOOR = surface("concrete_floor", MapColor.STONE, SoundType.STONE, 5, 1, 1, 1);
     public static final DeferredBlock<Block> WET_CONCRETE_FLOOR = structural("wet_concrete_floor", MapColor.COLOR_GRAY, SoundType.STONE);
     /** Pillar block with the darker base band; only used at floor + 1. */
     public static final DeferredBlock<Block> GARAGE_PILLAR = structural("garage_pillar", MapColor.STONE, SoundType.STONE);
@@ -132,8 +135,8 @@ public final class ModBlocks {
             props -> new StairBlock(CONCRETE_FLOOR.get().defaultBlockState(), props), unbreakable(MapColor.STONE, SoundType.STONE));
 
     // Level 2: Pipe Dreams. Plain painted concrete; the pipes are real 3D parts bolted to one wall.
-    public static final DeferredBlock<Block> PIPE_WALL = structural("pipe_wall", MapColor.COLOR_LIGHT_BLUE, SoundType.STONE);
-    public static final DeferredBlock<Block> PIPE_FLOOR = structural("pipe_floor", MapColor.COLOR_LIGHT_GRAY, SoundType.STONE);
+    public static final DeferredBlock<SurfaceBlock> PIPE_WALL = surface("pipe_wall", MapColor.COLOR_LIGHT_BLUE, SoundType.STONE, 5, 1, 1);
+    public static final DeferredBlock<SurfaceBlock> PIPE_FLOOR = surface("pipe_floor", MapColor.COLOR_LIGHT_GRAY, SoundType.STONE, 5, 1, 1);
     public static final DeferredBlock<Block> PIPE_CEILING = structural("pipe_ceiling", MapColor.COLOR_GRAY, SoundType.STONE);
     /** A dark metal drain grate set into the floor. */
     public static final DeferredBlock<Block> FLOOR_GRATE = structural("floor_grate", MapColor.COLOR_GRAY, SoundType.METAL);
@@ -159,7 +162,7 @@ public final class ModBlocks {
 
     // The Poolrooms: big white tiles, dark tiles for the drain and lane lines, a tile floor with
     // moving light ripples (caustics) under all the water, daylight skylights and underwater lamps.
-    public static final DeferredBlock<Block> POOL_TILE = structural("pool_tile", MapColor.SNOW, SoundType.STONE);
+    public static final DeferredBlock<SurfaceBlock> POOL_TILE = surface("pool_tile", MapColor.SNOW, SoundType.STONE, 7, 1, 1);
     public static final DeferredBlock<Block> POOL_TILE_DARK = structural("pool_tile_dark", MapColor.COLOR_BLACK, SoundType.STONE);
     /** Tile floor under the water; its texture is animated (pool_floor.png.mcmeta). */
     public static final DeferredBlock<Block> POOL_FLOOR = structural("pool_floor", MapColor.COLOR_CYAN, SoundType.STONE);
@@ -206,7 +209,7 @@ public final class ModBlocks {
     // Level 9: The Suburbs. A night-time 1960s suburb: wet asphalt, sidewalks, lawns, houses,
     // streetlamps and signs. Block models are drawn for FACING = NORTH and turned by the blockstates.
     // Ground & street (road surface at y40, sidewalk slabs and lawns on top of it).
-    public static final DeferredBlock<Block> ASPHALT = structural("asphalt", MapColor.COLOR_BLACK, SoundType.STONE);
+    public static final DeferredBlock<SurfaceBlock> ASPHALT = surface("asphalt", MapColor.COLOR_BLACK, SoundType.STONE, 5, 1, 1, 1);
     /** Darker asphalt with a puddle sheen. */
     public static final DeferredBlock<Block> ASPHALT_WET = structural("asphalt_wet", MapColor.COLOR_BLACK, SoundType.STONE);
     /** Asphalt with a faded paint stripe running along AXIS (centre lines, crosswalk bars). */
@@ -351,12 +354,12 @@ public final class ModBlocks {
     // ceiling with 1x2 fluorescent troffers (most of them dead), ribbon windows streaming with rain,
     // and the furniture of an office everyone left at once. Furniture FACING = the way its front
     // looks; wall-mounted things FACING = away from the wall. Models are drawn facing north.
-    public static final DeferredBlock<Block> OFFICE_CARPET = structural("office_carpet", MapColor.COLOR_GRAY, SoundType.WOOL);
+    public static final DeferredBlock<SurfaceBlock> OFFICE_CARPET = surface("office_carpet", MapColor.COLOR_GRAY, SoundType.WOOL, 5, 1, 1);
     public static final DeferredBlock<Block> OFFICE_CARPET_BLUE = structural("office_carpet_blue", MapColor.COLOR_BLUE, SoundType.WOOL);
     /** Darker, unfaded carpet where furniture stood for years: the "dents" left behind. */
     public static final DeferredBlock<Block> OFFICE_CARPET_INDENT = structural("office_carpet_indent", MapColor.COLOR_GRAY, SoundType.WOOL);
     public static final DeferredBlock<Block> OFFICE_CARPET_BLUE_INDENT = structural("office_carpet_blue_indent", MapColor.COLOR_BLUE, SoundType.WOOL);
-    public static final DeferredBlock<Block> OFFICE_WALL = structural("office_wall", MapColor.SAND, SoundType.STONE);
+    public static final DeferredBlock<SurfaceBlock> OFFICE_WALL = surface("office_wall", MapColor.SAND, SoundType.STONE, 5, 1, 1);
     /** Bottom wall block with the dark vinyl base strip. */
     public static final DeferredBlock<Block> OFFICE_WALL_BASE = structural("office_wall_base", MapColor.SAND, SoundType.STONE);
     /** Bottom wall block of the lobbies: base strip, darker paint and a wooden chair rail on top. */
@@ -905,6 +908,10 @@ public final class ModBlocks {
 
     private static DeferredBlock<Block> structural(String name, MapColor color, SoundType sound) {
         return BLOCKS.registerBlock(name, (Function<BlockBehaviour.Properties, Block>) Block::new, unbreakable(color, sound));
+    }
+
+    private static DeferredBlock<SurfaceBlock> surface(String name, MapColor color, SoundType sound, int... weights) {
+        return BLOCKS.registerBlock(name, props -> new SurfaceBlock(props, weights), unbreakable(color, sound));
     }
 
     private static DeferredBlock<WallDecalBlock> decal(String name) {

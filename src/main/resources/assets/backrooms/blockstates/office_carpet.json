@@ -1,6 +1,15 @@
 {
   "variants": {
-    "": {
+    "variant=0": {
+      "model": "backrooms:block/office_carpet"
+    },
+    "variant=1": {
+      "model": "backrooms:block/office_carpet_v1"
+    },
+    "variant=2": {
+      "model": "backrooms:block/office_carpet_v2"
+    },
+    "variant=3": {
       "model": "backrooms:block/office_carpet"
     }
   }

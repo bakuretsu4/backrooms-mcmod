@@ -216,8 +216,13 @@ CARPET = (198, 176, 112)      # -> ~#BCA03F lit
 CEILING = (208, 202, 186)
 
 
-def _wallpaper() -> np.ndarray:
-    """Lemon wallpaper: faint large damask lattice, paper mottling, a few water stains."""
+def _wallpaper(stains=True) -> np.ndarray:
+    """Lemon wallpaper: faint large damask lattice, paper mottling, a few water stains.
+
+    stains=False leaves out the three big water stains: the wall blocks use that clean paper and
+    get their stains from the random variants instead (see Surface variants), so the same stain
+    doesn't repeat on every block.
+    """
     rng = rng_for(101)
     img = fill(WALLPAPER, (S, S))
     X, Y = grid()
@@ -240,6 +245,8 @@ def _wallpaper() -> np.ndarray:
     stain_col = np.array([150, 118, 58])
     for cx, cy, sx, sy, a in ((30, 18, 22, 30, 0.22), (96, 92, 16, 20, 0.15), (70, 6, 30, 14, 0.18)):
         m = blob((S, S), cx, cy, sx, sy) * (1 + 0.35 * fnoise(rng, beta=2.0))
+        if not stains:
+            continue  # (the noise above is still drawn, so the paper below stays identical)
         inner = smoothstep(0.35, 0.6, m)
         rim = smoothstep(0.28, 0.36, m) - smoothstep(0.36, 0.48, m)
         img = over(img, stain_col, a * inner + 1.6 * a * np.clip(rim, 0, 1))
@@ -251,7 +258,7 @@ def _wallpaper() -> np.ndarray:
 
 
 def tex_yellow_wallpaper() -> None:
-    save_png(_wallpaper(), TEX / "block" / "yellow_wallpaper.png")
+    save_png(_wallpaper(stains=False), TEX / "block" / "yellow_wallpaper.png")
 
 
 def _baseboard(img) -> np.ndarray:
@@ -269,7 +276,7 @@ def _baseboard(img) -> np.ndarray:
 
 
 def tex_yellow_wallpaper_baseboard() -> None:
-    save_png(_baseboard(_wallpaper()), TEX / "block" / "yellow_wallpaper_baseboard.png")
+    save_png(_baseboard(_wallpaper(stains=False)), TEX / "block" / "yellow_wallpaper_baseboard.png")
 
 
 def _carpet(seed=102) -> np.ndarray:
@@ -282,8 +289,10 @@ def _carpet(seed=102) -> np.ndarray:
     lum -= (rng.random((S, S)) < 0.035) * 22.0      # dark fibre tips
     lum += (rng.random((S, S)) < 0.02) * 14.0       # light fibre tips
     img = add_lum(img, lum, (1.0, 0.94, 0.75))
-    dirt = smoothstep(0.9, 2.2, fnoise(rng, beta=3.2))   # damp/dirty patches
-    return over(img, np.array([120, 100, 52]), dirt * 0.25)
+    # Damp/dirty patches. Kept faint: they repeat on every block and read as a grid of spots;
+    # the big stains come from the floor's random variants (see Surface variants).
+    dirt = smoothstep(0.9, 2.2, fnoise(rng, beta=3.2))
+    return over(img, np.array([120, 100, 52]), dirt * 0.1)
 
 
 def tex_lobby_carpet() -> None:
@@ -299,8 +308,12 @@ def tex_lobby_carpet_arrow() -> None:
     save_png(img, TEX / "block" / "lobby_carpet_arrow.png")
 
 
-def tex_ceiling_tile() -> None:
-    """2x2 small acoustic tiles per block, fissured surface, dark seams and bevels."""
+def _ceiling_tile(stain=True) -> np.ndarray:
+    """2x2 small acoustic tiles per block, fissured surface, dark seams and bevels.
+
+    stain=False drops the water-stained corner (the ceiling blocks get their stains from the
+    random variants instead, see Surface variants).
+    """
     rng = rng_for(103)
     img = fill(CEILING, (S, S))
     X, Y = grid()
@@ -310,14 +323,18 @@ def tex_ceiling_tile() -> None:
     lum = tone - pits * 40 - fiss * 8 + fnoise(rng, beta=3.0) * 3 + rng.normal(0, 1.5, (S, S))
     img = add_lum(img, lum, (1.0, 0.98, 0.94))
     st = smoothstep(0.4, 0.65, blob((S, S), 100, 100, 18, 14) * (1 + 0.4 * fnoise(rng, beta=2)))
-    img = over(img, np.array([168, 146, 100]), st * 0.35)     # water-stained corner
+    if stain:
+        img = over(img, np.array([168, 146, 100]), st * 0.35)     # water-stained corner
     dx, dy = wrapd(X, 64), wrapd(Y, 64)
     for d in (dx, dy):
         img = add_lum(img, 10 * ((d > 1.5) & (d < 3.5)))      # lit bevel
         img = add_lum(img, -9 * ((d < -1.5) & (d > -3.5)))    # shadowed bevel
     seam = np.clip(smoothstep(1.8, 0.8, np.abs(dx)) + smoothstep(1.8, 0.8, np.abs(dy)), 0, 1)
-    img = over(img, np.array([92, 86, 76]), seam)
-    save_png(img, TEX / "block" / "ceiling_tile.png")
+    return over(img, np.array([92, 86, 76]), seam)
+
+
+def tex_ceiling_tile() -> None:
+    save_png(_ceiling_tile(stain=False), TEX / "block" / "ceiling_tile.png")
 
 
 def _fluorescent_panel(on: bool) -> np.ndarray:
@@ -600,7 +617,7 @@ def _pale_wall(seed=110) -> np.ndarray:
     return _pores(img, rng, density=0.004, depth=6)
 
 
-def tex_pipe_wall() -> None:
+def _pipe_wall() -> np.ndarray:
     """Pipe-corridor wall with a thin darker skirting band at the bottom of each block.
 
     The band repeats on every block (walls are stacked), so it is kept thin and soft:
@@ -610,11 +627,14 @@ def tex_pipe_wall() -> None:
     X, Y = grid()
     band = box((S, S), -1, S - 5, S + 1, S + 1)
     img = over(img, np.array([150, 145, 170]), band * 0.45)
-    img = add_lum(img, -6 * np.exp(-((Y - (S - 5.5)) / 0.9) ** 2))        # small shadow lip
-    save_png(img, TEX / "block" / "pipe_wall.png")
+    return add_lum(img, -6 * np.exp(-((Y - (S - 5.5)) / 0.9) ** 2))        # small shadow lip
 
 
-def tex_pipe_floor() -> None:
+def tex_pipe_wall() -> None:
+    save_png(_pipe_wall(), TEX / "block" / "pipe_wall.png")
+
+
+def _pipe_floor() -> np.ndarray:
     """Slightly greyer worn concrete with scuffs and a few hairline cracks."""
     rng = rng_for(112)
     img = _smooth_concrete(rng, (146, 142, 160), mottle=4.0, fine=1.2)
@@ -624,7 +644,11 @@ def tex_pipe_floor() -> None:
     crack = smoothstep(0.035, 0.0, np.abs(fnoise(rng, beta=2.6, kmin=2)))   # zero lines = cracks
     crack *= smoothstep(0.6, 1.4, fnoise(rng, beta=3.0))                    # only in a few places
     img = add_lum(img, -34 * crack)
-    save_png(_pores(img, rng, density=0.006, depth=8), TEX / "block" / "pipe_floor.png")
+    return _pores(img, rng, density=0.006, depth=8)
+
+
+def tex_pipe_floor() -> None:
+    save_png(_pipe_floor(), TEX / "block" / "pipe_floor.png")
 
 
 def _pipe_ceiling() -> np.ndarray:
@@ -7591,6 +7615,237 @@ def snd_music_drift() -> None:
 MUSIC_SOUNDS = [snd_music_liminal, snd_music_deep, snd_music_drift]
 
 
+# =============================================================================
+# Surface variants
+# =============================================================================
+# The big flat surfaces repeat one 128 px texture on every block, so a stain or a crack on it shows
+# up in a grid across a whole room. These surfaces get a few extra versions (<name>_v1.png, ...),
+# and the world generator picks one for each block, mostly the plain one (block/SurfaceBlock).
+# Every version is the same seamless base plus a few local marks that fade out well before the
+# block's edges, so any two versions still meet without a seam.
+
+EDGE_MARGIN = 14
+
+
+def _edge_fade(margin=EDGE_MARGIN) -> np.ndarray:
+    """1 in the middle of the block, falling to 0 at its edges."""
+    X, Y = grid()
+    d = np.minimum(np.minimum(X, S - X), np.minimum(Y, S - Y))
+    return smoothstep(2.0, margin, d)
+
+
+def _spot(rng, rx, ry, y_range=(0.0, 1.0)) -> tuple:
+    """A random centre that keeps a mark of radius (rx, ry) clear of the edges.
+
+    y_range (0 = top, 1 = bottom) narrows where it may go vertically (e.g. low on a wall).
+    """
+    lo_x, hi_x = EDGE_MARGIN + rx, S - EDGE_MARGIN - rx
+    lo_y = max(EDGE_MARGIN + ry, S * y_range[0])
+    hi_y = min(S - EDGE_MARGIN - ry, S * y_range[1])
+    cx = rng.uniform(lo_x, hi_x) if lo_x < hi_x else S / 2
+    cy = rng.uniform(lo_y, hi_y) if lo_y < hi_y else (lo_y + hi_y) / 2
+    return cx, cy
+
+
+def _local(cx, cy, sx, sy) -> np.ndarray:
+    """A gaussian blob that does NOT wrap around (unlike blob())."""
+    X, Y = grid()
+    return np.exp(-(((X - cx) / sx) ** 2 + ((Y - cy) / sy) ** 2) / 2)
+
+
+def mark_stain(img, rng, color, size=(14, 16), a=0.2, y_range=(0.0, 1.0)) -> np.ndarray:
+    """A water stain: a noisy blob with a darker tide-line rim."""
+    sx, sy = size[0] * rng.uniform(0.75, 1.2), size[1] * rng.uniform(0.75, 1.2)
+    cx, cy = _spot(rng, 1.5 * sx, 1.5 * sy, y_range)
+    m = _local(cx, cy, sx, sy) * (1 + 0.3 * fnoise(rng, beta=3.2) + 0.06 * fnoise(rng, beta=1.6))
+    inner = smoothstep(0.35, 0.6, m)
+    rim = np.clip(smoothstep(0.28, 0.36, m) - smoothstep(0.36, 0.48, m), 0, 1)
+    return over(img, np.array(color), (a * inner + 1.6 * a * rim) * _edge_fade())
+
+
+def mark_damp(img, rng, size=(22, 18), dark=0.14, tint=(1.0, 1.0, 1.0), y_range=(0.0, 1.0)) -> np.ndarray:
+    """A soft, irregular darker patch: damp, dirt or old spills."""
+    sx, sy = size[0] * rng.uniform(0.8, 1.2), size[1] * rng.uniform(0.8, 1.2)
+    cx, cy = _spot(rng, 1.4 * sx, 1.4 * sy, y_range)
+    m = smoothstep(0.25, 0.75, _local(cx, cy, sx, sy) * (1 + 0.45 * fnoise(rng, beta=3.2))) * _edge_fade()
+    return img * (1 - dark * m[..., None] * np.asarray(tint, float))
+
+
+def mark_drip(img, rng, color, a=0.22, length=(40, 70)) -> np.ndarray:
+    """A thin streak running down from a point (rust, water), fading as it goes."""
+    X, Y = grid()
+    L = rng.uniform(*length)
+    cx, y0 = rng.uniform(EDGE_MARGIN + 4, S - EDGE_MARGIN - 4), rng.uniform(EDGE_MARGIN, S - EDGE_MARGIN - L)
+    wander = 1.2 * fnoise(rng, (S, 1), beta=2.0)[:, 0]
+    w = rng.uniform(1.2, 2.4)
+    t = np.clip((Y - y0) / L, 0, 1)
+    core = np.exp(-((X - cx - wander[np.clip(Y.astype(int), 0, S - 1)]) / (w * (1 + 0.6 * t))) ** 2)
+    m = core * (Y >= y0) * (1 - t) ** 1.4 * (0.8 + 0.2 * fnoise(rng, beta=1.0))
+    head = _local(cx, y0 + 2, 3.5, 2.5)
+    return over(img, np.array(color), np.clip((m + head) * a, 0, 0.6) * _edge_fade())
+
+
+def mark_crack(img, rng, depth=30.0, length=(30, 55), branches=2) -> np.ndarray:
+    """A thin wandering crack (with a short branch or two), kept inside the block."""
+    lo, hi = EDGE_MARGIN + 6, S - EDGE_MARGIN - 6
+
+    def walk(x, y, ang, n):
+        pts = [(x, y)]
+        for _ in range(n):
+            ang += rng.normal(0, 0.45)
+            x = float(np.clip(x + 3.0 * np.cos(ang), lo, hi))
+            y = float(np.clip(y + 3.0 * np.sin(ang), lo, hi))
+            pts.append((x, y))
+        return pts
+
+    n = int(rng.uniform(*length) / 3)
+    main = walk(rng.uniform(lo, hi), rng.uniform(lo, hi), rng.uniform(0, 2 * np.pi), n)
+    lines = [main] + [walk(*main[int(rng.integers(2, len(main) - 2))], rng.uniform(0, 2 * np.pi), n // 3)
+                      for _ in range(branches)]
+
+    def draw(d, k):
+        for ln in lines:
+            d.line([(px * k, py * k) for px, py in ln], fill=255, width=max(1, int(1.1 * k)))
+
+    m = pil_mask(draw) * _edge_fade()
+    img = add_lum(img, -depth * m)
+    return add_lum(img, -0.25 * depth * blur(m, 1.2))   # a soft dark edge to the crack
+
+
+def mark_scuffs(img, rng, color, n=4, y_range=(0.72, 0.9), a=0.3) -> np.ndarray:
+    """Short horizontal shoe/furniture scuffs low on a wall."""
+    X, Y = grid()
+    m = np.zeros((S, S))
+    for _ in range(n):
+        cx, cy = _spot(rng, 10, 2, y_range)
+        m = np.maximum(m, _local(cx, cy, rng.uniform(4, 10), rng.uniform(0.6, 1.4)))
+    return over(img, np.array(color), np.clip(m * a, 0, 0.5) * _edge_fade())
+
+
+def mark_grout_grime(img, rng, size=(24, 20), a=0.45) -> np.ndarray:
+    """Grey-green grime soaked into the grout lines around one spot (pool tiles)."""
+    X, Y = grid()
+    g = np.minimum(np.abs(wrapd(X, POOL_TILE)), np.abs(wrapd(Y, POOL_TILE)))
+    grout = smoothstep(2.6, 0.8, g)
+    cx, cy = _spot(rng, size[0], size[1])
+    m = smoothstep(0.2, 0.7, _local(cx, cy, *size) * (1 + 0.4 * fnoise(rng, beta=2.2)))
+    img = over(img, np.array([112, 118, 106]), grout * m * a * 0.7 * _edge_fade())
+    return over(img, np.array([200, 200, 188]), m * 0.06 * _edge_fade())   # a faint dull film on the glaze
+
+
+def mark_patch(img, rng, color, size=(24, 18), a=0.55) -> np.ndarray:
+    """A rough-edged repair patch (asphalt): smoother and darker than its surroundings."""
+    X, Y = grid()
+    w, h = size[0] * rng.uniform(0.8, 1.2), size[1] * rng.uniform(0.8, 1.2)
+    cx, cy = _spot(rng, w, h)
+    edge = np.maximum(np.abs(X - cx) / w, np.abs(Y - cy) / h) + 0.08 * fnoise(rng, beta=1.6)
+    m = smoothstep(1.0, 0.92, edge) * _edge_fade()
+    patch = lerp(blur(img, 1.0), np.array(color), 0.5)
+    img = lerp(img, patch, (m * a)[..., None])
+    return add_lum(img, -10 * np.clip(smoothstep(1.06, 0.98, edge) - m, 0, 1))  # the dark seam round it
+
+
+WALL_STAIN = (150, 118, 58)
+CEILING_STAIN = (168, 146, 100)
+RUST = (122, 82, 58)
+
+
+def _wallpaper_marks(i, rng, img):
+    if i == 1:
+        return mark_stain(img, rng, WALL_STAIN, (16, 20), 0.2)
+    if i == 2:
+        img = mark_stain(img, rng, WALL_STAIN, (12, 14), 0.17)
+        img = mark_stain(img, rng, WALL_STAIN, (8, 10), 0.15)
+        return mark_drip(img, rng, WALL_STAIN, 0.14)
+    return mark_damp(img, rng, (24, 16), 0.12, (0.9, 1.0, 1.25), y_range=(0.55, 1.0))   # damp creeping up from the carpet
+
+
+# name: (base image, marks for version i (1..n-1), n = number of versions incl. the plain one).
+# n must match the number of weights the block gets in ModBlocks (block/SurfaceBlock), which also
+# decides how often each version is used.
+SURFACE_VARIANTS = {
+    "yellow_wallpaper": (lambda: _wallpaper(stains=False), _wallpaper_marks, 4),
+    "lobby_carpet": (_carpet, lambda i, rng, img: (
+        mark_damp(img, rng, (22, 18), 0.22, (0.9, 1.0, 1.3)) if i == 1 else
+        mark_stain(img, rng, (110, 84, 40), (12, 10), 0.3) if i == 2 else
+        mark_damp(mark_stain(img, rng, (96, 70, 34), (7, 7), 0.35), rng, (16, 12), 0.1)), 4),
+    "ceiling_tile": (lambda: _ceiling_tile(stain=False), lambda i, rng, img: (
+        mark_stain(img, rng, CEILING_STAIN, (12, 10), 0.35) if i == 1 else
+        mark_stain(mark_stain(img, rng, CEILING_STAIN, (20, 16), 0.3), rng, CEILING_STAIN, (8, 8), 0.3) if i == 2 else
+        mark_damp(mark_stain(img, rng, (140, 118, 80), (16, 14), 0.4), rng, (26, 22), 0.12)), 4),
+    "concrete_wall": (_concrete_wall, lambda i, rng, img: (
+        mark_drip(mark_damp(img, rng, (20, 26), 0.12), rng, (84, 80, 88), 0.25) if i == 1 else
+        mark_crack(img, rng, 26)), 3),
+    "concrete_floor": (lambda: _garage_floor(rng_for(107), (72, 64, 78)), lambda i, rng, img: (
+        mark_damp(img, rng, (20, 14), 0.3, (1.0, 0.95, 1.05)) if i == 1 else
+        mark_crack(img, rng, 18) if i == 2 else
+        mark_damp(mark_damp(img, rng, (9, 8), 0.3), rng, (24, 20), 0.1)), 4),
+    "pipe_wall": (_pipe_wall, lambda i, rng, img: (
+        mark_drip(img, rng, RUST, 0.3) if i == 1 else
+        mark_damp(img, rng, (22, 18), 0.1, (1.0, 1.0, 0.9))), 3),
+    "pipe_floor": (_pipe_floor, lambda i, rng, img: (
+        mark_stain(img, rng, RUST, (14, 12), 0.25) if i == 1 else
+        mark_damp(img, rng, (24, 18), 0.16)), 3),
+    "pool_tile": (lambda: _pool_tiles(140, POOL_WHITE, POOL_GROUT), lambda i, rng, img: (
+        mark_grout_grime(img, rng) if i == 1 else
+        mark_crack(img, rng, 22, (16, 26), 1)), 3),
+    "office_carpet": (lambda: _l4_carpet(4101, L4_CARPET), lambda i, rng, img: (
+        mark_stain(img, rng, (92, 70, 46), (9, 8), 0.4) if i == 1 else
+        mark_damp(img, rng, (24, 20), 0.15)), 3),
+    "office_wall": (lambda: _l4_drywall(4103), lambda i, rng, img: (
+        mark_scuffs(img, rng, (120, 112, 100), 5) if i == 1 else
+        mark_stain(img, rng, (170, 150, 112), (16, 18), 0.18, y_range=(0.0, 0.6))), 3),
+    "asphalt": (lambda: _asphalt(901), lambda i, rng, img: (
+        mark_crack(img, rng, 28, (40, 60), 3) if i == 1 else
+        mark_patch(img, rng, (44, 44, 48)) if i == 2 else
+        mark_damp(img, rng, (18, 14), 0.3, (1.0, 0.97, 0.9))), 4),
+}
+
+
+def _variant_seed(name: str, i: int) -> int:
+    import zlib
+    return zlib.crc32(name.encode()) + 7919 * i
+
+
+def surface_variant_images(name: str) -> list:
+    """[variant 1, variant 2, ...] for one surface (variant 0 is the plain texture)."""
+    base_fn, marks, count = SURFACE_VARIANTS[name]
+    base = base_fn()
+    return [marks(i, rng_for(_variant_seed(name, i)), base.copy()) for i in range(1, count)]
+
+
+def tex_surface_variants() -> None:
+    for name in SURFACE_VARIANTS:
+        for i, img in enumerate(surface_variant_images(name), start=1):
+            save_png(img, _blk(f"{name}_v{i}"))
+    # The wallpaper with its baseboard follows the wallpaper's variants (same stains above the board).
+    for i, img in enumerate(surface_variant_images("yellow_wallpaper"), start=1):
+        save_png(_baseboard(img), _blk(f"yellow_wallpaper_baseboard_v{i}"))
+
+
+def variant_models() -> None:
+    """Block models for the versions (copies of the plain model) and blockstates by VARIANT.
+
+    SurfaceBlock's VARIANT runs 0..3 for every surface; numbers past a block's last version show
+    the plain model (the world generator never picks them).
+    """
+    import json
+    counts = {n: c for n, (_, _, c) in SURFACE_VARIANTS.items()}
+    counts["yellow_wallpaper_baseboard"] = SURFACE_VARIANTS["yellow_wallpaper"][2]
+    for name, count in counts.items():
+        plain = json.loads((ROOT / "models" / "block" / f"{name}.json").read_text())
+        variants = {}
+        for i in range(4):
+            model = name if i == 0 or i >= count else f"{name}_v{i}"
+            variants[f"variant={i}"] = {"model": f"backrooms:block/{model}"}
+            if 0 < i < count:
+                version = dict(plain)
+                version["textures"] = {k: (f"backrooms:block/{model}" if v == f"backrooms:block/{name}" else v)
+                                       for k, v in plain["textures"].items()}
+                (ROOT / "models" / "block" / f"{model}.json").write_text(json.dumps(version, indent=2) + "\n", newline="\n")
+        (ROOT / "blockstates" / f"{name}.json").write_text(json.dumps({"variants": variants}, indent=2) + "\n", newline="\n")
+
+
 TEXTURES = [
     remove_stale,
     tex_yellow_wallpaper, tex_yellow_wallpaper_baseboard, tex_lobby_carpet, tex_lobby_carpet_arrow,
@@ -7626,6 +7881,7 @@ TEXTURES = [
     *L94_WORLD_TEXTURES,
     *L94_CASTLE_TEXTURES,
     *L94_SKY_TEXTURES,
+    tex_surface_variants, variant_models,
 ]
 SOUNDS = [
     snd_level0_hum, snd_level1_ambience, snd_level2_ambience,

@@ -95,19 +95,21 @@ public enum FixtureType {
     // and spill out of its doorways. Silent and steady. Long merged runs keep the 9 x 9 ceiling to
     // a handful of lights, so it doesn't eat the whole light budget.
     L94_GLARE_PANEL("l94_glare_panel", Mount.CEILING_BLOCK, 5, 0.96f, 0.98f, 1.0f, 3.2f, 16.0f, Hum.NONE, false),
-    // Level 0 anomalies. The Red Rooms' ceiling lamp: dim darkroom red, a small pool, silent (their
-    // "klaxon synth" hum is a sound of the rooms, see client/anomaly/level0). The flickering wall
-    // (the way to Level 1): a weak yellow glow that buzzes and stutters like a dying tube, all the
-    // time (its block has mode=flicker).
-    RED_ROOM_LIGHT("red_room_light", Mount.CEILING_BLOCK, 1, 1.0f, 0.10f, 0.06f, 0.6f, 5.0f, Hum.NONE, false),
+    // Level 0 anomalies. The Red Rooms' ceiling lamp: darkroom red, enough to fill a room so you can
+    // see the walls (a tiny dim pool read as plain black on camera), silent (their "klaxon synth"
+    // hum is a sound of the rooms, see client/anomaly/level0). The flickering wall (the way to
+    // Level 1): a weak yellow glow that buzzes and stutters like a dying tube, all the time (its
+    // block has mode=flicker).
+    RED_ROOM_LIGHT("red_room_light", Mount.CEILING_BLOCK, 1, 1.0f, 0.16f, 0.10f, 1.3f, 9.0f, Hum.NONE, false),
     FLICKERING_WALL("flickering_wall", Mount.CUBE, 3, 1.0f, 0.93f, 0.62f, 0.5f, 6.0f, Hum.FLUORESCENT, true),
     // Level 4 anomalies: the Window (Entity 2). Warm late-afternoon sunlight spilling from its glass
     // into the cold night office: the one inviting light in the room. Silent and steady.
     L4_CLEAR_WINDOW("l4_clear_window", Mount.INSET, 2, 1.0f, 0.80f, 0.52f, 1.5f, 9.0f, Hum.NONE, false),
     // Level 2 anomalies: the brownout's battery emergency light, the violet glow that came on after
-    // the Blackout. A small dim pool, silent and steady; battery-backed (see FixturePower), so it
-    // never takes part in blackouts, flickers or the lamp circuits failing.
-    L2_EMERGENCY_LIGHT("l2_emergency_light", Mount.WALL, 1, 0.62f, 0.30f, 1.0f, 0.9f, 9.0f, Hum.NONE, false);
+    // the Blackout. A dim pool that still reaches the far wall and the floor, so a brownout reads as
+    // violet-lit corridors rather than black; silent and steady; battery-backed (see FixturePower),
+    // so it never takes part in blackouts, flickers or the lamp circuits failing.
+    L2_EMERGENCY_LIGHT("l2_emergency_light", Mount.WALL, 1, 0.62f, 0.30f, 1.0f, 1.3f, 12.0f, Hum.NONE, false);
 
     /** Which looping buzz a fixture makes (positional, the nearest few lit ones play). */
     public enum Hum {

@@ -2,6 +2,7 @@ package com.rickr.backrooms.world;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.rickr.backrooms.block.SurfaceBlock;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import java.util.Arrays;
 import java.util.List;
@@ -63,7 +64,13 @@ public final class BackroomsChunkGenerator extends ChunkGenerator {
             for (int lz = 0; lz < 16; lz++) {
                 int x = chunkPos.getMinBlockX() + lx;
                 int z = chunkPos.getMinBlockZ() + lz;
+                // Surfaces get their stained/cracked versions everywhere except in anomalous areas,
+                // which may loop or copy their rooms (see block/SurfaceBlock).
+                boolean plain = layout.anomalyAt(seed, x, z) != null;
                 layout.fillColumn(seed, x, z, (y, state) -> {
+                    if (!plain && state.getBlock() instanceof SurfaceBlock surface) {
+                        state = surface.withVariant(state, seed, x, y, z);
+                    }
                     chunk.setBlockState(pos.set(x, y, z), state, false);
                     // Level 94 props: blocks with a block entity (siren horns, parked vehicles) need it
                     // made here. Writing straight into the chunk skips that, and without one a siren
