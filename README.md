@@ -140,6 +140,13 @@ light on and the sign over the front door.
   real world.
 - Dying in the Backrooms: *you can't escape.*
 
+### Main menu
+
+The vanilla title screen is replaced by a "found footage" menu (`client/menu`): camcorder footage
+of the levels plays behind it (a slow pan over screenshots, VHS glitch cuts, flickering lights,
+grain and scanlines) with the REC overlay, the logo, a camcorder-style menu and a taped note, while
+the Level 0 hum replaces the menu music. **FIELD NOTES** is a short in-game guide for new players.
+
 ## Operator commands
 
 ```

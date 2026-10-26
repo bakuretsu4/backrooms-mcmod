@@ -1,0 +1,11 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "backrooms:vt323.ttf",
+      "shift": [0.0, 1.0],
+      "size": 10.0,
+      "oversample": 3.0
+    }
+  ]
+}

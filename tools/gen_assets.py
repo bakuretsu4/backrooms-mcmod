@@ -3976,6 +3976,147 @@ def snd_checkpoint_save() -> None:
 
 
 # =============================================================================
+# Main menu (title screen) textures. Fonts: Anton and VT323 (both SIL Open Font License, see
+# tools/fonts/*-OFL.txt); only rasterised text ends up in these images.
+# =============================================================================
+
+FONTS = Path(__file__).resolve().parent / "fonts"
+MENU = TEX / "gui" / "menu"
+
+
+def tex_menu_logo() -> None:
+    """1024x384: "THE BACKROOMS" in tall pale-yellow letters with a VHS look (red/cyan fringes,
+    scanline gaps, a few rows shoved sideways) and "FOUND FOOTAGE" spaced out below."""
+    rng = rng_for(9101)
+    w, h = 1024, 384
+    margin = 24  # room for the sideways shoves and colour fringes, so nothing wraps around
+
+    def fitted(path, text, max_w, size, spacing=0):
+        """Largest font size (<= size) whose text, with extra letter spacing, fits max_w."""
+        while size > 10:
+            font = ImageFont.truetype(str(path), size)
+            probe = ImageDraw.Draw(Image.new("L", (1, 1)))
+            width = sum(probe.textlength(ch, font=font) + spacing for ch in text) - spacing if spacing else probe.textlength(text, font=font)
+            if width <= max_w:
+                return font
+            size -= 2
+        return ImageFont.truetype(str(path), size)
+
+    big = fitted(FONTS / "Anton-Regular.ttf", "THE BACKROOMS", w - 2 * margin, 220)
+    small = fitted(FONTS / "VT323-Regular.ttf", "FOUND FOOTAGE", w - 2 * margin, 96, spacing=30)
+
+    def text_mask(text, font, top, spacing=0):
+        """White-on-black mask of the text with its ink top at y = top; returns (mask, ink bottom)."""
+        m = Image.new("L", (w, h), 0)
+        d = ImageDraw.Draw(m)
+        y = top - d.textbbox((0, 0), text, font=font)[1]
+        if spacing:
+            x = margin
+            for ch in text:
+                d.text((x, y), ch, font=font, fill=255)
+                x += d.textlength(ch, font=font) + spacing
+        else:
+            d.text((margin, y), text, font=font, fill=255)
+        a = np.asarray(m, float) / 255.0
+        rows = np.nonzero(a.max(axis=1) > 0.5)[0]
+        return a, int(rows.max()) if rows.size else top
+
+    # Layout: a small "THE", a huge "BACKROOMS" filling the width, then "FOUND FOOTAGE".
+    the_font = ImageFont.truetype(str(FONTS / "Anton-Regular.ttf"), 76)
+    big = fitted(FONTS / "Anton-Regular.ttf", "BACKROOMS", w - 2 * margin, 300)
+    the_mask, the_bottom = text_mask("THE", the_font, 8)
+    word, title_bottom = text_mask("BACKROOMS", big, the_bottom + 12)
+    title = np.maximum(the_mask, word)
+    sub, _ = text_mask("FOUND FOOTAGE", small, title_bottom + 20, spacing=30)
+    # Grimy fill: pale fluorescent yellow with darker blotches, a little lighter at the top.
+    grime = fnoise(rng, (h, w), beta=2.2)
+    ramp = np.linspace(1.0, 0.82, h)[:, None]
+    yellow = np.stack([233 * ramp + 10 * grime, 214 * ramp + 10 * grime, 128 * ramp + 8 * grime], axis=2)
+    white = fill((226, 226, 218), (h, w))
+
+    def shove(a, rows):
+        out = a.copy()
+        for y0, y1, dx in rows:
+            out[y0:y1] = np.roll(a[y0:y1], dx, axis=1)
+        return out
+
+    # Tape damage: a few thin bands pushed sideways (same bands for fill and fringes).
+    rows = []
+    for _ in range(3):
+        y0 = int(rng.integers(the_bottom + 20, max(the_bottom + 21, title_bottom - 10)))
+        rows.append((y0, y0 + int(rng.integers(3, 7)), int(rng.integers(-9, 10))))
+    title = shove(title, rows)
+    # Scanline gaps: every 4th row a little see-through.
+    scan = np.where(np.arange(h) % 4 == 3, 0.8, 1.0)[:, None]
+    rgb = np.zeros((h, w, 3))
+    alpha = np.zeros((h, w))
+    # Chromatic fringes: red copy left, cyan copy right, under the main letters.
+    for mask, dx, col in ((title, -4, (220, 40, 40)), (title, 4, (40, 200, 220)), (sub, -2, (220, 40, 40)), (sub, 2, (40, 200, 220))):
+        m = np.roll(mask, dx, axis=1) * 0.55
+        rgb = rgb * (1 - m[..., None]) + np.array(col, float) * m[..., None]
+        alpha = np.maximum(alpha, m)
+    for mask, colour in ((title, yellow), (sub, white)):
+        m = mask * scan
+        rgb = rgb * (1 - m[..., None]) + colour * m[..., None]
+        alpha = np.maximum(alpha, m)
+    # Soft dark shadow so the logo reads on bright scenes.
+    sh = np.roll(np.roll(np.maximum(title, sub), 5, axis=0), 5, axis=1)
+    for _ in range(3):
+        sh = blur_wrap(sh, 2)
+    sh_a = np.clip(sh * 0.7 - alpha, 0, 1)
+    out = np.concatenate([rgb * (alpha / np.maximum(alpha + sh_a, 1e-6))[..., None], (np.clip(alpha + sh_a, 0, 1) * 255)[..., None]], axis=2)
+    save_png(out, MENU / "logo.png")
+
+
+def tex_menu_noise() -> None:
+    """256x256 tileable grey video noise; alpha 0..60 so it can be laid over anything."""
+    rng = rng_for(9102)
+    v = rng.random((256, 256))
+    g = 90 + 140 * v
+    a = 60 * np.abs(rng.standard_normal((256, 256))).clip(0, 2.5) / 2.5
+    save_png(np.stack([g, g, g, a], axis=2), MENU / "noise.png")
+
+
+def tex_menu_vignette() -> None:
+    """512x288 black vignette: clear in the middle, ~75% black in the corners."""
+    w, h = 512, 288
+    y, x = np.mgrid[0:h, 0:w]
+    d = np.hypot((x - w / 2) / (w / 2), (y - h / 2) / (h / 2)) / np.sqrt(2)
+    a = 255 * 0.78 * np.clip((d - 0.35) / 0.65, 0, 1) ** 1.6
+    z = np.zeros((h, w))
+    save_png(np.stack([z, z, z, a], axis=2), MENU / "vignette.png")
+
+
+def tex_menu_note() -> None:
+    """256x320 taped note: yellowed lined paper, coffee ring, creases, two strips of tape."""
+    rng = rng_for(9103)
+    w, h = 256, 320
+    n = fnoise(rng, (h, w), beta=1.8)
+    paper = np.stack([228 + 8 * n, 214 + 8 * n, 168 + 8 * n], axis=2)
+    y, x = np.mgrid[0:h, 0:w]
+    # Faint blue ruled lines and a red margin line.
+    lines = (np.abs((y - 52) % 22) < 1) & (y > 40)
+    paper[lines] = paper[lines] * 0.85 + np.array([110, 140, 190]) * 0.15
+    margin = np.abs(x - 30) < 1
+    paper[margin] = paper[margin] * 0.8 + np.array([200, 80, 80]) * 0.2
+    # Coffee ring.
+    r = np.hypot(x - 190, y - 250)
+    ring = np.exp(-((r - 34) ** 2) / 6.0) * 0.35 + (r < 34) * 0.06
+    paper = paper * (1 - ring[..., None]) + np.array([120, 80, 40]) * ring[..., None]
+    # Diagonal crease and darker edges.
+    crease = np.exp(-((x * 0.55 + y * 0.83 - 210) ** 2) / 8.0) * 0.12
+    edge = np.clip(1 - np.minimum.reduce([x, y, w - 1 - x, h - 1 - y]) / 14.0, 0, 1) * 0.25
+    paper *= (1 - crease - edge)[..., None]
+    alpha = np.full((h, w), 255.0)
+    # Tape strips (translucent grey) at the top corners.
+    for cx in (40, 216):
+        band = (np.abs((x - cx) * 0.7 + (y - 6) * 0.7 * (1 if cx < 128 else -1)) < 26) & (np.abs((x - cx) * 0.7 - (y - 6) * 0.7 * (1 if cx < 128 else -1)) < 9)
+        paper[band] = paper[band] * 0.7 + np.array([235, 235, 225]) * 0.3
+    save_png(np.concatenate([paper, alpha[..., None]], axis=2), MENU / "note.png")
+
+
+
+# =============================================================================
 
 TEXTURES = [
     remove_stale,
@@ -4004,6 +4145,7 @@ TEXTURES = [
     tex_energy_bar, tex_calm_pills, tex_bandage, tex_backpack, tex_backpack_flap, tex_backpack_pocket,
     tex_backpack_strap, tex_supply_locker, tex_supply_locker_top, tex_supply_locker_front,
     tex_checkpoint_radio_case, tex_checkpoint_radio_front, tex_safe_room_lamp, tex_safe_room_sign,
+    tex_menu_logo, tex_menu_noise, tex_menu_vignette, tex_menu_note,
 ]
 SOUNDS = [
     snd_level0_hum, snd_level1_ambience, snd_level2_ambience,
