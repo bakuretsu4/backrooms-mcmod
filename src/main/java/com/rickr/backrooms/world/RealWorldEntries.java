@@ -21,15 +21,14 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * the old one (suffocating inside a block, {@code ServerEvents}):
  * <ul>
  *   <li><b>Noclipping through a wall:</b> keep walking into a wall somewhere dark and enclosed and
- *       now and then it simply isn't there. Your client tells us while you push
- *       ({@code WallPushPayload}); after about 2 s of pushing, each half second has a 1 in 24
- *       chance (so usually somewhere around a quarter of a minute).</li>
+ *       it gives way. Your client tells us while you push ({@code WallPushPayload}); after the
+ *       first half second, each half second has a 1 in 2 chance (usually within 1-2 s).</li>
  *   <li><b>Too long alone in the dark:</b> dark, enclosed, nobody within 24 blocks. Reality wears
- *       thin over about 3 minutes: a fluorescent hum fades in, the picture yellows a little, and
- *       then you're through. Back in the light (or company) it heals again over ~10 s.</li>
+ *       thin over about 15 s: a fluorescent hum fades in, the picture yellows a little, and then
+ *       you're through. Back in the light (or company) it heals again over ~5 s.</li>
  *   <li><b>Filming it:</b> the same, with a camcorder recording in your hand (right-click it): the
- *       camera finds the seams four times faster (~45 s) and the tape breaks up as it does.</li>
- *   <li><b>A bad night:</b> one night's sleep in eight, you don't wake up in your bed.</li>
+ *       camera finds the seams in about 5 s, and the tape breaks up as it does.</li>
+ *   <li><b>A night's sleep:</b> sleep through the night and you don't wake up in your bed.</li>
  * </ul>
  * "Dark" is light level 3 or less where your eyes are; "enclosed" is no open sky above you.
  */
@@ -37,14 +36,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class RealWorldEntries {
     private static final int MAX_DARK_LIGHT = 3;
     private static final double ALONE_RANGE = 24.0;
-    private static final float ALONE_TICKS = 180 * 20;
-    private static final float FILMING_TICKS = 45 * 20;
-    private static final float HEAL_TICKS = 10 * 20;
+    private static final float ALONE_TICKS = 15 * 20;
+    private static final float FILMING_TICKS = 5 * 20;
+    private static final float HEAL_TICKS = 5 * 20;
     /** Wall pushes arrive about every 10 ticks; a gap longer than this ends the push. */
     private static final int PUSH_GAP_TICKS = 16;
-    private static final int PUSHES_BEFORE_CHANCE = 4;
-    private static final int PUSH_ONE_IN = 24;
-    private static final int SLEEP_ONE_IN = 8;
+    private static final int PUSHES_BEFORE_CHANCE = 1;
+    private static final int PUSH_ONE_IN = 2;
     /** The client is told the thinness again once it has changed this much. */
     private static final float SEND_STEP = 0.02f;
 
@@ -126,11 +124,11 @@ public final class RealWorldEntries {
         }
     }
 
-    /** A full night's sleep (not getting up in the middle of it): sometimes you never wake up at home. */
+    /** A full night's sleep (not getting up in the middle of it): you never wake up at home. */
     @SubscribeEvent
     public static void onWakeUp(PlayerWakeUpEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && !event.wakeImmediately() && !event.updateLevel()
-                && !Travel.inBackrooms(player.level()) && player.getRandom().nextInt(SLEEP_ONE_IN) == 0) {
+                && !Travel.inBackrooms(player.level())) {
             NoclipIntro.start(player);
         }
     }

@@ -10,7 +10,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Server side of noclipping into the Backrooms (every way in ends here: suffocating in a block,
- * pushing into a wall in the dark, filming the dark, staying alone in it too long, a bad night's
+ * pushing into a wall in the dark, filming the dark, staying alone in it too long, a night's
  * sleep; see {@link RealWorldEntries}). We don't move the player at once: first their client
  * freezes and breaks up the picture for {@link #LAG_TICKS} (client/intro/NoclipTransition), then
  * we move them to Level 0 and the client moshes the old picture into the new one.

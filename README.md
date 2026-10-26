@@ -16,7 +16,7 @@ Lithium, FerriteCore, ModernFix, Entity Culling, ImmediatelyFast and Dynamic FPS
 
 | Action | How |
 |---|---|
-| Get in | Reality has seams in the dark (see **Getting in** below): keep walking into a wall somewhere dark and enclosed, stay alone in the dark too long, film the dark with a **Camcorder** (craft: iron ingots around a glass pane and redstone; right-click to record), or sleep and hope you wake up at home. Suffocating inside a block still works too. |
+| Get in | Reality has seams in the dark (see **Getting in** below): keep walking into a wall somewhere dark and enclosed, stay alone in the dark too long, film the dark with a **Camcorder** (craft: iron ingots around a glass pane and redstone; right-click to record), or sleep through a night. Suffocating inside a block still works too. |
 | Flashlight | `R`. Everyone sees your beam. Uses the camcorder battery. |
 | NightShot (infrared) | `N` (drains the battery 3x faster) |
 | Camcorder REC overlay | `H` (off by default) |
@@ -46,16 +46,15 @@ in Level 0 and about 40% less in Level 37; slower cards gain more.
 Every way in (`world/RealWorldEntries`, `world/NoclipIntro`) counts "dark" as light level 3 or
 less at your eyes and "enclosed" as no open sky above you:
 
-- **Noclip through a wall:** keep walking into a wall somewhere dark and enclosed. After a couple
-  of seconds of pushing, each half second has a 1 in 24 chance that the wall simply isn't there
-  (about a quarter of a minute on average). Never in daylight.
-- **Too long alone in the dark:** dark, enclosed, nobody within 24 blocks. Over about 3 minutes
+- **Noclip through a wall:** keep walking into a wall somewhere dark and enclosed and it gives way,
+  usually within a second or two. Never in daylight.
+- **Too long alone in the dark:** dark, enclosed, nobody within 24 blocks. Over about 15 seconds
   reality wears thin: Level 0's fluorescent hum fades in from nowhere and the picture takes on a
-  faint stale yellow, until you're through. Back in the light or in company it heals in ~10 s.
+  faint stale yellow, until you're through. Back in the light or in company it heals in ~5 s.
 - **Film it:** the same with a Camcorder recording in your hand (right-click it: the camcorder
-  look and REC overlay switch on). It finds the seams four times faster (~45 s) and the tape breaks
-  up more and more as it does.
-- **A bad night:** one full night's sleep in eight, you don't wake up in your bed.
+  look and REC overlay switch on). It finds the seams in about 5 seconds, the tape breaking up as
+  it does.
+- **Sleep:** sleep through the night and you don't wake up in your bed.
 - **Suffocating inside a block** (sand or gravel falling on you) still works.
 
 However you go, the picture fails like a video stream that has lost its keyframes
