@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "backrooms:block/l94_grass_top_mid",
+    "side": "backrooms:block/l94_grass_side_mid",
+    "bottom": "backrooms:block/l94_dirt"
+  }
+}

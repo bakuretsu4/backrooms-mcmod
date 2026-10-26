@@ -688,6 +688,8 @@ public final class Level9Layout extends LevelLayout {
         int porchU0;
         int porchU1;
         boolean unlocked;
+        /** Level 94: about 1 in 40 enterable houses has a moulded clay front door that leads there. */
+        boolean clayDoor;
         boolean porchLight;
         boolean frontFence;
         /** 0 none, 1 hedge, 2 picket fence. */
@@ -773,6 +775,7 @@ public final class Level9Layout extends LevelLayout {
             porchBackpack = Hash.unit(seed, idx, k, 961) < 0.06;
             drivewayBackpack = garage && Hash.unit(seed, idx, k, 962) < 0.08;
             backpackFacing = Direction.from2DDataValue(Hash.range(Hash.of(seed, idx, k, 963), 4));
+            clayDoor = unlocked && Hash.unit(seed, idx, k, 964) < 1.0 / 40.0;
             // The top storey's wall plate / ceiling layer; the roof's first stairs sit at this height
             // on the overhang and climb from there, so there is no gap above the walls.
             roofBase = 41 + 5 * storeys;
@@ -1482,9 +1485,11 @@ public final class Level9Layout extends LevelLayout {
                         out.set(base + 2, window);
                     }
                     if (st == 0 && v == s && u == h.doorU) {
-                        BlockState door = ModBlocks.HOUSE_DOOR.get().defaultBlockState()
-                                .setValue(DoorBlock.FACING, h.inward)
-                                .setValue(HouseDoorBlock.LOCKED, !h.unlocked);
+                        BlockState door = h.clayDoor
+                                ? ModBlocks.L94_CLAY_DOOR.get().defaultBlockState().setValue(DoorBlock.FACING, h.inward)
+                                : ModBlocks.HOUSE_DOOR.get().defaultBlockState()
+                                        .setValue(DoorBlock.FACING, h.inward)
+                                        .setValue(HouseDoorBlock.LOCKED, !h.unlocked);
                         out.set(42, door.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
                         out.set(43, door.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
                     }

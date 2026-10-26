@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/l94_brick",
+    "north": "backrooms:block/l94_brick",
+    "south": "backrooms:block/l94_wallpaper_base",
+    "east": "backrooms:block/l94_wallpaper_base",
+    "west": "backrooms:block/l94_wallpaper_base",
+    "up": "backrooms:block/l94_wallpaper_base",
+    "down": "backrooms:block/l94_wallpaper_base"
+  }
+}

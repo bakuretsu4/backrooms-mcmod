@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=z": {
+      "model": "backrooms:block/l94_stripe_path"
+    },
+    "axis=x": {
+      "model": "backrooms:block/l94_stripe_path",
+      "y": 90
+    }
+  }
+}

@@ -1,7 +1,9 @@
 package com.rickr.backrooms.registry;
 
 import com.rickr.backrooms.Backrooms;
+import com.rickr.backrooms.block.SirenBlockEntity;
 import com.rickr.backrooms.block.SupplyContainerBlockEntity;
+import com.rickr.backrooms.block.VehicleBlockEntity;
 import java.util.function.Supplier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -24,6 +26,15 @@ public final class ModBlockEntities {
     public static final Supplier<BlockEntityType<SupplyContainerBlockEntity>> SUPPLY_LOCKER = BLOCK_ENTITIES.register("supply_locker",
             () -> BlockEntityType.Builder.of(SupplyContainerBlockEntity::new,
                     ModBlocks.SUPPLY_LOCKER.get(), ModBlocks.SUPPLY_CABINET.get()).build(null));
+
+    // Level 94 props: the siren (plays its song on the client) and the parked vehicle anchor
+    // (exists so its renderer can draw the whole car or van).
+    @SuppressWarnings("DataFlowIssue")
+    public static final Supplier<BlockEntityType<SirenBlockEntity>> L94_SIREN = BLOCK_ENTITIES.register("l94_siren",
+            () -> BlockEntityType.Builder.of(SirenBlockEntity::new, ModBlocks.L94_SIREN.get()).build(null));
+    @SuppressWarnings("DataFlowIssue")
+    public static final Supplier<BlockEntityType<VehicleBlockEntity>> L94_VEHICLE = BLOCK_ENTITIES.register("l94_vehicle",
+            () -> BlockEntityType.Builder.of(VehicleBlockEntity::new, ModBlocks.L94_VEHICLE.get()).build(null));
 
     private ModBlockEntities() {}
 }

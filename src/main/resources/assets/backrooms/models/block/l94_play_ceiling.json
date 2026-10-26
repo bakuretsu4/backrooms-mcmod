@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "backrooms:block/l94_play_ceiling",
+    "top": "backrooms:block/l94_play_carpet",
+    "side": "backrooms:block/l94_play_wall"
+  }
+}

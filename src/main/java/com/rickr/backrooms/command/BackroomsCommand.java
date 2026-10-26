@@ -15,6 +15,8 @@ import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
 import com.rickr.backrooms.world.LevelEvents;
 import com.rickr.backrooms.world.Travel;
+import com.rickr.backrooms.world.Level94Clock;
+import com.rickr.backrooms.world.Level94Sync;
 import com.rickr.backrooms.registry.ModEntities;
 import com.rickr.backrooms.network.LevelEventPayload;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -32,7 +34,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Operator tools for hosting sessions with friends:
  * <pre>
- * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9 (default: level_0)
+ * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94 (default: level_0)
  * /backrooms escape [targets]          send players back to reality
  * /backrooms battery [targets] [pct]   set camcorder batteries (default: full)
  * /backrooms sanity [targets] <0-100>   set sanity (for testing the low-sanity effects)
@@ -41,6 +43,7 @@ import net.minecraft.world.phys.Vec3;
  * /backrooms spawn bacteria [count]   spawn Bacteria about 12 blocks in front of you (for testing)
  * /backrooms spawn smiler [count|bold]  spawn Smilers about 16 blocks in front of you (start a blackout first)
  * /backrooms locate saferoom          distance/direction to the nearest safe room (for testing)
+ * /backrooms time94 <day|dusk|night|dawn>   Level 94: jump its day/night clock to the start of that phase (for testing)
  * </pre>
  */
 public final class BackroomsCommand {
@@ -84,6 +87,12 @@ public final class BackroomsCommand {
                         .then(eventNode("lampwave", LevelEventPayload.LAMP_WAVE, 25))
                         .then(eventNode("storm", LevelEventPayload.STORM, 6))
                         .then(Commands.literal("end").executes(ctx -> event(ctx, LevelEventPayload.NONE, 0))))
+                // Level 94 (Sky slice): jump the day/night clock to the start of a phase.
+                .then(Commands.literal("time94")
+                        .then(Commands.literal("day").executes(ctx -> time94(ctx, 0)))
+                        .then(Commands.literal("dusk").executes(ctx -> time94(ctx, Level94Clock.DAY_TICKS - Level94Clock.DUSK_TICKS)))
+                        .then(Commands.literal("night").executes(ctx -> time94(ctx, Level94Clock.DAY_TICKS)))
+                        .then(Commands.literal("dawn").executes(ctx -> time94(ctx, Level94Clock.CYCLE - Level94Clock.DAWN_TICKS))))
                 .then(Commands.literal("spawn")
                         .then(Commands.literal("bacteria")
                                 .executes(ctx -> spawnBacteria(ctx, 1))
@@ -115,7 +124,7 @@ public final class BackroomsCommand {
     }
 
     private static final SimpleCommandExceptionType UNKNOWN_LEVEL = new SimpleCommandExceptionType(
-            Component.literal("Unknown level. Try level_0, level_1, level_2, level_4, poolrooms, level_37 or level_9."));
+            Component.literal("Unknown level. Try level_0, level_1, level_2, level_4, poolrooms, level_37, level_9 or level_94."));
 
     private static BackroomsLevel levelArgument(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         BackroomsLevel level = BackroomsLevel.byName(StringArgumentType.getString(ctx, "level"));
@@ -239,6 +248,24 @@ public final class BackroomsCommand {
         }
         ctx.getSource().sendFailure(Component.literal("No safe room within 400 blocks."));
         return 0;
+    }
+
+    // ---- Level 94 (Sky slice) ------------------------------------------------------------------
+
+    /**
+     * {@code /backrooms time94 <phase>}: moves Level 94's clock so that it is now {@code cycleTick}
+     * ticks into the day (0 = morning), and tells every client there at once.
+     */
+    private static int time94(CommandContext<CommandSourceStack> ctx, long cycleTick) {
+        ServerLevel level = ctx.getSource().getServer().getLevel(BackroomsLevel.LEVEL_94.dimension());
+        if (level == null) {
+            ctx.getSource().sendFailure(Component.literal("Level 94 isn't loaded."));
+            return 0;
+        }
+        Level94Clock.setStart(level, level.getGameTime() - cycleTick);
+        Level94Sync.sendToAll(level);
+        ctx.getSource().sendSuccess(() -> Component.literal("Level 94 is now at: " + Level94Clock.phase(level)), true);
+        return 1;
     }
 
     private BackroomsCommand() {}

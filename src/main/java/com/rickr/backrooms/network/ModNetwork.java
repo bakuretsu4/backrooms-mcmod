@@ -7,6 +7,8 @@ import com.rickr.backrooms.player.EnergyData;
 import com.rickr.backrooms.player.HallucinationClientState;
 import com.rickr.backrooms.player.SanityClientState;
 import com.rickr.backrooms.player.SafeRoomClientState;
+import com.rickr.backrooms.client.Level94ClientState;
+import com.rickr.backrooms.world.Level94Clock;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -69,6 +71,15 @@ public final class ModNetwork {
                 (payload, context) -> SafeRoomClientState.inSafeRoom = payload.inSafeRoom());
         registrar.playToClient(CheckpointSavedPayload.TYPE, CheckpointSavedPayload.STREAM_CODEC,
                 (payload, context) -> SafeRoomClientState.checkpointSavedMs = System.currentTimeMillis());
+
+        // Level 94 (Sky slice): when the day began and where your nearest castle is, for the
+        // client's sky, light and the castle on the horizon.
+        registrar.playToClient(Level94StatePayload.TYPE, Level94StatePayload.STREAM_CODEC, (payload, context) -> {
+            Level94Clock.setClientStart(payload.clockStart());
+            Level94ClientState.castleX = payload.castleX();
+            Level94ClientState.castleZ = payload.castleZ();
+            Level94ClientState.castleKnown = true;
+        });
 
         registrar.playToServer(CameraTogglePayload.TYPE, CameraTogglePayload.STREAM_CODEC, (payload, context) -> {
             if (context.player() instanceof ServerPlayer player) {

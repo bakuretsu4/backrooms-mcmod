@@ -5698,6 +5698,1413 @@ L37_SOUNDS = [snd_l37_ambience, snd_l37_arrive]
 
 
 # =============================================================================
+# Level 94 "Motion" props (Props slice): the siren poles and the happy cartoon
+# tune they play, the parked 1930s cars and white milk vans, and the CRT TV
+# full of static. The level's SUBTLE crafted look: slightly over-saturated
+# colours, hand-brushed paint and grain, toy-like.
+# =============================================================================
+
+def _l94_paint(rng, col, shape=(S, S), grain=5.0) -> np.ndarray:
+    """Hand-brushed enamel: soft blotches, faint brush strokes running one way, fine grain."""
+    img = fill(col, shape)
+    lum = (fnoise(rng, shape, beta=3.0) * grain
+           + fnoise(rng, shape, beta=1.2, aniso=(10, 1), kmin=3) * grain * 0.45
+           + rng.normal(0, 1.2, shape))
+    return add_lum(img, lum)
+
+
+def tex_l94_siren() -> None:
+    """The siren pole and its horn loudspeaker.
+
+    l94_siren_pole: weathered dark wooden pole (vertical grain, cracks, sun-bleached streaks).
+    l94_siren_metal: grey enamel horn, chipped to dark primer, a few rust runs.
+    l94_siren_bracket: dark iron yoke. l94_siren_mouth: looking into the bell (light rim, grey
+    flare darkening into the throat, two grooves, the phase plug). The mouth is perfectly round
+    and has no noise, because the model draws the bell twice (turned 45 degrees) and the two
+    copies must look the same where they overlap.
+    """
+    rng = rng_for(9401)
+    X, Y = grid()
+    pole = _wood(rng, np.array([78, 60, 44]), horizontal=False)
+    cracks = smoothstep(0.06, 0.0, np.abs(fnoise(rng, beta=1.8, aniso=(1, 14), kmin=2)))
+    pole = add_lum(pole, -26 * cracks)
+    bleach = smoothstep(0.4, 1.6, fnoise(rng, beta=2.0, aniso=(1, 8)))
+    pole = over(pole, np.array([112, 104, 92]), bleach * 0.35)
+    save_png(pole, _blk("l94_siren_pole"))
+
+    metal = _l94_paint(rng, (150, 156, 162), grain=4.0)
+    chips = smoothstep(1.7, 2.3, blur(fnoise(rng, beta=1.3, kmin=3), 0.8))
+    metal = over(metal, np.array([82, 78, 74]), chips * 0.8)
+    rust = smoothstep(1.2, 2.2, fnoise(rng, beta=1.5, aniso=(1, 6)))
+    metal = over(metal, np.array([140, 84, 50]), rust * 0.45)
+    save_png(metal, _blk("l94_siren_metal"))
+
+    bracket = _galvanised(rng, (60, 60, 64))
+    bracket = over(bracket, np.array([110, 64, 44]), smoothstep(1.4, 2.2, fnoise(rng, beta=1.6)) * 0.5)
+    save_png(bracket, _blk("l94_siren_bracket"))
+
+    r = np.hypot(X - S / 2, Y - S / 2) / (S / 2)          # 0 at the centre, 1 at the edge midpoints
+    flare = lerp(np.array([118, 122, 128]), np.array([30, 30, 34]), smoothstep(0.85, 0.25, r)[..., None])
+    mouth = lerp(flare, np.array([172, 176, 182]), smoothstep(0.84, 0.9, r)[..., None])   # rolled rim
+    mouth = add_lum(mouth, -22 * np.exp(-((r - 0.9) / 0.02) ** 2))                         # rim edge
+    for g in (0.68, 0.48):                                                                 # grooves
+        mouth = add_lum(mouth, -14 * np.exp(-((r - g) / 0.015) ** 2) + 8 * np.exp(-((r - g - 0.03) / 0.015) ** 2))
+    plug = smoothstep(0.19, 0.16, r)
+    mouth = over(mouth, np.array([70, 72, 76]), plug)
+    mouth = add_lum(mouth, 30 * smoothstep(0.16, 0.0, r) * plug)                           # domed plug
+    save_png(mouth, _blk("l94_siren_mouth"))
+
+
+def _l94_rrect(shape, x0, y0, x1, y1, rad, k=1.0) -> np.ndarray:
+    """Anti-aliased rounded rectangle; coordinates are multiplied by k (e.g. pixels per unit)."""
+    cx, cy = (x0 + x1) / 2 * k, (y0 + y1) / 2 * k
+    hw, hh, rr = (x1 - x0) / 2 * k, (y1 - y0) / 2 * k, rad * k
+
+    def inside(x, y):
+        dx = np.maximum(np.abs(x - cx) - (hw - rr), 0)
+        dy = np.maximum(np.abs(y - cy) - (hh - rr), 0)
+        return (dx * dx + dy * dy) < rr * rr
+    return supersample(shape, inside)
+
+
+def tex_l94_tv() -> None:
+    """The Level 94 TV: an old wooden-cabinet CRT on short legs, its screen full of static.
+
+    l94_tv_cabinet: warm, slightly over-saturated veneer. l94_tv_front: the cabinet front as seen
+    from the room (8 px per model pixel; the screen element covers u 2.5..10.5, v 3..10.5): cream
+    trim and black bezel round the screen, two knob plates, a cloth speaker grille, a brass badge.
+    l94_tv_knob: cream bakelite. l94_tv_static: animated snow (24 frames, one per tick) with a
+    slow rolling bar and dark CRT corners; drawn full-bright by the model.
+    """
+    rng = rng_for(9420)
+    X, Y = grid()
+    k = S / 16
+    wood = _wood(rng, np.array([152, 88, 46]), horizontal=True)
+    wood = add_lum(wood, fnoise(rng, beta=2.6) * 4)
+    save_png(wood, _blk("l94_tv_cabinet"))
+
+    front = wood.copy()
+    front = over(front, np.array([222, 204, 158]), _l94_rrect((S, S), 1.9, 2.4, 11.1, 11.1, 1.3, k))
+    front = over(front, np.array([30, 26, 24]), _l94_rrect((S, S), 2.2, 2.7, 10.8, 10.8, 1.0, k))
+    for cy in (4.5, 7.0):
+        plate = supersample((S, S), lambda x, y, cy=cy: np.hypot(x - 12.25 * k, y - cy * k) < 1.1 * k)
+        front = over(front, np.array([196, 164, 92]), plate)
+    grille = _l94_rrect((S, S), 11.3, 8.4, 13.7, 12.2, 0.4, k)
+    cloth = add_lum(fill((206, 184, 132), (S, S)), rng.normal(0, 5, (S, S)))
+    cloth = add_lum(cloth, -40 * ((X % (0.5 * k)) < 1.5))
+    front = lerp(front, cloth, grille[..., None])
+    front = over(front, np.array([200, 168, 90]), box((S, S), 5.4 * k, 11.5 * k, 7.6 * k, 12.1 * k))
+    edge = np.minimum.reduce([X - 1.5 * k, 14.5 * k - X, Y - 1.5 * k, 12.5 * k - Y])
+    front = add_lum(front, -22 * smoothstep(5, 0, edge))
+    save_png(front, _blk("l94_tv_front"))
+
+    knob = add_lum(fill((226, 214, 182), (S, S)), fnoise(rng, beta=2.5) * 4)
+    knob = add_lum(knob, -18 * smoothstep(3, 0, np.minimum.reduce([X, S - X, Y, S - Y])))
+    save_png(knob, _blk("l94_tv_knob"))
+
+    frames, n = 24, 32
+    yy, xx = np.mgrid[0:n, 0:n] + 0.5
+    c = n / 2
+    corners = np.clip(1.15 - 0.55 * (((xx - c) / c) ** 4 + ((yy - c) / c) ** 4), 0, 1)
+    strip = []
+    for i in range(frames):
+        snow = rng.random((n, n)) ** 1.3
+        lines = rng.normal(0, 0.1, (n, 1))                       # whole lines flick brighter/darker
+        bar = 0.22 * np.exp(-(wrapd(yy - i / frames * n, n) / 3.0) ** 2)
+        v = np.clip(0.16 + 0.66 * snow + lines + bar, 0, 1) * corners
+        strip.append(v[..., None] * np.array([226, 232, 242]))
+    path = _blk("l94_tv_static")
+    save_png(np.concatenate(strip, axis=0), path)
+    path.with_name("l94_tv_static.png.mcmeta").write_text('{"animation": {"frametime": 1}}\n')
+
+
+# Vehicle atlases: 256x256 texture units drawn at 2 px per unit. The rectangles are the material
+# "swatches" of client/VehicleModel.java (u0, v0, u1, v1 in texture units): keep them in sync.
+L94_VPX = 2
+L94_CAR_SWATCHES = {"paint": (0, 0, 160, 80), "fender": (0, 80, 72, 112), "chrome": (72, 80, 152, 112),
+                    "grille": (152, 80, 184, 112), "tyre": (184, 80, 216, 112), "wheel": (216, 80, 240, 104),
+                    "glass": (0, 112, 64, 144), "lens": (64, 112, 76, 118), "tail": (80, 112, 96, 120)}
+L94_VAN_SWATCHES = {"box": (0, 0, 160, 80), "paint": (0, 96, 200, 160), "chrome": (160, 0, 256, 16),
+                    "tyre": (160, 16, 192, 48), "wheel": (192, 16, 220, 44), "lens": (224, 16, 238, 23),
+                    "tail": (240, 16, 256, 32), "grille": (160, 48, 200, 60), "door": (208, 48, 236, 92),
+                    "glass": (0, 162, 64, 176)}
+
+
+def _l94_put(atlas, rect, img, alpha=None) -> None:
+    """Pastes an RGB image into a swatch rectangle (texture units) of an RGBA atlas."""
+    u0, v0, u1, v1 = (c * L94_VPX for c in rect)
+    atlas[v0:v1, u0:u1, :3] = img
+    atlas[v0:v1, u0:u1, 3] = 255.0 if alpha is None else alpha
+
+
+def _l94_rect_shape(rect):
+    return ((rect[3] - rect[1]) * L94_VPX, (rect[2] - rect[0]) * L94_VPX)
+
+
+def _l94_chrome(rng, shape) -> np.ndarray:
+    """Polished chrome: bright and dark reflection bands, a little dull grain."""
+    yy = np.arange(shape[0])[:, None] / max(shape[0], 1)
+    bands = 26 * np.sin(2 * np.pi * (yy * 2.3 + 0.15)) + 14 * np.sin(2 * np.pi * yy * 7.1)
+    img = fill((196, 200, 208), shape)
+    return add_lum(img, np.broadcast_to(bands, shape) + rng.normal(0, 3, shape))
+
+
+def _l94_glass(rng, shape) -> np.ndarray:
+    """Dark window glass with the sky's pale reflection along the top and one diagonal streak."""
+    yy, xx = np.mgrid[0:shape[0], 0:shape[1]]
+    img = fill((54, 70, 86), shape)
+    img = add_lum(img, 26 * (1 - yy / shape[0]) ** 2, (0.9, 1.0, 1.1))
+    streak = np.exp(-(((xx - yy * 1.2) % 40 - 20) / 3.0) ** 2)
+    return add_lum(img, 22 * streak + rng.normal(0, 1.5, shape))
+
+
+def _l94_disc(units, rings, px=L94_VPX):
+    """A round picture on a square (wheel side, headlight lens) with see-through corners.
+
+    rings: list of (outer radius in units, rgb), outermost first. Returns (rgb, alpha)."""
+    n = int(units * px)
+    yy, xx = np.mgrid[0:n, 0:n] + 0.5
+    r = np.hypot(xx - n / 2, yy - n / 2) / px
+    img = np.zeros((n, n, 3))
+    for radius, col in rings:
+        img[r < radius] = col
+    alpha = np.where(r < rings[0][0], 255.0, 0.0)
+    return img, alpha, r
+
+
+def _l94_wheel_side(units, rim, whitewall=True):
+    """Side of a wheel: black tyre (with a whitewall), coloured rim with spoke lines, chrome cap."""
+    R = units / 2
+    rings = [(R, (28, 28, 30))]
+    if whitewall:
+        rings.append((R * 0.82, (232, 228, 214)))
+    rings += [(R * 0.62, (24, 24, 26)), (R * 0.57, rim), (R * 0.24, (212, 216, 222)), (R * 0.1, (150, 154, 160))]
+    img, alpha, r = _l94_disc(units, rings)
+    n = img.shape[0]
+    yy, xx = np.mgrid[0:n, 0:n] + 0.5
+    ang = np.arctan2(yy - n / 2, xx - n / 2)
+    spokes = (np.abs(np.sin(ang * 4)) < 0.18) & (r > R * 0.26) & (r < R * 0.55)
+    img[spokes] = np.asarray(rim) * 0.65
+    return img, alpha
+
+
+def _l94_lens(units):
+    """Round headlight: chrome ring round a pale yellow glass with a highlight."""
+    R = units / 2
+    img, alpha, r = _l94_disc(units, [(R, (206, 210, 216)), (R * 0.78, (250, 238, 182))])
+    n = img.shape[0]
+    yy, xx = np.mgrid[0:n, 0:n] + 0.5
+    hl = np.hypot(xx - n * 0.38, yy - n * 0.36) < n * 0.12
+    img[hl & (r < R * 0.78)] = (255, 255, 240)
+    return img, alpha
+
+
+def _l94_car_atlas(seed, paint, fender, rim) -> np.ndarray:
+    rng = rng_for(seed)
+    sw = L94_CAR_SWATCHES
+    atlas = np.zeros((256 * L94_VPX, 256 * L94_VPX, 4))
+    _l94_put(atlas, sw["paint"], _l94_paint(rng, paint, _l94_rect_shape(sw["paint"])))
+    _l94_put(atlas, sw["fender"], _l94_paint(rng, fender, _l94_rect_shape(sw["fender"]), grain=3.0))
+    _l94_put(atlas, sw["chrome"], _l94_chrome(rng, _l94_rect_shape(sw["chrome"])))
+    shp = _l94_rect_shape(sw["grille"])
+    grille = fill((36, 36, 40), shp)
+    grille[:, (np.arange(shp[1]) % 3) == 0] = (206, 210, 216)
+    _l94_put(atlas, sw["grille"], grille)
+    shp = _l94_rect_shape(sw["tyre"])
+    tyre = add_lum(fill((30, 30, 32), shp), rng.normal(0, 2, shp) - 8 * ((np.arange(shp[0])[:, None] % 4) == 0))
+    _l94_put(atlas, sw["tyre"], tyre)
+    _l94_put(atlas, sw["glass"], _l94_glass(rng, _l94_rect_shape(sw["glass"])))
+    _l94_put(atlas, sw["tail"], fill((200, 30, 26), _l94_rect_shape(sw["tail"])))
+    # Wheel sides: the plane's two faces sit side by side in the bottom 12x12 of its swatch.
+    wheel, alpha = _l94_wheel_side(12, rim)
+    u0, v0 = sw["wheel"][:2]
+    for du in (0, 12):
+        _l94_put(atlas, (u0 + du, v0 + 12, u0 + du + 12, v0 + 24), wheel, alpha)
+    lens, alpha = _l94_lens(6)
+    u0, v0 = sw["lens"][:2]
+    for du in (0, 6):
+        _l94_put(atlas, (u0 + du, v0, u0 + du + 6, v0 + 6), lens, alpha)
+    return atlas
+
+
+def _l94_van_atlas() -> np.ndarray:
+    rng = rng_for(9433)
+    sw = L94_VAN_SWATCHES
+    white = (238, 236, 226)
+    atlas = np.zeros((256 * L94_VPX, 256 * L94_VPX, 4))
+    p = L94_VPX
+    # Box body: white all over, then the two long sides (44x36) lettered MILK, the back with doors.
+    _l94_put(atlas, sw["box"], _l94_paint(rng, white, _l94_rect_shape(sw["box"]), grain=3.5))
+    side_shape = (36 * p, 44 * p)
+    for u0 in (0, 80):
+        side = _l94_paint(rng, white, side_shape, grain=3.5)
+        side = over(side, np.array([40, 92, 170]), box(side_shape, -1, 27 * p, 44 * p + 1, 30 * p))   # blue band
+        side = over(side, np.array([200, 36, 36]), _text("MILK", 22 * p, 14 * p, 20 * p, maxw=36 * p, shape=side_shape))
+        side = over(side, np.array([40, 92, 170]), _text("FRESH DAILY", 22 * p, 23.5 * p, 5 * p, maxw=30 * p, shape=side_shape))
+        side = add_lum(side, -20 * (box(side_shape, 0, 0, 44 * p, 1.0 * p) + box(side_shape, 0, 35 * p, 44 * p, 36 * p)))
+        _l94_put(atlas, (u0, 44, u0 + 44, 80), side)
+    back_shape = (36 * p, 36 * p)
+    back = _l94_paint(rng, white, back_shape, grain=3.5)
+    back = add_lum(back, -40 * box(back_shape, 17.8 * p, 2 * p, 18.2 * p, 35 * p))                   # door split
+    for x0 in (4, 21):
+        back = over(back, np.array([54, 70, 86]), box(back_shape, x0 * p, 4 * p, (x0 + 11) * p, 12 * p))   # windows
+    for x0 in (15, 19.5):
+        back = over(back, np.array([200, 204, 210]), box(back_shape, x0 * p, 17 * p, (x0 + 1.5) * p, 18 * p))  # handles
+    back = over(back, np.array([40, 92, 170]), box(back_shape, -1, 27 * p, 36 * p + 1, 30 * p))
+    _l94_put(atlas, (124, 44, 160, 80), back)
+    _l94_put(atlas, sw["paint"], _l94_paint(rng, white, _l94_rect_shape(sw["paint"]), grain=3.5))
+    _l94_put(atlas, sw["chrome"], _l94_chrome(rng, _l94_rect_shape(sw["chrome"])))
+    shp = _l94_rect_shape(sw["tyre"])
+    _l94_put(atlas, sw["tyre"], add_lum(fill((30, 30, 32), shp), rng.normal(0, 2, shp)))
+    _l94_put(atlas, sw["tail"], fill((200, 30, 26), _l94_rect_shape(sw["tail"])))
+    shp = _l94_rect_shape(sw["grille"])
+    grille = fill((36, 36, 40), shp)
+    grille[(np.arange(shp[0]) % 3) == 0, :] = (206, 210, 216)
+    _l94_put(atlas, sw["grille"], grille)
+    _l94_put(atlas, sw["glass"], _l94_glass(rng, _l94_rect_shape(sw["glass"])))
+    # Sliding doors: the two 13x31 side faces of the door slab, a window in the top part.
+    shp = _l94_rect_shape(sw["door"])
+    _l94_put(atlas, sw["door"], _l94_paint(rng, white, shp, grain=3.5))
+    door_shape = (31 * p, 13 * p)
+    door = _l94_paint(rng, white, door_shape, grain=3.5)
+    door = add_lum(door, -30 * (1 - box(door_shape, 0.6 * p, 0.6 * p, 12.4 * p, 30.4 * p)))          # seam
+    door = over(door, np.array([54, 70, 86]), _l94_rrect(door_shape, 2, 3, 11, 13, 1.0, p))            # window
+    door = over(door, np.array([200, 204, 210]), box(door_shape, 9.5 * p, 16 * p, 11 * p, 17 * p))     # handle
+    door = over(door, np.array([40, 92, 170]), box(door_shape, -1, 18 * p, 13 * p + 1, 21 * p))        # band
+    u0, v0 = sw["door"][:2]
+    for du in (0, 14):
+        _l94_put(atlas, (u0 + du, v0 + 13, u0 + du + 13, v0 + 44), door)
+    wheel, alpha = _l94_wheel_side(14, (236, 232, 220), whitewall=False)
+    u0, v0 = sw["wheel"][:2]
+    for du in (0, 14):
+        _l94_put(atlas, (u0 + du, v0 + 14, u0 + du + 14, v0 + 28), wheel, alpha)
+    lens, alpha = _l94_lens(7)
+    u0, v0 = sw["lens"][:2]
+    for du in (0, 7):
+        _l94_put(atlas, (u0 + du, v0, u0 + du + 7, v0 + 7), lens, alpha)
+    return atlas
+
+
+def tex_l94_vehicle() -> None:
+    """Parked Level 94 vehicles (textures for client/VehicleModel): three 1930s sedans (red with
+    black fenders and cream wheels, all black with red wheels, cream with maroon fenders), the
+    white milk van, and the inventory icon (a little red sedan from the side)."""
+    ent = TEX / "entity"
+    save_png(_l94_car_atlas(9430, (196, 38, 36), (34, 32, 34), (232, 218, 176)), ent / "l94_vehicle_red.png")
+    save_png(_l94_car_atlas(9431, (40, 40, 46), (30, 30, 32), (190, 40, 36)), ent / "l94_vehicle_black.png")
+    save_png(_l94_car_atlas(9432, (234, 216, 168), (112, 36, 34), (190, 40, 36)), ent / "l94_vehicle_cream.png")
+    save_png(_l94_van_atlas(), ent / "l94_vehicle_van.png")
+    # Icon: 32x32 side view, drawn at 4x and shrunk.
+    k = 4
+    im = Image.new("RGBA", (32 * k, 32 * k), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    s = lambda *c: [v * k for v in c]
+    d.rounded_rectangle(s(9, 7, 21, 15), radius=3 * k, fill=(196, 38, 36, 255))          # cabin
+    d.rectangle(s(11, 9, 15, 13), fill=(54, 70, 86, 255))
+    d.rectangle(s(16, 9, 19, 13), fill=(54, 70, 86, 255))
+    d.rounded_rectangle(s(2, 13, 29, 21), radius=3 * k, fill=(196, 38, 36, 255))         # body
+    d.ellipse(s(1, 15, 12, 23), fill=(34, 32, 34, 255))                                    # fenders
+    d.ellipse(s(20, 15, 31, 23), fill=(34, 32, 34, 255))
+    d.rectangle(s(9, 20, 23, 21), fill=(34, 32, 34, 255))                                  # running board
+    for cx in (6.5, 25.5):
+        d.ellipse(s(cx - 4, 18, cx + 4, 26), fill=(28, 28, 30, 255))
+        d.ellipse(s(cx - 2.6, 19.4, cx + 2.6, 24.6), fill=(232, 228, 214, 255))
+        d.ellipse(s(cx - 1.4, 20.6, cx + 1.4, 23.4), fill=(232, 218, 176, 255))
+    d.ellipse(s(1, 14, 4, 17), fill=(250, 238, 182, 255))                                  # headlight
+    icon = np.asarray(im.resize((32, 32), Image.BOX), float)
+    icon[..., 3] = np.where(icon[..., 3] >= 128, 255, 0)
+    save_png(icon, TEX / "item" / "l94_vehicle.png")
+
+
+# ----- the siren song -----
+
+def _l94_midi_hz(m) -> float:
+    return 440.0 * 2 ** ((m - 69) / 12)
+
+
+def _l94_tuba(freq, dur) -> np.ndarray:
+    """Oom: a round brassy tuba note with a little scoop and blat at the start."""
+    t = t_axis(dur + 0.12)
+    f = freq * (1 - 0.03 * np.exp(-t / 0.03))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    x = sum(a * (1 + 1.5 * (k > 2) * np.exp(-t / 0.05)) * np.sin(k * ph)
+            for k, a in enumerate((1, 0.85, 0.6, 0.42, 0.28, 0.18, 0.11, 0.07, 0.04), start=1))
+    env = np.clip(t / 0.025, 0, 1) * np.exp(-t / 0.7) * np.clip((dur + 0.1 - t) / 0.1, 0, 1)
+    return x * env
+
+
+def _l94_clarinet(freq, dur, rng) -> np.ndarray:
+    """A woody clarinet lead: mostly odd harmonics, breath on the attack, vibrato on long notes."""
+    t = t_axis(dur + 0.08)
+    vib = 1 + 0.005 * np.sin(2 * np.pi * 5.6 * t) * smoothstep(0.12, 0.3, t)
+    ph = 2 * np.pi * np.cumsum(freq * vib) / SR
+    x = sum((1.0 / k if k % 2 else 0.09 / k) * np.sin(k * ph) for k in range(1, 12) if k * freq < 9000)
+    breath = fft_filter(rng.normal(size=t.size), lambda fr: bp_gain(fr, freq * 1.5, freq * 4, 2)) * np.exp(-t / 0.04)
+    env = np.clip(t / 0.03, 0, 1) * (0.85 + 0.15 * np.exp(-t / 0.1)) * np.clip((dur + 0.06 - t) / 0.06, 0, 1)
+    return (x + 0.4 * norm(breath)) * env
+
+
+def _l94_xylophone(freq, dur) -> np.ndarray:
+    """A bright wooden xylophone bar: inharmonic partials that die away fast, a mallet click."""
+    t = t_axis(max(dur, 0.25) + 0.3)
+    x = ring([freq, freq * 3.93, freq * 9.1], [0.32, 0.07, 0.025], [1.0, 0.35, 0.12], t.size / SR)
+    x[:30] += np.linspace(0.6, 0, 30) * np.sign(np.sin(np.arange(30)))
+    return x
+
+
+def _l94_banjo(midis, dur, rng) -> np.ndarray:
+    """Pah: a quick banjo strum of the chord (each string a little after the last), short and twangy."""
+    out = np.zeros(int((dur + 0.3) * SR))
+    for j, m in enumerate(midis):
+        f = _l94_midi_hz(m)
+        t = t_axis(dur + 0.3 - j * 0.008)
+        s = sum((1.0 / k) * np.sin(2 * np.pi * f * k * t + rng.uniform(0, 6.28)) * np.exp(-t * (6 + 5 * k))
+                for k in range(1, 9))
+        add_at(out, s * np.clip((dur + 0.05 - t) / 0.05, 0, 1), j * 0.008, circular=False)
+    return out
+
+
+def _l94_slide_whistle(f0, f1, dur, rng) -> np.ndarray:
+    """A slide whistle swooping from f0 to f1 Hz (smoothly), breathy, with a wobble."""
+    t = t_axis(dur)
+    glide = f0 * (f1 / f0) ** smoothstep(0.0, 1.0, t / dur)
+    f = glide * (1 + 0.012 * np.sin(2 * np.pi * 7 * t))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    x = np.sin(ph) + 0.12 * np.sin(2 * ph)
+    breath = fft_filter(rng.normal(size=t.size), lambda fr: bp_gain(fr, 900, 4000, 1))
+    env = np.clip(t / 0.03, 0, 1) * np.clip((dur - t) / 0.06, 0, 1)
+    return (x + 0.08 * norm(breath)) * env
+
+
+def _l94_brush(rng) -> np.ndarray:
+    t = t_axis(0.14)
+    return fft_filter(rng.normal(size=t.size), lambda f: hp_gain(f, 2500, 2)) * np.exp(-t / 0.035)
+
+
+def _l94_woodblock(rng) -> np.ndarray:
+    x = ring([1150, 2650], [0.035, 0.012], [1.0, 0.4], 0.15)
+    x[:20] += rng.normal(size=20) * 0.5
+    return x
+
+
+def snd_l94_siren_song() -> None:
+    """40 s seamless loop: the happy cartoon tune Level 94's siren poles play all day.
+
+    An ORIGINAL little foxtrot in F major, 144 bpm, 24 bars of 4/4 (A, A', B, then round to A
+    again): oom-pah tuba bass, a banjo strumming the off-beats, a clarinet lead (a xylophone in
+    the B part), slide-whistle swoops, brushes and a woodblock. Then it is played "through" a
+    tinny old horn loudspeaker: band-passed 400-3500 Hz with two horn resonances, softly
+    overdriven, with record crackle and a slow warble, so it sounds old and a little wrong.
+    Every part is placed circularly (notes ringing past the end wrap round to the start) and
+    every effect is periodic, so the end flows straight into the start.
+    Length is exactly 1 764 000 samples: client/SirenSongs.SONG_SAMPLES must match.
+    """
+    rng = rng_for(9440)
+    beat = 60.0 / 144.0
+    bars = 24
+    n = int(round(bars * 4 * beat * SR))
+    eighth = beat / 2
+
+    # Chords: (tuba root, tuba fifth, banjo chord), MIDI notes.
+    chords = {"F": (41, 48, (57, 60, 65)), "Bb": (46, 41, (58, 62, 65)),
+              "C7": (48, 43, (58, 60, 64)), "G7": (43, 50, (59, 62, 65))}
+    form = ["F", "F", "C7", "C7", "F", "Bb", "C7", "F",
+            "F", "F", "C7", "C7", "F", "Bb", "C7", "F",
+            "Bb", "Bb", "F", "F", "G7", "G7", "C7", "C7"]
+    # Walking bass (four quarter notes) in the bars that lead into a new section.
+    walks = {7: (41, 43, 45, 48), 15: (41, 43, 45, 48), 23: (48, 46, 45, 43)}
+    # Lead melody per bar: (MIDI note, start, length) in eighth notes. F4=65 A4=69 C5=72 F5=77.
+    melody = [
+        [(72, 0, 1), (69, 1, 1), (72, 2, 1), (77, 3, 3), (76, 6, 1), (77, 7, 1)],
+        [(79, 0, 2), (77, 2, 1), (74, 3, 1), (72, 4, 4)],
+        [(70, 0, 1), (72, 1, 1), (74, 2, 1), (76, 3, 2), (79, 5, 1), (76, 6, 2)],
+        [(72, 0, 3), (70, 3, 1), (67, 4, 2)],
+        [(69, 0, 1), (72, 1, 1), (77, 2, 1), (81, 3, 3), (79, 6, 1), (77, 7, 1)],
+        [(74, 0, 2), (77, 2, 1), (74, 3, 1), (70, 4, 3), (72, 7, 1)],
+        [(74, 0, 1), (72, 1, 1), (70, 2, 1), (67, 3, 2), (76, 5, 1), (79, 6, 2)],
+        [(77, 0, 3), (72, 3, 1), (65, 4, 2)],
+        # A': same opening, a brighter second half and a "ta-da" ending.
+        [(72, 0, 1), (69, 1, 1), (72, 2, 1), (77, 3, 3), (76, 6, 1), (77, 7, 1)],
+        [(79, 0, 1), (81, 1, 1), (79, 2, 1), (77, 3, 1), (74, 4, 4)],
+        [(70, 0, 1), (72, 1, 1), (74, 2, 1), (76, 3, 2), (79, 5, 1), (76, 6, 2)],
+        [(72, 0, 2), (76, 2, 1), (79, 3, 1), (82, 4, 3), (81, 7, 1)],
+        [(81, 0, 2), (77, 2, 1), (72, 3, 1), (69, 4, 2), (72, 6, 2)],
+        [(70, 0, 1), (74, 1, 1), (77, 2, 1), (82, 3, 3), (81, 6, 1), (79, 7, 1)],
+        [(79, 0, 2), (76, 2, 2), (72, 4, 2), (76, 6, 2)],
+        [(77, 0, 4)],
+        # B: bouncier, on the xylophone.
+        [(77, 0, 1), (74, 1, 1), (77, 2, 1), (74, 3, 1), (70, 4, 2), (74, 6, 2)],
+        [(77, 0, 3), (79, 3, 1), (77, 4, 4)],
+        [(72, 0, 1), (69, 1, 1), (72, 2, 1), (69, 3, 1), (65, 4, 2), (69, 6, 2)],
+        [(72, 0, 3), (74, 3, 1), (72, 4, 4)],
+        [(71, 0, 1), (74, 1, 1), (79, 2, 1), (77, 3, 2), (74, 5, 1), (71, 6, 2)],
+        [(69, 0, 2), (71, 2, 2), (74, 4, 2), (77, 6, 2)],
+        [(76, 0, 1), (79, 1, 1), (76, 2, 1), (72, 3, 1), (70, 4, 2), (67, 6, 2)],
+        [(72, 0, 2), (76, 2, 2), (79, 4, 2)],
+    ]
+    # Slide whistle swoops: (bar, start eighth, length in eighths, from Hz, to Hz).
+    slides = [(3, 6, 2, 620, 1250), (7, 6, 2, 1400, 700), (15, 4, 2, 700, 1500), (15, 6, 2, 1500, 800),
+              (23, 6, 2, 650, 1400)]
+
+    bass = np.zeros(n)
+    strum = np.zeros(n)
+    lead = np.zeros(n)
+    whistle = np.zeros(n)
+    kit = np.zeros(n)
+    sharp = 2 ** (12 / 1200)                     # the lead is 12 cents sharp: a little bit wrong
+    for b, name in enumerate(form):
+        root, fifth, chord = chords[name]
+        t0 = b * 4 * beat
+        if b in walks:
+            for q, m in enumerate(walks[b]):
+                add_at(bass, _l94_tuba(_l94_midi_hz(m), beat * 0.8), t0 + q * beat, circular=True)
+        else:
+            add_at(bass, _l94_tuba(_l94_midi_hz(root), beat * 0.9), t0, circular=True)
+            add_at(bass, _l94_tuba(_l94_midi_hz(fifth), beat * 0.9), t0 + 2 * beat, circular=True)
+        for q in (1, 3):
+            add_at(strum, _l94_banjo(chord, beat * 0.45, rng), t0 + q * beat + rng.uniform(0, 0.006), circular=True)
+            add_at(kit, _l94_brush(rng) * 0.8, t0 + q * beat, circular=True)
+        if b % 2 == 1:
+            add_at(kit, _l94_woodblock(rng), t0 + 3.5 * beat, circular=True)
+        for m, at, ln in melody[b]:
+            start = t0 + at * eighth + rng.uniform(-0.004, 0.006)
+            f = _l94_midi_hz(m) * sharp
+            note = _l94_xylophone(f * 2, ln * eighth) * 0.8 if b >= 16 else _l94_clarinet(f, ln * eighth * 0.92, rng)
+            add_at(lead, note, start, circular=True)
+    for b, at, ln, f0, f1 in slides:
+        add_at(whistle, _l94_slide_whistle(f0, f1, ln * eighth, rng), b * 4 * beat + at * eighth, circular=True)
+
+    x = (norm(lead) * 1.0 + norm(bass) * 0.85 + norm(strum) * 0.4 + norm(whistle) * 0.45 + norm(kit) * 0.22)
+    # A little slapback off the hills, then the record's own crackle (it plays through the horn too).
+    x = x + 0.18 * circ_conv(x, reverb_ir(rng, 0.6, 0.15, lp=3000, predelay=0.03))
+    crackle = clicks(rng, np.sort(rng.uniform(0, n / SR - 0.05, int(n / SR * 12))), n / SR, 1200, 5000, amp_pow=3.0)
+    hiss = periodic_noise(n, rng, lambda f: bp_gain(f, 1500, 6000, 1))
+    x = norm(x) + 0.06 * norm(crackle[:n]) + 0.012 * hiss
+    # Old horn loudspeaker: band-pass 400-3500 Hz with two horn resonances, softly overdriven.
+    horn = lambda f: bp_gain(f, 400, 3500, 2) * (1 + 1.3 * np.exp(-((f - 1100) / 260) ** 2)
+                                                 + 0.7 * np.exp(-((f - 2500) / 420) ** 2))
+    x = fft_filter(x, horn, circular=True)
+    x = dist(norm(x) * 0.8, 1.6)
+    x = fft_filter(x, lambda f: lp_gain(f, 4500, 2) * hp_gain(f, 250, 1), circular=True)
+    # Slow warble (0.5 Hz wow, 6 Hz flutter): whole cycles in 40 s, read circularly, so it loops.
+    t = np.arange(n) / SR
+    pos = t - 0.0035 / (2 * np.pi * 0.5) * np.cos(2 * np.pi * 0.5 * t) \
+            - 0.0007 / (2 * np.pi * 6.0) * np.cos(2 * np.pi * 6.0 * t)
+    idx = np.mod(pos * SR, n)
+    x = np.interp(idx, np.arange(n + 1), np.concatenate([x, x[:1]]))
+    path = SND / "level94" / "siren_song.ogg"
+    save_ogg(x, path, peak=0.7, loop=True)
+    y = sf.read(str(path))[0]
+    step = np.abs(np.diff(y)).mean()
+    print(f"siren_song: {len(y)} samples ({len(y) / SR:.3f} s); loop seam step {abs(y[-1] - y[0]):.4f} "
+          f"vs typical step {step:.4f}")
+
+
+L94_PROPS_TEXTURES = [tex_l94_siren, tex_l94_tv, tex_l94_vehicle]
+L94_PROPS_SOUNDS = [snd_l94_siren_song]
+
+
+# =============================================================================
+# Level 94 "Motion" world (World slice): felt grass in three mown shades, toy
+# dirt, smooth grey asphalt, painted-cardboard houses with oversized bricks,
+# bright kids'-TV interiors, lollipop trees, water towers, road signs and the
+# moulded clay door. A SUBTLE crafted look: soft, slightly over-saturated,
+# handmade. Run: python tools/gen_assets.py tex_l94_
+# =============================================================================
+
+L94_GRASS = {"light": (134, 206, 72), "mid": (110, 184, 60), "dark": (90, 162, 52)}
+L94_DIRT = (150, 100, 62)
+L94_CREAM = (238, 226, 192)
+L94_WALLPAPER = (242, 150, 176)
+
+
+def _l94_felt(seed, col) -> np.ndarray:
+    """Soft felt: fine fuzz, gentle mottling and a few lighter fibres. Seamless."""
+    rng = rng_for(seed)
+    img = fill(col, (S, S))
+    img = add_lum(img, fnoise(rng, beta=0.8, kmin=20) * 5)
+    img = add_lum(img, fnoise(rng, beta=2.4) * 4)
+    img = add_lum(img, blur(rng.normal(0, 1, (S, S)), 0.7) * 6)
+    fibres = blur((rng.random((S, S)) < 0.02) * 1.0, 0.6)
+    return add_lum(img, fibres * 30, (1.0, 1.05, 0.75))
+
+
+def _l94_dirt(seed) -> np.ndarray:
+    """Warm toy dirt like modelling clay: soft lumps, a few pebbles."""
+    rng = rng_for(seed)
+    img = add_lum(fill(L94_DIRT, (S, S)), fnoise(rng, beta=2.2) * 7 + rng.normal(0, 3, (S, S)))
+    lumps = blur(fnoise(rng, beta=1.0, kmin=6), 1.2)
+    img = add_lum(img, lumps * 6, (1.0, 0.9, 0.8))
+    pebbles = blur((rng.random((S, S)) < 0.006) * 1.0, 0.9)
+    return add_lum(img, pebbles * 70, (1.0, 0.95, 0.85))
+
+
+def _l94_fringed(base, top_img, edge_y, rng) -> np.ndarray:
+    """base with top_img hanging over it down to a soft wavy line around edge_y (tiles in x)."""
+    X, Y = grid()
+    wave = edge_y + 4 * np.sin(X * 2 * np.pi / 64) + 3 * np.clip(fnoise(rng, (1, S), beta=0.8), -1.5, 1.5)
+    img = lerp(base, top_img, (Y < wave).astype(float)[..., None])
+    return add_lum(img, -18 * np.exp(-((Y - wave) / 2.0) ** 2) * (Y >= wave))
+
+
+def tex_l94_grass() -> None:
+    # The hills are built from steps of whole and half blocks. With dirt on the sides every step
+    # showed a brown stripe and the hills looked like stepped pyramids; the reference hills are
+    # smooth green mounds. So the sides are the same felt, a little darker (they face away from the
+    # sun), with a faint darker seam along the bottom edge that reads as a mowing line.
+    _, Y = grid()
+    for i, (name, col) in enumerate(L94_GRASS.items()):
+        felt = _l94_felt(9400 + i, col)
+        save_png(felt, _blk(f"l94_grass_top_{name}"))
+        side = add_lum(felt, -14 - 8 * np.exp(-((S - 1 - Y) / 6.0) ** 2))
+        save_png(side, _blk(f"l94_grass_side_{name}"))
+        save_png(side, _blk(f"l94_grass_slab_side_{name}"))
+
+
+def tex_l94_ground() -> None:
+    save_png(_l94_dirt(9430), _blk("l94_dirt"))
+    # Tan footpath: packed dirt with small pebbles.
+    rng = rng_for(9431)
+    path = add_lum(fill((210, 176, 120), (S, S)), fnoise(rng, beta=2.0) * 6 + rng.normal(0, 3, (S, S)))
+    path = add_lum(path, blur((rng.random((S, S)) < 0.01) * 1.0, 0.8) * -50)
+    save_png(path, _blk("l94_path_top"))
+    save_png(_l94_fringed(_l94_dirt(9432), path, 14, rng), _blk("l94_path_side"))
+    save_png(_l94_fringed(_l94_dirt(9432), path, 64 + 8, rng), _blk("l94_path_slab_side"))
+    # Smooth grey asphalt, no lines at all.
+    rng = rng_for(9433)
+    asphalt = add_lum(fill((108, 108, 112), (S, S)), fnoise(rng, beta=2.6) * 3 + rng.normal(0, 3.5, (S, S)))
+    save_png(add_lum(asphalt, blur((rng.random((S, S)) < 0.01) * 1.0, 0.5) * 25), _blk("l94_asphalt"))
+    # Light concrete curb: smooth, a hairline joint every half block.
+    rng = rng_for(9434)
+    X, Y = grid()
+    curb = add_lum(fill((214, 212, 204), (S, S)), fnoise(rng, beta=2.4) * 3 + rng.normal(0, 2, (S, S)))
+    save_png(add_lum(curb, -22 * smoothstep(1.2, 0.3, np.abs(wrapd(X, 64)))), _blk("l94_curb"))
+    # Plaza paving: pale square stones with thin grout.
+    rng = rng_for(9435)
+    tone = np.kron(rng.normal(0, 5, (4, 4)), np.ones((32, 32)))
+    pave = add_lum(fill((224, 210, 180), (S, S)), tone + fnoise(rng, beta=2.2) * 3 + rng.normal(0, 2, (S, S)))
+    joint = np.minimum(np.abs(wrapd(X, 32)), np.abs(wrapd(Y, 32)))
+    save_png(over(pave, np.array([168, 156, 136]), smoothstep(1.5, 0.5, joint)), _blk("l94_paving"))
+    # Fountain basin: big cut stones, bevelled.
+    rng = rng_for(9436)
+    row = np.floor(Y / 32)
+    bx = (X + 32 * (row % 2)) % S
+    stone = add_lum(fill((180, 174, 162), (S, S)), np.kron(rng.normal(0, 6, (4, 2)), np.ones((32, 64)))
+                    + fnoise(rng, beta=2.0) * 4 + rng.normal(0, 2, (S, S)))
+    mortar = np.minimum(np.abs(wrapd(Y, 32)), np.abs(wrapd(bx, 64)))
+    stone = add_lum(stone, 14 * smoothstep(4, 1.5, mortar) * ((Y % 32) < 16))
+    save_png(over(stone, np.array([130, 124, 114]), smoothstep(1.6, 0.6, mortar)), _blk("l94_fountain_stone"))
+    # The king's glossy painted plaster: near-white with a soft sheen.
+    rng = rng_for(9437)
+    statue = add_lum(fill((240, 234, 216), (S, S)), fnoise(rng, beta=3.0) * 3 + 6 * np.sin(X / S * 2 * np.pi))
+    save_png(statue, _blk("l94_statue"))
+
+
+def tex_l94_trees_towers() -> None:
+    X, Y = grid()
+    # Lollipop leaves: soft round bright-green puffs.
+    rng = rng_for(9440)
+    leaves = fill((118, 198, 62), (S, S))
+    for _ in range(26):
+        cx, cy, r = rng.uniform(0, S), rng.uniform(0, S), rng.uniform(10, 20)
+        d = np.hypot(wrapd(X - cx, S), wrapd(Y - cy, S)) / r
+        leaves = add_lum(leaves, 14 * np.clip(1 - d, 0, 1) ** 0.7 - 10 * np.exp(-((d - 1) / 0.12) ** 2), (0.9, 1.0, 0.6))
+    save_png(add_lum(leaves, rng.normal(0, 2.5, (S, S))), _blk("l94_leaves"))
+    # Trunk: brown, vertical grain.
+    rng = rng_for(9441)
+    save_png(add_lum(fill((122, 82, 50), (S, S)), fnoise(rng, beta=1.4, aniso=(10, 1), kmin=2) * 8), _blk("l94_trunk"))
+    # Water tower steel.
+    rng = rng_for(9442)
+    leg = add_lum(fill((156, 160, 166), (S, S)), 12 * np.cos((X - 40) / S * 2 * np.pi) + rng.normal(0, 2, (S, S)))
+    save_png(leg, _blk("l94_tower_leg"))
+    tank = add_lum(fill((160, 166, 170), (S, S)), fnoise(rng, beta=1.6, aniso=(1, 8), kmin=2) * 4 + rng.normal(0, 2, (S, S)))
+    tank = add_lum(tank, -20 * smoothstep(1.4, 0.4, np.abs(wrapd(X, 32))) + 10 * smoothstep(3, 1.4, np.abs(wrapd(X - 2, 32))))
+    rivets = (np.hypot(wrapd(X - 4, 32), wrapd(Y - 8, 16)) < 1.6).astype(float)
+    tank = add_lum(tank, blur(rivets, 0.5) * 30)
+    save_png(add_lum(tank, -10 * (Y / S)), _blk("l94_tank"))
+    roof = add_lum(fill((112, 116, 122), (S, S)), fnoise(rng, beta=2.0) * 4 - 16 * smoothstep(1.2, 0.3, np.abs(wrapd(X, 16))))
+    save_png(roof, _blk("l94_tank_roof"))
+    # Lattice bracing: a steel X between top and bottom bars, transparent between.
+    bars = pil_mask(lambda d, k: (d.line((0, 0, 128 * k, 128 * k), fill=255, width=7 * k),
+                                  d.line((0, 128 * k, 128 * k, 0), fill=255, width=7 * k),
+                                  d.rectangle((0, 0, 128 * k, 8 * k), fill=255),
+                                  d.rectangle((0, 120 * k, 128 * k, 128 * k), fill=255)))
+    out = np.zeros((S, S, 4))
+    out[..., :3] = leg
+    out[..., 3] = np.where(bars >= 0.5, 255, 0)
+    save_png(out, _blk("l94_tower_brace"))
+
+
+def _l94_siding(seed) -> np.ndarray:
+    """Cream painted-cardboard siding: soft lap boards, a faint corrugated grain, paper fibres."""
+    rng = rng_for(seed)
+    X, Y = grid()
+    img = add_lum(fill(L94_CREAM, (S, S)), fnoise(rng, beta=1.2, aniso=(10, 1), kmin=3) * 2.5 + rng.normal(0, 1.8, (S, S)))
+    v = (Y % 32) / 32
+    img = img * (0.95 + 0.06 * v)[..., None]
+    img = add_lum(img, -24 * smoothstep(1.8, 0.3, Y % 32))
+    return add_lum(img, 2.0 * np.sin(X * 2 * np.pi / 8))
+
+
+def _l94_wallpaper(seed) -> np.ndarray:
+    """Bright pink nursery wallpaper with cream polka dots."""
+    rng = rng_for(seed)
+    X, Y = grid()
+    img = add_lum(fill(L94_WALLPAPER, (S, S)), fnoise(rng, beta=2.2) * 2.5 + rng.normal(0, 1.5, (S, S)))
+    dots = np.clip(5.5 - np.hypot(wrapd(X - 16, 32), wrapd(Y - 16, 32)), 0, 1)
+    dots = np.maximum(dots, np.clip(4.0 - np.hypot(wrapd(X, 32), wrapd(Y, 32)), 0, 1))
+    return over(img, np.array([255, 240, 214]), dots)
+
+
+def _l94_window(surround, seed) -> np.ndarray:
+    """Dark mullioned window (2 x 3 panes) in a thick white frame on the given surround."""
+    rng = rng_for(seed)
+    X, Y = grid()
+    white = add_lum(fill((246, 244, 238), (S, S)), rng.normal(0, 1.5, (S, S)))
+    img = over(surround, white, box((S, S), 14, 10, 114, 118))
+    glass = add_lum(fill((32, 38, 56), (S, S)), np.exp(-((X - Y * 0.7 - 30) / 10) ** 2) * 16, (0.8, 0.9, 1.0))
+    panes = np.zeros((S, S))
+    for x0, x1 in ((24, 60), (68, 104)):
+        for y0, y1 in ((20, 47), (53, 80), (86, 108)):
+            panes = np.maximum(panes, box((S, S), x0, y0, x1, y1))
+    img = over(img, glass, panes)
+    return add_lum(img, -30 * box((S, S), 10, 114, 118, 120))          # sill shadow
+
+
+def tex_l94_house_walls() -> None:
+    X, Y = grid()
+    siding = _l94_siding(9450)
+    save_png(siding, _blk("l94_siding"))
+    paper = _l94_wallpaper(9451)
+    save_png(paper, _blk("l94_wallpaper"))
+    rng = rng_for(9452)
+    skirting = add_lum(fill((248, 246, 240), (S, S)), rng.normal(0, 1.5, (S, S)) - 18 * smoothstep(1.5, 0.3, np.abs(Y - 100)))
+    save_png(lerp(paper, skirting, (Y > 100).astype(float)[..., None]), _blk("l94_wallpaper_base"))
+    save_png(_l94_window(siding, 9453), _blk("l94_window"))
+    save_png(_l94_window(paper, 9454), _blk("l94_window_inside"))
+    # Oversized bricks: two to a row, four rows, warm red-orange with soft cream mortar.
+    rng = rng_for(9455)
+    row = np.floor(Y / 32)
+    bx = (X + 32 * (row % 2)) % S
+    tone = rng.normal(0, 8, (4, 2))[row.astype(int) % 4, (bx // 64).astype(int) % 2]
+    brick = fill((190, 84, 58), (S, S)) + tone[..., None] * np.array([1.0, 0.6, 0.5])
+    brick = add_lum(brick, fnoise(rng, beta=2.0) * 4 + rng.normal(0, 2.5, (S, S)))
+    mortar = np.minimum(np.abs(wrapd(Y, 32)), np.abs(wrapd(bx, 64)))
+    brick = add_lum(brick, 12 * smoothstep(5, 2, mortar) * ((Y % 32) < 16) - 10 * smoothstep(5, 2, mortar) * ((Y % 32) >= 16))
+    save_png(over(brick, np.array([226, 214, 190]), smoothstep(2.6, 1.4, mortar)), _blk("l94_brick"))
+    rng = rng_for(9456)
+    trim = add_lum(fill((246, 244, 238), (S, S)), fnoise(rng, beta=1.4, aniso=(1, 10), kmin=2) * 2 + rng.normal(0, 1.2, (S, S)))
+    save_png(trim, _blk("l94_trim"))
+    for name, col, seed in (("red", (184, 60, 46), 9457), ("brown", (128, 82, 52), 9458)):
+        rng = rng_for(seed)
+        r = np.floor(Y / 16).astype(int)
+        sx = (X + 16 * (r % 2)) % S
+        tone = rng.normal(0, 6, (8, 4))[r % 8, (sx // 32).astype(int) % 4]
+        img = fill(col, (S, S)) + tone[..., None]
+        img = add_lum(img, rng.normal(0, 3, (S, S)))
+        img = img * (0.86 + 0.18 * ((Y % 16) / 16))[..., None]
+        img = add_lum(img, -26 * smoothstep(1.6, 0.3, Y % 16) - 18 * smoothstep(1.2, 0.3, np.abs(wrapd(sx, 32))) * ((Y % 16) > 3))
+        save_png(img, _blk(f"l94_roof_{name}"))
+    save_png(fill((0, 0, 0), (S, S)), _blk("l94_dark_void"))
+
+
+def tex_l94_doors() -> None:
+    """The toy house door (cheerful red, panels, round window) and the moulded clay door."""
+    shp = (2 * S, S)
+    X, Y = grid(shp)
+    rng = rng_for(9460)
+    img = add_lum(fill((206, 54, 50), shp), fnoise(rng, shp, beta=1.6, aniso=(1, 8), kmin=2) * 3 + rng.normal(0, 1.5, shp))
+    img = over(img, np.array([246, 244, 238]), 1 - box(shp, 8, 8, 120, 248))          # white frame
+    for x0, x1 in ((22, 58), (70, 106)):
+        for y0, y1 in ((132, 236),):
+            outer, inner = box(shp, x0, y0, x1, y1), box(shp, x0 + 5, y0 + 5, x1 - 5, y1 - 5)
+            img = add_lum(img, (outer - inner) * np.where(Y < y0 + 50, 18, -22) - 8 * inner)
+    window = supersample(shp, lambda x, y: np.hypot(x - 64, y - 64) < 30)
+    rim = supersample(shp, lambda x, y: np.hypot(x - 64, y - 64) < 36)
+    img = over(img, np.array([246, 244, 238]), rim)
+    img = over(img, np.array([34, 40, 58]), window)
+    img = add_lum(img, 20 * window * np.exp(-((X - Y * 0.6 - 30) / 8) ** 2))
+    img = over(img, np.array([238, 196, 80]), supersample(shp, lambda x, y: np.hypot(x - 100, y - 140) < 6))
+    save_png(img[:S], _blk("l94_house_door_top"))
+    save_png(img[S:], _blk("l94_house_door_bottom"))
+
+    # Clay: warm terracotta with ochre swirls, lumpy, thumb-printed, rough edges, like plasticine.
+    rng = rng_for(9461)
+    swirl = fnoise(rng, shp, beta=2.8)
+    img = lerp(np.array([196, 102, 62], float), np.array([216, 150, 72], float), smoothstep(-0.4, 0.8, swirl)[..., None])
+    lumps = blur(fnoise(rng, shp, beta=1.6, kmin=3), 2.0)
+    gy, gx = np.gradient(lumps)
+    img = add_lum(img, (-gx * 0.6 - gy * 0.8) * 60 + lumps * 6)                       # soft light from the top left
+    for _ in range(9):                                                                # thumb prints: little ridged ovals
+        cx, cy = rng.uniform(16, S - 16), rng.uniform(16, 2 * S - 16)
+        ang = rng.uniform(0, np.pi)
+        u = (X - cx) * np.cos(ang) + (Y - cy) * np.sin(ang)
+        v = -(X - cx) * np.sin(ang) + (Y - cy) * np.cos(ang)
+        r = np.hypot(u / 1.0, v / 1.35)
+        img = add_lum(img, np.where(r < 11, 7 * np.sin(r * 2.2) - 4, 0))
+    for x0, x1, y0, y1 in ((20, 58, 24, 112), (70, 108, 24, 112), (20, 58, 136, 236), (70, 108, 136, 236)):
+        wob = 2.5 * np.sin(Y / 9 + x0) + 2 * np.sin(X / 7 + y0)
+        inner = smoothstep(0, 3, np.minimum(np.minimum(X - x0, x1 - X), np.minimum(Y - y0, y1 - Y)) + wob)
+        img = add_lum(img, -14 * inner * (1 - inner) * 4 - 8 * inner)                  # pressed-in panels
+    edge = np.minimum(np.minimum(X, S - X), np.minimum(Y, 2 * S - Y)) + 2 * np.sin(Y / 6) + 2 * np.sin(X / 5)
+    img = add_lum(img, -30 * smoothstep(8, 1, edge))
+    knob = supersample(shp, lambda x, y: np.hypot(x - 100, (y - 140) * 1.1) < 8)
+    img = over(img, np.array([226, 168, 70]), knob)
+    img = add_lum(img, 30 * supersample(shp, lambda x, y: np.hypot(x - 97, y - 137) < 3))
+    save_png(img[:S], _blk("l94_clay_door_top"))
+    save_png(img[S:], _blk("l94_clay_door_bottom"))
+
+
+def tex_l94_interior() -> None:
+    X, Y = grid()
+    # Bright turquoise vinyl floor in big tiles, sprinkled with confetti specks.
+    rng = rng_for(9470)
+    floor = add_lum(fill((62, 188, 190), (S, S)), np.kron(rng.normal(0, 4, (2, 2)), np.ones((64, 64))) + rng.normal(0, 1.5, (S, S)))
+    floor = add_lum(floor, 16 * smoothstep(1.4, 0.4, np.minimum(np.abs(wrapd(X, 64)), np.abs(wrapd(Y, 64)))))
+    for col in ((250, 220, 80), (250, 120, 150), (255, 255, 255)):
+        specks = blur((rng.random((S, S)) < 0.004) * 1.0, 0.7)
+        floor = over(floor, np.array(col), np.clip(specks * 3, 0, 1))
+    save_png(floor, _blk("l94_floor"))
+
+    # Toy-road play rug, 3 x 3 blocks (384 px): green with a grey road loop, a crossing road,
+    # dashed white lines, a blue pond and little houses. Split into l94_rug_0..8 (row * 3 + column).
+    R = 3 * S
+    shp = (R, R)
+    RX, RY = grid(shp)
+    rng = rng_for(9471)
+    rug = add_lum(fill((104, 182, 84), shp), rng.normal(0, 3, shp) + fnoise(rng, shp, beta=1.0, kmin=30) * 4)
+    border = np.minimum(np.minimum(RX, R - RX), np.minimum(RY, R - RY))
+    rug = over(rug, np.array([236, 70, 60]), smoothstep(18.5, 17.5, border))
+    rug = over(rug, np.array([250, 214, 70]), smoothstep(9.5, 8.5, border))
+    loop = np.abs(np.maximum(np.abs(RX - R / 2) - 70, 0) ** 2 + np.maximum(np.abs(RY - R / 2) - 70, 0) ** 2) ** 0.5
+    ring_d = np.abs(np.where((np.abs(RX - R / 2) > 70) | (np.abs(RY - R / 2) > 70), loop, 0) - 50)
+    ring_d = np.where((np.abs(RX - R / 2) <= 70) & (np.abs(RY - R / 2) <= 70),
+                      np.minimum(120 - np.abs(RX - R / 2), 120 - np.abs(RY - R / 2)), ring_d)
+    cross = np.abs(RY - 300)
+    road_d = np.minimum(np.abs(ring_d), np.where(RX > 30, cross, 1e9))
+    road = smoothstep(17, 15, road_d)
+    rug = over(rug, np.array([96, 96, 104]), road)
+    dash_x = ((RX // 16) % 2 == 0) & (cross < 2)
+    rug = over(rug, np.array([250, 250, 246]), (dash_x & (RX > 30)).astype(float))
+    pond = supersample(shp, lambda x, y: np.hypot((x - 192) / 1.3, y - 192) < 30)
+    rug = over(rug, np.array([70, 150, 230]), pond)
+    for hx, hy, col in ((60, 60, (250, 230, 190)), (320, 50, (250, 230, 190)), (330, 200, (250, 200, 80)),
+                        (50, 200, (240, 140, 170)), (110, 340, (250, 230, 190))):
+        rug = over(rug, np.array(col), box(shp, hx - 12, hy - 8, hx + 12, hy + 14))
+        rug = over(rug, np.array([180, 60, 46]), pil_mask(lambda d, k, hx=hx, hy=hy: d.polygon(
+            [((hx - 15) * k, (hy - 8) * k), (hx * k, (hy - 20) * k), ((hx + 15) * k, (hy - 8) * k)], fill=255), shp))
+    for i in range(9):
+        r, c = divmod(i, 3)
+        save_png(rug[r * S:(r + 1) * S, c * S:(c + 1) * S], _blk(f"l94_rug_{i}"))
+
+    # Armchair: bright orange velvety fabric with buttons; the cushion a lighter tangerine.
+    rng = rng_for(9472)
+    fabric = add_lum(fill((232, 118, 42), (S, S)), fnoise(rng, beta=1.0, kmin=12) * 4 + fnoise(rng, beta=2.4) * 5)
+    buttons = np.hypot(wrapd(X - 32, 64), wrapd(Y - 32, 64))
+    fabric = add_lum(fabric, -26 * smoothstep(6, 1, buttons) + 10 * smoothstep(14, 8, buttons) * (buttons > 6))
+    save_png(fabric, _blk("l94_armchair"))
+    cushion = add_lum(fill((248, 162, 72), (S, S)), fnoise(rng, beta=1.0, kmin=12) * 4)
+    edge = np.minimum(np.minimum(X, S - X), np.minimum(Y, S - Y))
+    save_png(add_lum(cushion, -24 * smoothstep(6, 1, edge) + 12 * smoothstep(14, 6, edge) * (edge > 6)), _blk("l94_armchair_cushion"))
+    # The odd lamp: a sunny yellow shade with red spots, a teal base, a warm bulb.
+    rng = rng_for(9473)
+    shade = add_lum(fill((250, 214, 82), (S, S)), fnoise(rng, beta=2.0) * 3)
+    spots = np.clip(9 - np.hypot(wrapd(X - 20, 48), wrapd(Y - 20 - 24 * ((X // 48) % 2), 48)), 0, 1)
+    save_png(over(shade, np.array([226, 64, 60]), spots), _blk("l94_lamp_shade"))
+    save_png(add_lum(fill((58, 160, 172), (S, S)), 14 * np.cos((X - 40) / S * 2 * np.pi) + rng.normal(0, 1.5, (S, S))),
+             _blk("l94_lamp_base"))
+    save_png(add_lum(fill((255, 244, 210), (S, S)), fnoise(rng, beta=3.0) * 2), _blk("l94_lamp_bulb"))
+
+
+def tex_l94_road_signs() -> None:
+    """STOP (red octagon), NO OUTLET (yellow diamond) and the grey octagonal back of the STOP sign."""
+    rng = rng_for(9480)
+    c = 36
+    octagon = [(2 + c, 2), (126 - c, 2), (126, 2 + c), (126, 126 - c), (126 - c, 126), (2 + c, 126), (2, 126 - c), (2, 2 + c)]
+    inner = [(x + (6 if x < 64 else -6) * (1 if x in (2, 126) else 0.42), y + (6 if y < 64 else -6) * (1 if y in (2, 126) else 0.42))
+             for x, y in octagon]
+    m = pil_mask(lambda d, k: d.polygon([(x * k, y * k) for x, y in octagon], fill=255))
+    ring = m - pil_mask(lambda d, k: d.polygon([(x * k, y * k) for x, y in inner], fill=255))
+    img = fill((200, 34, 36), (S, S))
+    img = over(img, np.array([248, 248, 244]), np.clip(ring, 0, 1))
+    img = over(img, np.array([248, 248, 244]), _text("STOP", 64, 66, 44, maxw=100))
+    _finish_sign(img, m, rng, "stop")
+    img, m = _sign_base(rng, (246, 206, 40), (24, 22, 20), shape="diamond")
+    img = over(img, np.array([24, 22, 20]), _text("NO", 64, 52, 26, maxw=60))
+    img = over(img, np.array([24, 22, 20]), _text("OUTLET", 64, 80, 22, maxw=78))
+    _finish_sign(img, m, rng, "no_outlet")
+    back = _weather(_galvanised(rng, (150, 152, 154)), rng, 0.2, 4)
+    out = np.zeros((S, S, 4))
+    out[..., :3] = back
+    out[..., 3] = np.where(pil_mask(lambda d, k: d.polygon([(x * k, y * k) for x, y in octagon], fill=255)) >= 0.5, 255, 0)
+    save_png(out, _blk("sign_back_octagon"))
+
+
+L94_WORLD_TEXTURES = [tex_l94_grass, tex_l94_ground, tex_l94_trees_towers, tex_l94_house_walls, tex_l94_doors,
+                      tex_l94_interior, tex_l94_road_signs]
+
+
+# =============================================================================
+# Level 94 castle (Castle slice): the see-through glass mountain and its pale
+# opal ramp, the cartoon-white castle with red roofs, and the funhouse inside.
+# Outside keeps the toy look; inside it fades into photographic, slightly grimy
+# play-centre surfaces ("realistic but wrong"). Run: python tools/gen_assets.py tex_l94c_
+# =============================================================================
+
+def _l94c_tiles(rng, cols, n, grout=(70, 70, 74), gw=1.5, gloss=6.0) -> np.ndarray:
+    """n x n glossy vinyl tiles per block, colours picked as a checker from cols, dark grout, scuffs."""
+    X, Y = grid()
+    t = S / n
+    idx = ((X // t).astype(int) + (Y // t).astype(int)) % len(cols)
+    img = np.asarray(cols, float)[idx]
+    img = add_lum(img, fnoise(rng, beta=2.6) * 5 + rng.normal(0, 1.5, (S, S)))
+    img = add_lum(img, smoothstep(1.2, 2.2, fnoise(rng, beta=1.8, aniso=(6, 1))) * gloss)       # wax sheen
+    scuffs = smoothstep(1.5, 2.4, fnoise(rng, beta=1.2, aniso=(1, 5), kmin=4))
+    img = over(img, np.array([60, 58, 60]), scuffs * 0.35)
+    gx = np.minimum(X % t, t - X % t)
+    gy = np.minimum(Y % t, t - Y % t)
+    g = smoothstep(gw + 0.8, gw - 0.2, np.minimum(gx, gy))
+    return over(img, np.array(grout), g * 0.9)
+
+
+def _l94c_plastic(rng, col, ribs=0, gloss=22.0) -> np.ndarray:
+    """Moulded glossy plastic: smooth colour, soft highlight streaks, optional ribs every S/ribs px."""
+    X, Y = grid()
+    img = add_lum(fill(col, (S, S)), fnoise(rng, beta=3.0) * 4 + rng.normal(0, 0.8, (S, S)))
+    img = add_lum(img, smoothstep(0.9, 2.0, fnoise(rng, beta=2.2, aniso=(1, 8))) * gloss)
+    if ribs:
+        p = S / ribs
+        u = (Y % p) / p
+        img = add_lum(img, 18 * np.cos(u * 2 * np.pi) - 6)
+    return add_lum(img, -smoothstep(1.4, 2.4, fnoise(rng, beta=1.4, kmin=4)) * 18)   # grubby hand marks
+
+
+def _l94c_paper_sheet(img, rng, x0, y0, w, h, angle, sketch=True) -> np.ndarray:
+    """A sheet of slightly yellowed paper pinned on img (rotated rectangle), with pencil sketches."""
+    ca, sa = np.cos(angle), np.sin(angle)
+    cx, cy = x0 + w / 2, y0 + h / 2
+
+    def inside(x, y):
+        u = (x - cx) * ca + (y - cy) * sa
+        v = -(x - cx) * sa + (y - cy) * ca
+        return (np.abs(u) < w / 2) & (np.abs(v) < h / 2)
+    m = supersample((S, S), inside)
+    shadow = blur(m, 1.5)
+    img = add_lum(img, -26 * np.clip(shadow - m, 0, 1))
+    paper = add_lum(fill((232, 226, 208), (S, S)), fnoise(rng, beta=2.0) * 3)
+    img = over(img, paper, m)
+    if sketch:
+        strokes = []
+        for _ in range(int(rng.integers(3, 6))):
+            px, py = cx + rng.uniform(-w * 0.3, w * 0.3), cy + rng.uniform(-h * 0.3, h * 0.3)
+            r = rng.uniform(3, min(w, h) * 0.22)
+            n = int(rng.integers(5, 9))
+            strokes.append([(px + r * np.cos(a + angle) * rng.uniform(0.8, 1.2), py + r * np.sin(a + angle) * rng.uniform(0.8, 1.2))
+                            for a in np.linspace(0, 2 * np.pi * rng.uniform(0.7, 1.0), n)])
+        lines = marker(fill((0, 0, 0), (S, S)), rng, strokes, width=1.2, color=(255, 255, 255), alpha=1.0)[..., 0] / 255
+        img = over(img, np.array([96, 94, 100]), lines * m * 0.8)
+    pin = blob((S, S), cx, y0 + 3, 1.6, 1.6)
+    return over(img, np.array(rng.choice([[200, 40, 40], [40, 90, 200], [240, 200, 40]])), np.clip(pin * 1.4, 0, 1))
+
+
+def tex_l94c_mountain() -> None:
+    """l94_glass_mountain: faint blue-white glass with soft cloud/sky reflections (translucent RGBA).
+    l94_opal_path: pale pearly paving, 2x2 slabs per block with a faint opal colour play."""
+    rng = rng_for(9440)
+    X, Y = grid()
+    cloud = smoothstep(-0.2, 1.8, fnoise(rng, beta=2.8))
+    rgb = lerp(np.array([176, 204, 236]), np.array([246, 250, 255]), cloud[..., None])
+    rgb = add_lum(rgb, fnoise(rng, beta=1.4, aniso=(10, 1), kmin=3) * 5)                 # faint ripples
+    alpha = 58 + 70 * cloud + 10 * smoothstep(0.8, 2.0, fnoise(rng, beta=1.6, aniso=(8, 1)))
+    save_png(np.concatenate([rgb, alpha[..., None]], axis=2), _blk("l94_glass_mountain"))
+
+    img = fill((228, 226, 232), (S, S))
+    hue = np.stack([fnoise(rng, beta=3.2) for _ in range(3)], axis=-1) * 5                 # pink/green/blue sheen
+    img = img + hue + (fnoise(rng, beta=2.0) * 3)[..., None]
+    img = add_lum(img, rng.normal(0, 1.2, (S, S)))
+    t = S / 2
+    gx = np.minimum(X % t, t - X % t)
+    gy = np.minimum(Y % t, t - Y % t)
+    img = add_lum(img, -26 * smoothstep(2.2, 0.6, np.minimum(gx, gy)) + 8 * smoothstep(3.5, 2.2, np.minimum(gx, gy)) * (np.minimum(gx, gy) > 2.2))
+    save_png(img, _blk("l94_opal_path"))
+
+
+def tex_l94c_exterior() -> None:
+    """Cartoon outside: l94_castle_wall (smooth white plaster), l94_castle_window (narrow arched slit),
+    l94_castle_roof (bright red round-ended tiles)."""
+    rng = rng_for(9441)
+    X, Y = grid()
+    wall = _l94_paint(rng, (240, 238, 232), grain=3.0)
+    wall = add_lum(wall, -smoothstep(1.6, 2.6, fnoise(rng, beta=1.6, aniso=(1, 6))) * 8)    # faint rain marks
+    save_png(wall, _blk("l94_castle_wall"))
+
+    slit = supersample((S, S), lambda x, y: ((np.abs(x - 64) < 13) & (y > 30) & (y < 112))
+                       | (np.hypot(x - 64, y - 30) < 13))
+    frame = supersample((S, S), lambda x, y: ((np.abs(x - 64) < 19) & (y > 30) & (y < 118))
+                        | (np.hypot(x - 64, y - 30) < 19))
+    win = over(wall, np.array([206, 200, 190]), frame)                                     # stone surround
+    glass = lerp(np.array([70, 92, 128]), np.array([30, 38, 58]), smoothstep(30, 110, Y)[..., None])
+    glass = add_lum(glass, 30 * np.exp(-((X - Y * 0.3 - 40) / 4) ** 2))                   # glint
+    win = over(win, glass, slit)
+    save_png(win, _blk("l94_castle_window"))
+
+    roof = fill((204, 44, 38), (S, S))
+    row = 16
+    yy = Y % row
+    shift = ((Y // row) % 2) * 8
+    xx = (X + shift) % 16
+    curve = np.hypot(xx - 8, np.maximum(yy - 8, 0) * 1.0)
+    roof = add_lum(roof, -38 * smoothstep(6.0, 8.0, curve))                                # rounded tile ends
+    roof = add_lum(roof, 22 * (1 - yy / row) - 8)
+    roof = add_lum(roof, fnoise(rng, beta=2.4) * 5)
+    save_png(roof, _blk("l94_castle_roof"))
+
+
+def tex_l94c_stone_light() -> None:
+    """l94_castle_stone: real grey ashlar (2 courses per block), l94_red_carpet: worn velvet pile,
+    l94_throne_light: pure white, l94_castle_lamp: bright square ceiling light in a metal frame."""
+    rng = rng_for(9442)
+    X, Y = grid()
+    st = _smooth_concrete(rng, (132, 130, 126), mottle=7.0, fine=2.0)
+    st = _pores(st, rng, density=0.008)
+    course = (Y // 64).astype(int)
+    xs = (X + course * 48) % 96
+    joint = np.minimum(np.minimum(Y % 64, 64 - Y % 64), np.minimum(xs, 96 - xs))
+    blockt = np.floor((X + course * 48) / 96) + course * 7
+    st = add_lum(st, (np.sin(blockt * 12.9898) * 43758.5453 % 1 - 0.5) * 10)
+    st = over(st, np.array([86, 84, 82]), smoothstep(2.4, 0.8, joint))
+    save_png(st, _blk("l94_castle_stone"))
+
+    carpet = add_lum(fill((138, 18, 26), (S, S)), rng.normal(0, 5, (S, S)) + fnoise(rng, beta=2.0) * 6)
+    wear = smoothstep(0.6, 2.0, fnoise(rng, beta=2.6, aniso=(1, 3)))
+    carpet = over(carpet, np.array([110, 40, 44]), wear * 0.5)
+    save_png(carpet, _blk("l94_red_carpet"))
+
+    save_png(add_lum(fill((255, 255, 255), (S, S)), -np.abs(fnoise(rng, beta=3.0)) * 1.5), _blk("l94_throne_light"))
+
+    lamp = _galvanised(rng, (176, 178, 182))
+    core = box((S, S), 10, 10, S - 10, S - 10, soft=1.0)
+    glow = lerp(np.array([255, 255, 250]), np.array([236, 240, 246]), smoothstep(20, 54, np.maximum(np.abs(X - 64), np.abs(Y - 64)))[..., None])
+    lamp = over(lamp, glow, core)
+    save_png(lamp, _blk("l94_castle_lamp"))
+
+
+def tex_l94c_floors() -> None:
+    """Funhouse floors (photo): l94_checker_floor blue/yellow vinyl, l94_stripe_path red/white bands
+    across the path, l94_star_tile, l94_disc_floor, l94_ring_floor, l94_play_mat foam puzzle tiles,
+    l94_play_carpet (upper-floor carpet with confetti flecks)."""
+    rng = rng_for(9443)
+    X, Y = grid()
+    save_png(_l94c_tiles(rng, [(40, 66, 156), (230, 182, 44)], 2), _blk("l94_checker_floor"))
+
+    band = ((Y // 32) % 2).astype(int)
+    stripes = np.asarray([(196, 34, 42), (236, 230, 216)], float)[band]
+    stripes = add_lum(stripes, fnoise(rng, beta=2.6) * 5 + rng.normal(0, 1.5, (S, S)))
+    stripes = add_lum(stripes, smoothstep(1.2, 2.2, fnoise(rng, beta=1.8, aniso=(6, 1))) * 6)
+    stripes = over(stripes, np.array([70, 64, 64]), smoothstep(1.5, 2.4, fnoise(rng, beta=1.2, kmin=4)) * 0.3)
+    save_png(stripes, _blk("l94_stripe_path"))
+
+    disc = _l94c_tiles(rng, [(232, 170, 44)], 1, grout=(150, 110, 40), gw=0.6)
+    save_png(disc, _blk("l94_disc_floor"))
+    save_png(_l94c_tiles(rng, [(46, 146, 76)], 1, grout=(30, 90, 50), gw=0.6), _blk("l94_ring_floor"))
+    points = [(64 + (50 if i % 2 == 0 else 20) * np.cos(-np.pi / 2 + i * np.pi / 5),
+               66 + (50 if i % 2 == 0 else 20) * np.sin(-np.pi / 2 + i * np.pi / 5)) for i in range(10)]
+    star = pil_mask(lambda d, k: d.polygon([(x * k, y * k) for x, y in points], fill=255))
+    tile = over(disc, np.array([200, 36, 44]), star)
+    save_png(tile, _blk("l94_star_tile"))
+
+    mat_cols = [(208, 50, 46), (44, 96, 196), (50, 156, 74), (236, 196, 50)]
+    q = ((X // 64).astype(int) + 2 * (Y // 64).astype(int)) % 4
+    mat = np.asarray(mat_cols, float)[q]
+    mat = add_lum(mat, rng.normal(0, 3.5, (S, S)) + fnoise(rng, beta=2.0) * 4)              # foam texture
+    gx = np.minimum(X % 64, 64 - X % 64)
+    gy = np.minimum(Y % 64, 64 - Y % 64)
+    nub = (np.hypot(gx, (Y % 64) - 32) < 7) | (np.hypot((X % 64) - 32, gy) < 7)
+    seam = (np.minimum(gx, gy) < 1.2) & ~nub
+    mat = add_lum(mat, -45 * seam)
+    save_png(mat, _blk("l94_play_mat"))
+
+    carpet = add_lum(fill((70, 80, 108), (S, S)), rng.normal(0, 6, (S, S)) + fnoise(rng, beta=2.2) * 5)
+    for col in ((220, 60, 60), (240, 200, 60), (70, 170, 90), (230, 230, 230)):
+        fleck = blur((rng.random((S, S)) < 0.004) * 1.0, 0.5)
+        carpet = over(carpet, np.array(col), np.clip(fleck * 3, 0, 1))
+    save_png(carpet, _blk("l94_play_carpet"))
+
+
+def tex_l94c_walls() -> None:
+    """l94_play_wall (scuffed teal paint), l94_play_ceiling (stained acoustic tiles), l94_play_pillar
+    (red with yellow bands) and its porthole version, l94_play_pipe(+_end) green painted duct."""
+    rng = rng_for(9444)
+    X, Y = grid()
+    wall = _smooth_concrete(rng, (120, 184, 198), mottle=3.0, fine=0.8)
+    smudge = smoothstep(1.2, 2.4, fnoise(rng, beta=1.6, kmin=3))
+    wall = over(wall, np.array([90, 120, 126]), smudge * 0.35)
+    chips = blur((rng.random((S, S)) < 0.0015) * 1.0, 0.8)
+    wall = over(wall, np.array([210, 210, 204]), np.clip(chips * 4, 0, 1))
+    save_png(wall, _blk("l94_play_wall"))
+
+    ceil = _smooth_concrete(rng, (214, 210, 200), mottle=3.0, fine=1.0)
+    ceil = add_lum(ceil, -blur((rng.random((S, S)) < 0.05) * 1.0, 0.5) * 30)            # pinholes
+    t = 64
+    g = np.minimum(np.minimum(X % t, t - X % t), np.minimum(Y % t, t - Y % t))
+    ceil = over(ceil, np.array([120, 118, 112]), smoothstep(1.8, 0.4, g))
+    stain = smoothstep(1.6, 2.4, fnoise(rng, beta=2.8))
+    ceil = over(ceil, np.array([170, 140, 90]), stain * 0.5)
+    save_png(ceil, _blk("l94_play_ceiling"))
+
+    band = np.where((X % 64 > 22) & (X % 64 < 42), 1, 0)
+    pil = np.asarray([(198, 34, 40), (238, 192, 44)], float)[band]
+    pil = add_lum(pil, fnoise(rng, beta=2.4) * 4 + rng.normal(0, 1.2, (S, S)))
+    pil = add_lum(pil, smoothstep(1.4, 2.4, fnoise(rng, beta=1.2, aniso=(1, 6))) * 10)    # varnish sheen
+    pil = over(pil, np.array([90, 70, 60]), smoothstep(1.6, 2.6, fnoise(rng, beta=1.4, kmin=4)) * 0.4)
+    save_png(pil, _blk("l94_play_pillar"))
+    r = np.hypot(X - 64, Y - 64)
+    port = over(pil, np.array([30, 30, 34]), smoothstep(38, 36, r))
+    port = over(port, np.array([236, 232, 222]), smoothstep(33, 31, r))
+    port = over(port, np.array([200, 40, 46]), smoothstep(22, 20, r))
+    port = add_lum(port, 40 * np.exp(-((X - 56) ** 2 + (Y - 54) ** 2) / 40) * (r < 21))
+    save_png(port, _blk("l94_play_pillar_porthole"))
+
+    pipe = _smooth_concrete(rng, (64, 158, 66), mottle=2.5, fine=0.8)
+    pipe = pipe * _round_shade(Y, 24, 104, outside=None)[..., None]
+    flange = np.minimum(X, S - X) < 6
+    pipe = add_lum(pipe, -26 * flange)
+    save_png(pipe, _blk("l94_play_pipe"))
+    end = _smooth_concrete(rng, (54, 140, 58), mottle=2.5, fine=0.8)
+    end = add_lum(end, -30 * smoothstep(30, 24, np.hypot(X - 64, Y - 64)))
+    save_png(end, _blk("l94_play_pipe_end"))
+
+
+def tex_l94c_play() -> None:
+    """l94_ball_pit (packed glossy balls), l94_climbing_frame (padded bars round a rope net, cutout),
+    l94_slide (yellow plastic), l94_play_tube (ribbed blue plastic)."""
+    rng = rng_for(9445)
+    X, Y = grid()
+    img = fill((36, 36, 44), (S, S))
+    depth = np.full((S, S), -1e9)
+    cols = [(214, 40, 40), (240, 200, 40), (40, 100, 210), (50, 170, 80), (240, 120, 30), (180, 60, 170)]
+    for _ in range(170):
+        cx, cy = rng.uniform(0, S, 2)
+        rr = rng.uniform(9, 12)
+        z = rng.uniform(0, 1)
+        dx = wrapd(X - cx, S)
+        dy = wrapd(Y - cy, S)
+        d = np.hypot(dx, dy) / rr
+        hit = (d < 1) & (z > depth)
+        if not hit.any():
+            continue
+        nz = np.sqrt(np.clip(1 - d ** 2, 0, 1))
+        light = 0.45 + 0.55 * np.clip((-dx * 0.4 - dy * 0.5) / rr + nz * 0.8, 0, 1)
+        c = np.asarray(cols[int(rng.integers(len(cols)))], float)
+        shade = c * light[..., None] + 90 * np.exp(-(((dx + rr * 0.35) ** 2 + (dy + rr * 0.4) ** 2) / (rr * 0.18) ** 2))[..., None]
+        img = np.where(hit[..., None], shade, img)
+        depth = np.where(hit, z, depth)
+    save_png(img, _blk("l94_ball_pit"))
+
+    rgba = np.zeros((S, S, 4))
+    net_u = np.abs(wrapd(X + Y, 32))
+    net_v = np.abs(wrapd(X - Y, 32))
+    net = (np.minimum(net_u, net_v) < 2.0)
+    rope = add_lum(fill((222, 214, 190), (S, S)), rng.normal(0, 8, (S, S)))
+    rgba[..., :3] = rope
+    rgba[..., 3] = np.where(net, 255, 0)
+    edge = np.minimum(np.minimum(X, S - X), np.minimum(Y, S - Y))
+    bar = edge < 12
+    bar_col = np.where((np.minimum(X, S - X) < 12)[..., None], np.array([214, 44, 44.]), np.array([40, 96, 206.]))
+    pad = bar_col * (0.75 + 0.25 * np.sin(np.clip(edge / 12, 0, 1) * np.pi))[..., None]
+    rgba[..., :3] = np.where(bar[..., None], pad, rgba[..., :3])
+    rgba[..., 3] = np.where(bar, 255, rgba[..., 3])
+    save_png(rgba, _blk("l94_climbing_frame"))
+
+    save_png(_l94c_plastic(rng, (238, 194, 42)), _blk("l94_slide"))
+    save_png(_l94c_plastic(rng, (44, 110, 204), ribs=8), _blk("l94_play_tube"))
+
+
+def tex_l94c_studio() -> None:
+    """Animation studio: l94_studio_wood, l94_desk_paper (drawing board with a sketch), l94_sketch_wall
+    (sheets pinned on the play wall), l94_studio_table_top (green model-board with grey streets),
+    l94_studio_table_side, and the miniature town: l94_mini_house_front/_side, l94_mini_roof,
+    l94_mini_leaves, l94_mini_trunk, l94_mini_stone, l94_mini_water."""
+    rng = rng_for(9446)
+    X, Y = grid()
+    wood = _wood(rng, np.array([196, 160, 112]), horizontal=True)
+    save_png(wood, _blk("l94_studio_wood"))
+    save_png(_l94c_paper_sheet(wood, rng, 14, 12, 100, 104, 0.04), _blk("l94_desk_paper"))
+
+    wall = np.asarray(Image.open(_blk("l94_play_wall")).convert("RGB"), float)
+    for (x0, y0, w, h, a) in ((6, 10, 40, 52, -0.06), (54, 6, 44, 56, 0.05), (20, 70, 46, 50, 0.03), (78, 66, 40, 54, -0.08)):
+        wall = _l94c_paper_sheet(wall, rng, x0, y0, w, h, a)
+    save_png(wall, _blk("l94_sketch_wall"))
+
+    board = add_lum(fill((84, 138, 70), (S, S)), rng.normal(0, 4, (S, S)) + fnoise(rng, beta=2.2) * 5)
+    road = (np.abs(X - 64) < 8) | (np.abs(Y - 64) < 8)
+    board = over(board, np.array([120, 120, 124]), road * 1.0)
+    board = add_lum(board, 30 * ((np.abs(X - 64) < 0.8) & (np.abs(Y - 64) > 8) | (np.abs(Y - 64) < 0.8) & (np.abs(X - 64) > 8)))
+    save_png(board, _blk("l94_studio_table_top"))
+    side = _wood(rng, np.array([120, 84, 52]), horizontal=True)
+    side = add_lum(side, -20 * (Y < 6) + 10 * ((Y >= 6) & (Y < 9)))
+    save_png(side, _blk("l94_studio_table_side"))
+
+    front = _l94_paint(rng, (236, 228, 204), grain=3.0)
+    front = over(front, np.array([150, 70, 50]), (Y > 112) * 1.0)                        # brick band
+    front = over(front, np.array([150, 40, 40]), box((S, S), 54, 72, 74, 112))           # door
+    for wx in (18, 92):
+        front = over(front, np.array([250, 250, 246]), box((S, S), wx - 2, 56, wx + 20, 82))
+        front = over(front, np.array([60, 76, 98]), box((S, S), wx, 58, wx + 18, 80))
+    save_png(front, _blk("l94_mini_house_front"))
+    side = _l94_paint(rng, (236, 228, 204), grain=3.0)
+    side = over(side, np.array([150, 70, 50]), (Y > 112) * 1.0)
+    side = over(side, np.array([250, 250, 246]), box((S, S), 52, 56, 76, 84))
+    side = over(side, np.array([60, 76, 98]), box((S, S), 54, 58, 74, 82))
+    save_png(side, _blk("l94_mini_house_side"))
+    roof = add_lum(fill((170, 52, 40), (S, S)), -30 * ((Y % 16) < 2) + fnoise(rng, beta=2.2) * 5)
+    save_png(roof, _blk("l94_mini_roof"))
+    leaves = add_lum(fill((60, 130, 56), (S, S)), blur(rng.normal(0, 14, (S, S)), 1.2) + fnoise(rng, beta=1.6, kmin=4) * 10)
+    save_png(leaves, _blk("l94_mini_leaves"))
+    save_png(_wood(rng, np.array([100, 70, 44]), horizontal=False), _blk("l94_mini_trunk"))
+    save_png(_smooth_concrete(rng, (196, 192, 186), mottle=4.0, fine=1.2), _blk("l94_mini_stone"))
+    water = add_lum(fill((206, 206, 186), (S, S)), fnoise(rng, beta=2.0, aniso=(1, 1)) * 6)
+    save_png(water, _blk("l94_mini_water"))
+
+
+L94_CASTLE_TEXTURES = [tex_l94c_mountain, tex_l94c_exterior, tex_l94c_stone_light, tex_l94c_floors,
+                       tex_l94c_walls, tex_l94c_play, tex_l94c_studio]
+
+
+# =============================================================================
+# Level 94 "Motion" sky (Sky slice): the big painted clouds and the far-off
+# castle on its glass mountain that client/Level94Sky draws in the sky, the soft
+# wind of the hills (the biome's ambient loop), very faint synthetic birdsong by
+# day and the distant cartoon laughter at night (client/Level94Atmosphere).
+# Run: python tools/gen_assets.py l94_sky l94_castle_far snd_l94_wind snd_l94_birds snd_l94_laugh
+# =============================================================================
+
+def _l94_env(name: str):
+    return TEX / "environment" / f"{name}.png"
+
+
+def _l94_save_sky(img, name: str) -> None:
+    """Saves a sky picture plus a .mcmeta asking for smooth (blurred) filtering and clamped edges,
+    because the sky draws these much bigger than their pixels."""
+    path = _l94_env(name)
+    save_png(img, path)
+    path.with_name(path.name + ".mcmeta").write_text('{"texture": {"blur": true, "clamp": true}}\n')
+
+
+def tex_l94_sky_clouds() -> None:
+    """Four big fluffy painted cumulus clouds, l94_cloud_0..3 (512x256, see-through round them).
+
+    Each is a heap of soft round puffs on a flat base, painted back to front: bright white where
+    the sun catches the top of each puff, a soft blue-grey underneath and a faint darker rim where
+    one puff sits in front of another, like a painted theatre backdrop. The sky tints them (orange
+    at dusk, dark at night) with the vertex colour."""
+    W, H = 512, 256
+    X, Y = grid((H, W))
+    white = np.array([255.0, 255.0, 255.0])
+    shade = np.array([186.0, 200.0, 224.0])
+    for i in range(4):
+        rng = rng_for(9490 + i)
+        base_y = H * rng.uniform(0.74, 0.8)
+        width = rng.uniform(0.62, 0.8) * W
+        puffs = []
+        for _ in range(int(rng.integers(9, 14))):
+            u = rng.uniform(-0.5, 0.5)
+            cx = W / 2 + u * width
+            mid = 1.0 - abs(u) * 2.0                       # bigger puffs in the middle: a dome
+            r = rng.uniform(26, 40) + 56 * mid * rng.uniform(0.55, 1.0)
+            cy = base_y - r * rng.uniform(0.35, 0.8)
+            puffs.append((cy, cx, r))
+        # Higher puffs are further back: paint them first.
+        puffs.sort(key=lambda p: p[0])
+        rgb = np.broadcast_to(shade, (H, W, 3)).copy()   # see-through parts keep the cloud colour (no dark fringe)
+        alpha = np.zeros((H, W))
+        for cy, cx, r in puffs:
+            d = np.hypot(X - cx, Y - cy) / r
+            cover = smoothstep(1.0, 0.9, d) * smoothstep(base_y + 3, base_y - 6, Y)   # flat bottom
+            lit = smoothstep(0.75, -0.6, (Y - cy) / r + 0.25 * (X - cx) / r)          # sun up and to the right
+            col = lerp(shade, white, lit[..., None])
+            col = col - 26 * smoothstep(0.7, 1.0, d)[..., None] * (1 - lit[..., None])  # soft rim
+            rgb = lerp(rgb, col, cover[..., None])
+            alpha = alpha + (1 - alpha) * cover
+        # The base is in its own shadow; a little paper grain so it reads as painted.
+        rgb = rgb - 18 * smoothstep(base_y - 40, base_y, Y)[..., None]
+        rgb = rgb + (fnoise(rng, (H, W), beta=2.6) * 3.0)[..., None]
+        alpha = blur(alpha, 1.2)
+        img = np.concatenate([np.clip(rgb, 0, 255), (np.clip(alpha, 0, 1) * 255)[..., None]], axis=2)
+        _l94_save_sky(img, f"l94_cloud_{i}")
+
+
+def tex_l94_castle_far() -> None:
+    """The castle on its glass mountain as seen from far away: l94_castle_far.png (256x352).
+
+    2 px per block: the picture is 128 blocks wide (the mountain's foot, radius 64) and covers
+    y40 (bottom row, the ground) to y216 (top), so client/Level94Sky can size it from the real
+    distance. The mountain is faint, see-through pale-blue glass that curves up to the flat top at
+    y150 (radius 24); on it stands a white tiered castle with red pointed roofs, lit from the right."""
+    W, H = 256, 352
+    k = 4                                          # drawn at 4x, then shrunk (anti-aliasing)
+
+    def px(x_block, y_block):
+        """Block offset from the centre / block height -> pixel position at k x size."""
+        return ((W / 2 + x_block * 2) * k, (H - (y_block - 40) * 2) * k)
+
+    # --- the glass mountain (numpy, in pixels) ---
+    X, Y = grid((H, W))
+    yb = 216 - Y / 2                                   # block height of each row
+    t = np.clip((yb - 40) / 110, 0, 1)
+    radius = 24 + 40 * (1 - t) ** 1.35                 # concave sides, flat top at y150
+    xb = (X - W / 2) / 2
+    inside = smoothstep(1.0, -1.0, np.abs(xb) - radius) * (yb <= 150.5) * (yb >= 40)
+    side = np.clip(xb / np.maximum(radius, 1), -1, 1)  # -1 left edge .. 1 right edge
+    glass = lerp(np.array([118, 158, 204]), np.array([214, 232, 248]), smoothstep(-0.9, 0.7, side)[..., None])
+    rng = rng_for(9495)
+    streaks = smoothstep(0.6, 1.8, blur(fnoise(rng, (H, W), beta=3.0, aniso=(1, 3)), 2.0))   # cloud reflections
+    glass = lerp(glass, np.array([246, 250, 255]), (streaks * 0.6)[..., None])
+    edge = smoothstep(0.75, 1.0, np.abs(side))          # glass looks thicker at its rims
+    a_mtn = inside * (0.26 + 0.26 * edge + 0.18 * streaks + 0.12 * smoothstep(146, 150, yb))
+    img = np.concatenate([glass, (np.clip(a_mtn, 0, 1) * 255)[..., None]], axis=2)
+
+    # --- the castle (PIL) ---
+    castle = Image.new("RGBA", (W * k, H * k), (0, 0, 0, 0))
+    d = ImageDraw.Draw(castle)
+    wall_lit, wall_dark = (246, 244, 238, 255), (204, 206, 214, 255)
+    roof_lit, roof_dark = (214, 46, 40, 255), (158, 30, 32, 255)
+    window = (70, 80, 104, 255)
+
+    def block(x0, x1, y0, y1):
+        """A white wall section from block x0..x1 (offset from the centre), heights y0..y1, shaded
+        on its left third (the sun is to the right)."""
+        mid = x0 + (x1 - x0) * 0.33
+        d.rectangle([*px(x0, y1), *px(x1, y0)], fill=wall_lit)
+        d.rectangle([*px(x0, y1), *px(mid, y0)], fill=wall_dark)
+
+    def roof(x0, x1, y0, y1):
+        """A red pointed roof from the eave (y0) to the tip (y1), its left half in shade."""
+        cx = (x0 + x1) / 2
+        d.polygon([px(x0 - 0.6, y0), px(cx, y1), px(x1 + 0.6, y0)], fill=roof_lit)
+        d.polygon([px(x0 - 0.6, y0), px(cx, y1), px(cx, y0)], fill=roof_dark)
+
+    def windows(x0, x1, y, count, h=2.0):
+        step = (x1 - x0) / (count + 1)
+        for j in range(1, count + 1):
+            wx = x0 + step * j
+            d.rectangle([*px(wx - 0.6, y + h), *px(wx + 0.6, y)], fill=window)
+
+    block(-19, 19, 150, 172)                           # the big lower storey
+    windows(-19, 19, 158, 7, 3)
+    block(-13, 13, 172, 188)                           # second tier
+    windows(-13, 13, 178, 5)
+    block(-8, 8, 188, 199)                             # third tier
+    windows(-8, 8, 192, 3)
+    block(-4, 4, 199, 205)                             # the top turret
+    roof(-5, 5, 205, 215.5)
+    for x in (-19, 15):                                # corner towers with their own roofs
+        block(x, x + 4, 150, 180)
+        roof(x, x + 4, 180, 189)
+    for x in (-12, 9):                                 # little turrets on the second tier
+        block(x, x + 3, 172, 192)
+        roof(x, x + 3, 192, 199)
+    d.rectangle([*px(-3, 158), *px(3, 150)], fill=(96, 70, 56, 255))   # the gate
+    castle = castle.resize((W, H), Image.LANCZOS)
+    c = np.asarray(castle, float)
+    ca = c[..., 3:4] / 255
+    out = img.copy()
+    out[..., :3] = img[..., :3] * (1 - ca) + c[..., :3] * ca
+    out[..., 3] = np.clip(img[..., 3] + (255 - img[..., 3]) * ca[..., 0], 0, 255)
+    _l94_save_sky(out, "l94_castle_far")
+
+
+def snd_l94_wind() -> None:
+    """16 s loop: the near-silent hills. A soft, airy breeze that swells and settles in slow
+    gusts, with a faint high whistle on the strongest ones. Kept very quiet and smooth."""
+    rng = rng_for(9496)
+    T = 16.0
+    n = int(T * SR)
+    gust = drift(n, rng, 0.55, 0.05, 0.18)
+    air = periodic_noise(n, rng, lambda f: bp_gain(f, 120, 900, 2) / np.maximum(f, 60) ** 0.3) * gust
+    low = periodic_noise(n, rng, lambda f: bp_gain(f, 40, 160, 2)) * drift(n, rng, 0.3, 0.05, 0.15)
+    whistle = periodic_noise(n, rng, lambda f: bp_gain(f, 1300, 1500, 4)) * np.clip(gust - 1.2, 0, None)
+    x = norm(air) + 0.35 * norm(low) + 0.05 * norm(whistle)
+    save_ogg(x, SND / "level94" / "wind.ogg", peak=0.3, loop=True)
+
+
+def _l94_chirp(f0, f1, dur, rng) -> np.ndarray:
+    """One clean, slightly too-perfect sine chirp gliding from f0 to f1 Hz (a toy bird)."""
+    t = t_axis(dur)
+    f = f0 * (f1 / f0) ** (t / dur)
+    f = f * (1 + 0.04 * np.sin(2 * np.pi * rng.uniform(25, 40) * t))      # a little warble
+    phase = 2 * np.pi * np.cumsum(f) / SR
+    return np.sin(phase) * np.sin(np.pi * t / dur) ** 2
+
+
+def snd_l94_birds() -> None:
+    """Three short phrases of faint synthetic birdsong (birds1..3), played far off by day: pure
+    sine chirps and trills, too clean and too regular to be real birds, in a little open-air echo."""
+    phrases = [
+        # (seed, [(start, f0, f1, dur), ...])
+        (9497, [(0.0, 3400, 2600, 0.09), (0.16, 3400, 2600, 0.09), (0.32, 3600, 2400, 0.14)]),
+        (9498, [(0.0, 2400, 3800, 0.12), (0.30, 4200, 3000, 0.07), (0.40, 4200, 3000, 0.07),
+                (0.50, 4200, 3000, 0.07), (0.60, 4200, 3000, 0.07)]),
+        (9499, [(0.0, 3000, 3000, 0.25), (0.34, 2600, 3400, 0.10), (0.50, 3400, 2200, 0.18)]),
+    ]
+    for i, (seed, notes) in enumerate(phrases, 1):
+        rng = rng_for(seed)
+        dur = 1.8
+        x = np.zeros(int(dur * SR))
+        for start, f0, f1, ln in notes:
+            add_at(x, _l94_chirp(f0, f1, ln, rng), start + 0.05, circular=False)
+        wet = conv(x, reverb_ir(rng, 1.2, 0.25, lp=5000, predelay=0.03))[:len(x)]
+        x = norm(x) + 0.3 * norm(wet)
+        save_ogg(x, SND / "level94" / f"birds{i}.ogg", peak=0.5, fade_out=0.2)
+
+
+def snd_l94_laugh() -> None:
+    """Three takes of distant cartoon laughter at night (laugh1..3), echoing over the hills.
+
+    Entirely synthetic (no recorded voice): an additive formant voice says "hoo", "hoo", "ha"
+    in a bouncy cartoon rhythm, the pitch wobbling like a warped record. Then it is pushed far
+    away: everything above ~1.2 kHz rolled off, a long hazy reverb and two slap-back echoes
+    off the hills, so it's barely a voice at all."""
+    hoo = [(320, 90, 1.0), (800, 140, 0.45), (2300, 300, 0.05)]
+    ha = [(760, 120, 1.0), (1220, 160, 0.7), (2500, 300, 0.12)]
+    takes = [
+        # (seed, base pitch Hz, [(vowel, start s, length s, pitch multiplier), ...])
+        (9500, 240, [(hoo, 0.0, 0.20, 1.0), (hoo, 0.30, 0.20, 1.12), (ha, 0.62, 0.55, 1.35)]),
+        (9501, 200, [(ha, 0.0, 0.18, 1.2), (ha, 0.26, 0.18, 1.1), (ha, 0.52, 0.18, 1.0), (hoo, 0.84, 0.6, 0.85)]),
+        (9502, 280, [(hoo, 0.0, 0.16, 1.0), (hoo, 0.24, 0.16, 1.06), (hoo, 0.48, 0.16, 1.12), (ha, 0.76, 0.7, 1.45)]),
+    ]
+    for i, (seed, base, syllables) in enumerate(takes, 1):
+        rng = rng_for(seed)
+        dur = 6.0
+        n = int(dur * SR)
+        dry = np.zeros(n)
+        for formants, start, ln, mult in syllables:
+            m = int(ln * SR)
+            t = np.arange(m) / SR
+            # Each syllable bounces: up quickly, then sags (the long last one sags a lot).
+            contour = mult * (1 + 0.08 * np.sin(np.pi * np.clip(t / ln * 1.4, 0, 1)) - 0.18 * (t / ln) ** 2 * (ln > 0.4))
+            f0 = base * contour * (1 + 0.012 * np.sin(2 * np.pi * 6.0 * t))
+            v = voice(f0, formants, rng, nh=24, tilt=0.02)
+            breath = fft_filter(rng.normal(size=m), lambda f: bp_gain(f, 300, 1500, 2)) * 0.04
+            env = env_adsr(m, 0.03, min(0.12, ln * 0.5))
+            add_at(dry, norm(v + breath) * env, 0.1 + start, circular=False)
+        # The warped-record wobble: the whole thing drifts in pitch by a few percent.
+        idx = np.arange(n) + np.cumsum(0.04 * np.sin(2 * np.pi * 0.9 * np.arange(n) / SR) + smooth_jitter(rng, n, 3, 0.02))
+        dry = np.interp(np.clip(idx, 0, n - 1), np.arange(n), dry)
+        dry = fft_filter(dry, lambda f: lp_gain(f, 1200, 2) * hp_gain(f, 120, 2))[:n]   # far away: muffled
+        echoes = np.zeros(n)
+        add_at(echoes, dry * 0.45, 0.38, circular=False)
+        add_at(echoes, dry * 0.22, 0.95, circular=False)
+        hall = conv(dry + echoes, reverb_ir(rng, 4.0, 1.3, lp=1400, predelay=0.08))[:n]
+        x = 0.35 * norm(dry) + 0.3 * norm(echoes) + 1.0 * norm(hall)
+        save_ogg(x, SND / "level94" / f"laugh{i}.ogg", peak=0.7, fade_out=0.6)
+
+
+L94_SKY_TEXTURES = [tex_l94_sky_clouds, tex_l94_castle_far]
+L94_SKY_SOUNDS = [snd_l94_wind, snd_l94_birds, snd_l94_laugh]
+
+
+# =============================================================================
 
 TEXTURES = [
     remove_stale,
@@ -5730,6 +7137,10 @@ TEXTURES = [
     tex_water_ripples, tex_water_caustics, tex_water_shallow_item,
     *L4_TEXTURES,
     *L37_TEXTURES,
+    *L94_PROPS_TEXTURES,
+    *L94_WORLD_TEXTURES,
+    *L94_CASTLE_TEXTURES,
+    *L94_SKY_TEXTURES,
 ]
 SOUNDS = [
     snd_level0_hum, snd_level1_ambience, snd_level2_ambience,
@@ -5749,6 +7160,8 @@ SOUNDS = [
     snd_water_wade, snd_water_splash,
     *L4_SOUNDS,
     *L37_SOUNDS,
+    *L94_PROPS_SOUNDS,
+    *L94_SKY_SOUNDS,
 ]
 
 

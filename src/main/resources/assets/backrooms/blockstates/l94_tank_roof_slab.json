@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "backrooms:block/l94_tank_roof_slab"
+    },
+    "type=top": {
+      "model": "backrooms:block/l94_tank_roof_slab_top"
+    },
+    "type=double": {
+      "model": "backrooms:block/l94_tank_roof"
+    }
+  }
+}

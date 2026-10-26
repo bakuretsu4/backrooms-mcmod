@@ -10,6 +10,7 @@ import com.rickr.backrooms.network.SanityPayload;
 import com.rickr.backrooms.registry.ModAttachments;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.LevelEvents;
+import com.rickr.backrooms.world.Level94Clock;
 import com.rickr.backrooms.world.SafeRooms;
 import com.rickr.backrooms.world.Travel;
 import net.minecraft.core.BlockPos;
@@ -32,6 +33,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *   <li>in a safe room it comes back fast (+1.0/s);</li>
  *   <li>otherwise it drains: a little all the time, more in the dark, alone, near monsters or
  *       during a blackout. Standing next to a friend in the light slowly restores it instead.</li>
+ *   <li>Level 94 has its own day/night rules instead ({@link #level94Change}): it recovers in a
+ *       house by day and drains slowly outside at night.</li>
  * </ul>
  * The client only displays it ({@link SanityClientState}) and does the scary stuff on its own.
  * Creative and spectator players are never affected.
@@ -55,6 +58,10 @@ public final class SanityService {
     private static final float OUTSIDE_RECOVERY = 0.5f;
     /** Level 37 ("Sublimity") is calming everywhere: warm light, still water, nothing hunting you. */
     private static final float LEVEL_37_RECOVERY = 0.6f;
+    /** Level 94: indoors (a house) by day you get your breath back; at night you only hold steady. */
+    private static final float LEVEL_94_HOUSE_RECOVERY = 0.6f;
+    /** Level 94: out on the hills at night it slowly wears you down (about -45 over a night). */
+    private static final float LEVEL_94_NIGHT_DRAIN = 0.25f;
 
     // ---- Distances (blocks) ----------------------------------------------------------------
     private static final double ALONE_RANGE = 24.0;
@@ -132,6 +139,9 @@ public final class SanityService {
 
     /** Positive = recovering, negative = draining. Only called inside the Backrooms. */
     private static float changePerSecond(ServerPlayer player) {
+        if (BackroomsLevel.fromDimension(player.level().dimension()) == BackroomsLevel.LEVEL_94) {
+            return level94Change(player);
+        }
         if (SafeRooms.isSafe(player)) {
             return SAFE_ROOM_RECOVERY; // the hum stops, the lamp is warm: you can breathe
         }
@@ -159,6 +169,20 @@ public final class SanityService {
             change -= BLACKOUT_DRAIN;
         }
         return change;
+    }
+
+    /**
+     * Level 94 runs on its own clock ({@link Level94Clock}): by day the sunny hills leave you be and
+     * a house lets you recover; at night you hold steady indoors but slowly drain outside, faster
+     * with a Smiler in view. Minecraft's own light can't tell day from night here (the dimension is
+     * stuck at noon), so the dark/loneliness rules of the other levels don't apply.
+     */
+    private static float level94Change(ServerPlayer player) {
+        boolean night = Level94Clock.isNight(player.level());
+        if (SafeRooms.isSafe(player)) {
+            return night ? 0.0f : LEVEL_94_HOUSE_RECOVERY;
+        }
+        return (night ? -LEVEL_94_NIGHT_DRAIN : 0.0f) - monsterDrain(player);
     }
 
     /** Dark at your eyes, and your camcorder flashlight isn't helping. */

@@ -559,5 +559,47 @@
       "backrooms:level4/water_cooler_glug"
     ],
     "subtitle": "subtitles.backrooms.water_cooler"
+  },
+  "level94.siren_song": {
+    "sounds": [
+      {
+        "name": "backrooms:level94/siren_song",
+        "stream": true,
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.backrooms.l94_siren_song"
+  },
+  "ambient.level94_wind": {
+    "sounds": [
+      {
+        "name": "backrooms:level94/wind",
+        "stream": true
+      }
+    ]
+  },
+  "level94.birds": {
+    "sounds": [
+      "backrooms:level94/birds1",
+      "backrooms:level94/birds2",
+      "backrooms:level94/birds3"
+    ]
+  },
+  "level94.laugh": {
+    "sounds": [
+      {
+        "name": "backrooms:level94/laugh1",
+        "stream": true
+      },
+      {
+        "name": "backrooms:level94/laugh2",
+        "stream": true
+      },
+      {
+        "name": "backrooms:level94/laugh3",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.l94_laugh"
   }
 }

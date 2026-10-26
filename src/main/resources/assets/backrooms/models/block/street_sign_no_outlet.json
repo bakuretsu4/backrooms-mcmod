@@ -1,0 +1,8 @@
+{
+  "parent": "backrooms:block/street_sign_diamond_template",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "face": "backrooms:block/street_sign_no_outlet",
+    "back": "backrooms:block/sign_back_diamond"
+  }
+}

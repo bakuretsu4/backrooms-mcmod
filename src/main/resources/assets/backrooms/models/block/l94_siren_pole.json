@@ -1,0 +1,155 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/l94_siren_pole",
+    "pole": "backrooms:block/l94_siren_pole"
+  },
+  "elements": [
+    {
+      "from": [
+        6,
+        0,
+        6
+      ],
+      "to": [
+        10,
+        16,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pole",
+          "uv": [
+            6,
+            0,
+            10,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#pole",
+          "uv": [
+            6,
+            0,
+            10,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#pole",
+          "uv": [
+            6,
+            0,
+            10,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#pole",
+          "uv": [
+            6,
+            0,
+            10,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#pole",
+          "uv": [
+            6,
+            6,
+            10,
+            10
+          ]
+        },
+        "down": {
+          "texture": "#pole",
+          "uv": [
+            6,
+            6,
+            10,
+            10
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        0,
+        6
+      ],
+      "to": [
+        10,
+        16,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pole",
+          "uv": [
+            2,
+            0,
+            6,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#pole",
+          "uv": [
+            2,
+            0,
+            6,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#pole",
+          "uv": [
+            2,
+            0,
+            6,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#pole",
+          "uv": [
+            2,
+            0,
+            6,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#pole",
+          "uv": [
+            6,
+            6,
+            10,
+            10
+          ]
+        },
+        "down": {
+          "texture": "#pole",
+          "uv": [
+            6,
+            6,
+            10,
+            10
+          ]
+        }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    }
+  ]
+}

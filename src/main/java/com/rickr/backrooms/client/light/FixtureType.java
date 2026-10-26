@@ -82,7 +82,9 @@ public enum FixtureType {
      * Level 4 vending machine: the glowing front throws a small cold glow into the dark break room.
      * Only the upper half counts (see {@link #of}), so a machine is one light.
      */
-    VENDING_MACHINE("vending_machine", Mount.INSET, 1, 0.80f, 0.90f, 1.0f, 0.45f, 6.0f, Hum.NONE, false);
+    VENDING_MACHINE("vending_machine", Mount.INSET, 1, 0.80f, 0.90f, 1.0f, 0.45f, 6.0f, Hum.NONE, false),
+    /** Level 94 odd floor lamp in the toy houses: a small warm pool, steady and silent. */
+    L94_LAMP("l94_lamp", Mount.WALL, 1, 1.0f, 0.86f, 0.62f, 1.2f, 9.0f, Hum.NONE, false);
 
     /** Which looping buzz a fixture makes (positional, the nearest few lit ones play). */
     public enum Hum {

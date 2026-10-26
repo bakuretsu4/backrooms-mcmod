@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/iron_bars_post",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l94_tower_brace",
+    "bars": "backrooms:block/l94_tower_brace",
+    "edge": "backrooms:block/l94_tower_brace"
+  }
+}

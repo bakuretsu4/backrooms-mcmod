@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l94_mini_house"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l94_mini_house",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l94_mini_house",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l94_mini_house",
+      "y": 270
+    }
+  }
+}

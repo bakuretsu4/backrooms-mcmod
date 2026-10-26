@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "backrooms:block/l94_studio_wood",
+    "top": "backrooms:block/l94_studio_table_top",
+    "side": "backrooms:block/l94_studio_table_side"
+  }
+}

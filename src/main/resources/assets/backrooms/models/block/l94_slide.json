@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/stairs",
+  "textures": {
+    "bottom": "backrooms:block/l94_slide",
+    "top": "backrooms:block/l94_slide",
+    "side": "backrooms:block/l94_slide"
+  }
+}

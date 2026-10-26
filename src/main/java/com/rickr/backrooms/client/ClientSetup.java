@@ -3,6 +3,7 @@ package com.rickr.backrooms.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.registry.ModEntities;
+import com.rickr.backrooms.registry.ModBlockEntities;
 import net.minecraft.client.KeyMapping;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -38,12 +39,17 @@ public final class ClientSetup {
         event.registerEntityRenderer(ModEntities.OBSERVER.get(), ObserverRenderer::new);
         // Blackouts on Levels 0-2: a glowing face drawn as a billboard.
         event.registerEntityRenderer(ModEntities.SMILER.get(), SmilerRenderer::new);
+        // Level 94: parked cars and milk vans, drawn whole by their anchor block's renderer.
+        event.registerBlockEntityRenderer(ModBlockEntities.L94_VEHICLE.get(), VehicleRenderer::new);
     }
 
     @SubscribeEvent
     public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(BacteriaModel.LAYER, BacteriaModel::createBodyLayer);
         event.registerLayerDefinition(SmilerModel.LAYER, SmilerModel::createLayer);
+        // Level 94 vehicles (Props slice).
+        event.registerLayerDefinition(VehicleModel.CAR_LAYER, VehicleModel::createCarLayer);
+        event.registerLayerDefinition(VehicleModel.VAN_LAYER, VehicleModel::createVanLayer);
     }
 
     @SubscribeEvent

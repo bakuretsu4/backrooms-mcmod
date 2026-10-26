@@ -113,6 +113,14 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_DOOR_MUSIC = register("level4.door_music");
     public static final DeferredHolder<SoundEvent, SoundEvent> VENDING_MACHINE_VEND = register("block.vending_machine.vend");
     public static final DeferredHolder<SoundEvent, SoundEvent> WATER_COOLER_GLUG = register("block.water_cooler.glug");
+    // Level 94 "Motion" (Props slice): the happy cartoon tune the siren poles play all day.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L94_SIREN_SONG = register("level94.siren_song");
+    // Level 94 "Motion" (Sky slice): the soft wind over the hills (the biome's ambient loop, day and
+    // night), faint synthetic birdsong by day and far-off cartoon laughter at night (one-shots
+    // scheduled by client/Level94Atmosphere).
+    public static final DeferredHolder<SoundEvent, SoundEvent> L94_WIND = register("ambient.level94_wind");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L94_BIRDS = register("level94.birds");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L94_LAUGH = register("level94.laugh");
 
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name) {
         return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(Backrooms.id(name)));

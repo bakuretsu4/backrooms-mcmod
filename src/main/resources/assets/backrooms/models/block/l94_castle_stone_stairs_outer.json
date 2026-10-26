@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/outer_stairs",
+  "textures": {
+    "bottom": "backrooms:block/l94_castle_stone",
+    "top": "backrooms:block/l94_castle_stone",
+    "side": "backrooms:block/l94_castle_stone"
+  }
+}

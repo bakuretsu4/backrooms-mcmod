@@ -17,7 +17,12 @@ public enum SignKind implements StringRepresentable {
     /** Yellow diamond warning sign with an eye. */
     WARNING("warning"),
     /** A traffic sign gone wrong: scrambled words. */
-    NONSENSE("nonsense");
+    NONSENSE("nonsense"),
+    // Level 94 road signs (new values go at the end so saved blocks keep their meaning).
+    /** Red octagonal STOP sign at busy crossroads. */
+    STOP("stop"),
+    /** Yellow diamond "NO OUTLET" sign at the mouth of a dead end. */
+    NO_OUTLET("no_outlet");
 
     /** The lowercase name used in blockstate files ("kind=warning"). */
     private final String name;

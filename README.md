@@ -4,6 +4,11 @@ A NeoForge 1.21.1 mod: noclip out of reality into an endless Backrooms lit by re
 lights, seen through a found-footage camera. Built for multiplayer: play it with friends on a
 server or LAN.
 
+> **Level 94 checkpoint — work in progress:** the new level is implemented and has had an initial
+> in-game tour, but vehicles, dark-house exits, night spawning and remaining traversal checks are
+> not release-verified. See [the saved progress and resume steps](tools/smoke/level94/PROGRESS.md).
+> Existing levels remain available; this checkpoint is not a finished Level 94 release.
+
 ## Playing
 
 **Everyone (server and every player) needs the same mod jar** in their `mods` folder, with

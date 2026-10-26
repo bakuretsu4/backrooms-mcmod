@@ -1,0 +1,31 @@
+{
+  "variants": {
+    "part=0": {
+      "model": "backrooms:block/l94_rug_0"
+    },
+    "part=1": {
+      "model": "backrooms:block/l94_rug_1"
+    },
+    "part=2": {
+      "model": "backrooms:block/l94_rug_2"
+    },
+    "part=3": {
+      "model": "backrooms:block/l94_rug_3"
+    },
+    "part=4": {
+      "model": "backrooms:block/l94_rug_4"
+    },
+    "part=5": {
+      "model": "backrooms:block/l94_rug_5"
+    },
+    "part=6": {
+      "model": "backrooms:block/l94_rug_6"
+    },
+    "part=7": {
+      "model": "backrooms:block/l94_rug_7"
+    },
+    "part=8": {
+      "model": "backrooms:block/l94_rug_8"
+    }
+  }
+}

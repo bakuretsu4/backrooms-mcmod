@@ -1,7 +1,12 @@
 package com.rickr.backrooms.registry;
 
 import com.rickr.backrooms.Backrooms;
+import com.rickr.backrooms.block.BallPitBlock;
+import com.rickr.backrooms.block.ClimbingFrameBlock;
+import com.rickr.backrooms.block.ParapetBlock;
+import com.rickr.backrooms.block.ThroneLightBlock;
 import com.rickr.backrooms.block.CeilingTubeBlock;
+import com.rickr.backrooms.block.ClayDoorBlock;
 import com.rickr.backrooms.block.CheckpointRadioBlock;
 import com.rickr.backrooms.block.DuctBlock;
 import com.rickr.backrooms.block.CubiclePartitionBlock;
@@ -29,10 +34,13 @@ import com.rickr.backrooms.block.ShallowWaterBlock;
 import com.rickr.backrooms.block.StreetSignBlock;
 import com.rickr.backrooms.block.StreetlampHeadBlock;
 import com.rickr.backrooms.block.SunlitVoidBlock;
+import com.rickr.backrooms.block.SirenBlock;
 import com.rickr.backrooms.block.SupplyContainerBlock;
 import com.rickr.backrooms.block.SupplyKind;
 import com.rickr.backrooms.block.ThinLayerBlock;
 import com.rickr.backrooms.block.TileCurveBlock;
+import com.rickr.backrooms.block.VehicleBlock;
+import com.rickr.backrooms.block.VehicleHullBlock;
 import com.rickr.backrooms.block.VendingMachineBlock;
 import com.rickr.backrooms.block.WallDecalBlock;
 import com.rickr.backrooms.block.WallDoorDrawingBlock;
@@ -495,6 +503,220 @@ public final class ModBlocks {
             props -> new WallMountBlock(props, 0, 2, 15, 16, 14, 16),
             unbreakable(MapColor.COLOR_GREEN, SoundType.METAL).noCollission().noOcclusion());
 
+    // Level 94 "Motion" props (Props slice): siren poles that play cartoon music all day, parked
+    // 1930s cars and milk vans, and the CRT TV full of static in the house interiors.
+    /** Weathered dark wooden pole; stack seven and put an l94_siren on top. */
+    public static final DeferredBlock<PoleBlock> L94_SIREN_POLE = BLOCKS.registerBlock("l94_siren_pole",
+            props -> new PoleBlock(props, 2), unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD).noOcclusion());
+    /** Old horn loudspeaker on top of the pole; FACING = the way the front horn points. Sings by day (client side). */
+    public static final DeferredBlock<SirenBlock> L94_SIREN = BLOCKS.registerBlock("l94_siren", SirenBlock::new,
+            unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** Anchor of a parked vehicle; its renderer draws the whole car or van (see block/Level94Vehicles). */
+    public static final DeferredBlock<VehicleBlock> L94_VEHICLE = BLOCKS.registerBlock("l94_vehicle", VehicleBlock::new,
+            vehicleBody());
+    /** Invisible solid filler for the rest of a vehicle's space. */
+    public static final DeferredBlock<VehicleHullBlock> L94_VEHICLE_HULL = BLOCKS.registerBlock("l94_vehicle_hull", VehicleHullBlock::new,
+            vehicleBody());
+    /**
+     * Wooden-cabinet CRT on short legs, its screen hissing with static (animated texture). The
+     * screen glows a little: light 4, and the model draws only the screen face full-bright.
+     */
+    public static final DeferredBlock<FurnitureBlock> L94_TV = BLOCKS.registerBlock("l94_tv",
+            props -> new FurnitureBlock(props, Shapes.or(
+                    Block.box(2, 0, 4, 14, 2.5, 13),
+                    Block.box(1, 2.5, 2.5, 15, 15, 14.5),
+                    Block.box(4, 4.5, 14, 12, 12.5, 15.5))),
+            unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD).noOcclusion().lightLevel(state -> 4));
+
+    // Level 94 "Motion" world (World slice): felt-green hills with mowing stripes, smooth grey roads,
+    // toy houses of painted cardboard, lollipop trees and water towers. The house walls are drawn
+    // like the Level 9 window decals: FACING is the outside face (siding), the other faces show the
+    // bright wallpaper inside.
+    /** Grass in three mown shades; the top is felt, the sides dirt with a grass fringe. */
+    public static final DeferredBlock<Block> L94_GRASS_LIGHT = structural("l94_grass_light", MapColor.COLOR_LIGHT_GREEN, SoundType.GRASS);
+    public static final DeferredBlock<Block> L94_GRASS_MID = structural("l94_grass_mid", MapColor.COLOR_LIGHT_GREEN, SoundType.GRASS);
+    public static final DeferredBlock<Block> L94_GRASS_DARK = structural("l94_grass_dark", MapColor.COLOR_GREEN, SoundType.GRASS);
+    /** Half-block grass: the in-between steps that make the hills look (and walk) smooth. */
+    public static final DeferredBlock<SlabBlock> L94_GRASS_SLAB_LIGHT = BLOCKS.registerBlock("l94_grass_slab_light", SlabBlock::new,
+            unbreakable(MapColor.COLOR_LIGHT_GREEN, SoundType.GRASS));
+    public static final DeferredBlock<SlabBlock> L94_GRASS_SLAB_MID = BLOCKS.registerBlock("l94_grass_slab_mid", SlabBlock::new,
+            unbreakable(MapColor.COLOR_LIGHT_GREEN, SoundType.GRASS));
+    public static final DeferredBlock<SlabBlock> L94_GRASS_SLAB_DARK = BLOCKS.registerBlock("l94_grass_slab_dark", SlabBlock::new,
+            unbreakable(MapColor.COLOR_GREEN, SoundType.GRASS));
+    public static final DeferredBlock<Block> L94_DIRT = structural("l94_dirt", MapColor.DIRT, SoundType.GRAVEL);
+    /** Smooth grey asphalt with no lines. */
+    public static final DeferredBlock<Block> L94_ASPHALT = structural("l94_asphalt", MapColor.COLOR_GRAY, SoundType.STONE);
+    /** Light concrete: road curbs and town sidewalks. */
+    public static final DeferredBlock<Block> L94_CURB = structural("l94_curb", MapColor.QUARTZ, SoundType.STONE);
+    /** Tan dirt footpath up to the hilltop houses. */
+    public static final DeferredBlock<Block> L94_PATH = structural("l94_path", MapColor.SAND, SoundType.GRAVEL);
+    public static final DeferredBlock<SlabBlock> L94_PATH_SLAB = BLOCKS.registerBlock("l94_path_slab", SlabBlock::new,
+            unbreakable(MapColor.SAND, SoundType.GRAVEL));
+    /** Pale stone paving of the town plaza. */
+    public static final DeferredBlock<Block> L94_PAVING = structural("l94_paving", MapColor.SAND, SoundType.STONE);
+    public static final DeferredBlock<Block> L94_FOUNTAIN_STONE = structural("l94_fountain_stone", MapColor.STONE, SoundType.STONE);
+    /** Glossy painted plaster of the king chess piece in the fountain. */
+    public static final DeferredBlock<Block> L94_STATUE = structural("l94_statue", MapColor.QUARTZ, SoundType.STONE);
+    /** Bright round crown of a lollipop tree (solid, like a toy). */
+    public static final DeferredBlock<Block> L94_LEAVES = structural("l94_leaves", MapColor.COLOR_LIGHT_GREEN, SoundType.GRASS);
+    public static final DeferredBlock<PoleBlock> L94_TRUNK = BLOCKS.registerBlock("l94_trunk",
+            props -> new PoleBlock(props, 2.5), unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD).noOcclusion());
+    // Water towers.
+    public static final DeferredBlock<PoleBlock> L94_TOWER_LEG = BLOCKS.registerBlock("l94_tower_leg",
+            props -> new PoleBlock(props, 1.5), unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** Lattice cross-bracing between the legs; joins its neighbours like a pane. */
+    public static final DeferredBlock<IronBarsBlock> L94_TOWER_BRACE = BLOCKS.registerBlock("l94_tower_brace", IronBarsBlock::new,
+            unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    public static final DeferredBlock<Block> L94_TANK = structural("l94_tank", MapColor.METAL, SoundType.METAL);
+    public static final DeferredBlock<Block> L94_TANK_ROOF = structural("l94_tank_roof", MapColor.COLOR_GRAY, SoundType.METAL);
+    public static final DeferredBlock<SlabBlock> L94_TANK_ROOF_SLAB = BLOCKS.registerBlock("l94_tank_roof_slab", SlabBlock::new,
+            unbreakable(MapColor.COLOR_GRAY, SoundType.METAL));
+    // Houses.
+    /** Cream painted-cardboard siding on every face (gables). */
+    public static final DeferredBlock<Block> L94_SIDING = structural("l94_siding", MapColor.TERRACOTTA_WHITE, SoundType.WOOD);
+    /** House wall: siding on the FACING side, wallpaper on the others. */
+    public static final DeferredBlock<WallDecalBlock> L94_HOUSE_WALL = BLOCKS.registerBlock("l94_house_wall", WallDecalBlock::new,
+            unbreakable(MapColor.TERRACOTTA_WHITE, SoundType.WOOD));
+    /** The band of oversized bricks along the base: bricks outside, wallpaper and skirting inside. */
+    public static final DeferredBlock<WallDecalBlock> L94_BRICK_BAND = BLOCKS.registerBlock("l94_brick_band", WallDecalBlock::new,
+            unbreakable(MapColor.TERRACOTTA_RED, SoundType.STONE));
+    /** Oversized bricks on every face (house corners). */
+    public static final DeferredBlock<Block> L94_BRICK = structural("l94_brick", MapColor.TERRACOTTA_RED, SoundType.STONE);
+    /** Dark mullioned window in the siding (FACING = outside); seen from inside too. */
+    public static final DeferredBlock<WallDecalBlock> L94_WINDOW = BLOCKS.registerBlock("l94_window", WallDecalBlock::new,
+            unbreakable(MapColor.TERRACOTTA_WHITE, SoundType.WOOD));
+    /** White painted trim: corner boards, the band between storeys, ceilings. */
+    public static final DeferredBlock<Block> L94_TRIM = structural("l94_trim", MapColor.SNOW, SoundType.WOOD);
+    /** Bright vinyl floor of the house interiors. */
+    public static final DeferredBlock<Block> L94_FLOOR = structural("l94_floor", MapColor.COLOR_CYAN, SoundType.WOOD);
+    public static final DeferredBlock<StairBlock> L94_STAIRS = BLOCKS.registerBlock("l94_stairs",
+            props -> new StairBlock(L94_FLOOR.get().defaultBlockState(), props), unbreakable(MapColor.COLOR_CYAN, SoundType.WOOD));
+    public static final DeferredBlock<DoorBlock> L94_HOUSE_DOOR = BLOCKS.registerBlock("l94_house_door",
+            props -> new DoorBlock(BlockSetType.OAK, props), unbreakable(MapColor.COLOR_RED, SoundType.WOOD).noOcclusion());
+    public static final DeferredBlock<Block> L94_ROOF_RED = structural("l94_roof_red", MapColor.COLOR_RED, SoundType.STONE);
+    public static final DeferredBlock<StairBlock> L94_ROOF_RED_STAIRS = BLOCKS.registerBlock("l94_roof_red_stairs",
+            props -> new StairBlock(L94_ROOF_RED.get().defaultBlockState(), props), unbreakable(MapColor.COLOR_RED, SoundType.STONE));
+    public static final DeferredBlock<SlabBlock> L94_ROOF_RED_SLAB = BLOCKS.registerBlock("l94_roof_red_slab", SlabBlock::new,
+            unbreakable(MapColor.COLOR_RED, SoundType.STONE));
+    public static final DeferredBlock<Block> L94_ROOF_BROWN = structural("l94_roof_brown", MapColor.COLOR_BROWN, SoundType.STONE);
+    public static final DeferredBlock<StairBlock> L94_ROOF_BROWN_STAIRS = BLOCKS.registerBlock("l94_roof_brown_stairs",
+            props -> new StairBlock(L94_ROOF_BROWN.get().defaultBlockState(), props), unbreakable(MapColor.COLOR_BROWN, SoundType.STONE));
+    public static final DeferredBlock<SlabBlock> L94_ROOF_BROWN_SLAB = BLOCKS.registerBlock("l94_roof_brown_slab", SlabBlock::new,
+            unbreakable(MapColor.COLOR_BROWN, SoundType.STONE));
+    /** A fat cushioned armchair; FACING = the way you'd sit. */
+    public static final DeferredBlock<FurnitureBlock> L94_ARMCHAIR = furniture("l94_armchair", MapColor.COLOR_ORANGE, SoundType.WOOL, Shapes.or(
+            Block.box(1, 0, 2, 15, 8, 15),
+            Block.box(1, 0, 11, 15, 16, 15),
+            Block.box(0, 0, 2, 3, 11, 15),
+            Block.box(13, 0, 2, 16, 11, 15)));
+    /** 3x3 play rug printed with toy roads (PART = which ninth, like the Level 0 rug). */
+    public static final DeferredBlock<RugBlock> L94_RUG = BLOCKS.registerBlock("l94_rug", RugBlock::new,
+            unbreakable(MapColor.COLOR_GREEN, SoundType.WOOL));
+    /** An odd, lopsided floor lamp that lights the room (vanilla light 13, plus a Veil light). */
+    public static final DeferredBlock<FurnitureBlock> L94_LAMP = BLOCKS.registerBlock("l94_lamp",
+            props -> new FurnitureBlock(props, Shapes.or(
+                    Block.box(4, 0, 4, 12, 1.5, 12),
+                    Block.box(7, 1.5, 7, 9, 10, 9),
+                    Block.box(3, 10, 3, 13, 16, 13))),
+            unbreakable(MapColor.COLOR_YELLOW, SoundType.WOOD).noOcclusion().lightLevel(state -> 13));
+    /**
+     * The dark behind a dark-door house's door: pitch black, gives no light, lets no light in and
+     * you can walk into it (which takes you back to Level 9). The dark sibling of l37_sunlit_void.
+     */
+    public static final DeferredBlock<Block> L94_DARK_VOID = BLOCKS.registerBlock("l94_dark_void", Block::new,
+            unbreakable(MapColor.COLOR_BLACK, SoundType.EMPTY).noCollission()
+                    .isSuffocating((state, level, pos) -> false)
+                    .isViewBlocking((state, level, pos) -> false));
+    /** The moulded-clay front door on a few Level 9 houses: step through it into Level 94. */
+    public static final DeferredBlock<ClayDoorBlock> L94_CLAY_DOOR = BLOCKS.registerBlock("l94_clay_door",
+            props -> new ClayDoorBlock(BlockSetType.OAK, props), unbreakable(MapColor.TERRACOTTA_ORANGE, SoundType.MUD).noOcclusion());
+
+    // Level 94 castle (Castle slice): the see-through glass mountain and its opal ramp, the white
+    // cartoon castle on top, and the play-centre funhouse inside, where things stop looking like
+    // toys and start looking real (see world/layout/Level94Castle and Level94CastlePlan).
+    /** The glass mountain: faint blue-white glass full of sky reflections. Faces between two glass blocks are hidden, so only the outside draws. */
+    public static final DeferredBlock<TransparentBlock> L94_GLASS_MOUNTAIN = BLOCKS.registerBlock("l94_glass_mountain",
+            TransparentBlock::new, glass());
+    /** Pale opal paving: the ramp up the mountain, its approach and the plateau around the castle. */
+    public static final DeferredBlock<Block> L94_OPAL_PATH = structural("l94_opal_path", MapColor.QUARTZ, SoundType.STONE);
+    /** Half-block opal paving: the in-between steps of the ramp, so you can walk up without jumping. */
+    public static final DeferredBlock<SlabBlock> L94_OPAL_PATH_SLAB = BLOCKS.registerBlock("l94_opal_path_slab", SlabBlock::new,
+            unbreakable(MapColor.QUARTZ, SoundType.STONE));
+    /** Knee-high opal railing on the outer edge of the ramp and the plateau (collides 1.5 tall). */
+    public static final DeferredBlock<ParapetBlock> L94_OPAL_RAIL = BLOCKS.registerBlock("l94_opal_rail", ParapetBlock::new,
+            unbreakable(MapColor.QUARTZ, SoundType.STONE).noOcclusion());
+    /** Outside of the castle: smooth white cartoon plaster. */
+    public static final DeferredBlock<Block> L94_CASTLE_WALL = structural("l94_castle_wall", MapColor.SNOW, SoundType.STONE);
+    /** White plaster with a narrow dark arched window on its four sides. */
+    public static final DeferredBlock<Block> L94_CASTLE_WINDOW = structural("l94_castle_window", MapColor.SNOW, SoundType.STONE);
+    /** Bright red roof tiles of the towers and halls. */
+    public static final DeferredBlock<Block> L94_CASTLE_ROOF = structural("l94_castle_roof", MapColor.COLOR_RED, SoundType.STONE);
+    public static final DeferredBlock<StairBlock> L94_CASTLE_ROOF_STAIRS = BLOCKS.registerBlock("l94_castle_roof_stairs",
+            props -> new StairBlock(L94_CASTLE_ROOF.get().defaultBlockState(), props), unbreakable(MapColor.COLOR_RED, SoundType.STONE));
+    /** Grey dressed stone of the throne room, its dais and the throne. */
+    public static final DeferredBlock<Block> L94_CASTLE_STONE = structural("l94_castle_stone", MapColor.STONE, SoundType.STONE);
+    public static final DeferredBlock<StairBlock> L94_CASTLE_STONE_STAIRS = BLOCKS.registerBlock("l94_castle_stone_stairs",
+            props -> new StairBlock(L94_CASTLE_STONE.get().defaultBlockState(), props), unbreakable(MapColor.STONE, SoundType.STONE));
+    /** Harsh square ceiling light of the play centre ("very bright in some rooms"). */
+    public static final DeferredBlock<Block> L94_CASTLE_LAMP = BLOCKS.registerBlock("l94_castle_lamp", Block::new,
+            fixture(MapColor.SNOW, SoundType.GLASS, 15));
+    /** Funhouse floors: blue/yellow checker, the red/white striped path (stripes cross AXIS), and the star circle. */
+    public static final DeferredBlock<Block> L94_CHECKER_FLOOR = structural("l94_checker_floor", MapColor.COLOR_BLUE, SoundType.STONE);
+    public static final DeferredBlock<MarkingBlock> L94_STRIPE_PATH = BLOCKS.registerBlock("l94_stripe_path", MarkingBlock::new,
+            unbreakable(MapColor.COLOR_RED, SoundType.STONE));
+    public static final DeferredBlock<Block> L94_STAR_TILE = structural("l94_star_tile", MapColor.COLOR_YELLOW, SoundType.STONE);
+    public static final DeferredBlock<Block> L94_DISC_FLOOR = structural("l94_disc_floor", MapColor.COLOR_YELLOW, SoundType.STONE);
+    public static final DeferredBlock<Block> L94_RING_FLOOR = structural("l94_ring_floor", MapColor.COLOR_GREEN, SoundType.STONE);
+    /** Red/yellow striped pillar; the porthole one has a round window ring. */
+    public static final DeferredBlock<Block> L94_PLAY_PILLAR = structural("l94_play_pillar", MapColor.COLOR_RED, SoundType.WOOD);
+    public static final DeferredBlock<Block> L94_PLAY_PILLAR_PORTHOLE = structural("l94_play_pillar_porthole", MapColor.COLOR_RED, SoundType.WOOD);
+    /** Fat green duct hanging under the ceiling, running along AXIS. */
+    public static final DeferredBlock<RotatedPillarBlock> L94_PLAY_PIPE = BLOCKS.registerBlock("l94_play_pipe", RotatedPillarBlock::new,
+            unbreakable(MapColor.COLOR_GREEN, SoundType.METAL).noOcclusion());
+    /** Scuffed painted interior wall, acoustic-tile ceiling (carpet on its upper face) and foam play mats. */
+    public static final DeferredBlock<Block> L94_PLAY_WALL = structural("l94_play_wall", MapColor.COLOR_LIGHT_BLUE, SoundType.STONE);
+    public static final DeferredBlock<Block> L94_PLAY_CEILING = structural("l94_play_ceiling", MapColor.SAND, SoundType.WOOL);
+    public static final DeferredBlock<Block> L94_PLAY_MAT = structural("l94_play_mat", MapColor.COLOR_RED, SoundType.WOOL);
+    /** Plastic balls: you sink in and wade slowly, like powder snow. */
+    public static final DeferredBlock<BallPitBlock> L94_BALL_PIT = BLOCKS.registerBlock("l94_ball_pit", BallPitBlock::new,
+            unbreakable(MapColor.COLOR_RED, SoundType.WOOL).noCollission().noOcclusion()
+                    .isSuffocating((state, level, pos) -> false)
+                    .isViewBlocking((state, level, pos) -> false));
+    /** Climbing-frame cube: walk in and climb it like a ladder. */
+    public static final DeferredBlock<ClimbingFrameBlock> L94_CLIMBING_FRAME = BLOCKS.registerBlock("l94_climbing_frame", ClimbingFrameBlock::new,
+            unbreakable(MapColor.COLOR_YELLOW, SoundType.WOOL).noCollission().noOcclusion()
+                    .isSuffocating((state, level, pos) -> false)
+                    .isViewBlocking((state, level, pos) -> false));
+    /** Glossy plastic tube lining (crawl tubes, the slide's side walls). */
+    public static final DeferredBlock<Block> L94_PLAY_TUBE = structural("l94_play_tube", MapColor.COLOR_BLUE, SoundType.STONE);
+    /** Slippery yellow slide: stairs as slick as ice, so you slide down them. */
+    public static final DeferredBlock<StairBlock> L94_SLIDE = BLOCKS.registerBlock("l94_slide",
+            props -> new StairBlock(L94_PLAY_TUBE.get().defaultBlockState(), props),
+            unbreakable(MapColor.COLOR_YELLOW, SoundType.STONE).friction(0.98f));
+    /** Animation studio: tilted drawing desk, sketches pinned to the wall (FACING side), the big table. */
+    public static final DeferredBlock<FurnitureBlock> L94_DRAWING_DESK = furniture("l94_drawing_desk", MapColor.WOOD, SoundType.WOOD, Shapes.or(
+            Block.box(0, 10, 1, 16, 14, 16),
+            Block.box(1, 0, 13, 15, 10, 15)));
+    public static final DeferredBlock<WallDecalBlock> L94_SKETCH_WALL = BLOCKS.registerBlock("l94_sketch_wall", WallDecalBlock::new,
+            unbreakable(MapColor.COLOR_LIGHT_BLUE, SoundType.STONE));
+    public static final DeferredBlock<Block> L94_STUDIO_TABLE = structural("l94_studio_table", MapColor.WOOD, SoundType.WOOD);
+    /** The miniature town on the studio table: a tiny house, a tiny tree, the tiny fountain. */
+    public static final DeferredBlock<FurnitureBlock> L94_MINI_HOUSE = furniture("l94_mini_house", MapColor.SNOW, SoundType.WOOD,
+            Block.box(3, 0, 4, 13, 10, 12));
+    public static final DeferredBlock<FurnitureBlock> L94_MINI_TREE = furniture("l94_mini_tree", MapColor.COLOR_GREEN, SoundType.GRASS,
+            Block.box(5, 0, 5, 11, 11, 11));
+    public static final DeferredBlock<FurnitureBlock> L94_MINI_FOUNTAIN = furniture("l94_mini_fountain", MapColor.STONE, SoundType.STONE,
+            Block.box(2, 0, 2, 14, 9, 14));
+    /** Throne room: worn red carpet, the empty grey stone throne, and the white light behind it (walk in: Level 1). */
+    public static final DeferredBlock<Block> L94_RED_CARPET = structural("l94_red_carpet", MapColor.COLOR_RED, SoundType.WOOL);
+    public static final DeferredBlock<FurnitureBlock> L94_THRONE = furniture("l94_throne", MapColor.STONE, SoundType.STONE, Shapes.or(
+            Block.box(1, 0, 1, 15, 8, 15),
+            Block.box(1, 8, 12, 15, 30, 15),
+            Block.box(1, 8, 1, 3, 14, 12),
+            Block.box(13, 8, 1, 15, 14, 12)));
+    public static final DeferredBlock<ThroneLightBlock> L94_THRONE_LIGHT = BLOCKS.registerBlock("l94_throne_light", ThroneLightBlock::new,
+            fixture(MapColor.SNOW, SoundType.GLASS, 15).noCollission().noOcclusion());
+
     private static DeferredBlock<Block> structural(String name, MapColor color, SoundType sound) {
         return BLOCKS.registerBlock(name, (Function<BlockBehaviour.Properties, Block>) Block::new, unbreakable(color, sound));
     }
@@ -534,6 +756,18 @@ public final class ModBlocks {
     /** See-through wall glass: lets light through, never suffocates, doesn't hide the blocks behind it. */
     private static BlockBehaviour.Properties glass() {
         return unbreakable(MapColor.NONE, SoundType.GLASS)
+                .noOcclusion()
+                .isViewBlocking((state, level, pos) -> false)
+                .isSuffocating((state, level, pos) -> false)
+                .isRedstoneConductor((state, level, pos) -> false);
+    }
+
+    /**
+     * Level 94 vehicle blocks: solid to bump into, but see-through for light and the camera (the
+     * renderer draws the body), so they never cast block-shaped shadows or suffocate anyone.
+     */
+    private static BlockBehaviour.Properties vehicleBody() {
+        return unbreakable(MapColor.METAL, SoundType.METAL)
                 .noOcclusion()
                 .isViewBlocking((state, level, pos) -> false)
                 .isSuffocating((state, level, pos) -> false)

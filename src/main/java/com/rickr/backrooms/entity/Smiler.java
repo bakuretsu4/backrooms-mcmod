@@ -6,6 +6,8 @@ import com.rickr.backrooms.registry.ModAttachments;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.LevelEvents;
+import com.rickr.backrooms.world.BackroomsSeeds;
+import com.rickr.backrooms.world.Level94Clock;
 import com.rickr.backrooms.world.SafeRooms;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -14,6 +16,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
@@ -25,6 +28,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -42,7 +46,7 @@ import org.jetbrains.annotations.Nullable;
  * FLINCH  --lit for 1.5 s in total (3 s if it's bold)-->  DISPEL
  * STALK   --within 4 blocks of its prey, not lit-->       LUNGE  (half a second, fast)
  * LUNGE   --touches its prey-->                           kills it, then DISPEL
- * any     --the blackout is over / its prey is in a safe room / nobody left-->  DISPEL
+ * any     --the blackout is over (Level 94: dawn) / its prey is in a safe room / nobody left-->  DISPEL
  * DISPEL  --1 s shrivelling away-->                       removed
  * </pre>
  *
@@ -342,10 +346,16 @@ public class Smiler extends Monster {
         return isBold() ? BOLD_BURN_TICKS : BURN_TICKS;
     }
 
-    /** The lights are back on (for blackout Smilers), or a command one has had its 90 s. */
+    /**
+     * The lights are back on (for blackout Smilers), dawn in Level 94 (for its night Smilers), or a
+     * command one has had its 90 s.
+     */
     private boolean shouldFade() {
         if (fromBlackout) {
             BackroomsLevel floor = BackroomsLevel.fromDimension(level().dimension());
+            if (floor == BackroomsLevel.LEVEL_94) {
+                return Level94Clock.phase(level()) != Level94Clock.Phase.NIGHT;
+            }
             return floor == null || !LevelEvents.isBlackout(floor);
         }
         return tickCount > COMMAND_LIFETIME;
@@ -371,7 +381,17 @@ public class Smiler extends Monster {
 
     private boolean isValidPrey(@Nullable Player player) {
         return player != null && player.isAlive() && !player.isRemoved() && !player.isSpectator() && !player.isCreative()
-                && player.level() == level() && distanceToSqr(player) < PREY_RANGE * PREY_RANGE && !SafeRooms.isSafe(player);
+                && player.level() == level() && distanceToSqr(player) < PREY_RANGE * PREY_RANGE && !SafeRooms.isSafe(player)
+                && !inLevel94Shelter(player);
+    }
+
+    /** Level 94: the castle is as safe as a house (houses are safe rooms already, see above). */
+    private boolean inLevel94Shelter(Player player) {
+        if (!(level() instanceof ServerLevel serverLevel)
+                || BackroomsLevel.fromDimension(serverLevel.dimension()) != BackroomsLevel.LEVEL_94) {
+            return false;
+        }
+        return !SmilerSpawner.isOutsideInLevel94(BackroomsSeeds.layoutSeed(serverLevel, BackroomsLevel.LEVEL_94), player);
     }
 
     /**
@@ -406,13 +426,21 @@ public class Smiler extends Monster {
         return null;
     }
 
-    /** Lamps on (no blackout) and bright where its face is. */
+    /**
+     * Lamps on (no blackout) and bright where its face is. In Level 94 only lamp light counts: the
+     * level's dimension is stuck at noon as far as Minecraft's sky light knows (the real day and
+     * night are drawn by {@link Level94Clock}), so sky light would "burn" every Smiler outdoors.
+     */
     private boolean inLitSpot() {
         BackroomsLevel floor = BackroomsLevel.fromDimension(level().dimension());
         if (floor != null && LevelEvents.isBlackout(floor)) {
             return false;
         }
-        return level().getMaxLocalRawBrightness(BlockPos.containing(facePosition())) >= LIT_LEVEL;
+        BlockPos face = BlockPos.containing(facePosition());
+        if (floor == BackroomsLevel.LEVEL_94) {
+            return level().getBrightness(LightLayer.BLOCK, face) >= LIT_LEVEL;
+        }
+        return level().getMaxLocalRawBrightness(face) >= LIT_LEVEL;
     }
 
     public Vec3 facePosition() {

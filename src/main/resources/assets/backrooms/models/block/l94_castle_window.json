@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "side": "backrooms:block/l94_castle_window",
+    "end": "backrooms:block/l94_castle_wall"
+  }
+}

@@ -15,6 +15,8 @@ import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
@@ -34,7 +36,6 @@ public final class BackroomsChunkGenerator extends ChunkGenerator {
     ).apply(i, BackroomsChunkGenerator::new));
 
     private static final int MIN_Y = 0;
-    private static final int HEIGHT = 64;
 
     private final BackroomsLevel level;
 
@@ -62,7 +63,18 @@ public final class BackroomsChunkGenerator extends ChunkGenerator {
             for (int lz = 0; lz < 16; lz++) {
                 int x = chunkPos.getMinBlockX() + lx;
                 int z = chunkPos.getMinBlockZ() + lz;
-                layout.fillColumn(seed, x, z, (y, state) -> chunk.setBlockState(pos.set(x, y, z), state, false));
+                layout.fillColumn(seed, x, z, (y, state) -> {
+                    chunk.setBlockState(pos.set(x, y, z), state, false);
+                    // Level 94 props: blocks with a block entity (siren horns, parked vehicles) need it
+                    // made here. Writing straight into the chunk skips that, and without one a siren
+                    // never sings and a vehicle is never drawn (vanilla world generation does the same).
+                    if (state.hasBlockEntity() && state.getBlock() instanceof EntityBlock entityBlock) {
+                        BlockEntity blockEntity = entityBlock.newBlockEntity(pos.immutable(), state);
+                        if (blockEntity != null) {
+                            chunk.setBlockEntity(blockEntity);
+                        }
+                    }
+                });
             }
         }
         return CompletableFuture.completedFuture(chunk);
@@ -85,10 +97,11 @@ public final class BackroomsChunkGenerator extends ChunkGenerator {
     }
 
     private BlockState[] column(int x, int z, RandomState randomState) {
-        BlockState[] states = new BlockState[HEIGHT];
+        int height = level.layout().worldHeight();
+        BlockState[] states = new BlockState[height];
         Arrays.fill(states, Blocks.AIR.defaultBlockState());
         level.layout().fillColumn(BackroomsSeeds.layoutSeed(randomState, level), x, z, (y, state) -> {
-            if (y >= MIN_Y && y < MIN_Y + HEIGHT) {
+            if (y >= MIN_Y && y < MIN_Y + height) {
                 states[y - MIN_Y] = state;
             }
         });
@@ -112,7 +125,7 @@ public final class BackroomsChunkGenerator extends ChunkGenerator {
 
     @Override
     public int getGenDepth() {
-        return HEIGHT;
+        return level.layout().worldHeight();
     }
 
     @Override

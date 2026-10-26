@@ -104,6 +104,36 @@
     "facing=west,kind=nonsense": {
       "model": "backrooms:block/street_sign_nonsense",
       "y": 270
+    },
+    "facing=north,kind=stop": {
+      "model": "backrooms:block/street_sign_stop"
+    },
+    "facing=east,kind=stop": {
+      "model": "backrooms:block/street_sign_stop",
+      "y": 90
+    },
+    "facing=south,kind=stop": {
+      "model": "backrooms:block/street_sign_stop",
+      "y": 180
+    },
+    "facing=west,kind=stop": {
+      "model": "backrooms:block/street_sign_stop",
+      "y": 270
+    },
+    "facing=north,kind=no_outlet": {
+      "model": "backrooms:block/street_sign_no_outlet"
+    },
+    "facing=east,kind=no_outlet": {
+      "model": "backrooms:block/street_sign_no_outlet",
+      "y": 90
+    },
+    "facing=south,kind=no_outlet": {
+      "model": "backrooms:block/street_sign_no_outlet",
+      "y": 180
+    },
+    "facing=west,kind=no_outlet": {
+      "model": "backrooms:block/street_sign_no_outlet",
+      "y": 270
     }
   }
 }

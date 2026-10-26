@@ -59,6 +59,14 @@ public abstract class LevelLayout {
         return interiorHeight;
     }
 
+    /**
+     * How tall this level's world is (blocks from y0). Must match "height" in its dimension_type
+     * JSON. 64 for the indoor levels; Level 94 needs room for hills and a castle on a mountain.
+     */
+    public int worldHeight() {
+        return 64;
+    }
+
     public final ExitLocator exits() {
         return exits;
     }

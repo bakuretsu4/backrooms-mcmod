@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l94_mini_fountain"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l94_mini_fountain",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l94_mini_fountain",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l94_mini_fountain",
+      "y": 270
+    }
+  }
+}
