@@ -45,7 +45,9 @@ def tex_l7_concrete() -> None:
     rng = G.rng_for(7001)
     img = G._smooth_concrete(rng, (116, 118, 115), mottle=5.0)
     img = G._pores(img, rng, density=0.01)
-    img = _water_streaks(img, rng, 22.0)
+    # Faint streaks only: this is mostly seen as the ceiling over the sea, where long runs would
+    # fan out into a starburst in perspective.
+    img = _water_streaks(img, rng, 7.0)
     green = G.smoothstep(0.8, 2.0, G.fnoise(rng, beta=2.8))
     img = G.over(img, np.array([70, 82, 66.0]), green * 0.35)
     G.save_png(img, _blk("l7_concrete"))

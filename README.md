@@ -123,11 +123,15 @@ flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on 
   huge pipes, 150 blocks west of the room: swim into it and you come out in Level 9. No monsters,
   but something enormous lives in the water: you hear it groan far below, feel the water heave
   when it passes under you, and once in a while a vast dark shape glides past at the edge of what
-  you can see. Your sanity drains in the water, faster the deeper you go; the room calms you.
+  you can see. Your sanity drains in the water, faster the deeper you go; the room calms you. The
+  sea is drawn like the pool water (below), in its own murky grey-green: a rippled surface that
+  mirrors the concrete above and lets the pale shallows show through, and underneath a dim teal
+  murk that turns black and closes in as you go down. Far off, waves slap against rock, the
+  ceiling drips and the giant pipes thump.
 
 Every floor is endless; exits are spread out a few hundred blocks apart.
 
-**Pool water (Poolrooms and Level 37)** is drawn by the mod itself instead of vanilla's flat blue
+**Pool water (Poolrooms, Level 37 and Level 7's sea)** is drawn by the mod itself instead of vanilla's flat blue
 water: it takes the colour of the lit room behind it, tinted from clear shallow mint/cyan to deep
 green/teal the more water you look through, bends the tile floor with slow ripples, throws moving
 caustic light patterns onto the floor and lower walls, mirrors the walls and pillars (Fresnel:
@@ -424,7 +428,7 @@ Keys are `[seconds, x, eye height, z, yaw, pitch]`. The HUD is hidden while reco
 | `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas) |
 | `network` | Packets between server and clients |
 | `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
-| `client/water` | Pool water: surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), underwater fog (`UnderwaterView`) |
+| `client/water` | Pool water (also Level 7's sea): surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), underwater fog and its darkening with depth (`UnderwaterView`) |
 | `client/audio` | Wall muffling and room reverb through OpenAL EFX (`Acoustics`, `AcousticsEfx`); distant one-off sounds per level (`DistantAmbience`) |
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`) |
 | `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`); lets anomaly teleports update the server's movement check (`ServerGamePacketListenerAccessor`) |

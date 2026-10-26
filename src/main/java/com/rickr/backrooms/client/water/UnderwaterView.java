@@ -25,8 +25,9 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Eyes under the water in the Poolrooms / Level 37: a clear, tinted view instead of vanilla's
- * murky blue. The fog colour and distance come from the level's {@link WaterStyle}; vanilla's
+ * Eyes under the water in the Poolrooms, Level 37 and Level 7: a tinted view instead of vanilla's
+ * murky blue. The fog colour and distance come from the level's {@link WaterStyle} (in Level 7's
+ * deep sea also from how far under the surface you are); vanilla's
  * dark "underwater" screen overlay is switched off; the camcorder gets an {@code Underwater}
  * value (0..1) for a gentle wobble of the picture.
  *
@@ -38,12 +39,16 @@ import org.jetbrains.annotations.Nullable;
 public final class UnderwaterView {
     /** Fog already starts a little in front of your eyes (vanilla uses -8). */
     private static final float FOG_NEAR = -1.0f;
-    /** Fog brightness in a pitch-dark spot vs a fully lit one (the water isn't a lamp). */
-    private static final float DARK_FOG = 0.18f;
+    /** How far up {@link #surfaceAbove} climbs looking for the surface (Level 7's sea is 150 deep). */
+    private static final int MAX_CLIMB = 256;
+    /** However deep and dark, the fog keeps this much of its colour (black would hide the flashlight's edge). */
+    private static final float MIN_FOG = 0.04f;
 
     private static final BlockPos.MutableBlockPos CURSOR = new BlockPos.MutableBlockPos();
     /** Eased 0..1 "eyes under water", for the camcorder. */
     private static float amount;
+    /** 0..1 how far toward the style's {@code darkDepth} the camera is (0 in the pools). */
+    private static float dark;
 
     /** The water style where the camera is (regardless of whether our renderer runs), or null. */
     @Nullable
@@ -72,6 +77,20 @@ public final class UnderwaterView {
         if (amount < 0.002f) {
             amount = 0.0f;
         }
+        dark = darkness();
+    }
+
+    /** Once a tick: how far down toward the black the camera is (measured from the surface above it). */
+    private static float darkness() {
+        Minecraft mc = Minecraft.getInstance();
+        WaterStyle style = levelStyle();
+        Camera camera = mc.gameRenderer.getMainCamera();
+        if (style == null || style.darkDepth() <= 0.0f || camera.getFluidInCamera() != FogType.WATER) {
+            return 0.0f;
+        }
+        Vec3 eye = camera.getPosition();
+        double depth = surfaceAbove(mc.level, eye) - eye.y;
+        return (float) Mth.clamp(depth / style.darkDepth(), 0.0, 1.0);
     }
 
     @SubscribeEvent
@@ -81,7 +100,7 @@ public final class UnderwaterView {
             return;
         }
         event.setNearPlaneDistance(FOG_NEAR);
-        event.setFarPlaneDistance(style.fogDistance());
+        event.setFarPlaneDistance(Mth.lerp(dark, style.fogDistance(), style.darkFogDistance()));
         event.setFogShape(FogShape.SPHERE);
         event.setCanceled(true); // required for NeoForge to use our distances
     }
@@ -92,9 +111,10 @@ public final class UnderwaterView {
         if (style == null || event.getCamera().getFluidInCamera() != FogType.WATER) {
             return;
         }
-        // The fog is light scattered by the water: dark in a dark room, full colour where it's lit.
+        // The fog is light scattered by the water: dark in a dark room, full colour where it's lit,
+        // and (in a deep sea) fading to black the further down you are.
         float light = lightAt(event.getCamera().getPosition());
-        float k = Mth.lerp(light, DARK_FOG, 1.0f);
+        float k = Math.max(Mth.lerp(light, style.darkFog(), 1.0f) * (1.0f - dark), MIN_FOG);
         event.setRed(WaterStyle.red(style.fogColor()) * k);
         event.setGreen(WaterStyle.green(style.fogColor()) * k);
         event.setBlue(WaterStyle.blue(style.fogColor()) * k);
@@ -125,7 +145,7 @@ public final class UnderwaterView {
      */
     static double surfaceAbove(ClientLevel level, Vec3 eye) {
         CURSOR.set(eye.x, eye.y, eye.z);
-        for (int i = 0; i < 32; i++) {
+        for (int i = 0; i < MAX_CLIMB; i++) {
             BlockState state = level.getBlockState(CURSOR);
             if (state.is(ModBlocks.SHALLOW_WATER.get()) || Flooding.isFlooded(state)) {
                 return CURSOR.getY() + WaterSurfaces.SHALLOW_SURFACE;
@@ -140,7 +160,7 @@ public final class UnderwaterView {
                 return CURSOR.getY() - 1 + fluid.getOwnHeight();
             }
         }
-        return eye.y + 32.0;
+        return eye.y + MAX_CLIMB;
     }
 
     private UnderwaterView() {}

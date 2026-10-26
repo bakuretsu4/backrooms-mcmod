@@ -110,6 +110,16 @@ public final class DistantAmbience {
                 new Entry(ModSounds.DISTANT_L9_SCREEN_DOOR, 3, 1.4f, When.ANY),
                 new Entry(ModSounds.DISTANT_L9_BIN_RATTLE, 2, 1.4f, When.ANY),
                 new Entry(ModSounds.DISTANT_L9_DOG_BARK, 2, 1.4f, When.ANY))));
+        // Level 7: the sea under the ceiling. Waves slapping against rock and concrete, drips from
+        // the ceiling, the giant pipes thumping and groaning, now and then bubbles rising from below.
+        // (Shared with the pool levels and Level 2, whose sounds fit here too.) Spaced out like the
+        // pool levels, and quieter than the Thing, which has its own sounds (client/Level7Client).
+        SCHEDULES.put(BackroomsLevel.LEVEL_7, new Schedule(25, 50, List.of(
+                new Entry(ModSounds.DISTANT_POOL_WATER_LAP, 4, 0.9f, When.ANY),
+                new Entry(ModSounds.DISTANT_POOL_TILE_DRIP, 3, 0.8f, When.ANY),
+                new Entry(ModSounds.DISTANT_POOL_PUMP_THUNK, 2, 1.0f, When.ANY),
+                new Entry(ModSounds.DISTANT_L37_WATER_BUBBLE, 2, 0.7f, When.ANY),
+                new Entry(ModSounds.DISTANT_L2_PRESSURE_GROAN, 1, 0.9f, When.ANY))));
         // Level 94: town sounds by day, eerie ones at night (and dawn, still night for the monsters);
         // the water tower creaks any time, so dusk is not completely empty.
         SCHEDULES.put(BackroomsLevel.LEVEL_94, new Schedule(20, 45, List.of(

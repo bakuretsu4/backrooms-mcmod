@@ -29,8 +29,10 @@ import org.joml.Vector3f;
  *       fading toward black the deeper the camera goes (so in the deep your flashlight is all you
  *       have). The entrance room's tube adds its own light.</li>
  *   <li><b>Fog:</b> above the water the thick fog of "bone dust" the wikis describe, pale grey and
- *       close. Under the water a murky dark teal that gets darker and closer with depth. The
- *       picture grade ({@link AtmosphereGrade}) adds the matching haze on top.</li>
+ *       close. The picture grade ({@link AtmosphereGrade}) adds the matching haze on top.</li>
+ *   <li><b>The water</b> itself (its surface, the murk under it that darkens with depth) is the
+ *       shared pool-water renderer with Level 7's style: see {@code client/water/WaterStyle#LEVEL_7}
+ *       and {@code UnderwaterView}. This class leaves the underwater fog alone.</li>
  * </ul>
  * The rest (depth, the Thing, the lurch when you drop through the hatch) is {@link Level7Client}.
  */
@@ -54,20 +56,11 @@ public final class Level7Atmosphere extends DimensionSpecialEffects {
     private static final float EMISSIVE = 0.95f;
 
     /** The bone-dust fog above the water (blocks). */
-    private static final float AIR_FOG_START = 1.0f;
-    private static final float AIR_FOG_END = 46.0f;
+    private static final float AIR_FOG_START = 6.0f;
+    private static final float AIR_FOG_END = 52.0f;
     private static final float AIR_FOG_R = 0.30f;
     private static final float AIR_FOG_G = 0.31f;
     private static final float AIR_FOG_B = 0.305f;
-    /** Under water: how far you see just below the surface, and at the bottom. */
-    private static final float WATER_FOG_END_SHALLOW = 48.0f;
-    private static final float WATER_FOG_END_DEEP = 26.0f;
-    private static final float WATER_R = 0.055f;
-    private static final float WATER_G = 0.110f;
-    private static final float WATER_B = 0.120f;
-    private static final float ABYSS_R = 0.004f;
-    private static final float ABYSS_G = 0.007f;
-    private static final float ABYSS_B = 0.009f;
 
     public Level7Atmosphere() {
         // No clouds, no ground (no horizon line drawn), no sky.
@@ -130,39 +123,22 @@ public final class Level7Atmosphere extends DimensionSpecialEffects {
 
     @SubscribeEvent
     public static void onRenderFog(ViewportEvent.RenderFog event) {
-        if (event.getMode() != FogRenderer.FogMode.FOG_TERRAIN || !inLevel7()) {
+        if (event.getType() != FogType.NONE || event.getMode() != FogRenderer.FogMode.FOG_TERRAIN || !inLevel7()) {
             return;
         }
-        float view = event.getFarPlaneDistance();
-        if (event.getType() == FogType.NONE) {
-            event.setNearPlaneDistance(AIR_FOG_START);
-            event.setFarPlaneDistance(Math.min(view, AIR_FOG_END));
-            event.setFogShape(FogShape.CYLINDER);
-        } else if (event.getType() == FogType.WATER) {
-            event.setNearPlaneDistance(-4.0f);
-            event.setFarPlaneDistance(Mth.lerp(Level7Client.deepness(), WATER_FOG_END_SHALLOW, WATER_FOG_END_DEEP));
-            event.setFogShape(FogShape.SPHERE);
-        } else {
-            return;
-        }
+        event.setNearPlaneDistance(AIR_FOG_START);
+        event.setFarPlaneDistance(Math.min(event.getFarPlaneDistance(), AIR_FOG_END));
+        event.setFogShape(FogShape.CYLINDER);
         event.setCanceled(true); // required for NeoForge to use our distances
     }
 
     @SubscribeEvent
     public static void onFogColor(ViewportEvent.ComputeFogColor event) {
-        if (!inLevel7()) {
+        if (!inLevel7() || event.getCamera().getFluidInCamera() != FogType.NONE) {
             return;
         }
-        FogType type = event.getCamera().getFluidInCamera();
-        if (type == FogType.NONE) {
-            event.setRed(AIR_FOG_R);
-            event.setGreen(AIR_FOG_G);
-            event.setBlue(AIR_FOG_B);
-        } else if (type == FogType.WATER) {
-            float deep = Level7Client.deepness();
-            event.setRed(Mth.lerp(deep, WATER_R, ABYSS_R));
-            event.setGreen(Mth.lerp(deep, WATER_G, ABYSS_G));
-            event.setBlue(Mth.lerp(deep, WATER_B, ABYSS_B));
-        }
+        event.setRed(AIR_FOG_R);
+        event.setGreen(AIR_FOG_G);
+        event.setBlue(AIR_FOG_B);
     }
 }

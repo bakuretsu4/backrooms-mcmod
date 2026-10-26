@@ -94,7 +94,7 @@ public final class AtmosphereGrade {
      * thick pale haze that swallows the sea a few dozen blocks out.
      */
     private static final Mood LEVEL_7_AIR = new Mood(1.0f, 0.95f, 0.60f, 0.93f, 0.97f, 1.0f, 1.0f, 1.0f, 0.97f,
-            0.020f, 0.022f, 0.024f, 0.40f, 0.41f, 0.40f, 3.0f, 0.040f, 0.70f, 0.30f, 0.10f, 0.012f);
+            0.020f, 0.022f, 0.024f, 0.40f, 0.41f, 0.40f, 6.0f, 0.030f, 0.60f, 0.30f, 0.10f, 0.012f);
     /** Level 7 just under the surface: murky dark teal closing in. */
     private static final Mood LEVEL_7_WATER = new Mood(1.0f, 1.0f, 0.68f, 0.85f, 0.98f, 1.02f, 0.95f, 1.0f, 1.0f,
             0.004f, 0.009f, 0.011f, 0.050f, 0.10f, 0.11f, 2.0f, 0.035f, 0.85f, 0.30f, 0.10f, 0.010f);
