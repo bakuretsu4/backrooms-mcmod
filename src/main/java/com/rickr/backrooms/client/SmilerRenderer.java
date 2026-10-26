@@ -18,18 +18,18 @@ import net.minecraft.util.FastColor;
  *
  * <p>Two passes, in this order:
  * <ol>
- *   <li>The body: a tall slab of black with soft edges, drawn normally (alpha blended). It ignores
- *       light, so it stays pitch black even in your flashlight beam: against a lit wall you see a
- *       black hole where it stands.</li>
+ *   <li>The smoke: a few ragged black puffs, see-through, unlit, and not writing depth
+ *       ({@link SmilerRenderTypes#SMOKE}), so even your flashlight beam doesn't light it: against
+ *       a lit wall you see a dark, churning smudge around the face.</li>
  *   <li>The face: drawn with additive "eyes" blending at full brightness. Additive means the
  *       black parts of the sprites add nothing and the glow only ever brightens what's behind
  *       it, like light. The camcorder's bloom then smears it into a haze.</li>
  * </ol>
- * The body must go first: these render types are drawn in the order they are requested, and
- * black drawn over the glow would put it out.
+ * The smoke must go first: these render types are drawn in the order they are requested, and
+ * smoke drawn over the glow would dim it.
  */
 public class SmilerRenderer extends EntityRenderer<Smiler> {
-    private static final ResourceLocation TEXTURE = Backrooms.id("textures/entity/smiler.png");
+    static final ResourceLocation TEXTURE = Backrooms.id("textures/entity/smiler.png");
 
     private final SmilerModel model;
 
@@ -50,8 +50,8 @@ public class SmilerRenderer extends EntityRenderer<Smiler> {
         poseStack.scale(-1.0f, -1.0f, 1.0f);
 
         model.show(false, true);
-        model.renderToBuffer(poseStack, buffers.getBuffer(RenderType.entityTranslucent(TEXTURE)),
-                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, FastColor.ARGB32.colorFromFloat(Math.min(1.0f, glow * 1.1f), 1.0f, 1.0f, 1.0f));
+        model.renderToBuffer(poseStack, buffers.getBuffer(SmilerRenderTypes.SMOKE),
+                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, FastColor.ARGB32.colorFromFloat(model.smokeDensity(), 1.0f, 1.0f, 1.0f));
         model.show(true, false);
         model.renderToBuffer(poseStack, buffers.getBuffer(RenderType.eyes(TEXTURE)),
                 LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, FastColor.ARGB32.colorFromFloat(1.0f, glow, glow, glow));

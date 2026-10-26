@@ -26,8 +26,9 @@ import net.minecraft.util.Mth;
  *
  * <p>Like the camcorder photos it's based on, it's mostly light: white-hot centres, warm orange
  * glow, red and blue fringes, and a faint haze around the whole face so from far away it's just a
- * smudge of light in the dark. Behind the face hangs a tall slab of pure black, the body: in the
- * dark you can't see it, but against a lit wall it's a black hole in the shape of a doorway.
+ * smudge of light in the dark. Around the face hangs a shroud of dark smoke: a few ragged puffs,
+ * slowly turning and drifting, thinning out below the face. It's translucent, so you only really
+ * notice it against a lit wall or in NightShot, as a darkness that's thicker than it should be.
  *
  * <p>Model space: units are pixels (1/16 block), +Y points down, the face's centre is the origin
  * (1.7 blocks above its feet). Texture: 64x64 units (the PNG is 4x that, for smooth sprites).
@@ -51,8 +52,22 @@ public class SmilerModel extends HierarchicalModel<Smiler> {
         }
     }
 
+    /**
+     * Smoke puffs: x, y (centre, px), size (px), sprite (0 or 1) and turning speed (radians per
+     * tick, the sign is the direction). One big puff behind the face and four around it, so the
+     * smoke encircles the face rather than forming a body.
+     */
+    private static final float[][] PUFFS = {
+            {0.0f, 0.0f, 30.0f, 0, 0.010f},
+            {-9.0f, -1.0f, 20.0f, 1, -0.016f},
+            {9.0f, -1.5f, 20.0f, 0, 0.019f},
+            {0.5f, -8.0f, 18.0f, 1, -0.013f},
+            {-0.5f, 7.0f, 21.0f, 0, 0.015f},
+    };
+
     private final ModelPart root;
-    private final ModelPart body;
+    private final ModelPart smoke;
+    private final ModelPart[] puffs = new ModelPart[PUFFS.length];
     private final ModelPart face;
     private final ModelPart rightEye;
     private final ModelPart leftEye;
@@ -60,10 +75,15 @@ public class SmilerModel extends HierarchicalModel<Smiler> {
     private final ModelPart[] teeth = new ModelPart[TEETH];
     /** 0..1, how brightly it glows this frame (fades in, flickers in the light, fades out). */
     private float glow = 1.0f;
+    /** 0..1, how dense the smoke is this frame. */
+    private float smokeDensity = 1.0f;
 
     public SmilerModel(ModelPart root) {
         this.root = root;
-        this.body = root.getChild("body");
+        this.smoke = root.getChild("smoke");
+        for (int i = 0; i < PUFFS.length; i++) {
+            puffs[i] = smoke.getChild("puff" + i);
+        }
         this.face = root.getChild("face");
         this.rightEye = face.getChild("right_eye");
         this.leftEye = face.getChild("left_eye");
@@ -77,9 +97,15 @@ public class SmilerModel extends HierarchicalModel<Smiler> {
         MeshDefinition mesh = new MeshDefinition();
         PartDefinition root = mesh.getRoot();
 
-        // The body: a black slab 1 block wide, from above its head down to the floor.
-        root.addOrReplaceChild("body", CubeListBuilder.create()
-                .texOffs(0, 20).addBox(-8.0f, -11.0f, 0.0f, 16.0f, 40.0f, 0.0f), PartPose.ZERO);
+        // Smoke: every puff is a 16x16 plane, scaled to its size each frame (the texture region is
+        // 16x16, so the plane must be too).
+        PartDefinition smoke = root.addOrReplaceChild("smoke", CubeListBuilder.create(), PartPose.ZERO);
+        for (int i = 0; i < PUFFS.length; i++) {
+            float[] p = PUFFS[i];
+            smoke.addOrReplaceChild("puff" + i, CubeListBuilder.create()
+                            .texOffs(p[3] == 0 ? 0 : 32, 20).addBox(-8.0f, -8.0f, 0.0f, 16.0f, 16.0f, 0.0f),
+                    PartPose.offset(p[0], p[1], 0.0f));
+        }
 
         PartDefinition face = root.addOrReplaceChild("face", CubeListBuilder.create(), PartPose.ZERO);
         // A faint warm haze behind the whole face.
@@ -122,15 +148,20 @@ public class SmilerModel extends HierarchicalModel<Smiler> {
         return root;
     }
 
-    /** Draw only the glowing face (additive pass) or only the black body (normal pass). */
-    public void show(boolean showFace, boolean showBody) {
+    /** Draw only the glowing face (additive pass) or only the smoke (normal pass). */
+    public void show(boolean showFace, boolean showSmoke) {
         face.visible = showFace;
-        body.visible = showBody;
+        smoke.visible = showSmoke;
     }
 
     /** How brightly the face glows this frame, 0..1. Valid after {@link #setupAnim}. */
     public float glow() {
         return glow;
+    }
+
+    /** How dense the smoke is this frame, 0..1. Valid after {@link #setupAnim}. */
+    public float smokeDensity() {
+        return smokeDensity;
     }
 
     @Override
@@ -145,8 +176,23 @@ public class SmilerModel extends HierarchicalModel<Smiler> {
         // Glow: fades in as it appears, shudders in the light, dies away when it's driven off.
         float open = mode == Smiler.Mode.APPEAR ? smooth(Mth.clamp((since - 4.0f) / 30.0f, 0.0f, 1.0f)) : 1.0f;
         glow = open * (0.92f + 0.08f * Mth.sin(ageInTicks * 0.13f));
+        smokeDensity = open;
         if (mode == Smiler.Mode.FLINCH) {
             glow *= 0.65f + Math.abs(twitch(seed + 9, ageInTicks, 1, 0.35f));
+            smokeDensity *= 0.6f; // the light thins the smoke
+        }
+
+        // Smoke: each puff turns slowly, swells and shrinks a little, and wanders around its spot,
+        // so the shroud is always churning.
+        for (int i = 0; i < puffs.length; i++) {
+            float[] p = PUFFS[i];
+            float phase = seed * 0.37f + i * 1.7f;
+            float swell = 1.0f + 0.07f * Mth.sin(ageInTicks * 0.04f + phase);
+            puffs[i].xScale = p[2] / 16.0f * swell;
+            puffs[i].yScale = p[2] / 16.0f * swell;
+            puffs[i].zRot = ageInTicks * p[4] + phase;
+            puffs[i].x += Mth.sin(ageInTicks * 0.03f + phase) * 1.4f;
+            puffs[i].y += Mth.cos(ageInTicks * 0.025f + phase) * 1.0f;
         }
 
         // Eyes: open slowly, blink now and then, narrow to slits as the light burns it.
@@ -184,6 +230,10 @@ public class SmilerModel extends HierarchicalModel<Smiler> {
             face.zRot += k * 1.4f + twitch(seed + 3, ageInTicks, 1, 0.2f * k);
             face.x += twitch(seed + 4, ageInTicks, 1, 1.2f * k);
             glow *= 1.0f - k;
+            // The smoke billows out and thins away.
+            smoke.xScale = 1.0f + k;
+            smoke.yScale = 1.0f + k;
+            smokeDensity *= 1.0f - k;
         }
     }
 

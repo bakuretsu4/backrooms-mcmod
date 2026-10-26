@@ -2077,7 +2077,8 @@ def tex_smiler() -> None:
     model show their front and back from neighbouring regions of the texture.
 
     Regions (model units): eye (0,0) 6x7, tooth (12,0) 2x6, face haze (16,0) 24x18,
-    body void (0,20) 16x40 (black with soft alpha edges, the only non-additive sprite).
+    smoke puffs (0,20) and (32,20) 16x16 each (black with ragged soft alpha, the only sprites
+    drawn normally rather than additively).
     """
     S = 4
     img = np.zeros((64 * S, 64 * S, 4))
@@ -2131,18 +2132,19 @@ def tex_smiler() -> None:
     haze = np.exp(-3.2 * d)
     place(16, 0, np.stack([60 * haze, 42 * haze, 30 * haze, np.full_like(haze, 255.0)], axis=-1))
 
-    # Body void: a tall slab of pure black with rounded top corners and soft edges. It is drawn
-    # normally (not additive), so it blots out the wall behind it when that wall is lit.
-    w, h = 16 * S, 40 * S
-    xx, yy = grid_xy(w, h)
-    margin = 1.2 * S
-    dx = np.clip(np.abs(xx - w / 2) - (w / 2 - margin - 3 * S), 0, None)
-    dy = np.clip((3 * S + margin) - yy, 0, None)  # only the top corners are rounded
-    edge = np.sqrt(dx ** 2 + dy ** 2)
-    side = np.clip((w / 2 - margin) - np.abs(xx - w / 2), 0, None)
-    alpha = np.clip(np.minimum(3 * S - edge, side) / (1.2 * S), 0, 1) * np.clip((h - margin - yy) / (2.5 * S), 0, 1)
-    body = np.stack([np.full_like(alpha, 5.0), np.full_like(alpha, 5.0), np.full_like(alpha, 7.0), 245.0 * alpha], axis=-1)
-    place(0, 20, body)
+    # Smoke: two ragged puffs of black with soft, uneven alpha. Several of them, turning slowly
+    # and overlapping, make the dark shroud that hangs around the face.
+    for k, (u, seed) in enumerate(((0, 2703), (32, 2704))):
+        rng = rng_for(seed)
+        n = 16 * S
+        xx, yy = grid_xy(n, n)
+        r2 = ((xx - n / 2) / (n / 2)) ** 2 + ((yy - n / 2) / (n / 2)) ** 2
+        base = np.exp(-2.6 * r2) * np.clip(1.0 - r2, 0, 1)
+        noise = blur(fnoise(rng, (n, n), beta=2.2), 1.2)
+        noise = (noise - noise.min()) / (noise.max() - noise.min() + 1e-9)
+        alpha = np.clip((base * (0.35 + 0.9 * noise) - 0.06) * 1.5, 0, 1) * 0.6
+        puff = np.stack([np.full_like(alpha, 4.0), np.full_like(alpha, 4.0), np.full_like(alpha, 6.0), 255.0 * alpha], axis=-1)
+        place(u, 20, puff)
     save_png(img, TEX / "entity" / "smiler.png")
     (TEX / "entity" / "smiler_body.png").unlink(missing_ok=True)  # the old separate body texture
 
