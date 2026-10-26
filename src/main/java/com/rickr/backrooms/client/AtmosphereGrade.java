@@ -1,0 +1,161 @@
+package com.rickr.backrooms.client;
+
+import com.rickr.backrooms.client.light.FixturePower;
+import com.rickr.backrooms.world.BackroomsLevel;
+import com.rickr.backrooms.world.Level94Clock;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.PostChain;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * The "mood" of each level, fed to the camcorder shader as a handful of numbers. Every effect here
+ * works the same over the WHOLE picture (nothing is stronger in the middle than at the edges):
+ * <ul>
+ *   <li><b>Grade:</b> exposure, contrast, saturation, a tint for the shadows and one for the
+ *       highlights ("split toning"), and a lifted black (the tape never goes fully black).</li>
+ *   <li><b>Haze:</b> the air itself has a colour; the further away something is, the more of it
+ *       sits between you and it. Based on real distance (the depth buffer), not screen position.</li>
+ *   <li><b>Contact shadows:</b> a soft darkening where walls meet floors and in corners
+ *       (screen-space ambient occlusion), so rooms feel solid and a little dirty.</li>
+ *   <li><b>Glow:</b> bright areas bleed softly into their surroundings, like old camcorder optics.
+ *       This is what makes it feel dreamlike without blurring what you need to see.</li>
+ *   <li><b>Breath:</b> the exposure drifts by a percent or two, very slowly, as if the camera's
+ *       auto-iris can't settle. You barely notice it; it just feels wrong.</li>
+ * </ul>
+ * Switching level fades from one mood to the next over about two seconds instead of snapping.
+ */
+public final class AtmosphereGrade {
+    /** One level's mood. Tints are multipliers (1, 1, 1 = no change); lift is the darkest colour. */
+    private record Mood(float exposure, float contrast, float saturation,
+                        float shR, float shG, float shB, float hiR, float hiG, float hiB,
+                        float liftR, float liftG, float liftB,
+                        float fogR, float fogG, float fogB, float fogStart, float fogDensity, float fogMax,
+                        float ao, float glow, float breath) {
+        Mood lerp(Mood o, float t) {
+            return new Mood(l(exposure, o.exposure, t), l(contrast, o.contrast, t), l(saturation, o.saturation, t),
+                    l(shR, o.shR, t), l(shG, o.shG, t), l(shB, o.shB, t), l(hiR, o.hiR, t), l(hiG, o.hiG, t), l(hiB, o.hiB, t),
+                    l(liftR, o.liftR, t), l(liftG, o.liftG, t), l(liftB, o.liftB, t),
+                    l(fogR, o.fogR, t), l(fogG, o.fogG, t), l(fogB, o.fogB, t),
+                    l(fogStart, o.fogStart, t), l(fogDensity, o.fogDensity, t), l(fogMax, o.fogMax, t),
+                    l(ao, o.ao, t), l(glow, o.glow, t), l(breath, o.breath, t));
+        }
+
+        private static float l(float a, float b, float t) {
+            return a + (b - a) * t;
+        }
+    }
+
+    // exposure, contrast, saturation | shadow tint | highlight tint | lift | haze colour, start (blocks),
+    // density (per block), max | contact shadows, glow, breath
+    /** Outside the Backrooms: no change at all (the old fixed blue-violet black point only). */
+    private static final Mood NEUTRAL = new Mood(1.0f, 1.0f, 1.0f, 1, 1, 1, 1, 1, 1,
+            2 / 255f, 0, 5 / 255f, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    /**
+     * Level 0: mono-yellow and stale. Sickly greenish shadows under butter-yellow highlights, a
+     * little washed out, thick yellow-grey air down the long halls, soft glow around the panels.
+     */
+    private static final Mood LEVEL_0 = new Mood(1.02f, 1.04f, 0.88f, 0.94f, 0.98f, 0.86f, 1.04f, 1.0f, 0.88f,
+            0.016f, 0.014f, 0.012f, 0.22f, 0.20f, 0.12f, 5.0f, 0.040f, 0.38f, 0.38f, 0.16f, 0.012f);
+    /** Level 1: cold, damp concrete. Blue shadows, grey highlights, little colour, grey-blue air. */
+    private static final Mood LEVEL_1 = new Mood(1.0f, 1.08f, 0.74f, 0.90f, 0.95f, 1.06f, 1.0f, 1.0f, 1.03f,
+            0.012f, 0.013f, 0.018f, 0.18f, 0.19f, 0.23f, 7.0f, 0.032f, 0.40f, 0.45f, 0.12f, 0.010f);
+    /** Level 2: hot, cramped and dirty. Rusty-brown shadows, cold bulbs, deep contact shadows, dark oily air. */
+    private static final Mood LEVEL_2 = new Mood(1.0f, 1.12f, 0.80f, 1.05f, 0.96f, 0.86f, 0.98f, 1.0f, 1.04f,
+            0.007f, 0.006f, 0.008f, 0.10f, 0.08f, 0.06f, 4.0f, 0.045f, 0.45f, 0.50f, 0.15f, 0.012f);
+    /** Level 4: an empty office on a rainy night. Cold fluorescent blue-grey, quiet, faint blue air. */
+    private static final Mood LEVEL_4 = new Mood(1.0f, 1.05f, 0.80f, 0.90f, 0.95f, 1.08f, 0.99f, 1.0f, 1.04f,
+            0.012f, 0.014f, 0.022f, 0.11f, 0.12f, 0.16f, 9.0f, 0.028f, 0.36f, 0.36f, 0.14f, 0.008f);
+    /** The Poolrooms: chlorine and echoes. Teal shadows, cool soft highlights, a gentle wet glow. */
+    private static final Mood POOLROOMS = new Mood(1.0f, 0.98f, 0.92f, 0.88f, 0.98f, 1.06f, 0.98f, 1.02f, 1.04f,
+            0.012f, 0.017f, 0.022f, 0.15f, 0.21f, 0.23f, 7.0f, 0.030f, 0.36f, 0.32f, 0.22f, 0.010f);
+    /**
+     * Level 37: a dream. Low contrast, milky shadows, warm overexposed highlights, warm white air
+     * and the strongest glow: bright but strangely soft, like a memory of a place.
+     */
+    private static final Mood LEVEL_37 = new Mood(1.0f, 0.90f, 0.86f, 0.97f, 1.0f, 0.95f, 1.05f, 1.01f, 0.92f,
+            0.032f, 0.032f, 0.026f, 0.86f, 0.83f, 0.74f, 12.0f, 0.020f, 0.28f, 0.26f, 0.30f, 0.014f);
+    /** Level 9: midnight suburb. Deep blue shadows, sodium-orange highlights, cold dark air. */
+    private static final Mood LEVEL_9 = new Mood(1.0f, 1.07f, 0.86f, 0.86f, 0.92f, 1.12f, 1.06f, 0.98f, 0.84f,
+            0.008f, 0.010f, 0.020f, 0.06f, 0.07f, 0.09f, 9.0f, 0.030f, 0.40f, 0.34f, 0.20f, 0.010f);
+    /**
+     * Level 94 by day: a toy town that's slightly off. A touch over-saturated and soft, warm light,
+     * pale blue air that turns far hills into a painted backdrop.
+     */
+    private static final Mood LEVEL_94_DAY = new Mood(1.0f, 0.96f, 1.08f, 0.95f, 0.97f, 1.04f, 1.03f, 1.01f, 0.95f,
+            0.020f, 0.020f, 0.030f, 0.70f, 0.80f, 0.92f, 40.0f, 0.008f, 0.35f, 0.24f, 0.18f, 0.006f);
+    /** Level 94 at night: the colour leaves; blue-black air and the same soft glow. */
+    private static final Mood LEVEL_94_NIGHT = new Mood(1.0f, 1.04f, 0.80f, 0.86f, 0.92f, 1.12f, 1.02f, 1.0f, 0.94f,
+            0.008f, 0.010f, 0.022f, 0.05f, 0.06f, 0.10f, 14.0f, 0.020f, 0.40f, 0.30f, 0.20f, 0.010f);
+
+    /** Fraction of the way to the target mood per frame at 60 fps (about two seconds to settle). */
+    private static final float BLEND_PER_FRAME = 0.035f;
+
+    @Nullable
+    private static Mood current;
+    private static long lastNanos;
+
+    private AtmosphereGrade() {}
+
+    /** The mood the current level wants right now (Level 94 follows its own day/night clock). */
+    private static Mood target(Minecraft mc) {
+        if (mc.level == null) {
+            return NEUTRAL;
+        }
+        BackroomsLevel floor = BackroomsLevel.fromDimension(mc.level.dimension());
+        if (floor == null) {
+            return NEUTRAL;
+        }
+        Mood mood = switch (floor) {
+            case LEVEL_0 -> LEVEL_0;
+            case LEVEL_1 -> LEVEL_1;
+            case LEVEL_2 -> LEVEL_2;
+            case LEVEL_4 -> LEVEL_4;
+            case POOLROOMS -> POOLROOMS;
+            case LEVEL_37 -> LEVEL_37;
+            case LEVEL_9 -> LEVEL_9;
+            case LEVEL_94 -> LEVEL_94_NIGHT.lerp(LEVEL_94_DAY, Level94Clock.daylight(mc.level, 0.0f));
+        };
+        return mood;
+    }
+
+    /** Pushes this frame's mood into the camcorder shader. Call once per frame. */
+    public static void apply(Minecraft mc, PostChain chain) {
+        Mood want = target(mc);
+        long now = System.nanoTime();
+        float frames = lastNanos == 0L ? 1000.0f : Math.min((now - lastNanos) / 16_666_667.0f, 1000.0f);
+        lastNanos = now;
+        if (current == null) {
+            current = want;
+        } else {
+            float t = 1.0f - (float) Math.pow(1.0f - BLEND_PER_FRAME, frames);
+            current = current.lerp(want, t);
+        }
+        Mood m = current;
+        // In a blackout the air stops glowing: a lit haze colour in the pitch dark would give the
+        // walls away. The haze darkens with the lights (the exit signs and flashlights still show).
+        float power = FixturePower.mainsPower();
+        float fogLight = 0.25f + 0.75f * power;
+
+        chain.setUniform("Exposure", m.exposure());
+        chain.setUniform("Contrast", m.contrast());
+        chain.setUniform("Saturation", m.saturation());
+        chain.setUniform("ShadowR", m.shR());
+        chain.setUniform("ShadowG", m.shG());
+        chain.setUniform("ShadowB", m.shB());
+        chain.setUniform("HighlightR", m.hiR());
+        chain.setUniform("HighlightG", m.hiG());
+        chain.setUniform("HighlightB", m.hiB());
+        chain.setUniform("LiftR", m.liftR());
+        chain.setUniform("LiftG", m.liftG());
+        chain.setUniform("LiftB", m.liftB());
+        chain.setUniform("HazeR", m.fogR() * fogLight);
+        chain.setUniform("HazeG", m.fogG() * fogLight);
+        chain.setUniform("HazeB", m.fogB() * fogLight);
+        chain.setUniform("HazeStart", m.fogStart());
+        chain.setUniform("HazeDensity", m.fogDensity());
+        chain.setUniform("HazeMax", m.fogMax());
+        chain.setUniform("ContactShadow", m.ao());
+        chain.setUniform("Glow", m.glow());
+        chain.setUniform("Breath", m.breath());
+    }
+}

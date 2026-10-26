@@ -255,7 +255,10 @@ public final class HandheldCamera {
         lastRenderPitch = pitch;
         float u = 0.0f;
         float v = 0.0f;
-        if (dt > 1.0e-4f && Math.abs(dYaw) < SNAP_DEG && Math.abs(dPitch) < SNAP_DEG) {
+        // A minimised window has zero width (tanH = 0): dividing by it would give NaN, and the
+        // smoothing below would then keep that NaN forever, smearing the whole picture into one
+        // flat colour. So no blur unless the projection is valid.
+        if (dt > 1.0e-4f && tanH > 1.0e-4f && tanV > 1.0e-4f && Math.abs(dYaw) < SNAP_DEG && Math.abs(dPitch) < SNAP_DEG) {
             float yawSmear = dYaw / dt * SHUTTER_SECONDS * Mth.DEG_TO_RAD;
             float pitchSmear = dPitch / dt * SHUTTER_SECONDS * Mth.DEG_TO_RAD;
             // Turning right slides the picture left (-u); looking down slides it up (+v, GL y points up).
@@ -271,6 +274,9 @@ public final class HandheldCamera {
         float blurEase = ease(0.3f, dTicks);
         blurU += (u - blurU) * blurEase;
         blurV += (v - blurV) * blurEase;
+        if (!Float.isFinite(blurU) || !Float.isFinite(blurV)) {
+            blurU = blurV = 0.0f; // never let a bad frame stick
+        }
 
         // The fallback (screen-space) flashlight beam trails your aim, like a torch in your hand.
         float beamFollow = Math.min(1.0f, BEAM_FOLLOW_PER_TICK * dTicks);
@@ -278,8 +284,8 @@ public final class HandheldCamera {
         beamPitch += (aimPitch - beamPitch) * beamFollow;
         float offYaw = Mth.clamp(Mth.wrapDegrees(beamYaw - yaw), -45.0f, 45.0f) * Mth.DEG_TO_RAD;
         float offPitch = Mth.clamp(beamPitch - pitch, -45.0f, 45.0f) * Mth.DEG_TO_RAD;
-        flashX = Mth.clamp((float) Math.tan(offYaw) / (2.0f * tanH), -0.25f, 0.25f);
-        flashY = Mth.clamp(-(float) Math.tan(offPitch) / (2.0f * tanV), -0.25f, 0.25f);
+        flashX = tanH > 1.0e-4f ? Mth.clamp((float) Math.tan(offYaw) / (2.0f * tanH), -0.25f, 0.25f) : 0.0f;
+        flashY = tanV > 1.0e-4f ? Mth.clamp(-(float) Math.tan(offPitch) / (2.0f * tanV), -0.25f, 0.25f) : 0.0f;
     }
 
     private HandheldCamera() {}

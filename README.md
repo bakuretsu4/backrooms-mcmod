@@ -203,6 +203,29 @@ light on and the sign over the front door.
   real world.
 - Dying in the Backrooms: *you can't escape.*
 
+### The camcorder picture
+
+Everything you see in the Backrooms is filmed: a gentle wide lens, worn VHS tape (faint line
+jitter and colour fringes), soft bloom on the lights and a little motion blur when you turn. On top
+of that each level has its own mood (`client/AtmosphereGrade`), applied evenly over the whole
+picture and blended over about two seconds when you change level:
+
+| Level | Mood |
+|---|---|
+| Level 0 | Stale yellow light, sickly greenish shadows, thick yellow-grey air down the halls |
+| Level 1 | Cold, damp concrete: blue shadows, little colour, grey-blue air |
+| Level 2 | Rusty-brown shadows under cold bulbs, deep corner shadows, dark oily air |
+| Level 4 | Cold fluorescent blue-grey, quiet |
+| Poolrooms | Teal shadows, soft cool highlights, a gentle wet glow |
+| Level 37 | Dreamlike: low contrast, milky shadows, warm overexposed highlights, the strongest glow |
+| Level 9 | Deep blue shadows, sodium-orange highlights, cold dark air |
+| Level 94 | A touch over-saturated and soft by day, pale blue distance; colour drains away at night |
+
+Each mood combines a colour grade (split-toned shadows and highlights, lifted blacks), coloured
+haze that thickens with real distance, soft contact shadows in corners and where walls meet floors,
+a faint glow around bright areas, and a very slow exposure drift, as if the camera's auto-iris
+can't quite settle. All of it is kept subtle so you can always see where you're going.
+
 ### Main menu
 
 The vanilla title screen is replaced by a "found footage" menu (`client/menu`): camcorder footage
@@ -257,5 +280,5 @@ soundfile; Windows speech synthesis for the intercom voices).
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes |
 | `client/camera` | Handheld camera shake, roll, smoothing |
 | `client/hud` | Minimal HUD, energy bolt |
-| `client` | Camcorder post-shader control, overlay, Bacteria model/renderer, keys |
-| `assets/backrooms/shaders` | Lens, bloom, motion blur and grade post-processing |
+| `client` | Camcorder post-shader control, per-level picture mood (`AtmosphereGrade`), overlay, Bacteria model/renderer, keys |
+| `assets/backrooms/shaders` | Lens, bloom, motion blur, contact shadows, distance haze, glow and grade post-processing |

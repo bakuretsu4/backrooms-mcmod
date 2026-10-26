@@ -3,16 +3,22 @@
 // Camcorder look for the Backrooms, matched to the reference footage.
 //
 // Order of operations (each numbered step is below):
-//  1. Lens: strong barrel distortion (k = 0.20 in half-height units), cropped exactly so the
+//  1. Lens: very gentle barrel distortion (k = 0.04 in half-height units), cropped exactly so the
 //     corners of the screen land on the corners of the picture: no black corners, no vignette.
+//     (Stronger barrel magnified the middle and stretched the edges, so everything seemed to
+//     happen in the centre of the screen.)
 //  2. VHS tape transport: always a little line jitter (sawtooth edges) and a head-switching strip
 //     at the bottom; wobble, tracking bar and tears only in glitch moments (danger, transitions, low battery).
 //  3. Rotational motion blur along the camera's turn this frame, with mild radial chromatic
 //     aberration (red and green pushed apart toward the screen sides).
 //  4. Fallback flashlight (only when Veil's real lights are not running): a dim, flat disc with a
 //     hard-ish edge, lit by how far each pixel is.
-//  5. Bloom: only near-white pixels (light tubes) glow; walls don't.
-//  6. Grade: neutral, black point lifted to blue-violet #020005, faint magenta on neutrals.
+//  5. Bloom: only near-white pixels (light tubes) glow; walls don't. Then the level's soft glow:
+//     everything bright bleeds a little into its surroundings (old optics), all over the picture.
+//  6. Atmosphere and grade, the same everywhere on screen (driven by AtmosphereGrade per level):
+//     contact shadows in corners and where walls meet floors (screen-space ambient occlusion),
+//     coloured haze that thickens with real distance, exposure/contrast/saturation, split-toned
+//     shadows and highlights, a lifted tinted black, and a very slow auto-iris "breath".
 //     Alarm = faint red wash, NightShot = green infrared, Lightning = white flash.
 //  7. Glitch-only extras (grain, specks, scanlines), wake-up eyelids, transition static.
 //  Dream (Poolrooms hallucination, uniform Dream 0..1) is woven into steps 2, 3, 5 and 6: slow
@@ -55,6 +61,28 @@ uniform float Sanity;     // 0..1 how broken your mind is (0 = picture exactly u
 uniform float SanityPulse;  // 0..1 heartbeat pulse for the edge darkening (only matters when Sanity > 0)
 uniform float SanityGlitch; // 0..1 a tiny tape glitch when a hallucination vanishes (0 = no change)
 uniform float Chroma;       // 0..1 a Smiler close by: strong colour fringing (0 = no change at all)
+// The level's mood (AtmosphereGrade). Defaults leave the picture as it was.
+uniform float Exposure;     // overall brightness multiplier
+uniform float Contrast;     // around mid-grey
+uniform float Saturation;   // 1 = unchanged, 0 = black and white
+uniform float ShadowR;      // tint multiplier for the dark parts
+uniform float ShadowG;
+uniform float ShadowB;
+uniform float HighlightR;   // tint multiplier for the bright parts
+uniform float HighlightG;
+uniform float HighlightB;
+uniform float LiftR;        // the darkest colour the tape shows (black is never quite black)
+uniform float LiftG;
+uniform float LiftB;
+uniform float HazeR;        // colour of the air
+uniform float HazeG;
+uniform float HazeB;
+uniform float HazeStart;    // blocks before the haze begins
+uniform float HazeDensity;  // how fast it thickens per block
+uniform float HazeMax;      // the most it can cover (0..1), so far walls never vanish entirely
+uniform float ContactShadow; // 0..1 strength of the corner / contact shadows
+uniform float Glow;         // 0..1 soft glow around bright areas
+uniform float Breath;       // tiny slow exposure drift (0.01 = 1%)
 uniform float Near;
 uniform float Far;
 
@@ -63,17 +91,17 @@ in vec2 oneTexel;
 
 out vec4 fragColor;
 
-// Barrel strength measured from the reference: a straight wall edge bows ~26 px at 480p.
-const float LENS_K = 0.20;
-// Chromatic aberration: offset = CA_STRENGTH * |x - 0.5| (so 0 in the middle, 0.15% at the sides).
-const float CA_STRENGTH = 0.003;
+// Barrel strength: enough for a camcorder lens feel, gentle enough that the picture stays even.
+const float LENS_K = 0.04;
+// Chromatic aberration: a faint fringe everywhere, a little more toward the sides (never zero in
+// the middle, so the whole picture shares the same slightly-soft camcorder feel).
+const float CA_STRENGTH = 0.0016;
 // Worn tape, always on: every scanline band is nudged sideways a few pixels (sawtooth edges),
 // stronger red/green colour fringes and a thin head-switching noise strip at the bottom.
 const float TAPE_BASE = 0.35;
 // How much of each of the three bloom sizes is added back.
 const float BLOOM_STRENGTH = 0.45;
-// Unlit black is not pure black on the tape, it is a very dark blue-violet.
-const vec3 BLACK_POINT = vec3(2.0, 0.0, 5.0) / 255.0;
+// (The darkest colour now comes from the level's Lift: by default the tape's blue-violet #020005.)
 // Neutral (grey/white) pixels lose ~2.8% green -> a faint magenta cast, e.g. 216/222/217 -> 216/216/217.
 const float MAGENTA_TINT = 0.028;
 // Motion blur taps (jittered per pixel, so few taps still look smooth).
@@ -100,6 +128,16 @@ float noise1(float x) {
 
 float luma(vec3 c) {
     return dot(c, vec3(0.2126, 0.7152, 0.0722));
+}
+
+// Distance (blocks) of the surface seen at uv; very far for the sky.
+float sceneDistance(vec2 uv) {
+    float d = texture(DepthSampler, uv).r;
+    if (d >= 0.99999) {
+        return 1000.0;
+    }
+    float z = d * 2.0 - 1.0;
+    return (2.0 * Near * Far) / (Far + Near - z * (Far - Near));
 }
 
 float linearDepth(float d) {
@@ -189,7 +227,9 @@ void main() {
     vec2 fromCentre = uv - 0.5;
     float centreDist = length(fromCentre);
     vec2 radial = centreDist > 1.0e-5 ? fromCentre / centreDist : vec2(0.0);
-    vec2 caOffset = radial * CA_STRENGTH * abs(uv.x - 0.5) * (1.0 + tape * 2.0);
+    // VHS chroma is recorded slightly out of step with the picture, so the colour sits a hair to the
+    // side of the edges EVERYWHERE (a constant horizontal shift), plus a touch of radial lens fringe.
+    vec2 caOffset = (vec2(CA_STRENGTH * 0.4, 0.0) + radial * CA_STRENGTH * centreDist * 1.4) * (1.0 + tape);
     if (Chroma > 0.0) {
         // Smiler close by: the colours tear apart, worst at the edges, wobbling a little.
         caOffset += radial * Chroma * (0.003 + 0.012 * centreDist) * (0.85 + 0.15 * sin(t * 17.0));
@@ -249,16 +289,73 @@ void main() {
         col = mix(col, texture(DiffuseSampler, ghostUv).rgb, ghost);
     }
 
+    // 6a. Contact shadows (screen-space ambient occlusion), the same all over the picture. For each
+    //     of six directions we look a little way to both sides. On a flat surface 1/distance changes
+    //     evenly across the screen, so the two neighbours average out to the middle; in an inside
+    //     corner (wall meets floor, a room's corners, under a desk) both neighbours are closer, so
+    //     the middle is darkened a little. Big jumps (an object in front of a far wall) don't count.
+    float dist0 = sceneDistance(uv);
+    if (ContactShadow > 0.0 && dist0 < 48.0) {
+        // About half a block on screen at this distance (1.4 ~ 2 * tan(35 degrees) for a 70 degree view).
+        float radiusPx = clamp(0.5 * InSize.y / (1.4 * dist0), 3.0, 40.0);
+        float rot = hash12(floor(gl_FragCoord.xy * 0.5)) * 3.14159;
+        float inv0 = 1.0 / dist0;
+        float occ = 0.0;
+        for (int i = 0; i < 6; i++) {
+            float a = rot + float(i) * 0.5235988; // 30 degree steps (both sides cover 360)
+            vec2 o = vec2(cos(a), sin(a)) * radiusPx * (0.6 + 0.4 * float(i & 1)) / InSize;
+            float d1 = sceneDistance(clamp(uv + o, 0.0, 1.0));
+            float d2 = sceneDistance(clamp(uv - o, 0.0, 1.0));
+            float valid = step(abs(d1 - dist0), 1.5) * step(abs(d2 - dist0), 1.5);
+            float concave = (0.5 * (1.0 / d1 + 1.0 / d2) - inv0) / inv0;
+            occ += clamp(concave * 7.0, 0.0, 1.0) * valid;
+        }
+        occ /= 6.0;
+        col *= 1.0 - ContactShadow * occ * smoothstep(48.0, 24.0, dist0);
+    }
+
     // 5. Bloom from the three blur sizes. Only light fixtures made it into these buffers.
     col += (texture(Bloom1Sampler, uv).rgb + texture(Bloom2Sampler, uv).rgb + texture(Bloom3Sampler, uv).rgb) * BLOOM_STRENGTH;
     col = clamp(col, 0.0, 1.0);
 
-    // 6. Grade.
+    // 6b. Glow: bright areas bleed softly into their neighbourhood (old, slightly hazy optics), and
+    //     the whole picture is a touch softer. Two rings of samples around every pixel, so it is the
+    //     same everywhere on screen.
+    if (Glow > 0.0) {
+        vec2 gr = vec2(0.016 / aspect, 0.016);
+        vec3 acc = vec3(0.0);
+        for (int i = 0; i < 8; i++) {
+            float a = float(i) * 0.7853982 + 0.39;
+            vec2 dir = vec2(cos(a), sin(a));
+            acc += texture(DiffuseSampler, clamp(uv + dir * gr, 0.0, 1.0)).rgb;
+            acc += texture(DiffuseSampler, clamp(uv + dir * gr * 2.3, 0.0, 1.0)).rgb;
+        }
+        vec3 soft = acc / 16.0;
+        col += max(soft - 0.32, 0.0) * (Glow * 0.9);
+        col = mix(col, max(col, soft), Glow * 0.25);
+        col = clamp(col, 0.0, 1.0);
+    }
+
+    // 6c. Haze: the air between you and what you see has a colour, and the further away a surface
+    //     is, the more of that air there is. Real distance, so it is even across the screen.
+    if (HazeMax > 0.0) {
+        float haze = HazeMax * (1.0 - exp(-max(dist0 - HazeStart, 0.0) * HazeDensity));
+        col = mix(col, vec3(HazeR, HazeG, HazeB), haze);
+    }
+
+    // 6d. The level's grade: exposure (drifting very slowly, like an auto-iris that never settles),
+    //     shadows and highlights tinted separately, saturation, then contrast around a dark mid-grey
+    //     (so dark rooms don't get their shadows crushed).
+    col *= Exposure * (1.0 + Breath * (0.6 * sin(t * 0.31) + 0.4 * sin(t * 0.73 + 1.3)));
+    float gradeLuma = luma(col);
+    col *= mix(vec3(ShadowR, ShadowG, ShadowB), vec3(HighlightR, HighlightG, HighlightB), smoothstep(0.04, 0.55, gradeLuma));
+    col = mix(vec3(luma(col)), col, Saturation);
+    col = clamp((col - 0.18) * Contrast + 0.18, 0.0, 1.0);
+
+    // 6e. Event overlays on top of the level's grade, so their colours stay true.
     // Level 9 fog drains the colour: near things keep it, beyond ~25 blocks they fade toward grey.
     if (FogDrain > 0.0) {
-        float sceneDepth = texture(DepthSampler, uv).r;
-        float dist = sceneDepth >= 0.99999 ? 1000.0 : linearDepth(sceneDepth);
-        float drain = FogDrain * smoothstep(8.0, 28.0, dist) * 0.92;
+        float drain = FogDrain * smoothstep(8.0, 28.0, dist0) * 0.92;
         col = mix(col, vec3(luma(col)), drain);
     }
     if (Alarm > 0.0) {
@@ -294,8 +391,9 @@ void main() {
     float lo = min(col.r, min(col.g, col.b));
     float saturation = (hi - lo) / max(hi, 1.0e-4);
     col.g *= 1.0 - MAGENTA_TINT * (1.0 - smoothstep(0.05, 0.3, saturation));
-    // Lift the black point to #020005 (pure black becomes that colour, white stays white).
-    col = BLACK_POINT + col * (1.0 - BLACK_POINT);
+    // Lift the black point to the level's darkest colour (pure black becomes it, white stays white).
+    vec3 lift = vec3(LiftR, LiftG, LiftB);
+    col = lift + col * (1.0 - lift);
     // Lightning: the whole frame blows out white for an instant.
     col = mix(col, vec3(1.0), clamp(Flash, 0.0, 1.0) * 0.85);
 

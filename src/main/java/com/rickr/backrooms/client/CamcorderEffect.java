@@ -172,6 +172,8 @@ public final class CamcorderEffect {
         chain.setUniform("SanityGlitch", SanityClientEffects.vanishGlitch());
         // Smilers: strong colour fringing when one is close (0 = picture exactly unchanged).
         chain.setUniform("Chroma", chroma);
+        // The level's mood: grade, haze, contact shadows, glow and breath (see AtmosphereGrade).
+        AtmosphereGrade.apply(mc, chain);
         chain.setUniform("Near", GameRenderer.PROJECTION_Z_NEAR);
         chain.setUniform("Far", mc.gameRenderer.getDepthFar());
     }
