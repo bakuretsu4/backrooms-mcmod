@@ -86,6 +86,8 @@ public final class Acoustics {
     private static final Material OFFICE = new Material(0.45f, 0.7f, 0.4f, 0.4f, 0.9f);
     // Level 9 and Level 94: mostly open air; inside the houses, small furnished rooms.
     private static final Material OUTDOORS = new Material(0.45f, 0.75f, 0.55f, 0.6f, 0.8f);
+    // Level 7: a vast concrete ceiling over open water: long, dark, smooth echoes (the groans roll on).
+    private static final Material SEA = new Material(0.7f, 1.6f, 0.6f, 0.6f, 1.0f);
 
     @Nullable
     private static Material material(@Nullable BackroomsLevel level) {
@@ -98,6 +100,7 @@ public final class Acoustics {
             case LEVEL_2 -> PIPES;
             case LEVEL_4 -> OFFICE;
             case LEVEL_9, LEVEL_94 -> OUTDOORS;
+            case LEVEL_7 -> SEA;
             case POOLROOMS, LEVEL_37 -> null; // nothing reverberates there (canon), muffling only
         };
     }

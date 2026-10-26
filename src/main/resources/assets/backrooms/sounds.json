@@ -1660,5 +1660,47 @@
       }
     ],
     "subtitle": "subtitles.backrooms.distant.level94.cartoon_tiptoe"
+  },
+  "ambient.level7": {
+    "sounds": [
+      {
+        "name": "backrooms:level7/ambience",
+        "stream": true
+      }
+    ]
+  },
+  "level7.groan": {
+    "sounds": [
+      {
+        "name": "backrooms:level7/groan1",
+        "stream": true
+      },
+      {
+        "name": "backrooms:level7/groan2",
+        "stream": true
+      },
+      {
+        "name": "backrooms:level7/groan3",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.l7_groan"
+  },
+  "level7.heave": {
+    "sounds": [
+      {
+        "name": "backrooms:level7/heave",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.l7_heave"
+  },
+  "level7.lurch": {
+    "sounds": [
+      {
+        "name": "backrooms:level7/lurch"
+      }
+    ],
+    "subtitle": "subtitles.backrooms.l7_lurch"
   }
 }

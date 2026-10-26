@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "backrooms:block/l7_pipe"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l7_pipe",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "backrooms:block/l7_pipe",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

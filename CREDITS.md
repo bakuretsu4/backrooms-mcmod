@@ -5,6 +5,17 @@
 
 All other textures and sounds are generated procedurally by `tools/gen_assets.py`.
 
+## Level 7 references
+
+- Level 7's setting is adapted from ["Level 7 — Thalassophobia"](https://backrooms-wiki.wikidot.com/level-7)
+  by Bart0nius, The Backrooms Wiki, licensed [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/),
+  mixed with the [Backrooms Fandom wiki's Level 7](https://backrooms.fandom.com/wiki/Level_7)
+  (rewrite by SherlsF, CC BY-SA). Changes include a Minecraft terrain adaptation, an exit door in a
+  ringed stone platform leading to Level 9, a flooded Level 94 house as the way in, and the Thing
+  kept off-screen (sounds, a swell of the water, a distant silhouette).
+- [Escape the Backrooms screenshots](https://escapethebackrooms.fandom.com/wiki/Level_7)
+  were consulted for visual reference only. No game assets were imported into the mod.
+
 ## Level 94 references
 
 - Level 94's setting is adapted from ["Level 94 — Motion"](https://backrooms-wiki.wikidot.com/level-94)

@@ -48,7 +48,8 @@ Overworld --suffocate--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 -
 ```
 
 Secret branches: a rare sunlit archway in the Poolrooms leads to **Level 37**, whose deep pits lead
-on to Level 9; a rare moulded-clay front door on a Level 9 house opens onto **Level 94**.
+on to Level 9; a rare moulded-clay front door on a Level 9 house opens onto **Level 94**, and a
+flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on to Level 9.
 
 - **Level 0 (the Lobby):** thick-walled yellow maze, lit rooms and dark corridors. Arrows drawn on
   the walls point to the exit stairwell, but some of them lie. Look for the EXIT sign over a
@@ -109,8 +110,20 @@ on to Level 9; a rare moulded-clay front door on a Level 9 house opens onto **Le
   climbing frame, a looping upstairs hall, an animation studio and an empty throne room. Day lasts
   8 minutes (the last 30 s is dusk), night 3: at night the music stops and Smilers come out on the
   hills, so get inside a house (they can't follow you in; your sanity holds steady there). Ways
-  out: houses whose doorway is pure black lead back to Level 9, and the light behind the throne
-  leads to Level 1.
+  out: houses whose doorway is pure black lead back to Level 9, flooded houses (knee-deep water,
+  steps going down into murk) lead to Level 7, and the light behind the throne leads to Level 1.
+- **Level 7 ("Thalassophobia"):** reached only down the stairs of a flooded house in Level 94
+  (about one exit house in three). You come up in a small flooded sitting room (bookcase, coffee
+  table, armchair, a radio and a crate on the dry landing) hanging from a concrete ceiling over an
+  endless dark sea in a thick pale fog. Open a hatch in the landing and drop; the rope by the
+  other hatch climbs back up (hold jump). Around the room is a shallow shelf of pale silt, then a
+  sheer drop to a carpeted sea floor about 150 blocks down, with rock stacks, tar, scrap and the
+  ribs of giant fish. You can hold your breath about ten times longer than normal here. The way
+  out is a wooden door lying in a round stone platform on the sea floor, ringed by pillars and
+  huge pipes, 150 blocks west of the room: swim into it and you come out in Level 9. No monsters,
+  but something enormous lives in the water: you hear it groan far below, feel the water heave
+  when it passes under you, and once in a while a vast dark shape glides past at the edge of what
+  you can see. Your sanity drains in the water, faster the deeper you go; the room calms you.
 
 Every floor is endless; exits are spread out a few hundred blocks apart.
 
@@ -298,6 +311,7 @@ picture and blended over about two seconds when you change level:
 | Level 37 | Dreamlike: low contrast, milky shadows, warm overexposed highlights, the strongest glow |
 | Level 9 | Deep blue shadows, sodium-orange highlights, cold dark air |
 | Level 94 | A touch over-saturated and soft by day, pale blue distance; colour drains away at night |
+| Level 7 | Colour almost gone: pale grey bone-dust fog above the water, murky dark teal under it, near-black in the deep |
 
 Each mood combines a colour grade (split-toned shadows and highlights, lifted blacks), coloured
 haze that thickens with real distance, soft contact shadows in corners and where walls meet floors,
@@ -323,7 +337,8 @@ game's music channel, so the Music volume slider controls them (`client/Backroom
 | `drift` | Now and then in the Poolrooms and Level 37 | Softer and dreamier: warm chords that never settle, water drips, a slow music-box line |
 
 In the levels a piece plays only every 3 to 8 minutes, like Minecraft's own music; in between
-you hear only the level. Level 94 has no music because its siren poles play their own tune.
+you hear only the level. Level 94 has no music because its siren poles play their own tune, and
+Level 7 none because the sea is louder.
 Everything goes through a worn-tape sound: a slow pitch wobble shared by every note, soft
 saturation, hiss and a big, empty room.
 
@@ -349,7 +364,7 @@ saturation, hiss and a big, empty room.
 ## Operator commands
 
 ```
-/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94
+/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7
 /backrooms time94 <day|dusk|night|dawn> jump Level 94's day/night clock (testing)
 /backrooms escape [players]             send players back to reality
 /backrooms battery [players] [percent]  set camcorder battery

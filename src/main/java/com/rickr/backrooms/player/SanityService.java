@@ -14,6 +14,7 @@ import com.rickr.backrooms.world.Level94Clock;
 import com.rickr.backrooms.world.SafeRooms;
 import com.rickr.backrooms.world.Travel;
 import com.rickr.backrooms.world.anomaly.level37.HealingWater;
+import com.rickr.backrooms.world.layout.Level7Layout;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -63,6 +64,10 @@ public final class SanityService {
     private static final float LEVEL_94_HOUSE_RECOVERY = 0.6f;
     /** Level 94: out on the hills at night it slowly wears you down (about -45 over a night). */
     private static final float LEVEL_94_NIGHT_DRAIN = 0.25f;
+    /** Level 7: being in the water at all (the Thing is down there somewhere)... */
+    private static final float LEVEL_7_WATER_DRAIN = 0.10f;
+    /** ...plus up to this much more at the bottom (about -0.6 per second at 150 blocks down). */
+    private static final float LEVEL_7_DEEP_DRAIN = 0.40f;
 
     // ---- Distances (blocks) ----------------------------------------------------------------
     private static final double ALONE_RANGE = 24.0;
@@ -168,6 +173,11 @@ public final class SanityService {
         BackroomsLevel floor = BackroomsLevel.fromDimension(player.level().dimension());
         if (floor != null && LevelEvents.isBlackout(floor)) {
             change -= BLACKOUT_DRAIN;
+        }
+        if (floor == BackroomsLevel.LEVEL_7 && player.isInWater()) {
+            // The sea itself: the deeper and darker the water under and around you, the worse.
+            double depth = Level7Layout.SURFACE_Y + 1 - player.getY();
+            change -= LEVEL_7_WATER_DRAIN + LEVEL_7_DEEP_DRAIN * (float) Mth.clamp(depth / 150.0, 0.0, 1.0);
         }
         return change;
     }

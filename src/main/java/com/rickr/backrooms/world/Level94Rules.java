@@ -28,6 +28,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *       ({@code block/ClayDoorBlock} tells us), and you arrive on a road among the hills.</li>
  *   <li><b>Out to Level 9:</b> a dark-door house. It looks like every other house, but behind the
  *       door is solid black ({@code l94_dark_void}). Walk into the dark and you are back in the suburbs.</li>
+ *   <li><b>Out to Level 7:</b> a flooded house: knee-deep water inside and steps going down into
+ *       murky dark ({@code l94_flood_dark}). Wade down into it and you come up in Level 7.</li>
  *   <li><b>Out to Level 1:</b> the light behind the empty throne in the castle.</li>
  * </ul>
  * Level 94 is never left by falling (its transferBelowY is unreachable).
@@ -63,6 +65,15 @@ public final class Level94Rules {
         if (player.level().getBlockState(feet).is(ModBlocks.L94_DARK_VOID.get())
                 || player.level().getBlockState(feet.above()).is(ModBlocks.L94_DARK_VOID.get())) {
             Travel.useExit(player, BackroomsLevel.LEVEL_94);
+            return;
+        }
+        // Down the flooded house's stairs into the murk: Level 7.
+        if (player.level().getBlockState(feet).is(ModBlocks.L94_FLOOD_DARK.get())
+                || player.level().getBlockState(feet.above()).is(ModBlocks.L94_FLOOD_DARK.get())) {
+            Checkpoints.clear(player);
+            // Level 7 sends arrivals to its nearest entrance room (Level7Layout.arrivalHint).
+            Travel.sendTo(player, BackroomsLevel.LEVEL_7, player.getBlockX(), player.getBlockZ());
+            player.sendSystemMessage(Component.translatable("message.backrooms.arrive.level_7").withStyle(s -> s.withItalic(true)));
         }
     }
 

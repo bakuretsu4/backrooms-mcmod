@@ -8,6 +8,7 @@ import com.rickr.backrooms.world.layout.Level2Layout;
 import com.rickr.backrooms.world.layout.Level37Layout;
 import com.rickr.backrooms.world.layout.Level4Layout;
 import com.rickr.backrooms.world.layout.Level94Layout;
+import com.rickr.backrooms.world.layout.Level7Layout;
 import com.rickr.backrooms.world.layout.Level9Layout;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import com.rickr.backrooms.world.layout.PoolroomsLayout;
@@ -54,7 +55,13 @@ public enum BackroomsLevel implements StringRepresentable {
      * on a glass mountain. Day/night cycle ({@link Level94Clock}); Smilers come out at night. No
      * Bacteria. Never left by falling: see {@code Level94Rules}.
      */
-    LEVEL_94("level_94", new Level94Layout(), Integer.MIN_VALUE, 0, 1);
+    LEVEL_94("level_94", new Level94Layout(), Integer.MIN_VALUE, 0, 1),
+    /**
+     * "Thalassophobia": an endless dark sea under a concrete ceiling. Reached through a flooded
+     * house in Level 94; the door in the stone platform deep under the sea leads on to Level 9
+     * (see {@code Level7Rules}). No monsters you can see: the Thing is only ever felt.
+     */
+    LEVEL_7("level_7", new Level7Layout(), Integer.MIN_VALUE, 0, 1);
 
     public static final Codec<BackroomsLevel> CODEC = StringRepresentable.fromEnum(BackroomsLevel::values);
 
@@ -109,7 +116,7 @@ public enum BackroomsLevel implements StringRepresentable {
             case LEVEL_1 -> LEVEL_2;
             case LEVEL_2 -> LEVEL_4;
             case LEVEL_4 -> POOLROOMS;
-            case POOLROOMS, LEVEL_37, LEVEL_94 -> LEVEL_9;
+            case POOLROOMS, LEVEL_37, LEVEL_94, LEVEL_7 -> LEVEL_9;
             case LEVEL_9 -> null;
         };
     }

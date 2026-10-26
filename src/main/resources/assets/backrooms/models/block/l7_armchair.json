@@ -1,0 +1,9 @@
+{
+  "parent": "backrooms:block/l94_armchair",
+  "textures": {
+    "particle": "backrooms:block/l7_armchair",
+    "fabric": "backrooms:block/l7_armchair",
+    "cushion": "backrooms:block/l7_armchair_cushion",
+    "legs": "backrooms:block/l94_lamp_base"
+  }
+}

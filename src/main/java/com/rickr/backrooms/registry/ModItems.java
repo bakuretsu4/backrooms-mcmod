@@ -349,6 +349,14 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.L9_CRATER_ASPHALT_SLAB);
         ITEMS.registerSimpleBlockItem(ModBlocks.L9_CRATER_SOIL);
         ITEMS.registerSimpleBlockItem(ModBlocks.L9_SANDBAGS);
+        // Level 7: the sea, the flooded entrance room and the exit ring.
+        for (var block : java.util.List.of(ModBlocks.L7_CONCRETE, ModBlocks.L7_RUST_METAL, ModBlocks.L7_GRATING,
+                ModBlocks.L7_CARPET, ModBlocks.L7_SILT, ModBlocks.L7_ROCK, ModBlocks.L7_BONE, ModBlocks.L7_TAR,
+                ModBlocks.L7_SCRAP, ModBlocks.L7_PIPE, ModBlocks.L7_PILLAR, ModBlocks.L7_PLATFORM, ModBlocks.L7_EXIT_DOOR,
+                ModBlocks.L7_ROPE, ModBlocks.L7_HATCH, ModBlocks.L7_BOOKCASE, ModBlocks.L7_COFFEE_TABLE,
+                ModBlocks.L7_ARMCHAIR, ModBlocks.L94_FLOOD_DARK)) {
+            ITEMS.registerSimpleBlockItem(block);
+        }
     }
 
     private ModItems() {}

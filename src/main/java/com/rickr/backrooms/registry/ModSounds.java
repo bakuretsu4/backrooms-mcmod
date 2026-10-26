@@ -121,6 +121,13 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_WIND = register("ambient.level94_wind");
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_BIRDS = register("level94.birds");
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_LAUGH = register("level94.laugh");
+    // Level 7 "Thalassophobia": the hollow sea ambience (the biome's loop), and the Thing, which you
+    // only ever hear: its groans from far below, the swell when it passes under you, and the gut-drop
+    // lurch when you fall through the hatch (one-shots from client/Level7Client).
+    public static final DeferredHolder<SoundEvent, SoundEvent> L7_AMBIENT = register("ambient.level7");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L7_GROAN = register("level7.groan");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L7_HEAVE = register("level7.heave");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L7_LURCH = register("level7.lurch");
     // Music (original pieces from tools/gen_assets.py, played by client/BackroomsMusic on the music
     // channel): the main theme on the title menu, a mix of the theme and a dark ambient piece in
     // most levels, and a dreamier piece (or the theme) in the Poolrooms and Level 37.

@@ -27,9 +27,10 @@ public final class MovementClientEvents {
         }
         Input input = event.getInput();
         // No jumping in the Backrooms: you are a tired person with a camcorder, not a parkour pro.
-        // Except in water: the jump key is how you swim up, and how you climb out of a pool onto
-        // the raised tile walkways of the Poolrooms.
-        if (!player.isInWater()) {
+        // Except in water (the jump key is how you swim up, and how you climb out of a pool onto
+        // the raised tile walkways of the Poolrooms) and on anything you climb (ropes, frames):
+        // holding jump is how you go up them.
+        if (!player.isInWater() && !player.onClimbable()) {
             input.jumping = false;
         }
 

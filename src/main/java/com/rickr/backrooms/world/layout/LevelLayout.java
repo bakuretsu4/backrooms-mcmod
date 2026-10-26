@@ -106,6 +106,15 @@ public abstract class LevelLayout {
     }
 
     /**
+     * Where to start looking for an arrival spot when someone is sent to (x, z). Most levels have
+     * somewhere to stand everywhere, so (x, z) itself. Level 7 is open sea except for one entrance
+     * room per region, so it points at the nearest room (arrivals only search ~96 blocks around).
+     */
+    public int[] arrivalHint(long seed, int x, int z) {
+        return new int[] {x, z};
+    }
+
+    /**
      * Exact height of a player's feet in column (x, z). Usually {@link #standY}; Level 9 overrides
      * it because its sidewalks are half slabs (you stand at y + 0.5).
      */

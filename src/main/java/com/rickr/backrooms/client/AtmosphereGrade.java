@@ -89,6 +89,18 @@ public final class AtmosphereGrade {
     /** Level 94 at night: the colour leaves; blue-black air and the same soft glow. */
     private static final Mood LEVEL_94_NIGHT = new Mood(1.0f, 1.04f, 0.80f, 0.86f, 0.92f, 1.12f, 1.02f, 1.0f, 0.94f,
             0.008f, 0.010f, 0.022f, 0.05f, 0.06f, 0.10f, 14.0f, 0.020f, 0.40f, 0.30f, 0.20f, 0.010f);
+    /**
+     * Level 7 above the water: the fog of bone dust. Colour almost gone, cold grey shadows, and a
+     * thick pale haze that swallows the sea a few dozen blocks out.
+     */
+    private static final Mood LEVEL_7_AIR = new Mood(1.0f, 0.95f, 0.60f, 0.93f, 0.97f, 1.0f, 1.0f, 1.0f, 0.97f,
+            0.020f, 0.022f, 0.024f, 0.40f, 0.41f, 0.40f, 3.0f, 0.040f, 0.70f, 0.30f, 0.10f, 0.012f);
+    /** Level 7 just under the surface: murky dark teal closing in. */
+    private static final Mood LEVEL_7_WATER = new Mood(1.0f, 1.0f, 0.68f, 0.85f, 0.98f, 1.02f, 0.95f, 1.0f, 1.0f,
+            0.004f, 0.009f, 0.011f, 0.050f, 0.10f, 0.11f, 2.0f, 0.035f, 0.85f, 0.30f, 0.10f, 0.010f);
+    /** Level 7 in the deep: nearly black; your flashlight reaches about a dozen blocks into the haze. */
+    private static final Mood LEVEL_7_DEEP = new Mood(1.0f, 1.04f, 0.55f, 0.85f, 0.95f, 1.04f, 0.92f, 0.98f, 1.0f,
+            0.002f, 0.003f, 0.004f, 0.004f, 0.007f, 0.009f, 2.0f, 0.065f, 0.95f, 0.30f, 0.08f, 0.008f);
 
     /** Fraction of the way to the target mood per frame at 60 fps (about two seconds to settle). */
     private static final float BLEND_PER_FRAME = 0.035f;
@@ -128,6 +140,8 @@ public final class AtmosphereGrade {
             case LEVEL_37 -> LEVEL_37;
             case LEVEL_9 -> LEVEL_9;
             case LEVEL_94 -> mc.level == null ? LEVEL_94_DAY : LEVEL_94_NIGHT.lerp(LEVEL_94_DAY, Level94Clock.daylight(mc.level, 0.0f));
+            // Level 7: the haze changes with your depth (Level7Client measures it).
+            case LEVEL_7 -> !Level7Client.underwater() ? LEVEL_7_AIR : LEVEL_7_WATER.lerp(LEVEL_7_DEEP, Level7Client.deepness());
         };
     }
 

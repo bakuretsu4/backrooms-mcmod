@@ -7,6 +7,9 @@ import com.rickr.backrooms.block.ParapetBlock;
 import com.rickr.backrooms.block.ThroneLightBlock;
 import com.rickr.backrooms.block.CeilingTubeBlock;
 import com.rickr.backrooms.block.ClayDoorBlock;
+import com.rickr.backrooms.block.RopeBlock;
+import com.rickr.backrooms.block.SeaDoorBlock;
+import com.rickr.backrooms.block.WaterloggedFurnitureBlock;
 import com.rickr.backrooms.block.CheckpointRadioBlock;
 import com.rickr.backrooms.block.DuctBlock;
 import com.rickr.backrooms.block.CubiclePartitionBlock;
@@ -55,6 +58,7 @@ import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
+import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.StairBlock;
@@ -635,6 +639,11 @@ public final class ModBlocks {
             unbreakable(MapColor.COLOR_BLACK, SoundType.EMPTY).noCollission()
                     .isSuffocating((state, level, pos) -> false)
                     .isViewBlocking((state, level, pos) -> false));
+    /** The murky dark at the bottom of a flooded house's stairwell: wade down into it and you come out in Level 7. */
+    public static final DeferredBlock<Block> L94_FLOOD_DARK = BLOCKS.registerBlock("l94_flood_dark", Block::new,
+            unbreakable(MapColor.COLOR_BLACK, SoundType.EMPTY).noCollission()
+                    .isSuffocating((state, level, pos) -> false)
+                    .isViewBlocking((state, level, pos) -> false));
     /** The moulded-clay front door on a few Level 9 houses: step through it into Level 94. */
     public static final DeferredBlock<ClayDoorBlock> L94_CLAY_DOOR = BLOCKS.registerBlock("l94_clay_door",
             props -> new ClayDoorBlock(BlockSetType.OAK, props), unbreakable(MapColor.TERRACOTTA_ORANGE, SoundType.MUD).noOcclusion());
@@ -905,6 +914,65 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> L9_CRATER_SOIL = structural("l9_crater_soil", MapColor.DIRT, SoundType.GRAVEL);
     /** Stacked sandbags ringing a foxhole in the Crimson Field. */
     public static final DeferredBlock<Block> L9_SANDBAGS = structural("l9_sandbags", MapColor.COLOR_BROWN, SoundType.WOOL);
+
+    // ---- Level 7 "Thalassophobia" (world/layout/Level7Layout) ---------------------------------
+    // The sea under the concrete ceiling, the flooded entrance room hanging off that ceiling, and
+    // the exit ring on the sea floor.
+    /** Stained grey concrete: the ceiling over the whole sea, and the rubble blocking the room's stairs. */
+    public static final DeferredBlock<Block> L7_CONCRETE = structural("l7_concrete", MapColor.STONE, SoundType.STONE);
+    /** Riveted metal plates scabbed with rust: the entrance room's walls and roof. */
+    public static final DeferredBlock<Block> L7_RUST_METAL = structural("l7_rust_metal", MapColor.TERRACOTTA_BROWN, SoundType.METAL);
+    /** Rusty floor grating: the dry landing by the hatches. */
+    public static final DeferredBlock<Block> L7_GRATING = structural("l7_grating", MapColor.TERRACOTTA_BROWN, SoundType.METAL);
+    /** Waterlogged carpet: the room's floor, and the floor of the deep sea. */
+    public static final DeferredBlock<Block> L7_CARPET = structural("l7_carpet", MapColor.COLOR_GRAY, SoundType.WOOL);
+    /** Pale silt of bone dust: the shallows around the room. */
+    public static final DeferredBlock<Block> L7_SILT = structural("l7_silt", MapColor.SAND, SoundType.SAND);
+    /** Dark wet rock: under everything, the cliffs and the stacks that rise to the islands. */
+    public static final DeferredBlock<Block> L7_ROCK = structural("l7_rock", MapColor.COLOR_GRAY, SoundType.STONE);
+    /** A heap of old bones (and the giant ribcages on the sea floor). */
+    public static final DeferredBlock<Block> L7_BONE = structural("l7_bone", MapColor.SAND, SoundType.BONE_BLOCK);
+    /** Black glossy tar: the mounds in the deep. */
+    public static final DeferredBlock<Block> L7_TAR = structural("l7_tar", MapColor.COLOR_BLACK, SoundType.MUD);
+    /** Rusted scrap metal lying on the bottom. */
+    public static final DeferredBlock<Block> L7_SCRAP = structural("l7_scrap", MapColor.TERRACOTTA_BROWN, SoundType.METAL);
+    /** The giant pipes rising out of the dark around the exit. */
+    public static final DeferredBlock<RotatedPillarBlock> L7_PIPE = BLOCKS.registerBlock("l7_pipe", RotatedPillarBlock::new,
+            unbreakable(MapColor.TERRACOTTA_BROWN, SoundType.METAL));
+    /** Weathered stone: the pillars around the exit. */
+    public static final DeferredBlock<Block> L7_PILLAR = structural("l7_pillar", MapColor.STONE, SoundType.STONE);
+    /** Carved stone with rings round it: the round platform the exit door lies in. */
+    public static final DeferredBlock<Block> L7_PLATFORM = structural("l7_platform", MapColor.STONE, SoundType.STONE);
+    /**
+     * The exit: an old wooden door lying in the platform. Swim into it (to Level 9). A faint light
+     * seeps round its edges (light 10), the only thing you can make out down there from afar.
+     */
+    public static final DeferredBlock<SeaDoorBlock> L7_EXIT_DOOR = BLOCKS.registerBlock("l7_exit_door", SeaDoorBlock::new,
+            unbreakable(MapColor.WOOD, SoundType.WOOD).noCollission().noOcclusion().lightLevel(state -> 10));
+    /** The rope from the room's landing down to the water: climb it (hold jump) to get back up. */
+    public static final DeferredBlock<RopeBlock> L7_ROPE = BLOCKS.registerBlock("l7_rope", RopeBlock::new,
+            unbreakable(MapColor.WOOD, SoundType.WOOL).noCollission().noOcclusion());
+    /** The rusty metal hatches in the room's floor, over the sea. Open by hand. */
+    public static final DeferredBlock<TrapDoorBlock> L7_HATCH = BLOCKS.registerBlock("l7_hatch",
+            props -> new TrapDoorBlock(BlockSetType.COPPER, props), unbreakable(MapColor.TERRACOTTA_BROWN, SoundType.METAL).noOcclusion());
+    /** A swollen bookcase of books that are only blocks of paper in dust jackets. */
+    public static final DeferredBlock<Block> L7_BOOKCASE = structural("l7_bookcase", MapColor.WOOD, SoundType.WOOD);
+    /** The room's low coffee table and its one armchair, standing in the water (they hold water themselves). */
+    public static final DeferredBlock<WaterloggedFurnitureBlock> L7_COFFEE_TABLE = BLOCKS.registerBlock("l7_coffee_table",
+            props -> new WaterloggedFurnitureBlock(props, Shapes.or(
+                    Block.box(0, 12.5, 0, 16, 14.5, 16),
+                    Block.box(1, 0, 1, 2.5, 12.5, 2.5),
+                    Block.box(13.5, 0, 1, 15, 12.5, 2.5),
+                    Block.box(1, 0, 13.5, 2.5, 12.5, 15),
+                    Block.box(13.5, 0, 13.5, 15, 12.5, 15))),
+            unbreakable(MapColor.WOOD, SoundType.WOOD).noOcclusion());
+    public static final DeferredBlock<WaterloggedFurnitureBlock> L7_ARMCHAIR = BLOCKS.registerBlock("l7_armchair",
+            props -> new WaterloggedFurnitureBlock(props, Shapes.or(
+                    Block.box(1, 0, 2, 15, 8, 15),
+                    Block.box(1, 0, 11, 15, 16, 15),
+                    Block.box(0, 0, 2, 3, 11, 15),
+                    Block.box(13, 0, 2, 16, 11, 15))),
+            unbreakable(MapColor.COLOR_BROWN, SoundType.WOOL).noOcclusion());
 
     private static DeferredBlock<Block> structural(String name, MapColor color, SoundType sound) {
         return BLOCKS.registerBlock(name, (Function<BlockBehaviour.Properties, Block>) Block::new, unbreakable(color, sound));

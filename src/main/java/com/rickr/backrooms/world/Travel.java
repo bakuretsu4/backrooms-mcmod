@@ -110,12 +110,13 @@ public final class Travel {
         Teleports.settle(player);
     }
 
-    /** Nearest safe column to (x, z), searched in growing squares. */
+    /** Nearest safe column to (x, z) (or to the level's hint for it), searched in growing squares. */
     public static BlockPos findSafeSpot(ServerLevel level, BackroomsLevel target, int x, int z) {
         LevelLayout layout = target.layout();
         long seed = BackroomsSeeds.layoutSeed(level, target);
-        BlockPos found = searchWalkable(layout, seed, x, z, SEARCH_RADIUS);
-        return found != null ? found : new BlockPos(x, layout.standY(seed, x, z), z);
+        int[] hint = layout.arrivalHint(seed, x, z);
+        BlockPos found = searchWalkable(layout, seed, hint[0], hint[1], SEARCH_RADIUS);
+        return found != null ? found : new BlockPos(hint[0], layout.standY(seed, hint[0], hint[1]), hint[1]);
     }
 
     /**

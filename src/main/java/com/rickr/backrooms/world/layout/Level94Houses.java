@@ -7,11 +7,13 @@ import com.rickr.backrooms.block.WallDecalBlock;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.Hash;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.SlabType;
@@ -43,6 +45,12 @@ final class Level94Houses {
     static final int FRAGMENT_ROOM = 4;
     /** Not even a room: a heap of furniture on a scrap of floor (near the castle; see Level94Plan.driftStage). */
     static final int FRAGMENT_PILE = 5;
+    /**
+     * Another exit, looking like BIG from outside: inside, knee-deep water, and steps going down
+     * through the floor into murky dark. Wade down them and you come out in Level 7 (the M.E.G.'s
+     * log: "we found a house which was flooded... which only meant one thing to me, Level 7").
+     */
+    static final int FLOODED = 6;
     /** Chance that the sink of a furniture pile still holds the coin dated 1953 the M.E.G. found (about one pile in seven). */
     private static final double COIN_CHANCE = 0.15;
 
@@ -317,6 +325,10 @@ final class Level94Houses {
             for (int y = g + 1; y <= g + 7; y++) out.set(y, dark);
             return;
         }
+        if (h.kind == FLOODED) {
+            flooded(h, u, v, out);
+            return;
+        }
         boolean big = h.kind == BIG;
         // Rug: 3x3, in front of the armchair.
         int rugU = 2;
@@ -350,6 +362,37 @@ final class Level94Houses {
             out.set(g + 1, furniture(ModBlocks.L94_LAMP.get().defaultBlockState(), h.front));
         } else if (u == 2 && v == (big ? 3 : 2)) {
             out.set(g + 1, furniture(ModBlocks.L94_TV.get().defaultBlockState(), h.inward));
+        }
+    }
+
+    /**
+     * A flooded house: water to the knee over the floor, and a two-wide flight of steps going down
+     * from the middle of the room toward the back wall, into the murk (l94_flood_dark) at the bottom.
+     * Everything is still water, held in by the walls and the ground around the stairwell.
+     */
+    private static void flooded(House h, int u, int v, LevelLayout.Column out) {
+        int g = h.g;
+        BlockState water = Blocks.WATER.defaultBlockState();
+        boolean well = (u == h.mid() || u == h.mid() + 1) && v >= 3 && v <= 7;
+        if (!well) {
+            out.set(g, ModBlocks.L94_FLOOR.get().defaultBlockState());
+            out.set(g + 1, water);
+            return;
+        }
+        // Steps at v = 3..6, one block lower each; at v = 7 the murk, two blocks high.
+        int bottom = g - 5;
+        BlockState dirt = ModBlocks.L94_DIRT.get().defaultBlockState();
+        for (int y = bottom - 1; y <= g + 1; y++) out.set(y, water);
+        out.set(bottom - 1, dirt);
+        if (v <= 6) {
+            int step = g - (v - 3);
+            for (int y = bottom; y < step; y++) out.set(y, dirt);
+            out.set(step, ModBlocks.L94_STAIRS.get().defaultBlockState()
+                    .setValue(StairBlock.FACING, h.front).setValue(BlockStateProperties.WATERLOGGED, true));
+        } else {
+            out.set(g - 4, ModBlocks.L94_FLOOD_DARK.get().defaultBlockState());
+            out.set(g - 3, ModBlocks.L94_FLOOD_DARK.get().defaultBlockState());
+            for (int y = bottom; y < g - 4; y++) out.set(y, dirt);
         }
     }
 

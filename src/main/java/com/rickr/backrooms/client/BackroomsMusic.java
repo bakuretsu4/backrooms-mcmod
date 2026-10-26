@@ -53,7 +53,7 @@ public final class BackroomsMusic {
         if (floor != null) {
             // null = no music at all (anything playing stops).
             event.setMusic(switch (floor) {
-                case LEVEL_94 -> null;
+                case LEVEL_94, LEVEL_7 -> null;
                 case POOLROOMS, LEVEL_37 -> DREAM;
                 default -> LEVELS;
             });

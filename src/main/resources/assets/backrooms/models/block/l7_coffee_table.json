@@ -1,0 +1,7 @@
+{
+  "parent": "backrooms:block/dining_table",
+  "textures": {
+    "particle": "backrooms:block/l7_wet_wood",
+    "wood": "backrooms:block/l7_wet_wood"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "side": "backrooms:block/l7_bookcase",
+    "end": "backrooms:block/l7_bookcase_top"
+  }
+}

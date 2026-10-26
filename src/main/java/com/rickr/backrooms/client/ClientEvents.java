@@ -94,6 +94,7 @@ public final class ClientEvents {
             return;
         }
         HandheldCamera.apply(mc, event);
+        Level7Client.modifyAngles(event);
         if (IntroCutscene.active()) {
             IntroCutscene.modifyAngles(event);
         }

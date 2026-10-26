@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l7_armchair"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l7_armchair",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l7_armchair",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l7_armchair",
+      "y": 270
+    }
+  }
+}

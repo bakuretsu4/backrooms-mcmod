@@ -640,7 +640,9 @@ final class Level94Plan {
         int topH = (int) Math.floor(hillHeight(hills, bestX + 0.5f, bestZ + 0.5f));
         Direction front = faceRoad(roads, bestX + 0.5f, bestZ + 0.5f, q);
         Level94Builds.Thing t = new Level94Builds.Thing(Level94Builds.HOUSE, 0, h, bestX, bestZ);
-        t.house = new Level94Houses.House().centred(Level94Houses.DARK, bestX, bestZ, front, 7, 9,
+        // About one exit house in three is flooded (the way to Level 7) instead of dark (Level 9).
+        int kind = Hash.unit(Hash.mix(h ^ 0x7L)) < 0.33 ? Level94Houses.FLOODED : Level94Houses.DARK;
+        t.house = new Level94Houses.House().centred(kind, bestX, bestZ, front, 7, 9,
                 LevelLayout.FLOOR_Y + topH, false, Hash.unit(Hash.mix(h)) < 0.5);
         t.box = t.house.worldReach(0);
         t.pad = t.house.worldReach(1);

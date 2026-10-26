@@ -36,7 +36,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Operator tools for hosting sessions with friends:
  * <pre>
- * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94 (default: level_0)
+ * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7 (default: level_0)
  * /backrooms escape [targets]          send players back to reality
  * /backrooms battery [targets] [pct]   set camcorder batteries (default: full)
  * /backrooms sanity [targets] <0-100>   set sanity (for testing the low-sanity effects)
@@ -166,7 +166,7 @@ public final class BackroomsCommand {
     }
 
     private static final SimpleCommandExceptionType UNKNOWN_LEVEL = new SimpleCommandExceptionType(
-            Component.literal("Unknown level. Try level_0, level_1, level_2, level_4, poolrooms, level_37, level_9 or level_94."));
+            Component.literal("Unknown level. Try level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94 or level_7."));
 
     private static BackroomsLevel levelArgument(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         BackroomsLevel level = BackroomsLevel.byName(StringArgumentType.getString(ctx, "level"));
