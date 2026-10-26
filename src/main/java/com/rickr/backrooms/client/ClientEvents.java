@@ -3,6 +3,7 @@ package com.rickr.backrooms.client;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.client.camera.HandheldCamera;
 import com.rickr.backrooms.client.intro.IntroCutscene;
+import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.network.CameraTogglePayload;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
@@ -65,11 +66,13 @@ public final class ClientEvents {
         }
     }
 
-    /** Wide camcorder lens. Only the world view; the held item keeps its FOV. */
+    /** Wide camcorder lens (can be turned off on the SETTINGS screen). Only the world view; the held item keeps its FOV. */
     @SubscribeEvent
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
         if (event.usedConfiguredFov() && CamcorderEffect.wanted(Minecraft.getInstance())) {
-            event.setFOV(Math.min(event.getFOV() * FOV_MULTIPLIER, MAX_FOV));
+            if (ClientSettings.WIDE_LENS.get()) {
+                event.setFOV(Math.min(event.getFOV() * FOV_MULTIPLIER, MAX_FOV));
+            }
             // The motion blur needs the real FOV to turn degrees of rotation into screen distance.
             HandheldCamera.setFov(event.getFOV());
         }

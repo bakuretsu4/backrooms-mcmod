@@ -125,6 +125,7 @@ public class BackroomsTitleScreen extends Screen {
                 VhsText.translatable("menu.backrooms.play"),
                 VhsText.translatable("menu.backrooms.multiplayer"),
                 VhsText.translatable("menu.backrooms.options"),
+                VhsText.translatable("menu.backrooms.settings"),
                 VhsText.translatable("menu.backrooms.mods"),
                 VhsText.translatable("menu.backrooms.field_notes"),
                 VhsText.translatable("menu.backrooms.quit"));
@@ -133,6 +134,7 @@ public class BackroomsTitleScreen extends Screen {
                 () -> this.minecraft.setScreen(this.minecraft.options.skipMultiplayerWarning
                         ? new JoinMultiplayerScreen(this) : new SafetyScreen(this)),
                 () -> this.minecraft.setScreen(new OptionsScreen(this, this.minecraft.options)),
+                () -> this.minecraft.setScreen(new SettingsScreen(this)),
                 () -> this.minecraft.setScreen(new ModListScreen(this)),
                 () -> this.minecraft.setScreen(new FieldNotesScreen(this)),
                 () -> this.minecraft.stop());

@@ -49,7 +49,7 @@ public final class ModNetwork {
             CameraClientState.eventEndMs = nowMs + payload.remainingTicks() * 50L;
         });
 
-        // Sprint energy for the HUD bolt and the client-side sprint release (S3).
+        // Sprint energy for the HUD stamina line and the client-side sprint release (S3).
         registrar.playToClient(EnergyPayload.TYPE, EnergyPayload.STREAM_CODEC, (payload, context) -> {
             EnergyClientState.energy = payload.energy() / (float) EnergyData.MAX;
             EnergyClientState.exhausted = payload.exhausted();

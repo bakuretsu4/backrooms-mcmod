@@ -25,7 +25,7 @@ public class EnergyBarItem extends Item {
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity entity) {
         if (entity instanceof ServerPlayer player) {
             player.getData(ModAttachments.ENERGY).refill();
-            // Tell the client right away so the HUD bolt fills up.
+            // Tell the client right away so the HUD stamina line fills up.
             PlayerGameplay.forceSync(player);
         }
         // The normal food behaviour: hunger, saturation, and one bar used up.

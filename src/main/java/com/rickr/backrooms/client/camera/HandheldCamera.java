@@ -1,6 +1,7 @@
 package com.rickr.backrooms.client.camera;
 
 import com.rickr.backrooms.camera.CameraClientState;
+import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.client.CamcorderEffect;
 import com.rickr.backrooms.network.LevelEventPayload;
 import net.minecraft.client.Minecraft;
@@ -26,8 +27,8 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
  */
 public final class HandheldCamera {
     // --- Smoothed look -------------------------------------------------------------------------
-    /** Fraction of the gap between view and aim still left after one tick (0.7 = 30% catch-up per tick). */
-    private static final float LOOK_SMOOTHING = 0.7f;
+    // How heavy it is comes from the SETTINGS screen: ClientSettings.lookSmoothing() is the fraction
+    // of the gap between view and aim still left after one tick (0 = instant, 0.7 was the old feel).
 
     // --- Handheld shake ------------------------------------------------------------------------
     /** Peak shake angle in degrees at intensity 1. Kept small: big wobble while running gets tiring fast. */
@@ -173,7 +174,7 @@ public final class HandheldCamera {
 
         // Smoothed look. Yaw is wrapped so a turn past 180 degrees goes the short way round.
         float prevSmoothYaw = smoothYaw;
-        float follow = ease(LOOK_SMOOTHING, dTicks);
+        float follow = ease(ClientSettings.lookSmoothing(), dTicks);
         smoothYaw += Mth.wrapDegrees(aimYaw - smoothYaw) * follow;
         smoothYaw = aimYaw - Mth.wrapDegrees(aimYaw - smoothYaw); // keep it near the aim's number range
         smoothPitch += (aimPitch - smoothPitch) * follow;
@@ -181,8 +182,9 @@ public final class HandheldCamera {
         // Turn roll from how fast the view yaws (degrees per tick), strafe roll from sideways speed.
         float yawPerTick = dTicks > 1.0e-3f ? Mth.wrapDegrees(smoothYaw - prevSmoothYaw) / dTicks : 0.0f;
         float rollEase = ease(ROLL_SMOOTHING, dTicks);
-        turnRoll += (Mth.clamp(yawPerTick * TURN_ROLL_PER_DEG, -ROLL_LIMIT_DEG, ROLL_LIMIT_DEG) - turnRoll) * rollEase;
-        strafeRoll += (Mth.clamp(sidewaysPerTick * STRAFE_ROLL_PER_BLOCK, -ROLL_LIMIT_DEG, ROLL_LIMIT_DEG) - strafeRoll) * rollEase;
+        float tilt = ClientSettings.tilt();
+        turnRoll += (Mth.clamp(yawPerTick * TURN_ROLL_PER_DEG, -ROLL_LIMIT_DEG, ROLL_LIMIT_DEG) * tilt - turnRoll) * rollEase;
+        strafeRoll += (Mth.clamp(sidewaysPerTick * STRAFE_ROLL_PER_BLOCK, -ROLL_LIMIT_DEG, ROLL_LIMIT_DEG) * tilt - strafeRoll) * rollEase;
 
         // Handheld shake: trauma grows gently with speed (capped low), intensity = trauma^2.
         float danger = CamcorderEffect.danger();
@@ -196,14 +198,15 @@ public final class HandheldCamera {
         if (noiseY > 10000.0f) {
             noiseY -= 10000.0f; // keep float precision
         }
-        float intensity = trauma * trauma * SHAKE_AMPLITUDE_DEG;
+        float shake = ClientSettings.shake();
+        float intensity = trauma * trauma * SHAKE_AMPLITUDE_DEG * shake;
         float shakePitch = GradientNoise.sample(1, noiseY) * intensity;
         float shakeYaw = GradientNoise.sample(73, noiseY) * intensity;
         float shakeRoll = GradientNoise.sample(146, noiseY) * intensity * SHAKE_ROLL_MULT;
 
         // Shaky hands when something is close: fast small jitter on top of the wobble.
         float t = (float) ((now / 1.0e9) % 3600.0);
-        float jitter = danger * danger;
+        float jitter = danger * danger * shake;
         shakeRoll += Mth.sin(t * 23.0f) * 1.2f * jitter;
         shakeYaw += Mth.sin(t * 31.0f) * 0.8f * jitter;
         shakePitch += Mth.cos(t * 27.0f) * 0.8f * jitter;
@@ -269,6 +272,9 @@ public final class HandheldCamera {
                 u *= MAX_BLUR_UV / len;
                 v *= MAX_BLUR_UV / len;
             }
+            float blurAmount = ClientSettings.motionBlur(); // SETTINGS screen: 0 = no smear
+            u *= blurAmount;
+            v *= blurAmount;
         }
         // A little smoothing so per-frame mouse noise doesn't make the blur flicker.
         float blurEase = ease(0.3f, dTicks);

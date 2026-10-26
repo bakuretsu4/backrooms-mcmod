@@ -9,8 +9,10 @@ server or LAN.
 **Everyone (server and every player) needs the same mod jar** in their `mods` folder, with
 NeoForge 1.21.1 installed. The jar already contains the Veil rendering library.
 
-Not compatible with Embeddium/Rubidium. Sodium must be 0.8.12 or newer. With Iris installed the
-mod falls back to simpler lighting.
+Not compatible with Sodium or Embeddium/Rubidium: with Sodium 0.8.13 the Veil lighting breaks
+(Level 0, the Poolrooms and Level 37 render 3-4x darker and the pool water disappears). With
+Iris installed the mod falls back to simpler lighting. Performance mods tested and fine:
+Lithium, FerriteCore, ModernFix, Entity Culling, ImmediatelyFast and Dynamic FPS.
 
 | Action | How |
 |---|---|
@@ -18,10 +20,11 @@ mod falls back to simpler lighting.
 | Flashlight | `R`. Everyone sees your beam. Uses the camcorder battery. |
 | NightShot (infrared) | `N` (drains the battery 3x faster) |
 | Camcorder REC overlay | `H` (off by default) |
-| Sprint | Limited by energy (the faint bolt in the middle of the screen). Rest to refill it. |
+| Sprint | Limited by energy: a thin faint line above your hearts shows it while you run (turns red when you're out of breath). Rest to refill it. |
 | Jump | Not possible in the Backrooms (except in water, to swim and climb out) |
 | Loot | Right-click Wooden Crates, Backpacks and Supply Lockers (see Supplies below) |
 | New battery | Right-click a Camcorder Battery |
+| Settings | **SETTINGS** on the main menu, **Backrooms Settings...** in the pause menu, or Config in the Mods list: camera smoothing (default 35%; the original feel was 88%), handheld shake, view tilt, motion blur, wide lens, stamina line. Changes apply immediately and are saved per player in `config/backrooms-client.toml`. |
 
 ### The way out
 
@@ -376,7 +379,7 @@ Keys are `[seconds, x, eye height, z, yaw, pitch]`. The HUD is hidden while reco
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`) |
 | `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`); lets anomaly teleports update the server's movement check (`ServerGamePacketListenerAccessor`) |
 | `client/camera` | Handheld camera shake, roll, smoothing |
-| `client/hud` | Minimal HUD, energy bolt |
+| `client/hud` | Minimal HUD, stamina line |
 | `client/trailer` | Dev-only trailer camera and frame recorder (`TrailerRecorder`, off unless started with `-Dbackrooms.trailerDir`) |
 | `client` | Camcorder post-shader control, per-level picture mood (`AtmosphereGrade`), overlay, Bacteria model/renderer, keys |
 | `assets/backrooms/shaders` | Lens, bloom, motion blur, contact shadows, distance haze, glow and grade post-processing |

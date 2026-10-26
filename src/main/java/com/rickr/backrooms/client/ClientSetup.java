@@ -16,7 +16,10 @@ import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-import com.rickr.backrooms.client.hud.EnergyBoltLayer;
+import com.rickr.backrooms.client.hud.StaminaBarLayer;
+import com.rickr.backrooms.client.menu.SettingsScreen;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import com.rickr.backrooms.client.intro.IntroCutscene;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import org.lwjgl.glfw.GLFW;
@@ -35,6 +38,9 @@ public final class ClientSetup {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         AnomalyClientEffects.bootstrap();
+        // The "Config" button in the Mods list opens our SETTINGS screen.
+        ModList.get().getModContainerById(Backrooms.MOD_ID).ifPresent(container -> container.registerExtensionPoint(
+                IConfigScreenFactory.class, (mod, parent) -> new SettingsScreen(parent)));
     }
 
     @SubscribeEvent
@@ -72,8 +78,8 @@ public final class ClientSetup {
         event.registerAboveAll(Backrooms.id("camcorder_hud"), new CamcorderHud());
         // Black frames of the noclip intro, over everything.
         event.registerAboveAll(IntroCutscene.LAYER_ID, new IntroCutscene());
-        // Faint sprint-energy bolt where the (hidden) crosshair would be.
-        event.registerAbove(VanillaGuiLayers.CROSSHAIR, Backrooms.id("energy_bolt"), new EnergyBoltLayer());
+        // Sprint stamina: a thin faint line where the (hidden) XP bar would be, only while it matters.
+        event.registerAbove(VanillaGuiLayers.EXPERIENCE_BAR, Backrooms.id("stamina_bar"), new StaminaBarLayer());
     }
 
     @SubscribeEvent

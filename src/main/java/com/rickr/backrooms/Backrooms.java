@@ -1,5 +1,6 @@
 package com.rickr.backrooms;
 
+import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.network.ModNetwork;
 import com.rickr.backrooms.world.anomaly.Anomalies;
 import com.rickr.backrooms.registry.ModAttachments;
@@ -12,7 +13,9 @@ import com.rickr.backrooms.registry.ModItems;
 import com.rickr.backrooms.registry.ModSounds;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 
 /**
  * Mod entry point. NeoForge constructs this once on both the client and the dedicated server.
@@ -23,7 +26,10 @@ import net.neoforged.fml.common.Mod;
 public final class Backrooms {
     public static final String MOD_ID = "backrooms";
 
-    public Backrooms(IEventBus modBus) {
+    public Backrooms(IEventBus modBus, ModContainer container) {
+        // Per-player camera/HUD settings (config/backrooms-client.toml). NeoForge only loads a
+        // CLIENT config on clients, so this is harmless on a dedicated server.
+        container.registerConfig(ModConfig.Type.CLIENT, ClientSettings.SPEC);
         // Deferred registers: blocks, items, entities, sounds, our chunk generator type, player data.
         ModBlocks.BLOCKS.register(modBus);
         ModItems.ITEMS.register(modBus);
