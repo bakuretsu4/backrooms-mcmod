@@ -3,9 +3,13 @@
   "minVersion": "0.8",
   "package": "com.rickr.backrooms.mixin",
   "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "LivingEntityMixin"
+  ],
   "client": [
     "client.LevelRendererMixin",
-    "client.LiquidBlockRendererMixin"
+    "client.LiquidBlockRendererMixin",
+    "client.LocalPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
@@ -23,6 +24,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -33,6 +35,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * How your body works inside the Backrooms: limited sprint energy, a slower walk, our own
@@ -51,6 +54,8 @@ public final class PlayerGameplay {
     private static final double RUN_STRIDE = 2.3;
     private static final float WALK_VOLUME = 0.15f;
     private static final float RUN_VOLUME = 1.0f;
+    /** Walking through water is never quiet: wading steps are much louder than a dry shuffle. */
+    private static final float WADE_WALK_VOLUME = 0.55f;
 
     /**
      * Per-player footstep tracking: {lastX, lastZ, blocks walked since last step}. Separate maps for
@@ -157,7 +162,7 @@ public final class PlayerGameplay {
         }
         track[2] = 0;
         SoundEvent sound = stepSound(player, running);
-        float volume = running ? RUN_VOLUME : WALK_VOLUME;
+        float volume = running ? RUN_VOLUME : sound == ModSounds.STEP_WATER_WADE_WALK.get() ? WADE_WALK_VOLUME : WALK_VOLUME;
         if (player.isCrouching()) {
             volume *= 0.5f;
         }
@@ -202,16 +207,30 @@ public final class PlayerGameplay {
     /**
      * Silences vanilla block step sounds made by players in the Backrooms (all named "block.*.step"),
      * since we play our own. Fires on both sides, so it works for the local player and the server.
+     * Other players' steps arrive through {@link PlayLevelSoundEvent.AtPosition}; your OWN steps
+     * go through {@link PlayLevelSoundEvent.AtEntity} (the local player plays them directly), so
+     * both are filtered: otherwise you would hear vanilla's stone or wool steps under ours.
      */
     @SubscribeEvent
     public static void onPlaySound(PlayLevelSoundEvent.AtPosition event) {
-        if (event.getSource() != SoundSource.PLAYERS || !Travel.inBackrooms(event.getLevel())) {
-            return;
-        }
-        String path = event.getSound().value().getLocation().getPath();
-        if (path.startsWith("block.") && path.endsWith(".step")) {
+        if (isVanillaPlayerStep(event.getSource(), event.getSound(), event.getLevel())) {
             event.setCanceled(true);
         }
+    }
+
+    @SubscribeEvent
+    public static void onPlaySoundAtEntity(PlayLevelSoundEvent.AtEntity event) {
+        if (event.getEntity() instanceof Player && isVanillaPlayerStep(event.getSource(), event.getSound(), event.getLevel())) {
+            event.setCanceled(true);
+        }
+    }
+
+    private static boolean isVanillaPlayerStep(SoundSource source, @Nullable Holder<SoundEvent> sound, Level level) {
+        if (source != SoundSource.PLAYERS || sound == null || !Travel.inBackrooms(level)) {
+            return false;
+        }
+        String path = sound.value().getLocation().getPath();
+        return path.startsWith("block.") && path.endsWith(".step");
     }
 
     /** Dying in the Backrooms: a sting and a short title only the victim sees. */

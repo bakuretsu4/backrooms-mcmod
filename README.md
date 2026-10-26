@@ -103,7 +103,10 @@ caustic light patterns onto the floor and lower walls, mirrors the walls and pil
 clear looking down, mirror-like at grazing angles) and catches sun glints in Level 37. Under water
 the view stays clear and tinted, with caustics and soft light shafts. Level 37's ankle-deep
 flooding is the `shallow_water` block: you wade through it (wading steps, a little drag) instead
-of swimming. With an Iris shader pack active, vanilla water is kept (the pack draws its own).
+of swimming. In both levels you can walk or run through shallow water (in the Poolrooms' knee-deep
+shallows too, which vanilla wouldn't allow): your steps become splashy wading sounds made of
+bubbles, sloshing and spray, and the water slows you down a little. Only deep pools make you swim.
+With an Iris shader pack active, vanilla water is kept (the pack draws its own).
 Sodium/Embeddium-style renderers that skip vanilla's fluid renderer are not covered.
 
 ### Supplies

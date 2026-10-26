@@ -4314,35 +4314,83 @@ def _water_slosh(rng, dur, lo, hi, attack, decay) -> np.ndarray:
     return norm(x) * smoothstep(0, attack, t) * np.exp(-np.maximum(t - attack, 0) / decay)
 
 
-def _water_step(rng, run: bool) -> np.ndarray:
-    dur = 0.6 if run else 0.5
+def _water_bubbles(rng, n, count, t0, spread, f_lo, f_hi, amp, rise=0.25, skew=1.6) -> np.ndarray:
+    """A cloud of air bubbles, the sound that makes water sound like water.
+
+    Each bubble rings at its Minnaert frequency (small bubble = high pitch) and dies away fast,
+    gliding slightly UP in pitch as it rises (falling pitch is what makes a thud sound like mud).
+    Bigger bubbles ring longer and louder. `count` bubbles start between t0 and t0 + spread
+    seconds, bunched towards t0 (skew > 1)."""
+    out = np.zeros(n)
+    for _ in range(count):
+        f0 = float(np.exp(rng.uniform(np.log(f_lo), np.log(f_hi))))
+        decay = 0.043 * f0 + 0.0014 * f0 ** 1.5          # 1/s, from the bubble physics literature
+        dur = min(6.0 / decay, 0.25)
+        t = np.arange(int(dur * SR)) / SR
+        f = f0 * (1.0 + rise * decay * t)
+        b = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-decay * t)
+        b *= smoothstep(0, 0.0006, t) * amp * rng.uniform(0.3, 1.0) * (1000.0 / f0) ** 0.5
+        add_at(out, b, t0 + spread * rng.uniform(0, 1) ** skew, False)
+    return out
+
+
+def _water_noise(rng, n, t0, attack, decay, lo, hi, gurgle=0.0) -> np.ndarray:
+    """Water being shoved aside: band-passed noise, optionally 'gurgling' (fast, irregular
+    wobble of the level, like the surface breaking up)."""
+    t = np.arange(n) / SR
+    x = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, lo, hi, 2))[:n]
+    x = norm(x)
+    env = smoothstep(t0, t0 + attack, t) * np.exp(-np.maximum(t - t0 - attack, 0) / decay)
+    if gurgle:
+        wob = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 18, 60, 2))[:n]
+        env *= np.clip(1 + gurgle * wob / (np.abs(wob).max() + 1e-9), 0, None)
+    return x * env
+
+
+def _wade_step(rng, run: bool) -> np.ndarray:
+    """One step through knee-deep water.
+
+    walk: the leg pushes through the water (a gurgling slosh full of bubbles), the foot lifts
+          out with water running off it, a few drips.
+    run:  the foot slaps down into the water: a bright splash of spray and a burst of bubbles,
+          the leg ploughs through, then the spray rains back down onto the surface.
+    """
+    dur = 0.75 if run else 0.8
     n = int(dur * SR)
     out = np.zeros(n)
-    # 1. The foot pushing into the water: a soft, dull slap and a low "plop".
-    add_at(out, _water_slosh(rng, 0.2, 300, 3200 if run else 2200, 0.004, 0.05 if run else 0.04)
-           * (1.0 if run else 0.8), 0.0, False)
-    pt = t_axis(0.12)
-    sweep = np.linspace(rng.uniform(170, 220), rng.uniform(80, 100), pt.size)
-    add_at(out, np.sin(2 * np.pi * np.cumsum(sweep) / SR) * np.exp(-pt / 0.035) * 0.5, 0.003, False)
-    # 2. The foot lifting out: a longer, airier swish of water running off it.
-    add_at(out, _water_slosh(rng, 0.25, 800, 5000 if run else 3800, 0.03, 0.07) * (0.7 if run else 0.45),
-           rng.uniform(0.14, 0.2), False)
-    # 3. Drips and small bubbles.
-    for _ in range(int(rng.integers(6, 11)) if run else int(rng.integers(3, 7))):
-        b = _water_bubble(rng, rng.uniform(600, 1700), rng.uniform(0.012, 0.03))
-        add_at(out, b * rng.uniform(0.08, 0.25), rng.uniform(0.02, dur - 0.08), False)
-    out = fft_filter(out, lambda f: lp_gain(f, 7000 if run else 5000, 2))[:n]
-    # A tiled room: short, bright reverb.
-    return out + 0.22 * conv(out, reverb_ir(rng, 0.6, 0.18, lp=4500, predelay=0.008))[:n]
-
+    if run:
+        # Foot hits the surface: a short bright crack of spray, and the surface tearing open.
+        out += 0.45 * _water_noise(rng, n, 0.0, 0.002, 0.025, 1500, 9000)
+        out += 0.2 * _water_noise(rng, n, 0.004, 0.006, 0.06, 400, 2500, gurgle=0.8)
+        out += _water_bubbles(rng, n, 110, 0.0, 0.12, 500, 3500, 0.4)
+        # The leg ploughing on: a long sloshing swish.
+        out += 0.18 * _water_noise(rng, n, 0.06, 0.06, 0.16, 250, 1800, gurgle=1.2)
+        out += _water_bubbles(rng, n, 70, 0.06, 0.25, 250, 1600, 0.35, skew=1.0)
+        # Spray raining back down: lots of tiny, high drops.
+        out += _water_bubbles(rng, n, 80, 0.12, 0.45, 1500, 5000, 0.16, rise=0.6, skew=1.3)
+        out += 0.05 * _water_noise(rng, n, 0.12, 0.05, 0.2, 3000, 10000)
+    else:
+        # The leg pushing forward through the water.
+        out += 0.22 * _water_noise(rng, n, 0.0, 0.09, 0.2, 200, 1400, gurgle=1.4)
+        out += _water_bubbles(rng, n, 60, 0.02, 0.3, 250, 1800, 0.35, skew=1.0)
+        # The foot lifting out, water pouring off it.
+        lift = rng.uniform(0.28, 0.36)
+        out += 0.12 * _water_noise(rng, n, lift, 0.03, 0.12, 600, 4500, gurgle=0.8)
+        out += _water_bubbles(rng, n, 40, lift, 0.2, 700, 3000, 0.25)
+        # Drips falling back.
+        out += _water_bubbles(rng, n, 16, lift + 0.08, 0.35, 1500, 4500, 0.14, rise=0.8, skew=1.0)
+    out = fft_filter(out, lambda f: hp_gain(f, 120, 2) * lp_gain(f, 11000 if run else 8000, 2))[:n]
+    # A tiled pool hall: short, bright early reflections and a little tail.
+    ir = reverb_ir(rng, 0.9, 0.22, lp=6000, predelay=0.006, early=((0.011, 0.5), (0.019, 0.35), (0.031, 0.25)))
+    return out + 0.35 * conv(out, ir)[:n]
 
 def snd_water_wade() -> None:
-    """Wading steps through shallow water, 4 walk + 4 run: plunge, lift, drips, tiled reverb."""
+    """Wading steps through knee-deep water, 4 walk + 4 run: bubble clouds, slosh, spray, drips."""
     for i in range(1, 5):
         for run in (False, True):
             rng = rng_for(4200 + (10 if run else 0) + i)
             kind = "run" if run else "walk"
-            save_ogg(_water_step(rng, run), SND / "water" / f"wade_{kind}{i}.ogg",
+            save_ogg(_wade_step(rng, run), SND / "water" / f"wade_{kind}{i}.ogg",
                      peak=0.85 if run else 0.9, fade_in=0.002, fade_out=0.04)
 
 
