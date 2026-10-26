@@ -8,9 +8,12 @@
     "ServerGamePacketListenerAccessor"
   ],
   "client": [
+    "client.ChannelAccessor",
     "client.LevelRendererMixin",
     "client.LiquidBlockRendererMixin",
-    "client.LocalPlayerMixin"
+    "client.LocalPlayerMixin",
+    "client.SoundEngineAccessor",
+    "client.SoundManagerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

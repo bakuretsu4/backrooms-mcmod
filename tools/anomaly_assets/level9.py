@@ -793,20 +793,23 @@ def snd_level9_gloom_drag() -> None:
 
 
 def snd_level9_gloom_throb() -> None:
-    """~2.5 s: one very soft, very low throb with a faint far hum, for each pulse of the red light."""
-    rng = G.rng_for(7995)
-    dur = 2.5
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    fd = np.interp(t, [0, 0.5, dur], [44, 39, 36])
-    ph = 2 * np.pi * np.cumsum(fd) / SR
-    # The 2nd/3rd harmonics let small speakers still hint at a sub-bass note they can't play.
-    throb = np.sin(ph) + 0.3 * np.sin(2 * ph) + 0.08 * np.sin(3 * ph)
-    throb *= G.smoothstep(0.0, 0.35, t) * np.exp(-np.maximum(t - 0.35, 0) / 0.6)
-    hum = G.mains_hum(t, f0=60.0, levels_db=(0, -8, -16, -26)) * (1 + G.smooth_jitter(rng, n, 2, 0.2))
-    hum = G.fft_filter(hum, lambda f: G.lp_gain(f, 350, 2)) * np.sin(np.pi * t / dur) ** 2
-    x = G.norm(throb) + 0.08 * G.norm(hum)
-    G.save_ogg(x, _snd("gloom_throb"), peak=0.5, fade_in=0.01, fade_out=0.3)
+    """~2.5 s: one very soft, very low throb with a faint far hum, for each pulse of the red light.
+    3 takes: throb pitch (+-5%), swell/decay timing and hum wobble differ."""
+    takes = ((7995, 1.0, 0.35, 0.6), (57995, 1.05, 0.28, 0.55), (67995, 0.95, 0.42, 0.66))
+    for i, (seed, p, att, dec) in enumerate(takes, 1):
+        rng = G.rng_for(seed)
+        dur = 2.5
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        fd = np.interp(t, [0, 0.5, dur], [44 * p, 39 * p, 36 * p])
+        ph = 2 * np.pi * np.cumsum(fd) / SR
+        # The 2nd/3rd harmonics let small speakers still hint at a sub-bass note they can't play.
+        throb = np.sin(ph) + 0.3 * np.sin(2 * ph) + 0.08 * np.sin(3 * ph)
+        throb *= G.smoothstep(0.0, att, t) * np.exp(-np.maximum(t - att, 0) / dec)
+        hum = G.mains_hum(t, f0=60.0, levels_db=(0, -8, -16, -26)) * (1 + G.smooth_jitter(rng, n, 2, 0.2))
+        hum = G.fft_filter(hum, lambda f: G.lp_gain(f, 350, 2)) * np.sin(np.pi * t / dur) ** 2
+        x = G.norm(throb) + 0.08 * G.norm(hum)
+        G.save_ogg(x, _snd("gloom_throb" if i == 1 else f"gloom_throb{i}"), peak=0.5, fade_in=0.01, fade_out=0.3)
 
 
 TEXTURES = [

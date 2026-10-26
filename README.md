@@ -327,6 +327,25 @@ you hear only the level. Level 94 has no music because its siren poles play thei
 Everything goes through a worn-tape sound: a slow pitch wobble shared by every note, soft
 saturation, hiss and a big, empty room.
 
+### Sound
+
+- **Walls muffle, rooms echo** (`client/audio/Acoustics`, using OpenAL's EFX effects). Every sound
+  placed in the world is muffled by the solid blocks between you and it (a lamp in the next
+  corridor hums dull and low and opens up as you round the corner), and it rings in a reverb that
+  follows the space you are standing in: short and close in a small room, long in a big one, hardly
+  at all under open sky. Each level adds its materials: Level 0's carpet and Level 4's offices soak
+  up the highs, Level 1's bare concrete garage rings, Level 2's pipe tunnels are tight and hard. The
+  Poolrooms and Level 37 get no reverb, since in canon nothing reverberates there. Music, the
+  camcorder's beeps and the overworld are left alone. Without EFX support it simply switches off.
+- **Distant sounds** (`client/audio/DistantAmbience`): every 20 seconds to a minute something
+  happens somewhere out of sight, picked from five per level, each with three takes: a ballast
+  popping or scratching behind the walls in Level 0, pipes clanging in Level 1 and 2, a phone or
+  copier in Level 4, water and drains in the pool levels, wind chimes and a dog that stops barking
+  in Level 9, a car horn or rats in Level 94 depending on the time of day.
+- **Mix:** the levels' background loops sit at about the same loudness, many lamps humming
+  together are turned down so their drone never buries everything else, and the music sits a
+  little above the level instead of over it.
+
 ## Operator commands
 
 ```
@@ -391,7 +410,8 @@ Keys are `[seconds, x, eye height, z, yaw, pitch]`. The HUD is hidden while reco
 | `network` | Packets between server and clients |
 | `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
 | `client/water` | Pool water: surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), underwater fog (`UnderwaterView`) |
-| `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`) |
+| `client/audio` | Wall muffling and room reverb through OpenAL EFX (`Acoustics`, `AcousticsEfx`); distant one-off sounds per level (`DistantAmbience`) |
+| `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`) |
 | `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`); lets anomaly teleports update the server's movement check (`ServerGamePacketListenerAccessor`) |
 | `client/camera` | Handheld camera shake, roll, smoothing |
 | `client/hud` | Minimal HUD, stamina line |

@@ -3441,23 +3441,29 @@ def snd_sodium_hum() -> None:
 
 
 def snd_lamp_flicker() -> None:
-    """Short electrical tick + two ragged buzz bursts of a failing streetlamp."""
-    rng = rng_for(2403)
-    dur = 0.7
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    x = np.zeros(n)
-    k = int(0.004 * SR)
-    add_at(x, rng.normal(size=k) * np.exp(-np.arange(k) / (0.0008 * SR)), 0.01, False)   # relay tick
-    add_at(x, 0.4 * ring([2900, 4100], [0.02, 0.012], [1, 0.6], 0.1), 0.01, False)
-    s = np.sin(2 * np.pi * 120 * t)
-    buzz = fft_filter(np.sign(s) * np.abs(s) ** 0.3, lambda f: bp_gain(f, 100, 2500, 1))[:n]
-    gate = np.zeros(n)
-    for st, ln in ((0.06, 0.12), (0.26, 0.05), (0.36, 0.18)):
-        gate += box((1, n), st * SR, -1, (st + ln) * SR, 2, soft=200)[0] * rng.uniform(0.6, 1.0)
-    x += 0.5 * norm(buzz) * gate
-    x = x + 0.2 * conv(x, reverb_ir(rng, 0.6, 0.15, lp=4000))[:n]
-    save_ogg(x, SND / "level9" / "lamp_flicker.ogg", peak=0.75, fade_in=0.001, fade_out=0.05)
+    """Short electrical tick + two ragged buzz bursts of a failing streetlamp (3 takes: the tick's
+    ring, the buzz pitch and the burst rhythm shift a little each time)."""
+    takes = ((2403, 1.0, ((0.06, 0.12), (0.26, 0.05), (0.36, 0.18))),
+             (52403, 1.05, ((0.05, 0.09), (0.19, 0.07), (0.33, 0.21))),
+             (62403, 0.96, ((0.07, 0.17), (0.29, 0.07), (0.38, 0.22))))
+    for i, (seed, p, bursts) in enumerate(takes, 1):
+        rng = rng_for(seed)
+        dur = 0.7
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        x = np.zeros(n)
+        k = int(0.004 * SR)
+        add_at(x, rng.normal(size=k) * np.exp(-np.arange(k) / (0.0008 * SR)), 0.01, False)   # relay tick
+        add_at(x, 0.4 * ring([2900 * p, 4100 * p], [0.02, 0.012], [1, 0.6], 0.1), 0.01, False)
+        s = np.sin(2 * np.pi * 120 * p * t)
+        buzz = fft_filter(np.sign(s) * np.abs(s) ** 0.3, lambda f: bp_gain(f, 100, 2500, 1))[:n]
+        gate = np.zeros(n)
+        for st, ln in bursts:
+            gate += box((1, n), st * SR, -1, (st + ln) * SR, 2, soft=200)[0] * rng.uniform(0.6, 1.0)
+        x += 0.5 * norm(buzz) * gate
+        x = x + 0.2 * conv(x, reverb_ir(rng, 0.6, 0.15, lp=4000))[:n]
+        name = "lamp_flicker.ogg" if i == 1 else f"lamp_flicker{i}.ogg"
+        save_ogg(x, SND / "level9" / name, peak=0.75, fade_in=0.001, fade_out=0.05)
 
 
 def snd_distant_rumble() -> None:
@@ -3577,19 +3583,23 @@ def snd_observer_vanish() -> None:
 
 def snd_smiler_breath() -> None:
     """~2.4 s faint, slow breathing: the only sound a Smiler makes, when it's a few blocks away.
-    Just air: a long, soft inhale and a slower exhale with a little wet catch in it."""
-    rng = rng_for(2720)
-    dur = 2.4
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    inhale = svf(rng.normal(size=n), 700 + 900 * smoothstep(0.0, 0.9, t), 2.0) * (smoothstep(0.0, 0.6, t) * (1 - smoothstep(0.8, 1.0, t)))
-    ex_env = smoothstep(1.1, 1.4, t) * (1 - smoothstep(1.8, dur, t))
-    exhale = svf(rng.normal(size=n), 1000 - 400 * smoothstep(1.1, dur, t), 1.4) * ex_env
-    wet = clicks(rng, np.sort(rng.uniform(1.3, 1.8, 4)), dur, 500, 1100, 0.004, 0.01)
-    x = 0.7 * norm(inhale) + norm(exhale) + 0.08 * norm(wet)
-    x = fft_filter(x, lambda f: lp_gain(f, 2500, 2))[:n]
-    x = x + 0.15 * norm(conv(x, reverb_ir(rng, 0.6, 0.15, lp=3000))[:n]) * np.abs(x).max()
-    save_ogg(x, SND / "entity" / "smiler_breath.ogg", peak=0.55, fade_in=0.05, fade_out=0.2)
+    Just air: a long, soft inhale and a slower exhale with a little wet catch in it.
+    3 takes: different air noise, breath timing and throat resonance (+-5%)."""
+    takes = ((2720, 1.0, 0.0), (52720, 1.05, 0.12), (62720, 0.95, -0.08))
+    for i, (seed, p, sh) in enumerate(takes, 1):
+        rng = rng_for(seed)
+        dur = 2.4
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        inhale = svf(rng.normal(size=n), p * (700 + 900 * smoothstep(0.0, 0.9 + sh, t)), 2.0) * (smoothstep(0.0, 0.6 + sh, t) * (1 - smoothstep(0.8 + sh, 1.0 + sh, t)))
+        ex_env = smoothstep(1.1 + sh, 1.4 + sh, t) * (1 - smoothstep(1.8 + sh, dur, t))
+        exhale = svf(rng.normal(size=n), p * (1000 - 400 * smoothstep(1.1 + sh, dur, t)), 1.4) * ex_env
+        wet = clicks(rng, np.sort(rng.uniform(1.3 + sh, 1.8 + sh, 4)), dur, 500 * p, 1100 * p, 0.004, 0.01)
+        x = 0.7 * norm(inhale) + norm(exhale) + 0.08 * norm(wet)
+        x = fft_filter(x, lambda f: lp_gain(f, 2500, 2))[:n]
+        x = x + 0.15 * norm(conv(x, reverb_ir(rng, 0.6, 0.15, lp=3000))[:n]) * np.abs(x).max()
+        name = "smiler_breath.ogg" if i == 1 else f"smiler_breath{i}.ogg"
+        save_ogg(x, SND / "entity" / name, peak=0.55, fade_in=0.05, fade_out=0.2)
 
 
 def snd_leaf_steps() -> None:
@@ -3660,16 +3670,19 @@ def snd_sanity_heartbeat() -> None:
 
 
 def snd_sanity_knock() -> None:
-    """A single close knock on a wall (dry, wooden, short room tail)."""
-    rng = rng_for(2520)
-    n = int(1.2 * SR)
-    k = ring([rng.uniform(110, 130), 190.0, 290.0, 520.0], [0.06, 0.045, 0.03, 0.012], [1, 0.6, 0.4, 0.2], 0.3)
-    m = len(k)
-    hit = fft_filter(rng.normal(size=m) * np.exp(-np.arange(m) / (0.003 * SR)), lambda f: lp_gain(f, 2500, 2))[:m]
-    dry = np.zeros(n)
-    add_at(dry, norm(k) + 0.6 * norm(hit), 0.01, False)
-    wet = conv(dry, reverb_ir(rng, 1.0, 0.3, lp=3000, predelay=0.01))[:n]
-    save_ogg(norm(dry) + 0.4 * norm(wet), SND / "sanity" / "knock.ogg", peak=0.85, fade_out=0.2)
+    """A single close knock on a wall (dry, wooden, short room tail). 3 takes: different wood
+    resonances (+-5%), hit noise and a slightly harder/softer strike."""
+    for i, (seed, p, hd) in enumerate(((2520, 1.0, 0.003), (52520, 1.05, 0.0024), (62520, 0.95, 0.0036)), 1):
+        rng = rng_for(seed)
+        n = int(1.2 * SR)
+        k = ring([rng.uniform(110, 130) * p, 190.0 * p, 290.0 * p, 520.0 * p], [0.06, 0.045, 0.03, 0.012], [1, 0.6, 0.4, 0.2], 0.3)
+        m = len(k)
+        hit = fft_filter(rng.normal(size=m) * np.exp(-np.arange(m) / (hd * SR)), lambda f: lp_gain(f, 2500, 2))[:m]
+        dry = np.zeros(n)
+        add_at(dry, norm(k) + 0.6 * norm(hit), 0.01, False)
+        wet = conv(dry, reverb_ir(rng, 1.0, 0.3, lp=3000, predelay=0.01))[:n]
+        name = "knock.ogg" if i == 1 else f"knock{i}.ogg"
+        save_ogg(norm(dry) + 0.4 * norm(wet), SND / "sanity" / name, peak=0.85, fade_out=0.2)
 
 
 
@@ -7846,6 +7859,732 @@ def variant_models() -> None:
         (ROOT / "blockstates" / f"{name}.json").write_text(json.dumps({"variants": variants}, indent=2) + "\n", newline="\n")
 
 
+# ------------------------------------------------------- Distant ambience ---
+# One-off sounds heard far away, a few per level, so long sessions don't loop audibly. The client
+# (client/audio/DistantAmbience) picks one every 18-55 s and places it 14-40 blocks off in a random
+# direction. Every sound here is "dry plus a little air": low-passed the way distance and walls do,
+# with a short faint early tail but NO big room reverb, because the game adds its own room reverb
+# at runtime and a baked-in one would double up. Three takes of each, so repeats differ.
+# Files: sounds/ambient/distant/<level>/<name><1..3>.ogg (events distant.<level>.<name>).
+
+DIST = SND / "ambient" / "distant"
+
+
+def _da_env(n, pts) -> np.ndarray:
+    """Piecewise-linear envelope over n samples: pts = [(seconds, level), ...]."""
+    ts, vs = zip(*pts)
+    return np.interp(np.arange(n) / SR, ts, vs)
+
+
+def _da_band(rng, n, lo, hi, order=2) -> np.ndarray:
+    """Band-limited noise, unit peak."""
+    return norm(fft_filter(rng.normal(size=n), lambda f: bp_gain(f, lo, hi, order)))
+
+
+def _da_hit(rng, freqs, decays, amps, noise_ms=3.0, noise_lp=2500.0) -> np.ndarray:
+    """An impact: decaying resonances (the struck object) plus a short noise click (the strike)."""
+    k = norm(ring(freqs, decays, amps, max(decays) * 6))
+    m = len(k)
+    click = rng.normal(size=m) * np.exp(-np.arange(m) / (noise_ms * 1e-3 * SR))
+    return k + 0.5 * norm(fft_filter(click, lambda f: lp_gain(f, noise_lp, 2)))
+
+
+def _da_chirp(f0, f1, dur, decay=None) -> np.ndarray:
+    """A decaying sine gliding from f0 to f1: the sound of a bubble or a drip."""
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    f = f0 * (f1 / f0) ** (t / dur)
+    env = np.exp(-t / (decay or dur / 3)) * np.clip(t / 0.002, 0, 1)
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * env
+
+
+def _da_stickslip(rng, dur, rate_pts, freqs, decays, amps) -> np.ndarray:
+    """Friction (creaks, groans, scrapes): tiny catches at a wandering rate (rate_pts = [(s, Hz)])
+    exciting the resonances of whatever is rubbing."""
+    n = int(dur * SR)
+    ts, rs = zip(*rate_pts)
+    rate = np.interp(np.arange(n) / SR, ts, rs) * (1 + smooth_jitter(rng, n, 6, 0.3))
+    ph = np.cumsum(rate) / SR
+    pulses = (np.diff(np.floor(ph), prepend=0) > 0) * rng.uniform(0.4, 1.0, n)
+    return conv(pulses, ring(freqs, decays, amps, max(decays) * 5))[:n]
+
+
+def _da_far(x, rng, lp, hp=60.0, air=0.15, room=0.3) -> np.ndarray:
+    """Distance: low-pass (air and walls swallow the highs), trim the sub-bass, add a little air.
+    The 'air' is a short, faint early tail (room seconds long), not a reverb."""
+    x = np.concatenate([x, np.zeros(int(room * SR))])
+    x = fft_filter(x, lambda f: lp_gain(f, lp, 2) * hp_gain(f, hp, 2))
+    if air > 0:
+        wet = conv(x, reverb_ir(rng, room, room / 5, lp=lp, predelay=0.01))[:len(x)]
+        x = x + air * norm(wet) * np.abs(x).max()
+    return x
+
+
+def _da_save(x, level, name, i, loud=1.0) -> None:
+    """Write ambient/distant/<level>/<name><i>.ogg at a common loudness.
+
+    Normalising the peak would make a lone click as loud as a long rumble. Instead the loudest
+    0.3 s of every sound is brought to the same level (times loud), so the in-game volumes in
+    DistantAmbience compare like with like. The peak stays below clipping."""
+    x = np.asarray(x, float)
+    x = x - x.mean()
+    w = int(0.3 * SR)
+    c = np.concatenate([[0.0], np.cumsum(x * x)])
+    rms = np.sqrt((c[w:] - c[:-w]).max() / w) if len(x) > w else np.sqrt((x * x).mean())
+    peak = min(0.89, np.abs(x).max() * 0.12 * loud / (rms + 1e-12))
+    save_ogg(x, DIST / level / f"{name}{i}.ogg", peak=peak, fade_in=0.002, fade_out=0.12)
+
+
+def _da_voice(rng, f0a, f0b, dur, formants, nh=30) -> np.ndarray:
+    """One syllable of a far-off voice: a pitch glide through fixed formants, with some breath."""
+    n = int(dur * SR)
+    f0 = np.geomspace(f0a, f0b, n) * (1 + smooth_jitter(rng, n, 5, 0.02))
+    v = norm(voice(f0, formants, rng, nh=nh)) + 0.12 * _da_band(rng, n, 500, 3000)
+    return v * env_adsr(n, 0.03, 0.08)
+
+
+def snd_dist_amb_level0() -> None:
+    """Level 0 (https://backrooms-wiki.wikidot.com/level-0): the lights' buzz "can fluctuate severely
+    and randomly" (a far tube pops and stutters out); "scratching sounds from behind the walls, as if
+    something is sharpening its nails"; the "Peripheral Shift" rearranging halls out of sight (a deep
+    settle); fluids soaking the carpet (dull drips); "familiar voices calling out" (a muffled call)."""
+    for i in range(1, 4):
+        # A ballast pops somewhere: a sharp tock, one to three stuttering buzz flares, a dying hum.
+        rng = rng_for(9600 + i)
+        x = np.zeros(int(1.6 * SR))
+        add_at(x, _da_hit(rng, [rng.uniform(150, 210), rng.uniform(900, 1300), rng.uniform(2600, 3600)],
+                          [0.02, 0.012, 0.02], [1, 0.4, 0.35], noise_ms=1.2, noise_lp=6000), 0.02, False)
+        tt = 0.02 + rng.uniform(0.05, 0.12)
+        for _ in range(i):
+            m = int(rng.uniform(0.05, 0.16) * SR)
+            hum, rasp = _mains_buzz(2 * np.pi * 60 * np.arange(m) / SR)
+            add_at(x, (0.5 * hum + 0.6 * rasp) * env_adsr(m, 0.004, 0.02) * rng.uniform(0.35, 0.7), tt, False)
+            tt += m / SR + rng.uniform(0.04, 0.15)
+        m = int(0.6 * SR)
+        hum, _ = _mains_buzz(2 * np.pi * 60 * np.arange(m) / SR)
+        add_at(x, 0.25 * hum * np.exp(-np.arange(m) / (0.15 * SR)), tt, False)
+        _da_save(_da_far(x, rng, 2200, hp=90), "level0", "ballast_pop", i)
+
+        # Scratching behind the wall: short gritty strokes, heard through plaster.
+        rng = rng_for(9610 + i)
+        dur = 3.2
+        n = int(dur * SR)
+        x = np.zeros(n)
+        tt = 0.05
+        while tt < dur - 0.7:
+            sd = rng.uniform(0.25, 0.6)
+            grit = _da_stickslip(rng, sd, [(0, rng.uniform(90, 160)), (sd, rng.uniform(200, 320))],
+                                 [rng.uniform(1400, 2200), rng.uniform(2800, 3800)], [0.002, 0.0015], [1, 0.6])
+            m = len(grit)
+            stroke = (norm(grit) + 0.3 * _da_band(rng, m, 1200, 4000)) * _da_env(m, [(0, 0), (0.04, 1), (sd * 0.7, 0.8), (sd, 0)])
+            add_at(x, stroke * rng.uniform(0.6, 1.0), tt, False)
+            tt += sd + rng.uniform(0.08, 0.35)
+        wall = ring([rng.uniform(180, 240), rng.uniform(420, 520)], [0.01, 0.006], [1, 0.6], 0.06)
+        x = x + 0.6 * norm(conv(x, wall)[:n]) * np.abs(x).max()
+        _da_save(_da_far(x, rng, 1300, hp=150, air=0.1), "level0", "wall_scratch", i, loud=0.8)
+
+        # The halls shifting out of sight: a deep muffled thump, a long low groan, ceiling tiles ticking.
+        rng = rng_for(9620 + i)
+        x = np.zeros(int(4.2 * SR))
+        th = norm(ring([rng.uniform(48, 62), rng.uniform(95, 120)], [0.25, 0.12], [1, 0.5], 1.2))
+        th += 0.4 * norm(fft_filter(rng.normal(size=len(th)) * np.exp(-np.arange(len(th)) / (0.03 * SR)),
+                                    lambda f: lp_gain(f, 250, 2)))
+        add_at(x, th, 0.05, False)
+        gd = rng.uniform(2.0, 2.8)
+        groan = _da_stickslip(rng, gd, [(0, 10), (gd * 0.4, rng.uniform(18, 30)), (gd, 8)],
+                              [rng.uniform(90, 120), rng.uniform(170, 220), rng.uniform(300, 380)],
+                              [0.05, 0.035, 0.02], [1, 0.7, 0.4])
+        add_at(x, 0.7 * norm(groan) * _da_env(len(groan), [(0, 0), (0.4, 1), (gd - 0.6, 0.8), (gd, 0)]),
+               0.3 + rng.uniform(0, 0.3), False)
+        add_at(x, 0.25 * norm(clicks(rng, np.sort(rng.uniform(0.15, 0.9, 6 + 3 * i)), 1.2, 900, 2200, amp_pow=2.0)),
+               0.05, False)
+        _da_save(_da_far(x, rng, 750, hp=35, air=0.12, room=0.4), "level0", "layout_shift", i)
+
+        # Drips falling onto the soaked carpet: dull, wet pats.
+        rng = rng_for(9630 + i)
+        dur = 3.0
+        x = np.zeros(int(dur * SR))
+        tt = 0.05
+        for _ in range(3 + i):
+            m = int(0.12 * SR)
+            pat = norm(ring([rng.uniform(140, 220), rng.uniform(380, 520)], [0.012, 0.006], [1, 0.4], 0.12))
+            wet = 0.6 * _da_band(rng, m, 400, 1400) * np.exp(-np.arange(m) / (0.02 * SR))
+            add_at(x, (pat + wet) * rng.uniform(0.5, 1.0), tt, False)
+            tt += rng.uniform(0.35, 0.8)
+            if tt > dur - 0.3:
+                break
+        _da_save(_da_far(x, rng, 1500, hp=90, air=0.1), "level0", "carpet_drip", i, loud=0.7)
+
+        # A voice calling, far off and through many walls: never clear enough to make out.
+        rng = rng_for(9640 + i)
+        e_vowel = [(550, 90, 1.0), (1800, 160, 0.5), (2500, 200, 0.2)]
+        o_vowel = [(480, 80, 1.0), (850, 120, 0.7), (2400, 200, 0.1)]
+        a_vowel = [(700, 100, 1.0), (1200, 140, 0.6), (2500, 200, 0.15)]
+        if i == 1:      # "hel-lo?"
+            sylls = [(0.05, 190, 200, 0.16, e_vowel), (0.25, 185, 250, 0.34, o_vowel)]
+        elif i == 2:    # "hey?" ... "hey?"
+            sylls = [(0.05, 230, 215, 0.3, e_vowel), (1.0, 215, 245, 0.32, e_vowel)]
+        else:           # a lower voice, two syllables, like a name
+            sylls = [(0.05, 135, 150, 0.2, a_vowel), (0.3, 150, 120, 0.42, o_vowel)]
+        x = np.zeros(int(2.0 * SR))
+        for k, (start, fa, fb, sd, formants) in enumerate(sylls):
+            add_at(x, _da_voice(rng, fa, fb, sd, formants) * (0.6 if i == 2 and k == 1 else 1.0), start, False)
+        _da_save(_da_far(x, rng, 850, hp=180, air=0.2, room=0.35), "level0", "far_call", i, loud=0.75)
+
+
+def snd_dist_amb_level1() -> None:
+    """Level 1 (https://backrooms-wiki.wikidot.com/level-1): "random clangs echoed through the pipes
+    on the ceiling" and "the intermittent rumbling through the pipes above"; a warehouse's metal
+    shutters; "if you feel or hear the walls, ceiling or roof vibrate, leave the area in silence";
+    and a door scraped by claws in the dark."""
+    for i in range(1, 4):
+        # A clang in the ceiling pipes, carried along the run as a few fainter repeats.
+        rng = rng_for(9700 + i)
+        x = np.zeros(int(3.0 * SR))
+        f1 = rng.uniform(260, 420)
+        for k in range(1 if i == 2 else 2):
+            hit = _da_hit(rng, [f1, f1 * 2.76, f1 * 5.40, f1 * 8.93], [0.9, 0.5, 0.3, 0.15], [1, 0.7, 0.4, 0.2],
+                          noise_ms=2, noise_lp=5000)
+            add_at(x, hit * (1.0 if k == 0 else 0.5), 0.03 + k * rng.uniform(0.18, 0.4), False)
+        y = x.copy()
+        for k, d in enumerate(np.sort(rng.uniform(0.07, 0.25, 3)), 1):
+            add_at(y, x * 0.35 / k, d, False)
+        _da_save(_da_far(y, rng, 2400, hp=120), "level1", "pipe_clang", i)
+
+        # Water rushing through the pipes overhead, with one knock as the flow catches.
+        rng = rng_for(9710 + i)
+        dur = 4.0 + 0.4 * i
+        n = int(dur * SR)
+        x = _da_band(rng, n, 70, 500) * (1 + 0.6 * smooth_jitter(rng, n, 9, 1.0))
+        x *= _da_env(n, [(0, 0), (dur * 0.35, 1), (dur * 0.6, 0.8), (dur, 0)])
+        add_at(x, 0.8 * _da_hit(rng, [rng.uniform(110, 150), rng.uniform(300, 380)], [0.08, 0.05], [1, 0.5]),
+               dur * rng.uniform(0.3, 0.6), False)
+        _da_save(_da_far(x, rng, 900, hp=40), "level1", "pipe_rumble", i)
+
+        # A roll-up metal shutter shaken in its frame: bursts of slats knocking together.
+        rng = rng_for(9720 + i)
+        dur = 2.4
+        x = np.zeros(int(dur * SR))
+        tt = 0.05
+        for _ in range(2 + (i == 3)):
+            bd = rng.uniform(0.4, 0.9)
+            rate = rng.uniform(22, 34)
+            u = 0.0
+            while u < bd:
+                h = _da_hit(rng, [rng.uniform(380, 520), rng.uniform(900, 1200), rng.uniform(1700, 2300)],
+                            [0.03, 0.02, 0.012], [1, 0.6, 0.4], noise_ms=1.5, noise_lp=4000)
+                add_at(x, h * np.sin(np.pi * u / bd) * rng.uniform(0.4, 1.0), tt + u, False)
+                u += 1 / (rate * rng.uniform(0.7, 1.3))
+            tt += bd + rng.uniform(0.15, 0.4)
+            if tt > dur - 0.5:
+                break
+        _da_save(_da_far(x, rng, 2300, hp=120), "level1", "shutter_rattle", i, loud=0.9)
+
+        # The ceiling vibrating: a low shake with loose sheet metal buzzing on each swing.
+        rng = rng_for(9730 + i)
+        dur = 3.5
+        n = int(dur * SR)
+        f0 = rng.uniform(42, 58) * (1 + smooth_jitter(rng, n, 2, 0.03))
+        ph = 2 * np.pi * np.cumsum(f0) / SR
+        drone = np.sin(ph) + 0.5 * np.sin(2 * ph)
+        buzz = fft_filter(np.clip(np.sin(ph) * 3 - 2, 0, None), lambda f: bp_gain(f, 250, 1200, 2))
+        x = (norm(drone) + 0.5 * norm(buzz)) * _da_env(n, [(0, 0), (1.2, 1), (2.2, 0.9), (dur, 0)])
+        _da_save(_da_far(x, rng, 900, hp=30), "level1", "ceiling_vibrate", i, loud=0.9)
+
+        # Claws dragged down a steel door, somewhere in the dark.
+        rng = rng_for(9740 + i)
+        dur = 2.6
+        n = int(dur * SR)
+        x = np.zeros(n)
+        tt = 0.05
+        for _ in range(2 + (i == 3)):
+            sd = rng.uniform(0.35, 0.7)
+            g = _da_stickslip(rng, sd, [(0, rng.uniform(150, 250)), (sd * 0.5, rng.uniform(300, 450)), (sd, rng.uniform(120, 200))],
+                              [rng.uniform(700, 900), rng.uniform(1500, 1900), rng.uniform(2600, 3200)],
+                              [0.01, 0.006, 0.004], [1, 0.7, 0.4])
+            add_at(x, norm(g) * _da_env(len(g), [(0, 0), (0.05, 1), (sd * 0.8, 0.7), (sd, 0)]) * rng.uniform(0.6, 1.0), tt, False)
+            tt += sd + rng.uniform(0.2, 0.5)
+            if tt > dur - 0.4:
+                break
+        door = ring([rng.uniform(140, 180), rng.uniform(330, 400)], [0.15, 0.1], [1, 0.6], 0.6)
+        x = x + 0.3 * norm(conv(x, door)[:n]) * np.abs(x).max()
+        _da_save(_da_far(x, rng, 1800, hp=120), "level1", "door_scrape", i, loud=0.75)
+
+
+def snd_dist_amb_level2() -> None:
+    """Level 2 (https://backrooms-wiki.wikidot.com/level-2): "pipes transferring fluids/gasses" (water
+    hammer knocks, a pipe groaning under pressure); "quiet internal whirring noises, as if the
+    machines are faulty"; the B.N.T.G.'s narrow-gauge tramway rumbling behind the walls; "a few of
+    the fluorescents are known to have burst"."""
+    for i in range(1, 4):
+        # Water hammer: a run of knocks travelling away down a pipe.
+        rng = rng_for(9800 + i)
+        x = np.zeros(int(2.8 * SR))
+        f1 = rng.uniform(170, 240)
+        tt, amp, gap = 0.04, 1.0, rng.uniform(0.12, 0.2)
+        for _ in range(3 + i):
+            h = _da_hit(rng, [f1 * rng.uniform(0.97, 1.03), f1 * 2.7, f1 * 5.1, rng.uniform(60, 80)],
+                        [0.12, 0.07, 0.04, 0.06], [1, 0.5, 0.25, 0.7], noise_ms=2.5, noise_lp=3000)
+            add_at(x, h * amp, tt, False)
+            tt += gap * rng.uniform(0.8, 1.4)
+            amp *= rng.uniform(0.55, 0.8)
+        _da_save(_da_far(x, rng, 1600, hp=50), "level2", "pipe_knock", i)
+
+        # A pipe groaning under pressure: a slow, rough low tone sinking in pitch.
+        rng = rng_for(9810 + i)
+        dur = 3.0 + 0.5 * i
+        n = int(dur * SR)
+        f0 = np.geomspace(rng.uniform(52, 64), rng.uniform(40, 48), n) * (1 + smooth_jitter(rng, n, 3, 0.04))
+        v = voice(f0, [(rng.uniform(200, 260), 60, 1.0), (rng.uniform(480, 560), 90, 0.6), (rng.uniform(1000, 1200), 160, 0.3)],
+                  rng, nh=40, tilt=0.02)
+        x = norm(v) * (1 + 0.35 * smooth_jitter(rng, n, 25, 1.0))
+        x *= _da_env(n, [(0, 0), (0.6, 0.8), (dur * 0.5, 1), (dur - 0.5, 0.6), (dur, 0)])
+        _da_save(_da_far(x, rng, 1100, hp=35), "level2", "pressure_groan", i)
+
+        # A faulty machine spins up, sags and catches, then winds down with a clunk.
+        rng = rng_for(9820 + i)
+        dur = 4.0
+        n = int(dur * SR)
+        top = rng.uniform(70, 110)
+        up = rng.uniform(1.0, 1.6)
+        hold = up + rng.uniform(0.3, 0.8)
+        rot = _da_env(n, [(0, 6), (up, top), (hold, top * rng.uniform(0.85, 0.95)), (dur, 4)])
+        rot *= 1 - 0.12 * np.clip(smooth_jitter(rng, n, 4, 1.0), 0, None)
+        ph = 2 * np.pi * np.cumsum(rot) / SR
+        motor = sum(a * np.sin(k * ph) for k, a in ((1, 1.0), (2, 0.6), (3, 0.3), (4, 0.2)))
+        whine = 0.25 * np.sin(int(rng.integers(9, 14)) * ph)
+        env = _da_env(n, [(0, 0), (0.3, 0.6), (up, 1), (hold, 1), (dur, 0)])
+        x = (motor + whine) * env + 0.15 * _da_band(rng, n, 300, 2000) * env
+        add_at(x, 0.8 * _da_hit(rng, [rng.uniform(80, 100), rng.uniform(180, 220)], [0.06, 0.04], [1, 0.5]),
+               hold + rng.uniform(0.1, 0.4), False)
+        _da_save(_da_far(x, rng, 1700, hp=40), "level2", "machine_whir", i)
+
+        # A tram passing far behind the walls: a swelling rumble, bogies clacking over rail joints.
+        rng = rng_for(9830 + i)
+        dur = 5.5
+        n = int(dur * SR)
+        env = _da_env(n, [(0, 0), (dur * 0.45, 1), (dur * 0.6, 0.9), (dur, 0)])
+        x = _da_band(rng, n, 35, 220) * (1 + 0.3 * smooth_jitter(rng, n, 8, 1.0)) * env
+        period = rng.uniform(0.55, 0.75)
+        tt = rng.uniform(0, 0.3)
+        while tt < dur - 0.2:
+            a = env[int(tt * SR)]
+            for dt in (0.0, rng.uniform(0.09, 0.13)):
+                h = _da_hit(rng, [rng.uniform(250, 330), rng.uniform(700, 900), rng.uniform(1600, 2000)],
+                            [0.04, 0.025, 0.015], [1, 0.6, 0.3], noise_ms=2, noise_lp=3000)
+                add_at(x, 0.9 * h * a, tt + dt, False)
+            tt += period
+        _da_save(_da_far(x, rng, 1000, hp=30, air=0.15, room=0.4), "level2", "tram_rumble", i)
+
+        # A fluorescent tube bursting: a dull thup, then glass shards tinkling and thinning out.
+        rng = rng_for(9840 + i)
+        dur = 1.8
+        x = np.zeros(int(dur * SR))
+        add_at(x, _da_hit(rng, [rng.uniform(90, 130), rng.uniform(240, 300)], [0.03, 0.02], [1, 0.5],
+                          noise_ms=1.5, noise_lp=8000), 0.03, False)
+        for tm in 0.04 + np.minimum(rng.exponential(0.12, 25 + 10 * i), dur - 0.4):
+            f = rng.uniform(2500, 6500)
+            shard = ring([f, f * rng.uniform(1.3, 1.8)], [rng.uniform(0.01, 0.04), 0.01], [1, 0.4], 0.2)
+            add_at(x, shard * 0.4 * rng.uniform(0.2, 1.0) * np.exp(-(tm - 0.04) / 0.25), tm, False)
+        _da_save(_da_far(x, rng, 3500, hp=150), "level2", "tube_burst", i, loud=0.8)
+
+
+def snd_dist_amb_level4() -> None:
+    """Level 4 (https://backrooms-wiki.wikidot.com/level-4): an abandoned office with "water coolers,
+    vending machines, and fountains containing Almond Water", "office-style stairways or occasional
+    elevators", and power still on. A desk phone ringing, a vending machine's compressor, a drinking
+    fountain running, an elevator stopping in its shaft, a copier warming up: nobody in sight."""
+    for i in range(1, 4):
+        # A desk phone ringing once (take 2: and starting a second ring; take 3: cut short).
+        rng = rng_for(9900 + i)
+        fa, fb = [(1020, 1280), (880, 1100), (1150, 1450)][i - 1]
+        trill = rng.uniform(16, 20)
+
+        def ringburst(sec):
+            m = int(sec * SR)
+            t = np.arange(m) / SR
+            ph = 2 * np.pi * np.cumsum(np.where(np.sin(2 * np.pi * trill * t) > 0, fa, fb)) / SR
+            tone = fft_filter(np.sin(ph) + 0.4 * np.sign(np.sin(ph)), lambda f: bp_gain(f, 400, 3500, 2))
+            return tone * env_adsr(m, 0.01, 0.03)
+        x = np.zeros(int(4.0 * SR))
+        add_at(x, ringburst(0.7 if i == 3 else 1.2), 0.05, False)
+        if i == 2:
+            add_at(x, ringburst(0.35), 3.25, False)
+        _da_save(_da_far(x, rng, 2400, hp=300), "level4", "phone_ring", i, loud=0.75)
+
+        # A vending machine's compressor: kicking on with a shudder (takes 1, 3) or shutting off (take 2).
+        rng = rng_for(9910 + i)
+        dur = 3.5
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        ph = 2 * np.pi * 60 * t
+        hum = np.sin(ph) + 0.6 * np.sin(2 * ph) + 0.25 * np.sin(3 * ph) + 0.15 * np.sin(4 * ph)
+        relay = _da_hit(rng, [rng.uniform(70, 90), rng.uniform(400, 600)], [0.05, 0.01], [1, 0.4], noise_ms=1.5, noise_lp=3000)
+        if i != 2:
+            hum *= 1 + 0.4 * np.sin(2 * np.pi * rng.uniform(5, 8) * t) * np.exp(-t / 0.5)
+            x = hum * _da_env(n, [(0, 0), (0.1, 0), (0.25, 1), (dur - 1.2, 0.8), (dur, 0)])
+            add_at(x, 0.8 * relay, 0.05, False)
+            stop = 0.3
+        else:
+            x = hum * _da_env(n, [(0, 0), (0.6, 0.8), (1.6, 0.8), (1.75, 0)])
+            add_at(x, 0.8 * relay, 1.6, False)
+            stop = 1.7
+        add_at(x, 0.3 * norm(clicks(rng, np.sort(rng.uniform(0.0, 0.5, 5)), 0.8, 600, 1500)), stop, False)
+        _da_save(_da_far(x, rng, 800, hp=40), "level4", "vending_compressor", i)
+
+        # A drinking fountain: valve click, a thin stream on steel, the drain swallowing the last of it.
+        rng = rng_for(9920 + i)
+        run = rng.uniform(1.3, 2.0)
+        x = np.zeros(int(3.2 * SR))
+        valve = _da_hit(rng, [rng.uniform(1800, 2400), 600], [0.006, 0.01], [1, 0.5], noise_ms=1, noise_lp=6000)
+        add_at(x, 0.5 * valve, 0.05, False)
+        m = int(run * SR)
+        stream = _da_band(rng, m, 900, 4500) * (1 + 0.3 * smooth_jitter(rng, m, 30, 1.0))
+        basin = ring([rng.uniform(700, 900), rng.uniform(1500, 1800)], [0.03, 0.02], [1, 0.6], 0.15)
+        stream = (stream + 0.4 * norm(conv(stream, basin)[:m])) * env_adsr(m, 0.08, 0.15)
+        add_at(x, 0.7 * stream, 0.08, False)
+        add_at(x, 0.4 * valve, 0.08 + run, False)
+        for _ in range(4 + i):
+            add_at(x, 0.4 * _da_chirp(rng.uniform(250, 400), rng.uniform(500, 800), 0.05),
+                   0.08 + run + rng.uniform(0, 0.6), False)
+        _da_save(_da_far(x, rng, 2400, hp=150), "level4", "fountain_run", i, loud=0.75)
+
+        # An elevator stopping somewhere in its shaft: motor hum, brake clunk, the cables creaking.
+        rng = rng_for(9930 + i)
+        dur = 3.4
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        t_stop = rng.uniform(1.2, 1.6)
+        ph = 2 * np.pi * 60 * t
+        motor = np.sin(2 * ph) + 0.5 * np.sin(4 * ph) + 0.3 * np.sin(6 * ph) + 0.4 * np.sin(ph)
+        x = 0.5 * motor * _da_env(n, [(0, 0), (0.3, 1), (t_stop - 0.4, 1), (t_stop, 0), (dur, 0)])
+        add_at(x, _da_hit(rng, [rng.uniform(55, 70), rng.uniform(140, 180), rng.uniform(420, 500)],
+                          [0.2, 0.1, 0.05], [1, 0.6, 0.3], noise_ms=3, noise_lp=1500), t_stop, False)
+        creak = _da_stickslip(rng, 0.8, [(0, 12), (0.4, 25), (0.8, 9)], [300, 650, 1100], [0.03, 0.02, 0.01], [1, 0.6, 0.3])
+        add_at(x, 0.3 * norm(creak) * _da_env(len(creak), [(0, 0), (0.1, 1), (0.8, 0)]), t_stop + 0.15, False)
+        _da_save(_da_far(x, rng, 850, hp=35), "level4", "elevator_clunk", i)
+
+        # A copier warming up: relay, motor spinning up, the lamp carriage sweeping, paper-feed clunks.
+        rng = rng_for(9940 + i)
+        dur = 4.2
+        n = int(dur * SR)
+        rot = _da_env(n, [(0, 0), (0.1, 0), (0.6, rng.uniform(85, 105)), (3.3, 100), (dur, 10)])
+        ph = 2 * np.pi * np.cumsum(rot) / SR
+        motor = (np.sin(ph) + 0.5 * np.sin(2 * ph) + 0.3 * np.sin(3 * ph) + 0.15 * np.sin(8 * ph))
+        x = 0.6 * motor * _da_env(n, [(0, 0), (0.1, 0), (0.6, 1), (3.3, 1), (dur, 0)])
+        sweep_f = _da_env(n, [(0, 500), (0.7, 500), (2.2, 700), (dur, 700)])
+        sweep = np.sin(2 * np.pi * np.cumsum(sweep_f) / SR) * 0.3 + 0.5 * _da_band(rng, n, 600, 2500)
+        x += 0.5 * sweep * _da_env(n, [(0, 0), (0.7, 0), (0.9, 1), (2.0, 1), (2.2, 0), (dur, 0)])
+        add_at(x, 0.5 * _da_hit(rng, [1900, 700], [0.006, 0.01], [1, 0.5], noise_ms=1, noise_lp=5000), 0.05, False)
+        for k in range(2 + (i == 2)):
+            add_at(x, 0.7 * _da_hit(rng, [rng.uniform(120, 180), rng.uniform(480, 560)], [0.04, 0.02], [1, 0.5]),
+                   2.4 + 0.45 * k + rng.uniform(-0.05, 0.05), False)
+        _da_save(_da_far(x, rng, 1700, hp=60), "level4", "copier", i, loud=0.85)
+
+
+def snd_dist_amb_poolrooms() -> None:
+    """The Poolrooms, built on Level 37's canon (https://backrooms-wiki.wikidot.com/level-37): "sound
+    is severely altered", "the sudden dropping-off of noises", "soundwaves not reverberating as they
+    should", "a minimal and constant rippling is present in the water". Everything is soft and
+    muffled (low cut-offs, very little air); one sound is a splash that simply stops."""
+    for i in range(1, 4):
+        # Water lapping at a pool edge: slow soft swells, a few small bubbles.
+        rng = rng_for(10000 + i)
+        x = np.zeros(int(3.4 * SR))
+        tt = 0.05
+        for _ in range(2 + i % 3):
+            m = int(rng.uniform(0.5, 0.8) * SR)
+            lap = _da_band(rng, m, 150, 900) * _da_env(m, [(0, 0), (0.08, 1), (m / SR, 0)]) ** 1.5
+            add_at(x, lap * rng.uniform(0.6, 1.0), tt, False)
+            for _ in range(3):
+                add_at(x, 0.2 * _da_chirp(rng.uniform(400, 700), rng.uniform(800, 1100), 0.03), tt + rng.uniform(0.05, 0.4), False)
+            tt += m / SR + rng.uniform(0.2, 0.6)
+            if tt > 2.6:
+                break
+        _da_save(_da_far(x, rng, 1100, hp=60, air=0.08, room=0.25), "poolrooms", "water_lap", i, loud=0.8)
+
+        # A far drain gurgling: low bubbling over a soft suction.
+        rng = rng_for(10010 + i)
+        gd = rng.uniform(1.4, 2.0)
+        n = int((gd + 0.5) * SR)
+        env = _da_env(n, [(0, 0), (0.3, 1), (gd * 0.7, 0.9), (gd, 0), (gd + 0.5, 0)])
+        x = 0.4 * _da_band(rng, n, 60, 400) * env
+        for tm in np.sort(rng.uniform(0.1, 0.1 + gd, int(gd * rng.uniform(12, 20)))):
+            add_at(x, env[int(tm * SR)] * _da_chirp(rng.uniform(150, 300), rng.uniform(350, 700), rng.uniform(0.03, 0.07)),
+                   tm, False)
+        _da_save(_da_far(x, rng, 900, hp=40, air=0.08, room=0.25), "poolrooms", "drain_gurgle", i)
+
+        # A drip into the pool, its tiny glassy ring on the tiles; then one or two smaller drips.
+        rng = rng_for(10020 + i)
+        x = np.zeros(int(2.6 * SR))
+        tt, amp = 0.05, 1.0
+        for _ in range(1 + i):
+            f0 = rng.uniform(800, 1100)
+            add_at(x, amp * _da_chirp(f0, f0 * rng.uniform(1.6, 2.2), 0.06, decay=0.02), tt, False)
+            add_at(x, amp * ring([rng.uniform(1800, 2600)], [0.15], [0.15], 0.6), tt + 0.01, False)
+            tt += rng.uniform(0.6, 1.0)
+            amp *= rng.uniform(0.4, 0.7)
+        _da_save(_da_far(x, rng, 1800, hp=200, air=0.1), "poolrooms", "tile_drip", i, loud=0.6)
+
+        # A pump somewhere under the tiles: a muffled thunk and a hum that swells and drops away
+        # (take 3: the hum stops dead, the level's "dropping-off of noises").
+        rng = rng_for(10030 + i)
+        dur = 3.2
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        ph = 2 * np.pi * 60 * t
+        hum = np.sin(ph) + 0.6 * np.sin(2 * ph) + 0.2 * np.sin(3 * ph)
+        if i == 3:
+            env = _da_env(n, [(0, 0), (0.6, 1), (1.6, 1), (1.605, 0), (dur, 0)])
+        else:
+            env = _da_env(n, [(0, 0), (0.6, 1), (1.6, 0.8), (dur, 0)])
+        x = 0.5 * hum * env
+        add_at(x, _da_hit(rng, [rng.uniform(55, 75), rng.uniform(150, 190)], [0.12, 0.06], [1, 0.5], noise_ms=4, noise_lp=600),
+               0.05, False)
+        _da_save(_da_far(x, rng, 600, hp=30, air=0.05, room=0.2), "poolrooms", "pump_thunk", i)
+
+        # Sloshing that cuts off mid-splash: the sound just stops, echo and all.
+        rng = rng_for(10040 + i)
+        cut = rng.uniform(0.8, 1.4)
+        n = int((cut + 0.6) * SR)
+        x = _da_band(rng, n, 200, 2200) * (1 + 0.5 * smooth_jitter(rng, n, 12, 1.0))
+        x *= _da_env(n, [(0, 0), (0.15, 1), (cut, 0.8), (cut + 0.6, 0.8)])
+        for _ in range(6):
+            add_at(x, 0.3 * _da_chirp(rng.uniform(300, 600), rng.uniform(700, 1200), 0.04), rng.uniform(0.05, cut), False)
+        x = _da_far(x, rng, 1600, hp=80, air=0.08, room=0.25)
+        c = int(cut * SR)
+        x[c - int(0.006 * SR):c] *= np.linspace(1, 0, int(0.006 * SR))
+        x[c:] = 0.0
+        _da_save(x, "poolrooms", "cutoff_splash", i, loud=0.8)
+
+
+def snd_dist_amb_level37() -> None:
+    """Level 37 "Sublimity" (https://backrooms-wiki.wikidot.com/level-37): calm, bright, "devoid of
+    entities"; "water rippling through the halls", the water "quiet, almost calming"; "you feel a
+    calming sensation". Only gentle things: a ripple washing past, a warm far hum, rising bubbles, a
+    trickle over a step, a soft breath of air. Nothing that could read as a threat."""
+    for i in range(1, 4):
+        # A gentle wash of water through a far arch.
+        rng = rng_for(10100 + i)
+        dur = 4.5
+        n = int(dur * SR)
+        x = _da_band(rng, n, 120, 1400) * _da_env(n, [(0, 0), (1.5, 1), (2.2, 0.9), (dur, 0)]) ** 1.3
+        for _ in range(5):
+            add_at(x, 0.1 * _da_chirp(rng.uniform(1200, 1800), rng.uniform(1900, 2600), 0.03), rng.uniform(1.0, 3.0), False)
+        _da_save(_da_far(x, rng, 2200, hp=80, air=0.12), "level37", "ripple_wash", i, loud=0.7)
+
+        # A warm, distant hum: a soft major chord swelling and fading, slowly beating.
+        rng = rng_for(10110 + i)
+        dur = 5.0
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        chord = [(87.3, 130.8, 174.6, 220.0), (116.5, 174.6, 233.1, 293.7), (98.0, 146.8, 196.0, 246.9)][i - 1]
+        x = sum(np.sin(2 * np.pi * f * t + rng.uniform(0, 6.28)) + 0.6 * np.sin(2 * np.pi * (f + rng.uniform(0.2, 0.5)) * t)
+                for f in chord) * _da_env(n, [(0, 0), (1.6, 1), (2.6, 1), (dur, 0)])
+        _da_save(_da_far(x, rng, 1400, hp=50, air=0.1), "level37", "warm_hum", i, loud=0.6)
+
+        # A few bubbles rising and breaking the surface.
+        rng = rng_for(10120 + i)
+        x = np.zeros(int(2.5 * SR))
+        tt = 0.05
+        for _ in range(3 + i):
+            add_at(x, rng.uniform(0.5, 1.0) * _da_chirp(rng.uniform(300, 500), rng.uniform(600, 900), rng.uniform(0.04, 0.08)),
+                   tt, False)
+            tt += rng.uniform(0.15, 0.45)
+            if tt > 2.0:
+                break
+        _da_save(_da_far(x, rng, 2000, hp=120, air=0.12), "level37", "water_bubble", i, loud=0.6)
+
+        # A short trickle of water spilling over a step into a pool.
+        rng = rng_for(10130 + i)
+        run = rng.uniform(1.4, 2.2)
+        n = int((run + 0.4) * SR)
+        env = _da_env(n, [(0, 0), (0.3, 1), (run - 0.4, 0.8), (run, 0), (run + 0.4, 0)])
+        x = 0.3 * _da_band(rng, n, 800, 3000) * env
+        for tm in np.sort(rng.uniform(0.05, run, int(run * rng.uniform(40, 70)))):
+            add_at(x, 0.3 * env[int(tm * SR)] * _da_chirp(rng.uniform(600, 1400), rng.uniform(1500, 2400), 0.02), tm, False)
+        _da_save(_da_far(x, rng, 2600, hp=200, air=0.12), "level37", "trickle", i, loud=0.65)
+
+        # A soft breath of warm air through the openings, with a faint whistle on its peak.
+        rng = rng_for(10140 + i)
+        dur = 4.5
+        n = int(dur * SR)
+        env = _da_env(n, [(0, 0), (1.8, 1), (2.6, 0.9), (dur, 0)])
+        wf = rng.uniform(600, 900) * (1 + smooth_jitter(rng, n, 1, 0.03))
+        x = (_da_band(rng, n, 250, 1800) + 0.05 * np.sin(2 * np.pi * np.cumsum(wf) / SR)) * env
+        _da_save(_da_far(x, rng, 2500, hp=120, air=0.1), "level37", "soft_breeze", i, loud=0.6)
+
+
+def snd_dist_amb_level9() -> None:
+    """Level 9 (https://backrooms-wiki.wikidot.com/level-9): an "infinite suburban area at midnight",
+    houses "furnished", "Items that require a power source are not functional" (so nothing
+    electric here), "wet asphalt roads" and "puddles", Hounds and Death Rats among its entities.
+    A dog barking that stops dead, wind chimes on a porch, a screen door slapping shut, a gutter
+    dripping, a trash can lid knocked over and wobbling still."""
+    for i in range(1, 4):
+        # Barking, far off, the last bark cut off short.
+        rng = rng_for(10200 + i)
+        x = np.zeros(int(2.2 * SR))
+        barks = [2, 3, 1][i - 1]
+        tt = 0.05
+        for b in range(barks):
+            bd = rng.uniform(0.12, 0.2)
+            m = int(bd * SR)
+            f0 = np.geomspace(rng.uniform(480, 620), rng.uniform(300, 380), m)
+            v = voice(f0, [(rng.uniform(650, 800), 150, 1.0), (rng.uniform(1300, 1600), 200, 0.7), (2600, 300, 0.3)],
+                      rng, nh=20, tilt=0.05)
+            bark = (norm(v) + 0.4 * _da_band(rng, m, 500, 3000)) * _da_env(m, [(0, 0), (0.012, 1), (bd * 0.4, 0.8), (bd, 0)])
+            if b == barks - 1:
+                c = int(m * 0.55)
+                bark[c - 200:c] *= np.linspace(1, 0, 200)
+                bark[c:] = 0.0
+            add_at(x, bark, tt, False)
+            tt += bd + rng.uniform(0.25, 0.45)
+        _da_save(_da_far(x, rng, 1600, hp=250, air=0.12, room=0.4), "level9", "dog_bark", i, loud=0.85)
+
+        # Wind chimes stirred on a porch: slightly out-of-tune tubes, ringing long.
+        rng = rng_for(10210 + i)
+        x = np.zeros(int(5.0 * SR))
+        base = rng.uniform(780, 900)
+        tt = 0.05
+        for _ in range(5 + 2 * i):
+            f = base * rng.choice([1, 9 / 8, 5 / 4, 3 / 2, 5 / 3]) * rng.uniform(0.985, 1.015)
+            add_at(x, rng.uniform(0.3, 1.0) * ring([f, f * 2.76, f * 5.40], [rng.uniform(1.2, 2.0), 0.6, 0.25], [1, 0.35, 0.12], 2.5),
+                   tt, False)
+            tt += rng.exponential(0.18)
+            if tt > 2.2:
+                break
+        _da_save(_da_far(x, rng, 3500, hp=300, air=0.15, room=0.4), "level9", "wind_chime", i, loud=0.7)
+
+        # A screen door: the spring creaks it open, it slaps shut and bounces twice in the frame.
+        rng = rng_for(10220 + i)
+        x = np.zeros(int(2.3 * SR))
+        creak = _da_stickslip(rng, 0.6, [(0, 30), (0.3, rng.uniform(70, 110)), (0.6, 40)],
+                              [rng.uniform(900, 1200), rng.uniform(1800, 2300), 3200], [0.008, 0.005, 0.003], [1, 0.6, 0.3])
+        add_at(x, 0.5 * norm(creak) * _da_env(len(creak), [(0, 0), (0.1, 1), (0.5, 0.7), (0.6, 0)]), 0.05, False)
+        slap_t = 0.65 + rng.uniform(0.05, 0.15)
+        for k, a in enumerate((1.0, 0.35, 0.15)):
+            slap = _da_hit(rng, [rng.uniform(160, 210), rng.uniform(420, 520), rng.uniform(900, 1100)],
+                           [0.04, 0.025, 0.015], [1, 0.7, 0.4], noise_ms=2.5, noise_lp=4000)
+            add_at(x, a * slap, slap_t + k * rng.uniform(0.06, 0.1), False)
+        add_at(x, ring([rng.uniform(250, 350)], [0.25], [0.15], 0.6), slap_t, False)
+        _da_save(_da_far(x, rng, 2200, hp=150, air=0.15, room=0.4), "level9", "screen_door", i, loud=0.85)
+
+        # A gutter dripping: tinny plinks in the metal, now and then one into a puddle.
+        rng = rng_for(10230 + i)
+        x = np.zeros(int(3.6 * SR))
+        tt = 0.05
+        while tt < 3.2:
+            if rng.random() < 0.25:
+                add_at(x, 0.6 * _da_chirp(rng.uniform(650, 800), rng.uniform(1200, 1500), 0.05), tt, False)
+            else:
+                add_at(x, rng.uniform(0.4, 1.0) * _da_hit(rng, [rng.uniform(1500, 2400), rng.uniform(3200, 4200)], [0.03, 0.015],
+                                                          [1, 0.5], noise_ms=0.6, noise_lp=6000), tt, False)
+            tt += rng.uniform(0.3, 0.8)
+        _da_save(_da_far(x, rng, 3000, hp=300, air=0.15), "level9", "gutter_drip", i, loud=0.6)
+
+        # A metal trash can lid knocked down: one clang, then it wobbles faster and faster to rest.
+        rng = rng_for(10240 + i)
+        x = np.zeros(int(3.0 * SR))
+        f1 = rng.uniform(380, 480)
+        lid = [f1, f1 * 2.3, f1 * 3.9, f1 * 5.7]
+        add_at(x, _da_hit(rng, lid, [0.4, 0.25, 0.15, 0.1], [1, 0.6, 0.4, 0.2], noise_ms=2, noise_lp=5000), 0.05, False)
+        tt, gap, amp = 0.05 + rng.uniform(0.25, 0.4), rng.uniform(0.15, 0.2), 0.5
+        while gap > 0.012 and tt < 2.6:
+            add_at(x, amp * _da_hit(rng, [f * rng.uniform(0.98, 1.02) for f in lid], [0.15, 0.1, 0.06, 0.04], [1, 0.6, 0.4, 0.2],
+                                    noise_ms=1, noise_lp=4000), tt, False)
+            tt += gap
+            gap *= 0.82
+            amp *= 0.87
+        _da_save(_da_far(x, rng, 2400, hp=150, air=0.15, room=0.4), "level9", "bin_rattle", i, loud=0.8)
+
+
+def snd_dist_amb_level94() -> None:
+    """Level 94 "Motion" (https://backrooms-wiki.wikidot.com/level-94): a toy-like town with "1930s-
+    styled cars, and milk vans" and "a water tower", safe "with no entities during the day"; at
+    night the music stops and things come out, the Death Rats with their "stop-motion look". By
+    day: a cartoon car horn, milk bottles clinking; any time: the water tower creaking; by night: a
+    choppy stop-motion skitter, sneaky cartoon tiptoes that stop mid-phrase."""
+    honk = [(700, 200, 1.0), (1400, 250, 0.8), (2500, 300, 0.4)]
+    for i in range(1, 4):
+        # A far car horn: "ah-oo-gah" (1), a double honk of two reeds (2), one long toot (3).
+        rng = rng_for(10300 + i)
+        x = np.zeros(int(2.2 * SR))
+        if i == 1:
+            m = int(0.75 * SR)
+            f0 = _da_env(m, [(0, 180), (0.15, 260), (0.45, 300), (0.75, 230)])
+            add_at(x, norm(voice(f0, honk, rng, nh=24)) * env_adsr(m, 0.02, 0.06), 0.05, False)
+        else:
+            notes = [(0.05, 0.22), (0.39, 0.22)] if i == 2 else [(0.05, 0.5)]
+            fa = rng.uniform(330, 380)
+            for start, ln in notes:
+                m = int(ln * SR)
+                f0 = np.full(m, fa)
+                tone = norm(voice(f0, honk, rng, nh=24)) + 0.7 * norm(voice(f0 * 1.26, honk, rng, nh=20))
+                add_at(x, norm(tone) * env_adsr(m, 0.015, 0.04), start, False)
+        _da_save(_da_far(x, rng, 2600, hp=200, air=0.2, room=0.5), "level94", "car_horn", i, loud=0.8)
+
+        # Milk bottles clinking in a crate on a van: little clusters of glassy clinks.
+        rng = rng_for(10310 + i)
+        x = np.zeros(int(2.0 * SR))
+        tt = 0.05
+        for _ in range(2 + (i == 3)):
+            add_at(x, 0.4 * ring([rng.uniform(180, 240)], [0.03], [1], 0.2), tt, False)
+            for _ in range(int(rng.integers(2, 5))):
+                f = rng.uniform(2200, 3800)
+                d = rng.uniform(0.04, 0.12)
+                add_at(x, rng.uniform(0.4, 1.0) * ring([f, f * 1.52, f * 2.4], [d, d * 0.7, d * 0.5], [1, 0.5, 0.3], 0.4), tt, False)
+                tt += rng.uniform(0.03, 0.09)
+            tt += rng.uniform(0.3, 0.5)
+        _da_save(_da_far(x, rng, 3800, hp=250, air=0.15), "level94", "milk_bottles", i, loud=0.65)
+
+        # The water tower's tank creaking as it settles, and one metallic tick.
+        rng = rng_for(10320 + i)
+        x = np.zeros(int(3.6 * SR))
+        cr = _da_stickslip(rng, 2.6, [(0, 6), (1.0, rng.uniform(14, 22)), (2.0, rng.uniform(9, 14)), (2.6, 5)],
+                           [rng.uniform(110, 150), rng.uniform(230, 290), rng.uniform(420, 520)], [0.06, 0.04, 0.025], [1, 0.7, 0.4])
+        add_at(x, norm(cr) * _da_env(len(cr), [(0, 0), (0.5, 1), (2.0, 0.8), (2.6, 0)]), 0.05, False)
+        add_at(x, 0.4 * _da_hit(rng, [rng.uniform(900, 1300), rng.uniform(2100, 2600)], [0.2, 0.1], [1, 0.4],
+                                noise_ms=0.8, noise_lp=5000), 2.8, False)
+        _da_save(_da_far(x, rng, 1200, hp=50, air=0.2, room=0.5), "level94", "water_tower_creak", i, loud=0.85)
+
+        # Night: a stop-motion skitter. Claw ticks come in clumps on 12-per-second "frames", with
+        # nothing in between, so the movement sounds as choppy as it looks.
+        rng = rng_for(10330 + i)
+        x = np.zeros(int(2.2 * SR))
+        tt = 0.05
+        for _ in range(3 + i % 2):
+            frames = int(rng.integers(3, 7))
+            for fr in range(frames):
+                for tm in tt + fr / 12 + rng.uniform(0, 0.012, int(rng.integers(2, 5))):
+                    tick = _da_hit(rng, [rng.uniform(2500, 4500), rng.uniform(5000, 7000)], [0.003, 0.002], [1, 0.5],
+                                   noise_ms=0.4, noise_lp=8000)
+                    add_at(x, rng.uniform(0.4, 1.0) * tick, tm, False)
+            tt += frames / 12 + rng.uniform(0.15, 0.45)
+            if tt > 1.7:
+                break
+        _da_save(_da_far(x, rng, 3200, hp=400, air=0.15), "level94", "rat_skitter", i, loud=0.65)
+
+        # Night: cartoon "sneaking" pizzicato steps, a little flat, that stop before the phrase ends.
+        rng = rng_for(10340 + i)
+        x = np.zeros(int(3.0 * SR))
+        steps = [[45, 47, 48, 50, 51], [52, 50, 48, 47], [45, 48, 45, 48, 50, 51]][i - 1]
+        tt = 0.05
+        for midi in steps:
+            f = _l94_midi_hz(midi) * 2 ** (-15 / 1200)
+            pluck = ring([f, 2 * f, 3 * f], [0.12, 0.06, 0.04], [1, 0.4, 0.2], 0.4)
+            add_at(x, pluck, tt, False)
+            add_at(x, 0.3 * _da_hit(rng, [f * 4], [0.005], [1], noise_ms=0.5, noise_lp=3000), tt, False)
+            tt += rng.uniform(0.3, 0.4)
+        _da_save(_da_far(x, rng, 2000, hp=70, air=0.2, room=0.5), "level94", "cartoon_tiptoe", i, loud=0.75)
+
+
+DISTANT_SOUNDS = [
+    snd_dist_amb_level0, snd_dist_amb_level1, snd_dist_amb_level2, snd_dist_amb_level4,
+    snd_dist_amb_poolrooms, snd_dist_amb_level37, snd_dist_amb_level9, snd_dist_amb_level94,
+]
+
+
 TEXTURES = [
     remove_stale,
     tex_yellow_wallpaper, tex_yellow_wallpaper_baseboard, tex_lobby_carpet, tex_lobby_carpet_arrow,
@@ -7904,6 +8643,7 @@ SOUNDS = [
     *L94_PROPS_SOUNDS,
     *L94_SKY_SOUNDS,
     *MUSIC_SOUNDS,
+    *DISTANT_SOUNDS,
 ]
 
 

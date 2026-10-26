@@ -193,6 +193,49 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> L0_RED_ROOMS_HUM = register("level0.red_rooms_hum");
     public static final DeferredHolder<SoundEvent, SoundEvent> L0_MANILA_PIANO = register("level0.manila_piano");
     public static final DeferredHolder<SoundEvent, SoundEvent> L0_BLACKOUT_BUZZ = register("level0.blackout_buzz");
+    // Distant ambience (client/audio/DistantAmbience): one-off sounds far away, a few per level, so a
+    // long stay never sounds like the same loop. One is picked every half minute or so and placed
+    // 14-40 blocks off in a random direction. Files: sounds/ambient/distant/<level>/<name>1..3.ogg.
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_BALLAST_POP = register("distant.level0.ballast_pop");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_WALL_SCRATCH = register("distant.level0.wall_scratch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_LAYOUT_SHIFT = register("distant.level0.layout_shift");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_CARPET_DRIP = register("distant.level0.carpet_drip");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_FAR_CALL = register("distant.level0.far_call");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L1_PIPE_CLANG = register("distant.level1.pipe_clang");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L1_PIPE_RUMBLE = register("distant.level1.pipe_rumble");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L1_SHUTTER_RATTLE = register("distant.level1.shutter_rattle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L1_CEILING_VIBRATE = register("distant.level1.ceiling_vibrate");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L1_DOOR_SCRAPE = register("distant.level1.door_scrape");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L2_PIPE_KNOCK = register("distant.level2.pipe_knock");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L2_PRESSURE_GROAN = register("distant.level2.pressure_groan");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L2_MACHINE_WHIR = register("distant.level2.machine_whir");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L2_TRAM_RUMBLE = register("distant.level2.tram_rumble");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L2_TUBE_BURST = register("distant.level2.tube_burst");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L4_PHONE_RING = register("distant.level4.phone_ring");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L4_VENDING_COMPRESSOR = register("distant.level4.vending_compressor");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L4_FOUNTAIN_RUN = register("distant.level4.fountain_run");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L4_ELEVATOR_CLUNK = register("distant.level4.elevator_clunk");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L4_COPIER = register("distant.level4.copier");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_POOL_WATER_LAP = register("distant.poolrooms.water_lap");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_POOL_DRAIN_GURGLE = register("distant.poolrooms.drain_gurgle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_POOL_TILE_DRIP = register("distant.poolrooms.tile_drip");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_POOL_PUMP_THUNK = register("distant.poolrooms.pump_thunk");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_POOL_CUTOFF_SPLASH = register("distant.poolrooms.cutoff_splash");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L37_RIPPLE_WASH = register("distant.level37.ripple_wash");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L37_WARM_HUM = register("distant.level37.warm_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L37_WATER_BUBBLE = register("distant.level37.water_bubble");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L37_TRICKLE = register("distant.level37.trickle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L37_SOFT_BREEZE = register("distant.level37.soft_breeze");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L9_DOG_BARK = register("distant.level9.dog_bark");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L9_WIND_CHIME = register("distant.level9.wind_chime");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L9_SCREEN_DOOR = register("distant.level9.screen_door");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L9_GUTTER_DRIP = register("distant.level9.gutter_drip");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L9_BIN_RATTLE = register("distant.level9.bin_rattle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L94_CAR_HORN = register("distant.level94.car_horn");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L94_MILK_BOTTLES = register("distant.level94.milk_bottles");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L94_WATER_TOWER_CREAK = register("distant.level94.water_tower_creak");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L94_RAT_SKITTER = register("distant.level94.rat_skitter");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L94_CARTOON_TIPTOE = register("distant.level94.cartoon_tiptoe");
 
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name) {
         return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(Backrooms.id(name)));

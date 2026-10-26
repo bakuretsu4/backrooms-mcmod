@@ -20,6 +20,8 @@ import net.minecraft.util.RandomSource;
 final class FixtureSounds {
     /** How many fixtures hum at once (the nearest lit ones). */
     private static final int HUM_COUNT = 8;
+    /** Up to this many hums play at full volume; with more, each is turned down (see tick). */
+    private static final int HUMS_AT_FULL = 3;
     /** Fluorescent hum fades out linearly over this many blocks. */
     private static final double HUM_RANGE = 16.0;
     /**
@@ -104,6 +106,19 @@ final class FixtureSounds {
             if (light.type.hum == FixtureType.Hum.FLUORESCENT) {
                 // Level 0: the tube hum fades away as you come near the Manila Room.
                 hum.target *= com.rickr.backrooms.client.anomaly.level0.Level0AnomalyEffects.fixtureHumScale();
+            }
+        }
+        // Many lamps close together (a lit office, a bright Level 0 hall) would stack up to a loud
+        // drone that buries everything else. Like a mixing desk, turn each one down as more play,
+        // so the hum's overall loudness stays about the same however dense the lights are.
+        float density = WANTED.size() > HUMS_AT_FULL ? (float) Math.sqrt((double) HUMS_AT_FULL / WANTED.size()) : 1.0f;
+        if (density < 1.0f) {
+            var keys = WANTED.iterator();
+            while (keys.hasNext()) {
+                FixtureHumSound hum = HUMS.get(keys.nextLong());
+                if (hum != null) {
+                    hum.target *= density;
+                }
             }
         }
         // Release hums that are no longer among the nearest lit lamps.

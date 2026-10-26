@@ -86,19 +86,21 @@ def snd_level37_dark_pass() -> None:
 
 def snd_level37_loop_drip() -> None:
     """1.2 s: one drip into still water, a few steps ahead in the tunnel. A soft plip with a short,
-    damped tail (Level 37 swallows its echoes); the same one every time you come round."""
-    rng = G.rng_for(3794)
-    dur = 1.2
-    n = int(dur * G.SR)
-    t = np.arange(n) / G.SR
-    f0 = 1150.0 * (1 + 0.55 * np.clip(t / 0.035, 0, 1))
-    plip = np.sin(2 * np.pi * np.cumsum(f0) / G.SR) * np.exp(-t / 0.028) * G.smoothstep(0, 0.002, t)
-    splash = G.fft_filter(rng.normal(size=n), lambda f: G.bp_gain(f, 800, 3000, 2)) * np.exp(-t / 0.012)
-    dry = G.norm(plip) * 0.8 + G.norm(splash) * 0.1
-    wet = G.conv(dry, G.reverb_ir(rng, 0.9, 0.22, lp=2600, predelay=0.03))[:n]
-    x = G.norm(dry) * 0.65 + G.norm(wet) * 0.35
-    x = G.fft_filter(x, lambda f: G.lp_gain(f, 2600, 1))
-    G.save_ogg(x, OUT / "loop_drip.ogg", peak=0.6, fade_out=0.3)
+    damped tail (Level 37 swallows its echoes). 3 takes: drop pitch (+-5%), glide speed and splash noise."""
+    for i, (seed, p, gl) in enumerate(((3794, 1.0, 0.035), (53794, 1.05, 0.03), (63794, 0.95, 0.041)), 1):
+        rng = G.rng_for(seed)
+        dur = 1.2
+        n = int(dur * G.SR)
+        t = np.arange(n) / G.SR
+        f0 = 1150.0 * p * (1 + 0.55 * np.clip(t / gl, 0, 1))
+        plip = np.sin(2 * np.pi * np.cumsum(f0) / G.SR) * np.exp(-t / 0.028) * G.smoothstep(0, 0.002, t)
+        splash = G.fft_filter(rng.normal(size=n), lambda f: G.bp_gain(f, 800, 3000, 2)) * np.exp(-t / 0.012)
+        dry = G.norm(plip) * 0.8 + G.norm(splash) * 0.1
+        wet = G.conv(dry, G.reverb_ir(rng, 0.9, 0.22, lp=2600, predelay=0.03))[:n]
+        x = G.norm(dry) * 0.65 + G.norm(wet) * 0.35
+        x = G.fft_filter(x, lambda f: G.lp_gain(f, 2600, 1))
+        name = "loop_drip.ogg" if i == 1 else f"loop_drip{i}.ogg"
+        G.save_ogg(x, OUT / name, peak=0.6, fade_out=0.3)
 
 
 TEXTURES = []

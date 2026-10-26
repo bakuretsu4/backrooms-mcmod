@@ -393,21 +393,24 @@ def snd_level1_drip() -> None:
 
 
 def snd_level1_crate_thud() -> None:
-    """A heavy wooden crate settling on concrete somewhere behind you: dull, a little hollow."""
-    rng = G.rng_for(9610)
-    dur = 2.2
-    n = int(dur * G.SR)
-    x = np.zeros(n)
-    k = int(0.08 * G.SR)
-    burst = rng.normal(size=k) * np.exp(-np.arange(k) / (0.012 * G.SR))
-    G.add_at(x, G.fft_filter(burst, lambda f: G.lp_gain(f, 260, 2)), 0.0, False)
-    G.add_at(x, 0.8 * G.ring([72, 118, 183], [0.09, 0.06, 0.04], [1.0, 0.6, 0.35], 0.5), 0.0, False)
-    G.add_at(x, 0.35 * G.ring([410, 560, 730], [0.025, 0.02, 0.015], [1.0, 0.7, 0.5], 0.2), 0.002, False)
-    # A second, smaller knock as it settles.
-    G.add_at(x, 0.3 * G.ring([95, 150, 480], [0.05, 0.04, 0.015], [1.0, 0.5, 0.4], 0.3), 0.11, False)
-    x = G.fft_filter(x, lambda f: G.lp_gain(f, 1600, 2))
-    wet = G.conv(x, G.reverb_ir(rng, 2.0, 0.6, lp=1100, predelay=0.04))[:n]
-    G.save_ogg(G.norm(x) + 0.45 * G.norm(wet), G.SND / "level1" / "crate_thud.ogg", peak=0.8, fade_out=0.3)
+    """A heavy wooden crate settling on concrete somewhere behind you: dull, a little hollow.
+    3 takes: different scrape noise, body resonances (+-5%) and settle-knock timing."""
+    for i, (seed, p, t2) in enumerate(((9610, 1.0, 0.11), (59611, 1.04, 0.095), (69610, 0.95, 0.14)), 1):
+        rng = G.rng_for(seed)
+        dur = 2.2
+        n = int(dur * G.SR)
+        x = np.zeros(n)
+        k = int(0.08 * G.SR)
+        burst = rng.normal(size=k) * np.exp(-np.arange(k) / (0.012 * G.SR))
+        G.add_at(x, G.fft_filter(burst, lambda f: G.lp_gain(f, 260, 2)), 0.0, False)
+        G.add_at(x, 0.8 * G.ring([72 * p, 118 * p, 183 * p], [0.09, 0.06, 0.04], [1.0, 0.6, 0.35], 0.5), 0.0, False)
+        G.add_at(x, 0.35 * G.ring([410 * p, 560 * p, 730 * p], [0.025, 0.02, 0.015], [1.0, 0.7, 0.5], 0.2), 0.002, False)
+        # A second, smaller knock as it settles.
+        G.add_at(x, 0.3 * G.ring([95 * p, 150 * p, 480 * p], [0.05, 0.04, 0.015], [1.0, 0.5, 0.4], 0.3), t2, False)
+        x = G.fft_filter(x, lambda f: G.lp_gain(f, 1600, 2))
+        wet = G.conv(x, G.reverb_ir(rng, 2.0, 0.6, lp=1100, predelay=0.04))[:n]
+        name = "crate_thud.ogg" if i == 1 else f"crate_thud{i}.ogg"
+        G.save_ogg(G.norm(x) + 0.45 * G.norm(wet), G.SND / "level1" / name, peak=0.8, fade_out=0.3)
 
 
 def snd_level1_corridor_drone() -> None:
