@@ -52,12 +52,15 @@ public final class Level2Sounds {
         duckAmbience(0.0f);
     }
 
+    // "Asked for within the last 2 ticks". Written as tick <= askedTick + 2, NOT tick - askedTick <= 2:
+    // the ask ticks start at Long.MIN_VALUE ("never"), and tick - Long.MIN_VALUE overflows to a huge
+    // negative number, which counted as "just asked" and silenced every sound in the game.
     private static boolean silenced() {
-        return tick - silenceTick <= 2;
+        return tick <= silenceTick + 2;
     }
 
     private static float duckTarget() {
-        return tick - duckTick <= 2 ? duckRequest : 1.0f;
+        return tick <= duckTick + 2 ? duckRequest : 1.0f;
     }
 
     @SubscribeEvent
