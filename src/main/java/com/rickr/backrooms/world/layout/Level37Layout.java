@@ -6,6 +6,9 @@ import com.rickr.backrooms.block.PoolLadderBlock;
 import com.rickr.backrooms.block.SunlitVoidBlock;
 import com.rickr.backrooms.block.TileCurveBlock;
 import com.rickr.backrooms.registry.ModBlocks;
+import com.rickr.backrooms.world.anomaly.AnomalySite;
+import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LightBlock;
@@ -13,6 +16,7 @@ import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.SlabType;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Level 37, "Sublimity": endless pristine tiled pools under warm daylight from nowhere. The
@@ -22,6 +26,9 @@ import net.minecraft.world.level.block.state.properties.SlabType;
  * <p>Nothing hunts you here and your sanity slowly comes back. The way on is down: one of the
  * round pits of deep, dark water. Dive (the current takes over, see {@code Level37Rules}) and once
  * you sink below {@link #TRANSFER_BELOW_Y} you come out in Level 9.
+ *
+ * <p>Anomalous areas (a void opening, a dark opening back to the Poolrooms, looping tunnels) are
+ * placed by {@link Level37AnomalyPlan}; their behaviour is in {@code world/anomaly/level37}.
  */
 public final class Level37Layout extends LevelLayout {
     /** Sinking below this in a pit's water shaft takes you on to the next level (the pit floor is y14). */
@@ -44,7 +51,7 @@ public final class Level37Layout extends LevelLayout {
     @Override
     public void fillColumn(long seed, int x, int z, Column out) {
         int[] codes = BUFFER.get();
-        PLAN.column(seed, x, z, codes);
+        PLAN.column(seed, x, z, anomalyAt(seed, x, z), codes);
         for (int y = 0; y < codes.length; y++) {
             BlockState state = stateOf(codes[y]);
             if (state != null) {
@@ -55,7 +62,31 @@ public final class Level37Layout extends LevelLayout {
 
     @Override
     public boolean isWalkable(long seed, int x, int z) {
-        return PLAN.isWalkable(seed, x, z);
+        return PLAN.isWalkable(seed, x, z, anomalyAt(seed, x, z));
+    }
+
+    // ---- Anomalies (see Level37AnomalyPlan) ----------------------------------------------------
+
+    @Override
+    @Nullable
+    public AnomalySite anomalyAt(long seed, int x, int z) {
+        return Level37AnomalyPlan.at(seed, x, z);
+    }
+
+    @Override
+    public void anomaliesNear(long seed, int x, int z, int radius, Consumer<AnomalySite> out) {
+        Level37AnomalyPlan.near(seed, x, z, radius, out);
+    }
+
+    @Override
+    @Nullable
+    public AnomalySite nearestAnomaly(long seed, int x, int z, String kind) {
+        return Level37AnomalyPlan.nearest(seed, x, z, kind);
+    }
+
+    @Override
+    public List<String> anomalyKinds() {
+        return Level37AnomalyPlan.KINDS;
     }
 
     @Override
@@ -98,6 +129,8 @@ public final class Level37Layout extends LevelLayout {
             case Level37Plan.LIGHT -> Blocks.LIGHT.defaultBlockState().setValue(LightBlock.LEVEL, data);
             case Level37Plan.BACKPACK -> ModBlocks.BACKPACK.get().defaultBlockState()
                     .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.from2DDataValue(data & 3));
+            // The walk-in darkness of a dark opening: the same pitch black as Level 94's dark doorways.
+            case Level37Plan.DARK -> ModBlocks.L94_DARK_VOID.get().defaultBlockState();
             default -> null;
         };
     }

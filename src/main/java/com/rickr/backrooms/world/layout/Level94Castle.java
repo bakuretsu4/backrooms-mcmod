@@ -84,7 +84,7 @@ public final class Level94Castle {
     }
 
     /** Same as {@link #nearest}, but packs x and z into one long so the per-column code allocates nothing. */
-    private static long nearestPacked(long seed, int x, int z) {
+    static long nearestPacked(long seed, int x, int z) {
         int rx = Math.floorDiv(x, REGION);
         int rz = Math.floorDiv(z, REGION);
         long best = Long.MAX_VALUE;
@@ -107,11 +107,11 @@ public final class Level94Castle {
         return ((long) bestX << 32) | (bestZ & 0xFFFFFFFFL);
     }
 
-    private static int unpackX(long packed) {
+    static int unpackX(long packed) {
         return (int) (packed >> 32);
     }
 
-    private static int unpackZ(long packed) {
+    static int unpackZ(long packed) {
         return (int) packed;
     }
 
@@ -138,8 +138,13 @@ public final class Level94Castle {
         return (arrivalQuarter + 1) & 3; // north (3) -> 0 turns, east (0) -> 1, south (1) -> 2, west (2) -> 3
     }
 
+    /** Quarter turns (clockwise from above) of the castle centred at (cx, cz): template to world. */
+    static int turnsAt(long seed, int cx, int cz) {
+        return castleTurns(arrivalQuarter(footQuarter(seed, cx, cz), spin(seed, cx, cz)));
+    }
+
     /** Template x of the world offset (dx, dz), undoing {@code turns} clockwise quarter turns. */
-    private static int localX(int dx, int dz, int turns) {
+    static int localX(int dx, int dz, int turns) {
         return switch (turns) {
             case 0 -> dx;
             case 1 -> dz;
@@ -149,7 +154,7 @@ public final class Level94Castle {
     }
 
     /** Template z of the world offset (dx, dz). */
-    private static int localZ(int dx, int dz, int turns) {
+    static int localZ(int dx, int dz, int turns) {
         return switch (turns) {
             case 0 -> dz;
             case 1 -> -dx;

@@ -143,7 +143,8 @@ final class Level94Builds {
 
     /**
      * A water tower: four thin legs with two bands of cross-bracing, a round grey tank and a
-     * cone roof with a little spike. Centred on its anchor, 7 x 7 at the tank.
+     * cone roof with a little spike. Centred on its anchor, 7 x 7 at the tank. The tank holds
+     * Almond Water (Level 94 wiki page): a standpipe with a tap comes down between the legs.
      */
     private static void tower(Thing t, int x, int z, LevelLayout.Column out) {
         int dx = x - t.x;
@@ -164,6 +165,9 @@ final class Level94Builds {
                     .setValue(IronBarsBlock.SOUTH, !alongX);
             out.set(g + 5, brace);
             out.set(g + 9, brace);
+        }
+        if (dx == 0 && dz == 0) {
+            out.set(g + 1, ModBlocks.L94_TOWER_TAP.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, t.facing));
         }
         int r2 = dx * dx + dz * dz;
         int tank0 = g + LEG_HEIGHT + 1;

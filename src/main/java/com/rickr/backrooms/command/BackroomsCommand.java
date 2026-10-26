@@ -15,6 +15,8 @@ import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
 import com.rickr.backrooms.world.LevelEvents;
 import com.rickr.backrooms.world.Travel;
+import com.rickr.backrooms.world.anomaly.AnomalyService;
+import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.Level94Clock;
 import com.rickr.backrooms.world.Level94Sync;
 import com.rickr.backrooms.registry.ModEntities;
@@ -39,11 +41,13 @@ import net.minecraft.world.phys.Vec3;
  * /backrooms battery [targets] [pct]   set camcorder batteries (default: full)
  * /backrooms sanity [targets] <0-100>   set sanity (for testing the low-sanity effects)
  * /backrooms locate                    distance/direction to the nearest exit (for testing)
- * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|end> [seconds]   start/stop an event on this floor
+ * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|end> [seconds]   start/stop an event on this floor
  * /backrooms spawn bacteria [count]   spawn Bacteria about 12 blocks in front of you (for testing)
  * /backrooms spawn smiler [count|bold]  spawn Smilers about 16 blocks in front of you (start a blackout first)
  * /backrooms locate saferoom          distance/direction to the nearest safe room (for testing)
  * /backrooms time94 <day|dusk|night|dawn>   Level 94: jump its day/night clock to the start of that phase (for testing)
+ * /backrooms anomaly locate <kind>     where the nearest anomalous area of that kind is on this floor (for testing)
+ * /backrooms anomaly here              which anomalous area you are standing in
  * </pre>
  */
 public final class BackroomsCommand {
@@ -76,6 +80,16 @@ public final class BackroomsCommand {
                                         .executes(ctx -> sanity(ctx, EntityArgument.getPlayers(ctx, "targets"), IntegerArgumentType.getInteger(ctx, "value"))))))
                 .then(Commands.literal("locate").executes(BackroomsCommand::locate)
                         .then(Commands.literal("saferoom").executes(BackroomsCommand::locateSafeRoom)))
+                // Anomalous areas: where is the nearest one of a kind / what am I standing in?
+                .then(Commands.literal("anomaly")
+                        .then(Commands.literal("here").executes(BackroomsCommand::anomalyHere))
+                        .then(Commands.literal("locate")
+                                .then(Commands.argument("kind", StringArgumentType.greedyString())
+                                        .suggests((ctx, builder) -> {
+                                            BackroomsLevel floor = BackroomsLevel.fromDimension(ctx.getSource().getLevel().dimension());
+                                            return SharedSuggestionProvider.suggest(floor == null ? java.util.List.of() : floor.layout().anomalyKinds(), builder);
+                                        })
+                                        .executes(ctx -> anomalyLocate(ctx, StringArgumentType.getString(ctx, "kind"))))))
                 .then(Commands.literal("event")
                         .then(eventNode("blackout", LevelEventPayload.BLACKOUT, 30))
                         .then(eventNode("flicker", LevelEventPayload.FLICKER, 8))
@@ -86,6 +100,7 @@ public final class BackroomsCommand {
                         .then(eventNode("fog", LevelEventPayload.FOG_ROLL, 50))
                         .then(eventNode("lampwave", LevelEventPayload.LAMP_WAVE, 25))
                         .then(eventNode("storm", LevelEventPayload.STORM, 6))
+                        .then(eventNode("water", LevelEventPayload.OBTRUSIVE_WATER, 30))
                         .then(Commands.literal("end").executes(ctx -> event(ctx, LevelEventPayload.NONE, 0))))
                 // Level 94 (Sky slice): jump the day/night clock to the start of a phase.
                 .then(Commands.literal("time94")
@@ -120,6 +135,33 @@ public final class BackroomsCommand {
             return 0;
         }
         LevelEvents.force(level, floor, kind, seconds * 20);
+        return 1;
+    }
+
+    private static int anomalyHere(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        AnomalySite site = AnomalyService.siteAt(player.serverLevel(), player.getBlockX(), player.getBlockZ());
+        ctx.getSource().sendSuccess(() -> Component.literal(site == null ? "No anomaly here." : "In " + site.kind()
+                + " (" + site.minX() + "," + site.minZ() + " to " + site.maxX() + "," + site.maxZ() + ")"), false);
+        return site == null ? 0 : 1;
+    }
+
+    private static int anomalyLocate(CommandContext<CommandSourceStack> ctx, String kind) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        ServerLevel level = player.serverLevel();
+        BackroomsLevel floor = BackroomsLevel.fromDimension(level.dimension());
+        if (floor == null) {
+            ctx.getSource().sendFailure(Component.literal("Run this inside the Backrooms."));
+            return 0;
+        }
+        AnomalySite site = floor.layout().nearestAnomaly(BackroomsSeeds.layoutSeed(level, floor), player.getBlockX(), player.getBlockZ(), kind);
+        if (site == null) {
+            ctx.getSource().sendFailure(Component.literal("No " + kind + " found nearby. Kinds here: " + floor.layout().anomalyKinds()));
+            return 0;
+        }
+        int dist = (int) site.distanceTo(player.getX(), player.getZ());
+        ctx.getSource().sendSuccess(() -> Component.literal(site.kind() + " at " + site.anchorX() + ", " + site.anchorZ()
+                + " (covers " + site.minX() + "," + site.minZ() + " to " + site.maxX() + "," + site.maxZ() + "), " + dist + " blocks away"), false);
         return 1;
     }
 

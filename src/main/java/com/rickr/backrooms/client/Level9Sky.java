@@ -8,6 +8,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.rickr.backrooms.client.anomaly.level9.CrimsonFieldClient;
 import com.rickr.backrooms.client.light.FixturePower;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.FogRenderer;
@@ -117,9 +118,7 @@ final class Level9Sky {
      */
     static void render(Matrix4f view, Camera camera, long nowMs) {
         float roll = Level9Atmosphere.fogRoll(nowMs);
-        float fogR = Level9Atmosphere.fogRed(roll);
-        float fogG = Level9Atmosphere.fogGreen(roll);
-        float fogB = Level9Atmosphere.fogBlue(roll);
+        float[] fog = Level9Atmosphere.fogColour(nowMs);
         float dt = lastFrameMs == 0L ? 0.0f : Math.min(nowMs - lastFrameMs, 200L);
         lastFrameMs = nowMs;
 
@@ -131,12 +130,60 @@ final class Level9Sky {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-        drawGradient(view, fogR, fogG, fogB);
+        drawGradient(view, fog[0], fog[1], fog[2]);
         // Thick rolled-in fog hides the stars too.
         drawStars(view, camera, nowMs, dt, 1.0f - roll);
+        if (Level9Atmosphere.inField()) {
+            drawGloom(view, CrimsonFieldClient.gloomPulse(0.0f) * (0.45f + 0.55f * CrimsonFieldClient.proximity()));
+        }
 
         RenderSystem.enableCull();
         RenderSystem.depthMask(true);
+    }
+
+    /**
+     * Level 9.1's Gloom: a red glow low on the eastern horizon (http://backrooms-mghc.wikidot.com/level-9-1),
+     * brightest just above the horizon and dead east, fading upward and to the sides. Added on
+     * top of the sky, so when it is off nothing is left of it.
+     */
+    private static void drawGloom(Matrix4f view, float strength) {
+        if (strength <= 0.003f) {
+            return;
+        }
+        int columns = 16;
+        int rows = 6;
+        float halfWidth = 55.0f * Mth.DEG_TO_RAD;
+        float top = 16.0f * Mth.DEG_TO_RAD;
+        BufferBuilder quads = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        for (int i = 0; i < columns; i++) {
+            for (int j = 0; j < rows; j++) {
+                gloomVertex(quads, view, i, j, columns, rows, halfWidth, top, strength);
+                gloomVertex(quads, view, i + 1, j, columns, rows, halfWidth, top, strength);
+                gloomVertex(quads, view, i + 1, j + 1, columns, rows, halfWidth, top, strength);
+                gloomVertex(quads, view, i, j + 1, columns, rows, halfWidth, top, strength);
+            }
+        }
+        // Additive: the glow only ever adds red light to the dark.
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+        BufferUploader.drawWithShader(quads.buildOrThrow());
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableBlend();
+    }
+
+    /** Grid point (i, j) of the glow: azimuth across the east, elevation up from just below the horizon. */
+    private static void gloomVertex(BufferBuilder quads, Matrix4f view, int i, int j, int columns, int rows,
+                                    float halfWidth, float top, float strength) {
+        float side = i / (float) columns * 2.0f - 1.0f; // -1..1 across the glow
+        float up = j / (float) rows;                     // 0 at the horizon, 1 at the top
+        float azimuth = side * halfWidth;
+        float elevation = -2.0f * Mth.DEG_TO_RAD + up * top;
+        float across = 1.0f - side * side;
+        float alpha = strength * across * across * (1.0f - up) * (1.0f - up);
+        float x = Mth.cos(elevation) * Mth.cos(azimuth) * RADIUS; // +x is east
+        float y = Mth.sin(elevation) * RADIUS;
+        float z = Mth.cos(elevation) * Mth.sin(azimuth) * RADIUS;
+        quads.addVertex(view, x, y, z).setColor(0.85f, 0.10f, 0.06f, alpha);
     }
 
     /**

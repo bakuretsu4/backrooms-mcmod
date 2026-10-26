@@ -35,6 +35,11 @@ public final class ModItems {
             CalmPillsItem::new, new Item.Properties().stacksTo(8));
     public static final DeferredItem<BandageItem> BANDAGE = ITEMS.registerItem("bandage",
             BandageItem::new, new Item.Properties().stacksTo(16));
+    // Level 94 anomalies and supplies: Almond Milk from the milk vans, and the 1953 coin from a sink in a furniture pile.
+    public static final DeferredItem<com.rickr.backrooms.item.AlmondMilkItem> ALMOND_MILK = ITEMS.registerItem("almond_milk",
+            com.rickr.backrooms.item.AlmondMilkItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<com.rickr.backrooms.item.Coin1953Item> COIN_1953 = ITEMS.registerItem("coin_1953",
+            com.rickr.backrooms.item.Coin1953Item::new, new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
 
     static {
         // Block items so builders can use every Backrooms block in creative.
@@ -278,6 +283,72 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.L94_RED_CARPET);
         ITEMS.registerSimpleBlockItem(ModBlocks.L94_THRONE);
         ITEMS.registerSimpleBlockItem(ModBlocks.L94_THRONE_LIGHT);
+        // Level 94 anomalies and supplies.
+        ITEMS.registerSimpleBlockItem(ModBlocks.L94_SINK);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L94_TOWER_TAP);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L94_MILK_CRATE);
+        ITEMS.registerItem("l94_wandering_door", props -> new DoubleHighBlockItem(ModBlocks.L94_WANDERING_DOOR.get(), props), new Item.Properties());
+        ITEMS.registerSimpleBlockItem(ModBlocks.L94_GLARE_PANEL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L94_WHITE_TILE);
+        // Level 1 anomalies: crate-hall racks, the crude paintings, condensation, the Corrupted Corridor.
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_STORAGE_SHELF);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_PAINTING);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_FLOOR_PAINTING);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_CONDENSATION);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_CINDERBLOCK);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_BLUE_TILE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_BLUE_TILE_SLAB);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_NOCLIP_WALL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_BRIGHT_PATCH);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_MONOCHROME_WALL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_MONOCHROME_FLOOR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L1_VOID_FLOOR);
+        // Level 4 anomalies: looping stairwells, the Window, elevator cars, the Cubicles.
+        ITEMS.registerSimpleBlockItem(ModBlocks.L4_STAIRWELL_WALL);
+        ITEMS.registerItem("l4_stair_door", props -> new DoubleHighBlockItem(ModBlocks.L4_STAIR_DOOR.get(), props), new Item.Properties());
+        ITEMS.registerSimpleBlockItem(ModBlocks.L4_FLOOR_SIGN);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L4_CLEAR_WINDOW);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L4_COVERED_WINDOW);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L4_WHITE_WALL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L4_WHITE_FLOOR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L4_ELEVATOR_WALL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L4_ELEVATOR_FLOOR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L4_OFFICE_FRIDGE);
+        // Level 2 anomalies: the brownout's emergency lights, dead lamps and black ooze, the hot
+        // zones' machines and steam vents, the void doors and the black of the void.
+        ITEMS.registerSimpleBlockItem(ModBlocks.L2_EMERGENCY_LIGHT);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L2_DEAD_LAMP);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L2_BLACK_OOZE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L2_MACHINE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L2_STEAM_VENT);
+        ITEMS.registerItem("l2_void_door", props -> new DoubleHighBlockItem(ModBlocks.L2_VOID_DOOR.get(), props), new Item.Properties());
+        ITEMS.registerSimpleBlockItem(ModBlocks.L2_VOID_BLACK);
+        // Level 0 anomalies: the Red Rooms and their warning signs, the flickering wall, blackout
+        // zones, the Manila Room's walls, furniture and notes, the arch wall of the pillar hall.
+        ITEMS.registerSimpleBlockItem(ModBlocks.RED_WALLPAPER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.RED_WALLPAPER_MOULD);
+        ITEMS.registerSimpleBlockItem(ModBlocks.RED_WALL_TALLY);
+        ITEMS.registerSimpleBlockItem(ModBlocks.RED_CARPET_COARSE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.RED_ROOM_LIGHT);
+        ITEMS.registerSimpleBlockItem(ModBlocks.RED_MUSHROOMS);
+        ITEMS.registerSimpleBlockItem(ModBlocks.PEELING_WALLPAPER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.STICKY_CARPET);
+        ITEMS.registerSimpleBlockItem(ModBlocks.FLICKERING_WALL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.BLACKOUT_WALLPAPER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.CARPET_FLUID);
+        ITEMS.registerSimpleBlockItem(ModBlocks.MANILA_WALLPAPER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.MANILA_BROWN_WALL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OCTAGON_TABLE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.WOODEN_CHAIR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.VOLUNTEER_NOTE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.ARCH_WALL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.ARCH_WALL_STAIRS);
+        // Level 9 anomalies: the Crimson Field's grass, the Mangled fog's crater, foxhole sandbags.
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_FIELD_GRASS);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_CRATER_ASPHALT);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_CRATER_ASPHALT_SLAB);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_CRATER_SOIL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_SANDBAGS);
     }
 
     private ModItems() {}

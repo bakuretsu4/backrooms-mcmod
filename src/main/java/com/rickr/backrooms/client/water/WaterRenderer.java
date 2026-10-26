@@ -126,7 +126,8 @@ public final class WaterRenderer {
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        WaterStyle levelStyle = mc.level == null ? null : WaterStyle.forLevel(BackroomsLevel.fromDimension(mc.level.dimension()));
+        WaterStyle levelStyle = mc.level == null || mc.player == null ? null
+                : WaterStyle.at(BackroomsLevel.fromDimension(mc.level.dimension()), mc.player.getX());
         boolean available = surfaceShader != null && underwaterShader != null
                 && (levelStyle == null || !VanillaWaterHider.shaderPackInUse());
         VanillaWaterHider.setRendererAvailable(available);

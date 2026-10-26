@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/stairs",
+  "textures": {
+    "bottom": "backrooms:block/arch_wall",
+    "top": "backrooms:block/arch_wall",
+    "side": "backrooms:block/arch_wall"
+  }
+}

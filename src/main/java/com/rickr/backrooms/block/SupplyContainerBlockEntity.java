@@ -59,6 +59,11 @@ public class SupplyContainerBlockEntity extends BaseContainerBlockEntity {
         return state.getBlock() instanceof SupplyContainerBlock block ? block.kind() : SupplyKind.CRATE;
     }
 
+    /** True once someone has opened it (its loot has been rolled). Level 1's vanishing crates only take unopened ones. */
+    public boolean isLootFilled() {
+        return lootFilled;
+    }
+
     /** Server only: rolls the loot once. Called right before the menu opens. */
     public void fillLootIfNeeded(ServerLevel level, @Nullable Player opener) {
         if (lootFilled) {

@@ -2,6 +2,7 @@ package com.rickr.backrooms.client.light;
 
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.network.LevelEventPayload;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 
@@ -19,6 +20,9 @@ import net.minecraft.world.phys.Vec3;
  *
  * <p>Separately, Level 9 lamps whose block is in mode=flicker are "broken": they stutter on
  * their own irregular rhythm all the time ({@link #brokenLampOn}).
+ *
+ * <p>And Level 2's caged lamps hang on series circuits that fail now and then, every lamp of a
+ * circuit at once ({@link #level2CircuitOn}).
  *
  * <p>The fades are kept as smoothed values stepped by {@link #tick()} (once per client tick), so
  * they work no matter how the server announces the end of an event.
@@ -208,7 +212,8 @@ public final class FixturePower {
 
     /** The 0..1 power of one fixture right now (before the camcorder battery). */
     public static float levelOf(FixtureLight light) {
-        if (light.type == FixtureType.EXIT_SIGN || light.type == FixtureType.SAFE_LAMP) {
+        if (light.type == FixtureType.EXIT_SIGN || light.type == FixtureType.SAFE_LAMP
+                || light.type == FixtureType.L2_EMERGENCY_LIGHT) {
             // Battery-backed: stays lit even in a blackout (and through alarms, flickers and lamp
             // waves). Exit signs are a little clue in the dark; safe-room lamps a place to hide.
             return 1.0f;
@@ -221,6 +226,108 @@ public final class FixturePower {
             return 0.0f;
         }
         return power * alarmDim();
+    }
+
+    // --- Level 2 series circuits -----------------------------------------------------------------
+    // Level 2's lamps are wired in series (https://backrooms-wiki.wikidot.com/level-2): when one
+    // part of a circuit fails, every lamp on it goes out at once, roughly a 3x3 to 6x6 grid of
+    // lamps, and nobody can tell which lamps share a circuit. Here a circuit is a patch of floor
+    // around one jittered point per 56x56 square (so circuits are irregular, 9-36 lamps), and
+    // whether it is up is a pure function of the circuit and the level's game time: every player
+    // sees the same circuit die at the same tick, and neighbouring circuits don't care.
+
+    /** One circuit centre per square this big (blocks). */
+    private static final int CIRCUIT_GRID = 56;
+    /** Each circuit's time is cut into rounds this long (ticks, 2.5 minutes) ... */
+    private static final long CIRCUIT_ROUND = 3000L;
+    /** ... in each round it fails with this chance (out of 256, so 1 in 4) ... */
+    private static final int CIRCUIT_FAIL_CHANCE = 64;
+    /** ... and stays out for 20 to 55 seconds (ticks) ... */
+    private static final long CIRCUIT_OUT_MIN = 400L;
+    private static final long CIRCUIT_OUT_SPREAD = 700L;
+    /** ... the last 1.5 s of which its lamps stutter together as the power comes back. */
+    private static final long CIRCUIT_RESTRIKE = 30L;
+    /** A failure younger than this (ticks) still gets its pop when first seen. */
+    private static final long CIRCUIT_POP_WINDOW = 6L;
+    /** Failures that already popped (circuit and start mixed), so each pops once. */
+    private static final LongOpenHashSet POPPED = new LongOpenHashSet();
+
+    /** The circuit a Level 2 lamp at (x, z) belongs to: the nearest circuit centre. */
+    public static long level2Circuit(double x, double z) {
+        int bx = (int) Math.floor(x);
+        int bz = (int) Math.floor(z);
+        int cx = Math.floorDiv(bx, CIRCUIT_GRID);
+        int cz = Math.floorDiv(bz, CIRCUIT_GRID);
+        long best = 0L;
+        long bestDist = Long.MAX_VALUE;
+        for (int ox = -1; ox <= 1; ox++) {
+            for (int oz = -1; oz <= 1; oz++) {
+                long id = mix((((long) (cx + ox)) << 32 ^ ((cz + oz) & 0xFFFFFFFFL)) ^ 0x2F1A7C3B9D5E4F61L);
+                long px = (long) (cx + ox) * CIRCUIT_GRID + 8 + (id & 0xFFFF) % (CIRCUIT_GRID - 16);
+                long pz = (long) (cz + oz) * CIRCUIT_GRID + 8 + ((id >>> 16) & 0xFFFF) % (CIRCUIT_GRID - 16);
+                long dist = (px - bx) * (px - bx) + (pz - bz) * (pz - bz);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = id;
+                }
+            }
+        }
+        return best;
+    }
+
+    /**
+     * The outage of {@code circuit} at {@code gameTime}: -1 when it is up, otherwise the ticks
+     * since it failed (high bits) and how long the outage lasts (low 16 bits).
+     */
+    private static long circuitOutage(long circuit, long gameTime) {
+        long t = gameTime + (circuit >>> 20) % CIRCUIT_ROUND; // each circuit has its own round boundaries
+        long round = Math.floorDiv(t, CIRCUIT_ROUND);
+        long h = mix(circuit + round * 0x9E3779B97F4A7C15L);
+        if ((h & 0xFF) >= CIRCUIT_FAIL_CHANCE) {
+            return -1L;
+        }
+        long length = CIRCUIT_OUT_MIN + ((h >>> 8) & 0xFFFF) % CIRCUIT_OUT_SPREAD;
+        long start = ((h >>> 24) & 0xFFFF) % (CIRCUIT_ROUND - length);
+        long since = t - round * CIRCUIT_ROUND - start;
+        return since >= 0 && since < length ? since << 16 | length : -1L;
+    }
+
+    /** True unless this Level 2 circuit is out (the stutter as it comes back counts as out). */
+    public static boolean level2CircuitPowered(long circuit, long gameTime) {
+        return circuitOutage(circuit, gameTime) < 0;
+    }
+
+    /** Is this Level 2 circuit powered at this game tick? (Stutters together while it comes back.) */
+    public static boolean level2CircuitOn(long circuit, long gameTime) {
+        long outage = circuitOutage(circuit, gameTime);
+        if (outage < 0) {
+            return true;
+        }
+        if (level2CircuitRestriking(circuit, gameTime)) {
+            return (mix(circuit ^ (gameTime / 2) * 0x632BE59BD9B4E019L) & 1L) == 0L;
+        }
+        return false;
+    }
+
+    /** True during the short stutter as a failed circuit's power comes back. */
+    public static boolean level2CircuitRestriking(long circuit, long gameTime) {
+        long outage = circuitOutage(circuit, gameTime);
+        return outage >= 0 && (outage >>> 16) >= (outage & 0xFFFF) - CIRCUIT_RESTRIKE;
+    }
+
+    /**
+     * True once per failure, for the first lamp of the circuit that asks within the first few
+     * ticks: that lamp plays the pop of the circuit going out.
+     */
+    public static boolean level2CircuitPop(long circuit, long gameTime) {
+        long outage = circuitOutage(circuit, gameTime);
+        if (outage < 0 || (outage >>> 16) >= CIRCUIT_POP_WINDOW) {
+            return false;
+        }
+        if (POPPED.size() > 256) {
+            POPPED.clear();
+        }
+        return POPPED.add(mix(circuit ^ (gameTime - (outage >>> 16))));
     }
 
     /** SplitMix64 finaliser: a cheap, well-mixed hash. */

@@ -127,6 +127,72 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_MENU = register("music.menu");
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_BACKROOMS = register("music.backrooms");
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_DREAM = register("music.dream");
+    // Level 94 anomalies: the high, glassy hum of the blinding hall's light (looped by the client
+    // while you are in it) and the coin rattling in a furniture-pile sink.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L94_BLINDING_HUM = register("level94.blinding_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L94_COIN = register("level94.coin");
+    // Poolrooms anomalies (client/anomaly/poolrooms): the "obtrusive" water that now and then swells
+    // over every other sound in both pool levels, the faint chorus of chants of a dark corner and
+    // the Sanguine Reservoir, its slithering and whimpers, the dull swell as you drift into it, and
+    // the rush of a current in a stair pit.
+    public static final DeferredHolder<SoundEvent, SoundEvent> POOL_OBTRUSIVE_WATER = register("anomaly.poolrooms.obtrusive_water");
+    public static final DeferredHolder<SoundEvent, SoundEvent> POOL_CHANT = register("anomaly.poolrooms.chant");
+    public static final DeferredHolder<SoundEvent, SoundEvent> POOL_SLITHER = register("anomaly.poolrooms.slither");
+    public static final DeferredHolder<SoundEvent, SoundEvent> POOL_WHIMPER = register("anomaly.poolrooms.whimper");
+    public static final DeferredHolder<SoundEvent, SoundEvent> POOL_DRIFT = register("anomaly.poolrooms.drift");
+    public static final DeferredHolder<SoundEvent, SoundEvent> POOL_CURRENT = register("anomaly.poolrooms.current");
+    // Level 37 anomalies (client/anomaly/level37): the high soft tone of a void opening (looped by
+    // the client as you near it) and the bright swell as it takes you, the cold draught breathing
+    // out of a dark opening and the muffled hush as you pass through it, and the single drip that
+    // repeats each time a looping tunnel brings you round again.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L37_VOID_TONE = register("level37.void_tone");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L37_VOID_VANISH = register("level37.void_vanish");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L37_DARK_DRAFT = register("level37.dark_draft");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L37_DARK_PASS = register("level37.dark_pass");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L37_LOOP_DRIP = register("level37.loop_drip");
+    // Level 1 anomalies (world/anomaly/level1): water dripping into the fog's puddles, a crate
+    // settling somewhere behind you, and the warbling drone of the Corrupted Corridor's
+    // black-and-white sector.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L1_DRIP = register("level1.drip");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L1_CRATE_THUD = register("level1.crate_thud");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L1_CORRIDOR_DRONE = register("level1.corridor_drone");
+    // Level 4 anomalies (world/anomaly/level4, client/anomaly/level4): footsteps and a door far up or
+    // down a looping stairwell, the Window's soft whispers and its grab, an elevator ride down and
+    // its chime, and the Cubicles' work ambience (paper, pencils, murmurs, muffled rain) and its
+    // nearby desk noises.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L4_STAIRWELL_ECHO = register("level4.stairwell_echo");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L4_WINDOW_WHISPER = register("level4.window_whisper");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L4_WINDOW_GRAB = register("level4.window_grab");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L4_ELEVATOR_RIDE = register("level4.elevator_ride");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L4_ELEVATOR_DING = register("level4.elevator_ding");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L4_CUBICLES_AMBIENCE = register("level4.cubicles_ambience");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L4_CUBICLES_WORK = register("level4.cubicles_work");
+    // Level 2 anomalies (world/anomaly/level2, client/anomaly/level2): the pop and fizz of a series
+    // circuit failing, the faulty whirring machinery of a hot zone (looped by the client), steam
+    // venting from its pipes, and black ooze dripping from burst pipes in a brownout.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L2_CIRCUIT_POP = register("level2.circuit_pop");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L2_MACHINE_LOOP = register("level2.machine_loop");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L2_STEAM_HISS = register("level2.steam_hiss");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L2_OOZE_DRIP = register("level2.ooze_drip");
+    // Level 9 anomalies (world/anomaly/level9, client/anomaly/level9): the Mangled fog's sudden
+    // cold, the booms of its black pillar, the garbled voice that follows them and the quake when
+    // it goes; Level 9.1's radio chatter, warped elevator music and backwards talking from
+    // nowhere, the Gloom's faint throb and its pull.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_FROST_ONSET = register("level9.frost_onset");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_PILLAR_BOOM = register("level9.pillar_boom");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_GARBLED_SPEECH = register("level9.garbled_speech");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_QUAKE = register("level9.quake");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_FIELD_RADIO = register("level9.field_radio");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_FIELD_ELEVATOR = register("level9.field_elevator");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_FIELD_REVERSED = register("level9.field_reversed");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_GLOOM_THROB = register("level9.gloom_throb");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_GLOOM_DRAG = register("level9.gloom_drag");
+    // Level 0 anomalies (world/anomaly/level0, client/anomaly/level0): the Red Rooms' "klaxon synth"
+    // hum (looped in each room), the Manila Room's quiet piano from nowhere, and the fluorescent buzz
+    // in a Blackout Zone that seems to lead the way out but never stays put.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_RED_ROOMS_HUM = register("level0.red_rooms_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_MANILA_PIANO = register("level0.manila_piano");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_BLACKOUT_BUZZ = register("level0.blackout_buzz");
 
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name) {
         return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(Backrooms.id(name)));

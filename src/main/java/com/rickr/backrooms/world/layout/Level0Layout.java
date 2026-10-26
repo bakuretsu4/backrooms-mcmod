@@ -8,6 +8,9 @@ import com.rickr.backrooms.block.WallLampBlock;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
+import com.rickr.backrooms.world.anomaly.AnomalySite;
+import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -39,6 +42,14 @@ import org.jetbrains.annotations.Nullable;
  * office room (wood panelling under the yellow wallpaper, beige carpet, a warm lamp) behind thick
  * walls with one doorway. A 1-wide strip of plain floor runs all around it, so the doorway always
  * leads back into the maze. See {@link SafeRoomPlan}.
+ *
+ * <p><b>Anomalies.</b> Five kinds of anomalous area, placed by {@link Level0AnomalyPlan}: the Red
+ * Rooms ({@link Level0RedRooms}, with peeling wallpaper and sticky carpet in the maze around them
+ * as a warning), Blackout Zones (the maze with no lights, rough walls and fluid on the carpet; see
+ * {@link Level0Blackout}), the Manila Room ({@link Level0ManilaRoom}, with a flickering wall to
+ * Level 1 in the maze nearby), a pillar hall that rearranges itself ({@link Level0PillarHall}) and a
+ * room whose floor is a grid of pits ({@link Level0Pitfalls}). The first four replace the maze in a
+ * rectangle (like the front office); blackouts change the maze in place.
  */
 public final class Level0Layout extends LevelLayout {
     /** Wall bands running north-south (cut along X) and east-west (cut along Z). */
@@ -74,8 +85,12 @@ public final class Level0Layout extends LevelLayout {
     private static final int OFFICE_YELLOW_WALL = 3;
     private static final int OFFICE_DOORWAY = 4;
 
+    /** Where the anomalous areas are (see {@link Level0AnomalyPlan}). */
+    private final Level0AnomalyPlan anomalies;
+
     public Level0Layout() {
         super(4, new ExitLocator(512, 64, 1000));
+        this.anomalies = new Level0AnomalyPlan(this);
     }
 
     // ==========================================================================================
@@ -333,15 +348,19 @@ public final class Level0Layout extends LevelLayout {
      */
     @Nullable
     private SafeRoomPlan safeRoomNear(long seed, int x, int z) {
-        int cellX = Math.floorDiv(x, SafeRoomPlan.CELL);
-        int cellZ = Math.floorDiv(z, SafeRoomPlan.CELL);
-        // 7x7 or 9x9 inside, with walls two blocks thick (11 or 13 across).
-        int size = Hash.unit(seed, cellX, cellZ, 401) < 0.5 ? 11 : 13;
-        SafeRoomPlan plan = SafeRoomPlan.jittered(seed, cellX, cellZ, 400, size, SAFE_MOAT, 2);
+        SafeRoomPlan plan = safeRoomPlan(seed, Math.floorDiv(x, SafeRoomPlan.CELL), Math.floorDiv(z, SafeRoomPlan.CELL));
         if (plan == null || !plan.near(x, z, SAFE_MOAT) || !safeRoomAllowed(seed, plan)) {
             return null;
         }
         return plan;
+    }
+
+    /** Where the safe room of a 128x128 square would go (before checking it's allowed there), or null. */
+    @Nullable
+    private static SafeRoomPlan safeRoomPlan(long seed, int cellX, int cellZ) {
+        // 7x7 or 9x9 inside, with walls two blocks thick (11 or 13 across).
+        int size = Hash.unit(seed, cellX, cellZ, 401) < 0.5 ? 11 : 13;
+        return SafeRoomPlan.jittered(seed, cellX, cellZ, 400, size, SAFE_MOAT, 2);
     }
 
     /** Never near an exit stairwell, never overlapping a front office (or the walkway around it). */
@@ -400,6 +419,147 @@ public final class Level0Layout extends LevelLayout {
     }
 
     // ==========================================================================================
+    // Anomalies (where they are: Level0AnomalyPlan; what they look like: the Level0* plan classes)
+    // ==========================================================================================
+
+    @Override
+    @Nullable
+    public AnomalySite anomalyAt(long seed, int x, int z) {
+        return anomalies.at(seed, x, z);
+    }
+
+    @Override
+    public void anomaliesNear(long seed, int x, int z, int radius, Consumer<AnomalySite> out) {
+        anomalies.near(seed, x, z, radius, out);
+    }
+
+    @Override
+    @Nullable
+    public AnomalySite nearestAnomaly(long seed, int x, int z, String kind) {
+        return anomalies.nearest(seed, x, z, kind);
+    }
+
+    @Override
+    public List<String> anomalyKinds() {
+        return Level0AnomalyPlan.KINDS;
+    }
+
+    /** Nobody arrives (or respawns) inside an anomalous structure: you have to walk in. */
+    @Override
+    public boolean isSafeArrival(long seed, int x, int z) {
+        return isWalkable(seed, x, z) && anomalies.structureAt(seed, x, z) == null;
+    }
+
+    /**
+     * True if a rectangle is clear of exit stairwells (and the lobby around them), safe rooms (with
+     * their free strip) and front offices (with their walkway). The anomaly planner only puts sites
+     * where this holds. Front offices count even where they are switched off near an exit, to keep
+     * this simple and safe.
+     */
+    boolean rectFree(long seed, int x0, int z0, int x1, int z1) {
+        int keep = CLEARING_RADIUS + 2;
+        int[][] probes = {{x0, z0}, {x1, z0}, {x0, z1}, {x1, z1}, {(x0 + x1) / 2, (z0 + z1) / 2}};
+        for (int[] probe : probes) {
+            int[] exit = exits().nearest(seed, probe[0], probe[1]);
+            if (exit[0] >= x0 - keep && exit[0] <= x1 + keep && exit[1] >= z0 - keep && exit[1] <= z1 + keep) {
+                return false;
+            }
+        }
+        for (int cellX = Math.floorDiv(x0, SafeRoomPlan.CELL); cellX <= Math.floorDiv(x1, SafeRoomPlan.CELL); cellX++) {
+            for (int cellZ = Math.floorDiv(z0, SafeRoomPlan.CELL); cellZ <= Math.floorDiv(z1, SafeRoomPlan.CELL); cellZ++) {
+                SafeRoomPlan plan = safeRoomPlan(seed, cellX, cellZ);
+                if (plan != null && safeRoomAllowed(seed, plan)
+                        && plan.x0 - SAFE_MOAT <= x1 && plan.x0 + plan.sizeX - 1 + SAFE_MOAT >= x0
+                        && plan.z0 - SAFE_MOAT <= z1 && plan.z0 + plan.sizeZ - 1 + SAFE_MOAT >= z0) {
+                    return false;
+                }
+            }
+        }
+        for (int cellX = Math.floorDiv(x0, OFFICE_GRID); cellX <= Math.floorDiv(x1, OFFICE_GRID); cellX++) {
+            for (int cellZ = Math.floorDiv(z0, OFFICE_GRID); cellZ <= Math.floorDiv(z1, OFFICE_GRID); cellZ++) {
+                long rect = officeRect(seed, cellX, cellZ);
+                if (rect == 0) {
+                    continue;
+                }
+                // The office plus its 2-wide walkway, as in officeAt.
+                int ox0 = cellX * OFFICE_GRID + ((int) (rect >>> 24) & 0xFF) - 2;
+                int oz0 = cellZ * OFFICE_GRID + ((int) (rect >>> 16) & 0xFF) - 2;
+                int ox1 = ox0 + ((int) (rect >>> 8) & 0xFF) + 3;
+                int oz1 = oz0 + ((int) rect & 0xFF) + 3;
+                if (ox0 <= x1 && ox1 >= x0 && oz0 <= z1 && oz1 >= z0) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /** A maze wall outside exits, offices and safe rooms (never asks the anomaly plan: the planner uses it). */
+    boolean plainMazeWall(long seed, int x, int z) {
+        return exits().distance(seed, x, z) > CLEARING_RADIUS && officeAt(seed, x, z) == NO_OFFICE
+                && mazeKind(seed, x, z) == WALL && safeRoomNear(seed, x, z) == null;
+    }
+
+    /** Open maze floor (or a doorway) outside exits, offices and safe rooms. */
+    boolean plainMazeOpen(long seed, int x, int z) {
+        return exits().distance(seed, x, z) > CLEARING_RADIUS && officeAt(seed, x, z) == NO_OFFICE
+                && mazeKind(seed, x, z) != WALL && safeRoomNear(seed, x, z) == null;
+    }
+
+    /**
+     * Does the spot suit an anomaly that likes {@code zone}: 0 tight maze, 1 ordinary rooms, 2 big
+     * halls (see {@link #zoneKind}), 3 the unlit half of the level.
+     */
+    boolean zonePrefers(long seed, int x, int z, int zone) {
+        return zone == 3 ? isUnlitZone(seed, x, z) : zoneKind(seed, x, z) == zone;
+    }
+
+    /** True in the half of the level where hardly any ceiling panel works (see {@link #ceilingLight}). */
+    public boolean isUnlitZone(long seed, int x, int z) {
+        return zone(seed, x, z, 32, 13) >= 0.5;
+    }
+
+    private void fillStructure(AnomalySite site, int x, int z, Column out) {
+        switch (site.kind()) {
+            case Level0AnomalyPlan.RED_ROOMS -> Level0RedRooms.fill(site, x, z, floorY(), ceilingY(), out);
+            case Level0AnomalyPlan.MANILA_ROOM -> Level0ManilaRoom.fill(site, x, z, floorY(), ceilingY(), out);
+            case Level0AnomalyPlan.PITFALLS -> Level0Pitfalls.fill(site, x, z, floorY(), ceilingY(), out);
+            default -> Level0PillarHall.fill(site, x, z, floorY(), ceilingY(), out);
+        }
+    }
+
+    private static boolean structureSolid(AnomalySite site, int x, int z) {
+        return switch (site.kind()) {
+            case Level0AnomalyPlan.RED_ROOMS -> Level0RedRooms.isSolid(site, x, z);
+            case Level0AnomalyPlan.MANILA_ROOM -> Level0ManilaRoom.isSolid(site, x, z);
+            case Level0AnomalyPlan.PITFALLS -> Level0Pitfalls.isSolid(site, x, z);
+            default -> Level0PillarHall.isSolid(site, x, z);
+        };
+    }
+
+    private static boolean structureWalkable(AnomalySite site, int x, int z) {
+        return switch (site.kind()) {
+            case Level0AnomalyPlan.RED_ROOMS -> Level0RedRooms.isWalkable(site, x, z);
+            case Level0AnomalyPlan.MANILA_ROOM -> Level0ManilaRoom.isWalkable(site, x, z);
+            case Level0AnomalyPlan.PITFALLS -> Level0Pitfalls.isWalkable(site, x, z);
+            default -> Level0PillarHall.isWalkable(site, x, z);
+        };
+    }
+
+    /**
+     * Warning signs of the Red Rooms in the maze around them: how close (blocks) column (x, z) is to
+     * a Red Rooms site, or -1 if it is out of range (see {@link Level0AnomalyPlan#RED_RING}).
+     */
+    private double redRoomsDistance(long seed, int x, int z) {
+        AnomalySite red = anomalies.redRoomsOfSquare(seed, x, z);
+        if (red == null) {
+            return -1;
+        }
+        double d = red.distanceTo(x + 0.5, z + 0.5);
+        return d <= Level0AnomalyPlan.RED_RING ? d : -1;
+    }
+
+    // ==========================================================================================
     // Column queries shared by fillColumn / isWalkable / decals / lights
     // ==========================================================================================
 
@@ -412,19 +572,26 @@ public final class Level0Layout extends LevelLayout {
         if (safe != null) return safe.role(x, z) == SafeRoomPlan.WALL;
         int office = officeAt(seed, x, z);
         if (office != NO_OFFICE) return office == OFFICE_WALL || office == OFFICE_YELLOW_WALL;
+        AnomalySite site = anomalies.structureAt(seed, x, z);
+        if (site != null) return structureSolid(site, x, z);
         return mazeKind(seed, x, z) == WALL;
     }
 
-    /** A plain maze wall column (where decals may be drawn). */
+    /**
+     * A plain yellow maze wall column (where the door drawing may go): not part of an anomaly, not
+     * rough blackout wall, not peeling wallpaper near the Red Rooms, not the Manila Room's exit.
+     */
     private boolean isMazeWall(long seed, int x, int z) {
-        return exits().distance(seed, x, z) > CLEARING_RADIUS && officeAt(seed, x, z) == NO_OFFICE
-                && mazeKind(seed, x, z) == WALL && safeRoomNear(seed, x, z) == null;
+        return plainMazeWall(seed, x, z) && anomalies.structureAt(seed, x, z) == null
+                && anomalies.blackoutAt(seed, x, z) == null && redRoomsDistance(seed, x, z) < 0
+                && !anomalies.isManilaExit(seed, x, z);
     }
 
-    /** A plain maze floor column (where ceiling panels may hang). */
+    /** A plain maze floor column (where ceiling panels may hang). Never inside a blackout zone. */
     private boolean isMazeRoom(long seed, int x, int z) {
         return exits().distance(seed, x, z) > CLEARING_RADIUS && officeAt(seed, x, z) == NO_OFFICE
-                && mazeKind(seed, x, z) == OPEN && safeRoomNear(seed, x, z) == null;
+                && mazeKind(seed, x, z) == OPEN && safeRoomNear(seed, x, z) == null
+                && anomalies.structureAt(seed, x, z) == null && anomalies.blackoutAt(seed, x, z) == null;
     }
 
     @Override
@@ -449,6 +616,10 @@ public final class Level0Layout extends LevelLayout {
                 return !officeCrate(seed, x, z, rx, rz, width);
             }
             return true;
+        }
+        AnomalySite site = anomalies.structureAt(seed, x, z);
+        if (site != null) {
+            return structureWalkable(site, x, z);
         }
         long sx = X_WALLS.span(seed, x);
         long sz = Z_WALLS.span(seed, z);
@@ -496,27 +667,63 @@ public final class Level0Layout extends LevelLayout {
             fillOffice(seed, x, z, office, out);
             return;
         }
+        AnomalySite structure = anomalies.structureAt(seed, x, z);
+        if (structure != null) {
+            fillStructure(structure, x, z, out);
+            return;
+        }
 
         long sx = X_WALLS.span(seed, x);
         long sz = Z_WALLS.span(seed, z);
         int kind = mazeKind(seed, x, z, sx, sz);
+        // A blackout zone is the same maze with no lights, rough dark walls and fluid on the carpet.
+        boolean blackout = anomalies.blackoutAt(seed, x, z) != null;
+        // Near the Red Rooms the wallpaper peels off crimson and the carpet turns sticky, more and
+        // more of it the closer you get.
+        double red = blackout ? -1 : redRoomsDistance(seed, x, z);
+        BlockState rough = ModBlocks.BLACKOUT_WALLPAPER.get().defaultBlockState();
+        BlockState fluid = ModBlocks.CARPET_FLUID.get().defaultBlockState();
         out.set(ceiling, tile);
         if (kind == WALL) {
             out.set(floor, carpet);
+            if (anomalies.isManilaExit(seed, x, z)) {
+                // The flickering wall the Manila Room's volunteers write about: walk into it to reach Level 1.
+                for (int y = floor + 1; y <= floor + 3; y++) {
+                    out.set(y, ModBlocks.FLICKERING_WALL.get().defaultBlockState());
+                }
+                for (int y = floor + 4; y < ceiling; y++) {
+                    out.set(y, wallpaper);
+                }
+                return;
+            }
+            if (blackout) {
+                for (int y = floor + 1; y < ceiling; y++) {
+                    out.set(y, rough);
+                }
+                return;
+            }
+            boolean peeling = red >= 0 && Hash.unit(seed, x, z, 3290) < 1.0 - red / (Level0AnomalyPlan.RED_RING + 1);
             out.set(floor + 1, baseboard);
             for (int y = floor + 2; y < ceiling; y++) {
-                out.set(y, wallpaper);
+                out.set(y, peeling ? ModBlocks.PEELING_WALLPAPER.get().defaultBlockState() : wallpaper);
             }
-            drawDecals(seed, x, z, out);
+            if (!peeling) {
+                drawDecals(seed, x, z, out);
+            }
             return;
         }
+        boolean sticky = red >= 0 && Hash.unit(seed, x, z, 3291) < 1.0 - red / 7.0;
+        BlockState stickyCarpet = ModBlocks.STICKY_CARPET.get().defaultBlockState();
         if (kind == DOORWAY) {
-            out.set(floor, carpet);
-            out.set(ceiling - 1, wallpaper); // lintel: this is what frames the "tunnel" view
+            out.set(floor, sticky ? stickyCarpet : carpet);
+            out.set(ceiling - 1, blackout ? rough : wallpaper); // lintel: this is what frames the "tunnel" view
+            if (blackout) {
+                out.set(floor + 1, fluid);
+            }
             return;
         }
 
-        out.set(floor, floorBlock(seed, x, z, sx, sz, carpet));
+        out.set(floor, sticky ? stickyCarpet : floorBlock(seed, x, z, sx, sz, carpet));
         int crates = crateHeight(seed, x, z, sx, sz);
         for (int i = 0; i < crates; i++) {
             out.set(floor + 1 + i, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
@@ -524,6 +731,12 @@ public final class Level0Layout extends LevelLayout {
         Direction backpack = backpackFacing(seed, x, z, sx, sz);
         if (backpack != null) {
             out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, backpack));
+        }
+        if (blackout) {
+            if (crates == 0 && backpack == null) {
+                out.set(floor + 1, fluid); // ankle-deep, murky
+            }
+            return; // and not a single working lamp
         }
         BlockState light = ceilingLight(seed, x, z);
         if (light != null) {

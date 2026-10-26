@@ -51,9 +51,9 @@ final class Level4Plan {
     static final int CELL = 48;
     /** The open ring aisle inside the border: local 1..3 and 45..47. */
     private static final int RING = 3;
-    /** The core is local CORE_LO..CORE_HI (inclusive): 41 x 41 blocks. */
-    private static final int CORE_LO = RING + 1;
-    private static final int CORE_HI = CELL - RING - 1;
+    /** The core is local CORE_LO..CORE_HI (inclusive): 41 x 41 blocks. (The anomalies plan uses it too.) */
+    static final int CORE_LO = RING + 1;
+    static final int CORE_HI = CELL - RING - 1;
     /** Exit stairwells: one per 288 x 288 region (6 x 6 zones). */
     static final ExitLocator EXITS = new ExitLocator(288, 32, 4400);
     /** Around a stairwell (outside its 11 x 11 tower) everything is cleared to bright open floor. */
@@ -275,8 +275,8 @@ final class Level4Plan {
         return false;
     }
 
-    /** Rows of the zone run along X (false) or along Z (true). */
-    private static boolean alongZ(long seed, int cx, int cz) {
+    /** Rows of the zone run along X (false) or along Z (true). (The anomalies plan uses it too.) */
+    static boolean alongZ(long seed, int cx, int cz) {
         return Hash.unit(seed, cx, cz, 7003) < 0.5;
     }
 
@@ -416,6 +416,16 @@ final class Level4Plan {
 
     private static boolean windowsFaceHigh(int border) {
         return (border & 4) != 0;
+    }
+
+    /**
+     * True when the west ({@code west}) or north border of zone (cx, cz) is a run of windows that
+     * look INTO this zone. Both lines belong to the zone itself (local coordinate 0), so the
+     * window and the floor in front of it are in the same zone. Used to place the Window anomaly.
+     */
+    static boolean windowsInto(long seed, int cx, int cz, boolean west) {
+        int b = border(seed, cx, cz, west);
+        return borderType(b) == B_WINDOW && windowsFaceHigh(b);
     }
 
     /**

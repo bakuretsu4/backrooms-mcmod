@@ -1,9 +1,11 @@
 package com.rickr.backrooms.world.layout;
 
 import com.rickr.backrooms.block.FurnitureBlock;
+import com.rickr.backrooms.block.Level94SinkBlock;
 import com.rickr.backrooms.block.RugBlock;
 import com.rickr.backrooms.block.WallDecalBlock;
 import com.rickr.backrooms.registry.ModBlocks;
+import com.rickr.backrooms.world.Hash;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.FenceBlock;
@@ -35,10 +37,14 @@ final class Level94Houses {
     static final int TINY = 1;
     /** An exit: looks like BIG, but behind the door there is nothing but black. */
     static final int DARK = 2;
-    /** A lone front wall with a chair and a lamp beside it. */
+    /** A single room: one front wall with a strip of floor and its furniture beside it. */
     static final int FRAGMENT_WALL = 3;
     /** A single room with three walls and no roof. */
     static final int FRAGMENT_ROOM = 4;
+    /** Not even a room: a heap of furniture on a scrap of floor (near the castle; see Level94Plan.driftStage). */
+    static final int FRAGMENT_PILE = 5;
+    /** Chance that the sink of a furniture pile still holds the coin dated 1953 the M.E.G. found (about one pile in seven). */
+    private static final double COIN_CHANCE = 0.15;
 
     private Level94Houses() {}
 
@@ -115,7 +121,12 @@ final class Level94Houses {
         }
 
         boolean isFragment() {
-            return kind == FRAGMENT_WALL || kind == FRAGMENT_ROOM;
+            return kind == FRAGMENT_WALL || kind == FRAGMENT_ROOM || kind == FRAGMENT_PILE;
+        }
+
+        /** Random bits of this house, from where it stands (fragments use them to vary their furniture). */
+        long bits() {
+            return Hash.of(0x94_5EEDL, x0, z0, 9499);
         }
 
         /** Local rectangle of everything this house draws (roof overhang, fence) or flattens: {u0, v0, u1, v1}. */
@@ -206,6 +217,10 @@ final class Level94Houses {
         }
         if (h.kind == FRAGMENT_ROOM) {
             fragmentRoom(h, u, v, out);
+            return;
+        }
+        if (h.kind == FRAGMENT_PILE) {
+            fragmentPile(h, u, v, out);
             return;
         }
         roof(h, u, v, out);
@@ -338,7 +353,12 @@ final class Level94Houses {
         }
     }
 
-    /** A lone front wall: brick band, cream siding, one window. A chair and a lamp stand on its papered side. */
+    /**
+     * A single room as the M.E.G. found one in the hills: "just a wall with furniture next to it".
+     * A lone front wall (brick band, cream siding, one window) with a strip of papered-room floor
+     * on its inner side: an armchair and a lamp against the wall, the TV facing them, and in some
+     * of them the kitchen sink.
+     */
     private static void fragmentWall(House h, int u, int v, LevelLayout.Column out) {
         int g = h.g;
         if (v == 0 && u >= 0 && u < h.w) {
@@ -354,11 +374,31 @@ final class Level94Houses {
             out.set(g + 4, trim());
             for (int y = g + 5; y <= g + 7; y++) out.set(y, wall(dir));
             out.set(g + 8, trim());
-        } else if (v == 1 && u == 2) {
+            return;
+        }
+        if (u < 0 || u >= h.w || v < 1 || v >= h.d) {
+            return;
+        }
+        out.set(g, ModBlocks.L94_FLOOR.get().defaultBlockState());
+        if (v == 1 && u == 2) {
             out.set(g + 1, furniture(ModBlocks.L94_ARMCHAIR.get().defaultBlockState(), h.inward));
         } else if (v == 1 && u == 1) {
             out.set(g + 1, furniture(ModBlocks.L94_LAMP.get().defaultBlockState(), h.inward));
+        } else if (v == 1 && u == h.w - 3 && isKitchen(h)) {
+            out.set(g + 1, sink(h.inward, false));
+        } else if (v == h.d - 1 && u == 2) {
+            out.set(g + 1, furniture(ModBlocks.L94_TV.get().defaultBlockState(), h.front));
         }
+    }
+
+    /** About a third of the single rooms are (part of) a kitchen: they have the sink. */
+    private static boolean isKitchen(House h) {
+        return Hash.unit(Hash.mix(h.bits() + 3)) < 0.35;
+    }
+
+    /** The porcelain sink; {@code coin}: the 1953 coin still lies in its plughole. */
+    private static BlockState sink(Direction front, boolean coin) {
+        return furniture(ModBlocks.L94_SINK.get().defaultBlockState(), front).setValue(Level94SinkBlock.COIN, coin);
     }
 
     /** A single papered room, open at the front and to the sky, furnished like any house. */
@@ -397,9 +437,62 @@ final class Level94Houses {
             out.set(g + 1, furniture(ModBlocks.L94_ARMCHAIR.get().defaultBlockState(), h.front));
         } else if (u == 1 && v == back) {
             out.set(g + 1, furniture(ModBlocks.L94_LAMP.get().defaultBlockState(), h.front));
+        } else if (u == h.w - 2 && v == back && isKitchen(h)) {
+            out.set(g + 1, sink(h.front, false));
         } else if (u == mid && v == 1) {
             out.set(g + 1, furniture(ModBlocks.L94_TV.get().defaultBlockState(), h.inward));
         }
+    }
+
+    /**
+     * Near the castle the houses have come apart completely: "only piles of furniture". A 5 x 5
+     * heap on a scrap of floor: armchairs, lamps and TVs jumbled together, some stacked, bits of
+     * wall lying around, and always one sink. In about one pile in seven ({@link #COIN_CHANCE}) that sink still
+     * holds the coin dated 1953 (see Level94SinkBlock).
+     */
+    private static void fragmentPile(House h, int u, int v, LevelLayout.Column out) {
+        if (u < 0 || u >= h.w || v < 0 || v >= h.d) {
+            return;
+        }
+        int g = h.g;
+        long bits = h.bits();
+        long cell = Hash.mix(bits + u * 31L + v * 977L);
+        boolean core = u >= 1 && u <= 3 && v >= 1 && v <= 3;
+        Direction facing = Direction.from2DDataValue(Hash.range(cell, 4));
+        if (core) {
+            out.set(g, ModBlocks.L94_FLOOR.get().defaultBlockState());
+        }
+        int sinkU = 1 + Hash.range(Hash.mix(bits + 1), 3);
+        int sinkV = 1 + Hash.range(Hash.mix(bits + 2), 3);
+        if (u == sinkU && v == sinkV) {
+            out.set(g + 1, sink(facing, Hash.unit(Hash.mix(bits + 4)) < COIN_CHANCE));
+            return;
+        }
+        double roll = Hash.unit(Hash.mix(cell + 1));
+        if (core) {
+            if (roll < 0.78) {
+                int lower = Hash.range(Hash.mix(cell + 2), 4);
+                out.set(g + 1, pilePiece(lower, facing));
+                // Chairs and TVs have something heaped on top of them now and then.
+                if (lower != 1 && Hash.unit(Hash.mix(cell + 3)) < 0.4) {
+                    out.set(g + 2, pilePiece(Hash.range(Hash.mix(cell + 4), 4), facing.getClockWise()));
+                }
+            }
+        } else if (roll < 0.16) {
+            // A broken-off bit of wall lying on the grass.
+            out.set(g + 1, Hash.unit(Hash.mix(cell + 5)) < 0.5 ? brickBand(facing) : wall(facing));
+        } else if (roll < 0.30) {
+            out.set(g + 1, pilePiece(Hash.range(Hash.mix(cell + 2), 4), facing));
+        }
+    }
+
+    /** One piece of a furniture pile: 0 and 3 armchair, 1 lamp, 2 TV. */
+    private static BlockState pilePiece(int which, Direction facing) {
+        return switch (which) {
+            case 1 -> furniture(ModBlocks.L94_LAMP.get().defaultBlockState(), facing);
+            case 2 -> furniture(ModBlocks.L94_TV.get().defaultBlockState(), facing);
+            default -> furniture(ModBlocks.L94_ARMCHAIR.get().defaultBlockState(), facing);
+        };
     }
 
     /** A white picket joined to the fence pieces beside it. */

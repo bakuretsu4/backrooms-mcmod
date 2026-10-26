@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l2_black_ooze"
+      },
+      {
+        "model": "backrooms:block/l2_black_ooze",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l2_black_ooze",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l2_black_ooze",
+        "y": 270
+      }
+    ]
+  }
+}

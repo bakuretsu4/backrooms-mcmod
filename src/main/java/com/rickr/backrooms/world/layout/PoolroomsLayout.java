@@ -8,7 +8,11 @@ import com.rickr.backrooms.block.SunlitVoidBlock;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
+import com.rickr.backrooms.world.anomaly.AnomalySite;
+import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -97,6 +101,17 @@ import org.jetbrains.annotations.Nullable;
  * side. Through it runs a 4-wide round-arched passage tiled in Level 37's fine white mosaic, ending
  * in a wall of dazzling warm daylight that spills out into the room. Walk into the light (the back
  * half of the passage) and {@code Level37Rules} takes you to Level 37.
+ *
+ * <p><b>Anomalies</b> ({@link PoolroomsAnomalyPlan}): lightless nooks in the corners of some lit
+ * rooms (dark corners) and rooms that are one deep, dark flooded shaft with a staircase running
+ * down into it (stair pits). Both are cut out of ordinary dry, shallow or pool rooms.
+ *
+ * <p><b>The Sanguine Reservoir.</b> Far to the east (x from 200,000 to 600,000) the level repeats
+ * itself exactly, {@link #RESERVOIR_OFFSET} blocks from the original: same rooms, same drains (the
+ * {@link ExitLocator} copies them too). But all white light is gone: no tubes, no skylights, the
+ * daylight archways are walled up, the tile is dim, the pool lamps glow red and red sprouts grow
+ * on the walkways. Lingering in a dark corner moves you there (world/anomaly/poolrooms). There are
+ * no dark corners in the Reservoir itself: the only way out is a drain, down to Level 9.
  */
 public final class PoolroomsLayout extends LevelLayout {
     // ---- Heights -----------------------------------------------------------------------------
@@ -115,7 +130,7 @@ public final class PoolroomsLayout extends LevelLayout {
 
     // ---- Room grid ---------------------------------------------------------------------------
     /** One room per CELL x CELL square; walls on the cell's west and north edges. */
-    private static final int CELL = 14;
+    static final int CELL = 14;
     /** Pillared halls cover zones of this many cells on a side ... */
     private static final int HALL_ZONE_CELLS = 3;
     /** ... and this fraction of all zones. */
@@ -242,8 +257,20 @@ public final class PoolroomsLayout extends LevelLayout {
     /** Wall beside the archway, faced with Level 37's fine tile: it frames the arch. */
     private static final int LINING = 9;
 
+    // ---- The Sanguine Reservoir ------------------------------------------------------------------
+    /** The Reservoir's copy of column x is column x + RESERVOIR_OFFSET ... */
+    public static final int RESERVOIR_OFFSET = 400_000;
+    /**
+     * ... and the Reservoir is the band RESERVOIR_OFFSET +- RESERVOIR_HALF, a copy of the band
+     * -RESERVOIR_HALF..RESERVOIR_HALF around the centre (nobody walks 200,000 blocks).
+     */
+    static final int RESERVOIR_HALF = 200_000;
+    /** Red sprouts grow on this share of the Reservoir's dry walkway blocks. */
+    private static final double SPROUT_SHARE = 0.025;
+
     /** The exits, kept in a static field so the static floor-plan helpers can reach them. */
-    private static final ExitLocator EXITS = new ExitLocator(384, 48, 5000);
+    private static final ExitLocator EXITS = new ExitLocator(384, 48, 5000)
+            .copying(RESERVOIR_OFFSET - RESERVOIR_HALF, RESERVOIR_OFFSET + RESERVOIR_HALF, RESERVOIR_OFFSET);
 
     public PoolroomsLayout() {
         super(INTERIOR_HEIGHT, EXITS);
@@ -256,25 +283,27 @@ public final class PoolroomsLayout extends LevelLayout {
     /** Dry walkways, doorways and shallow water: anywhere you can stand without swimming. */
     @Override
     public boolean isWalkable(long seed, int x, int z) {
-        int kind = columnKind(seed, x, z);
-        return kind == DRY || kind == DOORWAY || kind == SHALLOW || kind == ARCHWAY;
+        int kind = columnKind(seed, home(x), z);
+        return kind == DRY || kind == DOORWAY || kind == SHALLOW || kind == ARCHWAY || kind == PoolroomsAnomalyPlan.NOOK;
     }
 
     /** Only dry walkways: nobody should arrive in the water. */
     @Override
     public boolean isSafeArrival(long seed, int x, int z) {
-        return columnKind(seed, x, z) == DRY;
+        return columnKind(seed, home(x), z) == DRY;
     }
 
     /** Feet at y41 when wading in shallow water, y42 on the raised dry tiles (and swimming). */
     @Override
     public int standY(long seed, int x, int z) {
-        return columnKind(seed, x, z) == SHALLOW ? SURFACE_Y : SURFACE_Y + 1;
+        int kind = columnKind(seed, home(x), z);
+        return kind == SHALLOW || kind == PoolroomsAnomalyPlan.NOOK ? SURFACE_Y : SURFACE_Y + 1;
     }
 
     /** Everything inside a safe room, walls and doorway included (not the walkway around it). */
     @Override
     public boolean isSafeRoom(long seed, int x, int z) {
+        x = home(x);
         int cx = Math.floorDiv(x, CELL);
         int cz = Math.floorDiv(z, CELL);
         return isSafeCell(seed, cx, cz) && safeRoomPlan(seed, cx, cz).contains(x, z);
@@ -283,6 +312,108 @@ public final class PoolroomsLayout extends LevelLayout {
     @Override
     public int highestCeilingY() {
         return ATRIUM_CEILING_Y;
+    }
+
+    // ---- Anomalies (PoolroomsAnomalyPlan); in the Reservoir, the copies of the stair pits --------
+
+    @Override
+    @Nullable
+    public AnomalySite anomalyAt(long seed, int x, int z) {
+        boolean reservoir = inReservoir(x);
+        int hx = home(x);
+        AnomalySite site = PoolroomsAnomalyPlan.PITS.at(seed, hx, z);
+        if (site == null && !reservoir) {
+            site = PoolroomsAnomalyPlan.CORNERS.at(seed, hx, z);
+        }
+        return site != null && reservoir ? reservoirCopy(site) : site;
+    }
+
+    @Override
+    public void anomaliesNear(long seed, int x, int z, int radius, Consumer<AnomalySite> out) {
+        boolean reservoir = inReservoir(x);
+        int hx = home(x);
+        PoolroomsAnomalyPlan.PITS.near(seed, hx, z, radius, site -> out.accept(reservoir ? reservoirCopy(site) : site));
+        if (!reservoir) {
+            PoolroomsAnomalyPlan.CORNERS.near(seed, hx, z, radius, out);
+        }
+    }
+
+    @Override
+    @Nullable
+    public AnomalySite nearestAnomaly(long seed, int x, int z, String kind) {
+        boolean reservoir = inReservoir(x);
+        int hx = home(x);
+        AnomalySite site = null;
+        if (kind.equals(PoolroomsAnomalyPlan.STAIR_PIT)) {
+            site = PoolroomsAnomalyPlan.PITS.nearest(seed, hx, z, s -> true, 8);
+        } else if (kind.equals(PoolroomsAnomalyPlan.DARK_CORNER) && !reservoir) {
+            site = PoolroomsAnomalyPlan.CORNERS.nearest(seed, hx, z, s -> true, 8);
+        }
+        return site != null && reservoir ? reservoirCopy(site) : site;
+    }
+
+    @Override
+    public List<String> anomalyKinds() {
+        return PoolroomsAnomalyPlan.KINDS;
+    }
+
+    /**
+     * True in the Sanguine Reservoir, the red copy of the level far to the east (see the class
+     * comment). Client code uses this too (red water, the Reservoir's sounds and look).
+     */
+    public static boolean inReservoir(double x) {
+        return x >= RESERVOIR_OFFSET - RESERVOIR_HALF && x < RESERVOIR_OFFSET + RESERVOIR_HALF;
+    }
+
+    /** The original column that column x copies: x itself, or x - RESERVOIR_OFFSET in the Reservoir. */
+    private static int home(int x) {
+        return inReservoir(x) ? x - RESERVOIR_OFFSET : x;
+    }
+
+    /** A site of the original level, moved to its copy in the Reservoir. */
+    private static AnomalySite reservoirCopy(AnomalySite site) {
+        return new AnomalySite(site.kind(), site.minX() + RESERVOIR_OFFSET, site.minZ(), site.maxX() + RESERVOIR_OFFSET,
+                site.maxZ(), site.anchorX() + RESERVOIR_OFFSET, site.anchorZ(), site.facing(), site.salt());
+    }
+
+    /**
+     * True when room (cx, cz) may hold an anomaly: an ordinary dry or shallow room (also a pool room
+     * for a stair pit, which replaces the whole room), well away from any drain. A dark corner also
+     * needs the room to be lit: it is a lightless corner in an otherwise lit room.
+     */
+    static boolean anomalyRoomAllowed(long seed, int cx, int cz, boolean darkCorner) {
+        int kind = kindOf(room(seed, cx, cz));
+        boolean fits = darkCorner
+                ? (kind == ROOM_DRY || kind == ROOM_SHALLOW) && Hash.unit(seed, cx, cz, 90) >= DARK_ROOM_SHARE
+                : kind == ROOM_DRY || kind == ROOM_SHALLOW || kind == ROOM_POOL;
+        if (!fits) {
+            return false;
+        }
+        int centerX = cx * CELL + CELL / 2;
+        int centerZ = cz * CELL + CELL / 2;
+        int[] exit = EXITS.nearest(seed, centerX, centerZ);
+        return Math.max(Math.abs(exit[0] - centerX), Math.abs(exit[1] - centerZ)) >= SAFE_EXIT_DISTANCE;
+    }
+
+    /**
+     * The anomaly's column in room (cx, cz), or {@code PoolroomsAnomalyPlan.NONE}: a stair pit
+     * replaces the whole room (dry deck around the shaft), a dark corner one corner of it.
+     */
+    private static int anomalyColumn(long seed, int cx, int cz, int room, int mx, int mz) {
+        int kind = kindOf(room);
+        if (kind != ROOM_DRY && kind != ROOM_SHALLOW && kind != ROOM_POOL) {
+            return PoolroomsAnomalyPlan.NONE; // quick answer for most rooms
+        }
+        AnomalySite pit = PoolroomsAnomalyPlan.pitOfCell(seed, cx, cz);
+        if (pit != null) {
+            int column = PoolroomsAnomalyPlan.pitColumn(pit, mx, mz);
+            return column == PoolroomsAnomalyPlan.NONE ? DRY : column;
+        }
+        if (kind == ROOM_POOL) {
+            return PoolroomsAnomalyPlan.NONE;
+        }
+        AnomalySite corner = PoolroomsAnomalyPlan.cornerOfCell(seed, cx, cz);
+        return corner == null ? PoolroomsAnomalyPlan.NONE : PoolroomsAnomalyPlan.cornerColumn(corner, mx, mz, WALL);
     }
 
     // ==========================================================================================
@@ -349,6 +480,10 @@ public final class PoolroomsLayout extends LevelLayout {
             return edgeColumn(seed, cx, cz, NORTH, mx);
         }
         int room = room(seed, cx, cz);
+        int special = anomalyColumn(seed, cx, cz, room, mx, mz);
+        if (special != PoolroomsAnomalyPlan.NONE) {
+            return special;
+        }
         // How far this column is from the nearest edge of its room (1 = right next to a wall).
         int depth = Math.min(Math.min(mx, CELL - mx), Math.min(mz, CELL - mz));
         long details = Hash.of(seed, cx, cz, 73);
@@ -488,6 +623,9 @@ public final class PoolroomsLayout extends LevelLayout {
      * takes you to Level 37 ({@code Level37Rules}).
      */
     public boolean isSunlitThreshold(long seed, int x, int z) {
+        if (inReservoir(x)) {
+            return false; // the Reservoir's archways are walled up: no daylight there
+        }
         int cx = Math.floorDiv(x, CELL);
         int cz = Math.floorDiv(z, CELL);
         int mx = Math.floorMod(x, CELL);
@@ -866,6 +1004,10 @@ public final class PoolroomsLayout extends LevelLayout {
 
     @Override
     public void fillColumn(long seed, int x, int z, Column out) {
+        if (inReservoir(x)) {
+            fillReservoirColumn(seed, x - RESERVOIR_OFFSET, z, out);
+            return;
+        }
         BlockState tile = ModBlocks.POOL_TILE.get().defaultBlockState();
         BlockState dark = ModBlocks.POOL_TILE_DARK.get().defaultBlockState();
         BlockState underWater = ModBlocks.POOL_FLOOR.get().defaultBlockState();
@@ -919,14 +1061,23 @@ public final class PoolroomsLayout extends LevelLayout {
             tube(seed, x, z, kind, inDrainRoom, tall, ceiling, out);
             return;
         }
+        if (kind == PoolroomsAnomalyPlan.PIT || kind == PoolroomsAnomalyPlan.PIT_STEP) {
+            fillPit(seed, x, z, kind, tile, dark, water, out);
+            return; // a stair pit's room has no tubes
+        }
 
         // Every other column stands on solid tile from the deep-water floor up to the floor layer,
         // so the water in a neighbouring pool or channel always meets a wall, never air.
         for (int y = DEEP_FLOOR_Y; y < floor; y++) {
             out.set(y, tile);
         }
-        out.set(floor, kind == SHALLOW ? underWater : tile);
-        if (kind == SHALLOW) {
+        if (!inDrainRoom && (kind == DRY || kind == CONTAINER)) {
+            pitLining(seed, x, z, dark, out);
+        }
+        boolean wet = kind == SHALLOW || kind == PoolroomsAnomalyPlan.NOOK;
+        // A dark corner's water lies on dark tile, so the nook stays black even in a flashlight beam.
+        out.set(floor, kind == SHALLOW ? underWater : kind == PoolroomsAnomalyPlan.NOOK ? dark : tile);
+        if (wet) {
             out.set(SURFACE_Y, water);
         } else {
             // Dark tile bands on the drain room's deck lead from each doorway to the pool.
@@ -951,6 +1102,73 @@ public final class PoolroomsLayout extends LevelLayout {
             out.set(LAMP_Y, ModBlocks.POOL_LAMP.get().defaultBlockState().setValue(PoolLampBlock.FACING, lamp));
         }
         tube(seed, x, z, kind, inDrainRoom, tall, ceiling, out);
+    }
+
+    /**
+     * A column of the Sanguine Reservoir: the original column {@code x} (RESERVOIR_OFFSET blocks
+     * west), built the usual way and then stripped of its light on the way out. The white tile turns
+     * dim, the floors under the water lose their bright caustics, the pool lamps glow red, the tubes
+     * are gone and the skylights and the archway's daylight become blank tile. Red sprouts grow on
+     * a few dry walkway blocks: the only other light. Canon (Wikidot, Level 37.1): "the lighting
+     * fades out entirely... bright red sprouts and a red tint in the water light up the area".
+     */
+    private void fillReservoirColumn(long seed, int x, int z, Column out) {
+        Block tile = ModBlocks.POOL_TILE.get();
+        Block floorTile = ModBlocks.POOL_FLOOR.get();
+        Block lamp = ModBlocks.POOL_LAMP.get();
+        Block tube = ModBlocks.CEILING_TUBE.get();
+        Block skylight = ModBlocks.POOL_SKYLIGHT.get();
+        Block daylight = ModBlocks.L37_SUNLIT_VOID.get();
+        BlockState dimTile = ModBlocks.RESERVOIR_TILE.get().defaultBlockState();
+        BlockState dimFloor = ModBlocks.RESERVOIR_FLOOR.get().defaultBlockState();
+        BlockState redLamp = ModBlocks.RESERVOIR_LAMP.get().defaultBlockState();
+        fillColumn(seed, x, z, (y, state) -> {
+            Block block = state.getBlock();
+            if (block == tile || block == skylight || block == daylight) {
+                out.set(y, dimTile);
+            } else if (block == floorTile) {
+                out.set(y, dimFloor);
+            } else if (block == lamp) {
+                out.set(y, redLamp.setValue(PoolLampBlock.FACING, state.getValue(PoolLampBlock.FACING)));
+            } else if (block != tube) {
+                out.set(y, state);
+            }
+        });
+        if (Hash.unit(seed, x, z, 6300) < SPROUT_SHARE && columnKind(seed, x, z) == DRY && !isSafeRoom(seed, x, z)) {
+            out.set(SURFACE_Y + 1, ModBlocks.RESERVOIR_SPROUT.get().defaultBlockState());
+        }
+    }
+
+    /**
+     * A column of a stair pit's shaft: a tile step (one block lower per step down the stairs) or
+     * open water, over the pit's dark tile bottom. Water fills everything above, up to the surface.
+     */
+    private static void fillPit(long seed, int x, int z, int kind, BlockState tile, BlockState dark, BlockState water, Column out) {
+        int top = PoolroomsAnomalyPlan.PIT_FLOOR_Y;
+        out.set(top, dark);
+        if (kind == PoolroomsAnomalyPlan.PIT_STEP) {
+            AnomalySite pit = PoolroomsAnomalyPlan.pitOfCell(seed, Math.floorDiv(x, CELL), Math.floorDiv(z, CELL));
+            top = PoolroomsAnomalyPlan.stepTop(pit, Math.floorMod(x, CELL), Math.floorMod(z, CELL));
+            for (int y = PoolroomsAnomalyPlan.PIT_FLOOR_Y; y <= top; y++) {
+                out.set(y, tile);
+            }
+        }
+        for (int y = top + 1; y <= SURFACE_Y; y++) {
+            out.set(y, water);
+        }
+    }
+
+    /**
+     * The deck right around a stair pit: dark tile below the walkway all the way down to the pit's
+     * bottom, so the pit's water meets a wall everywhere (the class comment's "water never leaks").
+     */
+    private static void pitLining(long seed, int x, int z, BlockState dark, Column out) {
+        AnomalySite pit = PoolroomsAnomalyPlan.pitOfCell(seed, Math.floorDiv(x, CELL), Math.floorDiv(z, CELL));
+        if (pit != null && pit.contains(x, z) && PoolroomsAnomalyPlan.pitLining(pit, Math.floorMod(x, CELL), Math.floorMod(z, CELL))) {
+            for (int y = PoolroomsAnomalyPlan.PIT_FLOOR_Y; y < DEEP_FLOOR_Y; y++) {
+                out.set(y, dark);
+            }
+        }
     }
 
     /** A tube hanging just under the ceiling, if this column is part of a tube strip. */
@@ -978,6 +1196,16 @@ public final class PoolroomsLayout extends LevelLayout {
         if (kindOf(room) == ROOM_ATRIUM || kindOf(room) == ROOM_SAFE || kindOf(room) == ROOM_SUNLIT
                 || Hash.unit(seed, cx, cz, 90) < DARK_ROOM_SHARE) {
             return null; // atriums have skylights, safe rooms their own lamp
+        }
+        int kind = kindOf(room);
+        if (kind == ROOM_DRY || kind == ROOM_SHALLOW || kind == ROOM_POOL) {
+            if (PoolroomsAnomalyPlan.pitOfCell(seed, cx, cz) != null) {
+                return null; // a stair pit's room is dark
+            }
+            AnomalySite corner = PoolroomsAnomalyPlan.cornerOfCell(seed, cx, cz);
+            if (corner != null && PoolroomsAnomalyPlan.overNook(corner, mx, mz)) {
+                return null; // never over a dark corner (a tube beside its screen would be hidden anyway)
+            }
         }
         boolean two = kindOf(room) != ROOM_HALL && Hash.unit(seed, cx, cz, 91) < TWO_TUBES_SHARE;
         if (isChannelLike(room)) {

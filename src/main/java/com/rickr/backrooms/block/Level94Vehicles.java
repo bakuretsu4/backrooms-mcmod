@@ -18,7 +18,9 @@ import org.jetbrains.annotations.Nullable;
  * front, "side" = towards its right-hand side when you sit in it):
  * <ul>
  *   <li>Car: 2 wide (side 0..1), 5 long (along -2..2), 2 tall. The body is drawn 4.5 long.</li>
- *   <li>Milk van: 3 wide (side -1..1), 5 long (along -2..2), 3 tall. The body is drawn 2.5 wide.</li>
+ *   <li>Milk van: 3 wide (side -1..1), 5 long (along -2..2), 3 tall. The body is drawn 2.5 wide.
+ *       A crate of Almond Milk stands on the ground at its back doors (along -3, side 0): the
+ *       Level 94 wiki says the vans carry Almond Milk, and the invisible hull can't be clicked.</li>
  * </ul>
  */
 public final class Level94Vehicles {
@@ -64,6 +66,9 @@ public final class Level94Vehicles {
         boolean inside = kind.isVan()
                 ? dy >= 0 && dy <= 2 && side >= -1 && side <= 1 && along >= -2 && along <= 2
                 : dy >= 0 && dy <= 1 && side >= 0 && side <= 1 && along >= -2 && along <= 2;
+        if (!inside && kind.isVan() && dy == 0 && side == 0 && along == -3) {
+            return ModBlocks.L94_MILK_CRATE.get().defaultBlockState().setValue(WallMountBlock.FACING, facing.getOpposite());
+        }
         return inside ? ModBlocks.L94_VEHICLE_HULL.get().defaultBlockState() : null;
     }
 

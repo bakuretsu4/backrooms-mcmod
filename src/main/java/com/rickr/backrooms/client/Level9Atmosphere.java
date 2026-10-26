@@ -4,6 +4,7 @@ import com.mojang.blaze3d.shaders.FogShape;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.client.light.FixturePower;
+import com.rickr.backrooms.client.anomaly.level9.CrimsonFieldClient;
 import com.rickr.backrooms.network.LevelEventPayload;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.BackroomsLevel;
@@ -30,9 +31,13 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
  *       you see about 28-34 blocks: the next lamp or two, then nothing. The fog colour is very
  *       dark (#0B0E0D), so lit things glow out of it instead of the fog glowing itself. The
  *       light pools around you (under 10 blocks away) are barely touched.</li>
- *   <li><b>FOG_ROLL event:</b> over 6 s the fog closes in to ~12 blocks. A few times while it
- *       lasts, something huge rumbles far away in it (The Mangled moving) and the camera shakes
- *       lightly. The fog lifts over the last 8 s of the event.</li>
+ *   <li><b>FOG_ROLL event</b> (the Mangled's fog, see {@code world/anomaly/level9/MangledFog}):
+ *       first a sudden cold (frost, breath: {@code client/anomaly/level9}), then over 6 s the fog
+ *       closes in to ~12 blocks and the streetlamps' hum cuts out ({@link #lampHumScale}). A few
+ *       times while it lasts, something huge rumbles far away in it (The Mangled moving) and the
+ *       camera shakes lightly. The fog lifts over the last 8 s of the event.</li>
+ *   <li><b>Level 9.1, the Crimson Field</b> (far east in this same dimension): a closer, colder
+ *       mist that turns crimson with each pulse of the Gloom ({@code CrimsonFieldClient}).</li>
  * </ul>
  *
  * <p>The rumbles are scheduled here on the client from the event's start time, so the sound and
@@ -54,6 +59,8 @@ public final class Level9Atmosphere {
     private static final float ROLL_FOG_END = 12.0f;
     private static final float ROLL_IN_MS = 6000.0f;
     private static final float ROLL_OUT_MS = 8000.0f;
+    /** The Mangled's fog: first the temperature drops, then (this much later) the fog rolls in. */
+    private static final float CHILL_MS = 2500.0f;
 
     // --- Fog colour ------------------------------------------------------------------------------
     /** #0B0E0D: near-black with a damp grey-green cast. */
@@ -64,6 +71,19 @@ public final class Level9Atmosphere {
     private static final float ROLL_FOG_R = 18 / 255.0f;
     private static final float ROLL_FOG_G = 23 / 255.0f;
     private static final float ROLL_FOG_B = 21 / 255.0f;
+    /**
+     * Level 9.1, the Crimson Field: a closer, colder mist (#1C2024) ... A dark grey rather than
+     * black, so the grass stands out against it as dark stalks instead of vanishing.
+     */
+    private static final float FIELD_FOG_START = 2.0f;
+    private static final float FIELD_FOG_END = 28.0f;
+    private static final float FIELD_FOG_R = 28 / 255.0f;
+    private static final float FIELD_FOG_G = 32 / 255.0f;
+    private static final float FIELD_FOG_B = 36 / 255.0f;
+    /** ... that turns crimson (#4A0A0A) while the Gloom glows. */
+    private static final float GLOOM_FOG_R = 74 / 255.0f;
+    private static final float GLOOM_FOG_G = 10 / 255.0f;
+    private static final float GLOOM_FOG_B = 10 / 255.0f;
 
     // --- Rumbles ---------------------------------------------------------------------------------
     /** At most this many rumbles per fog roll ("a few"). */
@@ -100,14 +120,15 @@ public final class Level9Atmosphere {
     }
 
     /**
-     * 0..1 how far the FOG_ROLL event has closed in right now: eases in over 6 s, holds, and eases
-     * out over the last 8 s. 0 when no fog roll is running.
+     * 0..1 how far the FOG_ROLL event has closed in right now: after the first 2.5 s (the cold
+     * comes first) it eases in over 6 s, holds, and eases out over the last 8 s. 0 when no fog
+     * roll is running.
      */
     public static float fogRoll(long nowMs) {
         if (FixturePower.activeEvent(nowMs) != LevelEventPayload.FOG_ROLL) {
             return 0.0f;
         }
-        float in = (nowMs - CameraClientState.eventStartMs) / ROLL_IN_MS;
+        float in = (nowMs - CameraClientState.eventStartMs - CHILL_MS) / ROLL_IN_MS;
         float out = (CameraClientState.eventEndMs - nowMs) / ROLL_OUT_MS;
         float t = Mth.clamp(Math.min(in, out), 0.0f, 1.0f);
         return t * t * (3.0f - 2.0f * t);
@@ -126,15 +147,47 @@ public final class Level9Atmosphere {
         return Mth.lerp(roll, FOG_B, ROLL_FOG_B);
     }
 
+    /** The fog colour right now (the sky uses it for its horizon so the two meet seamlessly). */
+    public static float[] fogColour(long nowMs) {
+        if (inField()) {
+            float pulse = CrimsonFieldClient.gloomPulse(0.0f) * (0.6f + 0.4f * CrimsonFieldClient.proximity());
+            return new float[] {Mth.lerp(pulse, FIELD_FOG_R, GLOOM_FOG_R), Mth.lerp(pulse, FIELD_FOG_G, GLOOM_FOG_G),
+                    Mth.lerp(pulse, FIELD_FOG_B, GLOOM_FOG_B)};
+        }
+        float roll = fogRoll(nowMs);
+        return new float[] {fogRed(roll), fogGreen(roll), fogBlue(roll)};
+    }
+
+    /** True when the player is out in Level 9.1, the Crimson Field. */
+    public static boolean inField() {
+        return CrimsonFieldClient.inField(Minecraft.getInstance());
+    }
+
+    /**
+     * How loud the streetlamps may hum (0..1): as the Mangled's fog thickens their buzz cuts out,
+     * and the silence is total ("away from the main suburb, the hum stops").
+     */
+    public static float lampHumScale(long nowMs) {
+        if (!inLevel9()) {
+            return 1.0f;
+        }
+        return Mth.clamp(1.0f - fogRoll(nowMs) * 2.0f, 0.0f, 1.0f);
+    }
+
     @SubscribeEvent
     public static void onRenderFog(ViewportEvent.RenderFog event) {
         // Leave the vanilla fog alone under water / in lava / powder snow.
         if (event.getType() != FogType.NONE || !inLevel9()) {
             return;
         }
-        float roll = fogRoll(System.currentTimeMillis());
-        event.setNearPlaneDistance(Mth.lerp(roll, FOG_START, ROLL_FOG_START));
-        event.setFarPlaneDistance(Mth.lerp(roll, FOG_END, ROLL_FOG_END));
+        if (inField()) {
+            event.setNearPlaneDistance(FIELD_FOG_START);
+            event.setFarPlaneDistance(FIELD_FOG_END);
+        } else {
+            float roll = fogRoll(System.currentTimeMillis());
+            event.setNearPlaneDistance(Mth.lerp(roll, FOG_START, ROLL_FOG_START));
+            event.setFarPlaneDistance(Mth.lerp(roll, FOG_END, ROLL_FOG_END));
+        }
         // A sphere (not the vanilla cylinder) so the lamp heads above you fog the same as the road.
         event.setFogShape(FogShape.SPHERE);
         event.setCanceled(true); // required for NeoForge to use our distances
@@ -145,10 +198,10 @@ public final class Level9Atmosphere {
         if (!inLevel9() || event.getCamera().getFluidInCamera() != FogType.NONE) {
             return;
         }
-        float roll = fogRoll(System.currentTimeMillis());
-        event.setRed(fogRed(roll));
-        event.setGreen(fogGreen(roll));
-        event.setBlue(fogBlue(roll));
+        float[] colour = fogColour(System.currentTimeMillis());
+        event.setRed(colour[0]);
+        event.setGreen(colour[1]);
+        event.setBlue(colour[2]);
     }
 
     /** Schedules the far-off rumbles while the fog roll runs. */
@@ -156,7 +209,7 @@ public final class Level9Atmosphere {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         long now = System.currentTimeMillis();
-        if (mc.player == null || !inLevel9() || FixturePower.activeEvent(now) != LevelEventPayload.FOG_ROLL) {
+        if (mc.player == null || !inLevel9() || inField() || FixturePower.activeEvent(now) != LevelEventPayload.FOG_ROLL) {
             return;
         }
         long start = CameraClientState.eventStartMs;

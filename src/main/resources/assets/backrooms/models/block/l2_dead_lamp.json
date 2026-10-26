@@ -1,0 +1,6 @@
+{
+  "parent": "backrooms:block/bulkhead_lamp",
+  "textures": {
+    "bulb": "backrooms:block/l2_dead_bulb"
+  }
+}

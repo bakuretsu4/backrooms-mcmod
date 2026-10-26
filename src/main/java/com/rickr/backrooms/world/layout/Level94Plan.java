@@ -416,11 +416,23 @@ final class Level94Plan {
         long h = Hash.mix(hill.hash + 77);
         Level94Builds.Thing t;
         switch (hill.feature) {
-            case Level94Terrain.HOUSE -> {
+            case Level94Terrain.HOUSE, Level94Terrain.FRAGMENT -> {
                 t = new Level94Builds.Thing(Level94Builds.HOUSE, 1, hill.hash, hill.cx, hill.cz);
-                Direction front = faceRoad(roads, hill.cx + 0.5f, hill.cz + 0.5f, q);
-                t.house = new Level94Houses.House().centred(Level94Houses.BIG, hill.cx, hill.cz, front, 7, 9, g,
-                        Hash.unit(h) < 0.6, Hash.unit(Hash.mix(h)) < 0.5);
+                int stage = driftStage(seed, hill.cx, hill.cz, hill.hash);
+                // Thing.a is unused for houses: here it marks a furniture-drift fragment (the anomaly).
+                t.a = stage;
+                if (stage == DRIFT_PILE) {
+                    t.house = new Level94Houses.House().centred(Level94Houses.FRAGMENT_PILE,
+                            hill.cx, hill.cz, randomDirection(Hash.mix(h)), 5, 5, g, false, false);
+                } else if (stage == DRIFT_ROOM || hill.feature == Level94Terrain.FRAGMENT) {
+                    boolean room = Hash.unit(h) < 0.5;
+                    t.house = new Level94Houses.House().centred(room ? Level94Houses.FRAGMENT_ROOM : Level94Houses.FRAGMENT_WALL,
+                            hill.cx, hill.cz, randomDirection(Hash.mix(h)), 7, room ? 7 : 4, g, false, false);
+                } else {
+                    Direction front = faceRoad(roads, hill.cx + 0.5f, hill.cz + 0.5f, q);
+                    t.house = new Level94Houses.House().centred(Level94Houses.BIG, hill.cx, hill.cz, front, 7, 9, g,
+                            Hash.unit(h) < 0.6, Hash.unit(Hash.mix(h)) < 0.5);
+                }
                 t.box = t.house.worldReach(0);
                 t.pad = t.house.worldReach(1);
             }
@@ -435,14 +447,6 @@ final class Level94Plan {
                 t.b = 22 + Hash.range(Hash.mix(h), 11);
                 t.box = Level94Builds.square(hill.cx, hill.cz, (int) Math.ceil(t.b / 10.0));
                 t.pad = Level94Builds.square(hill.cx, hill.cz, 0);
-            }
-            case Level94Terrain.FRAGMENT -> {
-                t = new Level94Builds.Thing(Level94Builds.HOUSE, 1, hill.hash, hill.cx, hill.cz);
-                boolean room = Hash.unit(h) < 0.5;
-                t.house = new Level94Houses.House().centred(room ? Level94Houses.FRAGMENT_ROOM : Level94Houses.FRAGMENT_WALL,
-                        hill.cx, hill.cz, randomDirection(Hash.mix(h)), 7, room ? 7 : 3, g, false, false);
-                t.box = t.house.worldReach(0);
-                t.pad = t.house.worldReach(1);
             }
             case Level94Terrain.CAR -> {
                 t = new Level94Builds.Thing(Level94Builds.CAR, 1, hill.hash, hill.cx, hill.cz);
@@ -459,6 +463,34 @@ final class Level94Plan {
         t.padHeight = topH;
         t.padRaises = true;
         return t;
+    }
+
+    // ==========================================================================================
+    // Furniture drift (anomaly level_94/furniture_drift)
+    // ==========================================================================================
+
+    /** A hilltop house as usual (or a random fragment, as the hills have anywhere). */
+    static final int DRIFT_NONE = 0;
+    /** Only a single room is left: one wall and a floor with its furniture, or three walls round a floor. */
+    static final int DRIFT_ROOM = 1;
+    /** Nothing but a pile of furniture. */
+    static final int DRIFT_PILE = 2;
+    /** Closer than this to a castle (give or take the jitter), hilltop houses are only piles of furniture. */
+    static final int PILE_RANGE = 200;
+    /** Closer than this, they are single rooms. */
+    static final int ROOM_RANGE = 330;
+    /** The band edges wander by up to this much, so the stages blend instead of making rings. */
+    static final int DRIFT_JITTER = 60;
+
+    /**
+     * How far the house on the hilltop at (x, z) has "drifted apart": the M.E.G. found whole
+     * houses out in the hills, then single rooms ("just a wall with furniture next to it"), and
+     * closer to the castle only piles of furniture. Pure: the anomaly planner asks it too.
+     */
+    static int driftStage(long seed, int x, int z, long hillHash) {
+        double d = Level94Roads.castleDistance(seed, x + 0.5, z + 0.5)
+                + (Hash.unit(Hash.mix(hillHash + 31)) - 0.5) * DRIFT_JITTER;
+        return d < PILE_RANGE ? DRIFT_PILE : d < ROOM_RANGE ? DRIFT_ROOM : DRIFT_NONE;
     }
 
     @Nullable

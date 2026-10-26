@@ -1,6 +1,7 @@
 package com.rickr.backrooms;
 
 import com.rickr.backrooms.network.ModNetwork;
+import com.rickr.backrooms.world.anomaly.Anomalies;
 import com.rickr.backrooms.registry.ModAttachments;
 import com.rickr.backrooms.registry.ModBlockEntities;
 import com.rickr.backrooms.registry.ModBlocks;
@@ -35,6 +36,8 @@ public final class Backrooms {
 
         modBus.addListener(ModEntities::registerAttributes);
         modBus.addListener(ModNetwork::register);
+        // What each level's anomalous areas do on the server (world/anomaly).
+        Anomalies.bootstrap();
     }
 
     public static ResourceLocation id(String path) {

@@ -12,6 +12,7 @@ import com.rickr.backrooms.block.DuctBlock;
 import com.rickr.backrooms.block.CubiclePartitionBlock;
 import com.rickr.backrooms.block.ExitDoorBlock;
 import com.rickr.backrooms.block.ElevatorDoorBlock;
+import com.rickr.backrooms.block.FieldGrassBlock;
 import com.rickr.backrooms.block.FloodableSlabBlock;
 import com.rickr.backrooms.block.FloorArrowBlock;
 import com.rickr.backrooms.block.FurnitureBlock;
@@ -148,9 +149,13 @@ public final class ModBlocks {
     /** Ceiling strip; now only lights the middle of the Level 0/1 exit stairwells. */
     public static final DeferredBlock<Block> PIPE_LIGHT = BLOCKS.registerBlock("pipe_light", Block::new,
             fixture(MapColor.SNOW, SoundType.METAL, 11));
-    /** Small caged bulb on the plain wall of the Level 2 corridors, just under the ceiling. */
+    /**
+     * Small caged bulb on the plain wall of the Level 2 corridors, just under the ceiling. Its bulb
+     * stops glowing while its series circuit is out (see block/Level2LampGlow).
+     */
     public static final DeferredBlock<WallLampBlock> BULKHEAD_LAMP = BLOCKS.registerBlock("bulkhead_lamp",
-            props -> new WallLampBlock(props, 6, 3, 13, 6), wallFixture(MapColor.SNOW, 10));
+            props -> new WallLampBlock(props, 6, 3, 13, 6), wallFixture(MapColor.SNOW, 10)
+                    .emissiveRendering(com.rickr.backrooms.block.Level2LampGlow::emissive));
 
     // The Poolrooms: big white tiles, dark tiles for the drain and lane lines, a tile floor with
     // moving light ripples (caustics) under all the water, daylight skylights and underwater lamps.
@@ -716,6 +721,187 @@ public final class ModBlocks {
             Block.box(13, 8, 1, 15, 14, 12)));
     public static final DeferredBlock<ThroneLightBlock> L94_THRONE_LIGHT = BLOCKS.registerBlock("l94_throne_light", ThroneLightBlock::new,
             fixture(MapColor.SNOW, SoundType.GLASS, 15).noCollission().noOcclusion());
+    // Level 94 anomalies and supplies (world/anomaly/level94): the porcelain sink of the furniture
+    // piles (one in seven still holds the 1953 coin), the water tower tap and the milk-van crate
+    // (Almond Water and Almond Milk, a few bottles each), the wandering door (a plain house door
+    // in a free-standing frame) and the blinding hall's light ceiling and white floor.
+    public static final DeferredBlock<com.rickr.backrooms.block.Level94SinkBlock> L94_SINK = BLOCKS.registerBlock("l94_sink",
+            com.rickr.backrooms.block.Level94SinkBlock::new, unbreakable(MapColor.QUARTZ, SoundType.STONE).noOcclusion());
+    public static final DeferredBlock<com.rickr.backrooms.block.Level94SupplyBlock> L94_TOWER_TAP = BLOCKS.registerBlock("l94_tower_tap",
+            props -> new com.rickr.backrooms.block.Level94SupplyBlock(props, Shapes.or(
+                    Block.box(6.5, 0, 6.5, 9.5, 15, 9.5),
+                    Block.box(7, 9, 3, 9, 11, 6.5)),
+                    () -> ModItems.ALMOND_WATER.get(), net.minecraft.sounds.SoundEvents.BOTTLE_FILL, "message.backrooms.l94.tap_empty"),
+            unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    public static final DeferredBlock<com.rickr.backrooms.block.Level94SupplyBlock> L94_MILK_CRATE = BLOCKS.registerBlock("l94_milk_crate",
+            props -> new com.rickr.backrooms.block.Level94SupplyBlock(props, Block.box(2, 0, 2, 14, 11, 14),
+                    () -> ModItems.ALMOND_MILK.get(), net.minecraft.sounds.SoundEvents.BOTTLE_FILL, "message.backrooms.l94.crate_empty"),
+            unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    public static final DeferredBlock<com.rickr.backrooms.block.WanderingDoorBlock> L94_WANDERING_DOOR = BLOCKS.registerBlock("l94_wandering_door",
+            props -> new com.rickr.backrooms.block.WanderingDoorBlock(BlockSetType.OAK, props),
+            unbreakable(MapColor.COLOR_RED, SoundType.WOOD).noOcclusion());
+    public static final DeferredBlock<Block> L94_GLARE_PANEL = BLOCKS.registerBlock("l94_glare_panel", Block::new,
+            fixture(MapColor.SNOW, SoundType.GLASS, 15));
+    public static final DeferredBlock<Block> L94_WHITE_TILE = structural("l94_white_tile", MapColor.SNOW, SoundType.STONE);
+    // Poolrooms anomalies (world/anomaly/poolrooms): the Sanguine Reservoir, the red copy of the
+    // level. Its dim tile and floor under the water (no bright caustics), the red pool lamp and the
+    // glowing red sprouts on the walkways, the only light left there.
+    public static final DeferredBlock<Block> RESERVOIR_TILE = structural("reservoir_tile", MapColor.TERRACOTTA_WHITE, SoundType.STONE);
+    public static final DeferredBlock<Block> RESERVOIR_FLOOR = structural("reservoir_floor", MapColor.TERRACOTTA_RED, SoundType.STONE);
+    public static final DeferredBlock<PoolLampBlock> RESERVOIR_LAMP = BLOCKS.registerBlock("reservoir_lamp", PoolLampBlock::new,
+            fixture(MapColor.COLOR_RED, SoundType.GLASS, 10));
+    public static final DeferredBlock<com.rickr.backrooms.block.ReservoirSproutBlock> RESERVOIR_SPROUT = BLOCKS.registerBlock(
+            "reservoir_sprout", com.rickr.backrooms.block.ReservoirSproutBlock::new,
+            fixture(MapColor.COLOR_RED, SoundType.GRASS, 7).noCollission().noOcclusion());
+    // Level 1 anomalies (world/anomaly/level1, world/layout/Level1AnomalyPlan): the orange storage
+    // racks of the crate halls, the crude paintings (wall and floor) that change while nobody looks,
+    // the film of condensation the low fog leaves on the floor, and the Corrupted Corridor
+    // (Level 1.1): white cinderblock and blue tile, a wall you can walk into, bright patches in the
+    // dark, black-and-white walls and a floor that is not really there.
+    public static final DeferredBlock<Block> L1_STORAGE_SHELF = structural("l1_storage_shelf", MapColor.COLOR_ORANGE, SoundType.METAL);
+    public static final DeferredBlock<com.rickr.backrooms.block.CrudePaintingBlock> L1_PAINTING = BLOCKS.registerBlock("l1_painting",
+            com.rickr.backrooms.block.CrudePaintingBlock::new, unbreakable(MapColor.COLOR_BROWN, SoundType.WOOL).noCollission().noOcclusion());
+    public static final DeferredBlock<com.rickr.backrooms.block.FloorPaintingBlock> L1_FLOOR_PAINTING = BLOCKS.registerBlock("l1_floor_painting",
+            com.rickr.backrooms.block.FloorPaintingBlock::new, unbreakable(MapColor.COLOR_RED, SoundType.STONE).noCollission().noOcclusion());
+    public static final DeferredBlock<ThinLayerBlock> L1_CONDENSATION = BLOCKS.registerBlock("l1_condensation", ThinLayerBlock::new,
+            unbreakable(MapColor.WATER, SoundType.EMPTY).noCollission().noOcclusion());
+    public static final DeferredBlock<Block> L1_CINDERBLOCK = structural("l1_cinderblock", MapColor.SNOW, SoundType.STONE);
+    public static final DeferredBlock<Block> L1_BLUE_TILE = structural("l1_blue_tile", MapColor.COLOR_LIGHT_BLUE, SoundType.STONE);
+    public static final DeferredBlock<SlabBlock> L1_BLUE_TILE_SLAB = BLOCKS.registerBlock("l1_blue_tile_slab", SlabBlock::new,
+            unbreakable(MapColor.COLOR_LIGHT_BLUE, SoundType.STONE));
+    /** Looks like the cinderblock wall (a shade off), but you can walk into it: it throws you out somewhere else in Level 1. */
+    public static final DeferredBlock<Block> L1_NOCLIP_WALL = BLOCKS.registerBlock("l1_noclip_wall", Block::new,
+            unbreakable(MapColor.SNOW, SoundType.STONE).noCollission()
+                    .isSuffocating((state, level, pos) -> false)
+                    .isViewBlocking((state, level, pos) -> false));
+    /** An unexplained bright patch in the corridor's dark sector: full-bright, light 12. */
+    public static final DeferredBlock<Block> L1_BRIGHT_PATCH = BLOCKS.registerBlock("l1_bright_patch", Block::new,
+            fixture(MapColor.SNOW, SoundType.GLASS, 12));
+    public static final DeferredBlock<Block> L1_MONOCHROME_WALL = structural("l1_monochrome_wall", MapColor.COLOR_BLACK, SoundType.STONE);
+    public static final DeferredBlock<Block> L1_MONOCHROME_FLOOR = structural("l1_monochrome_floor", MapColor.COLOR_BLACK, SoundType.STONE);
+    /** Looks exactly like the monochrome floor but has no collision: you drop into the void below. */
+    public static final DeferredBlock<Block> L1_VOID_FLOOR = BLOCKS.registerBlock("l1_void_floor", Block::new,
+            unbreakable(MapColor.COLOR_BLACK, SoundType.STONE).noCollission()
+                    .isSuffocating((state, level, pos) -> false)
+                    .isViewBlocking((state, level, pos) -> false));
+
+    // ---- Level 4 anomalies (world/anomaly/level4, world/layout/Level4AnomalyPlan) ----------------
+    /** Plain grey painted block wall of the looping stairwells. */
+    public static final DeferredBlock<Block> L4_STAIRWELL_WALL = structural("l4_stairwell_wall", MapColor.COLOR_GRAY, SoundType.STONE);
+    /** Grey steel stairwell door (looks like the fire door); the copies further up and down the shaft are LOCKED. */
+    public static final DeferredBlock<HouseDoorBlock> L4_STAIR_DOOR = BLOCKS.registerBlock("l4_stair_door",
+            props -> new HouseDoorBlock(BlockSetType.COPPER, props), unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** The floor-number sign on every landing of a looping stairwell. It always says 4. */
+    public static final DeferredBlock<WallMountBlock> L4_FLOOR_SIGN = BLOCKS.registerBlock("l4_floor_sign",
+            props -> new WallMountBlock(props, 2, 1, 15, 14, 15, 16), unbreakable(MapColor.COLOR_GRAY, SoundType.METAL).noCollission().noOcclusion());
+    /** The Window (Entity 2): a clear pane onto a sunny, blurry, familiar place. Warm light pours out. */
+    public static final DeferredBlock<OfficeWindowBlock> L4_CLEAR_WINDOW = BLOCKS.registerBlock("l4_clear_window", OfficeWindowBlock::new,
+            unbreakable(MapColor.COLOR_YELLOW, SoundType.GLASS).lightLevel(state -> 12));
+    /** A window pane covered with cardboard and tape, the way survivors cover them. No glow. */
+    public static final DeferredBlock<OfficeWindowBlock> L4_COVERED_WINDOW = BLOCKS.registerBlock("l4_covered_window", OfficeWindowBlock::new,
+            unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD));
+    /** Level 4.3: the dim white hallways. */
+    public static final DeferredBlock<Block> L4_WHITE_WALL = structural("l4_white_wall", MapColor.SNOW, SoundType.STONE);
+    public static final DeferredBlock<Block> L4_WHITE_FLOOR = structural("l4_white_floor", MapColor.SNOW, SoundType.STONE);
+    /** Brushed-steel walls and ceiling of an elevator car, and its ribbed rubber floor. */
+    public static final DeferredBlock<Block> L4_ELEVATOR_WALL = structural("l4_elevator_wall", MapColor.METAL, SoundType.METAL);
+    public static final DeferredBlock<Block> L4_ELEVATOR_FLOOR = structural("l4_elevator_floor", MapColor.COLOR_BLACK, SoundType.STONE);
+    /** Office fridge in the Cubicles: right-click for Almond Water while it lasts. */
+    public static final DeferredBlock<com.rickr.backrooms.block.OfficeFridgeBlock> L4_OFFICE_FRIDGE = BLOCKS.registerBlock("l4_office_fridge",
+            com.rickr.backrooms.block.OfficeFridgeBlock::new, unbreakable(MapColor.QUARTZ, SoundType.METAL).noOcclusion());
+
+    // ---- Level 2 anomalies (world/anomaly/level2, world/layout/Level2AnomalyPlan) ----------------
+    /** Battery emergency light from the Blackout: a small violet glow (vanilla light 7 + a Veil light). */
+    public static final DeferredBlock<WallLampBlock> L2_EMERGENCY_LIGHT = BLOCKS.registerBlock("l2_emergency_light",
+            props -> new WallLampBlock(props, 10, 9, 14, 4), wallFixture(MapColor.COLOR_PURPLE, 7));
+    /** A caged lamp whose bulb burst in the Blackout: dark, no light at all. */
+    public static final DeferredBlock<WallLampBlock> L2_DEAD_LAMP = BLOCKS.registerBlock("l2_dead_lamp",
+            props -> new WallLampBlock(props, 6, 3, 13, 6), unbreakable(MapColor.COLOR_GRAY, SoundType.METAL).noCollission().noOcclusion());
+    /** Thick black liquid from burst pipes: wading through it is slow, like honey. Never glows. */
+    public static final DeferredBlock<com.rickr.backrooms.block.BlackOozeBlock> L2_BLACK_OOZE = BLOCKS.registerBlock("l2_black_ooze",
+            com.rickr.backrooms.block.BlackOozeBlock::new, unbreakable(MapColor.COLOR_BLACK, SoundType.HONEY_BLOCK)
+                    .noCollission().noOcclusion().speedFactor(0.45f).jumpFactor(0.6f));
+    /** A faulty machine cabinet in a hot zone; FACING = its front (gauges and vents). */
+    public static final DeferredBlock<FurnitureBlock> L2_MACHINE = BLOCKS.registerBlock("l2_machine",
+            props -> new FurnitureBlock(props, Shapes.block()), unbreakable(MapColor.METAL, SoundType.METAL));
+    /** A short leaking steam pipe high on a machine; FACING = the way the steam blows out. */
+    public static final DeferredBlock<WallMountBlock> L2_STEAM_VENT = BLOCKS.registerBlock("l2_steam_vent",
+            props -> new WallMountBlock(props, 5, 4, 6, 11, 10, 16), unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** Steel door with a pitch-black window. LOCKED ones only rattle; the rare unlocked one opens on the void. */
+    public static final DeferredBlock<HouseDoorBlock> L2_VOID_DOOR = BLOCKS.registerBlock("l2_void_door",
+            props -> new HouseDoorBlock(BlockSetType.COPPER, props), unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** Lightless matte black: the passage behind a void door, and the floor and sky of the void itself. */
+    public static final DeferredBlock<Block> L2_VOID_BLACK = structural("l2_void_black", MapColor.COLOR_BLACK, SoundType.STONE);
+
+    // ---- Level 0 anomalies (world/anomaly/level0, world/layout/Level0AnomalyPlan) ----------------
+    /** The Red Rooms: crimson wallpaper, with black mould, and with tally marks on its FACING side. */
+    public static final DeferredBlock<Block> RED_WALLPAPER = structural("red_wallpaper", MapColor.COLOR_RED, SoundType.WOOD);
+    public static final DeferredBlock<Block> RED_WALLPAPER_MOULD = structural("red_wallpaper_mould", MapColor.COLOR_RED, SoundType.WOOD);
+    public static final DeferredBlock<WallDecalBlock> RED_WALL_TALLY = BLOCKS.registerBlock("red_wall_tally", WallDecalBlock::new,
+            unbreakable(MapColor.COLOR_RED, SoundType.WOOD));
+    /** Coarse, sticky dark-red carpet that smells of copper: you walk a little slower on it. */
+    public static final DeferredBlock<Block> RED_CARPET_COARSE = BLOCKS.registerBlock("red_carpet_coarse", Block::new,
+            unbreakable(MapColor.COLOR_RED, SoundType.WOOL).speedFactor(0.85f));
+    /** Dim darkroom-red ceiling lamp of the Red Rooms (silent; see FixtureType.RED_ROOM_LIGHT). */
+    public static final DeferredBlock<Block> RED_ROOM_LIGHT = BLOCKS.registerBlock("red_room_light", Block::new,
+            fixture(MapColor.COLOR_RED, SoundType.GLASS, 4));
+    /** A cluster of small pale mushrooms growing out of the red carpet. You walk through them. */
+    public static final DeferredBlock<WallMountBlock> RED_MUSHROOMS = BLOCKS.registerBlock("red_mushrooms",
+            props -> new WallMountBlock(props, 3, 0, 3, 13, 6, 13), unbreakable(MapColor.COLOR_BROWN, SoundType.FUNGUS).noCollission().noOcclusion());
+    /** Warning signs of the Red Rooms: yellow wallpaper peeling off crimson, and sticky carpet (slows you down). */
+    public static final DeferredBlock<Block> PEELING_WALLPAPER = structural("peeling_wallpaper", MapColor.COLOR_YELLOW, SoundType.WOOD);
+    public static final DeferredBlock<Block> STICKY_CARPET = BLOCKS.registerBlock("sticky_carpet", Block::new,
+            unbreakable(MapColor.TERRACOTTA_YELLOW, SoundType.WOOL).speedFactor(0.75f));
+    /** The flickering wall: walk into it on Level 0 and you come out in Level 1. */
+    public static final DeferredBlock<com.rickr.backrooms.block.FlickeringWallBlock> FLICKERING_WALL = BLOCKS.registerBlock("flickering_wall",
+            com.rickr.backrooms.block.FlickeringWallBlock::new, unbreakable(MapColor.COLOR_YELLOW, SoundType.WOOD).noCollission()
+                    .lightLevel(state -> 5)
+                    .emissiveRendering((state, level, pos) -> true)
+                    .isSuffocating((state, level, pos) -> false));
+    /** Blackout Zones: rough, grimy, darker wallpaper, and the ankle-deep murky fluid on the carpet (slows you a little). */
+    public static final DeferredBlock<Block> BLACKOUT_WALLPAPER = structural("blackout_wallpaper", MapColor.TERRACOTTA_BROWN, SoundType.WOOD);
+    public static final DeferredBlock<ThinLayerBlock> CARPET_FLUID = BLOCKS.registerBlock("carpet_fluid", ThinLayerBlock::new,
+            unbreakable(MapColor.TERRACOTTA_BROWN, SoundType.EMPTY).noCollission().noOcclusion().speedFactor(0.85f));
+    /** The Manila Room: manila-beige wallpaper inside, the brown wall outside. */
+    public static final DeferredBlock<Block> MANILA_WALLPAPER = structural("manila_wallpaper", MapColor.SAND, SoundType.WOOD);
+    public static final DeferredBlock<Block> MANILA_BROWN_WALL = structural("manila_brown_wall", MapColor.COLOR_BROWN, SoundType.WOOD);
+    /**
+     * One quarter of the Manila Room's octagonal wooden table: four make the table, each quarter's
+     * cut corner pointing away from the middle (FACING north = the north-west quarter).
+     */
+    public static final DeferredBlock<FurnitureBlock> OCTAGON_TABLE = furniture("octagon_table", MapColor.WOOD, SoundType.WOOD, Shapes.or(
+            Block.box(6, 12.5, 0, 16, 14.5, 16),
+            Block.box(3, 12.5, 3, 6, 14.5, 16),
+            Block.box(0, 12.5, 6, 3, 14.5, 16),
+            Block.box(13, 0, 13, 16, 12.5, 16)));
+    /** Plain wooden chair; FACING = the way you'd sit. */
+    public static final DeferredBlock<FurnitureBlock> WOODEN_CHAIR = furniture("wooden_chair", MapColor.WOOD, SoundType.WOOD, Shapes.or(
+            Block.box(3, 7, 3, 13, 8.5, 13),
+            Block.box(3, 8.5, 11.5, 13, 16, 13),
+            Block.box(3, 0, 3, 4.5, 7, 4.5),
+            Block.box(11.5, 0, 3, 13, 7, 4.5),
+            Block.box(3, 0, 11.5, 4.5, 7, 13),
+            Block.box(11.5, 0, 11.5, 13, 7, 13)));
+    /** A volunteer's note on the Manila Room's wall: right-click to read it. */
+    public static final DeferredBlock<com.rickr.backrooms.block.VolunteerNoteBlock> VOLUNTEER_NOTE = BLOCKS.registerBlock("volunteer_note",
+            com.rickr.backrooms.block.VolunteerNoteBlock::new, unbreakable(MapColor.SAND, SoundType.WOOD).noCollission().noOcclusion());
+    /** The pale plaster of the Arch Variation (the stable landmark of the shifting pillar hall), and its arch pieces. */
+    public static final DeferredBlock<Block> ARCH_WALL = structural("arch_wall", MapColor.TERRACOTTA_WHITE, SoundType.STONE);
+    public static final DeferredBlock<StairBlock> ARCH_WALL_STAIRS = BLOCKS.registerBlock("arch_wall_stairs",
+            props -> new StairBlock(ARCH_WALL.get().defaultBlockState(), props), unbreakable(MapColor.TERRACOTTA_WHITE, SoundType.STONE));
+
+    // ---- Level 9 anomalies (world/anomaly/level9, world/layout/Level9AnomalyPlan) ----------------
+    /** Tall wild grass of Level 9.1, the Crimson Field: you wade through it (no collision). */
+    public static final DeferredBlock<FieldGrassBlock> L9_FIELD_GRASS = BLOCKS.registerBlock("l9_field_grass", FieldGrassBlock::new,
+            unbreakable(MapColor.COLOR_GREEN, SoundType.GRASS).noCollission().noOcclusion().offsetType(BlockBehaviour.OffsetType.XZ));
+    /** Heaved, shattered asphalt round the crater the Mangled fog's pillar leaves in the road. */
+    public static final DeferredBlock<Block> L9_CRATER_ASPHALT = structural("l9_crater_asphalt", MapColor.COLOR_BLACK, SoundType.STONE);
+    public static final DeferredBlock<SlabBlock> L9_CRATER_ASPHALT_SLAB = BLOCKS.registerBlock("l9_crater_asphalt_slab", SlabBlock::new,
+            unbreakable(MapColor.COLOR_BLACK, SoundType.STONE));
+    /** Churned wet earth: the bottom of a crater, and the mud round a foxhole hatch in the field. */
+    public static final DeferredBlock<Block> L9_CRATER_SOIL = structural("l9_crater_soil", MapColor.DIRT, SoundType.GRAVEL);
+    /** Stacked sandbags ringing a foxhole in the Crimson Field. */
+    public static final DeferredBlock<Block> L9_SANDBAGS = structural("l9_sandbags", MapColor.COLOR_BROWN, SoundType.WOOL);
 
     private static DeferredBlock<Block> structural(String name, MapColor color, SoundType sound) {
         return BLOCKS.registerBlock(name, (Function<BlockBehaviour.Properties, Block>) Block::new, unbreakable(color, sound));

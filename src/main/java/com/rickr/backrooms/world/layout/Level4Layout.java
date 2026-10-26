@@ -9,6 +9,9 @@ import com.rickr.backrooms.block.OfficeWindowBlock;
 import com.rickr.backrooms.block.VendingMachineBlock;
 import com.rickr.backrooms.block.WaterCoolerBlock;
 import com.rickr.backrooms.registry.ModBlocks;
+import com.rickr.backrooms.world.anomaly.AnomalySite;
+import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoorBlock;
@@ -36,6 +39,8 @@ import org.jetbrains.annotations.Nullable;
  *       (below y30) takes you on to the Poolrooms.</li>
  *   <li><b>Safe rooms:</b> a small office box standing in the middle of an open-plan floor
  *       ({@link SafeRoomPlan}), with the checkpoint radio, a cot and a crate.</li>
+ *   <li><b>Anomalies:</b> looping stairwells, the Window, vanishing elevators and the way into
+ *       Level 4.3 "The Cubicles" ({@link Level4AnomalyPlan}, blocks in {@link Level4AnomalyBlocks}).</li>
  * </ul>
  *
  * <p>Heights: floor y40, four blocks of air, the drop ceiling at y45 (like the Lobby).
@@ -58,6 +63,13 @@ public final class Level4Layout extends LevelLayout {
         if (safe != null) {
             return !safe.contains(x, z) || safe.isWalkable(x, z);
         }
+        AnomalySite site = Level4AnomalyPlan.GRID.at(seed, x, z);
+        if (site != null) {
+            int walkable = Level4AnomalyPlan.walkable(site, x, z);
+            if (walkable >= 0) {
+                return walkable == 1;
+            }
+        }
         return Level4Plan.walkable(Level4Plan.column(seed, x, z));
     }
 
@@ -71,6 +83,10 @@ public final class Level4Layout extends LevelLayout {
         if (safe != null) {
             return !safe.contains(x, z) || safe.role(x, z) == SafeRoomPlan.FLOOR;
         }
+        AnomalySite site = Level4AnomalyPlan.GRID.at(seed, x, z);
+        if (site != null && Level4AnomalyPlan.blocksArrival(site, x, z)) {
+            return false;
+        }
         return Level4Plan.kind(Level4Plan.column(seed, x, z)) == Level4Plan.FLOOR;
     }
 
@@ -78,6 +94,33 @@ public final class Level4Layout extends LevelLayout {
     public boolean isSafeRoom(long seed, int x, int z) {
         SafeRoomPlan plan = safeRoomNear(seed, x, z);
         return plan != null && plan.contains(x, z);
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // Anomalies (see Level4AnomalyPlan)
+    // ------------------------------------------------------------------------------------------
+
+    @Override
+    @Nullable
+    public AnomalySite anomalyAt(long seed, int x, int z) {
+        return Level4AnomalyPlan.GRID.at(seed, x, z);
+    }
+
+    @Override
+    public void anomaliesNear(long seed, int x, int z, int radius, Consumer<AnomalySite> out) {
+        Level4AnomalyPlan.GRID.near(seed, x, z, radius, out);
+    }
+
+    /** Searches up to 16 zones (768 blocks) away: even Level 4.3's rare entrances turn up. */
+    @Override
+    @Nullable
+    public AnomalySite nearestAnomaly(long seed, int x, int z, String kind) {
+        return Level4AnomalyPlan.GRID.nearest(seed, x, z, site -> site.kind().equals(kind), 16);
+    }
+
+    @Override
+    public List<String> anomalyKinds() {
+        return Level4AnomalyPlan.KINDS;
     }
 
     /** The safe room whose box or surrounding strip covers (x, z), or null. */
@@ -121,6 +164,11 @@ public final class Level4Layout extends LevelLayout {
         SafeRoomPlan safe = safeRoomNear(seed, x, z);
         if (safe != null) {
             fillSafeRoom(safe, x, z, out);
+            return;
+        }
+        // Anomalous areas build their own columns (the rest of their site is ordinary office).
+        AnomalySite site = Level4AnomalyPlan.GRID.at(seed, x, z);
+        if (site != null && Level4AnomalyBlocks.fill(this, seed, site, x, z, out)) {
             return;
         }
 
@@ -194,7 +242,7 @@ public final class Level4Layout extends LevelLayout {
         }
     }
 
-    private static BlockState floorBlock(int floor) {
+    static BlockState floorBlock(int floor) {
         boolean indent = (floor & Level4Plan.INDENT) != 0;
         return switch (floor & 3) {
             case Level4Plan.CARPET_BLUE -> (indent ? ModBlocks.OFFICE_CARPET_BLUE_INDENT : ModBlocks.OFFICE_CARPET_BLUE).get().defaultBlockState();
@@ -203,7 +251,7 @@ public final class Level4Layout extends LevelLayout {
         };
     }
 
-    private static BlockState ceilingBlock(int ceiling, int facing) {
+    static BlockState ceilingBlock(int ceiling, int facing) {
         return switch (ceiling) {
             case Level4Plan.TILE_MISSING -> ModBlocks.OFFICE_CEILING_MISSING.get().defaultBlockState();
             case Level4Plan.HATCH -> ModBlocks.OFFICE_CEILING_HATCH.get().defaultBlockState();
@@ -214,7 +262,7 @@ public final class Level4Layout extends LevelLayout {
         };
     }
 
-    private static BlockState panel(int facing, LampMode mode) {
+    static BlockState panel(int facing, LampMode mode) {
         return ModBlocks.OFFICE_PANEL.get().defaultBlockState()
                 .setValue(OfficePanelBlock.FACING, Direction.from2DDataValue(facing))
                 .setValue(OfficePanelBlock.MODE, mode);
@@ -278,7 +326,7 @@ public final class Level4Layout extends LevelLayout {
     }
 
     /** A cubicle partition joined to the sides set in {@code bits} (bit = 2D data value). */
-    private static BlockState partition(int bits) {
+    static BlockState partition(int bits) {
         return ModBlocks.CUBICLE_PARTITION.get().defaultBlockState()
                 .setValue(CubiclePartitionBlock.SOUTH, (bits & 1) != 0)
                 .setValue(CubiclePartitionBlock.WEST, (bits & 2) != 0)
@@ -327,11 +375,11 @@ public final class Level4Layout extends LevelLayout {
     // Small helpers
     // ==========================================================================================
 
-    private static BlockState faced(Block block, Direction facing) {
+    static BlockState faced(Block block, Direction facing) {
         return block.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
     }
 
-    private static void fill(int from, int to, BlockState state, Column out) {
+    static void fill(int from, int to, BlockState state, Column out) {
         for (int y = from; y <= to; y++) {
             out.set(y, state);
         }

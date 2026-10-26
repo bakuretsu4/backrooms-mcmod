@@ -4,6 +4,7 @@ import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.network.FlashlightStatesPayload;
 import com.rickr.backrooms.world.BackroomsLevel;
+import com.rickr.backrooms.world.layout.LevelLayout;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayList;
@@ -72,6 +73,8 @@ public final class BackroomsLights {
     /** Nearest first, but lights already on screen count as a bit closer (no swapping at the edge). */
     private static final Comparator<FixtureLight> BY_RANK =
             Comparator.comparingDouble(l -> SHOWN.contains(l.key) ? l.distSq * KEEP_BONUS : l.distSq);
+    /** Level 2 lamps whose circuit we last saw without power (their bulbs are drawn dark). */
+    private static final LongOpenHashSet DARK_BULBS = new LongOpenHashSet();
 
     @Nullable
     private static ClientLevel boundLevel;
@@ -134,6 +137,8 @@ public final class BackroomsLights {
         boolean flickering = FixturePower.flickering(now);
         boolean lampWave = FixturePower.lampWave(now);
         Vec3 eye = mc.gameRenderer.getMainCamera().getPosition();
+        boolean level2 = floor == BackroomsLevel.LEVEL_2;
+        long gameTime = level.getGameTime();
         for (FixtureLight light : lights) {
             light.distSq = sq(light.x - eye.x) + sq(light.y - eye.y) + sq(light.z - eye.z);
             boolean on = true;
@@ -148,7 +153,27 @@ public final class BackroomsLights {
                 // A broken Level 9 lamp stutters on top of whatever the event does.
                 on = on && FixturePower.brokenLampOn(light.key, now);
             }
-            if (on != light.on && (flickering || lampWave || light.broken)) {
+            boolean restriking = false;
+            // Level 2's caged lamps hang on series circuits: when one fails (with a pop), all of
+            // its lamps go dark together for a while (same for every player: game time). Not the
+            // copy of the lamp by a void door, down in the void below the floor: it is the only
+            // light there and must never go out.
+            if (level2 && light.type == FixtureType.BULKHEAD_LAMP && light.y > LevelLayout.FLOOR_Y) {
+                long circuit = FixturePower.level2Circuit(light.x, light.z);
+                if (FixturePower.level2CircuitPop(circuit, gameTime)) {
+                    FixtureSounds.circuitPop(light);
+                }
+                restriking = FixturePower.level2CircuitRestriking(circuit, gameTime);
+                on = on && FixturePower.level2CircuitOn(circuit, gameTime);
+                // The bulb's glowing faces are baked into the chunk mesh: redraw it when its
+                // circuit loses or regains power (see Level2LampGlow).
+                boolean powered = FixturePower.level2CircuitPowered(circuit, gameTime);
+                if (powered ? DARK_BULBS.remove(light.key) : DARK_BULBS.add(light.key)) {
+                    BlockPos bulb = BlockPos.of(light.key);
+                    mc.levelRenderer.setBlocksDirty(bulb.getX(), bulb.getY(), bulb.getZ(), bulb.getX(), bulb.getY(), bulb.getZ());
+                }
+            }
+            if (on != light.on && (flickering || lampWave || light.broken || restriking)) {
                 FixtureSounds.blink(light, on);
             }
             light.on = on;
@@ -251,6 +276,7 @@ public final class BackroomsLights {
         INDEX.reset(level);
         lights = new ArrayList<>();
         SELECTED.clear();
+        DARK_BULBS.clear();
         builtRevision = -1;
         Minecraft mc = Minecraft.getInstance();
         if (level != null && mc.player != null && mc.player.level() == level) {

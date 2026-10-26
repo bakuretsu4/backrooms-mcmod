@@ -3,13 +3,19 @@ package com.rickr.backrooms.world.layout;
 import com.rickr.backrooms.block.CeilingTubeBlock;
 import com.rickr.backrooms.block.DuctBlock;
 import com.rickr.backrooms.block.ExitDoorBlock;
+import com.rickr.backrooms.block.HouseDoorBlock;
 import com.rickr.backrooms.block.PipeRackBlock;
 import com.rickr.backrooms.block.WallLampBlock;
 import com.rickr.backrooms.block.WallMountBlock;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
+import com.rickr.backrooms.world.anomaly.AnomalySite;
+import com.rickr.backrooms.world.anomaly.level2.Level2Sites;
+import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
@@ -48,30 +54,36 @@ import org.jetbrains.annotations.Nullable;
  * carpeted, wood-panelled utility room carved into the rock between corridors, its doorway in the
  * plain wall of a corridor. Utility rooms may hold a metal supply locker, and now and then a
  * dropped backpack lies in a corridor.
+ *
+ * <p><b>Anomalies</b> (see {@link Level2AnomalyPlan} and world/anomaly/level2): brownout sections
+ * where the Blackout never ended, hot machinery rooms at dead ends, locked doors with black windows
+ * (the rare unlocked one opens on the void below the level) and doors onto a looping office
+ * hallway above it. The caged lamps also hang on series circuits that fail now and then (client
+ * side, see client/light/FixturePower).
  */
 public final class Level2Layout extends LevelLayout {
     // ---- Grid ----------------------------------------------------------------------------------
     /** Distance between grid nodes (and so between parallel corridors). */
-    private static final int GRID = 16;
+    static final int GRID = 16;
     /** Corridors are 3 wide: local 0..2 across. */
-    private static final int WIDTH = 3;
+    static final int WIDTH = 3;
     /** Straight runs are planned in stretches of this many grid steps. */
     private static final int RUN = 6;
     /** Junction rooms span node-local -2..4 (7x7, centred on the 3x3 node). */
     private static final int JUNCTION_LOW = -2;
     private static final int JUNCTION_HIGH = 4;
-    private static final int EXIT_ROOM_RADIUS = 7;
+    static final int EXIT_ROOM_RADIUS = 7;
     /** Lamps every this many blocks along a lit corridor ... */
-    private static final int LAMP_SPACING = 12;
+    static final int LAMP_SPACING = 12;
     /** ... and lit/dark stretches change every this many blocks. */
     private static final int LIGHT_ZONE = 48;
     private static final double DARK_SHARE = 0.35;
 
     // ---- What one column is (packed: kind in bits 0-3, FACING of pipes in bits 4-6) ----------
-    private static final int ROCK = 0;
-    private static final int WALK = 1;
+    static final int ROCK = 0;
+    static final int WALK = 1;
     /** The pipe stack along a wall: duct, valve or plain wall, two pipe racks. */
-    private static final int PIPES = 2;
+    static final int PIPES = 2;
     /** A doorway into a utility room: 3 tall, wall above. */
     private static final int DOOR = 3;
     private static final int CRATE = 4;
@@ -82,9 +94,17 @@ public final class Level2Layout extends LevelLayout {
     /** ... or its panelled walls and furniture. */
     private static final int SAFE_SOLID = 8;
     /** A dropped backpack on the corridor floor (FACING in bits 4-6). */
-    private static final int BACKPACK = 9;
+    static final int BACKPACK = 9;
     /** A supply locker against a utility room wall (FACING in bits 4-6). */
     private static final int LOCKER = 10;
+    /** A locked steel door with a black window in a plain wall (FACING = into the rock, bits 4-6). */
+    private static final int LOCKED_DOOR = 11;
+    /** Part of an anomaly's structure you can walk in (built by {@link Level2AnomalyPlan}). */
+    static final int SITE_OPEN = 12;
+    /** Part of an anomaly's structure that is solid (built by {@link Level2AnomalyPlan}). */
+    static final int SITE_SOLID = 13;
+    /** Out of 1: share of the free door spots in plain walls that hold a locked black-window door. */
+    private static final double LOCKED_DOOR_CHANCE = 0.14;
 
     // ---- Safe rooms ----------------------------------------------------------------------------
     /** Grid squares per side of a safe-room square (128 / 16). */
@@ -92,7 +112,7 @@ public final class Level2Layout extends LevelLayout {
     /** Safe rooms keep at least this far (chessboard distance from their square's centre) from an exit. */
     private static final int SAFE_EXIT_DISTANCE = 24;
     /** The exits, kept in a static field so the static floor-plan helpers can reach them. */
-    private static final ExitLocator EXITS = new ExitLocator(320, 40, 3000);
+    static final ExitLocator EXITS = new ExitLocator(320, 40, 3000);
 
     public Level2Layout() {
         super(4, EXITS);
@@ -105,6 +125,16 @@ public final class Level2Layout extends LevelLayout {
     @Override
     public boolean isWalkable(long seed, int x, int z) {
         int kind = kindOf(column(seed, x, z));
+        return kind == WALK || kind == DOOR || kind == SAFE_OPEN || kind == SITE_OPEN;
+    }
+
+    /**
+     * Nobody arrives inside an anomaly: the void door's passage would drop you straight into the
+     * void, and a hot zone would greet you with heatstroke.
+     */
+    @Override
+    public boolean isSafeArrival(long seed, int x, int z) {
+        int kind = kindOf(column(seed, x, z));
         return kind == WALK || kind == DOOR || kind == SAFE_OPEN;
     }
 
@@ -113,6 +143,40 @@ public final class Level2Layout extends LevelLayout {
     public boolean isSafeRoom(long seed, int x, int z) {
         SafeRoomPlan plan = safeRoomIn(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID));
         return plan != null && plan.contains(x, z);
+    }
+
+    @Override
+    @Nullable
+    public AnomalySite anomalyAt(long seed, int x, int z) {
+        return Level2AnomalyPlan.at(seed, x, z);
+    }
+
+    @Override
+    public void anomaliesNear(long seed, int x, int z, int radius, Consumer<AnomalySite> out) {
+        Level2AnomalyPlan.near(seed, x, z, radius, out);
+    }
+
+    @Override
+    @Nullable
+    public AnomalySite nearestAnomaly(long seed, int x, int z, String kind) {
+        return Level2AnomalyPlan.nearest(seed, x, z, kind);
+    }
+
+    @Override
+    public List<String> anomalyKinds() {
+        return Level2Sites.KINDS;
+    }
+
+    /** The looping hallway's ceiling lights hang above the tunnels (y51). */
+    @Override
+    public int highestCeilingY() {
+        return ceilingY() + Level2Sites.LOOP_RISE;
+    }
+
+    /** The lamp beside the void's copy of a void door hangs far below the floor. */
+    @Override
+    public int lowestFixtureY() {
+        return floorY() - Level2Sites.VOID_DROP;
     }
 
     // ==========================================================================================
@@ -126,7 +190,7 @@ public final class Level2Layout extends LevelLayout {
      * square's side (the doorway can't open behind the pipes) and no exit is near.
      */
     @Nullable
-    private static SafeRoomPlan safeRoomIn(long seed, int gx, int gz) {
+    static SafeRoomPlan safeRoomIn(long seed, int gx, int gz) {
         int cellX = Math.floorDiv(gx, SAFE_SQUARES);
         int cellZ = Math.floorDiv(gz, SAFE_SQUARES);
         long h = SafeRoomPlan.cellHash(seed, cellX, cellZ, 420);
@@ -230,12 +294,12 @@ public final class Level2Layout extends LevelLayout {
     }
 
     /** True if a corridor runs east from node (gx, gz) to node (gx + 1, gz). */
-    private static boolean hasEast(long seed, int gx, int gz) {
+    static boolean hasEast(long seed, int gx, int gz) {
         return linksWest(seed, gx + 1, gz) || inRun(seed, gx, gz, 301);
     }
 
     /** True if a corridor runs south from node (gx, gz) to node (gx, gz + 1). */
-    private static boolean hasSouth(long seed, int gx, int gz) {
+    static boolean hasSouth(long seed, int gx, int gz) {
         return !linksWest(seed, gx, gz + 1) || inRun(seed, gz, gx, 302);
     }
 
@@ -256,7 +320,7 @@ public final class Level2Layout extends LevelLayout {
         return i >= start && i < start + length;
     }
 
-    private static int degree(long seed, int gx, int gz) {
+    static int degree(long seed, int gx, int gz) {
         int n = 0;
         if (hasEast(seed, gx, gz)) n++;
         if (hasEast(seed, gx - 1, gz)) n++;
@@ -271,12 +335,12 @@ public final class Level2Layout extends LevelLayout {
     }
 
     /** East-west corridors: pipes along the north wall (true) or the south wall, per run. */
-    private static boolean pipesNorth(long seed, int gx, int gz) {
+    static boolean pipesNorth(long seed, int gx, int gz) {
         return Hash.unit(seed, Math.floorDiv(gx, RUN), gz, 304) < 0.5;
     }
 
     /** North-south corridors: pipes along the west wall (true) or the east wall, per run. */
-    private static boolean pipesWest(long seed, int gx, int gz) {
+    static boolean pipesWest(long seed, int gx, int gz) {
         return Hash.unit(seed, gx, Math.floorDiv(gz, RUN), 305) < 0.5;
     }
 
@@ -290,11 +354,19 @@ public final class Level2Layout extends LevelLayout {
         return hasSouth(seed, gx, gz) && Hash.unit(seed, gx, gz, 307) < 0.18;
     }
 
+    /** True if grid square (gx, gz) holds any utility room (see {@link #rockColumn}). */
+    static boolean hasUtilityRoom(long seed, int gx, int gz) {
+        return (roomOffEast(seed, gx, gz) && pipesNorth(seed, gx, gz))
+                || (roomOffEast(seed, gx, gz + 1) && !pipesNorth(seed, gx, gz + 1))
+                || (roomOffSouth(seed, gx, gz) && pipesWest(seed, gx, gz))
+                || (roomOffSouth(seed, gx + 1, gz) && !pipesWest(seed, gx + 1, gz));
+    }
+
     // ==========================================================================================
     // Columns
     // ==========================================================================================
 
-    private int column(long seed, int x, int z) {
+    int column(long seed, int x, int z) {
         int dx = exits().dx(seed, x, z);
         int dz = exits().dz(seed, x, z);
         if (Math.max(Math.abs(dx), Math.abs(dz)) <= EXIT_ROOM_RADIUS) {
@@ -304,10 +376,15 @@ public final class Level2Layout extends LevelLayout {
         if (safe != null && safe.contains(x, z)) {
             return safeColumn(safe, x, z);
         }
+        // An anomaly's own rooms and doors (anomalies never overlap exits or safe rooms).
+        int site = Level2AnomalyPlan.column(seed, x, z);
+        if (site >= 0) {
+            return site;
+        }
         return gridColumn(seed, x, z);
     }
 
-    private static int gridColumn(long seed, int x, int z) {
+    static int gridColumn(long seed, int x, int z) {
         // Junction rooms reach 2 blocks before their node, so look them up from (x + 2, z + 2).
         int nx = Math.floorDiv(x - JUNCTION_LOW, GRID);
         int nz = Math.floorDiv(z - JUNCTION_LOW, GRID);
@@ -419,6 +496,10 @@ public final class Level2Layout extends LevelLayout {
      * </pre>
      * Rooms are only on the plain side of a corridor, never behind its pipes. A square with a safe
      * room has no utility rooms (the safe room takes the rock).
+     *
+     * <p>A door spot without a room may instead hold a locked steel door with a pitch-black window
+     * (the void doors of https://backrooms-wiki.wikidot.com/level-2): trying it only rattles the
+     * handle. The rare one that opens is an anomaly site ({@link Level2AnomalyPlan}).
      */
     private static int rockColumn(long seed, int gx, int gz, int lx, int lz) {
         if (safeRoomIn(seed, gx, gz) != null) {
@@ -439,7 +520,28 @@ public final class Level2Layout extends LevelLayout {
         if (roomOffSouth(seed, gx + 1, gz) && !pipesWest(seed, gx + 1, gz)) {
             return utilityRoom(seed, gx, gz, 3, lx, lz, 11, 14, 9, 12, 15, 11, 11, 9, 11, 12, Direction.EAST);
         }
+        return lockedDoor(seed, gx, gz, lx, lz);
+    }
+
+    /** A locked black-window door at a free door spot of square (gx, gz) (FACING = into the rock), or ROCK. */
+    private static int lockedDoor(long seed, int gx, int gz, int lx, int lz) {
+        if (lx == 11 && lz == 3 && hasEast(seed, gx, gz) && pipesNorth(seed, gx, gz)) {
+            return lockedDoorRoll(seed, gx * 4, gz, Direction.SOUTH);
+        }
+        if (lx == 7 && lz == 15 && hasEast(seed, gx, gz + 1) && !pipesNorth(seed, gx, gz + 1)) {
+            return lockedDoorRoll(seed, gx * 4 + 1, gz, Direction.NORTH);
+        }
+        if (lx == 3 && lz == 8 && hasSouth(seed, gx, gz) && pipesWest(seed, gx, gz)) {
+            return lockedDoorRoll(seed, gx * 4 + 2, gz, Direction.EAST);
+        }
+        if (lx == 15 && lz == 11 && hasSouth(seed, gx + 1, gz) && !pipesWest(seed, gx + 1, gz)) {
+            return lockedDoorRoll(seed, gx * 4 + 3, gz, Direction.WEST);
+        }
         return ROCK;
+    }
+
+    private static int lockedDoorRoll(long seed, int spot, int gz, Direction intoRock) {
+        return Hash.unit(seed, spot, gz, 322) < LOCKED_DOOR_CHANCE ? withFacing(LOCKED_DOOR, intoRock) : ROCK;
     }
 
     /**
@@ -482,11 +584,11 @@ public final class Level2Layout extends LevelLayout {
     }
 
     /** Packs a column kind together with a facing (bits 4-6). */
-    private static int withFacing(int kind, Direction facing) {
+    static int withFacing(int kind, Direction facing) {
         return kind | (facing.get2DDataValue() << 4);
     }
 
-    private static int kindOf(int column) {
+    static int kindOf(int column) {
         return column & 15;
     }
 
@@ -500,18 +602,39 @@ public final class Level2Layout extends LevelLayout {
 
     @Override
     public void fillColumn(long seed, int x, int z, Column out) {
+        AnomalySite site = Level2AnomalyPlan.at(seed, x, z); // null almost everywhere
+        fillLevelColumn(seed, x, z, column(seed, x, z), site, out);
+        if (site != null) {
+            // The parts of an anomaly above or below the level: the void and its copy of the
+            // door, or the looping hallway over the tunnels.
+            Level2AnomalyPlan.fillOutside(this, seed, site, x, z, out);
+        }
+    }
+
+    /**
+     * The blocks of one column between floor and ceiling, for column code {@code code}. Also used
+     * (through a shifted {@code out}) to build the exact copies of the tunnel beside a void or loop
+     * door, so they always match the real thing.
+     *
+     * @param site the anomaly at (x, z), or null
+     */
+    void fillLevelColumn(long seed, int x, int z, int code, @Nullable AnomalySite site, Column out) {
         BlockState wall = ModBlocks.PIPE_WALL.get().defaultBlockState();
         int floor = floorY();
         int ceiling = ceilingY();
-        int code = column(seed, x, z);
         int kind = kindOf(code);
         if (kind == SAFE_OPEN || kind == SAFE_SOLID) {
             fillSafeRoom(seed, x, z, out);
             return;
         }
+        if (kind == SITE_OPEN || kind == SITE_SOLID) {
+            Level2AnomalyPlan.fillSiteColumn(this, site, x, z, out);
+            return;
+        }
         int dx = exits().dx(seed, x, z);
         int dz = exits().dz(seed, x, z);
         boolean inExitRoom = Math.max(Math.abs(dx), Math.abs(dz)) <= EXIT_ROOM_RADIUS;
+        boolean brownout = site != null && site.kind().equals(Level2Sites.BROWNOUT);
 
         out.set(ceiling, ModBlocks.PIPE_CEILING.get().defaultBlockState());
         out.set(floor, hasGrate(seed, x, z, kind, inExitRoom, dx, dz)
@@ -536,14 +659,32 @@ public final class Level2Layout extends LevelLayout {
                     .setValue(BlockStateProperties.HORIZONTAL_FACING, facingOf(code)));
             case LOCKER -> out.set(floor + 1, ModBlocks.SUPPLY_LOCKER.get().defaultBlockState()
                     .setValue(BlockStateProperties.HORIZONTAL_FACING, facingOf(code)));
+            case LOCKED_DOOR -> {
+                // Flush with the corridor wall (the door's slab sits on the corridor side), wall above.
+                BlockState door = ModBlocks.L2_VOID_DOOR.get().defaultBlockState()
+                        .setValue(DoorBlock.FACING, facingOf(code))
+                        .setValue(HouseDoorBlock.LOCKED, true);
+                out.set(floor + 1, door.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+                out.set(floor + 2, door.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+                out.set(floor + 3, wall);
+                out.set(floor + 4, wall);
+            }
             case PIPES -> fillPipes(seed, x, z, facingOf(code), out);
             default -> {
                 // Open floor: maybe a caged lamp up on the wall, or a tube in a room's ceiling.
                 Direction lamp = inExitRoom ? null : lampFacing(seed, x, z);
+                lamp = Level2AnomalyPlan.doorLamp(site, x, z, lamp); // a void/loop door keeps one lamp beside it
                 if (lamp != null) {
-                    out.set(ceiling - 1, ModBlocks.BULKHEAD_LAMP.get().defaultBlockState().setValue(WallLampBlock.FACING, lamp));
-                } else if (hasTube(seed, x, z, inExitRoom, dx, dz)) {
+                    // In a brownout nearly every bulb burst in the Blackout.
+                    BlockState bulb = brownout && !Level2AnomalyPlan.lampSurvives(seed, x, z)
+                            ? ModBlocks.L2_DEAD_LAMP.get().defaultBlockState()
+                            : ModBlocks.BULKHEAD_LAMP.get().defaultBlockState();
+                    out.set(ceiling - 1, bulb.setValue(WallLampBlock.FACING, lamp));
+                } else if (!brownout && hasTube(seed, x, z, inExitRoom, dx, dz)) {
                     out.set(ceiling - 1, ModBlocks.CEILING_TUBE.get().defaultBlockState().setValue(CeilingTubeBlock.AXIS, Direction.Axis.X));
+                }
+                if (brownout) {
+                    Level2AnomalyPlan.fillBrownout(this, seed, x, z, out);
                 }
             }
         }
@@ -575,6 +716,16 @@ public final class Level2Layout extends LevelLayout {
      */
     @Nullable
     private Direction lampFacing(long seed, int x, int z) {
+        return wallFixtureFacing(seed, x, z, 0, true);
+    }
+
+    /**
+     * Where something hangs on the plain wall of a corridor, one every LAMP_SPACING blocks: the
+     * way it faces, or null. {@code shift} slides the spots along the corridor (the brownout's
+     * emergency lights hang halfway between lamp spots); {@code litOnly} skips the dark stretches.
+     */
+    @Nullable
+    Direction wallFixtureFacing(long seed, int x, int z, int shift, boolean litOnly) {
         int gx = Math.floorDiv(x, GRID);
         int gz = Math.floorDiv(z, GRID);
         int lx = x - gx * GRID;
@@ -586,8 +737,8 @@ public final class Level2Layout extends LevelLayout {
             // East-west corridor: the plain wall is the side without pipes.
             int plainRow = pipesNorth(seed, gx, gz) ? WIDTH - 1 : 0;
             int phase = Hash.range(Hash.of(seed, gz, 0, 330), LAMP_SPACING);
-            if (lz != plainRow || Math.floorMod(x + phase, LAMP_SPACING) != 0
-                    || Hash.unit(seed, Math.floorDiv(x + phase, LIGHT_ZONE), gz, 331) < DARK_SHARE) {
+            if (lz != plainRow || Math.floorMod(x + phase + shift, LAMP_SPACING) != 0
+                    || (litOnly && Hash.unit(seed, Math.floorDiv(x + phase, LIGHT_ZONE), gz, 331) < DARK_SHARE)) {
                 return null;
             }
             facing = plainRow == 0 ? Direction.SOUTH : Direction.NORTH;
@@ -595,8 +746,8 @@ public final class Level2Layout extends LevelLayout {
         } else if (lx < WIDTH && lz >= WIDTH) {
             int plainCol = pipesWest(seed, gx, gz) ? WIDTH - 1 : 0;
             int phase = Hash.range(Hash.of(seed, gx, 0, 332), LAMP_SPACING);
-            if (lx != plainCol || Math.floorMod(z + phase, LAMP_SPACING) != 0
-                    || Hash.unit(seed, gx, Math.floorDiv(z + phase, LIGHT_ZONE), 333) < DARK_SHARE) {
+            if (lx != plainCol || Math.floorMod(z + phase + shift, LAMP_SPACING) != 0
+                    || (litOnly && Hash.unit(seed, gx, Math.floorDiv(z + phase, LIGHT_ZONE), 333) < DARK_SHARE)) {
                 return null;
             }
             facing = plainCol == 0 ? Direction.EAST : Direction.WEST;

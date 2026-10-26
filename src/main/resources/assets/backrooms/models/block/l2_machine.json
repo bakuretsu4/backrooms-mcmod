@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "backrooms:block/l2_machine_front",
+    "side": "backrooms:block/l2_machine_side",
+    "top": "backrooms:block/l2_machine_top"
+  }
+}

@@ -7651,10 +7651,22 @@ SOUNDS = [
 ]
 
 
+def anomaly_generators() -> list:
+    """Generator functions of tools/anomaly_assets/*.py (each module's TEXTURES + SOUNDS)."""
+    import importlib
+    import pkgutil
+    import anomaly_assets
+    fns = []
+    for info in sorted(pkgutil.iter_modules(anomaly_assets.__path__), key=lambda m: m.name):
+        module = importlib.import_module(f"anomaly_assets.{info.name}")
+        fns += list(getattr(module, "TEXTURES", [])) + list(getattr(module, "SOUNDS", []))
+    return fns
+
+
 def main() -> None:
     import sys
     filters = sys.argv[1:]
-    for fn in TEXTURES + SOUNDS:
+    for fn in TEXTURES + SOUNDS + anomaly_generators():
         if filters and not any(f in fn.__name__ for f in filters):
             continue
         fn()

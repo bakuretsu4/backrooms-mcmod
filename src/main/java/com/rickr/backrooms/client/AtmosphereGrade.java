@@ -25,13 +25,16 @@ import org.jetbrains.annotations.Nullable;
  * Switching level fades from one mood to the next over about two seconds instead of snapping.
  */
 public final class AtmosphereGrade {
-    /** One level's mood. Tints are multipliers (1, 1, 1 = no change); lift is the darkest colour. */
-    private record Mood(float exposure, float contrast, float saturation,
-                        float shR, float shG, float shB, float hiR, float hiG, float hiB,
-                        float liftR, float liftG, float liftB,
-                        float fogR, float fogG, float fogB, float fogStart, float fogDensity, float fogMax,
-                        float ao, float glow, float breath) {
-        Mood lerp(Mood o, float t) {
+    /**
+     * One mood. Tints are multipliers (1, 1, 1 = no change); lift is the darkest colour. Public so
+     * anomaly effects can ask for their own (see {@link #setAnomalyMood}).
+     */
+    public record Mood(float exposure, float contrast, float saturation,
+                       float shR, float shG, float shB, float hiR, float hiG, float hiB,
+                       float liftR, float liftG, float liftB,
+                       float fogR, float fogG, float fogB, float fogStart, float fogDensity, float fogMax,
+                       float ao, float glow, float breath) {
+        public Mood lerp(Mood o, float t) {
             return new Mood(l(exposure, o.exposure, t), l(contrast, o.contrast, t), l(saturation, o.saturation, t),
                     l(shR, o.shR, t), l(shG, o.shG, t), l(shB, o.shB, t), l(hiR, o.hiR, t), l(hiG, o.hiG, t), l(hiB, o.hiB, t),
                     l(liftR, o.liftR, t), l(liftG, o.liftG, t), l(liftB, o.liftB, t),
@@ -93,8 +96,40 @@ public final class AtmosphereGrade {
     @Nullable
     private static Mood current;
     private static long lastNanos;
+    @Nullable
+    private static Mood anomalyMood;
+    private static float anomalyWeight;
 
     private AtmosphereGrade() {}
+
+    /**
+     * An anomaly's own mood, mixed over the level's by {@code weight} (0..1). Client anomaly
+     * effects call this every tick while it should apply; it is cleared before each tick, and the
+     * picture eases back to the level's mood over a couple of seconds when nobody asks any more.
+     */
+    public static void setAnomalyMood(Mood mood, float weight) {
+        anomalyMood = mood;
+        anomalyWeight = Math.max(0.0f, Math.min(1.0f, weight));
+    }
+
+    public static void clearAnomalyMood() {
+        anomalyMood = null;
+        anomalyWeight = 0.0f;
+    }
+
+    /** The base mood of a level (for anomalies that want "the level's look, but..."). */
+    public static Mood levelMood(BackroomsLevel floor, Minecraft mc) {
+        return switch (floor) {
+            case LEVEL_0 -> LEVEL_0;
+            case LEVEL_1 -> LEVEL_1;
+            case LEVEL_2 -> LEVEL_2;
+            case LEVEL_4 -> LEVEL_4;
+            case POOLROOMS -> POOLROOMS;
+            case LEVEL_37 -> LEVEL_37;
+            case LEVEL_9 -> LEVEL_9;
+            case LEVEL_94 -> mc.level == null ? LEVEL_94_DAY : LEVEL_94_NIGHT.lerp(LEVEL_94_DAY, Level94Clock.daylight(mc.level, 0.0f));
+        };
+    }
 
     /** The mood the current level wants right now (Level 94 follows its own day/night clock). */
     private static Mood target(Minecraft mc) {
@@ -105,17 +140,8 @@ public final class AtmosphereGrade {
         if (floor == null) {
             return NEUTRAL;
         }
-        Mood mood = switch (floor) {
-            case LEVEL_0 -> LEVEL_0;
-            case LEVEL_1 -> LEVEL_1;
-            case LEVEL_2 -> LEVEL_2;
-            case LEVEL_4 -> LEVEL_4;
-            case POOLROOMS -> POOLROOMS;
-            case LEVEL_37 -> LEVEL_37;
-            case LEVEL_9 -> LEVEL_9;
-            case LEVEL_94 -> LEVEL_94_NIGHT.lerp(LEVEL_94_DAY, Level94Clock.daylight(mc.level, 0.0f));
-        };
-        return mood;
+        Mood mood = levelMood(floor, mc);
+        return anomalyMood == null ? mood : mood.lerp(anomalyMood, anomalyWeight);
     }
 
     /** Pushes this frame's mood into the camcorder shader. Call once per frame. */

@@ -46,4 +46,15 @@ public final class EnergyData {
         energy = MAX;
         exhausted = false;
     }
+
+    /**
+     * Uses up {@code amount} ticks of breath, the way running does (Level 2's hot zones wear you
+     * out even standing still). An empty bar means out of breath. Server side.
+     */
+    public void drain(int amount) {
+        energy = Math.max(0, energy - amount);
+        if (energy == 0) {
+            exhausted = true;
+        }
+    }
 }

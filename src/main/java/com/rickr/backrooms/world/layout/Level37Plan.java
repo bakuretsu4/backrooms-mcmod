@@ -4,7 +4,9 @@ import com.rickr.backrooms.block.CurveOrientation;
 import com.rickr.backrooms.block.CurveShape;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
+import com.rickr.backrooms.world.anomaly.AnomalySite;
 import java.util.Arrays;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The floor plan of Level 37 ("Sublimity") as plain numbers: for any column (x, z) it says what
@@ -38,6 +40,9 @@ import java.util.Arrays;
  *       of deep dark water; treads spiral down its wall into the water. Swim down and the current
  *       ({@code Level37Rules}) takes you below {@link Level37Layout#TRANSFER_BELOW_Y}.</li>
  * </ul>
+ * A few rooms and corridors are anomalous areas ({@link Level37AnomalyPlan}): a void opening in
+ * a slit-window wall, a dark opening in a pool room, a looping stretch of round tunnel. Their
+ * changes are made on top of the normal plan, column by column, from the same site answer.
  *
  * <h2>Heights</h2>
  * Floor layer y40, feet y41 (ankle-deep {@code SHALLOW_WATER} there on flooded floors). Deep
@@ -78,6 +83,8 @@ public final class Level37Plan {
     public static final int LIGHT = 12;
     /** Backpack of supplies: data = facing (2D index). */
     public static final int BACKPACK = 13;
+    /** Pitch-black walk-in darkness (a dark opening, see {@link Level37AnomalyPlan}). */
+    public static final int DARK = 14;
 
     public static int type(int code) {
         return code & 31;
@@ -87,7 +94,7 @@ public final class Level37Plan {
         return code >>> 5;
     }
 
-    private static int code(int type, int data) {
+    static int code(int type, int data) {
         return type | (data << 5);
     }
 
@@ -117,15 +124,15 @@ public final class Level37Plan {
     private static final int E2 = 3;
     private static final int DOWN3 = 0;
     private static final int NORTH3 = 2;
-    private static final int SOUTH3 = 3;
+    static final int SOUTH3 = 3;
     private static final int WEST3 = 4;
-    private static final int EAST3 = 5;
+    static final int EAST3 = 5;
 
     // ==========================================================================================
     // Heights
     // ==========================================================================================
-    private static final int FLOOR_Y = LevelLayout.FLOOR_Y;
-    private static final int FEET_Y = FLOOR_Y + 1;
+    static final int FLOOR_Y = LevelLayout.FLOOR_Y;
+    static final int FEET_Y = FLOOR_Y + 1;
     /** Solid tile from here up to the floor everywhere (deep pools reach down to y35). */
     private static final int FOUNDATION_Y = 33;
     /** Floor layer of the deep pools; their water fills y36-y40. */
@@ -150,7 +157,7 @@ public final class Level37Plan {
     // ==========================================================================================
     public static final int CELL = 24;
     /** Walls between cells are this thick (cell-local 0..2 on the west and north edges). */
-    private static final int BAND = 3;
+    static final int BAND = 3;
     /**
      * The middle of a cell, as a block CORNER coordinate (between cells 12 and 13): every circle
      * is centred on a block corner. Centred passages are 4 wide: cells 11..14.
@@ -167,9 +174,9 @@ public final class Level37Plan {
     private static final double SOLID_EDGE_SHARE = 0.3;
 
     // Room kinds (packed: bits 0-3 kind, bit 4 "along X", bits 5-8 variant, bits 9-13 height).
-    private static final int K_ROOM = 0;
-    private static final int K_POOL = 1;
-    private static final int K_CORRIDOR = 2;
+    static final int K_ROOM = 0;
+    static final int K_POOL = 1;
+    static final int K_CORRIDOR = 2;
     private static final int K_HALL = 3;
     private static final int K_ROTUNDA = 4;
     private static final int K_TUNNEL = 5;
@@ -177,15 +184,15 @@ public final class Level37Plan {
     private static final int K_PIT = 7;
     private static final int COR_SLITS = 0;
     private static final int COR_SKY = 1;
-    private static final int COR_VAULT = 2;
+    static final int COR_VAULT = 2;
     private static final int HALL_FOREST = 0;
     private static final int HALL_COLONNADE = 1;
 
     // Edges between cells: the one on a cell's west side, and on its north side.
-    private static final int WEST = 0;
-    private static final int NORTH = 1;
-    private static final int E_SOLID = 0;
-    private static final int E_ARCH = 1;
+    static final int WEST = 0;
+    static final int NORTH = 1;
+    static final int E_SOLID = 0;
+    static final int E_ARCH = 1;
     /** Two corridors meeting end to end: the corridor just runs on through the wall. */
     private static final int E_JOIN = 2;
     /** Inside one hall: no wall. */
@@ -193,8 +200,8 @@ public final class Level37Plan {
 
     // Results of the shape tests: cell fully inside the circle / rectangle (open), fully outside
     // (solid), otherwise a curved piece id (shape | orientation << 6).
-    private static final int C_IN = -1;
-    private static final int C_OUT = -2;
+    static final int C_IN = -1;
+    static final int C_OUT = -2;
     private static final int NONE = -3;
 
     /** One exit pit per 168 x 168 blocks (7 x 7 cells), never in a region's outer cells. */
@@ -204,17 +211,23 @@ public final class Level37Plan {
     // Public queries
     // ==========================================================================================
 
-    /** Fills {@code out} (indexed by y, 0..63) with the codes of column (x, z). */
-    public void column(long seed, int x, int z, int[] out) {
+    /**
+     * Fills {@code out} (indexed by y, 0..63) with the codes of column (x, z). {@code site} is the
+     * anomalous area covering the column (from {@link Level37AnomalyPlan}), or null.
+     */
+    public void column(long seed, int x, int z, @Nullable AnomalySite site, int[] out) {
         Col c = new Col();
-        plan(seed, x, z, c);
+        plan(seed, x, z, site, c);
         write(c, out);
+        if (site != null) {
+            Level37AnomalyPlan.build(site, x, z, out);
+        }
     }
 
     /** True when you can stand at feet level (y41) in column (x, z): solid floor, two free blocks. */
-    public boolean isWalkable(long seed, int x, int z) {
+    public boolean isWalkable(long seed, int x, int z, @Nullable AnomalySite site) {
         int[] out = new int[64];
-        column(seed, x, z, out);
+        column(seed, x, z, site, out);
         int floor = type(out[FLOOR_Y]);
         int feet = type(out[FEET_Y]);
         int head = type(out[FEET_Y + 1]);
@@ -239,15 +252,15 @@ public final class Level37Plan {
         return kind | (alongX ? 16 : 0) | (variant << 5) | (height << 9);
     }
 
-    private static int kind(int room) {
+    static int kind(int room) {
         return room & 15;
     }
 
-    private static boolean alongX(int room) {
+    static boolean alongX(int room) {
         return (room & 16) != 0;
     }
 
-    private static int variant(int room) {
+    static int variant(int room) {
         return (room >> 5) & 15;
     }
 
@@ -287,7 +300,7 @@ public final class Level37Plan {
         return true;
     }
 
-    private static int room(long seed, int cx, int cz) {
+    static int room(long seed, int cx, int cz) {
         if (isPitCell(seed, cx, cz)) {
             return pack(K_PIT, false, 0, 6);
         }
@@ -329,15 +342,15 @@ public final class Level37Plan {
         return state | (start << 2) | (width << 7) | (spring << 10) | (vault ? 1 << 17 : 0);
     }
 
-    private static int edgeState(int edge) {
+    static int edgeState(int edge) {
         return edge & 3;
     }
 
-    private static int edgeStart(int edge) {
+    static int edgeStart(int edge) {
         return (edge >> 2) & 31;
     }
 
-    private static int edgeWidth(int edge) {
+    static int edgeWidth(int edge) {
         return (edge >> 7) & 7;
     }
 
@@ -359,7 +372,7 @@ public final class Level37Plan {
     }
 
     /** The wall between cell (cx, cz) and its neighbour to the west or north. */
-    private static int edge(long seed, int cx, int cz, int side) {
+    static int edge(long seed, int cx, int cz, int side) {
         int ncx = side == WEST ? cx - 1 : cx;
         int ncz = side == WEST ? cz : cz - 1;
         int a = room(seed, cx, cz);
@@ -432,7 +445,7 @@ public final class Level37Plan {
      * Cell of an arch: {@code a} = the cell's offset across the opening from its middle corner,
      * {@code j} = height above the spring line. C_IN = open, C_OUT = solid, else an arch piece.
      */
-    private static int arch(int a, int j, int radius, boolean alongX) {
+    static int arch(int a, int j, int radius, boolean alongX) {
         int i = a >= 0 ? a : -a - 1;
         if (i >= radius) {
             return C_OUT;
@@ -582,7 +595,7 @@ public final class Level37Plan {
         }
     }
 
-    private void plan(long seed, int x, int z, Col c) {
+    private void plan(long seed, int x, int z, @Nullable AnomalySite site, Col c) {
         int cx = Math.floorDiv(x, CELL);
         int cz = Math.floorDiv(z, CELL);
         int lx = Math.floorMod(x, CELL);
@@ -601,12 +614,24 @@ public final class Level37Plan {
             c.solid(false); // the post where four walls meet
             return;
         }
+        // A looping tunnel (see Level37AnomalyPlan) is a sealed tube: no side passage may open into
+        // it, or the stretches it swaps you between would not look the same. (Its side walls stay
+        // solid; a neighbour's passage toward it just ends in a blind arch.)
+        boolean sealed = site != null && site.kind().equals(Level37AnomalyPlan.LOOPING_TUNNEL);
         if (lx < BAND) {
-            band(seed, cx, cz, WEST, lz, c);
+            if (sealed && !alongX(room)) {
+                c.solid(false);
+            } else {
+                band(seed, cx, cz, WEST, lz, c);
+            }
             return;
         }
         if (lz < BAND) {
-            band(seed, cx, cz, NORTH, lx, c);
+            if (sealed && alongX(room)) {
+                c.solid(false);
+            } else {
+                band(seed, cx, cz, NORTH, lx, c);
+            }
             return;
         }
         switch (kind(room)) {
@@ -617,7 +642,9 @@ public final class Level37Plan {
             case K_POOL -> pool(seed, cx, cz, lx, lz, room, c);
             default -> room(seed, cx, cz, lx, lz, room, c);
         }
-        lanes(seed, cx, cz, lx, lz, room, c);
+        if (!sealed) {
+            lanes(seed, cx, cz, lx, lz, room, c);
+        }
     }
 
     /** A column of the 3-thick wall on a cell's west or north edge. */
@@ -753,10 +780,16 @@ public final class Level37Plan {
 
     // ---- Ordinary room ------------------------------------------------------------------------
 
+    /** The side (0 W, 1 E, 2 N, 3 S) of an ordinary room that has the tall slit windows, or -1. */
+    static int roomSlitSide(long seed, int cx, int cz) {
+        long h = Hash.of(seed, cx, cz, 3720);
+        return Hash.unit(h) < 0.55 ? Hash.range(Hash.mix(h), 4) : -1;
+    }
+
     private static void room(long seed, int cx, int cz, int lx, int lz, int room, Col c) {
         long h = Hash.of(seed, cx, cz, 3720);
         int ceil = FEET_Y + height(room);
-        int slitSide = Hash.unit(h) < 0.55 ? Hash.range(Hash.mix(h), 4) : -1;
+        int slitSide = roomSlitSide(seed, cx, cz);
         int waveSide = Hash.unit(Hash.mix(h ^ 1)) < 0.4 ? Hash.range(Hash.mix(h ^ 2), 4) : -1;
         if (waveSide == slitSide) {
             waveSide = -1;
@@ -842,10 +875,16 @@ public final class Level37Plan {
 
     // ---- Pool room ----------------------------------------------------------------------------
 
+    /** The side (0 W, 1 E, 2 N, 3 S) of a pool room with the square windows high up, or -1. */
+    static int poolWindowSide(long seed, int cx, int cz) {
+        long h = Hash.of(seed, cx, cz, 3725);
+        return Hash.unit(h) < 0.6 ? Hash.range(Hash.mix(h), 4) : -1;
+    }
+
     private static void pool(long seed, int cx, int cz, int lx, int lz, int room, Col c) {
         long h = Hash.of(seed, cx, cz, 3725);
         int ceil = FEET_Y + height(room);
-        int windowSide = Hash.unit(h) < 0.6 ? Hash.range(Hash.mix(h), 4) : -1;
+        int windowSide = poolWindowSide(seed, cx, cz);
         int x0 = windowSide == 0 ? 5 : BAND;
         int x1 = windowSide == 1 ? CELL - 3 : CELL - 1;
         int z0 = windowSide == 2 ? 5 : BAND;

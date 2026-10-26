@@ -1,6 +1,7 @@
 package com.rickr.backrooms.client.water;
 
 import com.rickr.backrooms.world.BackroomsLevel;
+import com.rickr.backrooms.world.layout.PoolroomsLayout;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
@@ -69,6 +70,18 @@ public record WaterStyle(int shallowColor, float shallowAlpha, int deepColor, fl
             0.6f, 0.9f, SUN_DIR_37, SUN_COLOR_37, 0.8f,
             1.2f, 0.55f, 0.85f);
 
+    /**
+     * The Sanguine Reservoir (the Poolrooms' red copy, see PoolroomsLayout): dark red water lit
+     * only by red lamps. Wikidot Level 37.1: "a red tint in the water". Murky: short fog, the deep
+     * colour almost black-red, weak caustics, darker than the room light; the ripples are slow
+     * and heavy ("viscous").
+     */
+    public static final WaterStyle SANGUINE = new WaterStyle(
+            0x8A2424, 0.30f, 0x2A0606, 0.95f, 3.5f,
+            0x3A0A0A, 9.0f, 0x2A1C1C, 0.35f,
+            0.45f, 0.7f, STRAIGHT_DOWN, 0xFFD0C8, 0.0f,
+            1.2f, 0.85f, 0.8f);
+
     /** The water look of a level, or null when that level keeps plain vanilla water. */
     @Nullable
     public static WaterStyle forLevel(@Nullable BackroomsLevel level) {
@@ -80,6 +93,12 @@ public record WaterStyle(int shallowColor, float shallowAlpha, int deepColor, fl
             case LEVEL_37 -> LEVEL_37;
             default -> null;
         };
+    }
+
+    /** The water look at world column x of a level: the Poolrooms' Reservoir has its own red water. */
+    @Nullable
+    public static WaterStyle at(@Nullable BackroomsLevel level, double x) {
+        return level == BackroomsLevel.POOLROOMS && PoolroomsLayout.inReservoir(x) ? SANGUINE : forLevel(level);
     }
 
     static float red(int rgb) {

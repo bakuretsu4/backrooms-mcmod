@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/carpet_fluid"
+      },
+      {
+        "model": "backrooms:block/carpet_fluid",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/carpet_fluid",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/carpet_fluid",
+        "y": 270
+      }
+    ]
+  }
+}

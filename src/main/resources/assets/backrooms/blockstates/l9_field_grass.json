@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l9_field_grass"
+      },
+      {
+        "model": "backrooms:block/l9_field_grass",
+        "y": 90
+      }
+    ]
+  }
+}

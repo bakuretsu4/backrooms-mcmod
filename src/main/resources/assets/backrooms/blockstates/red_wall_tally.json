@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/red_wall_tally"
+    },
+    "facing=east": {
+      "model": "backrooms:block/red_wall_tally",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/red_wall_tally",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/red_wall_tally",
+      "y": 270
+    }
+  }
+}

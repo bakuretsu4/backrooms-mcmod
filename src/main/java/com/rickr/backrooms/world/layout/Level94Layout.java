@@ -2,6 +2,9 @@ package com.rickr.backrooms.world.layout;
 
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.ExitLocator;
+import com.rickr.backrooms.world.anomaly.AnomalySite;
+import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,6 +27,9 @@ import org.jetbrains.annotations.Nullable;
  * <p>Ways out: rare dark-door houses (one per {@value #EXIT_REGION}-block square, found with
  * {@code /backrooms locate}) lead to Level 9; the light behind the castle's throne leads to
  * Level 1. Both are handled in {@code Level94Rules}.
+ *
+ * <p>Anomalies (furniture drift on the hills, the wandering door and the blinding hall in the
+ * castle) are placed by {@link Level94AnomalyPlan}.
  */
 public final class Level94Layout extends LevelLayout {
     /** World height: hills reach ~y66, the glass mountain and castle go up to ~y215. */
@@ -59,6 +65,7 @@ public final class Level94Layout extends LevelLayout {
             for (int y = DIRT_BOTTOM_Y; y < FLOOR_Y; y++) out.set(y, dirt);
             out.set(FLOOR_Y, grass(plan.shade[i]));
             Level94Castle.fillColumn(seed, x, z, out);
+            Level94AnomalyPlan.castleColumn(seed, x, z, out);
             return;
         }
         int half = plan.top[i];
@@ -173,6 +180,28 @@ public final class Level94Layout extends LevelLayout {
         Level94Houses.House h = Level94Plan.darkHouse(seed, rx, rz).house;
         int mid = h.mid();
         return new int[] {h.worldX(mid, -1), h.worldZ(mid, -1)};
+    }
+
+    @Override
+    @Nullable
+    public AnomalySite anomalyAt(long seed, int x, int z) {
+        return Level94AnomalyPlan.at(seed, x, z);
+    }
+
+    @Override
+    public void anomaliesNear(long seed, int x, int z, int radius, Consumer<AnomalySite> out) {
+        Level94AnomalyPlan.near(seed, x, z, radius, out);
+    }
+
+    @Override
+    @Nullable
+    public AnomalySite nearestAnomaly(long seed, int x, int z, String kind) {
+        return Level94AnomalyPlan.nearest(seed, x, z, kind);
+    }
+
+    @Override
+    public List<String> anomalyKinds() {
+        return Level94AnomalyPlan.KINDS;
     }
 
     /**

@@ -206,6 +206,63 @@ light on and the sign over the front door.
   real world.
 - Dying in the Backrooms: *you can't escape.*
 
+### Anomalous areas
+
+Every level has its own strange places, taken from that level's own lore on the Backrooms wiki
+(nothing borrowed from another level). They are built into the map where they belong, rarer than
+the ordinary rooms, and most of them only change when nobody is looking. Their positions come from
+the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout builds them,
+`AnomalyService` runs their behaviour on the server and tells clients which ones are near).
+
+**Level 0**
+- **Red Rooms:** Sometimes the wallpaper starts peeling, there's crimson underneath, and the carpet grabs at your shoes. Turn the corner and you're in darkroom-red rooms that hum like a klaxon, and the way you came in is gone. Count the loops; Level 0 has its own way of letting people go.
+- **Blackout Zones:** Patches of the maze where every light is dead, the walls are rough and the carpet is flooded. The buzz you hear seems to lead the way out, but it never stays in one place.
+- **The Manila Room:** A very rare brown wall with a wooden door. Behind it is a quiet beige room with a table, two chairs, supplies and notes from volunteers, and a piano playing from nowhere. Read the notes: the way to Level 1 is close.
+- **Shifting pillar halls:** Big bright halls full of pillars that are never quite where they were when you look back. Only the pale arches in the middle stay put.
+- **Pit rooms:** A room whose floor is a grid of pitch-black shafts. Don't fall in. You will land, hurt, somewhere very far away.
+
+**Level 1**
+- **Crate halls:** In some of the open garage halls, rows of orange storage racks stand in a brighter, better-lit hall. Wooden crates turn up there: you hear something settle behind you, and there is a crate that wasn't there before. When the lights fail, the crates are gone; when the power comes back, new ones are waiting. Not everything inside is worth taking.
+- **Painting rooms:** Off the narrow maze corridors, a small closed room is covered in crude paintings and drawings. Look away, or wait for the lights to go out, and they are not the pictures you remember, if they are there at all.
+- **Fog patches:** Here and there a low, sourceless fog lies along the floor, the air turns grey and damp, and puddles of condensation gather and dry up again in places you weren't looking. Listen for the drips.
+- **The Corrupted Corridor (Level 1.1):** Very rarely, a doorway in a garage wall opens onto a long white-cinderblock corridor with a blue tiled floor. The further you go the worse it gets: the colours go wrong, the same stretch of hallway seems to repeat, the dark swallows your light, and the walls turn black and white and won't hold still. At the very end, a light beckons.
+
+**Level 2**
+- **Series circuits:** The caged lamps are wired in series. Now and then a circuit gives out with a sharp pop, and a whole patch of tunnel goes dark at once, sometimes for nearly a minute, before the lamps stutter back to life.
+- **Brownouts:** Some sections never recovered from the Blackout. Almost every bulb is burst, the machines are silent, and only a few violet emergency lights still glow. Burst pipes have left pools of thick black sludge that clings to your boots.
+- **Hot zones:** At the dead ends of some corridors the machinery is loudest. Faulty machines whir and steam hisses from leaking pipes. The heat slows you down, wears you out and makes you hungry fast, and if you stay too long it starts to hurt.
+- **Void doors:** Some doors have pitch-black windows and won't open. The rare one that does leads into an endless, silent, lightless space where the doorway behind you is the only light. Don't lose sight of it.
+- **Looping hallway:** A few office doors open onto a long, plain, fluorescent-lit hallway. However far you walk, you keep passing the same door you came in by.
+
+**Level 4**
+- **Looping stairwells:** Grey stair cores stand in some open-plan floors. However far you climb or descend, the sign on the landing always says 4, and somewhere far away you hear footsteps that never arrive. Once in a while the stairs let you out somewhere else.
+- **The Window:** Most windows show the storm, but very rarely one is clear: a blurry, sunny place that feels like somewhere you've been. If the panes around a window are taped over with cardboard, there's a reason. Don't get close, and don't listen.
+- **Vanishing elevators:** In some lobbies one elevator stands open and lit. Look away and it may not be where you left it. Step in and it will take you somewhere that looks exactly like here.
+- **Level 4.3, "The Cubicles":** A dim white series of hallways leads to an endless cubicle field in white fog, full of the sounds of people working whom you never see. The longer you stay, the harder it is to leave. Walk back the way you came.
+
+**The Poolrooms (and Level 37's water)**
+- **Sound in the pools:** In the Poolrooms and Level 37, footsteps and voices die out a few blocks away and everything sounds muffled; only the water stays clear. Every so often the water grows loud and close, drowning out everything else for half a minute.
+- **Dark corners:** Some lit rooms have a corner that no light reaches: a small nook of dark, ankle-deep water behind a tiled screen, with faint chanting drifting out of it. Stay inside too long and the light drains away, and you may find yourself somewhere that looks exactly the same, but red, where the water holds on to you and the chanting never stops. The only way on from there is down a drain.
+- **Stair pits:** Some rooms are one deep, dark flooded shaft, with a staircase running straight down into the water. Down there your breath runs out fast and currents drag you around. The stairs are always the way back up.
+
+**Level 37**
+- **Void openings:** In a few slit-window walls two slits have merged into one wider gap above a knee-high ledge, with dazzling white right behind it. The closer you get, the brighter and louder it grows, and the worse you feel. Those who climb in and stand in the white wake somewhere dark in the Lobby, shaken.
+- **Dark openings:** Rarely, a dim corner of a pool deck holds a round arch framed in dark tile and filled with absolute darkness, breathing cold air. Walk into it and the world fades to black; you come back out in the Poolrooms.
+- **Looping tunnels:** Some of the long dark round tunnels don't end. Keep walking and you keep passing the same stretch, the same drip, while the light fades a little each time. Turn around and you walk straight out; persist and it eventually lets you through.
+- **Healing water:** Level 37's warm water soothes. Standing or swimming in it slowly heals you and brings your sanity back, fastest in the deep pools; dry tile only calms you a little.
+
+**Level 9**
+- **The Mangled's fog:** Sometimes the air turns ice cold before the fog rolls in, and the streetlamps go silent. Somewhere down the street a black pillar rises into the sky, and booms roll out of the fog. When the fog lifts the pillar is gone, and the road where it stood has a crater in it.
+- **Clipped houses:** Now and then two houses have grown into each other. Walls run through the middle of rooms, furniture sticks out of walls, and there are two front doors. Some of the walls in there aren't quite solid.
+- **Twin houses:** Two identical houses stand side by side. Leave one by its back door and you may find you aren't where you think you are. The front door always leads out.
+- **Grass walkways and Level 9.1:** Rarely, a paved path runs between two houses and on into the woods, getting colder as it goes, to a clearing of tall grass. Stand in the middle of the clearing and you are in the Crimson Field: endless grass at night under a red glow that pulses on the horizon. Don't walk toward the glow. To get home, follow the path back to where it started; the rare foxhole hatches in the ground lead elsewhere, one way only.
+
+**Level 94**
+- **Furniture drift:** The closer you get to the castle, the less of the houses is left: whole houses on the far hills, single rooms nearer in, and closest of all only heaps of furniture, which turn towards the castle when nobody is looking. Check the sinks.
+- **The wandering door:** Somewhere on the castle's plateau or inside it stands a door with no wall around it. Look away and it may be somewhere else. Everyone who walks through it ends up in the same place.
+- **The blinding hall:** Upstairs in the castle, behind the looping hall, is a hall so bright it whites out your eyes. Nothing chasing you can keep track of you in there.
+- **Supplies:** The town fountain flows with Almond Water, the water towers have a tap at their base, and every milk van has a crate of Almond Milk at its back doors.
+
 ### The camcorder picture
 
 Everything you see in the Backrooms is filmed: a gentle wide lens, worn VHS tape (faint line
@@ -261,7 +318,9 @@ saturation, hiss and a big, empty room.
 /backrooms battery [players] [percent]  set camcorder battery
 /backrooms locate                       where is the nearest exit?
 /backrooms locate saferoom              where is the nearest safe room?
-/backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|end> [seconds]
+/backrooms anomaly here                 which anomalous area am I standing in?
+/backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)?
+/backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|end> [seconds]
 /backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
 /backrooms sanity [players] <0-100>     set sanity (test the low-sanity effects)
 /backrooms spawn bacteria [count]       spawn Bacteria ~12 blocks in front of you (they only hunt survival players)
@@ -304,7 +363,9 @@ Keys are `[seconds, x, eye height, z, yaw, pitch]`. The HUD is hidden while reco
 | Package | What lives there |
 |---|---|
 | `world` | Level definitions, the infinite chunk generator, exits, travel, floor events, safe rooms (`SafeRooms`) |
-| `world/layout` | One floor plan per level (pure functions of seed + x/z); Level 37's plan is integer codes (`Level37Plan`) turned into blocks by `Level37Layout` |
+| `world/layout` | One floor plan per level (pure functions of seed + x/z); Level 37's plan is integer codes (`Level37Plan`) turned into blocks by `Level37Layout`; each level's anomalous areas are planned in `<Level>AnomalyPlan` |
+| `world/anomaly` | Anomalous areas: site planner (`AnomalyGrid`), behaviour registry (`Anomalies`), server driver and client sync (`AnomalyService`), seamless teleports (`Teleports`), "is anyone looking?" (`Observation`); one sub-package per level |
+| `client/anomaly` | Client side of the anomalous areas: which sites are near (`AnomalyClientState`), per-level picture moods, sounds and overlays; one sub-package per level |
 | `entity` | The Bacteria and its spawner |
 | `camera` | Camcorder battery/flashlight/NightShot server rules, flashlight sync |
 | `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`) |
@@ -313,9 +374,10 @@ Keys are `[seconds, x, eye height, z, yaw, pitch]`. The HUD is hidden while reco
 | `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
 | `client/water` | Pool water: surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), underwater fog (`UnderwaterView`) |
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`) |
-| `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`) |
+| `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`); lets anomaly teleports update the server's movement check (`ServerGamePacketListenerAccessor`) |
 | `client/camera` | Handheld camera shake, roll, smoothing |
 | `client/hud` | Minimal HUD, energy bolt |
 | `client/trailer` | Dev-only trailer camera and frame recorder (`TrailerRecorder`, off unless started with `-Dbackrooms.trailerDir`) |
 | `client` | Camcorder post-shader control, per-level picture mood (`AtmosphereGrade`), overlay, Bacteria model/renderer, keys |
 | `assets/backrooms/shaders` | Lens, bloom, motion blur, contact shadows, distance haze, glow and grade post-processing |
+| `tools/gen_assets.py`, `tools/anomaly_assets` | Every texture and sound, generated in code; the anomalous areas' assets live in one module per level, loaded by `gen_assets.py` |

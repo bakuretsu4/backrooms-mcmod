@@ -97,6 +97,14 @@ final class FixtureSounds {
                 sounds.play(hum);
             }
             hum.target = Math.min(1.0f, light.level);
+            if (light.type.hum == FixtureType.Hum.SODIUM) {
+                // Level 9: the streetlamps' buzz cuts out while the Mangled's fog is thick.
+                hum.target *= com.rickr.backrooms.client.Level9Atmosphere.lampHumScale(System.currentTimeMillis());
+            }
+            if (light.type.hum == FixtureType.Hum.FLUORESCENT) {
+                // Level 0: the tube hum fades away as you come near the Manila Room.
+                hum.target *= com.rickr.backrooms.client.anomaly.level0.Level0AnomalyEffects.fixtureHumScale();
+            }
         }
         // Release hums that are no longer among the nearest lit lamps.
         var it = HUMS.long2ObjectEntrySet().fastIterator();
@@ -163,6 +171,16 @@ final class FixtureSounds {
         float pitch = 0.9f + RANDOM.nextFloat() * 0.2f;
         sounds.play(new SimpleSoundInstance(ModSounds.LIGHT_BLINK.get(), SoundSource.BLOCKS,
                 0.55f, pitch, RANDOM, light.soundX, light.soundY, light.soundZ));
+    }
+
+    /**
+     * Level 2: a series circuit just failed. One sharp electrical pop and fizz at (the nearest lamp
+     * of) the circuit; it carries a little further than the hum (sounds.json: 24 blocks).
+     */
+    static void circuitPop(FixtureLight light) {
+        float pitch = 0.85f + RANDOM.nextFloat() * 0.3f;
+        Minecraft.getInstance().getSoundManager().play(new SimpleSoundInstance(ModSounds.L2_CIRCUIT_POP.get(), SoundSource.BLOCKS,
+                0.9f, pitch, RANDOM, light.soundX, light.soundY, light.soundZ));
     }
 
     /** Silences every hum at once (dimension change, logout). */

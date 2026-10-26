@@ -28,8 +28,10 @@ public record LevelEventPayload(int kind, int remainingTicks, int elapsedTicks) 
     /** Level 2 only: the world tilts (camera roll) for ~20 s while radios hiss. */
     public static final int TWIST = 6;
     /**
-     * Level 9 only: thick fog rolls in over ~6 s (you see ~12 blocks), something huge rumbles
-     * far away in it a few times, then it clears again before the event ends.
+     * Level 9 only, the Mangled's fog: a sudden cold (frost, your breath), then thick fog rolls in
+     * over ~6 s (you see ~12 blocks) and the lamps fall silent; something huge rumbles far away,
+     * a black pillar may rise down a street with booms and a garbled voice (see
+     * {@link Level9PillarPayload}); it clears again before the event ends.
      */
     public static final int FOG_ROLL = 7;
     /**
@@ -42,6 +44,12 @@ public record LevelEventPayload(int kind, int remainingTicks, int elapsedTicks) 
      * flash cold white a couple of times, and the thunder rolls in a second or two later.
      */
     public static final int STORM = 9;
+    /**
+     * The Poolrooms and Level 37 only: the water turns "obtrusive" (both wikis, Level 37) and
+     * drowns out every other sound for a while (client/anomaly/poolrooms/PoolAcoustics). Numbered
+     * apart from the others so new events added for other levels never clash with it.
+     */
+    public static final int OBTRUSIVE_WATER = 37;
 
     public static final Type<LevelEventPayload> TYPE = new Type<>(Backrooms.id("level_event"));
     public static final StreamCodec<ByteBuf, LevelEventPayload> STREAM_CODEC = StreamCodec.composite(

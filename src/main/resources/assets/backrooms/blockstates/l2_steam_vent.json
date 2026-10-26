@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l2_steam_vent"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l2_steam_vent",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l2_steam_vent",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l2_steam_vent",
+      "y": 270
+    }
+  }
+}

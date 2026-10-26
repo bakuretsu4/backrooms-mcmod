@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "backrooms:block/l9_crater_asphalt_slab"
+    },
+    "type=top": {
+      "model": "backrooms:block/l9_crater_asphalt_slab_top"
+    },
+    "type=double": {
+      "model": "backrooms:block/l9_crater_asphalt"
+    }
+  }
+}

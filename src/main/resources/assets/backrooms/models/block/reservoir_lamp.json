@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "backrooms:block/reservoir_lamp",
+    "side": "backrooms:block/reservoir_tile",
+    "top": "backrooms:block/reservoir_tile",
+    "particle": "backrooms:block/reservoir_tile"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "backrooms:block/l94_milk_crate_empty",
+    "crate": "backrooms:block/l94_milk_crate_empty",
+    "inside": "backrooms:block/l94_milk_crate_inside"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        0,
+        2
+      ],
+      "to": [
+        14,
+        8,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#crate"
+        },
+        "south": {
+          "texture": "#crate"
+        },
+        "east": {
+          "texture": "#crate"
+        },
+        "west": {
+          "texture": "#crate"
+        },
+        "up": {
+          "texture": "#inside"
+        },
+        "down": {
+          "texture": "#crate"
+        }
+      }
+    }
+  ]
+}

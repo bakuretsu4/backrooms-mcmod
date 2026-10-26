@@ -13,6 +13,7 @@ import com.rickr.backrooms.world.LevelEvents;
 import com.rickr.backrooms.world.Level94Clock;
 import com.rickr.backrooms.world.SafeRooms;
 import com.rickr.backrooms.world.Travel;
+import com.rickr.backrooms.world.anomaly.level37.HealingWater;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -35,6 +36,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *       during a blackout. Standing next to a friend in the light slowly restores it instead.</li>
  *   <li>Level 94 has its own day/night rules instead ({@link #level94Change}): it recovers in a
  *       house by day and drains slowly outside at night.</li>
+ *   <li>Level 37 itself never drains it: a small trickle back anywhere, more while you stand or
+ *       swim in its water ({@link HealingWater}).</li>
  * </ul>
  * The client only displays it ({@link SanityClientState}) and does the scary stuff on its own.
  * Creative and spectator players are never affected.
@@ -56,8 +59,6 @@ public final class SanityService {
     private static final float SAFE_ROOM_RECOVERY = 1.0f;
     private static final float COMPANY_RECOVERY = 0.15f;
     private static final float OUTSIDE_RECOVERY = 0.5f;
-    /** Level 37 ("Sublimity") is calming everywhere: warm light, still water, nothing hunting you. */
-    private static final float LEVEL_37_RECOVERY = 0.6f;
     /** Level 94: indoors (a house) by day you get your breath back; at night you only hold steady. */
     private static final float LEVEL_94_HOUSE_RECOVERY = 0.6f;
     /** Level 94: out on the hills at night it slowly wears you down (about -45 over a night). */
@@ -146,7 +147,7 @@ public final class SanityService {
             return SAFE_ROOM_RECOVERY; // the hum stops, the lamp is warm: you can breathe
         }
         if (BackroomsLevel.fromDimension(player.level().dimension()) == BackroomsLevel.LEVEL_37) {
-            return LEVEL_37_RECOVERY; // even in its dark tunnels: the whole level is calm
+            return HealingWater.sanityPerSecond(player); // calm everywhere, the water most of all
         }
         boolean dark = isDark(player);
         boolean company = !dark && otherPlayerWithin(player, COMPANY_RANGE);

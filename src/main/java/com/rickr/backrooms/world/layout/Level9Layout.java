@@ -10,6 +10,10 @@ import com.rickr.backrooms.block.StreetlampHeadBlock;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
+import com.rickr.backrooms.world.anomaly.AnomalySite;
+import com.rickr.backrooms.world.anomaly.level9.Level9Sites;
+import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
@@ -66,6 +70,12 @@ import org.jetbrains.annotations.Nullable;
  * front door (outside and inside), the door unlocked, and in the living room a checkpoint radio,
  * a supply crate, a made cot and a warm lamp. The whole house counts as the safe room. Now and
  * then someone's backpack lies on a porch or a driveway.
+ *
+ * <p><b>Anomalies</b> ({@link Level9AnomalyPlan}, kinds in {@link Level9Sites}): clipped houses
+ * (two houses grown into each other), twin houses (leave one by its back door and you are in the
+ * other one's front hall), and rare grass walkways between houses that lead out of the suburb to
+ * Level 9.1, the Crimson Field. The field is part of this same dimension, far to the east
+ * (x &gt;= {@link Level9Sites#FIELD_MIN_X}): {@link #fillColumn} builds endless grass there.
  */
 public final class Level9Layout extends LevelLayout {
     // ---- Streets -----------------------------------------------------------------------------
@@ -78,7 +88,7 @@ public final class Level9Layout extends LevelLayout {
     /** Side streets: road half-width (7 wide). Main streets are 7 or 9 wide. */
     private static final int SIDE_HALF = 3;
     /** Sidewalk width on each side of every road. */
-    private static final int SW = 2;
+    static final int SW = 2;
     private static final int STUB_LEN = 26;
     private static final int BULB_R = 8;
     /** Roundabouts: island radius (curb ring) and road radius. */
@@ -89,8 +99,8 @@ public final class Level9Layout extends LevelLayout {
 
     // ---- Lots --------------------------------------------------------------------------------
     /** Lot width along the street and depth away from it. */
-    private static final int LW = 18;
-    private static final int LD = 21;
+    public static final int LW = 18;
+    public static final int LD = 21;
     /** Lots keep this far from side streets (full / cul-de-sac), jogs and roundabouts. */
     private static final int VERT_MARGIN = 7;
     private static final int STUB_MARGIN = 11;
@@ -148,17 +158,23 @@ public final class Level9Layout extends LevelLayout {
     private static final int TUNNEL_WALK = 7;
     private static final int TUNNEL_CURB = 8;
     /** Not street: a lot, empty lot or woods. */
-    private static final int OTHER = 9;
+    static final int OTHER = 9;
+    /** Level 9.1: the Crimson Field region far to the east (no streets, lots or woods). */
+    private static final int FIELD = 10;
 
     /** A lot's front faces the street: side 0 lots lie south of their street, side 1 north. */
-    private static final int SOUTH_OF_STREET = 0;
+    static final int SOUTH_OF_STREET = 0;
 
-    private static final BlockState AIR = Blocks.AIR.defaultBlockState();
+    static final BlockState AIR = Blocks.AIR.defaultBlockState();
+
+    /** Where the anomalies are and how their blocks look. */
+    private final Level9AnomalyPlan plan;
 
     public Level9Layout() {
         // The ExitLocator picks one point per 512x512 region; the underpass goes where the main
         // street nearest that point crosses its x.
         super(8, new ExitLocator(EXIT_REGION, 96, 9000));
+        this.plan = new Level9AnomalyPlan(this);
     }
 
     // ==========================================================================================
@@ -177,13 +193,21 @@ public final class Level9Layout extends LevelLayout {
         return c == ROAD || c == TUNNEL_ROAD;
     }
 
+    /**
+     * Plain open street (no underpass, curb or sidewalk): the only ground the Mangled fog's
+     * pillar may stand on and blast its crater into.
+     */
+    public boolean isPlainRoad(long seed, int x, int z) {
+        return classify(seed, x, z) == ROAD;
+    }
+
     /** Inside the footprint of a house or garage. */
     public boolean isIndoors(long seed, int x, int z) {
         if (classify(seed, x, z) != OTHER) {
             return false;
         }
         House h = houseAt(seed, x, z);
-        return h != null && (h.inHouse(h.u, h.v) || h.inGarage(h.u, h.v));
+        return h != null && h.indoors(h.u, h.v);
     }
 
     /** The whole footprint of a safe house, walls included. */
@@ -194,6 +218,30 @@ public final class Level9Layout extends LevelLayout {
         }
         House h = houseAt(seed, x, z);
         return h != null && h.safe && h.inHouse(h.u, h.v);
+    }
+
+    // ---- Anomalies (see Level9AnomalyPlan) --------------------------------------------------------
+
+    @Override
+    @Nullable
+    public AnomalySite anomalyAt(long seed, int x, int z) {
+        return plan.siteAt(seed, x, z);
+    }
+
+    @Override
+    public void anomaliesNear(long seed, int x, int z, int radius, Consumer<AnomalySite> out) {
+        plan.sitesNear(seed, x, z, radius, out);
+    }
+
+    @Override
+    @Nullable
+    public AnomalySite nearestAnomaly(long seed, int x, int z, String kind) {
+        return plan.nearest(seed, x, z, kind);
+    }
+
+    @Override
+    public List<String> anomalyKinds() {
+        return Level9AnomalyPlan.KINDS;
     }
 
     /** Deep inside the underpass: walking here escapes the Backrooms. */
@@ -297,7 +345,8 @@ public final class Level9Layout extends LevelLayout {
     }
 
     private static boolean isPassable(@Nullable BlockState state) {
-        return state == null || state.isAir() || state.is(ModBlocks.LEAF_LITTER.get()) || state.is(ModBlocks.DUST_PILE.get());
+        return state == null || state.isAir() || state.is(ModBlocks.LEAF_LITTER.get()) || state.is(ModBlocks.DUST_PILE.get())
+                || state.is(ModBlocks.L9_FIELD_GRASS.get());
     }
 
     private static boolean isBottomSlab(@Nullable BlockState state) {
@@ -445,7 +494,10 @@ public final class Level9Layout extends LevelLayout {
     // ---- Classifying a column ---------------------------------------------------------------
 
     /** What column (x, z) is: road, sidewalk, island, underpass, embankment or OTHER. */
-    private int classify(long seed, int x, int z) {
+    int classify(long seed, int x, int z) {
+        if (Level9Sites.inField(x)) {
+            return FIELD; // the Crimson Field: no streets or houses out there
+        }
         int cz = exitStreetZ(seed, x, z);
         if (cz != Integer.MIN_VALUE) {
             int street = exitStreet(seed, exits().exitZ(seed, Math.floorDiv(x, EXIT_REGION), Math.floorDiv(z, EXIT_REGION)));
@@ -530,8 +582,39 @@ public final class Level9Layout extends LevelLayout {
         return Hash.range(Hash.of(seed, r, side, 910), LW);
     }
 
-    /** A lot gets a house unless it would touch a side street, a jog, a roundabout or the exit. */
+    /**
+     * A lot gets a house unless it would touch a side street, a jog, a roundabout or the exit, or
+     * a grass walkway runs across it (then it stays an empty lot with the walkway on it).
+     */
     private boolean lotValid(long seed, int r, int side, int idx) {
+        return lotValidBase(seed, r, side, idx) && !plan.isWalkwayLot(seed, r, side, idx);
+    }
+
+    /** x of lot idx's first column (u = 0). */
+    int lotX0(long seed, int r, int side, int idx) {
+        return idx * LW + lotPhase(seed, r, side);
+    }
+
+    /**
+     * z of the lot's front row (v = 0, next to the sidewalk). Lots never straddle a jog of their
+     * street, so this holds for the whole lot.
+     */
+    int lotFrontZ(long seed, int r, int side, int x0) {
+        if (side == SOUTH_OF_STREET) {
+            return streetZ(seed, r, x0) + roadHalf(seed, r) + SW + 1;
+        }
+        return streetZ(seed, r + 1, x0) - roadHalf(seed, r + 1) - SW - 1;
+    }
+
+    /** How deep the woods between the two rows of lots of block row r are at x (blocks). */
+    int woodsDepth(long seed, int r, int x) {
+        int front = streetZ(seed, r, x) + roadHalf(seed, r) + SW + 1;
+        int back = streetZ(seed, r + 1, x) - roadHalf(seed, r + 1) - SW - 1;
+        return back - front + 1 - 2 * LD;
+    }
+
+    /** The plain lot rule (the anomaly plan's own checks use this, so they never ask themselves). */
+    boolean lotValidBase(long seed, int r, int side, int idx) {
         int x0 = idx * LW + lotPhase(seed, r, side);
         int x1 = x0 + LW - 1;
         int k0 = kGuess(seed, r, x0);
@@ -572,7 +655,7 @@ public final class Level9Layout extends LevelLayout {
      * Where (x, z) lies among the lots of its block, packed: side (bit 0), u (bits 1-8), v (bits
      * 9-16), lot index (bits 17-40, offset), row (bits 41-63, offset). Returns -1 in the woods.
      */
-    private long lotInfo(long seed, int x, int z) {
+    long lotInfo(long seed, int x, int z) {
         int r = blockRow(seed, x, z);
         int front = streetZ(seed, r, x) + roadHalf(seed, r) + SW + 1;
         int back = streetZ(seed, r + 1, x) - roadHalf(seed, r + 1) - SW - 1;
@@ -593,11 +676,11 @@ public final class Level9Layout extends LevelLayout {
         return side | ((long) u << 1) | ((long) v << 9) | ((long) (idx + (1 << 23)) << 17) | ((long) (r + (1 << 21)) << 41);
     }
 
-    private static int infoSide(long info) { return (int) (info & 1); }
-    private static int infoU(long info) { return (int) ((info >> 1) & 0xFF); }
-    private static int infoV(long info) { return (int) ((info >> 9) & 0xFF); }
-    private static int infoIdx(long info) { return (int) ((info >> 17) & 0xFFFFFF) - (1 << 23); }
-    private static int infoRow(long info) { return (int) (info >>> 41) - (1 << 21); }
+    static int infoSide(long info) { return (int) (info & 1); }
+    static int infoU(long info) { return (int) ((info >> 1) & 0xFF); }
+    static int infoV(long info) { return (int) ((info >> 9) & 0xFF); }
+    static int infoIdx(long info) { return (int) ((info >> 17) & 0xFFFFFF) - (1 << 23); }
+    static int infoRow(long info) { return (int) (info >>> 41) - (1 << 21); }
 
     /** The house standing on the lot that contains (x, z), with (u, v) filled in, or null. */
     @Nullable
@@ -623,7 +706,9 @@ public final class Level9Layout extends LevelLayout {
         House h = House.of(seed, r, side, idx);
         if (!h.safeKnown) {
             h.safeKnown = true;
-            if (h.livingRoomFits() && !h.glitch && safeHousePicked(seed, r, side, idx)) {
+            // Twin and clipped houses are dressed by the anomaly plan and are never safe houses.
+            boolean odd = plan.dressHouse(seed, r, side, idx, h);
+            if (!odd && h.livingRoomFits() && !h.glitch && safeHousePicked(seed, r, side, idx)) {
                 h.safe = true;
                 h.unlocked = true;
                 h.porchLight = true;
@@ -637,7 +722,7 @@ public final class Level9Layout extends LevelLayout {
      * Lots never straddle a jog of their street (lotValid keeps them away from side streets),
      * so the lot is a plain LW x LD rectangle.
      */
-    private boolean safeHousePicked(long seed, int r, int side, int idx) {
+    boolean safeHousePicked(long seed, int r, int side, int idx) {
         int x0 = idx * LW + lotPhase(seed, r, side);
         int z0;
         if (side == SOUTH_OF_STREET) {
@@ -661,6 +746,7 @@ public final class Level9Layout extends LevelLayout {
     /** True for woods: deep in the middle of a block, or the back of an empty lot. */
     private boolean isWoods(long seed, int x, int z) {
         if (classify(seed, x, z) != OTHER) return false;
+        if (plan.blocksTrees(seed, x, z)) return false; // keep trunks off a grass walkway and its clearing
         long info = lotInfo(seed, x, z);
         if (info < 0) return true;
         return infoV(info) >= EMPTY_LAWN && !lotValid(seed, infoRow(info), infoSide(info), infoIdx(info));
@@ -670,7 +756,7 @@ public final class Level9Layout extends LevelLayout {
      * One house on one lot, in lot coordinates: u runs along the street (0..17, with x), v away
      * from it (0 = next to the sidewalk). All numbers come from the lot's hash.
      */
-    private static final class House {
+    static final class House {
         int storeys;
         boolean garage;
         int width;
@@ -696,6 +782,18 @@ public final class Level9Layout extends LevelLayout {
         int sideFence;
         int backFence;
         boolean glitch;
+        /** One of a pair of identical twin houses (Level9AnomalyPlan): back door, front and back hall. */
+        boolean twin;
+        /**
+         * Clipped houses: the two houses grown into each other (drawn in canonical lot coordinates,
+         * mirrored when clipMirror), and the lot column u of the second house's front path.
+         */
+        @Nullable
+        House clipA;
+        @Nullable
+        House clipB;
+        boolean clipMirror;
+        int clipDoorBU = Integer.MIN_VALUE;
         boolean crate;
         /** Someone's backpack lies on the porch / on the driveway; it faces backpackFacing. */
         boolean porchBackpack;
@@ -824,8 +922,21 @@ public final class Level9Layout extends LevelLayout {
 
         /** The house with its roof overhang and porch, or the garage: no tree crowns in here. */
         boolean nearBuilding(int u, int v) {
+            if (clipA != null) {
+                int cu = clipMirror ? LW - 1 - u : u;
+                return clipA.nearBuilding(cu, v) || clipB.nearBuilding(cu, v);
+            }
             if (u >= hu0 - 1 && u <= hu1 + 1 && v >= setback - 2 && v <= setback + depth) return true;
             return garage && u >= gu0 - 1 && u <= gu0 + 5 && v >= setback - 1 && v <= setback + garageDepth;
+        }
+
+        /** Clipped houses: inside either of the two houses (walls included). Others: house or garage. */
+        boolean indoors(int u, int v) {
+            if (clipA != null) {
+                int cu = clipMirror ? LW - 1 - u : u;
+                return clipA.inHouse(cu, v) || clipB.inHouse(cu, v);
+            }
+            return inHouse(u, v) || inGarage(u, v);
         }
 
         boolean inPorch(int u, int v) {
@@ -1117,6 +1228,10 @@ public final class Level9Layout extends LevelLayout {
 
     @Override
     public void fillColumn(long seed, int x, int z, Column out) {
+        if (Level9Sites.inField(x)) {
+            plan.fillField(seed, x, z, out); // Level 9.1, the Crimson Field
+            return;
+        }
         int c = classify(seed, x, z);
         switch (c) {
             case ROAD, TUNNEL_ROAD -> fillRoad(seed, x, z, c, out);
@@ -1284,7 +1399,7 @@ public final class Level9Layout extends LevelLayout {
         }
     }
 
-    private static void lawn(Column out) {
+    static void lawn(Column out) {
         BlockState grass = ModBlocks.LAWN_GRASS.get().defaultBlockState();
         out.set(FLOOR_Y, grass);
         out.set(FLOOR_Y + 1, grass);
@@ -1330,6 +1445,11 @@ public final class Level9Layout extends LevelLayout {
     /** Lots, empty lots and woods. */
     private void fillLand(long seed, int x, int z, Column out) {
         lawn(out);
+        // A grass walkway (its lot and the path through the woods) is drawn by the plan.
+        if (plan.fillWalkway(seed, x, z, out)) {
+            applyTrees(seed, x, z, !plan.inWalkwayClearing(seed, x, z), out);
+            return;
+        }
         long info = lotInfo(seed, x, z);
         if (info >= 0) {
             int r = infoRow(info);
@@ -1339,6 +1459,11 @@ public final class Level9Layout extends LevelLayout {
                 House h = houseOf(seed, r, side, idx);
                 int u = infoU(info);
                 int v = infoV(info);
+                if (h.clipA != null) {
+                    plan.fillClipped(seed, x, z, h, u, v, out); // two houses grown into each other
+                    applyTrees(seed, x, z, !h.nearBuilding(u, v), out);
+                    return;
+                }
                 yard(seed, x, z, h, u, v, out);
                 house(h, u, v, out, false);
                 // A slab roof over the porch, unless the house roof itself already sits at that height.
@@ -1369,11 +1494,11 @@ public final class Level9Layout extends LevelLayout {
         }
     }
 
-    private static BlockState slab(BlockState state) {
+    static BlockState slab(BlockState state) {
         return state.setValue(SlabBlock.TYPE, SlabType.BOTTOM);
     }
 
-    private static BlockState facing(BlockState state, Direction d) {
+    static BlockState facing(BlockState state, Direction d) {
         return state.setValue(BlockStateProperties.HORIZONTAL_FACING, d);
     }
 
@@ -1422,7 +1547,7 @@ public final class Level9Layout extends LevelLayout {
     }
 
     /** 0 none, 1 hedge, 2 picket fence on lot column (u, v). */
-    private static int fenceKind(House h, int u, int v) {
+    static int fenceKind(House h, int u, int v) {
         if (v == LD - 1) return h.backFence;
         if (u == 0 && v >= h.setback) return h.sideFence;
         if (h.frontFence && v == 0) {
@@ -1434,7 +1559,7 @@ public final class Level9Layout extends LevelLayout {
     }
 
     /** A picket fence piece, joined to the fence pieces beside it. */
-    private BlockState picket(long seed, int x, int z) {
+    BlockState picket(long seed, int x, int z) {
         return ModBlocks.PICKET_FENCE.get().defaultBlockState()
                 .setValue(FenceBlock.NORTH, isPicket(seed, x, z - 1))
                 .setValue(FenceBlock.SOUTH, isPicket(seed, x, z + 1))
@@ -1451,7 +1576,7 @@ public final class Level9Layout extends LevelLayout {
 
     // ---- The house ---------------------------------------------------------------------------
 
-    private static BlockState siding(int colour) {
+    static BlockState siding(int colour) {
         return switch (colour) {
             case 0 -> ModBlocks.SIDING_GREEN.get().defaultBlockState();
             case 1 -> ModBlocks.SIDING_GREY.get().defaultBlockState();
@@ -1483,6 +1608,14 @@ public final class Level9Layout extends LevelLayout {
                         BlockState window = facing(ModBlocks.HOUSE_WINDOW.get().defaultBlockState(), outward(h, u, v));
                         out.set(base + 1, window);
                         out.set(base + 2, window);
+                    }
+                    if (h.twin && st == 0 && v == s + d - 1 && u == h.doorU) {
+                        // Twin houses also have a back door, straight behind the front one.
+                        BlockState back = ModBlocks.HOUSE_DOOR.get().defaultBlockState()
+                                .setValue(DoorBlock.FACING, h.inward)
+                                .setValue(HouseDoorBlock.LOCKED, false);
+                        out.set(42, back.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+                        out.set(43, back.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
                     }
                     if (st == 0 && v == s && u == h.doorU) {
                         BlockState door = h.clayDoor
@@ -1544,6 +1677,7 @@ public final class Level9Layout extends LevelLayout {
         int s = h.setback;
         if (v == s || v == s + h.depth - 1) {
             if (v == s && Math.abs(u - h.doorU) <= 1) return false;
+            if (h.twin && v == s + h.depth - 1 && Math.abs(u - h.doorU) <= 1) return false; // the back door
             int w = u - h.hu0;
             return w % 3 == 2 && w > 0 && w < h.width - 1;
         }
@@ -1557,7 +1691,7 @@ public final class Level9Layout extends LevelLayout {
      * meet in one column there is a ridge slab. Returns null where the roof doesn't cover.
      */
     @Nullable
-    private static BlockState roofAt(House h, int u, int v) {
+    static BlockState roofAt(House h, int u, int v) {
         int a;
         int b;
         int pos;
@@ -1584,7 +1718,7 @@ public final class Level9Layout extends LevelLayout {
         return ModBlocks.ROOF_SHINGLES_STAIRS.get().defaultBlockState().setValue(StairBlock.FACING, climb);
     }
 
-    private static int roofLayer(House h, int u, int v) {
+    static int roofLayer(House h, int u, int v) {
         if (h.ridgeAlongU) {
             return Math.min(v - (h.setback - 1), h.setback + h.depth - v);
         }
@@ -1592,7 +1726,7 @@ public final class Level9Layout extends LevelLayout {
     }
 
     /** On a gable-end wall, how many layers above the wall plate are still wall (the triangle). */
-    private static int gableLayers(House h, int u, int v) {
+    static int gableLayers(House h, int u, int v) {
         if (h.ridgeAlongU) {
             if (u != h.hu0 && u != h.hu1) return 0;
             return Math.min(v - (h.setback - 1), h.setback + h.depth - v);
@@ -1606,6 +1740,10 @@ public final class Level9Layout extends LevelLayout {
      * pieces of furniture standing against the walls, facing into the room.
      */
     private void interior(House h, int u, int v, Column out) {
+        if (h.twin) {
+            Level9AnomalyPlan.twinInterior(h, u, v, out); // halls front and back, and no upstairs
+            return;
+        }
         int s = h.setback;
         int d = h.depth;
         int back = s + d - 2;
@@ -1925,10 +2063,12 @@ public final class Level9Layout extends LevelLayout {
         if (classify(seed, tx, tz) != OTHER) return null;
         long info = lotInfo(seed, tx, tz);
         if (info < 0 || infoV(info) != 1) return null; // only where the verge is a plain straight strip
+        if (plan.blocksTrees(seed, tx, tz)) return null; // never across the mouth of a grass walkway
         if (lotValid(seed, infoRow(info), infoSide(info), infoIdx(info))) {
-            House h = House.of(seed, infoRow(info), infoSide(info), infoIdx(info));
+            House h = houseOf(seed, infoRow(info), infoSide(info), infoIdx(info));
             int u = infoU(info);
             if (u == 0 || (u >= h.doorU - 1 && u <= h.doorU + 1)) return null; // path and mailbox
+            if (h.clipA != null && Math.abs(u - h.clipDoorBU) <= 1) return null; // the second house's path
             if (h.garage && u >= h.gu0 && u <= h.gu0 + 4) return null; // driveway
         }
         int inward = side == 1 ? 1 : -1;
@@ -1949,7 +2089,7 @@ public final class Level9Layout extends LevelLayout {
                 return true;
             case OTHER: {
                 House h = houseAt(seed, x, z);
-                return h == null || !h.nearBuilding(h.u, h.v);
+                return (h == null || !h.nearBuilding(h.u, h.v)) && !plan.inWalkwayClearing(seed, x, z);
             }
             default:
                 return false;

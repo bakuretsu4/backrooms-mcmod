@@ -87,6 +87,14 @@ public final class ClientLighting {
      * they're small, so this doesn't haze the picture the way a big skylight would.
      */
     private static final float LEVEL9_EMISSIVE_MAX = 0.95f;
+    /**
+     * Level 9.1, the Crimson Field, has no lamps at all, so "unlit" there would be a black screen.
+     * A faint cold glow from the overcast sky instead: the grass reads as dark blue-grey stalks,
+     * darker than the mist behind them.
+     */
+    private static final float FIELD_UNLIT_R = 0.05f;
+    private static final float FIELD_UNLIT_G = 0.06f;
+    private static final float FIELD_UNLIT_B = 0.085f;
 
     private static int activeEvent() {
         return System.currentTimeMillis() < CameraClientState.eventEndMs ? CameraClientState.eventKind : LevelEventPayload.NONE;
@@ -233,6 +241,10 @@ public final class ClientLighting {
         float tr = Mth.lerp(m, SODIUM_R, MERCURY_R);
         float tg = Mth.lerp(m, SODIUM_G, MERCURY_G);
         float tb = Mth.lerp(m, SODIUM_B, MERCURY_B);
+        if (Level9Atmosphere.inField()) {
+            colors.set(FIELD_UNLIT_R + fill * tr, FIELD_UNLIT_G + fill * tg, FIELD_UNLIT_B + fill * tb);
+            return;
+        }
         colors.set(LEVEL9_UNLIT_R + fill * tr, LEVEL9_UNLIT_G + fill * tg, LEVEL9_UNLIT_B + fill * tb);
     }
 

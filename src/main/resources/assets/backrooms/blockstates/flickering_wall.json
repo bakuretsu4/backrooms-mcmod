@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "mode=flicker": {
+      "model": "backrooms:block/flickering_wall"
+    },
+    "mode=lit": {
+      "model": "backrooms:block/flickering_wall"
+    }
+  }
+}

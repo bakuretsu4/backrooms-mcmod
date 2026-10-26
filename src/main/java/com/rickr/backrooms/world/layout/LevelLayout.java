@@ -4,6 +4,9 @@ import com.rickr.backrooms.block.WallLampBlock;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
+import com.rickr.backrooms.world.anomaly.AnomalySite;
+import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoorBlock;
@@ -53,6 +56,15 @@ public abstract class LevelLayout {
      */
     public int highestCeilingY() {
         return ceilingY();
+    }
+
+    /**
+     * The lowest block layer that can hold a light fixture (the client only looks for lights
+     * between this and {@link #highestCeilingY()}). Usually just under the floor; Level 2 hangs a
+     * lamp far below it, at the lit doorway of its void.
+     */
+    public int lowestFixtureY() {
+        return floorY() - 1;
     }
 
     public final int interiorHeight() {
@@ -117,6 +129,31 @@ public abstract class LevelLayout {
      */
     public boolean isSafeRoom(long seed, int x, int z) {
         return false;
+    }
+
+    /**
+     * The anomalous area covering column (x, z), or null (see {@code world/anomaly}). Each level
+     * builds its anomalies' blocks in {@link #fillColumn} from the same answer, and the server
+     * makes them behave ({@code AnomalyService}). Levels without anomalies keep this default.
+     */
+    @Nullable
+    public AnomalySite anomalyAt(long seed, int x, int z) {
+        return null;
+    }
+
+    /** Every anomalous area within {@code radius} blocks of column (x, z) (for nearby sounds). */
+    public void anomaliesNear(long seed, int x, int z, int radius, Consumer<AnomalySite> out) {
+    }
+
+    /** The nearest anomalous area of {@code kind} to (x, z), or null (for /backrooms anomaly locate). */
+    @Nullable
+    public AnomalySite nearestAnomaly(long seed, int x, int z, String kind) {
+        return null;
+    }
+
+    /** The anomaly kinds this level can have (command suggestions). */
+    public List<String> anomalyKinds() {
+        return List.of();
     }
 
     /**

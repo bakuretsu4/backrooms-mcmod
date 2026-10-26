@@ -2,12 +2,14 @@ package com.rickr.backrooms.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.rickr.backrooms.Backrooms;
+import com.rickr.backrooms.client.anomaly.AnomalyClientEffects;
 import com.rickr.backrooms.registry.ModEntities;
 import com.rickr.backrooms.registry.ModBlockEntities;
 import net.minecraft.client.KeyMapping;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
@@ -28,6 +30,12 @@ public final class ClientSetup {
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "key.categories.backrooms");
     public static final KeyMapping OSD_KEY = new KeyMapping("key.backrooms.osd",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, "key.categories.backrooms");
+
+    /** What each level's anomalous areas do on the client (sounds, picture mood): client/anomaly. */
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        AnomalyClientEffects.bootstrap();
+    }
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {

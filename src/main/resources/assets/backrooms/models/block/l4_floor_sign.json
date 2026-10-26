@@ -1,0 +1,69 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/l4_floor_sign",
+    "board": "backrooms:block/l4_floor_sign"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        1,
+        15
+      ],
+      "to": [
+        14,
+        15,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            1,
+            14,
+            15
+          ],
+          "texture": "#board"
+        },
+        "east": {
+          "uv": [
+            0,
+            1,
+            1,
+            15
+          ],
+          "texture": "#board"
+        },
+        "west": {
+          "uv": [
+            15,
+            1,
+            16,
+            15
+          ],
+          "texture": "#board"
+        },
+        "up": {
+          "uv": [
+            2,
+            15,
+            14,
+            16
+          ],
+          "texture": "#board"
+        },
+        "down": {
+          "uv": [
+            2,
+            0,
+            14,
+            1
+          ],
+          "texture": "#board"
+        }
+      }
+    }
+  ]
+}

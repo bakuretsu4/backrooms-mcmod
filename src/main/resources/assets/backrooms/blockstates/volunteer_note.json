@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/volunteer_note"
+    },
+    "facing=east": {
+      "model": "backrooms:block/volunteer_note",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/volunteer_note",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/volunteer_note",
+      "y": 270
+    }
+  }
+}

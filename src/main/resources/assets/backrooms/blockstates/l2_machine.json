@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l2_machine"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l2_machine",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l2_machine",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l2_machine",
+      "y": 270
+    }
+  }
+}

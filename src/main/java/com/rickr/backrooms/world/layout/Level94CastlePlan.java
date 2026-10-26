@@ -30,7 +30,8 @@ import org.jetbrains.annotations.Nullable;
  *  ground floor (ly 1-8)                         upper floor (ly 10-16)
  *  z -16..-8  entrance hall (whole width)         ring corridor ("looping hall") round
  *  z  -6..4   ball pit | gallery | playground     the animation studio, x -14..4, z -16..4
- *  z   6..15  throne room (ly 1-23, whole width)  (reached by the playground's climbing frame)
+ *  z   6..15  throne room (ly 1-23, whole width)  (reached by the playground's climbing frame),
+ *                                                 and east of it the blinding hall, x 6..14, z -16..-8
  * </pre>
  */
 final class Level94CastlePlan {
@@ -116,6 +117,9 @@ final class Level94CastlePlan {
     private static final int CARPET = reg(ModBlocks.L94_RED_CARPET);
     private static final int[] THRONE = facing(ModBlocks.L94_THRONE);
     private static final int LIGHT = reg(ModBlocks.L94_THRONE_LIGHT);
+    // The blinding hall (anomaly level_94/blinding_hall): a ceiling that is all light, a white floor.
+    private static final int GLARE = reg(ModBlocks.L94_GLARE_PANEL);
+    private static final int WHITE_TILE = reg(ModBlocks.L94_WHITE_TILE);
 
     private static final byte[] CELLS = new byte[SIZE * SIZE * LAYERS];
 
@@ -127,6 +131,7 @@ final class Level94CastlePlan {
         buildGallery();
         buildPlayground();
         buildUpperFloor();
+        buildBlindingHall();
         buildThroneRoom();
         buildRoofsAndTowers();
     }
@@ -316,7 +321,7 @@ final class Level94CastlePlan {
         box(-13, 13, 1, 23, 6, 15, AIR);                   // throne room
         // Upper floor (ly 10-16 on the ly 9 ceiling of the ground floor).
         box(-14, 4, 10, 16, -16, 4, AIR);                  // looping hall + studio
-        box(6, 14, 10, 16, -16, -8, AIR);                  // a sealed, empty room over the east end of the hall
+        box(6, 14, 10, 16, -16, -8, AIR);                  // over the east end of the hall: the blinding hall (see buildBlindingHall)
 
         // Between the storeys: a ceiling of acoustic tiles that is carpet on its upper side.
         box(-14, 14, 9, 9, -16, -8, CEILING);
@@ -530,6 +535,21 @@ final class Level94CastlePlan {
         set(-4, 11, -2, MINI_TREE);
         set(-7, 11, -8, MINI_TREE);
         set(-3, 11, -4, MINI_TREE);
+    }
+
+    /**
+     * The blinding hall (x 6..14, z -16..-8, ly 10-16): the M.E.G. log's "hall of unnaturally
+     * bright, blinding levels of light", where the Robo-Man chasing an explorer lost him. Its
+     * whole ceiling is light panels over a white tiled floor. One doorway opens from the east
+     * side of the looping hall, a second onto the playground deck, so it is a shortcut you can
+     * run through (the light spilling out of the doorways is the warning). What it does to the
+     * picture and to anything chasing you lives in world/anomaly/level94 and client/anomaly/level94.
+     */
+    private static void buildBlindingHall() {
+        box(6, 14, 9, 9, -16, -8, WHITE_TILE);
+        box(6, 14, 17, 17, -16, -8, GLARE);
+        box(5, 5, 10, 12, -12, -11, AIR);                  // from the looping hall (east side of the ring)
+        box(7, 8, 10, 11, -7, -7, AIR);                    // onto the playground deck
     }
 
     /**

@@ -72,12 +72,12 @@ final class Level94Terrain {
      */
     @Nullable
     static Hill hill(long seed, int ci, int cj, List<Level94Roads.Road> roads) {
-        long h = Hash.of(seed, ci, cj, 9450);
+        long h = cellHash(seed, ci, cj);
         if (Hash.unit(h) >= 0.92) {
             return null;
         }
-        int cx = ci * HILL_CELL + 8 + Hash.range(Hash.mix(h + 1), HILL_CELL - 16);
-        int cz = cj * HILL_CELL + 8 + Hash.range(Hash.mix(h + 2), HILL_CELL - 16);
+        int cx = centreX(h, ci);
+        int cz = centreZ(h, cj);
         float r0 = 14 + (float) Hash.unit(Hash.mix(h + 3)) * (MAX_RADIUS - 14);
         // Height 45-62% of the radius: tall enough to read as a dome, never too steep to climb.
         float h0 = Math.max(6, Math.min(26, r0 * (0.45f + 0.17f * (float) Hash.unit(Hash.mix(h + 4)))));
@@ -96,7 +96,7 @@ final class Level94Terrain {
             return null;
         }
 
-        double f = Hash.unit(Hash.mix(h + 5));
+        double f = featureRoll(h);
         int feature;
         if (r >= 16) {
             feature = f < 0.30 ? HOUSE
@@ -109,6 +109,37 @@ final class Level94Terrain {
             feature = f < 0.35 ? TREE : NOTHING;
         }
         return new Hill(ci, cj, cx, cz, r, height, feature, h);
+    }
+
+    /** The random bits of hill cell (ci, cj); a hilltop building uses them as its key. */
+    static long cellHash(long seed, int ci, int cj) {
+        return Hash.of(seed, ci, cj, 9450);
+    }
+
+    /** Centre column of cell ci's dome (x), if it has one. */
+    static int centreX(long cellHash, int ci) {
+        return ci * HILL_CELL + 8 + Hash.range(Hash.mix(cellHash + 1), HILL_CELL - 16);
+    }
+
+    /** Centre column of cell cj's dome (z), if it has one. */
+    static int centreZ(long cellHash, int cj) {
+        return cj * HILL_CELL + 8 + Hash.range(Hash.mix(cellHash + 2), HILL_CELL - 16);
+    }
+
+    private static double featureRoll(long cellHash) {
+        return Hash.unit(Hash.mix(cellHash + 5));
+    }
+
+    /**
+     * Cheap pre-check (no roads needed): false when the cell can never hold a hilltop house or
+     * fragment, whatever the roads do to its dome. Used by the furniture-drift anomaly planner.
+     */
+    static boolean mayHoldHouse(long cellHash) {
+        if (Hash.unit(cellHash) >= 0.92) {
+            return false;
+        }
+        double f = featureRoll(cellHash);
+        return f < 0.30 || (f >= 0.52 && f < 0.58);
     }
 
     /** A slow, smooth wiggle (about +-1) that keeps the mowing stripes from looking ruler-straight. */

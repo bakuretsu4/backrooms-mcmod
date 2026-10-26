@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "coin=false,facing=north": {
+      "model": "backrooms:block/l94_sink"
+    },
+    "coin=true,facing=north": {
+      "model": "backrooms:block/l94_sink_coin"
+    },
+    "coin=false,facing=east": {
+      "model": "backrooms:block/l94_sink",
+      "y": 90
+    },
+    "coin=true,facing=east": {
+      "model": "backrooms:block/l94_sink_coin",
+      "y": 90
+    },
+    "coin=false,facing=south": {
+      "model": "backrooms:block/l94_sink",
+      "y": 180
+    },
+    "coin=true,facing=south": {
+      "model": "backrooms:block/l94_sink_coin",
+      "y": 180
+    },
+    "coin=false,facing=west": {
+      "model": "backrooms:block/l94_sink",
+      "y": 270
+    },
+    "coin=true,facing=west": {
+      "model": "backrooms:block/l94_sink_coin",
+      "y": 270
+    }
+  }
+}

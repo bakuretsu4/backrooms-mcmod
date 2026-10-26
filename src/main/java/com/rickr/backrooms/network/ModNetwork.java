@@ -1,6 +1,7 @@
 package com.rickr.backrooms.network;
 
 import com.rickr.backrooms.camera.CameraClientState;
+import com.rickr.backrooms.client.anomaly.AnomalyClientState;
 import com.rickr.backrooms.camera.CameraService;
 import com.rickr.backrooms.player.EnergyClientState;
 import com.rickr.backrooms.player.EnergyData;
@@ -81,11 +82,19 @@ public final class ModNetwork {
             Level94ClientState.castleKnown = true;
         });
 
+        // Anomalies: the site you're in and the ones nearby (sounds, picture mood, effects).
+        registrar.playToClient(AnomalyPayload.TYPE, AnomalyPayload.STREAM_CODEC,
+                (payload, context) -> AnomalyClientState.update(payload.current().orElse(null), payload.nearby()));
+
         registrar.playToServer(CameraTogglePayload.TYPE, CameraTogglePayload.STREAM_CODEC, (payload, context) -> {
             if (context.player() instanceof ServerPlayer player) {
                 CameraService.toggle(player, payload.toggle());
             }
         });
+
+        // Level 9 anomalies: where the Mangled fog's black pillar stands (the clients draw it).
+        registrar.playToClient(Level9PillarPayload.TYPE, Level9PillarPayload.STREAM_CODEC,
+                (payload, context) -> com.rickr.backrooms.client.anomaly.level9.MangledPillar.receive(payload.phase(), payload.x(), payload.z()));
     }
 
     private ModNetwork() {}

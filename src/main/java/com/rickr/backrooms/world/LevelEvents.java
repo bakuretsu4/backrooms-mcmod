@@ -2,6 +2,7 @@ package com.rickr.backrooms.world;
 
 import com.rickr.backrooms.network.LevelEventPayload;
 import com.rickr.backrooms.registry.ModSounds;
+import com.rickr.backrooms.world.anomaly.level9.MangledFog;
 import java.util.EnumMap;
 import java.util.Map;
 import net.minecraft.core.Holder;
@@ -23,13 +24,19 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *
  * <p>Between events, each player now and then hears a lone knock or creak somewhere far away.
  *
- * <p>The Poolrooms are the calm exception: no random events and no knocks, just the water. An
- * operator can still force an event there with the command (it then runs and ends normally).
+ * <p>The Poolrooms and Level 37 are the calm exception: no scares and no knocks, just the water.
+ * Their only event is OBTRUSIVE_WATER, every 6-12 minutes: the water's sound swells and drowns out
+ * everything else for 20-40 s (both wikis, Level 37: the water is usually calm, but sometimes
+ * "obtrusive", drowning out other sounds). The clients play it ({@code PoolAcoustics}). An
+ * operator can still force any event there with the command (it then runs and ends normally).
  *
  * <p>Level 9 (the Suburbs) has its own two events and no knocks (its horror is the silence):
  * LAMP_WAVE, a stutter rolling down the streetlamps that leaves some of them dead for a while,
- * and FOG_ROLL, the fog closing in to ~12 blocks while something huge rumbles far away in it.
- * The clients render both (lamps, fog, rumble sounds and shake) from the event payload alone.
+ * and FOG_ROLL, the Mangled's fog ({@link MangledFog}): a sudden cold, then the fog closing in to
+ * ~12 blocks while the lamps fall silent and something huge rumbles far away in it; a black
+ * pillar rises down a street with thunder-like booms and a garbled voice, and leaves a crater
+ * when it goes. The clients render the lamps, fog, frost, pillar and shaking from the event
+ * payload (and {@code Level9PillarPayload}).
  *
  * <p>Level 4 (the Abandoned Office) has no scares, only its storm: every 1-3 minutes lightning
  * strikes outside (STORM). The clients flash the windows ({@code Level4Atmosphere}); the server
@@ -46,6 +53,8 @@ public final class LevelEvents {
     private static final int INTERCOM_ECHO_DELAY = 7;
     /** Level 4 storm: the flashes take ~2 s, the thunder comes 1-3.5 s after the first one. */
     private static final int STORM_TICKS = 6 * 20;
+    /** Pool levels: the first obtrusive-water spell comes 4-5 minutes after someone arrives. */
+    private static final int POOL_FIRST_DELAY = 4 * 60 * 20;
 
     private static final class State {
         int kind = LevelEventPayload.NONE;
@@ -75,7 +84,7 @@ public final class LevelEvents {
         }
         if (state.nextTick < 0) {
             // Level 4's storm starts soon after you arrive: the rain should not keep you waiting.
-            int first = floor == BackroomsLevel.LEVEL_4 ? 25 * 20 : FIRST_DELAY;
+            int first = floor == BackroomsLevel.LEVEL_4 ? 25 * 20 : isPoolLevel(floor) ? POOL_FIRST_DELAY + random.nextInt(60 * 20) : FIRST_DELAY;
             state.nextTick = now + first + random.nextInt(20 * 20) - 10 * 20;
         }
 
@@ -97,9 +106,14 @@ public final class LevelEvents {
             return;
         }
 
-        if ((!calm || floor == BackroomsLevel.LEVEL_4) && now >= state.nextTick) {
+        if ((!calm || floor == BackroomsLevel.LEVEL_4 || isPoolLevel(floor)) && now >= state.nextTick) {
             startRandom(level, floor, state, random);
         }
+    }
+
+    /** The two levels of pool water: the Poolrooms and Level 37. */
+    private static boolean isPoolLevel(BackroomsLevel floor) {
+        return floor == BackroomsLevel.POOLROOMS || floor == BackroomsLevel.LEVEL_37;
     }
 
     // ------------------------------------------------------------------ running events
@@ -120,6 +134,14 @@ public final class LevelEvents {
                 playDistant(player, ModSounds.LEVEL4_THUNDER, 30, 4.0f, 0.85f + level.getRandom().nextFloat() * 0.25f, level.getRandom());
             }
         }
+        if (state.kind == LevelEventPayload.FOG_ROLL && isSuburb(level)) {
+            MangledFog.tick(level, state.startTick, now);
+        }
+    }
+
+    /** Level 9's own events (the Mangled fog) only do their full show in the suburb. */
+    private static boolean isSuburb(ServerLevel level) {
+        return BackroomsLevel.fromDimension(level.dimension()) == BackroomsLevel.LEVEL_9;
     }
 
     private static void startRandom(ServerLevel level, BackroomsLevel floor, State state, RandomSource random) {
@@ -146,6 +168,11 @@ public final class LevelEvents {
             case LEVEL_4 -> {
                 kind = LevelEventPayload.STORM;
                 duration = STORM_TICKS;
+            }
+            // The pool levels: only ever the water growing loud, for 20-40 s.
+            case POOLROOMS, LEVEL_37 -> {
+                kind = LevelEventPayload.OBTRUSIVE_WATER;
+                duration = (20 + random.nextInt(21)) * 20;
             }
             default -> {
                 if (roll < 35) { kind = LevelEventPayload.TWIST; duration = TWIST_TICKS; }
@@ -190,6 +217,11 @@ public final class LevelEvents {
             case LevelEventPayload.STORM -> state.thunderTick = now + 20 + random.nextInt(50);
             case LevelEventPayload.TWIST ->
                     level.players().forEach(p -> p.playNotifySound(ModSounds.RADIO_STATIC.get(), SoundSource.AMBIENT, 0.6f, 1.0f));
+            case LevelEventPayload.FOG_ROLL -> {
+                if (isSuburb(level)) {
+                    MangledFog.begin(level, now, state.endTick); // the cold before the fog
+                }
+            }
             default -> {}
         }
         broadcast(level, state, now);
@@ -199,6 +231,9 @@ public final class LevelEvents {
         int ended = state.kind;
         if (ended == LevelEventPayload.BLACKOUT) {
             level.players().forEach(p -> p.playNotifySound(ModSounds.POWER_UP.get(), SoundSource.AMBIENT, 1.0f, 1.0f));
+        }
+        if (ended == LevelEventPayload.FOG_ROLL && isSuburb(level)) {
+            MangledFog.finish(level); // the pillar goes, leaving its crater
         }
         if (ended == LevelEventPayload.TWIST) {
             level.players().forEach(LevelEvents::stopRadioStatic);
@@ -219,8 +254,10 @@ public final class LevelEvents {
             case LEVEL_0 -> (50 + random.nextInt(26)) * 20;
             case LEVEL_1 -> (45 + random.nextInt(26)) * 20;
             case LEVEL_2 -> (30 + random.nextInt(21)) * 20;
+            // The pool levels: the water grows loud only rarely, every 6-12 minutes.
+            case POOLROOMS, LEVEL_37 -> (360 + random.nextInt(361)) * 20;
             // Never starts events by itself; this only matters after an operator forced one.
-            case POOLROOMS, LEVEL_37, LEVEL_94 -> (60 + random.nextInt(30)) * 20;
+            case LEVEL_94 -> (60 + random.nextInt(30)) * 20;
             // Level 4: a lightning strike outside every 1-3 minutes.
             case LEVEL_4 -> (60 + random.nextInt(121)) * 20;
             case LEVEL_9 -> (40 + random.nextInt(31)) * 20;
@@ -274,12 +311,22 @@ public final class LevelEvents {
         if (state == null || state.kind != LevelEventPayload.TWIST) {
             stopRadioStatic(player); // left Level 2 mid-twist: don't carry the hiss along
         }
+        MangledFog.sendCurrent(player); // the Mangled fog's pillar, if one is standing on this floor
     }
 
     /** True while the lights are out on this floor (monsters get bolder). */
     public static boolean isBlackout(BackroomsLevel floor) {
         State state = STATES.get(floor);
         return state != null && state.kind == LevelEventPayload.BLACKOUT;
+    }
+
+    /**
+     * True during a blackout or while the lights stutter (flicker) on this floor. Level 1's
+     * anomalies use it: supplies vanish and paintings change while the lights are out.
+     */
+    public static boolean isLightsOut(BackroomsLevel floor) {
+        State state = STATES.get(floor);
+        return state != null && (state.kind == LevelEventPayload.BLACKOUT || state.kind == LevelEventPayload.FLICKER);
     }
 
     /** Operator command: start an event right now ({@code NONE} ends the current one). */
@@ -296,12 +343,16 @@ public final class LevelEvents {
         if (state.kind == LevelEventPayload.TWIST) {
             level.players().forEach(LevelEvents::stopRadioStatic);
         }
+        if (state.kind == LevelEventPayload.FOG_ROLL && isSuburb(level)) {
+            MangledFog.finish(level); // a new event replaces the fog: the pillar goes
+        }
         start(level, state, kind, durationTicks);
     }
 
     /** Server stopping: forget per-world state. */
     public static void reset() {
         STATES.clear();
+        MangledFog.reset();
     }
 
     private static LevelEventPayload payload(State state, long now) {

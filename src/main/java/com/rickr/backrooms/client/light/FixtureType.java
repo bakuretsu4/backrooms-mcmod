@@ -84,7 +84,30 @@ public enum FixtureType {
      */
     VENDING_MACHINE("vending_machine", Mount.INSET, 1, 0.80f, 0.90f, 1.0f, 0.45f, 6.0f, Hum.NONE, false),
     /** Level 94 odd floor lamp in the toy houses: a small warm pool, steady and silent. */
-    L94_LAMP("l94_lamp", Mount.WALL, 1, 1.0f, 0.86f, 0.62f, 1.2f, 9.0f, Hum.NONE, false);
+    L94_LAMP("l94_lamp", Mount.WALL, 1, 1.0f, 0.86f, 0.62f, 1.2f, 9.0f, Hum.NONE, false),
+    // Poolrooms anomalies: the Sanguine Reservoir's only lights. A red underwater lamp (the red
+    // tint in its water) and the glowing red sprouts on its walkways: small, deep red pools of
+    // light with darkness between them. Silent and steady.
+    RESERVOIR_LAMP("reservoir_lamp", Mount.INSET, 1, 1.0f, 0.14f, 0.10f, 0.8f, 8.0f, Hum.NONE, false),
+    RESERVOIR_SPROUT("reservoir_sprout", Mount.WALL, 1, 1.0f, 0.12f, 0.08f, 0.9f, 7.0f, Hum.NONE, false),
+    // Level 94 anomalies: the blinding hall's ceiling, all light panels. Far too bright on purpose
+    // (the hall's "blinding levels of light"): cold white pools that clip walls and floor to white
+    // and spill out of its doorways. Silent and steady. Long merged runs keep the 9 x 9 ceiling to
+    // a handful of lights, so it doesn't eat the whole light budget.
+    L94_GLARE_PANEL("l94_glare_panel", Mount.CEILING_BLOCK, 5, 0.96f, 0.98f, 1.0f, 3.2f, 16.0f, Hum.NONE, false),
+    // Level 0 anomalies. The Red Rooms' ceiling lamp: dim darkroom red, a small pool, silent (their
+    // "klaxon synth" hum is a sound of the rooms, see client/anomaly/level0). The flickering wall
+    // (the way to Level 1): a weak yellow glow that buzzes and stutters like a dying tube, all the
+    // time (its block has mode=flicker).
+    RED_ROOM_LIGHT("red_room_light", Mount.CEILING_BLOCK, 1, 1.0f, 0.10f, 0.06f, 0.6f, 5.0f, Hum.NONE, false),
+    FLICKERING_WALL("flickering_wall", Mount.CUBE, 3, 1.0f, 0.93f, 0.62f, 0.5f, 6.0f, Hum.FLUORESCENT, true),
+    // Level 4 anomalies: the Window (Entity 2). Warm late-afternoon sunlight spilling from its glass
+    // into the cold night office: the one inviting light in the room. Silent and steady.
+    L4_CLEAR_WINDOW("l4_clear_window", Mount.INSET, 2, 1.0f, 0.80f, 0.52f, 1.5f, 9.0f, Hum.NONE, false),
+    // Level 2 anomalies: the brownout's battery emergency light, the violet glow that came on after
+    // the Blackout. A small dim pool, silent and steady; battery-backed (see FixturePower), so it
+    // never takes part in blackouts, flickers or the lamp circuits failing.
+    L2_EMERGENCY_LIGHT("l2_emergency_light", Mount.WALL, 1, 0.62f, 0.30f, 1.0f, 0.9f, 9.0f, Hum.NONE, false);
 
     /** Which looping buzz a fixture makes (positional, the nearest few lit ones play). */
     public enum Hum {

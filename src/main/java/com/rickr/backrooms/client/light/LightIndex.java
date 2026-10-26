@@ -54,7 +54,7 @@ public final class LightIndex {
             BackroomsLevel floor = BackroomsLevel.fromDimension(newLevel.dimension());
             if (floor != null) {
                 level = newLevel;
-                minY = floor.layout().floorY() - 1;
+                minY = floor.layout().lowestFixtureY(); // just under the floor (Level 2: its void's doorway lamp)
                 maxY = floor.layout().highestCeilingY() + 1; // Poolrooms atriums are taller
             }
         }

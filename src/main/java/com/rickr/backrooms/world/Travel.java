@@ -4,6 +4,7 @@ import com.rickr.backrooms.camera.CameraService;
 import com.rickr.backrooms.network.TransitionPayload;
 import com.rickr.backrooms.player.Checkpoints;
 import com.rickr.backrooms.registry.ModSounds;
+import com.rickr.backrooms.world.anomaly.Teleports;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -105,6 +106,8 @@ public final class Travel {
         player.setDeltaMovement(Vec3.ZERO);
         player.teleportTo(level, pos.x, pos.y, pos.z, player.getYRot(), player.getXRot());
         player.fallDistance = 0;
+        // Travel often runs inside the player's tick (falling out of a level, anomalies).
+        Teleports.settle(player);
     }
 
     /** Nearest safe column to (x, z), searched in growing squares. */

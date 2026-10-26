@@ -1,0 +1,6 @@
+{
+  "parent": "backrooms:block/l94_sink",
+  "textures": {
+    "top": "backrooms:block/l94_sink_top_coin"
+  }
+}

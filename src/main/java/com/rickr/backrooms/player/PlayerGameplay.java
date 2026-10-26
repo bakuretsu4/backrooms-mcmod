@@ -183,6 +183,10 @@ public final class PlayerGameplay {
         if (player.level().getBlockState(player.blockPosition()).is(ModBlocks.LEAF_LITTER.get())) {
             return ModSounds.STEP_LEAVES.get(); // the litter layer sits in the same block as your feet
         }
+        if (player.level().getBlockState(player.blockPosition()).is(ModBlocks.CARPET_FLUID.get())) {
+            // Level 0's blackout zones: the carpet is soaked ankle-deep, every step squelches.
+            return running ? ModSounds.STEP_WATER_WADE_RUN.get() : ModSounds.STEP_WATER_WADE_WALK.get();
+        }
         BlockState on = player.getBlockStateOn();
         if (isCarpet(on)) {
             return running ? ModSounds.STEP_CARPET_RUN.get() : ModSounds.STEP_CARPET_WALK.get();

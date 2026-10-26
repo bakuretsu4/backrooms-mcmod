@@ -45,11 +45,12 @@ public final class UnderwaterView {
     /** Eased 0..1 "eyes under water", for the camcorder. */
     private static float amount;
 
-    /** The water style of the current level (regardless of whether our renderer runs), or null. */
+    /** The water style where the camera is (regardless of whether our renderer runs), or null. */
     @Nullable
     private static WaterStyle levelStyle() {
         Minecraft mc = Minecraft.getInstance();
-        return mc.level == null ? null : WaterStyle.forLevel(BackroomsLevel.fromDimension(mc.level.dimension()));
+        return mc.level == null ? null : WaterStyle.at(BackroomsLevel.fromDimension(mc.level.dimension()),
+                mc.gameRenderer.getMainCamera().getPosition().x);
     }
 
     /** True while the camera is inside water in a level whose water we draw. */

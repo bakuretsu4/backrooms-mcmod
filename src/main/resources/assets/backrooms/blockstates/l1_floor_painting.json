@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "variant=0": {
+      "model": "backrooms:block/l1_floor_painting_0"
+    },
+    "variant=1": {
+      "model": "backrooms:block/l1_floor_painting_1"
+    },
+    "variant=2": {
+      "model": "backrooms:block/l1_floor_painting_2"
+    },
+    "variant=3": {
+      "model": "backrooms:block/l1_floor_painting_3"
+    }
+  }
+}

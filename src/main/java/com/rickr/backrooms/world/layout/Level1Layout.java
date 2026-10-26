@@ -6,6 +6,10 @@ import com.rickr.backrooms.block.WallLampBlock;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
+import com.rickr.backrooms.world.anomaly.AnomalyGrid;
+import com.rickr.backrooms.world.anomaly.AnomalySite;
+import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -36,6 +40,13 @@ import org.jetbrains.annotations.Nullable;
  * inside a carpet, wood panelling under white paint and a warm lamp. A 1-wide strip of floor runs
  * all around it so it always joins the garage. Maze rooms also hold the odd metal supply locker
  * against a wall, and now and then a dropped backpack.
+ *
+ * <p><b>Anomalous areas</b> (shapes in {@link Level1AnomalyPlan}, behaviours in
+ * {@code world/anomaly/level1}): crate halls with racks inside open garage halls, small painting
+ * rooms off the maze, patches of low fog and puddles, and, rarely, the doorway into the Corrupted
+ * Corridor (Level 1.1). Two grids place them: one site at most per 96x96 square for the first
+ * three, per 512x512 square for the corridor. Their planners only use this file's own pure plan
+ * functions, and keep clear of exits, safe rooms and each other.
  */
 public final class Level1Layout extends LevelLayout {
     private static final int GRID = 8;
@@ -57,6 +68,11 @@ public final class Level1Layout extends LevelLayout {
     private static final int SAFE_EXIT_DISTANCE = 24;
     /** Grid cells per safe-room square (128 / 8). */
     private static final int SAFE_GRID_CELLS = SafeRoomPlan.CELL / GRID;
+
+    /** The Corrupted Corridor; its 138-block length may cross into the next square. */
+    private final AnomalyGrid corridorGrid = new AnomalyGrid(Level1AnomalyPlan.CORRIDOR_CELL, 1, this::planCorridor);
+    /** Crate halls, painting rooms and fog patches; each always fits inside its own square. */
+    private final AnomalyGrid roomGrid = new AnomalyGrid(Level1AnomalyPlan.ROOM_CELL, 0, this::planRoomSite);
 
     public Level1Layout() {
         super(5, new ExitLocator(384, 48, 2000));
@@ -227,6 +243,28 @@ public final class Level1Layout extends LevelLayout {
 
     @Override
     public boolean isWalkable(long seed, int x, int z) {
+        return walkable(seed, x, z, true);
+    }
+
+    /**
+     * Nobody arrives (or respawns) inside a crate hall, painting room or the corridor: crates
+     * appear on the floor there, the room is a dead end, and the corridor throws you around. The
+     * fog patches are just a damp bit of garage, so arriving there is fine.
+     */
+    @Override
+    public boolean isSafeArrival(long seed, int x, int z) {
+        AnomalySite site = anomalyAt(seed, x, z);
+        if (site != null && !Level1AnomalyPlan.isFog(site)) {
+            return false;
+        }
+        return isWalkable(seed, x, z);
+    }
+
+    /**
+     * {@link #isWalkable}, optionally ignoring the anomalous areas: their planners ask about the
+     * garage as it would be without them (asking about the anomalies there would go round in circles).
+     */
+    private boolean walkable(long seed, int x, int z, boolean withAnomalies) {
         int d = exits().distance(seed, x, z);
         if (d <= STAIRWELL_RADIUS) return false;
         if (d <= CLEARING_RADIUS) return true;
@@ -234,14 +272,22 @@ public final class Level1Layout extends LevelLayout {
         if (safe != null) {
             return !safe.contains(x, z) || safe.isWalkable(x, z);
         }
+        AnomalySite site = withAnomalies ? anomalyAt(seed, x, z) : null;
+        if (Level1AnomalyPlan.isCorridor(site)) {
+            return Level1AnomalyPlan.corridorWalkable(site, x, z);
+        }
+        if (site != null && Level1AnomalyPlan.PAINTING_ROOM.equals(site.kind())) {
+            return paintingRoomWalkable(site, x, z);
+        }
         int mx = Math.floorMod(x, GRID);
         int mz = Math.floorMod(z, GRID);
         int cx = Math.floorDiv(x, GRID);
         int cz = Math.floorDiv(z, GRID);
+        boolean crateHall = Level1AnomalyPlan.inCrateHall(site, x, z);
         if (mx <= 1 && mz <= 1) return false; // pillar
         if (mz <= 1 || mx <= 1) {
             int axis = mz <= 1 ? 0 : 1;
-            int state = partition(seed, cx, cz, axis);
+            int state = crateHall ? OPEN : partition(seed, cx, cz, axis);
             int row = axis == 0 ? mz : mx;
             int along = axis == 0 ? mx : mz;
             if (state == SOLID) return false;
@@ -249,6 +295,7 @@ public final class Level1Layout extends LevelLayout {
             if (state == CHAIN) return row == 1;
             return true;
         }
+        if (crateHall) return !Level1AnomalyPlan.crateHallShelf(mx, mz);
         if (splitWall(seed, x, z)) return false;
         return crateHeight(seed, x, z) == 0 && lockerFacing(seed, x, z) == null && backpackFacing(seed, x, z) == null;
     }
@@ -271,8 +318,21 @@ public final class Level1Layout extends LevelLayout {
             fillSafeRoom(safe, x, z, out);
             return;
         }
+        // Anomalous areas (see Level1AnomalyPlan). The corridor and the painting room replace the
+        // whole column; a crate hall and a fog patch change parts of the garage built below.
+        AnomalySite site = anomalyAt(seed, x, z);
+        if (Level1AnomalyPlan.isCorridor(site)) {
+            Level1AnomalyPlan.fillCorridor(site, x, z, floor, ceiling, out);
+            return;
+        }
+        if (site != null && Level1AnomalyPlan.PAINTING_ROOM.equals(site.kind())) {
+            fillPaintingRoom(seed, site, x, z, out);
+            return;
+        }
+        boolean crateHall = Level1AnomalyPlan.inCrateHall(site, x, z);
         out.set(ceiling, concrete);
-        out.set(floor, puddle(seed, x, z) ? ModBlocks.WET_CONCRETE_FLOOR.get().defaultBlockState() : floorBlock);
+        boolean wet = puddle(seed, x, z) || Level1AnomalyPlan.fogPuddleSpot(site, x, z);
+        out.set(floor, wet ? ModBlocks.WET_CONCRETE_FLOOR.get().defaultBlockState() : floorBlock);
         if (exitDistance <= CLEARING_RADIUS) {
             // Open apron around the stairwell, lit by tube strips on all four sides.
             int ax = Math.abs(dx);
@@ -302,7 +362,8 @@ public final class Level1Layout extends LevelLayout {
 
         if (mz <= 1 || mx <= 1) {
             int axis = mz <= 1 ? 0 : 1;
-            int state = partition(seed, cx, cz, axis);
+            // Inside a crate hall every partition is open: one big storage hall.
+            int state = crateHall ? OPEN : partition(seed, cx, cz, axis);
             int row = axis == 0 ? mz : mx;
             int along = axis == 0 ? mx : mz;
             if (state == SOLID || state == DOOR) {
@@ -328,7 +389,7 @@ public final class Level1Layout extends LevelLayout {
         }
 
         // Fixtures on the faces of nearby pillars (only on open rows, never inside a fence or wall).
-        if (partitionAt(seed, x, z) == OPEN) {
+        if (crateHall || partitionAt(seed, x, z) == OPEN) {
             Direction tubeFace = pillarTubeFace(seed, x, z);
             if (tubeFace != null) {
                 BlockState tube = ModBlocks.WAREHOUSE_LIGHT.get().defaultBlockState().setValue(WallLampBlock.FACING, tubeFace);
@@ -342,6 +403,10 @@ public final class Level1Layout extends LevelLayout {
         }
 
         if (mx >= 2 && mz >= 2) {
+            if (crateHall) {
+                Level1AnomalyPlan.fillCrateHallBay(mx, mz, floor, ceiling, out);
+                return;
+            }
             if (splitWall(seed, x, z)) {
                 for (int y = floor + 1; y < ceiling; y++) {
                     out.set(y, concrete);
@@ -371,6 +436,10 @@ public final class Level1Layout extends LevelLayout {
             Direction backpack = backpackFacing(seed, x, z);
             if (backpack != null) {
                 out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, backpack));
+            }
+            // Condensation from the low fog, where nothing else stands.
+            if (crates == 0 && locker == null && backpack == null && Level1AnomalyPlan.fogPuddleAtStart(site, x, z)) {
+                out.set(floor + 1, ModBlocks.L1_CONDENSATION.get().defaultBlockState());
             }
         }
     }
@@ -526,5 +595,269 @@ public final class Level1Layout extends LevelLayout {
             return 0;
         }
         return 1 + Hash.range(Hash.of(seed, x, z, 28), 3);
+    }
+
+    // ==========================================================================================
+    // Anomalous areas (their shapes: Level1AnomalyPlan; what they do: world/anomaly/level1)
+    // ==========================================================================================
+
+    /** Share of the 96x96 squares that try to hold each kind (if a good spot is found). */
+    private static final double CRATE_HALL_SHARE = 0.26;
+    private static final double FOG_SHARE = 0.24;
+    private static final double PAINTING_SHARE = 0.16;
+    /** Grid cells per 96-block anomaly square, and per 512-block corridor square. */
+    private static final int ROOM_GRID_CELLS = Level1AnomalyPlan.ROOM_CELL / GRID;
+    private static final int CORRIDOR_GRID_CELLS = Level1AnomalyPlan.CORRIDOR_CELL / GRID;
+
+    @Override
+    @Nullable
+    public AnomalySite anomalyAt(long seed, int x, int z) {
+        AnomalySite corridor = corridorGrid.at(seed, x, z);
+        return corridor != null ? corridor : roomGrid.at(seed, x, z);
+    }
+
+    @Override
+    public void anomaliesNear(long seed, int x, int z, int radius, Consumer<AnomalySite> out) {
+        corridorGrid.near(seed, x, z, radius, out);
+        roomGrid.near(seed, x, z, radius, out);
+    }
+
+    @Override
+    @Nullable
+    public AnomalySite nearestAnomaly(long seed, int x, int z, String kind) {
+        if (Level1AnomalyPlan.CORRUPTED_CORRIDOR.equals(kind)) {
+            return corridorGrid.nearest(seed, x, z, site -> kind.equals(site.kind()), 8);
+        }
+        return roomGrid.nearest(seed, x, z, site -> kind.equals(site.kind()), 40);
+    }
+
+    @Override
+    public List<String> anomalyKinds() {
+        return Level1AnomalyPlan.KINDS;
+    }
+
+    /** True if (x, z) belongs to an exit's stairwell or clearing (with a margin) or to a safe room. */
+    private boolean blocksAnomaly(long seed, int x, int z) {
+        return exits().distance(seed, x, z) <= CLEARING_RADIUS + 2 || safeRoomNear(seed, x, z) != null;
+    }
+
+    /**
+     * The Corrupted Corridor of one 512x512 square, or null. A straight 8-wide band along one row
+     * (or column) of the pillar grid, 17 bays long. Its doorway is in the side wall near one end
+     * and opens onto a bay of an open garage hall, so you can always walk up to it. Tries a few
+     * spots and gives up if none keeps clear of exits and safe rooms (so it is rare).
+     */
+    @Nullable
+    private AnomalySite planCorridor(long seed, int cellX, int cellZ) {
+        long h = Hash.of(seed, cellX, cellZ, 7100);
+        int bays = Level1AnomalyPlan.CORRIDOR_LENGTH / GRID; // 17, plus the closing pillar row
+        for (int attempt = 0; attempt < 16; attempt++) {
+            long a = Hash.mix(h + (attempt + 1) * 0x9E3779B97F4A7C15L);
+            boolean alongX = (a & 1) == 0;
+            boolean forward = (a & 2) == 0; // walking in towards +x / +z
+            int band = (alongX ? cellZ : cellX) * CORRIDOR_GRID_CELLS + 1 + Hash.range(Hash.mix(a ^ 1), CORRIDOR_GRID_CELLS - 2);
+            int start = (alongX ? cellX : cellZ) * CORRIDOR_GRID_CELLS + Hash.range(Hash.mix(a ^ 2), CORRIDOR_GRID_CELLS - bays);
+            int alongMin = start * GRID;
+            int alongMax = alongMin + Level1AnomalyPlan.CORRIDOR_LENGTH - 1;
+            int acrossMin = band * GRID;
+            int acrossMax = acrossMin + GRID - 1;
+            Direction facing = alongX ? (forward ? Direction.EAST : Direction.WEST) : (forward ? Direction.SOUTH : Direction.NORTH);
+            int anchor = forward ? alongMin : alongMax;
+            long salt = Hash.mix(a ^ 3);
+            AnomalySite site = alongX
+                    ? new AnomalySite(Level1AnomalyPlan.CORRUPTED_CORRIDOR, alongMin, acrossMin, alongMax, acrossMax,
+                            anchor, acrossMin, facing.get2DDataValue(), salt)
+                    : new AnomalySite(Level1AnomalyPlan.CORRUPTED_CORRIDOR, acrossMin, alongMin, acrossMax, alongMax,
+                            acrossMin, anchor, facing.get2DDataValue(), salt);
+            if (corridorFits(seed, site)) {
+                return site;
+            }
+        }
+        return null;
+    }
+
+    private boolean corridorFits(long seed, AnomalySite site) {
+        // The doorway opens onto the floor of an open garage hall.
+        for (int t = Level1AnomalyPlan.DOOR_T; t <= Level1AnomalyPlan.DOOR_T + 1; t++) {
+            int x = Level1AnomalyPlan.corridorX(site, t, -1);
+            int z = Level1AnomalyPlan.corridorZ(site, t, -1);
+            if (!hallZone(seed, x, z) || !walkable(seed, x, z, false)) {
+                return false;
+            }
+        }
+        // Clear of exits and safe rooms: test the lines of columns just outside both long sides and
+        // the ends. Anything that matters (a stairwell clearing, a safe room) is wider than the
+        // corridor, so if it touched the corridor it would cross one of those lines.
+        for (int t = -1; t <= Level1AnomalyPlan.CORRIDOR_LENGTH; t += 3) {
+            for (int a = -1; a <= GRID; a += GRID + 1) {
+                if (blocksAnomaly(seed, Level1AnomalyPlan.corridorX(site, t, a), Level1AnomalyPlan.corridorZ(site, t, a))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * The crate hall, painting room or fog patch of one 96x96 square, or null. The square's roll
+     * picks the kind; then a few spots are tried until one suits it.
+     */
+    @Nullable
+    private AnomalySite planRoomSite(long seed, int cellX, int cellZ) {
+        long h = Hash.of(seed, cellX, cellZ, 7200);
+        double roll = Hash.unit(h);
+        String kind = roll < CRATE_HALL_SHARE ? Level1AnomalyPlan.CRATE_HALL
+                : roll < CRATE_HALL_SHARE + FOG_SHARE ? Level1AnomalyPlan.FOG_PUDDLES
+                : roll < CRATE_HALL_SHARE + FOG_SHARE + PAINTING_SHARE ? Level1AnomalyPlan.PAINTING_ROOM
+                : null;
+        if (kind == null) {
+            return null;
+        }
+        for (int attempt = 0; attempt < 12; attempt++) {
+            long a = Hash.mix(h + (attempt + 1) * 0x9E3779B97F4A7C15L);
+            AnomalySite site = switch (kind) {
+                case Level1AnomalyPlan.CRATE_HALL -> crateHallCandidate(seed, cellX, cellZ, a);
+                // The first tries insist on a narrow corridor outside the door ("a side room off the Corridors").
+                case Level1AnomalyPlan.PAINTING_ROOM -> paintingRoomCandidate(seed, cellX, cellZ, a, attempt < 8);
+                default -> fogCandidate(cellX, cellZ, a);
+            };
+            // A painting room also keeps the bay outside its door clear.
+            int margin = Level1AnomalyPlan.PAINTING_ROOM.equals(kind) ? GRID : 2;
+            if (site != null && anomalyAreaClear(seed, site, margin)) {
+                return site;
+            }
+        }
+        return null;
+    }
+
+    /** 3x3 bays of storage racks inside an open garage hall (the Gild sector's crate-rich halls). */
+    @Nullable
+    private static AnomalySite crateHallCandidate(long seed, int cellX, int cellZ, long a) {
+        int span = ROOM_GRID_CELLS - Level1AnomalyPlan.CRATE_HALL_CELLS;
+        int minX = (cellX * ROOM_GRID_CELLS + Hash.range(Hash.mix(a ^ 1), span)) * GRID;
+        int minZ = (cellZ * ROOM_GRID_CELLS + Hash.range(Hash.mix(a ^ 2), span)) * GRID;
+        int maxX = minX + Level1AnomalyPlan.CRATE_HALL_SIZE - 1;
+        int maxZ = minZ + Level1AnomalyPlan.CRATE_HALL_SIZE - 1;
+        if (!hallZone(seed, minX, minZ) || !hallZone(seed, maxX, minZ) || !hallZone(seed, minX, maxZ) || !hallZone(seed, maxX, maxZ)) {
+            return null;
+        }
+        return new AnomalySite(Level1AnomalyPlan.CRATE_HALL, minX, minZ, maxX, maxZ, (minX + maxX) / 2, (minZ + maxZ) / 2, 0, Hash.mix(a ^ 3));
+    }
+
+    /**
+     * One maze room closed off on all four sides, its only doorway (in the middle of one wall)
+     * leading into a neighbouring maze room. The door wall must not have been a solid wall
+     * before: a wall lamp may hang on the far side of a solid wall, and it would block the door.
+     */
+    @Nullable
+    private static AnomalySite paintingRoomCandidate(long seed, int cellX, int cellZ, long a, boolean wantCorridor) {
+        int cx = cellX * ROOM_GRID_CELLS + Hash.range(Hash.mix(a ^ 1), ROOM_GRID_CELLS - 1);
+        int cz = cellZ * ROOM_GRID_CELLS + Hash.range(Hash.mix(a ^ 2), ROOM_GRID_CELLS - 1);
+        Direction door = Direction.from2DDataValue(Hash.range(Hash.mix(a ^ 4), 4));
+        int nx = cx + door.getStepX();
+        int nz = cz + door.getStepZ();
+        if (hallZone(seed, cx * GRID, cz * GRID) || hallZone(seed, nx * GRID, nz * GRID)) {
+            return null;
+        }
+        int doorWall = switch (door) {
+            case NORTH -> partition(seed, cx, cz, 0);
+            case SOUTH -> partition(seed, cx, cz + 1, 0);
+            case WEST -> partition(seed, cx, cz, 1);
+            default -> partition(seed, cx + 1, cz, 1);
+        };
+        if (doorWall == SOLID || wantCorridor && splitKind(seed, nx, nz) == 0) {
+            return null;
+        }
+        int minX = cx * GRID;
+        int minZ = cz * GRID;
+        int size = Level1AnomalyPlan.PAINTING_ROOM_SIZE;
+        return new AnomalySite(Level1AnomalyPlan.PAINTING_ROOM, minX, minZ, minX + size - 1, minZ + size - 1,
+                minX + GRID / 2, minZ + GRID / 2, door.get2DDataValue(), Hash.mix(a ^ 3));
+    }
+
+    /** A patch of low fog, 18 to 28 blocks across, anywhere in the garage. */
+    private static AnomalySite fogCandidate(int cellX, int cellZ, long a) {
+        int w = 18 + Hash.range(Hash.mix(a ^ 1), 11);
+        int d = 18 + Hash.range(Hash.mix(a ^ 2), 11);
+        int minX = cellX * Level1AnomalyPlan.ROOM_CELL + 2 + Hash.range(Hash.mix(a ^ 4), Level1AnomalyPlan.ROOM_CELL - w - 4);
+        int minZ = cellZ * Level1AnomalyPlan.ROOM_CELL + 2 + Hash.range(Hash.mix(a ^ 5), Level1AnomalyPlan.ROOM_CELL - d - 4);
+        return new AnomalySite(Level1AnomalyPlan.FOG_PUDDLES, minX, minZ, minX + w - 1, minZ + d - 1,
+                minX + w / 2, minZ + d / 2, 0, Hash.mix(a ^ 3));
+    }
+
+    /** Clear of exits, safe rooms and any Corrupted Corridor (and the bay in front of its doorway). */
+    private boolean anomalyAreaClear(long seed, AnomalySite site, int margin) {
+        int x0 = site.minX() - margin;
+        int z0 = site.minZ() - margin;
+        int x1 = site.maxX() + margin;
+        int z1 = site.maxZ() + margin;
+        for (int x = x0; x <= x1 + 2; x += 3) {
+            for (int z = z0; z <= z1 + 2; z += 3) {
+                if (blocksAnomaly(seed, Math.min(x, x1), Math.min(z, z1))) {
+                    return false;
+                }
+            }
+        }
+        boolean[] hit = {false};
+        corridorGrid.near(seed, (x0 + x1) / 2, (z0 + z1) / 2, Math.max(x1 - x0, z1 - z0) / 2 + 4, corridor -> {
+            if (corridor.minX() - 3 <= x1 && corridor.maxX() + 3 >= x0 && corridor.minZ() - 3 <= z1 && corridor.maxZ() + 3 >= z0) {
+                hit[0] = true;
+            }
+        });
+        return !hit[0];
+    }
+
+    /**
+     * One column of a painting room: the four corner pillars, solid concrete walls with a single
+     * doorway, a single tube light, and the crude paintings on the walls and the floor.
+     */
+    private void fillPaintingRoom(long seed, AnomalySite site, int x, int z, Column out) {
+        BlockState concrete = ModBlocks.CONCRETE_WALL.get().defaultBlockState();
+        int floor = floorY();
+        int ceiling = ceilingY();
+        int lx = x - site.minX();
+        int lz = z - site.minZ();
+        int mx = Math.floorMod(x, GRID);
+        int mz = Math.floorMod(z, GRID);
+        out.set(ceiling, concrete);
+        out.set(floor, ModBlocks.CONCRETE_FLOOR.get().defaultBlockState());
+        if (mz <= 1) {
+            out.set(ceiling - 1, ModBlocks.CEILING_BEAM.get().defaultBlockState());
+        }
+        if (mx <= 1 && mz <= 1) {
+            fillPillar(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID), mx, mz, out);
+            return;
+        }
+        if (mx <= 1 || mz <= 1) {
+            int top = mz <= 1 ? ceiling - 1 : ceiling; // leave the beam on east-west rows
+            boolean doorway = Level1AnomalyPlan.paintingDoorway(site, lx, lz);
+            for (int y = floor + 1; y < top; y++) {
+                if (!(doorway && y <= floor + 3)) {
+                    out.set(y, concrete);
+                }
+            }
+            return;
+        }
+        if (lz == 4 && (lx == 4 || lx == 5)) {
+            out.set(ceiling - 1, tube(Direction.Axis.X));
+        }
+        for (int y = floor + 1; y <= floor + 3; y++) {
+            BlockState painting = Level1AnomalyPlan.initialPainting(site, x, y, z);
+            if (painting != null) {
+                out.set(y, painting);
+            }
+        }
+    }
+
+    private static boolean paintingRoomWalkable(AnomalySite site, int x, int z) {
+        int mx = Math.floorMod(x, GRID);
+        int mz = Math.floorMod(z, GRID);
+        if (mx <= 1 && mz <= 1) {
+            return false;
+        }
+        if (mx <= 1 || mz <= 1) {
+            return Level1AnomalyPlan.paintingDoorway(site, x - site.minX(), z - site.minZ());
+        }
+        return true;
     }
 }
