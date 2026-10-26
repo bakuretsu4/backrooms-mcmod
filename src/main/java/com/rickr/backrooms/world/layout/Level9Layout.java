@@ -60,6 +60,12 @@ import org.jetbrains.annotations.Nullable;
  * <p>Streetlamps: 30% dead, 15% flickering, 55% working (1 in 6 of those a cold mercury lamp).
  * Street signs at junctions point toward the nearest exit (they lie about one time in seven);
  * Neighborhood Watch notices and warnings stand in front of empty lots.
+ *
+ * <p><b>Safe houses.</b> Each 96x96 square of the suburb picks one random point; if it falls on
+ * a lot with a suitable house, that house is a safe house: porch light on, a SAFE sign over the
+ * front door (outside and inside), the door unlocked, and in the living room a checkpoint radio,
+ * a supply crate, a made cot and a warm lamp. The whole house counts as the safe room. Now and
+ * then someone's backpack lies on a porch or a driveway.
  */
 public final class Level9Layout extends LevelLayout {
     // ---- Streets -----------------------------------------------------------------------------
@@ -122,6 +128,10 @@ public final class Level9Layout extends LevelLayout {
     private static final int ARRIVAL_LAMP_REACH = 8;
     private static final int TREE_CELL = 6;
 
+    // ---- Safe houses ---------------------------------------------------------------------------
+    /** One safe-house point per SAFE_CELL x SAFE_CELL square (lots cover about a third of the ground). */
+    private static final int SAFE_CELL = 96;
+
     // ---- Side street kinds -------------------------------------------------------------------
     private static final int NONE = 0;
     private static final int STUB = 1;
@@ -174,6 +184,16 @@ public final class Level9Layout extends LevelLayout {
         }
         House h = houseAt(seed, x, z);
         return h != null && (h.inHouse(h.u, h.v) || h.inGarage(h.u, h.v));
+    }
+
+    /** The whole footprint of a safe house, walls included. */
+    @Override
+    public boolean isSafeRoom(long seed, int x, int z) {
+        if (classify(seed, x, z) != OTHER) {
+            return false;
+        }
+        House h = houseAt(seed, x, z);
+        return h != null && h.safe && h.inHouse(h.u, h.v);
     }
 
     /** Deep inside the underpass: walking here escapes the Backrooms. */
@@ -588,10 +608,54 @@ public final class Level9Layout extends LevelLayout {
         int side = infoSide(info);
         int idx = infoIdx(info);
         if (!lotValid(seed, r, side, idx)) return null;
-        House h = House.of(seed, r, side, idx);
+        House h = houseOf(seed, r, side, idx);
         h.u = infoU(info);
         h.v = infoV(info);
         return h;
+    }
+
+    /**
+     * The house of a valid lot. The first time a house is looked at on this thread, also works
+     * out whether it is a safe house; if so it gets its porch light switched on and its door
+     * unlocked (the House object is cached, so this happens once).
+     */
+    private House houseOf(long seed, int r, int side, int idx) {
+        House h = House.of(seed, r, side, idx);
+        if (!h.safeKnown) {
+            h.safeKnown = true;
+            if (h.livingRoomFits() && !h.glitch && safeHousePicked(seed, r, side, idx)) {
+                h.safe = true;
+                h.unlocked = true;
+                h.porchLight = true;
+            }
+        }
+        return h;
+    }
+
+    /**
+     * True when the safe-house point of one of the 96x96 squares falls on lot (r, side, idx).
+     * Lots never straddle a jog of their street (lotValid keeps them away from side streets),
+     * so the lot is a plain LW x LD rectangle.
+     */
+    private boolean safeHousePicked(long seed, int r, int side, int idx) {
+        int x0 = idx * LW + lotPhase(seed, r, side);
+        int z0;
+        if (side == SOUTH_OF_STREET) {
+            z0 = streetZ(seed, r, x0) + roadHalf(seed, r) + SW + 1;        // the lot's front edge
+        } else {
+            z0 = streetZ(seed, r + 1, x0) - roadHalf(seed, r + 1) - SW - LD; // its back edge (the woods side)
+        }
+        for (int cx = Math.floorDiv(x0, SAFE_CELL); cx <= Math.floorDiv(x0 + LW - 1, SAFE_CELL); cx++) {
+            for (int cz = Math.floorDiv(z0, SAFE_CELL); cz <= Math.floorDiv(z0 + LD - 1, SAFE_CELL); cz++) {
+                long h = SafeRoomPlan.cellHash(seed, cx, cz, 440);
+                int px = cx * SAFE_CELL + Hash.range(Hash.mix(h ^ 1), SAFE_CELL);
+                int pz = cz * SAFE_CELL + Hash.range(Hash.mix(h ^ 2), SAFE_CELL);
+                if (px >= x0 && px < x0 + LW && pz >= z0 && pz < z0 + LD) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** True for woods: deep in the middle of a block, or the back of an empty lot. */
@@ -631,6 +695,13 @@ public final class Level9Layout extends LevelLayout {
         int backFence;
         boolean glitch;
         boolean crate;
+        /** Someone's backpack lies on the porch / on the driveway; it faces backpackFacing. */
+        boolean porchBackpack;
+        boolean drivewayBackpack;
+        Direction backpackFacing;
+        /** A safe house (see safeHousePicked); only valid once safeKnown is true (set by houseOf). */
+        boolean safe;
+        boolean safeKnown;
         int roofBase;
         /** Interior partition column, or Integer.MIN_VALUE for none. */
         int partitionU;
@@ -699,6 +770,9 @@ public final class Level9Layout extends LevelLayout {
             backFence = Hash.unit(seed, idx, k, 956) < 0.6 ? 2 : 1;
             glitch = !unlocked && Hash.unit(seed, idx, k, 957) < 0.04;
             crate = Hash.unit(seed, idx, k, 958) < 0.3;
+            porchBackpack = Hash.unit(seed, idx, k, 961) < 0.06;
+            drivewayBackpack = garage && Hash.unit(seed, idx, k, 962) < 0.08;
+            backpackFacing = Direction.from2DDataValue(Hash.range(Hash.of(seed, idx, k, 963), 4));
             // The top storey's wall plate / ceiling layer; the roof's first stairs sit at this height
             // on the overhang and climb from there, so there is no gap above the walls.
             roofBase = 41 + 5 * storeys;
@@ -757,6 +831,11 @@ public final class Level9Layout extends LevelLayout {
 
         int stairU() {
             return hu1 - 1;
+        }
+
+        /** A living room (left of the interior wall) wide enough for the safe-house furniture. */
+        boolean livingRoomFits() {
+            return partitionU != Integer.MIN_VALUE && partitionU >= hu0 + 4;
         }
 
         /** Direction meaning "+u" (east) or "-u" (west) in the world. */
@@ -1254,7 +1333,7 @@ public final class Level9Layout extends LevelLayout {
             int side = infoSide(info);
             int idx = infoIdx(info);
             if (lotValid(seed, r, side, idx)) {
-                House h = House.of(seed, r, side, idx);
+                House h = houseOf(seed, r, side, idx);
                 int u = infoU(info);
                 int v = infoV(info);
                 yard(seed, x, z, h, u, v, out);
@@ -1308,6 +1387,12 @@ public final class Level9Layout extends LevelLayout {
             if (h.porchLight && v == s - 1 && u == h.doorU + 1) {
                 out.set(44, facing(ModBlocks.PORCH_LIGHT.get().defaultBlockState(), h.front));
             }
+            if (h.safe && v == s - 1 && u == h.doorU) {
+                out.set(44, facing(ModBlocks.SAFE_ROOM_SIGN.get().defaultBlockState(), h.front)); // over the front door
+            }
+            if (h.porchBackpack && v == s - 1 && u == h.porchU0) {
+                out.set(42, facing(ModBlocks.BACKPACK.get().defaultBlockState(), h.backpackFacing));
+            }
             return;
         }
         BlockState concrete = ModBlocks.SIDEWALK_SLAB.get().defaultBlockState().setValue(SlabBlock.TYPE, SlabType.DOUBLE);
@@ -1317,6 +1402,9 @@ public final class Level9Layout extends LevelLayout {
         }
         if (h.garage && v <= s - 1 && u >= h.gu0 + 1 && u <= h.gu0 + 3) {
             out.set(FLOOR_Y + 1, concrete); // driveway
+            if (h.drivewayBackpack && v == s - 2 && u == h.gu0 + 1) {
+                out.set(42, facing(ModBlocks.BACKPACK.get().defaultBlockState(), h.backpackFacing));
+            }
             return;
         }
         int fence = fenceKind(h, u, v);
@@ -1533,11 +1621,16 @@ public final class Level9Layout extends LevelLayout {
         if (h.storeys == 2 && u == h.stairU() - 1 && v >= s + 1 && v <= s + 4) {
             out.set(47, ModBlocks.PORCH_POST.get().defaultBlockState()); // banister by the stairwell
         }
-        BlockState piece = null;
+        if (h.safe) {
+            safeHouseExtras(h, u, v, out);
+        }
+        BlockState piece = h.safe ? safeHousePiece(h, u, v) : null;
         int pu = h.partitionU;
         int tvU = h.hu0 + 1 != h.doorU ? h.hu0 + 1 : h.hu0 + 2;
         int kitchenEnd = Math.min(pu + 3, h.hu1 - (h.storeys == 2 ? 3 : 1));
-        if (v == back && (u == h.hu0 + 1 || u == h.hu0 + 2)) {
+        if (piece != null) {
+            // a safe-house piece already stands here
+        } else if (v == back && (u == h.hu0 + 1 || u == h.hu0 + 2)) {
             piece = facing(ModBlocks.SOFA.get().defaultBlockState(), h.front);
         } else if (v == s + 1 && u == tvU && tvU < pu) {
             piece = facing(ModBlocks.TV.get().defaultBlockState(), h.inward);
@@ -1554,6 +1647,39 @@ public final class Level9Layout extends LevelLayout {
         if (piece != null) out.set(42, piece);
         if (h.storeys == 2 && u == h.hu0 + 2 && (v == back - 1 || v == back)) {
             out.set(47, facing(ModBlocks.BED.get().defaultBlockState(), h.inward).setValue(HouseBedBlock.HEAD, v == back));
+        }
+    }
+
+    /**
+     * Safe-house furniture in the living room (left of the interior wall), or null: the checkpoint
+     * radio against the side wall facing into the room (the spot in front of it stays free), a
+     * supply crate by the TV, and a made cot along the interior wall.
+     */
+    @Nullable
+    private static BlockState safeHousePiece(House h, int u, int v) {
+        int s = h.setback;
+        int back = s + h.depth - 2;
+        if (u == h.hu0 + 1 && v == s + h.depth / 2) {
+            return facing(ModBlocks.CHECKPOINT_RADIO.get().defaultBlockState(), House.alongU(true));
+        }
+        if (u == h.hu0 + 1 && v == s + 2) {
+            return ModBlocks.SUPPLY_CRATE.get().defaultBlockState();
+        }
+        if (u == h.partitionU - 1 && (v == back - 1 || v == back)) {
+            // HouseBedBlock: FACING points from the foot to the head (at the back wall).
+            return facing(ModBlocks.BED.get().defaultBlockState(), h.inward).setValue(HouseBedBlock.HEAD, v == back);
+        }
+        return null;
+    }
+
+    /** The safe house's warm ceiling lamp over the living room, and the SAFE sign inside the front door. */
+    private static void safeHouseExtras(House h, int u, int v, Column out) {
+        int s = h.setback;
+        if (u == (h.hu0 + h.partitionU) / 2 && v == s + (h.depth - 1) / 2) {
+            out.set(46, ModBlocks.SAFE_ROOM_LAMP.get().defaultBlockState()); // the ground floor's ceiling layer
+        }
+        if (u == h.doorU && v == s + 1) {
+            out.set(44, facing(ModBlocks.SAFE_ROOM_SIGN.get().defaultBlockState(), h.inward)); // above the door, inside
         }
     }
 

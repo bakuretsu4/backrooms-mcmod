@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/supply_locker"
+    },
+    "facing=east": {
+      "model": "backrooms:block/supply_locker",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/supply_locker",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/supply_locker",
+      "y": 270
+    }
+  }
+}

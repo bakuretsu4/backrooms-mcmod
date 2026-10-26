@@ -6,6 +6,7 @@ import com.rickr.backrooms.camera.CameraService;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.layout.LevelLayout;
+import com.rickr.backrooms.world.SafeRooms;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -429,8 +430,9 @@ public class Watcher extends FlyingMob {
         return false;
     }
 
+    /** Someone it may watch and turn to dust. Players inside a safe room are left alone (that also cancels a charging beam). */
     private static boolean isValidPrey(ServerPlayer player) {
-        return player.isAlive() && !player.isSpectator() && !player.isCreative();
+        return player.isAlive() && !player.isSpectator() && !player.isCreative() && !SafeRooms.isSafe(player);
     }
 
     /** Within range (longer with a flashlight), optionally inside the cone, and nothing in between. */

@@ -1,6 +1,15 @@
 {
   "variants": {
-    "": {
+    "facing=north": {
+      "model": "backrooms:block/supply_crate"
+    },
+    "facing=east": {
+      "model": "backrooms:block/supply_crate"
+    },
+    "facing=south": {
+      "model": "backrooms:block/supply_crate"
+    },
+    "facing=west": {
       "model": "backrooms:block/supply_crate"
     }
   }

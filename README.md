@@ -20,7 +20,7 @@ mod falls back to simpler lighting.
 | Camcorder REC overlay | `H` (off by default) |
 | Sprint | Limited by energy (the faint bolt in the middle of the screen). Rest to refill it. |
 | Jump | Not possible in the Backrooms (except in water, to swim and climb out) |
-| Loot | Right-click Wooden Crates: canned food, backshrooms, almond water, batteries |
+| Loot | Right-click Wooden Crates, Backpacks and Supply Lockers (see Supplies below) |
 | New battery | Right-click a Camcorder Battery |
 
 ### The way out
@@ -50,6 +50,65 @@ Overworld --suffocate--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 -
   and walk into the dark.
 
 Every floor is endless; exits are spread out a few hundred blocks apart.
+
+### Supplies
+
+Containers are filled the first time anyone opens them, from a loot table for the floor you are
+on (`data/backrooms/loot_table/supplies/<crate|backpack|locker>/<level>.json`, falling back to
+`default.json`). Breaking one spills what is left inside.
+
+- **Wooden Crate** (27 slots): mostly food: canned food, backshrooms, bread, almond water, energy bars.
+- **Backpack** (9 slots, lying in corridors): few items but the best ones: pills, bandages, energy
+  bars, and the best chance of a camcorder battery.
+- **Supply Locker** (27 slots, metal cabinet): bandages, calm pills, energy bars, some food.
+
+Each floor leans its own way: Level 0 has more almond water, Level 1 more batteries, Level 2 more
+bandages, the Poolrooms more almond water and pills, Level 9 ordinary kitchen food (cookies,
+apples, bread). Camcorder batteries stay rare everywhere.
+
+| Item | What it does |
+|---|---|
+| Canned Food / Backshroom / Bread | Food. 1 can in 20 has gone bad; backshrooms can make you sick. |
+| Almond Water | Heals a little and clears your head (Poolrooms hallucinations). |
+| Energy Bar | 3 hunger, eaten fast, and refills your sprint energy at once (even when out of breath). |
+| Calm Pills | Hold right-click for 1 s: restores 25 sanity. |
+| Bandage | Hold right-click for 1.5 s: heals 2 hearts plus Regeneration I for 5 s. |
+| Camcorder Battery | Right-click to swap in a fresh battery. |
+
+### Sanity
+
+Your heart rate (top-right, always shown in the Backrooms) is your sanity: 70 BPM when calm, up to
+160 BPM when you're losing it. It starts at 100, is saved when you log out, and you respawn at 70.
+
+- **Drains** slowly all the time in the Backrooms, faster in the dark (with your flashlight off),
+  when nobody is within 24 blocks, when you see a Bacteria (much faster if it's chasing you), a
+  Watcher or an Observer, and during blackouts.
+- **Restores** in a safe room (fast), next to a friend in the light (slowly), out in the real world,
+  and with Almond Water (+35) or Calm Pills (+25). Creative/spectator players aren't affected.
+- **When it's low** (only you notice): below 70 you hear whispers, knocks and footsteps right behind
+  you; below 50 the camcorder picture darkens at the edges in time with your heart, loses colour
+  and a black figure stands at the edge of your view until you look at it; below 30 you hear your
+  heartbeat and the readout blinks red, and the Bacteria find you more often; below 15 the figure
+  sometimes screams and charges at you down the corridor. None of it is real.
+
+### Safe rooms & checkpoints
+
+Every level has small safe rooms, marked by a green **SAFE** plaque over the doorway. Inside there
+is a warm lamp, a crate, a cot and an old field radio on a little table.
+About six in ten 128x128 areas have one: a panelled office room hidden in the Lobby maze, a
+concrete room with a metal door frame in the Habitable Zone, a carpeted utility room off a Level 2
+corridor, a dry tiled room on a walkway in the Poolrooms, and on Level 9 a house with its porch
+light on and the sign over the front door.
+
+- **Safe:** no monster spawns in a safe room or within 12 blocks of one, the Bacteria never walks
+  in (reaching one mid-chase counts as escaping), and Watchers and Observers leave you alone while
+  you're inside. The camcorder shows **SAFE ROOM** at the top left while you're in one.
+- **The lamp is battery-backed:** like the exit signs it stays on in blackouts and never flickers
+  (with the Veil lights; without Veil a blackout darkens everything).
+- **Checkpoints:** right-click the radio to save your checkpoint (static, a chime and
+  **CHECKPOINT SAVED** on the camcorder). If you die on that level you wake up on the floor in front
+  of the radio. Dying anywhere else still sends you back to the real world, and leaving the level
+  through its exit forgets the checkpoint. Clicking the radio again just saves again.
 
 ### Things that happen
 
@@ -88,8 +147,10 @@ Every floor is endless; exits are spread out a few hundred blocks apart.
 /backrooms escape [players]             send players back to reality
 /backrooms battery [players] [percent]  set camcorder battery
 /backrooms locate                       where is the nearest exit?
+/backrooms locate saferoom              where is the nearest safe room?
 /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|end> [seconds]
 /backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
+/backrooms sanity [players] <0-100>     set sanity (test the low-sanity effects)
 /backrooms spawn bacteria [count]       spawn Bacteria ~12 blocks in front of you (they only hunt survival players)
 /backrooms spawn <watcher|observer> [players]   Level 9 test spawns
 ```
@@ -112,12 +173,12 @@ soundfile; Windows speech synthesis for the intercom voices).
 
 | Package | What lives there |
 |---|---|
-| `world` | Level definitions, the infinite chunk generator, exits, travel, floor events |
+| `world` | Level definitions, the infinite chunk generator, exits, travel, floor events, safe rooms (`SafeRooms`) |
 | `world/layout` | One floor plan per level (pure functions of seed + x/z) |
 | `entity` | The Bacteria and its spawner |
 | `camera` | Camcorder battery/flashlight/NightShot server rules, flashlight sync |
-| `player` | Energy (stamina), movement limits, footsteps |
-| `block`, `item` | Decals, lamps, crates, doors, food |
+| `player` | Energy (stamina), movement limits, footsteps, checkpoints and respawning (`Checkpoints`) |
+| `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages |
 | `network` | Packets between server and clients |
 | `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, flashlights, hum sounds |
 | `client/camera` | Handheld camera shake, roll, smoothing |

@@ -3,6 +3,7 @@ package com.rickr.backrooms.entity;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.LevelEvents;
+import com.rickr.backrooms.world.SafeRooms;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -19,6 +20,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -42,6 +44,9 @@ import org.jetbrains.annotations.Nullable;
  * SEARCH  --sees or hears you--> CHASE      SEARCH --8 s, nothing--> WANDER ("lost" creak)
  * </pre>
  * The mode is synced to clients so the model can pose and the camcorder can glitch.
+ *
+ * <p>Safe rooms ({@code world/SafeRooms}) are off limits: it never walks into one, and it can't
+ * see or hear anyone inside. Reaching a safe room in a chase counts as escaping.
  */
 public class Bacteria extends Monster {
     /** What the Bacteria is doing right now. The order matters: it is synced as a byte. */
@@ -286,6 +291,9 @@ public class Bacteria extends Monster {
         if (attackCooldown > 0) {
             attackCooldown--;
         }
+        if (keepOutOfSafeRooms()) {
+            return;
+        }
         // Spread the sense checks of many Bacteria over different ticks.
         boolean senseNow = (tickCount + getId()) % SENSE_INTERVAL == 0;
         switch (mode) {
@@ -294,6 +302,31 @@ public class Bacteria extends Monster {
             case CHASE -> tickChase();
             case SEARCH -> tickSearch(senseNow);
         }
+    }
+
+    /**
+     * Safe rooms are off limits: if the next step of its path (or the spot it stands on) is
+     * inside one, it stops at the door. A hunt ends there as if it lost you (the "lost" creak
+     * tells you you made it). True if it stopped this tick.
+     */
+    private boolean keepOutOfSafeRooms() {
+        Path path = getNavigation().getPath();
+        boolean headingIn = path != null && !path.isDone() && SafeRooms.isSafe(level(), path.getNextNodePos());
+        boolean inside = SafeRooms.isSafe(this);
+        if (!headingIn && !inside) {
+            return false;
+        }
+        getNavigation().stop();
+        if (mode == Mode.SPOTTED || mode == Mode.CHASE || mode == Mode.SEARCH) {
+            giveUp(true);
+        } else if (mode == Mode.DRIFT) {
+            setMode(Mode.WANDER);
+        }
+        if (inside && !anyPlayerCanSee()) {
+            discard(); // somehow got in (e.g. pushed): it slips away unseen
+            return true;
+        }
+        return inside;
     }
 
     private void tickCalm(boolean senseNow) {
@@ -322,7 +355,9 @@ public class Bacteria extends Monster {
         // WANDER: now and then a rough guess at where someone is, otherwise short strolls.
         if (--nextGuessIn <= 0) {
             nextGuessIn = GUESS_MIN_TICKS + random.nextInt(GUESS_MAX_TICKS - GUESS_MIN_TICKS);
-            Player nearest = level().getNearestPlayer(getX(), getY(), getZ(), GUESS_RANGE, EntitySelector.NO_CREATIVE_OR_SPECTATOR);
+            // (Never someone hiding in a safe room: it doesn't know they're there.)
+            Player nearest = level().getNearestPlayer(getX(), getY(), getZ(), GUESS_RANGE,
+                    EntitySelector.NO_CREATIVE_OR_SPECTATOR.and(entity -> !SafeRooms.isSafe(entity)));
             if (nearest != null) {
                 double ox = (random.nextDouble() * 2.0 - 1.0) * GUESS_ERROR;
                 double oz = (random.nextDouble() * 2.0 - 1.0) * GUESS_ERROR;
@@ -357,6 +392,11 @@ public class Bacteria extends Monster {
         if (prey != null && prey.isDeadOrDying()) {
             // Got them. No "lost" creak: that sound must only ever mean "you escaped".
             giveUp(false);
+            return;
+        }
+        if (prey != null && SafeRooms.isSafe(prey)) {
+            // You made it into a safe room: it gives up at once ("lost" creak, quiet minute).
+            giveUp(true);
             return;
         }
         if (!isHuntable(prey) || distanceToSqr(prey) > CHASE_GIVE_UP * CHASE_GIVE_UP) {
@@ -564,9 +604,10 @@ public class Bacteria extends Monster {
         return level().getMaxLocalRawBrightness(BlockPos.containing(player.getEyePosition())) >= LIT_LEVEL;
     }
 
+    /** Someone it may notice and chase. Players inside a safe room are out of its reach: it can't see or hear them. */
     private boolean isHuntable(@Nullable Player player) {
         return player != null && player.isAlive() && !player.isRemoved() && !player.isSpectator()
-                && !player.isCreative() && player.level() == level();
+                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player);
     }
 
     private boolean anyPlayerCanSee() {

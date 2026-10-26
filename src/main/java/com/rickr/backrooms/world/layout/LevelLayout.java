@@ -100,6 +100,16 @@ public abstract class LevelLayout {
     }
 
     /**
+     * True for every column of a safe room, its walls and doorway included (see
+     * {@link SafeRoomPlan}). Spawners, monsters and the sanity meter ask this every tick, so each
+     * level answers it cheaply from the same plan its {@link #fillColumn} builds from. Levels
+     * without safe rooms keep this default.
+     */
+    public boolean isSafeRoom(long seed, int x, int z) {
+        return false;
+    }
+
+    /**
      * The {x, z} of the exit nearest to (x, z), as a player would find it (used by /backrooms
      * locate). Usually the exit locator's point; Level 9 moves it onto the street it belongs to.
      */

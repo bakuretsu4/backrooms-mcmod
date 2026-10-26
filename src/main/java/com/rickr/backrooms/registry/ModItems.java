@@ -2,7 +2,10 @@ package com.rickr.backrooms.registry;
 
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.item.AlmondWaterItem;
+import com.rickr.backrooms.item.BandageItem;
+import com.rickr.backrooms.item.CalmPillsItem;
 import com.rickr.backrooms.item.CamcorderBatteryItem;
+import com.rickr.backrooms.item.EnergyBarItem;
 import com.rickr.backrooms.item.ModFoods;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.DoubleHighBlockItem;
@@ -25,6 +28,13 @@ public final class ModItems {
             new Item.Properties().stacksTo(16).food(ModFoods.CANNED_FOOD));
     public static final DeferredItem<Item> BACKSHROOM = ITEMS.registerSimpleItem("backshroom",
             new Item.Properties().food(ModFoods.BACKSHROOM));
+    // Supplies (v3): sprint energy, sanity and health in a pinch.
+    public static final DeferredItem<EnergyBarItem> ENERGY_BAR = ITEMS.registerItem("energy_bar",
+            EnergyBarItem::new, new Item.Properties().stacksTo(16).food(ModFoods.ENERGY_BAR));
+    public static final DeferredItem<CalmPillsItem> CALM_PILLS = ITEMS.registerItem("calm_pills",
+            CalmPillsItem::new, new Item.Properties().stacksTo(8));
+    public static final DeferredItem<BandageItem> BANDAGE = ITEMS.registerItem("bandage",
+            BandageItem::new, new Item.Properties().stacksTo(16));
 
     static {
         // Block items so builders can use every Backrooms block in creative.
@@ -124,6 +134,13 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.TUNNEL_CONCRETE);
         ITEMS.registerSimpleBlockItem(ModBlocks.EXIT_TUNNEL_MARKER);
         ITEMS.registerSimpleBlockItem(ModBlocks.HIGHWAY_SIGN_EXIT);
+        // Supply containers (v3).
+        ITEMS.registerSimpleBlockItem(ModBlocks.BACKPACK);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SUPPLY_LOCKER);
+        // Safe rooms (v3).
+        ITEMS.registerSimpleBlockItem(ModBlocks.CHECKPOINT_RADIO);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SAFE_ROOM_LAMP);
+        ITEMS.registerSimpleBlockItem(ModBlocks.SAFE_ROOM_SIGN);
     }
 
     private ModItems() {}

@@ -5,6 +5,8 @@ import com.rickr.backrooms.camera.CameraService;
 import com.rickr.backrooms.player.EnergyClientState;
 import com.rickr.backrooms.player.EnergyData;
 import com.rickr.backrooms.player.HallucinationClientState;
+import com.rickr.backrooms.player.SanityClientState;
+import com.rickr.backrooms.player.SafeRoomClientState;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -54,9 +56,19 @@ public final class ModNetwork {
         registrar.playToClient(HallucinationPayload.TYPE, HallucinationPayload.STREAM_CODEC,
                 (payload, context) -> HallucinationClientState.dream = payload.dream());
 
+        // Your sanity (0..100) for the HUD readout and the low-sanity hallucinations.
+        registrar.playToClient(SanityPayload.TYPE, SanityPayload.STREAM_CODEC,
+                (payload, context) -> SanityClientState.sanity = payload.sanity());
+
         // Who has their flashlight on, so we can draw other players' beams (S1).
         registrar.playToClient(FlashlightStatesPayload.TYPE, FlashlightStatesPayload.STREAM_CODEC,
                 (payload, context) -> payload.applyOnClient());
+
+        // Safe rooms: "SAFE ROOM" on the camcorder while you're inside one, and "CHECKPOINT SAVED".
+        registrar.playToClient(SafeRoomPayload.TYPE, SafeRoomPayload.STREAM_CODEC,
+                (payload, context) -> SafeRoomClientState.inSafeRoom = payload.inSafeRoom());
+        registrar.playToClient(CheckpointSavedPayload.TYPE, CheckpointSavedPayload.STREAM_CODEC,
+                (payload, context) -> SafeRoomClientState.checkpointSavedMs = System.currentTimeMillis());
 
         registrar.playToServer(CameraTogglePayload.TYPE, CameraTogglePayload.STREAM_CODEC, (payload, context) -> {
             if (context.player() instanceof ServerPlayer player) {

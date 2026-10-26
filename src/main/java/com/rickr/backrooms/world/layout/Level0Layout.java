@@ -10,6 +10,7 @@ import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +34,11 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p><b>Exit.</b> One per 512x512 region: a wooden door in a wall opening into a white stairwell
  * with stairs going down. Arrows drawn on walls point toward it... mostly.
+ *
+ * <p><b>Safe rooms.</b> About 60% of the 128x128 squares hide one somewhere in the maze: a cosy
+ * office room (wood panelling under the yellow wallpaper, beige carpet, a warm lamp) behind thick
+ * walls with one doorway. A 1-wide strip of plain floor runs all around it, so the doorway always
+ * leads back into the maze. See {@link SafeRoomPlan}.
  */
 public final class Level0Layout extends LevelLayout {
     /** Wall bands running north-south (cut along X) and east-west (cut along Z). */
@@ -43,6 +49,10 @@ public final class Level0Layout extends LevelLayout {
     private static final int ARROW_RANGE = 320;
     private static final int ZONE = 48;
     private static final int OFFICE_GRID = 96;
+    /** Safe rooms: a free strip this wide runs all around each one, joining it to the maze. */
+    private static final int SAFE_MOAT = 1;
+    /** Safe rooms keep at least this far (chessboard distance from their centre) from an exit. */
+    private static final int SAFE_EXIT_DISTANCE = 24;
 
     // What a maze column is.
     private static final int OPEN = 0;
@@ -314,6 +324,82 @@ public final class Level0Layout extends LevelLayout {
     }
 
     // ==========================================================================================
+    // Safe rooms
+    // ==========================================================================================
+
+    /**
+     * The safe room whose footprint (the room plus the free strip around it) contains (x, z), or
+     * null. Each 128x128 square has at most one, so only one square needs checking.
+     */
+    @Nullable
+    private SafeRoomPlan safeRoomNear(long seed, int x, int z) {
+        int cellX = Math.floorDiv(x, SafeRoomPlan.CELL);
+        int cellZ = Math.floorDiv(z, SafeRoomPlan.CELL);
+        // 7x7 or 9x9 inside, with walls two blocks thick (11 or 13 across).
+        int size = Hash.unit(seed, cellX, cellZ, 401) < 0.5 ? 11 : 13;
+        SafeRoomPlan plan = SafeRoomPlan.jittered(seed, cellX, cellZ, 400, size, SAFE_MOAT, 2);
+        if (plan == null || !plan.near(x, z, SAFE_MOAT) || !safeRoomAllowed(seed, plan)) {
+            return null;
+        }
+        return plan;
+    }
+
+    /** Never near an exit stairwell, never overlapping a front office (or the walkway around it). */
+    private boolean safeRoomAllowed(long seed, SafeRoomPlan plan) {
+        int[] exit = exits().nearest(seed, plan.centerX(), plan.centerZ());
+        if (Math.max(Math.abs(exit[0] - plan.centerX()), Math.abs(exit[1] - plan.centerZ())) < SAFE_EXIT_DISTANCE) {
+            return false;
+        }
+        int fx0 = plan.x0 - SAFE_MOAT;
+        int fz0 = plan.z0 - SAFE_MOAT;
+        int fx1 = plan.x0 + plan.sizeX - 1 + SAFE_MOAT;
+        int fz1 = plan.z0 + plan.sizeZ - 1 + SAFE_MOAT;
+        for (int cellX = Math.floorDiv(fx0, OFFICE_GRID); cellX <= Math.floorDiv(fx1, OFFICE_GRID); cellX++) {
+            for (int cellZ = Math.floorDiv(fz0, OFFICE_GRID); cellZ <= Math.floorDiv(fz1, OFFICE_GRID); cellZ++) {
+                long rect = officeRect(seed, cellX, cellZ);
+                if (rect == 0) {
+                    continue;
+                }
+                // The office plus its 2-wide walkway, as in officeAt.
+                int ox0 = cellX * OFFICE_GRID + ((int) (rect >>> 24) & 0xFF) - 2;
+                int oz0 = cellZ * OFFICE_GRID + ((int) (rect >>> 16) & 0xFF) - 2;
+                int ox1 = ox0 + ((int) (rect >>> 8) & 0xFF) + 3;
+                int oz1 = oz0 + ((int) rect & 0xFF) + 3;
+                if (ox0 <= fx1 && ox1 >= fx0 && oz0 <= fz1 && oz1 >= fz0) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /** Everything inside a safe room, walls and doorway included. */
+    @Override
+    public boolean isSafeRoom(long seed, int x, int z) {
+        SafeRoomPlan plan = safeRoomNear(seed, x, z);
+        return plan != null && plan.contains(x, z);
+    }
+
+    private void fillSafeRoom(SafeRoomPlan plan, int x, int z, Column out) {
+        BlockState tile = ModBlocks.CEILING_TILE.get().defaultBlockState();
+        if (!plan.contains(x, z)) {
+            // The free strip around the room: plain carpet, no lights.
+            out.set(floorY(), ModBlocks.LOBBY_CARPET.get().defaultBlockState());
+            out.set(ceilingY(), tile);
+            return;
+        }
+        BlockState wallpaper = ModBlocks.YELLOW_WALLPAPER.get().defaultBlockState();
+        plan.fill(x, z, floorY(), ceilingY(), new SafeRoomPlan.Style(
+                ModBlocks.BEIGE_CARPET.get().defaultBlockState(),
+                tile,
+                ModBlocks.YELLOW_WALLPAPER_BASEBOARD.get().defaultBlockState(),
+                wallpaper,
+                ModBlocks.WOOD_FLOOR.get().defaultBlockState(), // wood panelling below the dado line
+                wallpaper,
+                null), out);
+    }
+
+    // ==========================================================================================
     // Column queries shared by fillColumn / isWalkable / decals / lights
     // ==========================================================================================
 
@@ -322,6 +408,8 @@ public final class Level0Layout extends LevelLayout {
         int d = exits().distance(seed, x, z);
         if (d <= STAIRWELL_RADIUS) return true;
         if (d <= CLEARING_RADIUS) return false;
+        SafeRoomPlan safe = safeRoomNear(seed, x, z);
+        if (safe != null) return safe.role(x, z) == SafeRoomPlan.WALL;
         int office = officeAt(seed, x, z);
         if (office != NO_OFFICE) return office == OFFICE_WALL || office == OFFICE_YELLOW_WALL;
         return mazeKind(seed, x, z) == WALL;
@@ -330,13 +418,13 @@ public final class Level0Layout extends LevelLayout {
     /** A plain maze wall column (where decals may be drawn). */
     private boolean isMazeWall(long seed, int x, int z) {
         return exits().distance(seed, x, z) > CLEARING_RADIUS && officeAt(seed, x, z) == NO_OFFICE
-                && mazeKind(seed, x, z) == WALL;
+                && mazeKind(seed, x, z) == WALL && safeRoomNear(seed, x, z) == null;
     }
 
     /** A plain maze floor column (where ceiling panels may hang). */
     private boolean isMazeRoom(long seed, int x, int z) {
         return exits().distance(seed, x, z) > CLEARING_RADIUS && officeAt(seed, x, z) == NO_OFFICE
-                && mazeKind(seed, x, z) == OPEN;
+                && mazeKind(seed, x, z) == OPEN && safeRoomNear(seed, x, z) == null;
     }
 
     @Override
@@ -344,6 +432,10 @@ public final class Level0Layout extends LevelLayout {
         int d = exits().distance(seed, x, z);
         if (d <= STAIRWELL_RADIUS) return false;
         if (d <= CLEARING_RADIUS) return true;
+        SafeRoomPlan safe = safeRoomNear(seed, x, z);
+        if (safe != null) {
+            return !safe.contains(x, z) || safe.isWalkable(x, z);
+        }
         int office = officeAt(seed, x, z);
         if (office != NO_OFFICE) {
             if (office == OFFICE_WALL || office == OFFICE_YELLOW_WALL) return false;
@@ -362,7 +454,8 @@ public final class Level0Layout extends LevelLayout {
         long sz = Z_WALLS.span(seed, z);
         int kind = mazeKind(seed, x, z, sx, sz);
         if (kind == WALL) return false;
-        return kind == DOORWAY || crateHeight(seed, x, z, sx, sz) == 0;
+        if (kind == DOORWAY) return true;
+        return crateHeight(seed, x, z, sx, sz) == 0 && backpackFacing(seed, x, z, sx, sz) == null;
     }
 
     // ==========================================================================================
@@ -391,6 +484,11 @@ public final class Level0Layout extends LevelLayout {
             int az = Math.abs(dz);
             boolean panel = (ax == 7 && (az == 3 || az == 4)) || (az == 7 && (ax == 3 || ax == 4));
             out.set(ceiling, panel ? ModBlocks.FLUORESCENT_LIGHT.get().defaultBlockState() : tile);
+            return;
+        }
+        SafeRoomPlan safe = safeRoomNear(seed, x, z);
+        if (safe != null) {
+            fillSafeRoom(safe, x, z, out);
             return;
         }
         int office = officeAt(seed, x, z);
@@ -422,6 +520,10 @@ public final class Level0Layout extends LevelLayout {
         int crates = crateHeight(seed, x, z, sx, sz);
         for (int i = 0; i < crates; i++) {
             out.set(floor + 1 + i, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
+        }
+        Direction backpack = backpackFacing(seed, x, z, sx, sz);
+        if (backpack != null) {
+            out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, backpack));
         }
         BlockState light = ceilingLight(seed, x, z);
         if (light != null) {
@@ -499,6 +601,27 @@ public final class Level0Layout extends LevelLayout {
             return 0;
         }
         return Hash.unit(seed, ix, iz, 252) < 0.3 ? 2 : 1;
+    }
+
+    /**
+     * Now and then someone's backpack lies on the floor of a room: rare (about one per 400 floor
+     * blocks), at most one per room. Returns the way it faces, or null for no backpack here.
+     */
+    @Nullable
+    private static Direction backpackFacing(long seed, int x, int z, long sx, long sz) {
+        if (Bands.isBand(sx) || Bands.isBand(sz)) {
+            return null; // rooms only, not the gaps in walls
+        }
+        long h = Hash.of(seed, Bands.index(sx), Bands.index(sz), 255);
+        if (Hash.unit(h) >= 0.06) {
+            return null;
+        }
+        int bx = X_WALLS.start(sx) + Hash.range(Hash.mix(h ^ 1), Bands.length(sx));
+        int bz = Z_WALLS.start(sz) + Hash.range(Hash.mix(h ^ 2), Bands.length(sz));
+        if (x != bx || z != bz || roomPillar(seed, x, z, sx, sz) || crateHeight(seed, x, z, sx, sz) > 0) {
+            return null;
+        }
+        return Direction.from2DDataValue(Hash.range(Hash.mix(h ^ 3), 4));
     }
 
     /**

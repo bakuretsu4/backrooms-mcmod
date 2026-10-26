@@ -208,8 +208,10 @@ public final class FixturePower {
 
     /** The 0..1 power of one fixture right now (before the camcorder battery). */
     public static float levelOf(FixtureLight light) {
-        if (light.type == FixtureType.EXIT_SIGN) {
-            return 1.0f; // battery-backed: stays lit even in a blackout, a little clue in the dark
+        if (light.type == FixtureType.EXIT_SIGN || light.type == FixtureType.SAFE_LAMP) {
+            // Battery-backed: stays lit even in a blackout (and through alarms, flickers and lamp
+            // waves). Exit signs are a little clue in the dark; safe-room lamps a place to hide.
+            return 1.0f;
         }
         float power = mainsPower();
         if (light.type == FixtureType.RED_ALARM_LAMP) {

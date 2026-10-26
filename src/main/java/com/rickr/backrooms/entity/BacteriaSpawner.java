@@ -5,6 +5,8 @@ import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
 import com.rickr.backrooms.world.LevelEvents;
 import com.rickr.backrooms.world.Travel;
+import com.rickr.backrooms.player.SanityService;
+import com.rickr.backrooms.world.SafeRooms;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +31,9 @@ import net.minecraft.world.phys.Vec3;
  *       number of players around them, so four friends together don't get four times the monsters.</li>
  *   <li>After a Bacteria gives up a chase, the players near it get a quiet minute
  *       ({@link #quietAround}): no new spawn right on the heels of an escape.</li>
+ *   <li>Safe rooms: nothing spawns in one or within {@value #SAFE_ROOM_MARGIN} blocks of one, and
+ *       players inside one don't attract spawns.</li>
+ *   <li>Low sanity ({@link SanityService#spawnPressure}) makes spawns up to three times as likely.</li>
  * </ul>
  */
 public final class BacteriaSpawner {
@@ -42,6 +47,8 @@ public final class BacteriaSpawner {
     /** Quiet time after an escape. */
     private static final int QUIET_TICKS = 60 * 20;
     private static final double QUIET_RADIUS = 48.0;
+    /** No spawns within this many blocks (sideways) of a safe room. */
+    private static final int SAFE_ROOM_MARGIN = 12;
 
     /** Player -> game time until which nothing spawns for them. Cleared when the server stops. */
     private static final Map<UUID, Long> QUIET_UNTIL = new HashMap<>();
@@ -65,9 +72,11 @@ public final class BacteriaSpawner {
             if (!canHaveSpawns(player) || QUIET_UNTIL.containsKey(player.getUUID())) {
                 continue;
             }
-            // In a blackout the Bacteria come out three times as often.
+            // In a blackout the Bacteria come out three times as often, and low sanity draws them
+            // in too: the one-in-N roll is shared by the group and shrunk by its sanity pressure.
             int chance = LevelEvents.isBlackout(floor) ? Math.max(1, floor.bacteriaSpawnChance() / 3) : floor.bacteriaSpawnChance();
-            if (random.nextInt(chance * groupSize(level, player)) != 0) {
+            int oneIn = Math.max(1, Math.round(chance * groupSize(level, player) / groupPressure(level, player)));
+            if (random.nextInt(oneIn) != 0) {
                 continue;
             }
             AABB area = player.getBoundingBox().inflate(COUNT_RADIUS);
@@ -83,7 +92,8 @@ public final class BacteriaSpawner {
                 continue;
             }
             boolean tooClose = level.players().stream().anyMatch(p -> p.distanceToSqr(spot.getX(), spot.getY(), spot.getZ()) < MIN_DISTANCE * MIN_DISTANCE);
-            if (!tooClose && !anyoneCanSee(level, spot)) {
+            // Never in or right next to a safe room, so nothing comes out of its doorway.
+            if (!tooClose && !SafeRooms.isNearSafeRoom(level, spot, SAFE_ROOM_MARGIN) && !anyoneCanSee(level, spot)) {
                 ModEntities.BACTERIA.get().spawn(level, spot, MobSpawnType.EVENT);
             }
         }
@@ -104,8 +114,9 @@ public final class BacteriaSpawner {
         QUIET_UNTIL.clear();
     }
 
+    /** Players in a safe room don't count: nothing spawns because of them, and they don't shrink anyone's group roll. */
     private static boolean canHaveSpawns(ServerPlayer player) {
-        return !player.isSpectator() && !player.isCreative();
+        return !player.isSpectator() && !player.isCreative() && !SafeRooms.isSafe(player);
     }
 
     /** This player plus everyone near them who could also roll a spawn. Always at least 1. */
@@ -117,6 +128,20 @@ public final class BacteriaSpawner {
             }
         }
         return Math.max(1, count);
+    }
+
+    /**
+     * How much the group's fear draws the Bacteria in: the highest {@link SanityService#spawnPressure}
+     * among this player and everyone near them (1 = normal, up to 3 when someone is losing it).
+     */
+    private static float groupPressure(ServerLevel level, ServerPlayer player) {
+        float pressure = SanityService.spawnPressure(player);
+        for (ServerPlayer other : level.players()) {
+            if (canHaveSpawns(other) && other.distanceToSqr(player) < GROUP_RADIUS * GROUP_RADIUS) {
+                pressure = Math.max(pressure, SanityService.spawnPressure(other));
+            }
+        }
+        return Math.max(1.0f, pressure);
     }
 
     /**

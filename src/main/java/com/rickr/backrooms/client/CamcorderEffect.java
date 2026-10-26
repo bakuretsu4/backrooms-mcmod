@@ -148,6 +148,10 @@ public final class CamcorderEffect {
         // Level 9: electronics going haywire near a Watcher, and the fog draining colour with distance.
         chain.setUniform("Interference", WatcherInterference.interference());
         chain.setUniform("FogDrain", BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_9 ? 1.0f : 0.0f);
+        // Low sanity: tape wear, desaturation and heartbeat edge darkening (0 = picture exactly unchanged).
+        chain.setUniform("Sanity", SanityClientEffects.shaderSanity());
+        chain.setUniform("SanityPulse", SanityClientEffects.heartbeatPulse());
+        chain.setUniform("SanityGlitch", SanityClientEffects.vanishGlitch());
         chain.setUniform("Near", GameRenderer.PROJECTION_Z_NEAR);
         chain.setUniform("Far", mc.gameRenderer.getDepthFar());
     }

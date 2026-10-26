@@ -3,6 +3,7 @@ package com.rickr.backrooms.client;
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.client.intro.IntroCutscene;
 import com.rickr.backrooms.network.TransitionPayload;
+import com.rickr.backrooms.world.Travel;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -18,7 +19,8 @@ import net.minecraft.util.RandomSource;
  * The camcorder's on-screen display, drawn on top of the shader so it stays sharp:
  * REC + tape counter (top-left), battery (top-right), clock and date (bottom-left), exit signal
  * bars (bottom-right) and viewfinder corner brackets. The date always reads 1990, like the
- * Kane Pixels tapes. When something is close the OSD itself starts to jitter.
+ * Kane Pixels tapes. When something is close the OSD itself starts to jitter. Your heart rate
+ * (sanity) shows top-right whenever you're in the Backrooms, even with the OSD hidden.
  */
 public final class CamcorderHud implements LayeredDraw.Layer {
     private static final int WHITE = 0xFFF2F2E8;
@@ -64,6 +66,15 @@ public final class CamcorderHud implements LayeredDraw.Layer {
             return;
         }
 
+        // Heart rate (your sanity) always shows in the Backrooms, even with the OSD hidden.
+        if (Travel.inBackrooms(mc.level) && CamcorderEffect.wakeAmount() <= 0.35f) {
+            heartRate(g, font, w - m + jx, m + 18 + jy, now);
+        }
+        // "SAFE ROOM" and "CHECKPOINT SAVED" also show with the OSD hidden.
+        if (CamcorderEffect.wakeAmount() <= 0.35f) {
+            SafeRoomOsd.render(g, font, m + jx, m + jy, osdVisible || IntroCutscene.filming(), now);
+        }
+
         boolean showOsd = osdVisible || IntroCutscene.filming(); // the intro is "someone filming"
         if (!showOsd || CamcorderEffect.wakeAmount() > 0.35f) {
             return;
@@ -88,6 +99,31 @@ public final class CamcorderHud implements LayeredDraw.Layer {
         drawScaled(g, font, clock.format(DATE).toUpperCase(Locale.ENGLISH), m + jx, h - m - 12 + jy, 1.25f, WHITE, false);
 
         signal(g, font, w - m - 34 + jx, h - m - 14 + jy);
+    }
+
+    /**
+     * Sanity as a heart-rate readout, right-aligned at x: a pixel heart that throbs with each beat
+     * and "112 BPM" (70 when calm, up to 160 when you're losing it). Amber below 50, blinking red below 30.
+     */
+    private static void heartRate(GuiGraphics g, Font font, int right, int y, long now) {
+        float sanity = SanityClientEffects.shownSanity();
+        int color = sanity < 30.0f ? ((now / 400) % 2 == 0 ? RED : 0x00000000) : sanity < 50.0f ? AMBER : WHITE;
+        if ((color >>> 24) == 0) {
+            return;
+        }
+        String text = SanityClientEffects.bpm() + " BPM";
+        int textX = right - font.width(text);
+        g.drawString(font, text, textX, y + 2, color, true);
+        // 7x6 pixel heart left of the number; one pixel bigger on the beat.
+        int hx = textX - 11;
+        int hy = y + 2;
+        int grow = SanityClientEffects.heartbeatPulse() > 0.5f ? 1 : 0;
+        g.fill(hx + 1, hy - grow, hx + 3, hy + 1, color);
+        g.fill(hx + 4, hy - grow, hx + 6, hy + 1, color);
+        g.fill(hx - grow, hy + 1, hx + 7 + grow, hy + 3, color);
+        g.fill(hx + 1, hy + 3, hx + 6, hy + 4, color);
+        g.fill(hx + 2, hy + 4, hx + 5, hy + 5, color);
+        g.fill(hx + 3, hy + 5, hx + 4, hy + 6 + grow, color);
     }
 
     private static String tapeCounter() {

@@ -2,6 +2,7 @@ package com.rickr.backrooms.registry;
 
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.block.CeilingTubeBlock;
+import com.rickr.backrooms.block.CheckpointRadioBlock;
 import com.rickr.backrooms.block.DuctBlock;
 import com.rickr.backrooms.block.ExitDoorBlock;
 import com.rickr.backrooms.block.FloorArrowBlock;
@@ -18,7 +19,8 @@ import com.rickr.backrooms.block.PoolLampBlock;
 import com.rickr.backrooms.block.RugBlock;
 import com.rickr.backrooms.block.StreetSignBlock;
 import com.rickr.backrooms.block.StreetlampHeadBlock;
-import com.rickr.backrooms.block.SupplyCrateBlock;
+import com.rickr.backrooms.block.SupplyContainerBlock;
+import com.rickr.backrooms.block.SupplyKind;
 import com.rickr.backrooms.block.ThinLayerBlock;
 import com.rickr.backrooms.block.WallDecalBlock;
 import com.rickr.backrooms.block.WallDoorDrawingBlock;
@@ -290,9 +292,40 @@ public final class ModBlocks {
             fixture(MapColor.COLOR_GREEN, SoundType.GLASS, 9));
     public static final DeferredBlock<ExitDoorBlock> EXIT_DOOR = BLOCKS.registerBlock("exit_door", ExitDoorBlock::new,
             unbreakable(MapColor.COLOR_GRAY, SoundType.METAL).noOcclusion());
-    public static final DeferredBlock<SupplyCrateBlock> SUPPLY_CRATE = BLOCKS.registerBlock("supply_crate", SupplyCrateBlock::new,
+    // Supply containers: filled from a loot table the first time they're opened (see SupplyContainerBlockEntity).
+    public static final DeferredBlock<SupplyContainerBlock> SUPPLY_CRATE = BLOCKS.registerBlock("supply_crate",
+            props -> new SupplyContainerBlock(props, SupplyKind.CRATE, Shapes.block()),
             BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(1.5f).sound(SoundType.WOOD)
                     .pushReaction(PushReaction.BLOCK).noLootTable());
+    /** A canvas backpack lying flat on the floor: flap and straps on top, a pocket on the front. */
+    public static final DeferredBlock<SupplyContainerBlock> BACKPACK = BLOCKS.registerBlock("backpack",
+            props -> new SupplyContainerBlock(props, SupplyKind.BACKPACK, Shapes.or(
+                    Block.box(2.75, 0, 3.5, 13.25, 6, 13.25),
+                    Block.box(4, 0, 2.5, 12, 3, 3.5))),
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(0.5f).sound(SoundType.WOOL)
+                    .pushReaction(PushReaction.BLOCK).noOcclusion().noLootTable());
+    /** A painted metal cabinet with a vented door, its back against the wall. */
+    public static final DeferredBlock<SupplyContainerBlock> SUPPLY_LOCKER = BLOCKS.registerBlock("supply_locker",
+            props -> new SupplyContainerBlock(props, SupplyKind.LOCKER, Block.box(1, 0, 1.5, 15, 16, 16)),
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(3.0f).sound(SoundType.METAL)
+                    .pushReaction(PushReaction.BLOCK).noOcclusion().noLootTable());
+
+    // Safe rooms (placed by the level layouts; see world/SafeRooms).
+    /** Old field radio on a little table: right-click to save your checkpoint. FACING = its front, into the room. */
+    public static final DeferredBlock<CheckpointRadioBlock> CHECKPOINT_RADIO = BLOCKS.registerBlock("checkpoint_radio",
+            CheckpointRadioBlock::new, unbreakable(MapColor.COLOR_GREEN, SoundType.METAL).lightLevel(state -> 6).noOcclusion());
+    /**
+     * Warm incandescent ceiling lamp (part of the ceiling, like the Lobby panels). Battery-backed:
+     * its light stays on in blackouts. Unlike the other fixtures it is NOT drawn full-bright,
+     * because full-bright faces all go dark together in a blackout; instead its own light (and
+     * vanilla light 13, for when Veil isn't installed) lights its face.
+     */
+    public static final DeferredBlock<Block> SAFE_ROOM_LAMP = BLOCKS.registerBlock("safe_room_lamp", Block::new,
+            unbreakable(MapColor.TERRACOTTA_WHITE, SoundType.GLASS).lightLevel(state -> 13));
+    /** "SAFE" plaque hung on a wall over a safe room's doorway; FACING points away from the wall. You walk through it. */
+    public static final DeferredBlock<WallMountBlock> SAFE_ROOM_SIGN = BLOCKS.registerBlock("safe_room_sign",
+            props -> new WallMountBlock(props, 0, 2, 15, 16, 14, 16),
+            unbreakable(MapColor.COLOR_GREEN, SoundType.METAL).noCollission().noOcclusion());
 
     private static DeferredBlock<Block> structural(String name, MapColor color, SoundType sound) {
         return BLOCKS.registerBlock(name, (Function<BlockBehaviour.Properties, Block>) Block::new, unbreakable(color, sound));

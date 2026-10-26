@@ -1,6 +1,7 @@
 package com.rickr.backrooms.entity;
 
 import com.rickr.backrooms.registry.ModSounds;
+import com.rickr.backrooms.world.SafeRooms;
 import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
@@ -166,6 +167,10 @@ public class Observer extends PathfinderMob {
         ServerPlayer victim = victim();
         if (victim == null || !victim.isAlive() || victim.isSpectator() || victim.level() != level()) {
             discard();
+            return;
+        }
+        if (SafeRooms.isSafe(victim)) {
+            vanish(false); // they're in a safe room: it quietly isn't there any more
             return;
         }
         faceVictim(victim);

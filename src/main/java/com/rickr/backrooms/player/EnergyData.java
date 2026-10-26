@@ -40,4 +40,10 @@ public final class EnergyData {
     public boolean exhausted() {
         return exhausted;
     }
+
+    /** Full bar and breath back at once (the Energy Bar). Server side; call PlayerGameplay.forceSync after. */
+    public void refill() {
+        energy = MAX;
+        exhausted = false;
+    }
 }

@@ -2067,6 +2067,37 @@ def tex_bacteria() -> None:
     save_png(np.clip(np.stack([ir, ir, ir], axis=-1), 0, 255), TEX / "entity" / "bacteria_ir.png")
 
 
+def tex_sanity_silhouette() -> None:
+    """64x128 black cut-out of a tall, gaunt Bacteria-like figure for the low-sanity hallucination.
+    Only the alpha matters: the client draws it pitch black as a billboard (it isn't really there)."""
+    rng = rng_for(2530)
+
+    def draw(d, k):
+        def line(pts, w):
+            d.line([(x * k, y * k) for x, y in pts], fill=255, width=int(w * k), joint="curve")
+        # Hunched torso, thin legs, arms hanging past the knees.
+        line([(32, 26), (31, 44), (32, 66)], 9)
+        line([(30, 64), (27, 92), (26, 126)], 4)
+        line([(34, 64), (37, 92), (38, 126)], 4)
+        line([(27, 30), (20, 52), (17, 76), (15, 96)], 3)
+        line([(37, 30), (44, 52), (47, 76), (50, 96)], 3)
+        for fx in (15, 50):                       # long crooked fingers
+            for o in (-3, 0, 3):
+                line([(fx, 96), (fx + o, 104)], 1.5)
+        line([(31, 26), (33, 18)], 4)             # neck
+        # Lumpy, spiky head (the Bacteria's tangled mass).
+        d.ellipse([25 * k, 6 * k, 41 * k, 20 * k], fill=255)
+        for _ in range(9):
+            ang = rng.uniform(-np.pi, 0.2)
+            ln = rng.uniform(9, 15)
+            line([(33, 13), (33 + np.cos(ang) * ln, 13 + np.sin(ang) * ln)], 2)
+
+    a = pil_mask(draw, shape=(128, 64))
+    img = np.zeros((128, 64, 4))
+    img[..., 3] = (a > 0.4) * 255.0
+    save_png(img, TEX / "misc" / "sanity_silhouette.png")
+
+
 # =============================================================================
 # Audio helpers
 # =============================================================================
@@ -3451,6 +3482,497 @@ def snd_leaf_steps() -> None:
         save_ogg(x, SND / "step" / f"leaves{i}.ogg", peak=0.6 * 10 ** (rng.uniform(-1, 1) / 20),
                  fade_in=0.001, fade_out=0.05)
 
+# ---- Sanity (low-sanity hallucinations) ----------------------------------------------------
+
+def snd_sanity_whisper() -> None:
+    """3 unintelligible whispers (~2 s): breathy noise through two sweeping 'formant' bandpasses,
+    chopped into syllable-like puffs, with a little room so it sounds like it's right behind you."""
+    for i in range(1, 4):
+        rng = rng_for(2500 + i)
+        dur = 1.8 + 0.3 * i
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        breath = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 400, 7000, 1))[:n]
+        # Two formants that wander like a mouth shaping vowels (but never real words).
+        f1 = 500 + 350 * (0.5 + 0.5 * np.sin(2 * np.pi * rng.uniform(2.5, 4.0) * t + rng.uniform(0, 6)))
+        f1 += smooth_jitter(rng, n, 6.0, 150.0)
+        f2 = 1500 + 900 * (0.5 + 0.5 * np.sin(2 * np.pi * rng.uniform(3.0, 5.0) * t + rng.uniform(0, 6)))
+        f2 += smooth_jitter(rng, n, 8.0, 400.0)
+        x = svf(breath, f1, 6.0) + 0.8 * svf(breath, f2, 8.0) + 0.15 * fft_filter(breath, lambda f: hp_gain(f, 3500, 2))[:n]
+        # Syllables: 4-7 soft puffs with gaps between them.
+        env = np.zeros(n)
+        tt = 0.05
+        while tt < dur - 0.25:
+            length = rng.uniform(0.12, 0.3)
+            seg = np.arange(int(length * SR)) / SR
+            puff = np.sin(np.pi * seg / length) ** 1.5 * rng.uniform(0.5, 1.0)
+            add_at(env, puff, tt, False)
+            tt += length + rng.uniform(0.03, 0.15)
+        x = x * env
+        wet = conv(x, reverb_ir(rng, 1.2, 0.25, lp=5000, predelay=0.01))[:n]
+        save_ogg(norm(x) + 0.35 * norm(wet), SND / "sanity" / f"whisper{i}.ogg", peak=0.8, fade_out=0.2)
+
+
+def snd_sanity_heartbeat() -> None:
+    """One 'lub-dub' (0.55 s). The client retriggers it once per beat, so the rate can change."""
+    rng = rng_for(2510)
+    dur = 0.55
+    n = int(dur * SR)
+    x = np.zeros(n)
+    for start, f0, amp in ((0.0, 52.0, 1.0), (0.16, 64.0, 0.7)):
+        m = int(0.22 * SR)
+        tm = np.arange(m) / SR
+        # A low sine that drops in pitch, plus a muffled thump of noise: a beat felt in the chest.
+        thump = np.sin(2 * np.pi * (f0 * tm - 12.0 * tm * tm)) * np.exp(-tm / 0.05)
+        thump *= np.clip(tm / 0.004, 0, 1)
+        body = fft_filter(rng.normal(size=m) * np.exp(-tm / 0.02), lambda f: lp_gain(f, 180, 2))[:m]
+        add_at(x, amp * (norm(thump) + 0.35 * norm(body)), start, False)
+    x = fft_filter(x, lambda f: lp_gain(f, 260, 2))[:n]
+    save_ogg(x, SND / "sanity" / "heartbeat.ogg", peak=0.85, fade_in=0.001, fade_out=0.05)
+
+
+def snd_sanity_knock() -> None:
+    """A single close knock on a wall (dry, wooden, short room tail)."""
+    rng = rng_for(2520)
+    n = int(1.2 * SR)
+    k = ring([rng.uniform(110, 130), 190.0, 290.0, 520.0], [0.06, 0.045, 0.03, 0.012], [1, 0.6, 0.4, 0.2], 0.3)
+    m = len(k)
+    hit = fft_filter(rng.normal(size=m) * np.exp(-np.arange(m) / (0.003 * SR)), lambda f: lp_gain(f, 2500, 2))[:m]
+    dry = np.zeros(n)
+    add_at(dry, norm(k) + 0.6 * norm(hit), 0.01, False)
+    wet = conv(dry, reverb_ir(rng, 1.0, 0.3, lp=3000, predelay=0.01))[:n]
+    save_ogg(norm(dry) + 0.4 * norm(wet), SND / "sanity" / "knock.ogg", peak=0.85, fade_out=0.2)
+
+
+
+
+# =============================================================================
+# Supplies (v3): energy bar, calm pills, bandage, backpack, supply locker
+# =============================================================================
+
+def tex_energy_bar() -> None:
+    """Energy bar lying diagonally: crimped silver foil ends, red wrapper, yellow bolt stripe."""
+    rng = rng_for(3101)
+    X, Y = grid((16, 16))
+    u = ((X - 8) - (Y - 8)) / np.sqrt(2)          # along the bar (bottom-left -> top-right)
+    v = ((X - 8) + (Y - 8)) / np.sqrt(2)          # across the bar
+    inside = (np.abs(u) <= 7.2) & (np.abs(v) <= 2.4)
+    foil = np.abs(u) > 5.0
+    img = np.zeros((16, 16, 4))
+    red = np.array([178, 38, 34]) + rng.normal(0, 4, (16, 16, 1))
+    silver = np.array([196, 200, 208]) * (0.85 + 0.15 * np.cos(u[..., None] * 3.0))   # crimp ridges
+    col = np.where(foil[..., None], silver, red)
+    stripe = (~foil) & (np.abs(v) < 0.7) & (np.abs(u) < 4.0)
+    col = np.where(stripe[..., None], np.array([246, 204, 60]), col)
+    col = col * np.where((v < -1.4)[..., None], 1.12, 1.0)                              # lit top edge
+    edge = inside & ((np.abs(v) > 1.6) | (np.abs(u) > 6.4))
+    col = np.where(edge[..., None], col * 0.62, col)
+    img[..., :3] = np.clip(col, 0, 255)
+    img[..., 3] = np.where(inside, 255, 0)
+    save_png(img, TEX / "item" / "energy_bar.png")
+
+
+def tex_calm_pills() -> None:
+    """Little amber-orange pill bottle with a white child-proof cap and a white label."""
+    img = np.zeros((16, 16, 4))
+    outline_cap, outline = (150, 150, 156, 255), (140, 64, 12, 255)
+    # cap: rows 1..4, x 5..10, ridged
+    for y in range(1, 5):
+        for x in range(5, 11):
+            c = 236 if x % 2 else 214
+            img[y, x] = (c, c, c - 4, 255)
+    img[1, 5:11] = (250, 250, 248, 255)
+    img[1:5, 5] = img[1:5, 10] = outline_cap
+    img[0, 6:10] = outline_cap
+    # bottle: rows 5..14, x 4..11, translucent amber with pills showing at the bottom
+    for y in range(5, 15):
+        for x in range(4, 12):
+            img[y, x] = (226, 120, 30, 235)
+            if y >= 12:
+                img[y, x] = (238, 214, 170, 245) if (x + y) % 3 else (210, 110, 34, 240)
+        img[y, 4] = img[y, 11] = outline
+    img[15, 5:11] = outline
+    img[5, 4:12] = (196, 94, 20, 255)          # shoulder shadow under the cap
+    # label band with a little red cross-ish mark and "text" line
+    img[8:11, 5:11] = (246, 244, 236, 255)
+    img[9, 6:8] = (60, 60, 70, 255)
+    img[9, 9] = (196, 40, 40, 255)
+    img[8, 5:11, :3] -= 12
+    # glossy highlight
+    for y in (6, 7, 11, 12, 13):
+        img[y, 5] = (255, 214, 160, 240)
+    save_png(img, TEX / "item" / "calm_pills.png")
+
+
+def tex_bandage() -> None:
+    """Rolled white gauze: a roll seen from the end (spiral) with a loose strip trailing off."""
+    rng = rng_for(3103)
+    img = np.zeros((16, 16, 4))
+    # loose strip first (the roll is drawn over it)
+    for i, x in enumerate(range(8, 15)):
+        y0 = 10 + i // 2
+        for y in (y0, y0 + 1, y0 + 2):
+            if y < 16:
+                c = 238 - 10 * (y == y0 + 2) + rng.normal(0, 3)
+                img[y, x] = (c, c - 2, c - 10, 255)
+    X, Y = grid((16, 16))
+    # roll body: a short cylinder lying on its side, end face towards the viewer (circle)
+    r = np.hypot(X - 7, Y - 7.5)
+    roll = r <= 5.6
+    weave = 232 + 8 * ((np.floor(X) + np.floor(Y)) % 2) + rng.normal(0, 3, (16, 16))
+    spiral = np.cos(r * 2.2 - np.arctan2(Y - 7.5, X - 7) * 0.35) > 0.55
+    shade = np.where(spiral, 0.82, 1.0) * (1.04 - 0.05 * (Y - 7.5) / 5.6)
+    col = np.stack([weave, weave - 2, weave - 10], -1) * shade[..., None]
+    col = np.where((r <= 1.3)[..., None], np.array([150, 140, 120]), col)       # hollow core
+    col = np.where(((r > 4.8) & roll)[..., None], col * 0.78, col)              # outline
+    img[roll, :3] = np.clip(col[roll], 0, 255)
+    img[roll, 3] = 255
+    save_png(img, TEX / "item" / "bandage.png")
+
+
+# --- Backpack: faded olive canvas, blue-grey nylon webbing ---------------------------------
+
+BACKPACK_CANVAS = (104, 110, 74)
+BACKPACK_STRAP = (66, 78, 96)
+
+
+def _canvas(rng, col, fade=0.15) -> np.ndarray:
+    """Coarse cotton canvas: crosshatched weave, sun-faded blotches, grime."""
+    X, Y = grid()
+    img = fill(col, (S, S))
+    weave = np.sin(X * np.pi / 2) * np.sin(Y * np.pi / 2)            # 4 px threads, over/under
+    img = add_lum(img, weave * 5 + rng.normal(0, 3.5, (S, S)))
+    img = add_lum(img, fnoise(rng, beta=1.4, aniso=(10, 1), kmin=4) * 3)   # slubby weft threads
+    faded = smoothstep(0.3, 1.6, fnoise(rng, beta=2.6))
+    img = lerp(img, img * 0.4 + np.array([150, 150, 128]) * 0.6, faded[..., None] * fade * 3)
+    grime = smoothstep(0.5, 2.0, fnoise(rng, beta=2.2))
+    return add_lum(img, -grime * 16)
+
+
+def _stitch_border(img, inset=6, pitch=8, col=(70, 72, 50)) -> np.ndarray:
+    """Darker seam piping round the edge + a dashed stitch line just inside it."""
+    X, Y = grid()
+    d = np.minimum(np.minimum(X, S - X), np.minimum(Y, S - Y))
+    img = add_lum(img, -22 * smoothstep(3.0, 0.5, d))
+    line = np.abs(d - inset) < 0.9
+    dash = ((X + Y) % pitch) < pitch * 0.6
+    return over(img, col, (line & dash) * 0.8)
+
+
+def tex_backpack() -> None:
+    rng = rng_for(3110)
+    save_png(_stitch_border(_canvas(rng, BACKPACK_CANVAS)), _blk("backpack"))
+
+
+def tex_backpack_flap() -> None:
+    """Flap: same canvas a shade darker (less sun under it), wide stitched hem, a faded marker tag."""
+    rng = rng_for(3111)
+    img = _stitch_border(_canvas(rng, (92, 98, 66), fade=0.08), inset=10, pitch=10)
+    img = over(img, (40, 40, 36), _text("K.W.", 64, 70, 22) * 0.35)                # owner's initials
+    save_png(img, _blk("backpack_flap"))
+
+
+def tex_backpack_pocket() -> None:
+    """Front pocket face: canvas with a metal zipper across the top and a dangling pull tab."""
+    rng = rng_for(3112)
+    X, Y = grid()
+    img = _stitch_border(_canvas(rng, BACKPACK_CANVAS))
+    tape = box((S, S), 6, 24, S - 6, 40)
+    img = over(img, (54, 58, 44), tape)                                             # zipper tape
+    teeth = box((S, S), 6, 29, S - 6, 35) * ((X % 4) < 2)
+    img = over(img, (150, 150, 140), teeth)
+    img = add_lum(img, -18 * box((S, S), 6, 40, S - 6, 44))                         # shadow under it
+    tab = box((S, S), 84, 30, 92, 62, soft=0.8)
+    img = over(img, (170, 168, 156), tab)
+    img = add_lum(img, 20 * box((S, S), 85, 31, 87, 60) - 25 * box((S, S), 86, 50, 90, 56))
+    save_png(img, _blk("backpack_pocket"))
+
+
+def tex_backpack_strap() -> None:
+    """Nylon webbing (weave runs along v) with a grey plastic side-release buckle in the lower half."""
+    rng = rng_for(3113)
+    X, Y = grid()
+    img = fill(BACKPACK_STRAP, (S, S))
+    img = add_lum(img, np.sin(X * np.pi / 3) * 6 + fnoise(rng, beta=1.0, aniso=(1, 12), kmin=4) * 4)
+    img = add_lum(img, -smoothstep(0.6, 2.0, fnoise(rng, beta=2.2)) * 12)            # grime
+    img = add_lum(img, -14 * (smoothstep(8, 2, X) + smoothstep(S - 8, S - 2, X)))   # rolled edges
+    buckle = box((S, S), 10, 76, S - 10, 112, soft=1.0)
+    img = over(img, (46, 46, 50), buckle)
+    img = add_lum(img, 26 * box((S, S), 14, 80, S - 14, 86) - 30 * box((S, S), 30, 92, S - 30, 100))
+    save_png(img, _blk("backpack_strap"))
+
+
+# --- Supply locker: grey-green painted steel ------------------------------------------------
+
+LOCKER_PAINT = (86, 102, 88)
+
+
+def _locker_paint(rng, col=LOCKER_PAINT) -> np.ndarray:
+    """Old enamel on sheet steel: faint mottling, scuffs to bare grey metal, rust spots, low grime."""
+    X, Y = grid()
+    img = _smooth_concrete(rng, col, mottle=2.0, fine=0.7)
+    for _ in range(14):                                                             # scratches
+        x0, y0 = rng.uniform(0, S, 2)
+        ang = rng.uniform(-0.5, 0.5) + (np.pi / 2 if rng.random() < 0.3 else 0)
+        L = rng.uniform(8, 30)
+        d = np.abs((X - x0) * np.sin(ang) - (Y - y0) * np.cos(ang))
+        t = (X - x0) * np.cos(ang) + (Y - y0) * np.sin(ang)
+        img = over(img, (150, 152, 150), ((d < 0.6) & (t > 0) & (t < L)) * rng.uniform(0.4, 0.8))
+    scuff = smoothstep(1.2, 2.2, fnoise(rng, beta=2.0, kmin=3))
+    img = over(img, (132, 134, 134), scuff * 0.7)
+    rust = smoothstep(1.7, 2.6, fnoise(rng, beta=2.4))
+    img = over(img, (112, 62, 34), rust * 0.85)
+    return add_lum(img, -22 * smoothstep(S * 0.7, S, Y))                           # floor grime
+
+
+def tex_supply_locker() -> None:
+    rng = rng_for(3120)
+    X, Y = grid()
+    img = _locker_paint(rng)
+    img = add_lum(img, 12 * smoothstep(4, 0, X) - 12 * smoothstep(S - 4, S, X))    # folded edges
+    save_png(img, _blk("supply_locker"))
+
+
+def tex_supply_locker_top() -> None:
+    rng = rng_for(3121)
+    img = _locker_paint(rng, (80, 94, 82))
+    dust = smoothstep(-0.2, 1.2, fnoise(rng, beta=2.0))
+    save_png(over(img, (150, 146, 136), dust * 0.35), _blk("supply_locker_top"))
+
+
+def tex_supply_locker_front() -> None:
+    """Locker door: pressed frame, two banks of louvre vents, faded stencil, kick scuffs at the bottom."""
+    rng = rng_for(3122)
+    X, Y = grid()
+    img = _locker_paint(rng)
+    # pressed frame: light top/left bevel, dark bottom/right bevel
+    inner = box((S, S), 8, 8, S - 8, S - 8, soft=1.0)
+    img = add_lum(img, 16 * (box((S, S), 6, 6, S - 6, 9) + box((S, S), 6, 6, 9, S - 6))
+                  - 18 * (box((S, S), 6, S - 9, S - 6, S - 6) + box((S, S), S - 9, 6, S - 6, S - 6)))
+    img = add_lum(img, -4 * (1 - inner))
+    # louvre vents: 6 slots at the top and 4 at the bottom
+    for y0, count in ((16, 6), (98, 4)):
+        for i in range(count):
+            y = y0 + i * 6
+            slot = box((S, S), 28, y, S - 28, y + 3, soft=0.6)
+            img = over(img, (14, 16, 14), slot)
+            img = add_lum(img, 22 * box((S, S), 28, y + 3, S - 28, y + 4, soft=0.6))   # lit louvre lip
+    # faded white stencil
+    img = over(img, (214, 214, 204), _text("SUPPLIES", 64, 72, 15, maxw=80) * 0.5
+               * (0.6 + 0.4 * smoothstep(-1, 1, fnoise(rng, beta=1.4))))
+    # kick scuffs near the floor
+    img = over(img, (60, 60, 58), smoothstep(0.4, 1.6, fnoise(rng, beta=1.8, aniso=(4, 1))) * smoothstep(S - 30, S - 8, Y) * 0.6)
+    save_png(img, _blk("supply_locker_front"))
+
+
+# --- Supply sounds ----------------------------------------------------------------------------
+
+def _zipper(rng, dur, rate_pts, f_lo=1800, f_hi=5200) -> np.ndarray:
+    """A zipper run: one tiny click per tooth, rate following rate_pts, over fabric hiss."""
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    rate = np.interp(t, np.linspace(0, dur, len(rate_pts)), rate_pts) * (1 + smooth_jitter(rng, n, 10, 0.2))
+    phase = np.cumsum(rate) / SR
+    ticks = np.nonzero(np.diff(np.floor(phase)) > 0)[0] / SR
+    x = clicks(rng, ticks, dur + 0.05, f_lo, f_hi, 0.0008, 0.002)[:n]
+    hiss = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 2000, 9000, 1))[:n]
+    hiss *= np.interp(t, np.linspace(0, dur, len(rate_pts)), rate_pts) / max(rate_pts)
+    return norm(x) + 0.35 * norm(hiss)
+
+
+def snd_zipper_open() -> None:
+    """~0.7 s zipper pulled open: speeds up, then slows at the end of the track."""
+    rng = rng_for(3130)
+    x = _zipper(rng, 0.7, [60, 260, 320, 180, 40])
+    save_ogg(x, SND / "supplies" / "zipper_open.ogg", peak=0.7, fade_in=0.002, fade_out=0.04)
+
+
+def snd_zipper_close() -> None:
+    """~0.55 s zipper pulled shut: a quick steady run ending in a soft stop."""
+    rng = rng_for(3131)
+    x = _zipper(rng, 0.55, [120, 300, 300, 240, 30], f_lo=1500, f_hi=4400)
+    save_ogg(x, SND / "supplies" / "zipper_close.ogg", peak=0.7, fade_in=0.002, fade_out=0.04)
+
+
+def _clank(rng, dur, freqs, decay) -> np.ndarray:
+    """Struck sheet metal: a sharp noise transient into a few inharmonic ringing modes."""
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    rngf = [f * rng.uniform(0.97, 1.03) for f in freqs]
+    tone = ring(rngf, [decay * (1 - 0.15 * i) for i in range(len(rngf))], [1 / (1 + 0.5 * i) for i in range(len(rngf))], dur)[:n]
+    hit = fft_filter(rng.normal(size=n) * np.exp(-t / 0.006), lambda f: bp_gain(f, 800, 8000, 1))[:n]
+    return norm(tone) * 0.6 + norm(hit)
+
+
+def snd_locker_open() -> None:
+    """Metal latch lifts (click-clack), then the thin door swings with a short hinge squeak."""
+    rng = rng_for(3132)
+    dur = 0.9
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    x = np.zeros(n)
+    add_at(x, _clank(rng, 0.25, [2400, 3700, 5100], 0.05) * 0.8, 0.0, circular=False)
+    add_at(x, _clank(rng, 0.3, [1900, 2950, 4300], 0.06), 0.07, circular=False)
+    squeak = svf(rng.normal(size=n), np.interp(t, [0, dur], [1300, 1900]), 12.0)
+    squeak *= smoothstep(0.18, 0.28, t) * (1 - smoothstep(0.55, 0.8, t)) * (1 + smooth_jitter(rng, n, 25, 0.5))
+    door = _clank(rng, dur, [420, 690, 1130, 1580], 0.25) * smoothstep(0.15, 0.2, t) * 0.25
+    x = x + 0.35 * norm(squeak) + door
+    x = x + 0.25 * conv(x, reverb_ir(rng, 0.6, 0.15, lp=5000))[:n]
+    save_ogg(x, SND / "supplies" / "locker_open.ogg", peak=0.8, fade_in=0.001, fade_out=0.08)
+
+
+def snd_locker_close() -> None:
+    """Thin steel door slams: a boomy panel thud, the latch catching, and a short metallic ring."""
+    rng = rng_for(3133)
+    dur = 0.9
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    thud = fft_filter(rng.normal(size=n) * np.exp(-t / 0.04), lambda f: lp_gain(f, 500, 2))[:n]
+    panel = _clank(rng, dur, [310, 520, 870, 1240, 1710], 0.3)
+    x = norm(thud) + 0.6 * panel
+    add_at(x, _clank(rng, 0.25, [2600, 4100, 5600], 0.04) * 0.7, 0.045, circular=False)
+    x = x + 0.3 * conv(x, reverb_ir(rng, 0.7, 0.18, lp=4500))[:n]
+    save_ogg(x, SND / "supplies" / "locker_close.ogg", peak=0.85, fade_in=0.001, fade_out=0.1)
+
+
+def snd_pills_rattle() -> None:
+    """Three shakes of a plastic pill bottle: bursts of small hard clicks."""
+    rng = rng_for(3134)
+    dur = 0.6
+    times = []
+    for c in (0.02, 0.2, 0.38):
+        times += list(c + np.sort(rng.exponential(0.025, 14)).clip(0, 0.12))
+    x = clicks(rng, times, dur, 2500, 6500, 0.0006, 0.0018, amp_pow=1.5)
+    n = len(x)
+    body = fft_filter(x, lambda f: bp_gain(f, 600, 2500, 1))[:n]                 # the hollow bottle
+    save_ogg(norm(x) + 0.4 * norm(body), SND / "supplies" / "pills_rattle.ogg", peak=0.7, fade_in=0.001, fade_out=0.05)
+
+
+def snd_bandage_wrap() -> None:
+    """~1.3 s of gauze being unrolled and wound round an arm: soft fabric swishes, a little crackle."""
+    rng = rng_for(3135)
+    dur = 1.3
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    env = np.zeros(n)
+    for c in (0.12, 0.5, 0.88):
+        env += np.exp(-0.5 * ((t - c) / 0.09) ** 2)
+    fc = 1800 + 1400 * env
+    swish = svf(rng.normal(size=n), fc, 0.8) * env * (1 + smooth_jitter(rng, n, 20, 0.4))
+    crackle = _crackle(rng, dur, 900, f_lo=3000) * (0.3 + env)
+    x = norm(swish) + 0.25 * norm(crackle)
+    save_ogg(x, SND / "supplies" / "bandage_wrap.ogg", peak=0.65, fade_in=0.01, fade_out=0.08)
+
+
+# ---- Safe rooms & checkpoints ----------------------------------------------------------------
+
+RADIO_OLIVE = (86, 92, 62)   # army-green painted steel of the old field radio
+
+
+def _radio_case(rng) -> np.ndarray:
+    """Olive-drab painted steel: soft mottling, chipped paint showing dark metal, a little grime."""
+    img = _smooth_concrete(rng, RADIO_OLIVE, mottle=3.0, fine=1.0)
+    chips = smoothstep(1.6, 2.2, fnoise(rng, beta=1.2, kmin=4))
+    img = over(img, np.array([58, 56, 52]), chips * 0.8)
+    grime = smoothstep(0.5, 1.8, fnoise(rng, beta=2.6))
+    return over(img, np.array([40, 40, 30]), grime * 0.3)
+
+
+def tex_checkpoint_radio_case() -> None:
+    save_png(_radio_case(rng_for(2601)), _blk("checkpoint_radio_case"))
+
+
+def tex_checkpoint_radio_front() -> None:
+    """Field radio front panel, drawn in the top 77 rows (the model maps the 10x6 px front onto
+    them): round-hole speaker grille on the left, a backlit amber tuning dial with a red needle on
+    the right, dark bezels where the two 3D knobs sit, and a stencilled channel label."""
+    rng = rng_for(2602)
+    X, Y = grid()
+    img = _radio_case(rng)
+    H = 77
+    frame = box((S, S), 3, 3, S - 3, H - 3) - box((S, S), 6, 6, S - 6, H - 6)      # inset panel line
+    img = add_lum(img, -22 * np.clip(frame, 0, 1))
+    holes = np.zeros((S, S))
+    for cy in range(20, 70, 8):                                                      # speaker grille
+        for cx in range(14, 62, 8):
+            holes = np.maximum(holes, np.clip(2.6 - np.hypot(X - cx, Y - cy), 0, 1))
+    img = over(img, np.array([18, 18, 16]), holes)
+    dial = box((S, S), 72, 12, 120, 40, soft=0.8)                                   # tuning dial
+    glass = lerp(np.array([255, 196, 96]), np.array([214, 140, 52]), np.clip(np.abs(Y - 26) / 16, 0, 1)[..., None])
+    img = over(img, glass, dial)
+    ticks = np.zeros((S, S))
+    for i, x in enumerate(np.linspace(76, 116, 11)):
+        ticks = np.maximum(ticks, box((S, S), x - 0.6, 14, x + 0.6, 20 if i % 2 else 23))
+    img = over(img, np.array([60, 36, 16]), ticks * dial)
+    img = over(img, np.array([200, 30, 24]), box((S, S), 99, 13, 101, 39) * dial)   # needle
+    img = add_lum(img, -30 * np.clip(blur(dial, 1.5) - dial, 0, 1) * 2)             # bezel shadow
+    for cx in (82, 108):                                                             # knob bezels
+        d = np.hypot(X - cx, Y - 58)
+        img = add_lum(img, -30 * (np.clip(9.5 - d, 0, 1) - np.clip(7.0 - d, 0, 1)))
+    img = over(img, np.array([214, 210, 180]), _text("CH 7", 38, 11, 8, maxw=40) * 0.85)
+    save_png(img, _blk("checkpoint_radio_front"))
+
+
+def tex_safe_room_lamp() -> None:
+    """Safe-room ceiling lamp seen from below: a round frosted warm-white glass dome in a square
+    off-white metal frame. It isn't drawn full-bright in game, so the glass is painted bright."""
+    rng = rng_for(2603)
+    X, Y = grid()
+    img = _smooth_concrete(rng, (214, 208, 196), mottle=2.0, fine=0.6)              # painted frame
+    img = add_lum(img, -18 * (1 - box((S, S), 4, 4, S - 4, S - 4)))                 # edge seam
+    r = np.hypot(X - 64, Y - 64)
+    dome = np.clip(50.5 - r, 0, 1)
+    glass = lerp(np.array([255, 246, 222]), np.array([250, 206, 140]), (np.clip(r / 50, 0, 1) ** 1.6)[..., None])
+    glass = add_lum(glass, fnoise(rng, beta=2.2) * 2.5)
+    img = add_lum(img, -26 * np.clip(np.clip(54.5 - r, 0, 1) - dome, 0, 1))          # metal rim
+    img = over(img, glass, dome)
+    for cx, cy in ((64, 9), (64, 119), (9, 64), (119, 64)):                        # rim screws
+        img = over(img, np.array([150, 140, 120]), np.clip(3 - np.hypot(X - cx, Y - cy), 0, 1))
+    save_png(img, _blk("safe_room_lamp"))
+
+
+def tex_safe_room_sign() -> None:
+    """'SAFE' plaque (16x12 px in game, drawn in the top 96 rows): deep green enamel, white border,
+    our own shelter emblem (a house with a doorway inside a ring) and the word SAFE. The rows
+    below stay plain green; the plaque's thin edges use them."""
+    rng = rng_for(2604)
+    X, Y = grid()
+    H = 96
+    green, white = np.array([24, 92, 58]), np.array([236, 236, 226])
+    img = add_lum(fill(green, (S, S)), fnoise(rng, beta=2.4) * 3)
+    border = box((S, S), 4, 4, S - 4, H - 4) - box((S, S), 8, 8, S - 8, H - 8)
+    img = over(img, white, np.clip(border, 0, 1))
+    cx, cy = 32, 48
+    r = np.hypot(X - cx, Y - cy)
+    img = over(img, white, np.clip(22.5 - r, 0, 1) - np.clip(18.5 - r, 0, 1))       # ring
+    house = pil_mask(lambda d, k: d.polygon([((cx - 10) * k, (cy + 12) * k), ((cx - 10) * k, (cy - 2) * k),
+                                             (cx * k, (cy - 12) * k), ((cx + 10) * k, (cy - 2) * k),
+                                             ((cx + 10) * k, (cy + 12) * k)], fill=255))
+    img = over(img, white, house)
+    img = over(img, green, box((S, S), cx - 3.5, cy + 3, cx + 3.5, cy + 12.5) * house)   # doorway
+    img = over(img, white, _text("SAFE", 89, 50, 32, maxw=58))
+    img = _weather(img, rng, dirt=0.15, scratches=5)
+    save_png(img, _blk("safe_room_sign"))
+
+
+def snd_checkpoint_save() -> None:
+    """~2.4 s: the field radio crackles to life (static swelling in, then a squelch cuts it
+    down), then a soft two-note chime through its little speaker: 'checkpoint saved'."""
+    rng = rng_for(2605)
+    dur = 2.4
+    n = int(dur * SR)
+    t = np.arange(n) / SR
+    hiss = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 500, 4500, 2))[:n]
+    static = norm(hiss) * (0.65 + 0.35 * np.sin(2 * np.pi * 7 * t) ** 2) + 0.7 * norm(_crackle(rng, dur, 120))
+    static *= np.interp(t, [0, 0.08, 0.55, 0.68, dur], [0, 1, 0.9, 0.1, 0.0])
+    chime = np.zeros(n)
+    for start, f in ((0.72, 659.3), (1.0, 880.0)):                                  # E5 then A5
+        bell = ring([f, 2.0 * f, 2.76 * f, 5.4 * f], [0.7, 0.35, 0.2, 0.08], [1, 0.35, 0.2, 0.08], 1.3)
+        add_at(chime, bell * np.clip(t_axis(1.3) / 0.004, 0, 1), start, False)
+    chime = fft_filter(chime, lambda f: bp_gain(f, 350, 5000, 2))[:n]               # small speaker
+    x = 0.45 * norm(static) + norm(chime)
+    wet = conv(x, reverb_ir(rng, 0.8, 0.2, lp=4000, predelay=0.008))[:n]
+    save_ogg(x + 0.2 * norm(wet) * np.abs(x).max(), SND / "safe_room" / "checkpoint_save.ogg", peak=0.8, fade_out=0.15)
 
 
 # =============================================================================
@@ -3478,6 +4000,10 @@ TEXTURES = [
     tex_streetlamp_parts, tex_streetlamp_heads, tex_sign_post, tex_street_signs, tex_tunnel_concrete,
     tex_exit_tunnel_marker, tex_highway_sign_exit,
     tex_camcorder_battery, tex_almond_water, tex_canned_food, tex_backshroom, tex_bacteria,
+    tex_sanity_silhouette,
+    tex_energy_bar, tex_calm_pills, tex_bandage, tex_backpack, tex_backpack_flap, tex_backpack_pocket,
+    tex_backpack_strap, tex_supply_locker, tex_supply_locker_top, tex_supply_locker_front,
+    tex_checkpoint_radio_case, tex_checkpoint_radio_front, tex_safe_room_lamp, tex_safe_room_sign,
 ]
 SOUNDS = [
     snd_level0_hum, snd_level1_ambience, snd_level2_ambience,
@@ -3490,6 +4016,9 @@ SOUNDS = [
     snd_poolrooms_ambience, snd_hallucination_loop, snd_phantom_vanish, snd_drain_pull,
     snd_level9_ambience, snd_sodium_hum, snd_lamp_flicker, snd_distant_rumble, snd_watcher_hum,
     snd_watcher_spot, snd_watcher_beam, snd_watcher_dust, snd_observer_vanish, snd_leaf_steps,
+    snd_sanity_whisper, snd_sanity_heartbeat, snd_sanity_knock,
+    snd_zipper_open, snd_zipper_close, snd_locker_open, snd_locker_close, snd_pills_rattle, snd_bandage_wrap,
+    snd_checkpoint_save,
 ]
 
 

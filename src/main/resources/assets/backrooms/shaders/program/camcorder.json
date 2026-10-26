@@ -33,6 +33,9 @@
         { "name": "PoolWater", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Interference", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "FogDrain", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Sanity", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "SanityPulse", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "SanityGlitch", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Near", "type": "float", "count": 1, "values": [ 0.05 ] },
         { "name": "Far", "type": "float", "count": 1, "values": [ 256.0 ] }
     ]

@@ -18,6 +18,9 @@
 //  Dream (Poolrooms hallucination, uniform Dream 0..1) is woven into steps 2, 3, 5 and 6: slow
 //  watery ripples + breathing zoom, chromatic shimmer, a faint ghost image when strong, and a
 //  cyan/saturated grade. Every part is scaled by Dream, so Dream = 0 changes nothing at all.
+//  Sanity (uniform Sanity 0..1, 0 = sane) adds a little tape jitter (step 2), a slight
+//  desaturation and edge darkening that pulses with the heartbeat (step 6). Sanity = 0, SanityPulse
+//  and SanityGlitch = 0 change nothing at all.
 
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;
@@ -45,6 +48,9 @@ uniform float Dream;      // 0..1 Poolrooms hallucination (0 = picture exactly u
 uniform float PoolWater;  // 1 in the Poolrooms: make pool water vivid cyan
 uniform float Interference; // 0..1 Level 9: a Watcher frying the electronics (0 = no change at all)
 uniform float FogDrain;   // 1 in Level 9: colour drains out of distant things (0 = no change at all)
+uniform float Sanity;     // 0..1 how broken your mind is (0 = picture exactly unchanged)
+uniform float SanityPulse;  // 0..1 heartbeat pulse for the edge darkening (only matters when Sanity > 0)
+uniform float SanityGlitch; // 0..1 a tiny tape glitch when a hallucination vanishes (0 = no change)
 uniform float Near;
 uniform float Far;
 
@@ -112,10 +118,12 @@ void main() {
     // 0 = clean picture. Danger, transitions and a dying battery make the tape misbehave.
     // A monster nearby only roughs the tape up a little (max ~0.3): enough to warn you, not enough
     // to hide what you're looking at. Level transitions keep the full-strength glitch.
-    float glitch = clamp(Danger * 0.3 + Transition * 1.2 + lowBattery * 0.35 - Signal * 0.15, 0.0, 1.5);
+    float glitch = clamp(Danger * 0.3 + Transition * 1.2 + lowBattery * 0.35 - Signal * 0.15 + SanityGlitch * 0.6, 0.0, 1.5);
     // The worn-tape look (line jitter, colour fringes, head-switching strip, grain) never goes away;
     // glitch moments add to it. The big tracking bar, tears and scanlines stay glitch-only.
-    float tape = clamp(TAPE_BASE + glitch, 0.0, 1.5);
+    // Low sanity wears the tape a little more (adds to tape only, never to the glitch extras).
+    float sanity = clamp(Sanity, 0.0, 1.0);
+    float tape = clamp(TAPE_BASE + glitch + sanity * 0.2, 0.0, 1.5);
 
     // 1. Lens. p is the output pixel in half-height units (y -1..1, x -aspect..aspect).
     //    Barrel: sample from p * (1 + k|p|^2). Dividing by the corner's factor (1 + k(aspect^2+1))
@@ -261,6 +269,13 @@ void main() {
         col *= mix(vec3(1.0), vec3(0.93, 1.02, 1.06), dream * (0.6 + 0.4 * drift));
         col += vec3(0.55, 0.85, 1.0) * smoothstep(0.55, 1.0, dl) * 0.05 * dream;
         col = clamp(col, 0.0, 1.0);
+    }
+    if (sanity > 0.0) {
+        // Low sanity: colour slowly drains away, and the edges of the picture close in, throbbing
+        // with your heartbeat (strongest in the corners, nothing in the middle).
+        col = mix(col, vec3(luma(col)), sanity * 0.3);
+        float edge = smoothstep(0.45, 1.35, length((texCoord - 0.5) * 2.0));
+        col *= 1.0 - sanity * (0.4 + 0.2 * clamp(SanityPulse, 0.0, 1.0)) * edge;
     }
     // Faint magenta on neutrals: the less saturated a pixel, the more green it loses.
     float hi = max(col.r, max(col.g, col.b));

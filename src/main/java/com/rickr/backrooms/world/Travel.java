@@ -2,6 +2,7 @@ package com.rickr.backrooms.world;
 
 import com.rickr.backrooms.camera.CameraService;
 import com.rickr.backrooms.network.TransitionPayload;
+import com.rickr.backrooms.player.Checkpoints;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import java.util.List;
@@ -59,8 +60,12 @@ public final class Travel {
         return true;
     }
 
-    /** Used the exit of {@code from}: go one floor deeper, or escape if it was the last floor. */
+    /**
+     * Used the exit of {@code from}: go one floor deeper, or escape if it was the last floor.
+     * Leaving a floor forgets its checkpoint (you can't respawn back up there).
+     */
     public static void useExit(ServerPlayer player, BackroomsLevel from) {
+        Checkpoints.clear(player);
         BackroomsLevel next = from.next();
         if (next == null) {
             escape(player);
@@ -75,6 +80,7 @@ public final class Travel {
 
     /** Back to reality at world spawn. "...or did you?" */
     public static void escape(ServerPlayer player) {
+        Checkpoints.clear(player); // you left the Backrooms: checkpoints no longer apply
         ServerLevel overworld = player.server.overworld();
         BlockPos spawn = overworld.getSharedSpawnPos();
         BlockPos top = overworld.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, spawn);

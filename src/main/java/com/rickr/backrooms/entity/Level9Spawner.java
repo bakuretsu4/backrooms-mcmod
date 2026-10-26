@@ -4,6 +4,8 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.registry.ModEntities;
 import com.rickr.backrooms.world.BackroomsLevel;
+import com.rickr.backrooms.world.SafeRooms;
+import com.rickr.backrooms.world.layout.LevelLayout;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +44,8 @@ import org.jetbrains.annotations.Nullable;
  *       appear.</li>
  *   <li>Observers: now and then, one per player, in a dark spot 25-40 blocks away.</li>
  * </ul>
+ * Nothing appears in or within {@value #SAFE_ROOM_MARGIN} blocks of a safe room, or for a player
+ * who is inside one.
  * Also adds the test command {@code /backrooms spawn watcher|observer [targets]} (operators).
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
@@ -61,6 +65,8 @@ public final class Level9Spawner {
     private static final int OBSERVER_COOLDOWN = 90 * 20;
     /** Observers only stand where the block light is at most this (the darkest spots). */
     private static final int OBSERVER_MAX_LIGHT = 5;
+    /** No Watchers or Observers appear within this many blocks (sideways) of a safe room. */
+    private static final int SAFE_ROOM_MARGIN = 12;
 
     /** Each player's current Observer and cooldown. Server thread only. */
     private static final Map<UUID, ObserverSlot> OBSERVERS = new HashMap<>();
@@ -78,8 +84,8 @@ public final class Level9Spawner {
             return;
         }
         for (ServerPlayer player : level.players()) {
-            if (player.isSpectator()) {
-                continue;
+            if (player.isSpectator() || SafeRooms.isSafe(player)) {
+                continue; // nothing new shows up for someone resting in a safe room
             }
             tickWatchers(level, player);
             tickObserver(level, player);
@@ -112,6 +118,9 @@ public final class Level9Spawner {
                     Mth.floor(player.getZ() + Math.sin(angle) * distance));
             if (spot == null) {
                 continue;
+            }
+            if (SafeRooms.isNearSafeRoom(level, BlockPos.containing(spot), SAFE_ROOM_MARGIN)) {
+                continue; // never over or near a safe room
             }
             if (hidden && clearLine(level, player, player.getEyePosition(), spot.add(0.0, Watcher.HALF_SIZE, 0.0))) {
                 continue;
@@ -190,6 +199,9 @@ public final class Level9Spawner {
             Double feetY = groundUnderOpenSky(level, x, z);
             if (feetY == null) {
                 continue;
+            }
+            if (SafeRooms.isNearSafeRoom(level, new BlockPos(x, LevelLayout.FLOOR_Y, z), SAFE_ROOM_MARGIN)) {
+                continue; // never in or near a safe room
             }
             int light = level.getBrightness(LightLayer.BLOCK, BlockPos.containing(x, feetY + 1.5, z));
             if (!relaxed && light > OBSERVER_MAX_LIGHT) {

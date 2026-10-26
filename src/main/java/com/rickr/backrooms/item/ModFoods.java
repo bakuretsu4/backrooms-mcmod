@@ -18,5 +18,11 @@ public final class ModFoods {
             .effect(() -> new MobEffectInstance(MobEffects.CONFUSION, 200), 0.10f)
             .build();
 
+    /** Chewy energy bar: 3 hunger, eaten quickly, and you can eat it even when full (it's for the sprint energy). */
+    public static final FoodProperties ENERGY_BAR = new FoodProperties.Builder()
+            .nutrition(3).saturationModifier(0.4f)
+            .fast().alwaysEdible()
+            .build();
+
     private ModFoods() {}
 }

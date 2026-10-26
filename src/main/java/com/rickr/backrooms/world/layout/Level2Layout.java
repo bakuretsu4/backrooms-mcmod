@@ -11,6 +11,7 @@ import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,6 +43,11 @@ import org.jetbrains.annotations.Nullable;
  * <p><b>Exit.</b> One emergency door per 320x320 region, standing in a short wall in the middle
  * of a 15x15 room with tube lights and pipes along its walls. Opening it takes you (and anyone
  * standing next to you) on to the Poolrooms.
+ *
+ * <p><b>Safe rooms.</b> About 60% of the 128x128 squares (8x8 grid squares) have one: a
+ * carpeted, wood-panelled utility room carved into the rock between corridors, its doorway in the
+ * plain wall of a corridor. Utility rooms may hold a metal supply locker, and now and then a
+ * dropped backpack lies in a corridor.
  */
 public final class Level2Layout extends LevelLayout {
     // ---- Grid ----------------------------------------------------------------------------------
@@ -71,9 +77,25 @@ public final class Level2Layout extends LevelLayout {
     private static final int CRATE = 4;
     private static final int EXIT_WALL = 5;
     private static final int EXIT_DOOR = 6;
+    /** Inside a safe room: floor you can stand on (doorway, free floor) ... */
+    private static final int SAFE_OPEN = 7;
+    /** ... or its panelled walls and furniture. */
+    private static final int SAFE_SOLID = 8;
+    /** A dropped backpack on the corridor floor (FACING in bits 4-6). */
+    private static final int BACKPACK = 9;
+    /** A supply locker against a utility room wall (FACING in bits 4-6). */
+    private static final int LOCKER = 10;
+
+    // ---- Safe rooms ----------------------------------------------------------------------------
+    /** Grid squares per side of a safe-room square (128 / 16). */
+    private static final int SAFE_SQUARES = SafeRoomPlan.CELL / GRID;
+    /** Safe rooms keep at least this far (chessboard distance from their square's centre) from an exit. */
+    private static final int SAFE_EXIT_DISTANCE = 24;
+    /** The exits, kept in a static field so the static floor-plan helpers can reach them. */
+    private static final ExitLocator EXITS = new ExitLocator(320, 40, 3000);
 
     public Level2Layout() {
-        super(4, new ExitLocator(320, 40, 3000));
+        super(4, EXITS);
     }
 
     // ==========================================================================================
@@ -83,7 +105,119 @@ public final class Level2Layout extends LevelLayout {
     @Override
     public boolean isWalkable(long seed, int x, int z) {
         int kind = kindOf(column(seed, x, z));
-        return kind == WALK || kind == DOOR;
+        return kind == WALK || kind == DOOR || kind == SAFE_OPEN;
+    }
+
+    /** Everything inside a safe room, walls and doorway included. */
+    @Override
+    public boolean isSafeRoom(long seed, int x, int z) {
+        SafeRoomPlan plan = safeRoomIn(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID));
+        return plan != null && plan.contains(x, z);
+    }
+
+    // ==========================================================================================
+    // Safe rooms
+    // ==========================================================================================
+
+    /**
+     * The safe room in grid square (gx, gz) (the rock between the corridors of nodes gx..gx+1,
+     * gz..gz+1), or null. Each 8x8 block of squares tries up to three random squares and uses the
+     * first one that works; a square works when one of its corridors has its plain wall on the
+     * square's side (the doorway can't open behind the pipes) and no exit is near.
+     */
+    @Nullable
+    private static SafeRoomPlan safeRoomIn(long seed, int gx, int gz) {
+        int cellX = Math.floorDiv(gx, SAFE_SQUARES);
+        int cellZ = Math.floorDiv(gz, SAFE_SQUARES);
+        long h = SafeRoomPlan.cellHash(seed, cellX, cellZ, 420);
+        if (!SafeRoomPlan.rolled(h)) {
+            return null;
+        }
+        // Quick answer for most squares: not one of the three candidates at all.
+        int match = -1;
+        for (int k = 0; k < 3 && match < 0; k++) {
+            long hk = Hash.mix(h + k);
+            if (cellX * SAFE_SQUARES + Hash.range(hk, SAFE_SQUARES) == gx
+                    && cellZ * SAFE_SQUARES + Hash.range(Hash.mix(hk), SAFE_SQUARES) == gz) {
+                match = k;
+            }
+        }
+        if (match < 0) {
+            return null;
+        }
+        for (int k = 0; k <= match; k++) {
+            long hk = Hash.mix(h + k);
+            int sx = cellX * SAFE_SQUARES + Hash.range(hk, SAFE_SQUARES);
+            int sz = cellZ * SAFE_SQUARES + Hash.range(Hash.mix(hk), SAFE_SQUARES);
+            Direction door = safeDoorSide(seed, sx, sz, hk);
+            if (door == null || nearExit(seed, sx, sz)) {
+                continue; // this candidate doesn't work: try the next one
+            }
+            return k == match ? safeRoomPlan(sx, sz, door) : null; // an earlier candidate won
+        }
+        return null;
+    }
+
+    /** A side of square (gx, gz) whose corridor has its plain wall facing the square, or null. */
+    @Nullable
+    private static Direction safeDoorSide(long seed, int gx, int gz, long hash) {
+        int start = Hash.range(Hash.mix(hash ^ 7), 4);
+        for (int i = 0; i < 4; i++) {
+            Direction side = Direction.from2DDataValue((start + i) & 3);
+            boolean ok = switch (side) {
+                case NORTH -> hasEast(seed, gx, gz) && pipesNorth(seed, gx, gz);          // pipes on its far side
+                case SOUTH -> hasEast(seed, gx, gz + 1) && !pipesNorth(seed, gx, gz + 1);
+                case WEST -> hasSouth(seed, gx, gz) && pipesWest(seed, gx, gz);
+                default -> hasSouth(seed, gx + 1, gz) && !pipesWest(seed, gx + 1, gz);   // EAST
+            };
+            if (ok) {
+                return side;
+            }
+        }
+        return null;
+    }
+
+    private static boolean nearExit(long seed, int gx, int gz) {
+        int cx = gx * GRID + GRID / 2;
+        int cz = gz * GRID + GRID / 2;
+        int[] exit = EXITS.nearest(seed, cx, cz);
+        return Math.max(Math.abs(exit[0] - cx), Math.abs(exit[1] - cz)) < SAFE_EXIT_DISTANCE;
+    }
+
+    /**
+     * The room inside square (gx, gz): 7 wide inside, 8 deep, its door wall right against the
+     * corridor (local 3..15 is rock; the 2x2 corners stay free for junction rooms).
+     */
+    private static SafeRoomPlan safeRoomPlan(int gx, int gz, Direction door) {
+        int bx = gx * GRID;
+        int bz = gz * GRID;
+        return switch (door) {
+            case NORTH -> new SafeRoomPlan(bx + 5, bz + 3, 9, 11, door, 1);
+            case SOUTH -> new SafeRoomPlan(bx + 5, bz + 5, 9, 11, door, 1);
+            case WEST -> new SafeRoomPlan(bx + 3, bz + 5, 11, 9, door, 1);
+            default -> new SafeRoomPlan(bx + 5, bz + 5, 11, 9, door, 1); // EAST
+        };
+    }
+
+    /** Column code of a safe-room column. Its outer wall layer is ordinary rock (lamps may hang on it). */
+    private static int safeColumn(SafeRoomPlan plan, int x, int z) {
+        if (plan.isOuterWall(x, z)) {
+            return ROCK;
+        }
+        return plan.isWalkable(x, z) ? SAFE_OPEN : SAFE_SOLID;
+    }
+
+    private void fillSafeRoom(long seed, int x, int z, Column out) {
+        SafeRoomPlan plan = safeRoomIn(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID));
+        BlockState wall = ModBlocks.PIPE_WALL.get().defaultBlockState();
+        plan.fill(x, z, floorY(), ceilingY(), new SafeRoomPlan.Style(
+                ModBlocks.BEIGE_CARPET.get().defaultBlockState(),
+                ModBlocks.PIPE_CEILING.get().defaultBlockState(),
+                wall,
+                wall,
+                ModBlocks.WOOD_FLOOR.get().defaultBlockState(),    // wood panelling below the dado line
+                ModBlocks.DIM_WALLPAPER.get().defaultBlockState(), // old wallpaper above it
+                null), out);
     }
 
     // ==========================================================================================
@@ -166,6 +300,10 @@ public final class Level2Layout extends LevelLayout {
         if (Math.max(Math.abs(dx), Math.abs(dz)) <= EXIT_ROOM_RADIUS) {
             return exitRoomColumn(seed, x, z, dx, dz);
         }
+        SafeRoomPlan safe = safeRoomIn(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID));
+        if (safe != null && safe.contains(x, z)) {
+            return safeColumn(safe, x, z);
+        }
         return gridColumn(seed, x, z);
     }
 
@@ -190,16 +328,37 @@ public final class Level2Layout extends LevelLayout {
                 return ROCK;
             }
             boolean north = pipesNorth(seed, gx, gz);
-            return lz == (north ? 0 : WIDTH - 1) ? pipes(north ? Direction.SOUTH : Direction.NORTH) : WALK;
+            if (lz == (north ? 0 : WIDTH - 1)) {
+                return pipes(north ? Direction.SOUTH : Direction.NORTH);
+            }
+            return lz == 1 ? corridorBackpack(seed, gx, gz, 0, lx) : WALK;
         }
         if (lx < WIDTH) {
             if (!hasSouth(seed, gx, gz)) {
                 return ROCK;
             }
             boolean west = pipesWest(seed, gx, gz);
-            return lx == (west ? 0 : WIDTH - 1) ? pipes(west ? Direction.EAST : Direction.WEST) : WALK;
+            if (lx == (west ? 0 : WIDTH - 1)) {
+                return pipes(west ? Direction.EAST : Direction.WEST);
+            }
+            return lx == 1 ? corridorBackpack(seed, gx, gz, 1, lz) : WALK;
         }
         return rockColumn(seed, gx, gz, lx, lz);
+    }
+
+    /**
+     * Now and then a dropped backpack lies in the middle row of a corridor (next to the pipes, so
+     * never right in front of a doorway): about one per 220 blocks of walkway. {@code axis} 0 =
+     * the corridor east of node (gx, gz), 1 = the one south of it; {@code along} = 3..15 along it.
+     * Returns the column code: BACKPACK with its facing, or WALK.
+     */
+    private static int corridorBackpack(long seed, int gx, int gz, int axis, int along) {
+        long h = Hash.of(seed, gx, gz, 350 + axis);
+        // Positions 5..13 stay clear of junction rooms (which reach 2 blocks into the corridor).
+        if (Hash.unit(h) >= 0.12 || along != 5 + Hash.range(Hash.mix(h), 9)) {
+            return WALK;
+        }
+        return withFacing(BACKPACK, Direction.from2DDataValue(Hash.range(Hash.mix(h ^ 1), 4)));
     }
 
     /**
@@ -253,35 +412,43 @@ public final class Level2Layout extends LevelLayout {
      * up to four of them, at fixed spots chosen so they never touch each other, a corridor or a
      * junction room (local coordinates 3..15):
      * <pre>
-     *   A: off the corridor along its top edge    x 9-12, z 4-7,  door (11, 3)
-     *   B: off the corridor along its bottom edge x 6-9,  z 11-14, door (7, 15)
-     *   C: off the corridor along its left edge   x 4-7,  z 6-9,  door (3, 8)
-     *   D: off the corridor along its right edge  x 11-14, z 9-12, door (15, 11)
+     *   A: off the corridor along its top edge    x 9-12, z 4-7,  door (11, 3),  locker (9, 7)
+     *   B: off the corridor along its bottom edge x 6-9,  z 11-14, door (7, 15), locker (9, 11)
+     *   C: off the corridor along its left edge   x 4-7,  z 6-9,  door (3, 8),   locker (7, 6)
+     *   D: off the corridor along its right edge  x 11-14, z 9-12, door (15, 11), locker (11, 12)
      * </pre>
-     * Rooms are only on the plain side of a corridor, never behind its pipes.
+     * Rooms are only on the plain side of a corridor, never behind its pipes. A square with a safe
+     * room has no utility rooms (the safe room takes the rock).
      */
     private static int rockColumn(long seed, int gx, int gz, int lx, int lz) {
+        if (safeRoomIn(seed, gx, gz) != null) {
+            return ROCK;
+        }
         if (roomOffEast(seed, gx, gz) && pipesNorth(seed, gx, gz)) {
-            int r = utilityRoom(seed, gx, gz, 0, lx, lz, 9, 12, 4, 7, 11, 3, 12, 7);
+            int r = utilityRoom(seed, gx, gz, 0, lx, lz, 9, 12, 4, 7, 11, 3, 12, 7, 9, 7, Direction.NORTH);
             if (r != ROCK) return r;
         }
         if (roomOffEast(seed, gx, gz + 1) && !pipesNorth(seed, gx, gz + 1)) {
-            int r = utilityRoom(seed, gx, gz, 1, lx, lz, 6, 9, 11, 14, 7, 15, 6, 11);
+            int r = utilityRoom(seed, gx, gz, 1, lx, lz, 6, 9, 11, 14, 7, 15, 6, 11, 9, 11, Direction.SOUTH);
             if (r != ROCK) return r;
         }
         if (roomOffSouth(seed, gx, gz) && pipesWest(seed, gx, gz)) {
-            int r = utilityRoom(seed, gx, gz, 2, lx, lz, 4, 7, 6, 9, 3, 8, 7, 9);
+            int r = utilityRoom(seed, gx, gz, 2, lx, lz, 4, 7, 6, 9, 3, 8, 7, 9, 7, 6, Direction.WEST);
             if (r != ROCK) return r;
         }
         if (roomOffSouth(seed, gx + 1, gz) && !pipesWest(seed, gx + 1, gz)) {
-            return utilityRoom(seed, gx, gz, 3, lx, lz, 11, 14, 9, 12, 15, 11, 11, 9);
+            return utilityRoom(seed, gx, gz, 3, lx, lz, 11, 14, 9, 12, 15, 11, 11, 9, 11, 12, Direction.EAST);
         }
         return ROCK;
     }
 
-    /** One utility room: interior box, its 1-wide door, and maybe a crate in the far corner. */
+    /**
+     * One utility room: interior box, its 1-wide door, maybe a crate in the far corner and maybe a
+     * supply locker against the back wall (facing the door side, away from the wall).
+     */
     private static int utilityRoom(long seed, int gx, int gz, int which, int lx, int lz,
-                                   int x0, int x1, int z0, int z1, int doorX, int doorZ, int crateX, int crateZ) {
+                                   int x0, int x1, int z0, int z1, int doorX, int doorZ, int crateX, int crateZ,
+                                   int lockerX, int lockerZ, Direction lockerFacing) {
         if (lx == doorX && lz == doorZ) {
             return DOOR;
         }
@@ -290,6 +457,9 @@ public final class Level2Layout extends LevelLayout {
         }
         if (lx == crateX && lz == crateZ && Hash.unit(seed, gx * 4 + which, gz, 320) < 0.5) {
             return CRATE;
+        }
+        if (lx == lockerX && lz == lockerZ && Hash.unit(seed, gx * 4 + which, gz, 321) < 0.35) {
+            return withFacing(LOCKER, lockerFacing);
         }
         return WALK;
     }
@@ -308,7 +478,12 @@ public final class Level2Layout extends LevelLayout {
     }
 
     private static int pipes(Direction facing) {
-        return PIPES | (facing.get2DDataValue() << 4);
+        return withFacing(PIPES, facing);
+    }
+
+    /** Packs a column kind together with a facing (bits 4-6). */
+    private static int withFacing(int kind, Direction facing) {
+        return kind | (facing.get2DDataValue() << 4);
     }
 
     private static int kindOf(int column) {
@@ -330,6 +505,10 @@ public final class Level2Layout extends LevelLayout {
         int ceiling = ceilingY();
         int code = column(seed, x, z);
         int kind = kindOf(code);
+        if (kind == SAFE_OPEN || kind == SAFE_SOLID) {
+            fillSafeRoom(seed, x, z, out);
+            return;
+        }
         int dx = exits().dx(seed, x, z);
         int dz = exits().dz(seed, x, z);
         boolean inExitRoom = Math.max(Math.abs(dx), Math.abs(dz)) <= EXIT_ROOM_RADIUS;
@@ -353,6 +532,10 @@ public final class Level2Layout extends LevelLayout {
             }
             case DOOR -> out.set(floor + 4, wall); // the lintel over a utility room doorway
             case CRATE -> out.set(floor + 1, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
+            case BACKPACK -> out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState()
+                    .setValue(BlockStateProperties.HORIZONTAL_FACING, facingOf(code)));
+            case LOCKER -> out.set(floor + 1, ModBlocks.SUPPLY_LOCKER.get().defaultBlockState()
+                    .setValue(BlockStateProperties.HORIZONTAL_FACING, facingOf(code)));
             case PIPES -> fillPipes(seed, x, z, facingOf(code), out);
             default -> {
                 // Open floor: maybe a caged lamp up on the wall, or a tube in a room's ceiling.

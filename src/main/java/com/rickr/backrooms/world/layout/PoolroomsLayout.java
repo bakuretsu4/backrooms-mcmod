@@ -8,6 +8,7 @@ import com.rickr.backrooms.world.Hash;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -82,6 +83,11 @@ import org.jetbrains.annotations.Nullable;
  * air anywhere at the water's level. Below y36 only the drain shaft holds water, and its dark
  * lining surrounds it all the way down. Lamps are full blocks that replace solid wall blocks. So
  * no water block ever touches air at its side or below, and nothing flows when the chunk loads.
+ *
+ * <p><b>Safe rooms.</b> About 60% of the 9x9-cell blocks (126x126) turn one ordinary cell into a
+ * safe room: a dry walkway runs around the inside of the cell, and in the middle stands a small
+ * carpeted, tiled room (dark tile dado band) with one doorway onto that walkway. No water inside.
+ * Elsewhere, backpacks and the odd supply crate lie on dry walkways (never in the water).
  */
 public final class PoolroomsLayout extends LevelLayout {
     // ---- Heights -----------------------------------------------------------------------------
@@ -149,6 +155,14 @@ public final class PoolroomsLayout extends LevelLayout {
     private static final int ROOM_CHANNEL = 5;
     /** The same shape as a channel, but dry. */
     private static final int ROOM_CORRIDOR = 6;
+    /** A safe room standing on a dry walkway that runs around the inside of the cell. */
+    private static final int ROOM_SAFE = 7;
+
+    // ---- Safe rooms --------------------------------------------------------------------------
+    /** Safe rooms: at most one per this many cells on a side (9 x 14 = 126 blocks). */
+    private static final int SAFE_BLOCK_CELLS = 9;
+    /** Safe rooms keep at least this far (chessboard distance from their cell's centre) from an exit. */
+    private static final int SAFE_EXIT_DISTANCE = 24;
 
     /** Channels run along X (east-west) ... */
     private static final int AXIS_X = 0;
@@ -194,9 +208,14 @@ public final class PoolroomsLayout extends LevelLayout {
     private static final int DEEP = 4;
     /** The drain shaft: water from y41 down to y24. */
     private static final int SHAFT = 5;
+    /** A dry walkway with a backpack or supply crate standing on it. */
+    private static final int CONTAINER = 6;
+
+    /** The exits, kept in a static field so the static floor-plan helpers can reach them. */
+    private static final ExitLocator EXITS = new ExitLocator(384, 48, 5000);
 
     public PoolroomsLayout() {
-        super(INTERIOR_HEIGHT, new ExitLocator(384, 48, 5000));
+        super(INTERIOR_HEIGHT, EXITS);
     }
 
     // ==========================================================================================
@@ -220,6 +239,14 @@ public final class PoolroomsLayout extends LevelLayout {
     @Override
     public int standY(long seed, int x, int z) {
         return columnKind(seed, x, z) == SHALLOW ? SURFACE_Y : SURFACE_Y + 1;
+    }
+
+    /** Everything inside a safe room, walls and doorway included (not the walkway around it). */
+    @Override
+    public boolean isSafeRoom(long seed, int x, int z) {
+        int cx = Math.floorDiv(x, CELL);
+        int cz = Math.floorDiv(z, CELL);
+        return isSafeCell(seed, cx, cz) && safeRoomPlan(seed, cx, cz).contains(x, z);
     }
 
     @Override
@@ -260,7 +287,16 @@ public final class PoolroomsLayout extends LevelLayout {
         return DRY; // the deck inside the room, and the walkway ring around it
     }
 
+    /** The floor plan of the grid, plus the backpacks and crates lying on its dry walkways. */
     private static int gridColumn(long seed, int x, int z) {
+        int kind = baseGridColumn(seed, x, z);
+        if (kind == DRY && (crateSpot(seed, x, z) || backpackFacing(seed, x, z) != null)) {
+            return CONTAINER;
+        }
+        return kind;
+    }
+
+    private static int baseGridColumn(long seed, int x, int z) {
         int cx = Math.floorDiv(x, CELL);
         int cz = Math.floorDiv(z, CELL);
         if (isAtrium(seed, cx, cz)) {
@@ -302,9 +338,126 @@ public final class PoolroomsLayout extends LevelLayout {
                 }
                 return depth < poolStart(details) ? SHALLOW : DEEP; // the optional shallow step
             }
+            case ROOM_SAFE:
+                if (depth <= 1) {
+                    return DRY; // the walkway around the safe room
+                }
+                return safeRoomPlan(seed, cx, cz).isWalkable(x, z) ? DRY : WALL;
             default:
                 return DRY;
         }
+    }
+
+    // ---- Safe rooms ----------------------------------------------------------------------------
+
+    /**
+     * True when cell (cx, cz) is the safe room of its 9x9 block of cells. The chosen cell is never
+     * on the block's edge (so two safe rooms never touch), never in an atrium or pillared hall,
+     * and never near the drain room.
+     */
+    private static boolean isSafeCell(long seed, int cx, int cz) {
+        int bx = Math.floorDiv(cx, SAFE_BLOCK_CELLS);
+        int bz = Math.floorDiv(cz, SAFE_BLOCK_CELLS);
+        long h = SafeRoomPlan.cellHash(seed, bx, bz, 430);
+        if (!SafeRoomPlan.rolled(h)
+                || cx != bx * SAFE_BLOCK_CELLS + 1 + Hash.range(Hash.mix(h ^ 1), SAFE_BLOCK_CELLS - 2)
+                || cz != bz * SAFE_BLOCK_CELLS + 1 + Hash.range(Hash.mix(h ^ 2), SAFE_BLOCK_CELLS - 2)) {
+            return false;
+        }
+        if (isAtrium(seed, cx, cz) || isHall(seed, cx, cz)) {
+            return false;
+        }
+        int centerX = cx * CELL + CELL / 2;
+        int centerZ = cz * CELL + CELL / 2;
+        int[] exit = EXITS.nearest(seed, centerX, centerZ);
+        return Math.max(Math.abs(exit[0] - centerX), Math.abs(exit[1] - centerZ)) >= SAFE_EXIT_DISTANCE;
+    }
+
+    /**
+     * The room inside a safe cell: 11x11 with two-thick walls (7x7 inside), leaving the 1-wide dry
+     * walkway (cell-local 1 and 13) all around it. The doorway can face any side.
+     */
+    private static SafeRoomPlan safeRoomPlan(long seed, int cx, int cz) {
+        long h = SafeRoomPlan.cellHash(seed, Math.floorDiv(cx, SAFE_BLOCK_CELLS), Math.floorDiv(cz, SAFE_BLOCK_CELLS), 430);
+        return new SafeRoomPlan(cx * CELL + 2, cz * CELL + 2, CELL - 3, CELL - 3, SafeRoomPlan.doorSide(h), 2);
+    }
+
+    private void fillSafeRoom(long seed, int x, int z, Column out) {
+        BlockState tile = ModBlocks.POOL_TILE.get().defaultBlockState();
+        // Solid tile below the floor, like every other dry column.
+        for (int y = DEEP_FLOOR_Y; y < SURFACE_Y; y++) {
+            out.set(y, tile);
+        }
+        safeRoomPlan(seed, Math.floorDiv(x, CELL), Math.floorDiv(z, CELL)).fill(x, z, SURFACE_Y, ceilingY(),
+                new SafeRoomPlan.Style(
+                        ModBlocks.BEIGE_CARPET.get().defaultBlockState(),
+                        tile,
+                        tile,
+                        tile,
+                        ModBlocks.POOL_TILE_DARK.get().defaultBlockState(), // a dark tile band below the dado line
+                        tile,
+                        null), out);
+    }
+
+    // ---- Backpacks and crates on the dry walkways -----------------------------------------------
+
+    /** A supply crate in one corner of some dry, pool and shallow rooms (always on the dry rim). */
+    private static boolean crateSpot(long seed, int x, int z) {
+        int mx = Math.floorMod(x, CELL);
+        int mz = Math.floorMod(z, CELL);
+        if ((mx != 1 && mx != CELL - 1) || (mz != 1 && mz != CELL - 1)) {
+            return false;
+        }
+        int cx = Math.floorDiv(x, CELL);
+        int cz = Math.floorDiv(z, CELL);
+        long h = Hash.of(seed, cx, cz, 78);
+        if (Hash.unit(h) >= 0.2) {
+            return false;
+        }
+        int corner = Hash.range(Hash.mix(h), 4);
+        if (mx != ((corner & 1) != 0 ? CELL - 1 : 1) || mz != ((corner & 2) != 0 ? CELL - 1 : 1)) {
+            return false;
+        }
+        int kind = kindOf(room(seed, cx, cz));
+        return kind == ROOM_DRY || kind == ROOM_POOL || kind == ROOM_SHALLOW;
+    }
+
+    /**
+     * Dropped backpacks: each cell has four candidate spots, each used one time in ten, but only
+     * where the spot is a dry walkway (the caller checks that). That is about one backpack per 400
+     * dry blocks. Returns the backpack's facing, or null.
+     */
+    @Nullable
+    private static Direction backpackFacing(long seed, int x, int z) {
+        int mx = Math.floorMod(x, CELL);
+        int mz = Math.floorMod(z, CELL);
+        if (mx == 0 || mz == 0) {
+            return null;
+        }
+        int cx = Math.floorDiv(x, CELL);
+        int cz = Math.floorDiv(z, CELL);
+        for (int k = 0; k < 4; k++) {
+            long h = Hash.of(seed, cx, cz, 79 + k);
+            if (Hash.unit(h) >= 0.1
+                    || mx != 1 + Hash.range(Hash.mix(h), CELL - 1)
+                    || mz != 1 + Hash.range(Hash.mix(h ^ 1), CELL - 1)) {
+                continue;
+            }
+            if (kindOf(room(seed, cx, cz)) == ROOM_SAFE || crateSpot(seed, x, z) || gridLampFacing(seed, x, z) != null) {
+                return null; // the safe room has its own supplies; never on a pool lamp
+            }
+            return Direction.from2DDataValue(Hash.range(Hash.mix(h ^ 2), 4));
+        }
+        return null;
+    }
+
+    /** The block standing on a CONTAINER column. */
+    private static BlockState containerAt(long seed, int x, int z) {
+        if (crateSpot(seed, x, z)) {
+            return ModBlocks.SUPPLY_CRATE.get().defaultBlockState();
+        }
+        return ModBlocks.BACKPACK.get().defaultBlockState()
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, backpackFacing(seed, x, z));
     }
 
     /**
@@ -501,6 +654,9 @@ public final class PoolroomsLayout extends LevelLayout {
         if (isHall(seed, cx, cz)) {
             return ROOM_HALL;
         }
+        if (isSafeCell(seed, cx, cz)) {
+            return ROOM_SAFE;
+        }
         // Runs of channel cells: a stretch of RUN cells in a row (along X) or a column (along Z).
         boolean xRun = Hash.unit(seed, Math.floorDiv(cx, RUN), cz, 84) < RUN_SHARE;
         boolean zRun = Hash.unit(seed, cx, Math.floorDiv(cz, RUN), 85) < RUN_SHARE;
@@ -573,6 +729,10 @@ public final class PoolroomsLayout extends LevelLayout {
         int ring = Math.max(Math.abs(dx), Math.abs(dz));
         boolean inDrainRoom = ring <= CLEARING_RADIUS;
         int kind = inDrainRoom ? drainRoomColumn(dx, dz, ring) : gridColumn(seed, x, z);
+        if (!inDrainRoom && isSafeRoom(seed, x, z)) {
+            fillSafeRoom(seed, x, z, out);
+            return;
+        }
         boolean tall = isTall(seed, x, z);
         int ceiling = tall ? ATRIUM_CEILING_Y : ceilingY();
 
@@ -631,6 +791,8 @@ public final class PoolroomsLayout extends LevelLayout {
             for (int y = SURFACE_Y + 1; y < ceiling; y++) {
                 out.set(y, tile);
             }
+        } else if (kind == CONTAINER) {
+            out.set(SURFACE_Y + 1, containerAt(seed, x, z));
         }
 
         Direction lamp = poolLampFacing(seed, x, z, kind, inDrainRoom, dx, dz, ring);
@@ -662,8 +824,8 @@ public final class PoolroomsLayout extends LevelLayout {
         int mx = Math.floorMod(x, CELL);
         int mz = Math.floorMod(z, CELL);
         int room = room(seed, cx, cz);
-        if (kindOf(room) == ROOM_ATRIUM || Hash.unit(seed, cx, cz, 90) < DARK_ROOM_SHARE) {
-            return null;
+        if (kindOf(room) == ROOM_ATRIUM || kindOf(room) == ROOM_SAFE || Hash.unit(seed, cx, cz, 90) < DARK_ROOM_SHARE) {
+            return null; // atriums have skylights, safe rooms their own lamp
         }
         boolean two = kindOf(room) != ROOM_HALL && Hash.unit(seed, cx, cz, 91) < TWO_TUBES_SHARE;
         if (isChannelLike(room)) {

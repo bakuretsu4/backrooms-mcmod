@@ -1,6 +1,7 @@
 package com.rickr.backrooms.item;
 
 import com.rickr.backrooms.player.HallucinationService;
+import com.rickr.backrooms.player.SanityService;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -21,6 +22,7 @@ import net.minecraft.world.level.Level;
 /**
  * Almond water: drink to heal a little and steady yourself (Regeneration II for 6 s, some hunger).
  * In the Poolrooms it also clears your head at once: wet meter to zero, your "friend" vanishes.
+ * It also steadies your nerves: +35 sanity.
  */
 public class AlmondWaterItem extends Item {
     public AlmondWaterItem(Properties properties) {
@@ -42,6 +44,7 @@ public class AlmondWaterItem extends Item {
             }
             if (entity instanceof ServerPlayer serverPlayer) {
                 HallucinationService.cure(serverPlayer);
+                SanityService.restore(serverPlayer, 35.0f); // a sip of normality
             }
         }
         stack.consume(1, entity);

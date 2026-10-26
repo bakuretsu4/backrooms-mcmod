@@ -63,7 +63,12 @@ public enum FixtureType {
      */
     MERCURY_LAMP("streetlamp_head_mercury", Mount.LAMP_HEAD, 1, 0.72f, 0.95f, 0.82f, 2.4f, 22.0f, Hum.NONE, true),
     /** Level 9 porch light by a front door: a small warm glow over the porch steps, steady and silent. */
-    PORCH_LIGHT("porch_light", Mount.WALL, 1, 1.0f, 0.78f, 0.50f, 1.3f, 10.0f, Hum.NONE, false);
+    PORCH_LIGHT("porch_light", Mount.WALL, 1, 1.0f, 0.78f, 0.50f, 1.3f, 10.0f, Hum.NONE, false),
+    /**
+     * Safe-room ceiling lamp: a warm incandescent bulb, steady and silent. Battery-backed like the
+     * exit signs (see FixturePower): it stays on in blackouts and never flickers.
+     */
+    SAFE_LAMP("safe_room_lamp", Mount.CEILING_BLOCK, 1, 1.0f, 0.82f, 0.60f, 2.4f, 11.0f, Hum.NONE, false);
 
     /** Which looping buzz a fixture makes (positional, the nearest few lit ones play). */
     public enum Hum {

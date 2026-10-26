@@ -397,5 +397,67 @@
       "backrooms:step/leaves4"
     ],
     "subtitle": "subtitles.backrooms.step"
+  },
+  "sanity.whisper": {
+    "sounds": [
+      "backrooms:sanity/whisper1",
+      "backrooms:sanity/whisper2",
+      "backrooms:sanity/whisper3"
+    ],
+    "subtitle": "subtitles.backrooms.sanity_whisper"
+  },
+  "sanity.heartbeat": {
+    "sounds": [
+      "backrooms:sanity/heartbeat"
+    ],
+    "subtitle": "subtitles.backrooms.sanity_heartbeat"
+  },
+  "sanity.knock": {
+    "sounds": [
+      "backrooms:sanity/knock"
+    ],
+    "subtitle": "subtitles.backrooms.sanity_knock"
+  },
+  "block.backpack.open": {
+    "sounds": [
+      "backrooms:supplies/zipper_open"
+    ],
+    "subtitle": "subtitles.backrooms.backpack_open"
+  },
+  "block.backpack.close": {
+    "sounds": [
+      "backrooms:supplies/zipper_close"
+    ],
+    "subtitle": "subtitles.backrooms.backpack_close"
+  },
+  "block.supply_locker.open": {
+    "sounds": [
+      "backrooms:supplies/locker_open"
+    ],
+    "subtitle": "subtitles.backrooms.locker_open"
+  },
+  "block.supply_locker.close": {
+    "sounds": [
+      "backrooms:supplies/locker_close"
+    ],
+    "subtitle": "subtitles.backrooms.locker_close"
+  },
+  "item.calm_pills.rattle": {
+    "sounds": [
+      "backrooms:supplies/pills_rattle"
+    ],
+    "subtitle": "subtitles.backrooms.pills_rattle"
+  },
+  "item.bandage.wrap": {
+    "sounds": [
+      "backrooms:supplies/bandage_wrap"
+    ],
+    "subtitle": "subtitles.backrooms.bandage_wrap"
+  },
+  "block.checkpoint_radio.save": {
+    "sounds": [
+      "backrooms:safe_room/checkpoint_save"
+    ],
+    "subtitle": "subtitles.backrooms.checkpoint_save"
   }
 }

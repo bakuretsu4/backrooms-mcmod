@@ -9,6 +9,7 @@ import com.rickr.backrooms.world.Hash;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -29,6 +30,12 @@ import org.jetbrains.annotations.Nullable;
  * </ul>
  *
  * <p>Exit: one white stairwell per 384x384 region.
+ *
+ * <p><b>Safe rooms.</b> About 60% of the 128x128 squares have one: a concrete room built over a
+ * block of 2x2 bays (so its outside lines up with the pillar rows), with a metal door frame, and
+ * inside a carpet, wood panelling under white paint and a warm lamp. A 1-wide strip of floor runs
+ * all around it so it always joins the garage. Maze rooms also hold the odd metal supply locker
+ * against a wall, and now and then a dropped backpack.
  */
 public final class Level1Layout extends LevelLayout {
     private static final int GRID = 8;
@@ -44,9 +51,81 @@ public final class Level1Layout extends LevelLayout {
     private static final int DOOR = 2;  // wall with a doorway
     private static final int SOLID = 3; // wall, no way through
 
+    /** Safe rooms: the free strip all around each one. */
+    private static final int SAFE_MOAT = 1;
+    /** Safe rooms keep at least this far (chessboard distance from their centre) from an exit. */
+    private static final int SAFE_EXIT_DISTANCE = 24;
+    /** Grid cells per safe-room square (128 / 8). */
+    private static final int SAFE_GRID_CELLS = SafeRoomPlan.CELL / GRID;
+
     public Level1Layout() {
         super(5, new ExitLocator(384, 48, 2000));
     }
+
+    // ==========================================================================================
+    // Safe rooms
+    // ==========================================================================================
+
+    /**
+     * The safe room whose footprint (room plus the free strip around it) contains (x, z), or null.
+     * The footprint covers two bays by two bays, from just inside one pillar row to just before
+     * the pillar row two cells further on, so it never leaves half a pillar standing.
+     */
+    @Nullable
+    private SafeRoomPlan safeRoomNear(long seed, int x, int z) {
+        int cellX = Math.floorDiv(x, SafeRoomPlan.CELL);
+        int cellZ = Math.floorDiv(z, SafeRoomPlan.CELL);
+        long h = SafeRoomPlan.cellHash(seed, cellX, cellZ, 410);
+        if (!SafeRoomPlan.rolled(h)) {
+            return null;
+        }
+        // Grid cells a..a+1 and b..b+1, never at the square's edge.
+        int a = cellX * SAFE_GRID_CELLS + 1 + Hash.range(Hash.mix(h ^ 1), SAFE_GRID_CELLS - 3);
+        int b = cellZ * SAFE_GRID_CELLS + 1 + Hash.range(Hash.mix(h ^ 2), SAFE_GRID_CELLS - 3);
+        int footX = a * GRID + 2; // footprint: 14 x 14 blocks from here
+        int footZ = b * GRID + 2;
+        int footSize = 2 * GRID - 2;
+        if (x < footX || x >= footX + footSize || z < footZ || z >= footZ + footSize) {
+            return null;
+        }
+        SafeRoomPlan plan = new SafeRoomPlan(footX + SAFE_MOAT, footZ + SAFE_MOAT, footSize - 2 * SAFE_MOAT,
+                footSize - 2 * SAFE_MOAT, SafeRoomPlan.doorSide(h), 2);
+        int[] exit = exits().nearest(seed, plan.centerX(), plan.centerZ());
+        if (Math.max(Math.abs(exit[0] - plan.centerX()), Math.abs(exit[1] - plan.centerZ())) < SAFE_EXIT_DISTANCE) {
+            return null;
+        }
+        return plan;
+    }
+
+    /** Everything inside a safe room, walls and doorway included. */
+    @Override
+    public boolean isSafeRoom(long seed, int x, int z) {
+        SafeRoomPlan plan = safeRoomNear(seed, x, z);
+        return plan != null && plan.contains(x, z);
+    }
+
+    private void fillSafeRoom(SafeRoomPlan plan, int x, int z, Column out) {
+        BlockState concrete = ModBlocks.CONCRETE_WALL.get().defaultBlockState();
+        if (!plan.contains(x, z)) {
+            // The free strip around the room: bare concrete.
+            out.set(floorY(), ModBlocks.CONCRETE_FLOOR.get().defaultBlockState());
+            out.set(ceilingY(), concrete);
+            return;
+        }
+        plan.fill(x, z, floorY(), ceilingY(), new SafeRoomPlan.Style(
+                ModBlocks.BEIGE_CARPET.get().defaultBlockState(),
+                concrete,
+                ModBlocks.GARAGE_PILLAR.get().defaultBlockState(), // the dark base band outside
+                concrete,
+                ModBlocks.WOOD_FLOOR.get().defaultBlockState(),    // wood panelling below the dado line
+                ModBlocks.STAIRWELL_WALL.get().defaultBlockState(), // white paint above it
+                ModBlocks.FLOOR_GRATE.get().defaultBlockState()),   // dark metal door frame
+                out);
+    }
+
+    // ==========================================================================================
+    // Maze
+    // ==========================================================================================
 
     /** Large areas where the power is out: no tubes at all. */
     private static boolean darkZone(long seed, int x, int z) {
@@ -151,6 +230,10 @@ public final class Level1Layout extends LevelLayout {
         int d = exits().distance(seed, x, z);
         if (d <= STAIRWELL_RADIUS) return false;
         if (d <= CLEARING_RADIUS) return true;
+        SafeRoomPlan safe = safeRoomNear(seed, x, z);
+        if (safe != null) {
+            return !safe.contains(x, z) || safe.isWalkable(x, z);
+        }
         int mx = Math.floorMod(x, GRID);
         int mz = Math.floorMod(z, GRID);
         int cx = Math.floorDiv(x, GRID);
@@ -167,7 +250,7 @@ public final class Level1Layout extends LevelLayout {
             return true;
         }
         if (splitWall(seed, x, z)) return false;
-        return crateHeight(seed, x, z) == 0;
+        return crateHeight(seed, x, z) == 0 && lockerFacing(seed, x, z) == null && backpackFacing(seed, x, z) == null;
     }
 
     @Override
@@ -181,6 +264,11 @@ public final class Level1Layout extends LevelLayout {
         int exitDistance = Math.max(Math.abs(dx), Math.abs(dz));
 
         if (stairwell(seed, dx, dz, x - dx, z - dz, concrete, concrete, false, out)) {
+            return;
+        }
+        SafeRoomPlan safe = safeRoomNear(seed, x, z);
+        if (safe != null) {
+            fillSafeRoom(safe, x, z, out);
             return;
         }
         out.set(ceiling, concrete);
@@ -276,7 +364,77 @@ public final class Level1Layout extends LevelLayout {
             for (int i = 0; i < crates; i++) {
                 out.set(floor + 1 + i, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
             }
+            Direction locker = lockerFacing(seed, x, z);
+            if (locker != null) {
+                out.set(floor + 1, ModBlocks.SUPPLY_LOCKER.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, locker));
+            }
+            Direction backpack = backpackFacing(seed, x, z);
+            if (backpack != null) {
+                out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, backpack));
+            }
         }
+    }
+
+    /**
+     * A metal supply locker standing against one wall of a maze room (about one room in eight).
+     * Returns the way its door faces (into the room), or null for no locker here. Only against a
+     * real wall (never in front of a doorway), never in a split room, and clear of the crate corner
+     * and the wall lamps.
+     */
+    @Nullable
+    private static Direction lockerFacing(long seed, int x, int z) {
+        int mx = Math.floorMod(x, GRID);
+        int mz = Math.floorMod(z, GRID);
+        if (mx < 2 || mz < 2) {
+            return null;
+        }
+        int cx = Math.floorDiv(x, GRID);
+        int cz = Math.floorDiv(z, GRID);
+        long h = Hash.of(seed, cx, cz, 53);
+        if (Hash.unit(h) >= 0.12 || hallZone(seed, cx * GRID, cz * GRID) || splitKind(seed, cx, cz) != 0) {
+            return null;
+        }
+        int along = 6 + Hash.range(Hash.mix(h ^ 1), 2); // 6 or 7 along the wall
+        // The wall it stands against: the partition just outside the room on that side.
+        int px;
+        int pz;
+        int axis;
+        Direction facing;
+        switch (Hash.range(Hash.mix(h), 4)) {
+            case 0 -> { if (mx != along || mz != 2) return null; px = cx; pz = cz; axis = 0; facing = Direction.SOUTH; }
+            case 1 -> { if (mx != 2 || mz != along) return null; px = cx; pz = cz; axis = 1; facing = Direction.EAST; }
+            case 2 -> { if (mx != along || mz != 7) return null; px = cx; pz = cz + 1; axis = 0; facing = Direction.NORTH; }
+            default -> { if (mx != 7 || mz != along) return null; px = cx + 1; pz = cz; axis = 1; facing = Direction.WEST; }
+        }
+        int state = partition(seed, px, pz, axis);
+        boolean wallBehind = state == SOLID || state == DOOR && !doorwayAt(seed, px, pz, axis, along);
+        return wallBehind ? facing : null;
+    }
+
+    /**
+     * Now and then a backpack someone dropped lies on the floor of a bay: rare (about one per 400
+     * floor blocks). Returns the way it faces, or null for no backpack here.
+     */
+    @Nullable
+    private Direction backpackFacing(long seed, int x, int z) {
+        int mx = Math.floorMod(x, GRID);
+        int mz = Math.floorMod(z, GRID);
+        if (mx < 2 || mz < 2) {
+            return null;
+        }
+        int cx = Math.floorDiv(x, GRID);
+        int cz = Math.floorDiv(z, GRID);
+        long h = Hash.of(seed, cx, cz, 54);
+        if (Hash.unit(h) >= 0.08 || splitKind(seed, cx, cz) != 0) {
+            return null;
+        }
+        if (mx != 2 + Hash.range(Hash.mix(h ^ 1), GRID - 2) || mz != 2 + Hash.range(Hash.mix(h ^ 2), GRID - 2)) {
+            return null;
+        }
+        if (crateHeight(seed, x, z) > 0 || lockerFacing(seed, x, z) != null) {
+            return null;
+        }
+        return Direction.from2DDataValue(Hash.range(Hash.mix(h ^ 3), 4));
     }
 
     private static BlockState tube(Direction.Axis axis) {

@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.rickr.backrooms.camera.CameraService;
+import com.rickr.backrooms.player.SanityService;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
 import com.rickr.backrooms.world.LevelEvents;
@@ -29,9 +30,11 @@ import net.minecraft.world.phys.Vec3;
  * /backrooms enter [targets] [level]   noclip players into a level: 0-2, 3 = the Poolrooms, 4 = Level 9 (default: Level 0)
  * /backrooms escape [targets]          send players back to reality
  * /backrooms battery [targets] [pct]   set camcorder batteries (default: full)
+ * /backrooms sanity [targets] <0-100>   set sanity (for testing the low-sanity effects)
  * /backrooms locate                    distance/direction to the nearest exit (for testing)
  * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|end> [seconds]   start/stop an event on this floor
  * /backrooms spawn bacteria [count]   spawn Bacteria about 12 blocks in front of you (for testing)
+ * /backrooms locate saferoom          distance/direction to the nearest safe room (for testing)
  * </pre>
  */
 public final class BackroomsCommand {
@@ -54,7 +57,14 @@ public final class BackroomsCommand {
                                 .executes(ctx -> battery(EntityArgument.getPlayers(ctx, "targets"), 100))
                                 .then(Commands.argument("percent", IntegerArgumentType.integer(0, 100))
                                         .executes(ctx -> battery(EntityArgument.getPlayers(ctx, "targets"), IntegerArgumentType.getInteger(ctx, "percent"))))))
-                .then(Commands.literal("locate").executes(BackroomsCommand::locate))
+                .then(Commands.literal("sanity")
+                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 100))
+                                .executes(ctx -> sanity(ctx, java.util.List.of(ctx.getSource().getPlayerOrException()), IntegerArgumentType.getInteger(ctx, "value"))))
+                        .then(Commands.argument("targets", EntityArgument.players())
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 100))
+                                        .executes(ctx -> sanity(ctx, EntityArgument.getPlayers(ctx, "targets"), IntegerArgumentType.getInteger(ctx, "value"))))))
+                .then(Commands.literal("locate").executes(BackroomsCommand::locate)
+                        .then(Commands.literal("saferoom").executes(BackroomsCommand::locateSafeRoom)))
                 .then(Commands.literal("event")
                         .then(eventNode("blackout", LevelEventPayload.BLACKOUT, 30))
                         .then(eventNode("flicker", LevelEventPayload.FLICKER, 8))
@@ -152,5 +162,43 @@ public final class BackroomsCommand {
         return dist;
     }
 
+    /** Searches outward in growing squares (every 2nd column, safe rooms are at least 7 wide) for the nearest safe room. */
+    private static int locateSafeRoom(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        BackroomsLevel level = BackroomsLevel.fromDimension(player.level().dimension());
+        if (level == null) {
+            ctx.getSource().sendFailure(Component.literal("You are not in the Backrooms."));
+            return 0;
+        }
+        long seed = BackroomsSeeds.layoutSeed(player.serverLevel(), level);
+        int px = player.getBlockX();
+        int pz = player.getBlockZ();
+        for (int r = 0; r <= 400; r += 2) {
+            for (int ox = -r; ox <= r; ox += 2) {
+                for (int oz = -r; oz <= r; oz += 2) {
+                    if (Math.max(Math.abs(ox), Math.abs(oz)) != r || !level.layout().isSafeRoom(seed, px + ox, pz + oz)) {
+                        continue;
+                    }
+                    int x = px + ox;
+                    int z = pz + oz;
+                    int dist = (int) Math.sqrt((double) ox * ox + (double) oz * oz);
+                    ctx.getSource().sendSuccess(() -> Component.literal("Nearest safe room: " + x + ", " + z + " (" + dist + " blocks)"), false);
+                    return Math.max(dist, 1);
+                }
+            }
+        }
+        ctx.getSource().sendFailure(Component.literal("No safe room within 400 blocks."));
+        return 0;
+    }
+
     private BackroomsCommand() {}
+
+    /** Sets sanity exactly (synced to the HUD right away). */
+    private static int sanity(CommandContext<CommandSourceStack> ctx, Collection<ServerPlayer> players, int value) {
+        for (ServerPlayer player : players) {
+            SanityService.set(player, value);
+        }
+        ctx.getSource().sendSuccess(() -> Component.literal("Sanity set to " + value + " for " + players.size() + " player(s)."), true);
+        return players.size();
+    }
 }

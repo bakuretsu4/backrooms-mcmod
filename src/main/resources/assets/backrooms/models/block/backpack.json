@@ -1,0 +1,286 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/backpack",
+    "canvas": "backrooms:block/backpack",
+    "flap": "backrooms:block/backpack_flap",
+    "pocket": "backrooms:block/backpack_pocket",
+    "strap": "backrooms:block/backpack_strap"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        0,
+        4
+      ],
+      "to": [
+        13,
+        5,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#canvas"
+        },
+        "south": {
+          "texture": "#canvas"
+        },
+        "east": {
+          "texture": "#canvas"
+        },
+        "west": {
+          "texture": "#canvas"
+        },
+        "up": {
+          "texture": "#canvas"
+        },
+        "down": {
+          "texture": "#canvas"
+        }
+      }
+    },
+    {
+      "from": [
+        2.75,
+        5,
+        4.5
+      ],
+      "to": [
+        13.25,
+        5.75,
+        13.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#flap"
+        },
+        "south": {
+          "texture": "#flap"
+        },
+        "east": {
+          "texture": "#flap"
+        },
+        "west": {
+          "texture": "#flap"
+        },
+        "up": {
+          "texture": "#flap"
+        },
+        "down": {
+          "texture": "#flap"
+        }
+      }
+    },
+    {
+      "from": [
+        4.5,
+        2.75,
+        3.5
+      ],
+      "to": [
+        11.5,
+        5.75,
+        4.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#flap"
+        },
+        "east": {
+          "texture": "#flap"
+        },
+        "west": {
+          "texture": "#flap"
+        },
+        "down": {
+          "texture": "#flap"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        0,
+        2.5
+      ],
+      "to": [
+        12,
+        3,
+        4
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pocket",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#pocket"
+        },
+        "west": {
+          "texture": "#pocket"
+        },
+        "up": {
+          "texture": "#pocket"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        5.75,
+        4.2
+      ],
+      "to": [
+        6.5,
+        6.05,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#strap"
+        },
+        "south": {
+          "texture": "#strap"
+        },
+        "east": {
+          "texture": "#strap"
+        },
+        "west": {
+          "texture": "#strap"
+        },
+        "up": {
+          "texture": "#strap"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        2.5,
+        3.2
+      ],
+      "to": [
+        6.5,
+        6.05,
+        3.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#strap",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#strap"
+        },
+        "west": {
+          "texture": "#strap"
+        },
+        "down": {
+          "texture": "#strap"
+        }
+      }
+    },
+    {
+      "from": [
+        9.5,
+        5.75,
+        4.2
+      ],
+      "to": [
+        11,
+        6.05,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#strap"
+        },
+        "south": {
+          "texture": "#strap"
+        },
+        "east": {
+          "texture": "#strap"
+        },
+        "west": {
+          "texture": "#strap"
+        },
+        "up": {
+          "texture": "#strap"
+        }
+      }
+    },
+    {
+      "from": [
+        9.5,
+        2.5,
+        3.2
+      ],
+      "to": [
+        11,
+        6.05,
+        3.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#strap",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#strap"
+        },
+        "west": {
+          "texture": "#strap"
+        },
+        "down": {
+          "texture": "#strap"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        5.75,
+        11.5
+      ],
+      "to": [
+        9,
+        6.75,
+        12.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#strap"
+        },
+        "south": {
+          "texture": "#strap"
+        },
+        "east": {
+          "texture": "#strap"
+        },
+        "west": {
+          "texture": "#strap"
+        },
+        "up": {
+          "texture": "#strap"
+        }
+      }
+    }
+  ]
+}
