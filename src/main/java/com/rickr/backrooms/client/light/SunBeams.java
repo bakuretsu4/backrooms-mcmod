@@ -43,9 +43,14 @@ import org.joml.Vector3f;
  * <b>area light</b>: a glowing rectangle the size of the opening that shines along a slanted
  * "sun" direction, with a narrow beam angle. With Veil's shadows on, the solid wall or ceiling
  * around the opening crops the beam, so it lands as a sharp bright rectangle (or a stripe per
- * slit) on the walls, floors and pillars it reaches, like sun through a window; a little in-air
- * scattering gives the dusty "god ray" look. The sunlit void block doesn't block light, so it never
- * shadows its own opening.
+ * slit) on the walls, floors and pillars it reaches, like sun through a window. The sunlit void
+ * block doesn't block light, so it never shadows its own opening.
+ *
+ * <p>No in-air scattering ("god rays") on these lights: Veil's area-light scattering marches a
+ * 1-block sphere around the nearest point of the rectangle, and on any surface within a block of
+ * it (the glowing void face itself, the jambs of the opening) it goes negative or explodes. That
+ * drew flat grey patches over the archway's light, rings around it and coloured speckle on the
+ * walls beside it. The haze comes from the fog ({@code Level37Atmosphere}) instead.
  *
  * <p>The light leaves at irregular angles on purpose ("strict but senseless" architecture, sun
  * from nowhere): skylights shine down tilted around the level's mean sun direction
@@ -84,11 +89,11 @@ public final class SunBeams {
     private static final float DISTANCE = 30.0f;
     /** Soft edge of the beam, radians: small = crisp rectangles of light. */
     private static final float EDGE_ANGLE = 0.14f;
-    /** Visible shaft in the air (the flashlight uses 0.3). */
-    private static final float INSCATTER_37 = 0.1f;
-    private static final float INSCATTER_ARCHWAY = 0.22f;
+    // (No setInscatteringStrength: see the class comment. Veil's default is 0 = off.)
     /** The rectangle reaches this far beyond the opening on each side; the walls around crop it. */
     private static final float SIZE_MARGIN = 0.35f;
+    /** The archway's light rectangle is exactly the size of its opening (see {@link #cluster}). */
+    private static final float ARCHWAY_INSET = 0.0f;
 
     /** One opening's beam (plain data, no Veil types). */
     public record Beam(long key, double x, double y, double z, float dx, float dy, float dz, float halfX, float halfY,
@@ -337,11 +342,14 @@ public final class SunBeams {
                 }
             }
         }
-        // The rectangle sits on the face the light comes out of, centred on the opening.
+        // The rectangle sits on the glowing void's face, centred on the opening. (Half a block back
+        // inside the void lit the void face evenly, but then the passage walls beside it were lit at
+        // a grazing angle and Veil's area-light shadows turned them into flickering speckle. The
+        // void face is evenly bright anyway: its model draws unshaded at full emissive brightness.)
         double cx = (minX + maxX + 1) / 2.0;
         double cy = (minY + maxY + 1) / 2.0;
         double cz = (minZ + maxZ + 1) / 2.0;
-        double inset = 0.02;
+        double inset = 0.0;
         switch (facing) {
             case DOWN -> cy = minY - inset;
             case UP -> cy = maxY + 1 + inset;
@@ -362,7 +370,12 @@ public final class SunBeams {
             halfX = (facing.getAxis() == Direction.Axis.X ? maxZ - minZ + 1 : maxX - minX + 1) / 2.0f;
             halfY = (maxY - minY + 1) / 2.0f;
         }
-        return new Beam(start, cx, cy, cz, dir.x, dir.y, dir.z, halfX + SIZE_MARGIN, halfY + SIZE_MARGIN, vertical, archway);
+        // Level 37's openings: the rectangle overhangs the opening and the walls around crop it. The
+        // Poolrooms archway's light wall fills a passage whose side walls run along the beam, so an
+        // overhang would put the light's edge inside those walls and Veil's area-light shading turns
+        // the wall surface into flickering speckle: there the rectangle stays a little inside.
+        float margin = archway ? -ARCHWAY_INSET : SIZE_MARGIN;
+        return new Beam(start, cx, cy, cz, dir.x, dir.y, dir.z, halfX + margin, halfY + margin, vertical, archway);
     }
 
     /**
@@ -448,8 +461,7 @@ public final class SunBeams {
                 .setDistance(DISTANCE)
                 .setColor(SUN_R, SUN_G, SUN_B)
                 .setBrightness(brightnessOf(beam) * scale)
-                .setOcclusionEnabled(true)
-                .setInscatteringStrength(beam.archway() ? INSCATTER_ARCHWAY : INSCATTER_37);
+                .setOcclusionEnabled(true);
         light.getPositionMutable().set(beam.x(), beam.y(), beam.z());
         // Area lights shine along their local +Z. lookAlong turns the given direction to -Z, so
         // pass the reverse (same trick as the spot lights in VeilFixtures). "Up" picks how the

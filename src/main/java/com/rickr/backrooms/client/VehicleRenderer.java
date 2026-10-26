@@ -53,7 +53,9 @@ public class VehicleRenderer implements BlockEntityRenderer<VehicleBlockEntity> 
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - facing.toYRot()));
         // Model space has +Y pointing down (like every entity model), so flip it upright. Flipping x
         // too makes it a half turn instead of a mirror image, so the "MILK" lettering reads right.
-        poseStack.scale(-1.0f / 16.0f, -1.0f / 16.0f, 1.0f / 16.0f);
+        // No 1/16 here: ModelPart already turns its pixel units into blocks when it renders (an extra
+        // 1/16 shrank every car to a speck under its own shadow).
+        poseStack.scale(-1.0f, -1.0f, 1.0f);
         VehicleModel model = kind.isVan() ? van : car;
         model.renderToBuffer(poseStack, buffers.getBuffer(model.renderType(texture(kind))), packedLight, OverlayTexture.NO_OVERLAY);
         poseStack.popPose();

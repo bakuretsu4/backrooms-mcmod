@@ -454,7 +454,7 @@ public final class ModBlocks {
     /** Break-room vending machine (two tall, glowing front): right-click for Almond Water or an Energy Bar while stock lasts. */
     public static final DeferredBlock<VendingMachineBlock> VENDING_MACHINE = BLOCKS.registerBlock("vending_machine",
             VendingMachineBlock::new, unbreakable(MapColor.COLOR_RED, SoundType.METAL).lightLevel(state -> 6).noOcclusion());
-    /** Water cooler: right-click with an empty hand for Almond Water, three times. */
+    /** Water cooler: right-click for Almond Water, three times. */
     public static final DeferredBlock<WaterCoolerBlock> WATER_COOLER = BLOCKS.registerBlock("water_cooler",
             WaterCoolerBlock::new, unbreakable(MapColor.SNOW, SoundType.METAL).noOcclusion());
     /** A filing cabinet that is really a supply locker (filled from the locker loot table). */

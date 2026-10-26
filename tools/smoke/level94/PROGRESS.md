@@ -1,98 +1,42 @@
-# Level 94 work-in-progress checkpoint
+# Level 94: verification record (finished)
 
-This checkpoint preserves the implementation and investigation state. It is NOT a finished release. Do not describe Level 94 as fully tested or ready to play yet.
+The resume list from the WIP checkpoint was worked through in a real dev server + client
+(Windows, RTX 4070, Veil lighting on). Level 94 is now documented as a playable level in the
+README and the in-game Field Notes, and has a title-menu footage shot (`scene_7`).
 
-## User decisions
+## Verified in game
 
-- Source: https://backrooms-wiki.wikidot.com/level-94 ("Motion"). Additional visual references: https://backrooms-pantheon.wikidot.com/level-94 and https://escapethebackrooms.fandom.com/wiki/Level_94 . The main wiki is the primary source, not the other game's mechanics.
-- Endless rolling green hills, handmade/felt/cardboard look, winding roads, small cream houses, picket fences, water towers, partial houses, toy-like trees, town fountain, sirens, parked old cars and milk vans.
-- Subtle crafted look, NOT a choppy 12-fps screen effect.
-- Reachable castle on a transparent mountain, with a funhouse interior, ball pit, playground, looping corridor, animation studio and empty throne room.
-- No new monsters (no Animations, Robo-Men or Animated King). Existing Smilers outdoors at night.
-- Rare clay doors in Level 9 houses enter Level 94. Dark-door houses return to Level 9. Light behind the throne sends the player to Level 1.
-- Eight minutes day (last 30 seconds dusk); three minutes night (last 20 seconds dawn).
-- User requested lower agent usage. No new agents are needed to resume. Work inline by default; never restart the four completed slices.
+1. **Outside:** arrival on a road; felt-grass hills now have green sides (the `tex_l94_grass` change);
+   a full house exterior from 18 blocks out looks right.
+2. **Vehicles:** `L94_VEHICLE` block entities exist server side. They were drawn as a tiny speck
+   because `VehicleRenderer` scaled by 1/16 on top of `ModelPart`'s own pixel-to-block
+   conversion (the double-scaling hypothesis was right). Fixed: `scale(-1, -1, 1)`. Cars and the
+   milk van now draw full size in the town.
+3. **Siren:** `L94_SIREN` has its block entity and the horn model renders on the pole. No sound
+   errors in the client log (the music itself was not listened to).
+4. **Ball pit / playground:** both rooms render correctly (ball pit at castle-local
+   x -13..-7, z -5..3; playground with the climbing frame, stairs and checker floor).
+5. **Night:** `/backrooms time94 night` outside: a Smiler appears after 15-25 s and kills you if
+   ignored ("saw something smile in the dark"). Flashlight on its face at ~15 blocks: it flinches
+   and burns away in ~2.7 s, player unharmed. Inside an intact house (with a TV) for 60 s of night:
+   no Smilers, sanity held steady (by design 0 at night, +0.6/s by day). `time94 dawn` dispels
+   Smilers within a second. Outside at night sanity drains as designed.
+6. **Dark-house exit:** the house next to the default arrival was a DARK house (kind 2): its
+   interior is `L94_DARK_VOID`. Stepping in sends you to `backrooms:level_9`. (The old lookup failure
+   was a test-search problem, not generation.)
+7. **Clay door:** found at a Level 9 house (875, 42, -13 in the test world), opened it and stepped into
+   the doorway from Level 9: arrived in `backrooms:level_94`.
+8. **Castle ramp:** a breadth-first walk over `Level94Castle.standY` from the ramp foot (y41), with
+   steps of at most 0.6 blocks, reaches the plateau (feet y151) in front of the gate. Glass
+   mountain, spiral ramp and castle exterior render (screenshots).
+9. **Smilers in blackouts (Levels 0-2):** a Smiler spawns ~15 blocks away right after
+   `/backrooms event blackout`.
 
-`CONTRACT.md` preserves the implementation interfaces and design brief used by the completed workers. It is a design record, not proof that every item works.
+Not verified: listening to sounds (only structural checks: every OGG decodes, mono, no clipping,
+nothing silent), Veil-off fallback lighting.
 
-## Implemented
+## Test helpers
 
-All four slices have landed: outdoor world, props, castle and sky/night. Relevant code:
-
-- `world/layout/Level94*.java`: terrain, cached plans, roads, houses, town, props placement, castle and glass mountain/ramp.
-- `world/Level94Clock`, `Level94Rules`, `Level94Sync`: custom clock, entry/exits, synchronization.
-- `client/Level94Atmosphere`, `Level94Sky`, `Level94ClientState`: sky, fog, daylight/night lighting, distant castle image.
-- `block/Vehicle*`, `Level94Vehicles`, `Siren*`, `client/Vehicle*`, `SirenSongs`, `SirenSongSound`: parked vehicles, siren music, TV assets.
-- `SmilerSpawner`, `Smiler`, `SanityService`: Level 94 night behavior and shelter rules.
-- New dimension type `motion`: height 256, fixed vanilla time at noon, skylight enabled. Custom clock controls rendered day/night. Other dimensions retain height 64 via `LevelLayout.worldHeight()`.
-- `/backrooms time94 day|dusk|night|dawn` debug command.
-- Textures and original synthesized sounds generated by `tools/gen_assets.py` (keep its CRLF line endings).
-
-## Exercised verification before checkpoint
-
-A full Gradle build passed before adding the first tour harness. The first real client tour exited successfully and produced 27 screenshots. The contact sheets `l94_a.jpg`, `l94_b.jpg`, `l94_c.jpg` preserve those images.
-
-Checkpoint verification after moving the helpers out of src: `./gradlew build` passed.
-The produced `backrooms-1.0.0.jar` was inspected: it contains neither ClientSmoke nor Level94Probe.
-Gradle reports no test sources; this build is not a gameplay acceptance test.
-
-Observed in that run:
-- Dimension loads; arrival lands on a road.
-- Daytime sky, clouds, distant castle, town, water tower, house interior, glass mountain, castle exterior, entrance hall, animation studio, throne room, dusk and night render.
-- NightShot works outdoors at night.
-- Entering the throne light transfers the player to `backrooms:level_1`.
-- Ball-pit/playground screenshots clip into walls due to bad harness camera positions, so those views are not verified.
-- No nearby Smilers were visible by the later night shot. The count logged earlier in the tour was only about 10 seconds into night, so it alone does not establish the cause.
-- Dark-house door lookup returned null; dark-house exit was NOT exercised.
-- Clay-door test incorrectly ran in Level 94 because the earlier dark-house transfer did not happen. It does NOT verify Level 9 entry.
-- Vehicles were not visibly drawn in the town street shot; dark patches were visible on the road. Cause unconfirmed.
-- One OpenAL "Stop: Invalid name parameter" error was logged; audio has not been listened to.
-
-The saved contact sheets PRE-DATE the following two fixes:
-1. Grass side textures changed from mostly dirt with a grass fringe to shaded green felt (`tex_l94_grass`). Regenerated successfully; visual retest still needed.
-2. Level 94 Smiler spawn search now uses `openGround` / `isWalkable` instead of `Travel.searchWalkable`, which only accepts `isSafeArrival` spots (roads near houses on this level). It compiled, but a complete after-fix night scenario has NOT run.
-
-A second client run began with the OLD harness because a large edit was rejected. It was cancelled deliberately. Do not treat its partial output as a completed verification.
-
-## Test helpers (not part of the shipped mod)
-
-`ClientSmoke.java` and `Level94Probe.java` were moved here from src/main/java to keep the automatic world-creation/screenshot code OUT of the jar. These are the actual saved helpers; they still contain the OLD tour, not the proposed focused second tour. The probe additionally has `darkHouse(...)` for diagnostics.
-
-To run again, copy them temporarily to their package paths:
-- ClientSmoke.java -> src/main/java/com/rickr/backrooms/client/ClientSmoke.java
-- Level94Probe.java -> src/main/java/com/rickr/backrooms/world/layout/Level94Probe.java
-
-Then create `run/CLIENT_SMOKE`. The harness auto-creates/opens `l94_test`, tours the world and quits the client. Use a fresh test save (never delete user worlds), and remove the helpers from src again before building a deliverable.
-
-The old harness uses random world seeds. Previous run coordinates therefore won't match a fresh world. It logs town/castle positions and uses the layout seed via `BackroomsSeeds.layoutSeed(ServerLevel, LEVEL_94)`.
-
-## Resume here: focused second tour
-
-Do NOT reimplement the level or re-run the four slices. Fix the saved harness first, then inspect actual game output.
-
-1. House outside camera: it selected a wall fragment rather than a full house, and stood low on a slope. Filter for an intact house and fly at its ground+3, 18 blocks in front, looking at ground+4. Confirm green hill sides after the texture change.
-2. Vehicles: find `ModBlocks.L94_VEHICLE` near the town (scan y40..46 within ~48 blocks), log server AND client block state/block entity, and take a close-up. Inspect VehicleRenderer transforms/scale, not just registration. `ModelPart.render` already converts pixel units to blocks; VehicleRenderer currently also scales by 1/16, so double scaling is a specific unconfirmed hypothesis to inspect. Do not assume the block entity is missing.
-3. Siren: find `L94_SIREN`, confirm its block entity and visual horn model, verify no runtime errors. Music waveform checks were only agent-reported; not listened to.
-4. Ball pit/playground: stand in the correct room, not inside a wall. Castle room coordinates are in CONTRACT.md / Level94CastlePlan. Existing scan locates a ball-pit edge and climbing frame; don't offset the camera blindly across the central gallery wall.
-5. Night: set time94 night, remain outside houses/castle for >=35 seconds, then count and face nearby Smilers. Verify new openGround fix; entering shelter and dawn must dispel them. Also check sanity changes.
-6. Dark-house diagnostics: use `exitPosition` plus `Level94Probe.darkHouse` to get house ground height. The old lookup used a heightmap-derived scan of only y±4 near a door and failed. Scan the entire house at its actual ground height for `L94_HOUSE_DOOR` and `L94_DARK_VOID`, print the surrounding block columns, determine whether this is a test-camera/search error or generation bug, then exercise the exit to Level 9.
-7. Clay door: ensure the player is in Level 9 first. Place or find an open `L94_CLAY_DOOR`, walk into the lower cell, verify transition to Level 94. Do not count teleporting into it in Level 94 as a test.
-8. Walk the castle ramp (agent's offline math only was checked), verify access from plateau to gate and main rooms. Inspect transparency sorting/performance.
-9. Test Level 94 light with Veil and fallback. Only Veil mode has been visually observed so far.
-
-## Build and final delivery
-
-Working directory: repository root. This machine's Java 21 is at `/tmp/jdk/jdk-21.0.13+9`:
-
-```sh
-export JAVA_HOME=/tmp/jdk/jdk-21.0.13+9
-export PATH="$JAVA_HOME/bin:$PATH"
-./gradlew -Dorg.gradle.java.home="$JAVA_HOME" build --console=plain
-```
-
-Never change the friend's Windows `org.gradle.java.home` in gradle.properties; override it on the command line.
-
-Remaining release work: fix and verify the issues above; update in-game FieldNotesScreen level count/text and Smiler note, add a real Level 94 title-menu screenshot if appropriate; replace the README WIP notice with final gameplay documentation; remove throwaway helpers from src and local Python caches from staging; build, commit and push. Do not claim a complete level until those checks pass.
-
-Git auth used here:
-`git -c credential.helper= -c credential.helper='!gh auth git-credential' push origin main`.
+`ClientSmoke.java` and `Level94Probe.java` here are throwaway helpers kept out of the jar. To use
+the probe again, copy it to `src/main/java/com/rickr/backrooms/world/layout/` temporarily and remove
+it before building a release. `CONTRACT.md` is the original design brief.

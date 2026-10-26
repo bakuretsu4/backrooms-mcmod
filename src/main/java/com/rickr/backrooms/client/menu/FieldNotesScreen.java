@@ -24,7 +24,7 @@ public class FieldNotesScreen extends Screen {
             new Section("what", 1),
             new Section("in", 1),
             new Section("goal", 3),
-            new Section("levels", 7),
+            new Section("levels", 8),
             new Section("monsters", 4),
             new Section("survival", 7),
             new Section("multiplayer", 1));

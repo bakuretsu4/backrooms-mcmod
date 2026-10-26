@@ -5351,7 +5351,8 @@ def _l37_tiles(seed, tile_col, grout_col, var=1.6, glaze=1.6, grout_mix=0.5) -> 
     and pale grey like the references (the shading darkens it in shadow), never "graph paper".
 
     Barely any variation (it is new, clean tile): a whisper of per-tile tone, a soft glaze sheen
-    toward each tile's upper left, slightly pillowed edges and a fine speckle in the grout.
+    toward each tile's upper left and slightly pillowed edges. No per-pixel speckle anywhere: at a
+    distance or a grazing angle it only turned into shimmering noise (mipmaps can't average it).
     """
     rng = rng_for(seed)
     T = L37_TILE
@@ -5359,14 +5360,14 @@ def _l37_tiles(seed, tile_col, grout_col, var=1.6, glaze=1.6, grout_mix=0.5) -> 
     X, Y = grid()
     u, v = (X % T) / T, (Y % T) / T
     tone = np.kron(rng.normal(0, var, (n, n)), np.ones((T, T)))
-    img = add_lum(fill(tile_col, (S, S)), tone + rng.normal(0, 0.5, (S, S)) + fnoise(rng, beta=3.2) * 0.6)
+    img = add_lum(fill(tile_col, (S, S)), tone + fnoise(rng, beta=3.2) * 0.6)
     img = add_lum(img, (0.5 - 0.5 * (u + v)) * glaze * 2.0)                    # glaze sheen
     du = np.minimum(X % T, T - X % T)
     dv = np.minimum(Y % T, T - Y % T)
     edge = np.minimum(du, dv)
     img = add_lum(img, -1.5 * smoothstep(3.0, 1.0, edge))                         # pillowed edges
     g = np.minimum(np.abs(wrapd(X, T)), np.abs(wrapd(Y, T)))                     # distance to a joint
-    grout = add_lum(fill(grout_col, (S, S)), rng.normal(0, 2.0, (S, S)))
+    grout = fill(grout_col, (S, S))
     return lerp(img, grout, (grout_mix * smoothstep(1.2, 0.2, g))[..., None])
 
 

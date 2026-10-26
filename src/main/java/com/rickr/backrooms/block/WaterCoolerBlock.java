@@ -19,7 +19,8 @@ import net.minecraft.world.phys.shapes.Shapes;
 
 /**
  * An office water cooler: a white cabinet with an upturned blue bottle on top. The water in it
- * turned out to be Almond Water. Right-click it with an empty hand to fill a bottle; it has
+ * turned out to be Almond Water. Right-click it to fill a bottle (whatever you are holding, so you
+ * can fill several in a row: Minecraft asks the block before the item in your hand); it has
  * {@link #MAX_USES} fills (the USES property, so the model can show the water level going down),
  * then it is empty for good.
  */
@@ -43,9 +44,6 @@ public class WaterCoolerBlock extends FurnitureBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!player.getMainHandItem().isEmpty()) {
-            return InteractionResult.PASS;
-        }
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }

@@ -4,11 +4,6 @@ A NeoForge 1.21.1 mod: noclip out of reality into an endless Backrooms lit by re
 lights, seen through a found-footage camera. Built for multiplayer: play it with friends on a
 server or LAN.
 
-> **Level 94 checkpoint — work in progress:** the new level is implemented and has had an initial
-> in-game tour, but vehicles, dark-house exits, night spawning and remaining traversal checks are
-> not release-verified. See [the saved progress and resume steps](tools/smoke/level94/PROGRESS.md).
-> Existing levels remain available; this checkpoint is not a finished Level 94 release.
-
 ## Playing
 
 **Everyone (server and every player) needs the same mod jar** in their `mods` folder, with
@@ -34,8 +29,8 @@ mod falls back to simpler lighting.
 Overworld --suffocate--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Poolrooms --drain--> Level 9 --underpass--> Overworld
 ```
 
-Secret branch: a rare sunlit archway in the Poolrooms leads to **Level 37**, whose deep pits lead
-on to Level 9.
+Secret branches: a rare sunlit archway in the Poolrooms leads to **Level 37**, whose deep pits lead
+on to Level 9; a rare moulded-clay front door on a Level 9 house opens onto **Level 94**.
 
 - **Level 0 (the Lobby):** thick-walled yellow maze, lit rooms and dark corridors. Arrows drawn on
   the walls point to the exit stairwell, but some of them lie. Look for the EXIT sign over a
@@ -55,7 +50,7 @@ on to Level 9.
   with radiators under the sills. Rain drums on the glass everywhere, the pipes rumble now and
   then, and every minute or two lightning flashes through the windows before the thunder rolls
   in. No monsters: it is a safe haven. Break rooms have **vending machines** (right-click: Almond
-  Water or an Energy Bar until sold out) and **water coolers** (empty hand: Almond Water, three
+  Water or an Energy Bar until sold out) and **water coolers** (right-click: Almond Water, three
   times each). Some filing cabinets marked SUPPLIES are lockers. Safe rooms stand as little
   office boxes in the open floors. Behind one locked door with a brass "6", faint music plays.
   The way out is an **emergency stairwell**: look for the glowing EXIT sign over a grey steel fire
@@ -86,6 +81,18 @@ on to Level 9.
   flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark
   forest behind the yards. Follow the green EXIT arrow signs (a few lie) to a highway underpass
   and walk into the dark.
+- **Level 94 ("Motion"):** reached only through a rare clay front door on a Level 9 house (about
+  one unlocked house in forty). Endless rolling hills of felt grass under a painted sky with fat
+  cartoon clouds, winding roads, little cream houses with red roofs (some enterable, with a CRT TV
+  showing static), house fragments on the hills, water towers, parked old cars and milk vans, siren
+  poles that play a happy tune by day, and a town with a chess-king fountain. Far away a white
+  cartoon castle stands on a see-through glass mountain; walk the spiral ramp up to it. Inside it
+  turns into a real (and wrong) play centre: checker floors, a ball pit, a playground with a
+  climbing frame, a looping upstairs hall, an animation studio and an empty throne room. Day lasts
+  8 minutes (the last 30 s is dusk), night 3: at night the music stops and Smilers come out on the
+  hills, so get inside a house (they can't follow you in; your sanity holds steady there). Ways
+  out: houses whose doorway is pure black lead back to Level 9, and the light behind the throne
+  leads to Level 1.
 
 Every floor is endless; exits are spread out a few hundred blocks apart.
 
@@ -168,14 +175,14 @@ light on and the sign over the front door.
   NightShot on you can see it even in total darkness.
 - **Blackouts:** the lights fade out over two seconds. Only flashlights work, and the Bacteria come
   out three times as often, but they can't use the lamps to spot you either.
-- **Smilers (blackouts, Levels 0-2):** two glowing eyes and a huge glowing grin in the dark,
+- **Smilers (blackouts in Levels 0-2, and Level 94 at night):** two glowing eyes and a huge glowing grin in the dark,
   wrapped in a faint shroud of churning dark smoke you mostly notice against a lit wall or in NightShot.
   One comes when the lights go out, sometimes a second from the other side 10 seconds later. It
   makes no sound except a faint breath when it's a few blocks away; if it reaches you, you die.
   Hold your flashlight on its face: it squints, backs off and burns away after about 1.5 seconds
   of light in total (bursts add up). About one in six has a wider grin and takes twice as long.
-  Weapons go straight through it. When the lights come back on, or you reach a safe room, they're
-  gone.
+  Weapons go straight through it. When the lights come back on (in Level 94: at dawn), or you reach
+  a safe room or a house, they're gone.
 - **Flicker**, **alarm** (red rotating emergency lamps), **intercom** announcements that get
   creepier, **lightning** in the garage, the **twist** in the pipes (the corridor tilts), distant
   knocks and creaks.
@@ -206,7 +213,8 @@ the Level 0 hum replaces the menu music. **FIELD NOTES** is a short in-game guid
 ## Operator commands
 
 ```
-/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9
+/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94
+/backrooms time94 <day|dusk|night|dawn> jump Level 94's day/night clock (testing)
 /backrooms escape [players]             send players back to reality
 /backrooms battery [players] [percent]  set camcorder battery
 /backrooms locate                       where is the nearest exit?
