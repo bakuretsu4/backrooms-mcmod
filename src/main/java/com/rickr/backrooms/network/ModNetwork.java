@@ -36,7 +36,7 @@ public final class ModNetwork {
             CameraClientState.transitionStartMs = System.currentTimeMillis();
         });
 
-        // The noclip intro (filming -> glitch -> fall). Plain fields; the client cutscene reads them.
+        // Noclipping in (freeze -> held -> mosh). Plain fields; client/intro/NoclipTransition reads them.
         registrar.playToClient(IntroCutscenePayload.TYPE, IntroCutscenePayload.STREAM_CODEC, (payload, context) -> {
             CameraClientState.introPhase = payload.phase();
             CameraClientState.introStartMs = System.currentTimeMillis();
@@ -89,6 +89,17 @@ public final class ModNetwork {
         // Anomalies: the site you're in and the ones nearby (sounds, picture mood, effects).
         registrar.playToClient(AnomalyPayload.TYPE, AnomalyPayload.STREAM_CODEC,
                 (payload, context) -> AnomalyClientState.update(payload.current().orElse(null), payload.nearby()));
+
+        // The real world: filming with a camcorder, reality wearing thin, walking into walls in the dark.
+        registrar.playToClient(RealWorldPayload.TYPE, RealWorldPayload.STREAM_CODEC, (payload, context) -> {
+            CameraClientState.realRecording = payload.recording();
+            CameraClientState.realThin = payload.thin();
+        });
+        registrar.playToServer(WallPushPayload.TYPE, WallPushPayload.STREAM_CODEC, (payload, context) -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.rickr.backrooms.world.RealWorldEntries.onWallPush(player);
+            }
+        });
 
         registrar.playToServer(CameraTogglePayload.TYPE, CameraTogglePayload.STREAM_CODEC, (payload, context) -> {
             if (context.player() instanceof ServerPlayer player) {

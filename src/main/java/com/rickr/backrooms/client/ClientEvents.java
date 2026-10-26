@@ -2,7 +2,6 @@ package com.rickr.backrooms.client;
 
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.client.camera.HandheldCamera;
-import com.rickr.backrooms.client.intro.IntroCutscene;
 import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.network.CameraTogglePayload;
 import net.minecraft.client.CameraType;
@@ -95,9 +94,6 @@ public final class ClientEvents {
         }
         HandheldCamera.apply(mc, event);
         Level7Client.modifyAngles(event);
-        if (IntroCutscene.active()) {
-            IntroCutscene.modifyAngles(event);
-        }
         CamcorderEffect.updateCameraUniforms(mc);
     }
 

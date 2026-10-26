@@ -20,7 +20,6 @@ import com.rickr.backrooms.client.hud.StaminaBarLayer;
 import com.rickr.backrooms.client.menu.SettingsScreen;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import com.rickr.backrooms.client.intro.IntroCutscene;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import org.lwjgl.glfw.GLFW;
 
@@ -76,8 +75,9 @@ public final class ClientSetup {
     @SubscribeEvent
     public static void registerGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(Backrooms.id("camcorder_hud"), new CamcorderHud());
-        // Black frames of the noclip intro, over everything.
-        event.registerAboveAll(IntroCutscene.LAYER_ID, new IntroCutscene());
+        // The real world wearing thin: a faint stale yellow (client/intro/RealWorldClient).
+        event.registerAboveAll(com.rickr.backrooms.client.intro.RealWorldClient.LAYER_ID,
+                new com.rickr.backrooms.client.intro.RealWorldClient());
         // Sprint stamina: a thin faint line where the (hidden) XP bar would be, only while it matters.
         event.registerAbove(VanillaGuiLayers.EXPERIENCE_BAR, Backrooms.id("stamina_bar"), new StaminaBarLayer());
     }

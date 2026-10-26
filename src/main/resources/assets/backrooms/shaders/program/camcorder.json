@@ -23,7 +23,6 @@
         { "name": "FlashY", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Signal", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Transition", "type": "float", "count": 1, "values": [ 0.0 ] },
-        { "name": "Wake", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Alarm", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Flash", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "BlurX", "type": "float", "count": 1, "values": [ 0.0 ] },

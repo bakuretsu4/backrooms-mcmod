@@ -20,7 +20,11 @@ public final class CameraClientState {
     public static volatile long eventEndMs;
     /** When the current event started (system ms), for fade-ins like the blackout or the twist roll. */
     public static volatile long eventStartMs;
-    /** Last noclip intro step ({@code IntroCutscenePayload} constant) and when it arrived (system ms, 0 = none). */
+    /** Filming the real world with a camcorder (the camcorder look and REC overlay on outside the Backrooms). */
+    public static volatile boolean realRecording;
+    /** 0..1 how thin reality has worn around you (alone in the dark; filming it): the hum, the glitches. */
+    public static volatile float realThin;
+    /** Last noclip step ({@code IntroCutscenePayload} constant) and when it arrived (system ms, 0 = none). */
     public static volatile int introPhase;
     public static volatile long introStartMs;
 

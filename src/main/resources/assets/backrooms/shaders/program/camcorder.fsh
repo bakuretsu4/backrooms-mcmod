@@ -20,7 +20,7 @@
 //     coloured haze that thickens with real distance, exposure/contrast/saturation, split-toned
 //     shadows and highlights, a lifted tinted black, and a very slow auto-iris "breath".
 //     Alarm = faint red wash, NightShot = green infrared, Lightning = white flash.
-//  7. Glitch-only extras (grain, specks, scanlines), wake-up eyelids, transition static.
+//  7. Glitch-only extras (grain, specks, scanlines), transition static.
 //  Dream (Poolrooms hallucination, uniform Dream 0..1) is woven into steps 2, 3, 5 and 6: slow
 //  watery ripples + breathing zoom, chromatic shimmer, a faint ghost image when strong, and a
 //  cyan/saturated grade. Every part is scaled by Dream, so Dream = 0 changes nothing at all.
@@ -47,7 +47,6 @@ uniform float FlashX;     // where the (lagging) beam points, offset from centre
 uniform float FlashY;
 uniform float Signal;     // 0..1, nearness of the exit (calms the picture)
 uniform float Transition; // 1 -> 0 over the noclip / escape transition
-uniform float Wake;       // 1 -> 0 while waking up on the Level 0 carpet
 uniform float Alarm;      // 0..1 red emergency pulse
 uniform float Flash;      // 0..1 lightning flash
 uniform float BlurX;      // motion blur streak for this frame, texture units
@@ -207,8 +206,6 @@ void main() {
                            cos(uv.x * 8.0 + t * 0.9) + 0.5 * cos(uv.x * 15.0 + t * 1.3));
         uv += ripple * 0.0017 * dream;
     }
-    // Waking up: everything swims.
-    uv += vec2(sin(t * 1.7 + uv.y * 6.0), cos(t * 1.3 + uv.x * 5.0)) * 0.006 * Wake;
     // Under water: the picture sways gently, as if seen through moving water. A tiny zoom-in
     // first, so the sway never pulls an edge into view.
     float under = clamp(Underwater, 0.0, 1.0);
@@ -245,9 +242,8 @@ void main() {
     }
 
     vec2 blurVec = vec2(BlurX, BlurY);
-    float wakeBlur = Wake * 0.012; // out-of-focus eyes while waking up
     vec3 col;
-    if (length(blurVec * InSize) < 0.75 && wakeBlur <= 0.0) {
+    if (length(blurVec * InSize) < 0.75) {
         col = sampleCA(uv, caOffset); // camera still: one sharp sample
     } else {
         // Taps spread evenly along the streak, shifted by a per-pixel random amount so the gaps
@@ -256,9 +252,7 @@ void main() {
         vec3 acc = vec3(0.0);
         for (int i = 0; i < BLUR_TAPS; i++) {
             float f = (float(i) + jitter) / float(BLUR_TAPS);
-            float angle = float(i) * 2.39996; // golden angle spiral for the wake-up defocus
-            vec2 defocus = vec2(cos(angle) / aspect, sin(angle)) * wakeBlur * sqrt(f);
-            acc += sampleCA(clamp(uv + blurVec * (f - 0.5) + defocus, 0.0, 1.0), caOffset);
+            acc += sampleCA(clamp(uv + blurVec * (f - 0.5), 0.0, 1.0), caOffset);
         }
         col = acc / float(BLUR_TAPS);
     }
@@ -402,7 +396,7 @@ void main() {
     col = mix(col, vec3(1.0), clamp(Flash, 0.0, 1.0) * 0.85);
 
     // 7. Grain and tape damage.
-    float grainAmount = Grain + tape * 0.10 + NightShot * 0.06 + Wake * 0.03;
+    float grainAmount = Grain + tape * 0.10 + NightShot * 0.06;
     if (grainAmount > 0.0) {
         float scale = max(InSize.y / 720.0, 1.0);
         float grain = hash12(floor(gl_FragCoord.xy / scale) + fract(t * 7.13) * vec2(431.0, 177.0)) - 0.5;
@@ -430,14 +424,6 @@ void main() {
         float line = floor(texCoord.y * 240.0);
         float drop = step(1.0 - 0.015 * k, hash12(vec2(line, floor(t * 24.0))));
         col = mix(col, vec3(step(0.5, hash12(vec2(line, t)))), drop * 0.45);
-    }
-
-    // Eyelids: opening slowly, with a couple of heavy blinks.
-    if (Wake > 0.0) {
-        float blink = smoothstep(0.02, 0.0, abs(fract(Wake * 2.3) - 0.5) - 0.42);
-        float open = clamp(1.0 - Wake * 1.15, 0.0, 1.0) * (1.0 - blink * 0.8);
-        float lid = smoothstep(open * 0.62 + 0.02, open * 0.62 - 0.12, abs(texCoord.y - 0.5));
-        col *= lid * (1.0 - Wake * 0.5);
     }
 
     if (Transition > 0.0) {

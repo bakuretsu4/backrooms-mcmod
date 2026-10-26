@@ -1,0 +1,17 @@
+{
+    "vertex": "backrooms:datamosh",
+    "fragment": "backrooms:datamosh",
+    "samplers": [
+        { "name": "PrevOut" },
+        { "name": "Scene" },
+        { "name": "PrevScene" }
+    ],
+    "uniforms": [
+        { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+        { "name": "Mode", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Progress", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Seed", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Shift", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+        { "name": "BlockSize", "type": "float", "count": 1, "values": [ 16.0 ] }
+    ]
+}

@@ -9,21 +9,23 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * Server side of the noclip intro. When a player starts to noclip we don't teleport them right
- * away: first their client plays the "filming in the real world, then it glitches" part for
- * {@link #FILMING_TICKS}. Then we move them to Level 0 and tell the client to play the fall.
+ * Server side of noclipping into the Backrooms (every way in ends here: suffocating in a block,
+ * pushing into a wall in the dark, filming the dark, staying alone in it too long, a bad night's
+ * sleep; see {@link RealWorldEntries}). We don't move the player at once: first their client
+ * freezes and breaks up the picture for {@link #LAG_TICKS} (client/intro/NoclipTransition), then
+ * we move them to Level 0 and the client moshes the old picture into the new one.
  * While a player is in this window, suffocation damage is ignored.
  */
 public final class NoclipIntro {
-    /** Length of the real-world part (must match the client's FILMING timeline: 2.6 s). */
-    public static final int FILMING_TICKS = 52;
+    /** Length of the real-world lag (must match the client's LAG_MS: 0.5 s). */
+    public static final int LAG_TICKS = 10;
 
     private static final Map<UUID, Integer> PENDING = new HashMap<>();
 
-    /** Begin the intro for this player (does nothing if it's already running). */
+    /** Begin noclipping this player (does nothing if it's already running). */
     public static void start(ServerPlayer player) {
-        if (PENDING.putIfAbsent(player.getUUID(), FILMING_TICKS) == null) {
-            PacketDistributor.sendToPlayer(player, new IntroCutscenePayload(IntroCutscenePayload.FILMING));
+        if (PENDING.putIfAbsent(player.getUUID(), LAG_TICKS) == null) {
+            PacketDistributor.sendToPlayer(player, new IntroCutscenePayload(IntroCutscenePayload.FREEZE));
         }
     }
 
@@ -43,11 +45,11 @@ public final class NoclipIntro {
         }
         PENDING.remove(player.getUUID());
         Travel.sendToQuietly(player, BackroomsLevel.LEVEL_0, player.getBlockX(), player.getBlockZ());
-        PacketDistributor.sendToPlayer(player, new IntroCutscenePayload(IntroCutscenePayload.FALLING));
+        PacketDistributor.sendToPlayer(player, new IntroCutscenePayload(IntroCutscenePayload.ARRIVED));
         player.sendSystemMessage(Component.translatable("message.backrooms.noclip").withStyle(s -> s.withItalic(true).withColor(0xC8B45A)));
     }
 
-    /** Player left mid-intro: forget them (they stay in the real world). */
+    /** Player left mid-noclip: forget them (they stay in the real world). */
     public static void forget(ServerPlayer player) {
         PENDING.remove(player.getUUID());
     }

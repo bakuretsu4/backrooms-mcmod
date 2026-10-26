@@ -217,14 +217,6 @@ public final class HandheldCamera {
         float pitch = smoothPitch + shakePitch;
         float roll = event.getRoll() + turnRoll + strafeRoll + shakeRoll + twist * TWIST_ROLL_DEG;
 
-        float wake = CamcorderEffect.wakeAmount();
-        if (wake > 0.0f) {
-            // Waking up on the carpet: lying on your back, then sitting up quickly near the end.
-            float lying = wake * wake * (3.0f - 2.0f * wake);
-            pitch = Mth.lerp(lying, pitch, -80.0f + Mth.sin(t * 1.3f) * 3.0f);
-            roll = Mth.lerp(lying, roll, 28.0f + Mth.sin(t * 0.8f) * 4.0f);
-            yaw += lying * Mth.sin(t * 0.6f) * 6.0f;
-        }
         event.setYaw(yaw);
         event.setPitch(pitch);
         event.setRoll(roll);

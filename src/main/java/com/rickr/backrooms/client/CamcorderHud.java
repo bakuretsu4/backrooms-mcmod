@@ -1,7 +1,6 @@
 package com.rickr.backrooms.client;
 
 import com.rickr.backrooms.camera.CameraClientState;
-import com.rickr.backrooms.client.intro.IntroCutscene;
 import com.rickr.backrooms.network.TransitionPayload;
 import com.rickr.backrooms.world.Travel;
 import java.time.LocalDateTime;
@@ -67,16 +66,14 @@ public final class CamcorderHud implements LayeredDraw.Layer {
         }
 
         // Heart rate (your sanity) always shows in the Backrooms, even with the OSD hidden.
-        if (Travel.inBackrooms(mc.level) && CamcorderEffect.wakeAmount() <= 0.35f) {
+        if (Travel.inBackrooms(mc.level)) {
             heartRate(g, font, w - m + jx, m + 18 + jy, now);
         }
         // "SAFE ROOM" and "CHECKPOINT SAVED" also show with the OSD hidden.
-        if (CamcorderEffect.wakeAmount() <= 0.35f) {
-            SafeRoomOsd.render(g, font, m + jx, m + jy, osdVisible || IntroCutscene.filming(), now);
-        }
+        SafeRoomOsd.render(g, font, m + jx, m + jy, osdVisible || CameraClientState.realRecording, now);
 
-        boolean showOsd = osdVisible || IntroCutscene.filming(); // the intro is "someone filming"
-        if (!showOsd || CamcorderEffect.wakeAmount() > 0.35f) {
+        boolean showOsd = osdVisible || CameraClientState.realRecording; // filming the real world
+        if (!showOsd) {
             return;
         }
         brackets(g, m - 6 + jx, m - 6 + jy, w - m + 6 + jx, h - m + 6 + jy);

@@ -255,7 +255,7 @@
   "menu.backrooms.notes.what.title": "WHAT ARE THE BACKROOMS?",
   "menu.backrooms.notes.what.0": "Endless empty rooms behind reality: old yellow wallpaper, damp carpet and the buzz of fluorescent lights. Every floor is a different level, every level goes on forever, and you see all of it through the viewfinder of your camcorder.",
   "menu.backrooms.notes.in.title": "GETTING IN",
-  "menu.backrooms.notes.in.0": "Suffocate inside a block in the real world (let sand or gravel fall on you). Your camcorder starts recording, the footage breaks up and you noclip out of reality, falling through the dark into Level 0.",
+  "menu.backrooms.notes.in.0": "Reality has seams, and they're in the dark. Keep walking into a wall somewhere dark and enclosed. Stay alone in the dark too long. Film the dark with a camcorder (iron, a glass pane and redstone). Or just sleep, and hope you wake up at home. Suffocating inside a block still works too. Either way the picture breaks up, and when it settles you're somewhere else.",
   "menu.backrooms.notes.goal.title": "THE WAY OUT",
   "menu.backrooms.notes.goal.0": "The only way out is down. Find each level's exit (a stairwell, an EXIT door, a drain...) to go deeper, until the last one lets you walk back into the real world.",
   "menu.backrooms.notes.goal.1": "- Exits are a few hundred blocks apart. Arrows drawn on the walls point the way, but some of them lie.",
@@ -642,5 +642,8 @@
   "note.backrooms.dir.7": "north-west",
   "note.backrooms.far.0": "not far at all",
   "note.backrooms.far.1": "a couple hundred steps",
-  "note.backrooms.far.2": "a long walk"
+  "note.backrooms.far.2": "a long walk",
+  "item.backrooms.camcorder": "Camcorder",
+  "item.backrooms.camcorder.tooltip": "Right-click to start or stop recording.",
+  "item.backrooms.camcorder.tooltip2": "Some places shouldn't be filmed."
 }

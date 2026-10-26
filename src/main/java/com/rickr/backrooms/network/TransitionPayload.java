@@ -10,8 +10,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 public record TransitionPayload(int kind) implements CustomPacketPayload {
     public static final int NOCLIP = 0;
     public static final int ESCAPE = 1;
-    /** Noclipped in from reality: you come to on the Level 0 carpet. */
-    public static final int WAKE_UP = 2;
 
     public static final Type<TransitionPayload> TYPE = new Type<>(Backrooms.id("transition"));
     public static final StreamCodec<ByteBuf, TransitionPayload> STREAM_CODEC =

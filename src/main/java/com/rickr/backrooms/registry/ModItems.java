@@ -40,6 +40,9 @@ public final class ModItems {
             com.rickr.backrooms.item.AlmondMilkItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.rickr.backrooms.item.Coin1953Item> COIN_1953 = ITEMS.registerItem("coin_1953",
             com.rickr.backrooms.item.Coin1953Item::new, new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
+    /** An old camcorder for the real world: film the dark long enough and it lets you in. */
+    public static final DeferredItem<com.rickr.backrooms.item.CamcorderItem> CAMCORDER = ITEMS.registerItem("camcorder",
+            com.rickr.backrooms.item.CamcorderItem::new, new Item.Properties().stacksTo(1));
     /** A torn note from a supply container: a rough (sometimes wrong) direction to the exit. */
     public static final DeferredItem<com.rickr.backrooms.item.WandererNoteItem> WANDERER_NOTE = ITEMS.registerItem("wanderer_note",
             com.rickr.backrooms.item.WandererNoteItem::new, new Item.Properties().stacksTo(1));

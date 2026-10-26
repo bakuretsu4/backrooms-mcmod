@@ -5,13 +5,12 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.client.camera.HandheldCamera;
-import com.rickr.backrooms.client.intro.IntroCutscene;
+import com.rickr.backrooms.client.intro.NoclipTransition;
 import com.rickr.backrooms.client.light.BackroomsLights;
 import com.rickr.backrooms.client.water.UnderwaterView;
 import com.rickr.backrooms.entity.Bacteria;
 import com.rickr.backrooms.entity.Smiler;
 import com.rickr.backrooms.network.LevelEventPayload;
-import com.rickr.backrooms.network.TransitionPayload;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.Travel;
 import net.minecraft.client.Minecraft;
@@ -38,8 +37,6 @@ public final class CamcorderEffect {
     /** All our chains live here: camcorder.json (HIGH), camcorder_medium.json, camcorder_low.json. */
     private static final String CHAIN_PREFIX = Backrooms.id("shaders/post/camcorder").toString();
     private static final float TRANSITION_MS = 2500.0f;
-    /** Waking up on the carpet after the fall (eyes opening, sitting up). */
-    public static final float WAKE_MS = 4500.0f;
     private static final double DANGER_RANGE = 32.0;
     /** Smilers feed danger from this far, and the colour fringing starts at the closer range. */
     private static final double SMILER_RANGE = 24.0;
@@ -61,18 +58,10 @@ public final class CamcorderEffect {
         return danger;
     }
 
-    /** In the Backrooms, or filming the real world during the noclip intro. */
+    /** In the Backrooms, noclipping into them, or filming the real world with a camcorder. */
     public static boolean wanted(Minecraft mc) {
-        return mc.level != null && mc.player != null && (Travel.inBackrooms(mc.level) || IntroCutscene.filming());
-    }
-
-    /** 1 at the moment you wake up on the carpet, easing to 0 over {@link #WAKE_MS}. */
-    public static float wakeAmount() {
-        if (CameraClientState.transitionKind != TransitionPayload.WAKE_UP) {
-            return 0.0f;
-        }
-        long since = System.currentTimeMillis() - CameraClientState.transitionStartMs;
-        return since < 0 || since > WAKE_MS ? 0.0f : 1.0f - since / WAKE_MS;
+        return mc.level != null && mc.player != null
+                && (Travel.inBackrooms(mc.level) || NoclipTransition.active() || CameraClientState.realRecording);
     }
 
     /** The post chain for the QUALITY setting; they differ only in how many glow (blur) passes they run. */
@@ -151,7 +140,10 @@ public final class CamcorderEffect {
         float seconds = (float) ((System.nanoTime() / 1.0e9) % 3600.0);
         long sinceTransition = now - CameraClientState.transitionStartMs;
         float transition = sinceTransition >= 0 && sinceTransition < TRANSITION_MS ? 1.0f - sinceTransition / TRANSITION_MS : 0.0f;
-        transition = Math.max(transition, IntroCutscene.glitch());
+        // Filming the dark in the real world: the tape breaks up more and more as reality thins.
+        if (CameraClientState.realRecording) {
+            transition = Math.max(transition, CameraClientState.realThin * CameraClientState.realThin);
+        }
         boolean dead = CameraClientState.battery <= 0.0f;
         // When Veil's real dynamic lights are on, the flashlight is a real light in the world, so
         // the screen-space fake one must stay off or the beam would be doubled.
@@ -164,7 +156,6 @@ public final class CamcorderEffect {
         chain.setUniform("Flashlight", fakeFlashlight ? flashlightFlicker(seconds) : 0.0f);
         chain.setUniform("Signal", CameraClientState.exitSignal);
         chain.setUniform("Transition", transition);
-        chain.setUniform("Wake", wakeAmount());
         chain.setUniform("Alarm", alarmPulse(now));
         chain.setUniform("Flash", lightningFlash(now));
         chain.setUniform("Grain", BASE_GRAIN);
