@@ -231,7 +231,23 @@ can't quite settle. All of it is kept subtle so you can always see where you're 
 The vanilla title screen is replaced by a "found footage" menu (`client/menu`): camcorder footage
 of the levels plays behind it (a slow pan over screenshots, VHS glitch cuts, flickering lights,
 grain and scanlines) with the REC overlay, the logo, a camcorder-style menu and a taped note, while
-the Level 0 hum replaces the menu music. **FIELD NOTES** is a short in-game guide for new players.
+the main theme plays (see Music below). **FIELD NOTES** is a short in-game guide for new players.
+
+### Music
+
+Three original pieces, composed in code in `tools/gen_assets.py` (`snd_music_*`) and played on the
+game's music channel, so the Music volume slider controls them (`client/BackroomsMusic`):
+
+| Piece | Where | What it is |
+|---|---|---|
+| `liminal` | Title menu (looping); now and then in every level except Level 94 | The main theme: slow, washed-out tape chords in D minor with an uneasy E-flat. Single tones fade in, it swells into a wall of sound, then falls apart into wind, a creak, a far boom and an out-of-tune music box |
+| `deep` | Now and then in Levels 0, 1, 2, 4 and 9 | Drones, wind and far-off noises with long near-silences; a muffled memory of the theme drifts past |
+| `drift` | Now and then in the Poolrooms and Level 37 | Softer and dreamier: warm chords that never settle, water drips, a slow music-box line |
+
+In the levels a piece plays only every 3 to 8 minutes, like Minecraft's own music; in between
+you hear only the level. Level 94 has no music because its siren poles play their own tune.
+Everything goes through a worn-tape sound: a slow pitch wobble shared by every note, soft
+saturation, hiss and a big, empty room.
 
 ## Operator commands
 

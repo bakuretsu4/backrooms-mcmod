@@ -7107,6 +7107,442 @@ L94_SKY_SOUNDS = [snd_l94_wind, snd_l94_birds, snd_l94_laugh]
 
 # =============================================================================
 
+
+# =============================================================================
+# Music: three ORIGINAL pieces for the Backrooms, composed here note by note
+# (nothing is sampled or copied). Inspired by the feel of slow "liminal" tape
+# music and by the empty, unsettling sound of Minecraft's disc 13, not by their
+# notes:
+#   liminal - the main theme (title menu, and now and then in the levels): slow,
+#             washed-out tape chords in D minor with an unsettling E-flat. It
+#             starts with single tones fading in, swells into a wall of sound,
+#             then falls apart into wind and far-off noises.
+#   deep    - mostly drones, wind and distant noises with long near-silences;
+#             fragments of the theme drift past as if heard through walls.
+#   drift   - softer and dreamier for the Poolrooms and Level 37: warm chords
+#             that are never quite at rest, water drips, a lot of space.
+# All three are stereo and go through the same "worn tape" chain: a slow pitch
+# wow and a little flutter shared by every note, soft saturation, hiss, a dull
+# top end and a big empty room.
+
+_M_PC = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+_M_TABLES: dict = {}
+
+
+def _m_hz(name: str) -> float:
+    """Note name -> Hz: 'D3', 'Eb4', 'F#2' (A4 = 440 Hz)."""
+    pc = _M_PC[name[0]]
+    rest = name[1:]
+    while rest and rest[0] in "#b":
+        pc += 1 if rest[0] == "#" else -1
+        rest = rest[1:]
+    return 440.0 * 2 ** ((12 * (int(rest) + 1) + pc - 69) / 12)
+
+
+def _m_table(nh: int, tilt: float) -> np.ndarray:
+    """One cycle (4096 samples) of a soft saw-like wave with nh harmonics falling as 1/k^tilt.
+    The top third of the harmonics fades out so the band limit has no hard edge."""
+    key = (nh, tilt)
+    if key not in _M_TABLES:
+        ph = np.arange(4096) / 4096
+        k = np.arange(1, nh + 1)
+        amps = 1.0 / k ** tilt * np.clip((nh + 1 - k) / max(1.0, nh * 0.35), 0, 1)
+        tab = (amps[:, None] * np.sin(2 * np.pi * k[:, None] * ph[None, :])).sum(0)
+        _M_TABLES[key] = np.append(tab / np.abs(tab).max(), 0.0)
+        _M_TABLES[key][-1] = _M_TABLES[key][0]
+    return _M_TABLES[key]
+
+
+def _m_env(n: int, attack: float, hold_end: float, release: float) -> np.ndarray:
+    """Raised-cosine swell in, hold, then an exponential release (about -26 dB after `release`)."""
+    t = np.arange(n) / SR
+    e = 0.5 - 0.5 * np.cos(np.pi * np.clip(t / max(attack, 1e-3), 0, 1))
+    e = e * np.where(t < hold_end, 1.0, np.exp(-(t - hold_end) / (release / 3.0)))
+    tail = min(n, int(0.05 * SR))
+    e[n - tail:] *= np.linspace(1, 0, tail)
+    return e
+
+
+class _MTrack:
+    """A stereo multitrack: named buses of (left, right) float32 arrays plus one shared tape
+    pitch curve, so every note wobbles together like a real worn cassette."""
+
+    def __init__(self, seconds: float, seed: int, wow: float = 0.0035, flutter: float = 0.0009):
+        self.n = int(seconds * SR)
+        self.rng = rng_for(seed)
+        t = np.arange(self.n) / SR
+        self.ratio = (1 + wow * (0.6 * np.sin(2 * np.pi * 0.29 * t + self.rng.uniform(0, 6.3))
+                                 + 0.4 * smooth_jitter(self.rng, self.n, 0.2, 1.0))
+                      + flutter * np.sin(2 * np.pi * 5.3 * t))
+        self.buses: dict = {}
+
+    def bus(self, name: str):
+        if name not in self.buses:
+            self.buses[name] = (np.zeros(self.n, np.float32), np.zeros(self.n, np.float32))
+        return self.buses[name]
+
+    def add(self, name: str, start: float, left: np.ndarray, right=None) -> None:
+        L, R = self.bus(name)
+        right = left if right is None else right
+        i0 = max(0, int(round(start * SR)))
+        end = min(self.n, i0 + len(left))
+        if end > i0:
+            L[i0:end] += left[: end - i0].astype(np.float32)
+            R[i0:end] += right[: end - i0].astype(np.float32)
+
+    def _ratio(self, start: float, n: int) -> np.ndarray:
+        i0 = max(0, int(round(start * SR)))
+        seg = self.ratio[i0:i0 + n]
+        return np.pad(seg, (0, n - len(seg)), constant_values=1.0)
+
+    def pad(self, name: str, start: float, dur: float, note: str, vel: float, bright: float = 2500.0,
+            attack: float = 1.6, release: float = 3.5, tilt: float = 1.15, cents=(-8.0, 0.0, 7.0),
+            pitch: float = 1.0) -> None:
+        """A slow pad note: three detuned saw-ish voices spread across the stereo field."""
+        freq = _m_hz(note) * pitch
+        n = int((dur + release) * SR)
+        ratio = self._ratio(start, n)
+        tab = _m_table(int(np.clip(bright / freq, 1, 64)), tilt)
+        env = _m_env(n, attack, dur, release) * vel
+        L = np.zeros(n)
+        R = np.zeros(n)
+        for c, pan in zip(cents, (-0.8, 0.0, 0.8)):
+            ph = (self.rng.uniform() + np.cumsum(freq * 2 ** (c / 1200) * ratio) / SR) % 1.0
+            v = np.interp(ph * 4096, np.arange(4097), tab)
+            L += v * np.sqrt(0.5 * (1 - pan))
+            R += v * np.sqrt(0.5 * (1 + pan))
+        self.add(name, start, L * env / len(cents), R * env / len(cents))
+
+    def chord(self, name: str, start: float, dur: float, notes, vel: float, spread: float = 0.18, **kw) -> None:
+        """Several pad notes, each entering a moment after the last (an unhurried hand)."""
+        for i, note in enumerate(notes):
+            self.pad(name, start + i * spread * self.rng.uniform(0.6, 1.2), dur, note,
+                     vel * self.rng.uniform(0.85, 1.0), **kw)
+
+    def bell(self, name: str, start: float, note: str, vel: float, decay: float = 2.4,
+             pitch: float = 1.0, pan: float = 0.0) -> None:
+        """Music-box / celesta tone: a few inharmonic partials, a soft click of an attack."""
+        freq = _m_hz(note) * pitch
+        n = int(decay * 3.2 * SR)
+        t = np.arange(n) / SR
+        ratio = self._ratio(start, n)
+        x = np.zeros(n)
+        for mult, amp, dk in ((1.0, 1.0, 1.0), (2.0, 0.28, 0.55), (2.76, 0.22, 0.35),
+                              (5.40, 0.10, 0.16), (8.93, 0.04, 0.09)):
+            ph = np.cumsum(freq * mult * ratio) / SR + self.rng.uniform()
+            x += amp * np.sin(2 * np.pi * ph) * np.exp(-t / (decay * dk))
+        x *= np.clip(t / 0.004, 0, 1) * vel
+        self.add(name, start, x * np.sqrt(0.5 * (1 - pan)), x * np.sqrt(0.5 * (1 + pan)))
+
+    def drone(self, name: str, start: float, dur: float, note: str, vel: float, fade: float = 8.0,
+              beat: float = 0.35) -> None:
+        """Low sine drone with a slightly detuned twin (slow beating) and a little 2nd harmonic."""
+        freq = _m_hz(note)
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        ratio = self._ratio(start, n)
+        ph = np.cumsum(freq * ratio) / SR
+        x = np.sin(2 * np.pi * ph) + 0.25 * np.sin(4 * np.pi * ph + 1.0)
+        y = np.sin(2 * np.pi * np.cumsum((freq + beat) * ratio) / SR + 0.5)   # beats `beat` times a second
+        e = np.clip(t / fade, 0, 1) * np.clip((dur - t) / fade, 0, 1)
+        e = e * e * (3 - 2 * e) * vel
+        self.add(name, start, (x + 0.7 * y) * e * 0.6, (0.7 * x + y) * e * 0.6)
+
+    def noise_bed(self, name: str, lo: float, hi: float, vel_pts, drift_amt: float = 0.35) -> None:
+        """Band-limited noise (wind, room, water) whose level follows (seconds, level) points and
+        breathes slowly on its own. Left and right are independent, so it fills the space."""
+        t = np.arange(self.n) / SR
+        level = np.interp(t, [p[0] for p in vel_pts], [p[1] for p in vel_pts])
+        chans = []
+        for _ in range(2):
+            nz = fft_filter(self.rng.normal(size=self.n), lambda f: bp_gain(f, lo, hi, 2))
+            nz /= nz.std() + 1e-12
+            chans.append(nz * level * (1 + smooth_jitter(self.rng, self.n, 0.15, drift_amt)))
+        self.add(name, 0.0, chans[0], chans[1])
+
+    def boom(self, name: str, start: float, vel: float) -> None:
+        """Something heavy, very far away: a falling sub thump with a dull rumble."""
+        n = int(4.0 * SR)
+        t = np.arange(n) / SR
+        f = 26 + 30 * np.exp(-t / 0.5)
+        x = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 1.1)
+        rum = fft_filter(self.rng.normal(size=n), lambda fr: bp_gain(fr, 30, 160, 2))
+        x = norm(x) + 0.5 * norm(rum) * np.exp(-t / 0.9)
+        x *= np.clip(t / 0.02, 0, 1) * vel
+        self.add(name, start, x, x)
+
+    def creak(self, name: str, start: float, vel: float, pan: float = 0.3) -> None:
+        """A slow, far-off creak (a door or a beam somewhere you can't see)."""
+        x = _creak(self.rng, 2.6, 7, 26, [420, 760, 1310])
+        x = fft_filter(x, lambda f: lp_gain(f, 1600, 2))
+        x = norm(x) * vel
+        self.add(name, start, x * np.sqrt(0.5 * (1 - pan)), x * np.sqrt(0.5 * (1 + pan)))
+
+    def scrape(self, name: str, start: float, vel: float, f0: float = 900.0, f1: float = 280.0,
+               dur: float = 3.2) -> None:
+        """Metal dragged on concrete far away: a resonant noise band sliding down in pitch."""
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        nz = self.rng.normal(size=n)
+        x = np.zeros(n)
+        for k in range(3):   # a few overlapping fixed bands crossfaded = a cheap sweep
+            fc = f0 + (f1 - f0) * (k + 0.5) / 3
+            band = fft_filter(nz, lambda f: bp_gain(f, fc * 0.92, fc * 1.08, 4))
+            w = np.clip(1 - np.abs(t / dur * 3 - (k + 0.5)), 0, 1)
+            x += band * w
+        x = norm(x) * np.sin(np.pi * t / dur) ** 1.5 * vel
+        self.add(name, start, x * 0.8, x)
+
+    def swell(self, name: str, end: float, note: str, vel: float, length: float = 5.0) -> None:
+        """A reversed reverb tail that rises and stops dead at `end` (classic dread swell)."""
+        n = int(length * SR)
+        rng = self.rng
+        src = np.zeros(n)
+        f = _m_hz(note)
+        tt = np.arange(int(0.4 * SR)) / SR
+        hit = sum(np.sin(2 * np.pi * f * m * tt) * a for m, a in ((1, 1), (2, 0.4), (3, 0.2))) * np.exp(-tt / 0.15)
+        src[: len(hit)] = hit
+        for ch in range(2):
+            wet = conv(src, reverb_ir(rng, length, length / 3.5, lp=3000))[:n][::-1]
+            wet = norm(wet) * vel * np.clip(np.arange(n) / (0.3 * n), 0, 1)
+            if ch == 0:
+                left = wet
+            else:
+                right = wet
+        self.add(name, end - length, left, right)
+
+    def master(self, mix: dict, reverb: dict, room_s: float = 5.5, room_lp: float = 3800.0,
+               lp: float = 6500.0, drive: float = 1.3, hiss: float = 0.0025):
+        """Sum the buses (gain per bus), send some of each into a big dark room, then the tape:
+        soft saturation, a dull top, a little hiss."""
+        L = np.zeros(self.n)
+        R = np.zeros(self.n)
+        sendL = np.zeros(self.n)
+        sendR = np.zeros(self.n)
+        for name, (bl, br) in self.buses.items():
+            g = mix.get(name, 1.0)
+            L += g * bl
+            R += g * br
+            s = reverb.get(name, 0.0) * g
+            if s:
+                sendL += s * bl
+                sendR += s * br
+        irL = reverb_ir(self.rng, room_s, room_s / 4.0, lp=room_lp, predelay=0.03)
+        irR = reverb_ir(self.rng, room_s, room_s / 4.0, lp=room_lp, predelay=0.037)
+        L += conv(sendL, irL)[: self.n] * 4.0
+        R += conv(sendR, irR)[: self.n] * 4.0
+        peak = max(np.abs(L).max(), np.abs(R).max()) + 1e-9
+        L = np.tanh(drive * L / peak) / np.tanh(drive)
+        R = np.tanh(drive * R / peak) / np.tanh(drive)
+        tape = lambda f: lp_gain(f, lp, 2) * hp_gain(f, 28, 2)
+        L = fft_filter(L, tape)
+        R = fft_filter(R, tape)
+        for ch in (L, R):
+            ch += hiss * fft_filter(self.rng.normal(size=self.n), lambda f: bp_gain(f, 1500, 9000, 1))
+        return L, R
+
+
+def _m_save(L: np.ndarray, R: np.ndarray, path: Path, peak: float = 0.62,
+            fade_in: float = 0.5, fade_out: float = 5.0) -> None:
+    """Stereo Ogg Vorbis with gentle fades; re-encoded quieter if the codec overshoots."""
+    x = np.stack([L, R], axis=1)
+    x -= x.mean(axis=0)
+    fi, fo = int(fade_in * SR), int(fade_out * SR)
+    x[:fi] *= np.linspace(0, 1, fi)[:, None]
+    x[-fo:] *= (np.linspace(1, 0, fo) ** 2)[:, None]
+    x = x / np.abs(x).max() * peak
+    path.parent.mkdir(parents=True, exist_ok=True)
+    gain = 1.0
+    for _ in range(6):
+        # Written in blocks: libsndfile's Vorbis encoder overflows its stack on one huge write.
+        with sf.SoundFile(str(path), "w", SR, 2, format="OGG", subtype="VORBIS") as out:
+            y = (x * gain).astype(np.float32)
+            for i in range(0, len(y), SR):
+                out.write(y[i:i + SR])
+        decoded = np.abs(sf.read(str(path))[0]).max()
+        if decoded <= peak + 0.03:
+            break
+        gain *= peak / decoded
+
+
+def snd_music_liminal() -> None:
+    """The main theme, ~3 minutes. D minor with E-flat (the Phrygian colour that makes it uneasy),
+    one chord every 4.4 s. Intro: single tones fade in one by one over a low D. A: soft chords
+    and a slow music-box line. A reversed swell, then B: the same world, but loud, wide and
+    saturated. Then everything drops away: wind, a creak, a far boom, the music box again from
+    somewhere far off and out of tune, and a last D against E-flat that never resolves."""
+    bar = 4.4
+    tr = _MTrack(39 * bar + 6.0, seed=13001)
+
+    # Intro (bars 0-6): a low D, then tones enter one at a time and pile up into a cluster.
+    tr.drone("drone", 0.0, 14.5 * bar, "D2", 0.18, fade=14.0)
+    for at, length, note, vel in ((0.6, 5.6, "D3", 0.16), (1.5, 4.7, "A3", 0.13), (2.4, 3.8, "E4", 0.10),
+                                  (3.3, 2.9, "F4", 0.10), (4.2, 2.0, "C4", 0.08)):
+        tr.pad("soft", at * bar, length * bar, note, vel, bright=1400, attack=4.0, release=5.0)
+
+    # A (bars 6-14): soft chords, root an octave below, a slow music-box line on top.
+    a_chords = [["D3", "A3", "C4", "E4", "F4"], ["Bb2", "F3", "A3", "D4"], ["G2", "D3", "Bb3", "A4"],
+                ["Eb3", "G3", "Bb3", "D4", "A4"], ["D3", "A3", "C4", "E4", "F4"], ["Bb2", "F3", "A3", "D4", "F4"],
+                ["G2", "F3", "Bb3", "D4", "A4"], ["A2", "E3", "G3", "C#4", "Bb4"]]
+    a_roots = ["D2", "Bb1", "G1", "Eb2", "D2", "Bb1", "G1", "A1"]
+    for i, (ch, root) in enumerate(zip(a_chords, a_roots)):
+        at = (6 + i) * bar
+        tr.chord("soft", at, bar, ch, 0.19, bright=1500, attack=1.8, release=4.0)
+        tr.pad("bass", at, bar, root, 0.30, bright=300, attack=1.0, release=3.0)
+    motif = [(7.0, "A5"), (7.5, "F5"), (8.0, "E5"), (8.75, "D5"), (9.0, "Eb5"), (9.5, "D5"),
+             (11.0, "F5"), (11.5, "E5"), (12.0, "D5"), (12.5, "A4"), (13.0, "Bb4"), (13.5, "C#5"), (13.8, "A4")]
+    for k, (b, note) in enumerate(motif):
+        tr.bell("bell", b * bar + tr.rng.uniform(-0.04, 0.06), note, 0.24, pan=-0.3 + 0.6 * (k % 2))
+
+    # Bar 14: everything holds its breath; a reversed swell rushes up into B.
+    tr.pad("soft", 14 * bar, bar, "D3", 0.15, bright=900, attack=1.0, release=2.5)
+    tr.swell("fx", 15 * bar, "D3", 0.55, length=5.5)
+
+    # B (bars 15-27): a wall of saturated, wide chords; quieter octave shimmer on top.
+    b_chords = [["D3", "A3", "E4", "F4", "A4"], ["D3", "Eb3", "G3", "Bb3", "G4"], ["F3", "A3", "C4", "D4", "F4"],
+                ["D3", "F3", "Bb3", "A4"], ["D3", "A3", "E4", "F4", "A4"], ["Eb3", "G3", "Bb3", "D4", "A4"],
+                ["F3", "Bb3", "D4", "A4"], ["E3", "G3", "C#4", "Bb4"], ["F3", "A3", "D4", "F4"],
+                ["G3", "A3", "Bb3", "D4"], ["E3", "G3", "Bb3", "C#4"], ["D3", "A3", "E4", "F4"]]
+    b_roots = ["D2", "D2", "Bb1", "G1", "D2", "Eb2", "F2", "A1", "F2", "Bb1", "C#2", "D2"]
+    for i, (ch, root) in enumerate(zip(b_chords, b_roots)):
+        at = (15 + i) * bar
+        last = i == len(b_chords) - 1
+        swell = 0.75 + 0.25 * np.sin(np.pi * min(i, 8) / 8)   # builds to bar ~22, then eases
+        tr.chord("full", at, bar * (2.5 if last else 1.0), ch, 0.32 * swell, bright=3600,
+                 attack=1.2, release=6.0 if last else 3.0, spread=0.08)
+        tr.chord("shimmer", at + 0.3, bar, ch[-2:], 0.35 * swell, bright=5000, attack=2.0,
+                 release=3.5, pitch=2.0)
+        tr.pad("bass", at, bar * (2.5 if last else 1.0), root, 0.70, bright=420, attack=0.8,
+               release=6.0 if last else 2.5)
+    for k, (b, note) in enumerate(motif[:6]):
+        tr.bell("bell", (b + 10) * bar, note, 0.22, pan=0.4 - 0.8 * (k % 2))
+    for k, (b, note) in enumerate(motif[6:]):
+        tr.bell("bell", (b + 10) * bar, note, 0.20, pan=-0.4 + 0.8 * (k % 2), pitch=0.5)
+
+    # Breakdown (bars 27-33): the music is gone; only the place is left.
+    tr.drone("drone", 26.5 * bar, 12.5 * bar, "D2", 0.2, fade=10.0)
+    tr.creak("fx", 121.0, 0.22, pan=0.5)
+    tr.boom("fx", 127.0, 0.5)
+    tr.swell("fx", 134.0, "Eb3", 0.35, length=6.0)
+    far = [(135.0, "A4"), (136.3, "F4"), (137.6, "E4"), (139.2, "D4"), (140.6, "Eb4"), (142.4, "D4")]
+    for k, (s, note) in enumerate(far):
+        tr.bell("far", s + tr.rng.uniform(-0.1, 0.1), note, 0.32, decay=3.0,
+                pitch=0.985 - 0.004 * k, pan=-0.5)
+
+    # Outro (bars 33-39): A, D and E-flat rubbing against each other, fading into the hiss.
+    for note, vel in (("A2", 0.13), ("D3", 0.13), ("Eb3", 0.08)):
+        tr.pad("soft", 33 * bar + tr.rng.uniform(0, 1.5), 5.5 * bar, note, vel, bright=1100,
+               attack=5.0, release=7.0)
+
+    tr.noise_bed("wind", 180, 900, [(0, 0.0), (12, 0.03), (60, 0.018), (66, 0.01), (118, 0.012),
+                                    (124, 0.045), (150, 0.03), (178, 0.02)])
+    tr.noise_bed("room", 25, 120, [(0, 0.0), (10, 0.02), (178, 0.02)], drift_amt=0.2)
+
+    for name, (l, r) in list(tr.buses.items()):
+        if name == "soft":
+            tr.buses[name] = (fft_filter(l, lambda f: lp_gain(f, 1400, 2)), fft_filter(r, lambda f: lp_gain(f, 1400, 2)))
+        elif name == "full":
+            l2 = fft_filter(np.tanh(2.2 * l / (np.abs(l).max() + 1e-9)), lambda f: lp_gain(f, 3600, 2))
+            r2 = fft_filter(np.tanh(2.2 * r / (np.abs(r).max() + 1e-9)), lambda f: lp_gain(f, 3600, 2))
+            tr.buses[name] = (l2 * np.abs(l).max(), r2 * np.abs(r).max())
+        elif name == "far":
+            tr.buses[name] = (fft_filter(l, lambda f: bp_gain(f, 250, 1300, 2)), fft_filter(r, lambda f: bp_gain(f, 250, 1300, 2)))
+    L, R = tr.master(mix={"soft": 1.0, "full": 1.1, "shimmer": 0.5, "bass": 0.7, "bell": 0.55, "drone": 0.55,
+                          "fx": 0.6, "far": 0.35, "wind": 1.0, "room": 1.0},
+                     reverb={"soft": 0.5, "full": 0.35, "shimmer": 0.8, "bass": 0.1, "bell": 0.7, "far": 1.0,
+                             "fx": 0.4, "drone": 0.1})
+    _m_save(L, R, SND / "music" / "liminal.ogg", fade_out=6.0)
+
+
+def snd_music_deep() -> None:
+    """~2.5 minutes in the spirit of an empty, unsettling ambient record: drones on G, wind, long
+    near-silences, things happening far away, and only fragments of harmony (one of them a
+    memory of the main theme, muffled as if through walls)."""
+    tr = _MTrack(152.0, seed=13002, wow=0.005)
+    tr.drone("drone", 0.0, 88.0, "G1", 0.3, fade=15.0)
+    tr.drone("drone", 2.0, 86.0, "D2", 0.15, fade=18.0, beat=0.21)
+    tr.drone("drone", 104.0, 48.0, "G1", 0.25, fade=12.0)
+    tr.bell("bell", 9.0, "G4", 0.35, decay=3.5, pan=-0.4)
+    tr.bell("bell", 9.05, "Ab4", 0.25, decay=3.5, pan=0.4)
+    tr.boom("fx", 18.0, 0.55)
+    tr.creak("fx", 26.0, 0.25, pan=-0.6)
+    tr.chord("memory", 34.0, 12.0, ["D3", "A3", "C4", "F4"], 0.5, bright=900, attack=4.0, release=6.0, pitch=0.97)
+    tr.swell("fx", 58.0, "G3", 0.45, length=6.0)
+    tr.bell("bell", 58.2, "G3", 0.4, decay=4.0, pan=0.2)
+    tr.bell("bell", 61.0, "Db4", 0.3, decay=4.0, pan=-0.3)
+    tr.scrape("fx", 66.0, 0.18)
+    tr.boom("fx", 75.0, 0.4)
+    for s, note in ((80.0, "C6"), (81.3, "B5"), (84.0, "C6")):
+        tr.bell("drip", s, note, 0.18, decay=0.6, pan=tr.rng.uniform(-0.7, 0.7))
+    for k, (s, note) in enumerate(((110.0, "A4"), (111.6, "F4"), (113.2, "E4"), (115.1, "D4"), (116.8, "Eb4"))):
+        tr.bell("far", s, note, 0.5, decay=3.2, pitch=0.94 - 0.006 * k, pan=0.5)
+    tr.creak("fx", 122.0, 0.2, pan=0.6)
+    tr.swell("fx", 129.0, "Ab2", 0.35, length=5.0)
+    tr.chord("memory", 129.0, 12.0, ["G2", "Ab2", "D3"], 0.45, bright=700, attack=5.0, release=6.0)
+    tr.noise_bed("wind", 150, 800, [(0, 0.0), (10, 0.035), (50, 0.05), (88, 0.018), (104, 0.008),
+                                    (108, 0.03), (140, 0.045), (152, 0.02)], drift_amt=0.5)
+    tr.noise_bed("room", 20, 110, [(0, 0.012), (152, 0.018)], drift_amt=0.25)
+    for name in ("memory", "far"):
+        l, r = tr.buses[name]
+        g = (lambda f: lp_gain(f, 520, 2)) if name == "memory" else (lambda f: bp_gain(f, 250, 1300, 2))
+        tr.buses[name] = (fft_filter(l, g), fft_filter(r, g))
+    L, R = tr.master(mix={"drone": 0.6, "bell": 0.45, "fx": 0.6, "memory": 0.6, "drip": 0.35, "far": 0.35,
+                          "wind": 1.0, "room": 1.0},
+                     reverb={"bell": 0.8, "fx": 0.45, "memory": 0.5, "drip": 1.0, "far": 1.0, "drone": 0.1},
+                     room_s=7.0, room_lp=3000)
+    _m_save(L, R, SND / "music" / "deep.ogg", fade_out=8.0)
+
+
+def snd_music_drift() -> None:
+    """~2 minutes for the Poolrooms and Level 37: soft, warm chords around F (with a raised B
+    that keeps it floating), one borrowed D-flat chord that makes it slightly wrong, water drips,
+    a slow music-box line, and an ending on two notes a semitone apart."""
+    bar = 5.0
+    tr = _MTrack(23 * bar + 7.0, seed=13003, wow=0.0045)
+    tr.drone("drone", 0.0, 23 * bar + 4.0, "F2", 0.15, fade=12.0)
+    chords = [["F3", "A3", "C4", "E4", "B4"], ["E3", "A3", "B3", "C4"], ["Db3", "F3", "Ab3", "C4"],
+              ["G2", "E3", "G3", "B3", "C4"]]
+    roots = ["F2", "E2", "Db2", "G1"]
+    for rep in range(2):
+        for i, (ch, root) in enumerate(zip(chords, roots)):
+            at = (1 + rep * 4 + i) * bar
+            tr.chord("soft", at, bar, ch, 0.30, bright=1100, tilt=1.6, attack=2.2, release=4.5, spread=0.3)
+            tr.pad("bass", at, bar, root, 0.35, bright=260, attack=1.5, release=3.5)
+    for i, (ch, root) in enumerate(zip(chords, roots)):   # second half: an octave of air above
+        at = (9 + i) * bar
+        tr.chord("soft", at, bar, ch, 0.34, bright=1300, tilt=1.6, attack=2.0, release=4.5, spread=0.3)
+        tr.chord("shimmer", at + 0.5, bar, ch[-2:], 0.14, bright=4000, attack=2.5, release=4.0, pitch=2.0)
+        tr.pad("bass", at, bar, root, 0.38, bright=260, attack=1.5, release=3.5)
+    for i, (ch, root) in enumerate(zip(chords[:2], roots[:2])):
+        at = (13 + i) * bar
+        tr.chord("soft", at, bar * (2.0 if i else 1.0), ch, 0.28, bright=1000, tilt=1.6, attack=2.0, release=5.0)
+    line = [(2.0, "C5"), (2.5, "E5"), (3.0, "B4"), (3.75, "A4"), (4.0, "Ab4"), (4.5, "C5"), (5.0, "G4"),
+            (10.0, "E5"), (10.5, "B4"), (11.0, "C5"), (11.75, "Ab4"), (12.0, "G4")]
+    for k, (b, note) in enumerate(line):
+        tr.bell("bell", b * bar + tr.rng.uniform(-0.05, 0.05), note, 0.26, decay=3.0, pan=-0.35 + 0.7 * (k % 2))
+    rng = tr.rng
+    for s in np.sort(rng.uniform(3.0, 23 * bar, 26)):
+        tr.bell("drip", float(s), rng.choice(["E6", "G6", "B6", "C7", "A6"]), float(rng.uniform(0.06, 0.16)),
+                decay=0.35, pan=float(rng.uniform(-0.8, 0.8)))
+    # The end: F and E together, never resolving.
+    tr.pad("soft", 16 * bar, 6.0 * bar, "F3", 0.26, bright=900, tilt=1.6, attack=4.0, release=7.0)
+    tr.pad("soft", 16.5 * bar, 5.5 * bar, "E3", 0.20, bright=900, tilt=1.6, attack=5.0, release=7.0)
+    tr.swell("fx", 16 * bar, "C4", 0.25, length=5.0)
+    tr.noise_bed("water", 300, 2500, [(0, 0.0), (8, 0.012), (115, 0.012), (122, 0.0)], drift_amt=0.6)
+    tr.noise_bed("room", 25, 120, [(0, 0.0), (8, 0.015), (122, 0.015)], drift_amt=0.2)
+    l, r = tr.buses["soft"]
+    g = lambda f: lp_gain(f, 1600, 2)
+    tr.buses["soft"] = (fft_filter(l, g), fft_filter(r, g))
+    L, R = tr.master(mix={"soft": 1.0, "shimmer": 0.45, "bass": 0.6, "bell": 0.5, "drip": 0.3, "drone": 0.45,
+                          "fx": 0.5, "water": 1.0, "room": 1.0},
+                     reverb={"soft": 0.55, "shimmer": 0.9, "bell": 0.8, "drip": 1.0, "fx": 0.4, "bass": 0.1},
+                     room_s=6.5, room_lp=4200)
+    _m_save(L, R, SND / "music" / "drift.ogg", fade_out=7.0)
+
+
+MUSIC_SOUNDS = [snd_music_liminal, snd_music_deep, snd_music_drift]
+
+
 TEXTURES = [
     remove_stale,
     tex_yellow_wallpaper, tex_yellow_wallpaper_baseboard, tex_lobby_carpet, tex_lobby_carpet_arrow,
@@ -7163,6 +7599,7 @@ SOUNDS = [
     *L37_SOUNDS,
     *L94_PROPS_SOUNDS,
     *L94_SKY_SOUNDS,
+    *MUSIC_SOUNDS,
 ]
 
 

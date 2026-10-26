@@ -121,6 +121,12 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_WIND = register("ambient.level94_wind");
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_BIRDS = register("level94.birds");
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_LAUGH = register("level94.laugh");
+    // Music (original pieces from tools/gen_assets.py, played by client/BackroomsMusic on the music
+    // channel): the main theme on the title menu, a mix of the theme and a dark ambient piece in
+    // most levels, and a dreamier piece (or the theme) in the Poolrooms and Level 37.
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_MENU = register("music.menu");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_BACKROOMS = register("music.backrooms");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_DREAM = register("music.dream");
 
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name) {
         return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(Backrooms.id(name)));

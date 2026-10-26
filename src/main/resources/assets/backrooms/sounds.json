@@ -601,5 +601,39 @@
       }
     ],
     "subtitle": "subtitles.backrooms.l94_laugh"
+  },
+  "music.menu": {
+    "sounds": [
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true
+      }
+    ]
+  },
+  "music.backrooms": {
+    "sounds": [
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true
+      },
+      {
+        "name": "backrooms:music/deep",
+        "stream": true,
+        "weight": 2
+      }
+    ]
+  },
+  "music.dream": {
+    "sounds": [
+      {
+        "name": "backrooms:music/drift",
+        "stream": true,
+        "weight": 2
+      },
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true
+      }
+    ]
   }
 }
