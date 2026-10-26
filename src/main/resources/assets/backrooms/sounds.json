@@ -363,43 +363,11 @@
       "backrooms:entity/observer_vanish"
     ]
   },
-  "entity.smiler.giggle": {
-    "sounds": [
-      "backrooms:entity/smiler_giggle1",
-      "backrooms:entity/smiler_giggle2",
-      "backrooms:entity/smiler_giggle3"
-    ],
-    "subtitle": "subtitles.backrooms.smiler_giggle"
-  },
   "entity.smiler.breath": {
     "sounds": [
       "backrooms:entity/smiler_breath"
     ],
     "subtitle": "subtitles.backrooms.smiler_breath"
-  },
-  "entity.smiler.flinch": {
-    "sounds": [
-      "backrooms:entity/smiler_flinch"
-    ],
-    "subtitle": "subtitles.backrooms.smiler_flinch"
-  },
-  "entity.smiler.dispel": {
-    "sounds": [
-      "backrooms:entity/smiler_dispel"
-    ],
-    "subtitle": "subtitles.backrooms.smiler_dispel"
-  },
-  "entity.smiler.lunge": {
-    "sounds": [
-      "backrooms:entity/smiler_lunge"
-    ],
-    "subtitle": "subtitles.backrooms.smiler_lunge"
-  },
-  "entity.smiler.kill": {
-    "sounds": [
-      "backrooms:entity/smiler_kill"
-    ],
-    "subtitle": "subtitles.backrooms.smiler_kill"
   },
   "step.grass_walk": {
     "sounds": [

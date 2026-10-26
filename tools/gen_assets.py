@@ -2068,24 +2068,83 @@ def tex_bacteria() -> None:
 
 
 def tex_smiler() -> None:
-    """Smiler face (smiler.png) and its NightShot body (smiler_body.png), 32x32 each.
+    """Smiler atlas (smiler.png, 256x256 for a 64x64 UV model, so 4 pixels per model unit).
 
-    The face is drawn full-bright and additively, so it only needs to be nearly white: a faint warm
-    mottle keeps it from looking like flat UI paint. The body is black smoke with ragged holes
-    (fully transparent pixels): the model's flat body parts drawn with cutout come out torn and
-    flame-like instead of as clean rectangles.
+    Everything glowing is drawn with additive blending, so black means "nothing" and colour means
+    light. Each sprite is a soft white-hot shape inside a warm orange glow, with the colour
+    channels pulled apart at the edges (red outside, blue on one side) like the smeared, fringed
+    camcorder photos of Smilers. Every sprite is stored twice side by side: the flat planes in the
+    model show their front and back from neighbouring regions of the texture.
+
+    Regions (model units): eye (0,0) 6x7, tooth (12,0) 2x6, face haze (16,0) 24x18,
+    body void (0,20) 16x40 (black with soft alpha edges, the only non-additive sprite).
     """
-    rng = rng_for(2701)
-    N = 32
-    mott = blur(fnoise(rng, (N, N), beta=2.0), 0.7)
-    v = np.clip(238.0 + 10.0 * mott, 215, 255)
-    save_png(np.stack([v + 2.0, v, v - 6.0], axis=-1), TEX / "entity" / "smiler.png")
+    S = 4
+    img = np.zeros((64 * S, 64 * S, 4))
+    img[..., 3] = 255.0
 
-    rng = rng_for(2702)
-    smoke = blur(fnoise(rng, (N, N), beta=1.6, aniso=(1.0, 2.5)), 0.5)
-    dark = np.clip(9.0 + 6.0 * smoke, 3, 20)
-    alpha = np.where(smoke > -1.1, 255.0, 0.0)  # about 1 pixel in 7 is a hole
-    save_png(np.stack([dark, dark, dark + 1.0, alpha], axis=-1), TEX / "entity" / "smiler_body.png")
+    def place(x0, y0, sprite):
+        h, w = sprite.shape[:2]
+        for k in range(2):  # front and back copy
+            img[y0 * S:y0 * S + h, (x0 * S + k * w):(x0 * S + k * w) + w] = sprite
+
+    def grid_xy(w, h):
+        yy, xx = np.mgrid[0:h, 0:w].astype(float)
+        return xx + 0.5, yy + 0.5
+
+    def glow_sprite(mask_fn, w, h, fringe_dx, fringe_dy, core_blur, halo_sigma, warmth):
+        xx, yy = grid_xy(w, h)
+        m = mask_fn(xx, yy)
+        m_r = mask_fn(xx - fringe_dx, yy - fringe_dy * 0.5)   # red slips one way...
+        m_b = mask_fn(xx + fringe_dx, yy + fringe_dy)          # ...blue the other
+        soft = lambda a, s: np.clip(blur(np.pad(a, 8), s)[8:-8, 8:-8], 0, None)
+        core, core_r, core_b = soft(m, core_blur), soft(m_r, core_blur * 1.4), soft(m_b, core_blur * 1.2)
+        halo = soft(m, halo_sigma)
+        halo = halo / (halo.max() + 1e-9)
+        r = 255 * np.clip(0.95 * core_r + 0.25 * core + warmth * 0.95 * halo, 0, 1)
+        g = 255 * np.clip(0.95 * core + warmth * 0.42 * halo, 0, 1)
+        b = 255 * np.clip(0.75 * core * core_b + 0.55 * core_b + warmth * 0.10 * halo, 0, 1)
+        out = np.zeros((h, w, 4))
+        out[..., 0], out[..., 1], out[..., 2], out[..., 3] = r, g, b, 255.0
+        return out
+
+    # Eye: an egg, rounder on top, a little pointed at the bottom.
+    def eye_mask(x, y):
+        cx, cy, rx, ry = 12.0, 13.0, 6.2, 8.5
+        dy = (y - cy) / ry
+        rxy = rx * (1.0 - 0.28 * np.clip(dy, 0, None))
+        d = ((x - cx) / rxy) ** 2 + dy ** 2
+        return np.clip((1.0 - d) * 3.0, 0, 1)
+    place(0, 0, glow_sprite(eye_mask, 6 * S, 7 * S, 1.6, 1.2, 0.8, 3.0, 0.9))
+
+    # Tooth: a long sliver, pointed at both ends (the plane is scaled per tooth in the model).
+    def tooth_mask(x, y):
+        cx, cy, half_h = 4.0, 12.0, 10.5
+        t = np.clip(1.0 - ((y - cy) / half_h) ** 2, 0, 1)
+        half_w = 1.6 * t ** 1.2
+        return np.clip((half_w - np.abs(x - cx)) * 1.6, 0, 1)
+    place(12, 0, glow_sprite(tooth_mask, 2 * S, 6 * S, 1.0, 0.0, 0.4, 1.2, 0.55))
+
+    # Face haze: a wide, very faint warm glow that makes it read as a smudge of light from afar.
+    xx, yy = grid_xy(24 * S, 18 * S)
+    d = ((xx - 12 * S) / (11 * S)) ** 2 + ((yy - 9 * S) / (8.5 * S)) ** 2
+    haze = np.exp(-3.2 * d)
+    place(16, 0, np.stack([60 * haze, 42 * haze, 30 * haze, np.full_like(haze, 255.0)], axis=-1))
+
+    # Body void: a tall slab of pure black with rounded top corners and soft edges. It is drawn
+    # normally (not additive), so it blots out the wall behind it when that wall is lit.
+    w, h = 16 * S, 40 * S
+    xx, yy = grid_xy(w, h)
+    margin = 1.2 * S
+    dx = np.clip(np.abs(xx - w / 2) - (w / 2 - margin - 3 * S), 0, None)
+    dy = np.clip((3 * S + margin) - yy, 0, None)  # only the top corners are rounded
+    edge = np.sqrt(dx ** 2 + dy ** 2)
+    side = np.clip((w / 2 - margin) - np.abs(xx - w / 2), 0, None)
+    alpha = np.clip(np.minimum(3 * S - edge, side) / (1.2 * S), 0, 1) * np.clip((h - margin - yy) / (2.5 * S), 0, 1)
+    body = np.stack([np.full_like(alpha, 5.0), np.full_like(alpha, 5.0), np.full_like(alpha, 7.0), 245.0 * alpha], axis=-1)
+    place(0, 20, body)
+    save_png(img, TEX / "entity" / "smiler.png")
+    (TEX / "entity" / "smiler_body.png").unlink(missing_ok=True)  # the old separate body texture
 
 
 
@@ -3487,120 +3546,24 @@ def snd_observer_vanish() -> None:
 
 
 # =============================================================================
-# Smiler sounds
+# Smiler sound
 # =============================================================================
 
-def _giggle(rng, dur, f0_base, syllables, gap, far=True) -> np.ndarray:
-    """Breathy "heh-heh-heh": short voiced syllables with a lot of breath, each falling in pitch,
-    doubled an octave below so it sounds wrong, not like a person."""
-    n = int(dur * SR)
-    x = np.zeros(n)
-    start = 0.04
-    for i in range(syllables):
-        length = rng.uniform(0.08, 0.12)
-        m = int(length * SR)
-        tt = np.arange(m) / SR
-        f0_s = f0_base * (1.0 - 0.035 * i) * rng.uniform(0.95, 1.06)
-        f0 = f0_s * (1.15 - 0.3 * tt / length) * (1 + smooth_jitter(rng, m, 30, 0.03))
-        forms = [(560, 130, 1.0), (1850, 220, 0.6), (2800, 320, 0.3)]
-        v = voice(f0, forms, rng, nh=30) + 0.45 * voice(f0 * 0.5, [(450, 150, 1.0), (1300, 250, 0.4)], rng, nh=24)
-        breath = svf(rng.normal(size=m), 1900.0, 1.8)
-        env = np.sin(np.pi * tt / length) ** 1.5
-        add_at(x, (0.55 * norm(v) + 0.45 * norm(breath)) * env * (1.0 - 0.06 * i), start, circular=False)
-        start += gap * rng.uniform(0.8, 1.2)
-        if start > dur - 0.15:
-            break
-    if far:
-        x = fft_filter(x, lambda f: lp_gain(f, 3200, 2))[:n]
-        x = x + 0.45 * norm(conv(x, reverb_ir(rng, 1.3, 0.45, lp=2800))[:n]) * np.abs(x).max()
-    return x
-
-
-def snd_smiler_giggle() -> None:
-    """3 giggles heard when a Smiler appears: far off, breathy, pitched a little too high."""
-    for i, (f0, syl, gap, dur) in enumerate(((340, 6, 0.15, 1.9), (300, 5, 0.18, 1.9), (390, 7, 0.13, 2.0)), 1):
-        rng = rng_for(2710 + i)
-        x = _giggle(rng, dur, f0, syl, gap)
-        save_ogg(x, SND / "entity" / f"smiler_giggle{i}.ogg", peak=0.8, fade_in=0.01, fade_out=0.3)
-
-
 def snd_smiler_breath() -> None:
-    """~2.4 s slow, wet breathing close by: a long inhale, a rattling exhale with a low growl."""
+    """~2.4 s faint, slow breathing: the only sound a Smiler makes, when it's a few blocks away.
+    Just air: a long, soft inhale and a slower exhale with a little wet catch in it."""
     rng = rng_for(2720)
     dur = 2.4
     n = int(dur * SR)
     t = np.arange(n) / SR
-    inhale = svf(rng.normal(size=n), 900 + 1400 * smoothstep(0.0, 0.9, t), 2.2) * (smoothstep(0.0, 0.5, t) * (1 - smoothstep(0.8, 1.0, t)))
-    ex_env = smoothstep(1.05, 1.3, t) * (1 - smoothstep(1.9, dur, t))
-    exhale = svf(rng.normal(size=n), 1300 - 500 * smoothstep(1.1, dur, t), 1.6) * ex_env
-    growl = voice(np.full(n, 68.0) * (1 + smooth_jitter(rng, n, 8, 0.06)), [(380, 120, 1.0), (900, 200, 0.4)], rng, nh=40) * ex_env
-    wet = clicks(rng, np.sort(rng.uniform(1.1, 1.9, 9)), dur, 600, 1500, 0.004, 0.01)
-    x = norm(inhale) * 0.8 + norm(exhale) + 0.35 * norm(growl) + 0.25 * norm(wet)
-    x = x + 0.2 * norm(conv(x, reverb_ir(rng, 0.6, 0.15, lp=4000))[:n]) * np.abs(x).max()
-    save_ogg(x, SND / "entity" / "smiler_breath.ogg", peak=0.75, fade_in=0.02, fade_out=0.15)
-
-
-def snd_smiler_flinch() -> None:
-    """~0.7 s: a sharp hiss like water on a hot plate, with a short pained squeal."""
-    rng = rng_for(2730)
-    dur = 0.7
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    hiss = fft_filter(rng.normal(size=n), lambda f: hp_gain(f, 2500, 2))[:n] * np.exp(-t / 0.25)
-    sizzle = _crackle(rng, dur, 900, f_lo=3000) * np.exp(-t / 0.35)
-    squeal = _scream(rng, dur, f_pts=[(0, 900), (0.08, 1400), (0.3, 1100), (dur, 700)],
-                     f1_pts=[(0, 900), (dur, 800)], f2_pts=[(0, 2600), (dur, 2200)],
-                     env_pts=[(0, 0), (0.02, 1.0), (0.2, 0.5), (0.45, 0.0), (dur, 0.0)], drive=4.0, bits=7, hold=1)
-    x = norm(hiss) + 0.6 * norm(sizzle) + 0.45 * norm(squeal)
-    save_ogg(x, SND / "entity" / "smiler_flinch.ogg", peak=0.82, fade_out=0.08)
-
-
-def snd_smiler_dispel() -> None:
-    """~1.6 s: it burns away. Dense crackling fire, a shriek falling to nothing, a rush of air."""
-    rng = rng_for(2740)
-    dur = 1.6
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    fire = _crackle(rng, dur, 2500, f_lo=1800) * (1 - smoothstep(0.6, dur, t))
-    shriek = _scream(rng, dur, f_pts=[(0, 1300), (0.15, 1600), (0.6, 800), (1.1, 260), (dur, 120)],
-                     f1_pts=[(0, 1000), (dur, 500)], f2_pts=[(0, 2900), (dur, 1300)],
-                     env_pts=[(0, 0), (0.03, 1.0), (0.5, 0.8), (1.1, 0.25), (1.4, 0.0), (dur, 0.0)],
-                     drive=6.0, bits=6, hold=2, detune=1.12, sub=0.4)
-    rush = svf(rng.normal(size=n), 2500 * np.exp(-t / 0.5) + 200, 1.2) * smoothstep(0, 0.1, t) * (1 - smoothstep(0.4, dur, t))
-    x = 0.7 * norm(fire) + norm(shriek) + 0.5 * norm(rush)
-    x = x + 0.3 * norm(conv(x, reverb_ir(rng, 1.2, 0.4, lp=3500))[:n]) * np.abs(x).max()
-    save_ogg(x, SND / "entity" / "smiler_dispel.ogg", peak=0.85, fade_out=0.2)
-
-
-def snd_smiler_lunge() -> None:
-    """~0.6 s: a sharp, rising breath in, then teeth snapping together."""
-    rng = rng_for(2750)
-    dur = 0.6
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    inhale = svf(rng.normal(size=n), 800 + 3000 * smoothstep(0.0, 0.35, t), 2.0) * smoothstep(0.0, 0.3, t) * (1 - smoothstep(0.34, 0.38, t))
-    snap = clicks(rng, [0.38, 0.385, 0.41], dur, 2200, 4200, 0.003, 0.008)
-    thud = np.sin(2 * np.pi * 90 * t) * np.exp(-np.clip(t - 0.38, 0, None) / 0.05) * (t >= 0.38)
-    x = norm(inhale) + 0.9 * norm(snap) + 0.4 * norm(thud)
-    save_ogg(x, SND / "entity" / "smiler_lunge.ogg", peak=0.86, fade_out=0.05)
-
-
-def snd_smiler_kill() -> None:
-    """~1.8 s: a wet crunch, then a low, slow laugh."""
-    rng = rng_for(2760)
-    dur = 1.8
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    thump = np.sin(2 * np.pi * np.cumsum(np.interp(t, [0, 0.08], [120, 45])) / SR) * np.exp(-t / 0.08)
-    crack = clicks(rng, np.sort(rng.uniform(0.0, 0.18, 10)), dur, 1500, 4500, 0.002, 0.006)
-    squelch = svf(rng.normal(size=n), 700.0, 1.5) * np.exp(-t / 0.15)
-    laugh = np.zeros(n)
-    add_at(laugh, _giggle(rng, 1.4, 160, 6, 0.2, far=False), 0.35, circular=False)
-    laugh = dist(norm(laugh), 2.5)
-    x = norm(thump) + 0.7 * norm(crack) + 0.4 * norm(squelch) + 0.8 * norm(laugh)
-    x = x + 0.25 * norm(conv(x, reverb_ir(rng, 0.9, 0.3, lp=3500))[:n]) * np.abs(x).max()
-    save_ogg(x, SND / "entity" / "smiler_kill.ogg", peak=0.88, fade_out=0.2)
-
+    inhale = svf(rng.normal(size=n), 700 + 900 * smoothstep(0.0, 0.9, t), 2.0) * (smoothstep(0.0, 0.6, t) * (1 - smoothstep(0.8, 1.0, t)))
+    ex_env = smoothstep(1.1, 1.4, t) * (1 - smoothstep(1.8, dur, t))
+    exhale = svf(rng.normal(size=n), 1000 - 400 * smoothstep(1.1, dur, t), 1.4) * ex_env
+    wet = clicks(rng, np.sort(rng.uniform(1.3, 1.8, 4)), dur, 500, 1100, 0.004, 0.01)
+    x = 0.7 * norm(inhale) + norm(exhale) + 0.08 * norm(wet)
+    x = fft_filter(x, lambda f: lp_gain(f, 2500, 2))[:n]
+    x = x + 0.15 * norm(conv(x, reverb_ir(rng, 0.6, 0.15, lp=3000))[:n]) * np.abs(x).max()
+    save_ogg(x, SND / "entity" / "smiler_breath.ogg", peak=0.55, fade_in=0.05, fade_out=0.2)
 
 
 def snd_leaf_steps() -> None:
@@ -5777,7 +5740,7 @@ SOUNDS = [
     snd_poolrooms_ambience, snd_hallucination_loop, snd_phantom_vanish, snd_drain_pull,
     snd_level9_ambience, snd_sodium_hum, snd_lamp_flicker, snd_distant_rumble, snd_watcher_hum,
     snd_watcher_spot, snd_watcher_beam, snd_watcher_dust, snd_observer_vanish, snd_leaf_steps,
-    snd_smiler_giggle, snd_smiler_breath, snd_smiler_flinch, snd_smiler_dispel, snd_smiler_lunge, snd_smiler_kill,
+    snd_smiler_breath,
     snd_sanity_whisper, snd_sanity_heartbeat, snd_sanity_knock,
     snd_zipper_open, snd_zipper_close, snd_locker_open, snd_locker_close, snd_pills_rattle, snd_bandage_wrap,
     snd_checkpoint_save,

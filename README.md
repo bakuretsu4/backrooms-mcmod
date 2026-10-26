@@ -163,13 +163,14 @@ light on and the sign over the front door.
   NightShot on you can see it even in total darkness.
 - **Blackouts:** the lights fade out over two seconds. Only flashlights work, and the Bacteria come
   out three times as often, but they can't use the lamps to spot you either.
-- **Smilers (blackouts, Levels 0-2):** a glowing grin and two glowing eyes in the dark, no body (NightShot
-  shows a black, smoky shape under the face). One comes when the lights go out, sometimes a second
-  from the other side 10 seconds later. It giggles when it appears, creeps toward you and breathes
-  when it's close; if it reaches you, you die. Hold your flashlight on its face: it squints, backs
-  off and burns away after about 1.5 seconds of light in total (bursts add up). About one in six
-  has a wider grin and takes twice as long. Weapons go straight through it. When the lights come
-  back on, or you reach a safe room, they're gone.
+- **Smilers (blackouts, Levels 0-2):** two glowing eyes and a huge glowing grin in the dark. Its body
+  is a tall slab of pitch black you only notice when it stands against a lit wall (or in NightShot).
+  One comes when the lights go out, sometimes a second from the other side 10 seconds later. It
+  makes no sound except a faint breath when it's a few blocks away; if it reaches you, you die.
+  Hold your flashlight on its face: it squints, backs off and burns away after about 1.5 seconds
+  of light in total (bursts add up). About one in six has a wider grin and takes twice as long.
+  Weapons go straight through it. When the lights come back on, or you reach a safe room, they're
+  gone.
 - **Flicker**, **alarm** (red rotating emergency lamps), **intercom** announcements that get
   creepier, **lightning** in the garage, the **twist** in the pipes (the corridor tilts), distant
   knocks and creaks.

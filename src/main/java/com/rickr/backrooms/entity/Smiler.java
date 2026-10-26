@@ -46,9 +46,10 @@ import org.jetbrains.annotations.Nullable;
  * DISPEL  --1 s shrivelling away-->                       removed
  * </pre>
  *
- * <p>Fairness: its face glows, so you see it from far away in the dark; it giggles when it
- * appears and breathes when it's close; it can't be hurt, but light always works on it. About
- * one in six is "bold" (a visibly wider grin) and needs twice as much light.
+ * <p>Fairness: its face glows, so you see it from far away in the dark, and within a few blocks
+ * you can hear it breathing (its only sound) even with your back to it. It can't be hurt, but
+ * light always works on it. About one in six is "bold" (a visibly wider grin) and needs twice as
+ * much light.
  */
 public class Smiler extends Monster {
     /** What it is doing. The order matters: it is synced as a byte. */
@@ -75,8 +76,8 @@ public class Smiler extends Monster {
     private static final int FLINCH_RELEASE_TICKS = 6;
     private static final int LUNGE_TICKS = 12;
     private static final int REPATH_TICKS = 10;
+    /** Within this many blocks you hear it breathe, every 2.5 s. */
     private static final int BREATH_TICKS = 50;
-    private static final int FLINCH_SOUND_GAP = 30;
     /** With no prey for this long it gives up and fades. */
     private static final int NO_PREY_TICKS = 600;
     /** One spawned by command (not by a blackout) fades after 90 s. */
@@ -85,7 +86,7 @@ public class Smiler extends Monster {
     // --- Distances (blocks) -----------------------------------------------------------------
     private static final double PREY_RANGE = 48.0;
     private static final double LUNGE_RANGE = 4.0;
-    private static final double BREATH_RANGE = 8.0;
+    private static final double BREATH_RANGE = 6.0;
     /** The flashlight: matches the bright centre of the beam (client: Flashlights, 25 blocks). */
     private static final double BEAM_RANGE = 25.0;
     private static final double BEAM_COS = Math.cos(Math.toRadians(14.0));
@@ -104,7 +105,6 @@ public class Smiler extends Monster {
     private int unlitTicks;
     private int noPreyTicks;
     private int repathIn;
-    private int lastFlinchSound = -FLINCH_SOUND_GAP;
     private boolean fromBlackout;
     @Nullable
     private Player prey;
@@ -202,7 +202,7 @@ public class Smiler extends Monster {
             return;
         }
         if (shouldFade()) {
-            dispel(false);
+            dispel();
             return;
         }
         if (tickCount % 20 == 0 || !isValidPrey(prey)) {
@@ -210,7 +210,7 @@ public class Smiler extends Monster {
         }
         noPreyTicks = prey == null ? noPreyTicks + 1 : 0;
         if (noPreyTicks > NO_PREY_TICKS) {
-            dispel(false);
+            dispel();
             return;
         }
 
@@ -224,7 +224,7 @@ public class Smiler extends Monster {
             unlitTicks = 0;
             entityData.set(BURN, Math.min(1.0f, (float) burnTicks / burnNeeded()));
             if (burnTicks >= burnNeeded()) {
-                dispel(true);
+                dispel();
                 return;
             }
             if (mode != Mode.FLINCH) {
@@ -250,10 +250,6 @@ public class Smiler extends Monster {
 
     private void tickAppear() {
         getNavigation().stop();
-        if (modeTicks == 1) {
-            // The tell: a giggle somewhere in the dark as the eyes open.
-            playSound(ModSounds.SMILER_GIGGLE.get(), 2.0f, 0.85f + random.nextFloat() * 0.3f);
-        }
         if (prey != null) {
             getLookControl().setLookAt(prey, 30.0f, 30.0f);
         }
@@ -271,24 +267,19 @@ public class Smiler extends Monster {
         double distance = distanceTo(prey);
         if (distance <= LUNGE_RANGE && hasLineOfSight(prey)) {
             setMode(Mode.LUNGE);
-            playSound(ModSounds.SMILER_LUNGE.get(), 1.6f, 0.9f + random.nextFloat() * 0.2f);
             return;
         }
         if (--repathIn <= 0) {
             repathIn = REPATH_TICKS;
             getNavigation().moveTo(prey, STALK_SPEED);
         }
-        if (distance <= BREATH_RANGE && modeTicks % BREATH_TICKS == 0) {
-            playSound(ModSounds.SMILER_BREATH.get(), 0.9f, 0.9f + random.nextFloat() * 0.15f);
+        if (distance <= BREATH_RANGE && tickCount % BREATH_TICKS == 0) {
+            playSound(ModSounds.SMILER_BREATH.get(), 0.45f, 0.9f + random.nextFloat() * 0.15f);
         }
     }
 
     private void tickFlinch() {
         getNavigation().stop();
-        if (modeTicks == 1 && tickCount - lastFlinchSound >= FLINCH_SOUND_GAP) {
-            lastFlinchSound = tickCount;
-            playSound(ModSounds.SMILER_FLINCH.get(), 1.4f, 0.9f + random.nextFloat() * 0.2f);
-        }
         // Back away from whoever is shining on it.
         if (lighter != null) {
             Vec3 away = position().subtract(lighter.position()).multiply(1.0, 0.0, 1.0);
@@ -323,9 +314,8 @@ public class Smiler extends Monster {
     private void kill(Player victim) {
         DamageSource source = new DamageSource(level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(SMILER_DAMAGE), this);
         victim.hurt(source, Float.MAX_VALUE);
-        level().playSound(null, victim.getX(), victim.getEyeY(), victim.getZ(), ModSounds.SMILER_KILL.get(), getSoundSource(), 2.0f, 1.0f);
         if (!victim.isAlive()) {
-            dispel(false); // it got what it came for
+            dispel(); // it got what it came for
         } else {
             setMode(Mode.STALK); // something saved them (a totem): it comes again
         }
@@ -339,14 +329,13 @@ public class Smiler extends Monster {
         entityData.set(MODE, (byte) next.ordinal());
     }
 
-    /** Fades away. {@code burned}: driven off by light (hiss + shriek); otherwise it just leaves. */
-    private void dispel(boolean burned) {
+    /** Fades away: driven off by light, its prey gone, or the lights back on. */
+    private void dispel() {
         if (mode == Mode.DISPEL) {
             return;
         }
         setMode(Mode.DISPEL);
         getNavigation().stop();
-        playSound(ModSounds.SMILER_DISPEL.get(), burned ? 1.8f : 0.8f, burned ? 1.0f : 0.7f);
     }
 
     private int burnNeeded() {
