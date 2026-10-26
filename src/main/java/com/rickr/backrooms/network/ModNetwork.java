@@ -82,6 +82,10 @@ public final class ModNetwork {
             Level94ClientState.castleKnown = true;
         });
 
+        // Exit hints: where your level's nearest real exit is (its faint sound, the NightShot marks).
+        registrar.playToClient(ExitHintPayload.TYPE, ExitHintPayload.STREAM_CODEC,
+                (payload, context) -> com.rickr.backrooms.client.hint.ExitHints.receive(payload));
+
         // Anomalies: the site you're in and the ones nearby (sounds, picture mood, effects).
         registrar.playToClient(AnomalyPayload.TYPE, AnomalyPayload.STREAM_CODEC,
                 (payload, context) -> AnomalyClientState.update(payload.current().orElse(null), payload.nearby()));

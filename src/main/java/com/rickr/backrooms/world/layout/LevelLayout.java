@@ -173,6 +173,15 @@ public abstract class LevelLayout {
         return exits.nearest(seed, x, z);
     }
 
+    /**
+     * Rough height of the exit at column (x, z) from {@link #exitPosition} (for the hints that point
+     * at it: its sound, the NightShot marks). Usually where you would stand there; Level 7's door
+     * lies on the sea floor, far below its entrance rooms.
+     */
+    public int exitY(long seed, int x, int z) {
+        return standY(seed, x, z);
+    }
+
     /** Low-frequency "zone" value in [0, 1) shared by blocks within the same zone. */
     protected static double zone(long seed, int x, int z, int zoneSize, int salt) {
         return Hash.unit(seed, Math.floorDiv(x, zoneSize), Math.floorDiv(z, zoneSize), salt);

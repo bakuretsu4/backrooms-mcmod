@@ -146,6 +146,12 @@ public final class Level7Layout extends LevelLayout {
         return new int[] {r[0] - EXIT_WEST, r[1]};
     }
 
+    /** The door lies on top of the platform, two blocks above the flattened floor round the ring. */
+    @Override
+    public int exitY(long seed, int x, int z) {
+        return DEEP_TOP_Y + 3;
+    }
+
     // ==========================================================================================
     // Blocks
     // ==========================================================================================

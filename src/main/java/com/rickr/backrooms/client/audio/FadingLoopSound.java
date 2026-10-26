@@ -1,4 +1,4 @@
-package com.rickr.backrooms.client.anomaly.poolrooms;
+package com.rickr.backrooms.client.audio;
 
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -14,7 +14,7 @@ import net.minecraft.util.RandomSource;
  * <p>Either placed in the world (it fades with distance as usual) or {@code relative}: then it is
  * "in your head", the same everywhere, like the level's ambience.
  */
-final class FadingLoopSound extends AbstractTickableSoundInstance {
+public final class FadingLoopSound extends AbstractTickableSoundInstance {
     /** Ticks without a feed before the sound fades away. */
     private static final int STARVE_TICKS = 3;
 
@@ -22,7 +22,7 @@ final class FadingLoopSound extends AbstractTickableSoundInstance {
     private float target;
     private int unfed;
 
-    FadingLoopSound(SoundEvent sound, boolean relative, double x, double y, double z, float fadePerTick) {
+    public FadingLoopSound(SoundEvent sound, boolean relative, double x, double y, double z, float fadePerTick) {
         super(sound, SoundSource.AMBIENT, RandomSource.create());
         this.looping = true;
         this.delay = 0;
@@ -36,7 +36,7 @@ final class FadingLoopSound extends AbstractTickableSoundInstance {
     }
 
     /** Call every tick while the sound should play, with the volume it should have. */
-    void feed(float targetVolume) {
+    public void feed(float targetVolume) {
         target = targetVolume;
         unfed = 0;
     }

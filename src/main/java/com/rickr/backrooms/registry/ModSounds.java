@@ -128,6 +128,17 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> L7_GROAN = register("level7.groan");
     public static final DeferredHolder<SoundEvent, SoundEvent> L7_HEAVE = register("level7.heave");
     public static final DeferredHolder<SoundEvent, SoundEvent> L7_LURCH = register("level7.lurch");
+    // Exit hints: the faint loop each level's exit gives off (client/hint/ExitHints plays it at the
+    // nearest exit; no subtitle, it is meant to be noticed, not announced).
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_0 = register("exit_hint.level_0");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_1 = register("exit_hint.level_1");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_2 = register("exit_hint.level_2");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_4 = register("exit_hint.level_4");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_POOLROOMS = register("exit_hint.poolrooms");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_37 = register("exit_hint.level_37");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_9 = register("exit_hint.level_9");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_94 = register("exit_hint.level_94");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_7 = register("exit_hint.level_7");
     // Music (original pieces from tools/gen_assets.py, played by client/BackroomsMusic on the music
     // channel): the main theme on the title menu, a mix of the theme and a dark ambient piece in
     // most levels, and a dreamier piece (or the theme) in the Poolrooms and Level 37.

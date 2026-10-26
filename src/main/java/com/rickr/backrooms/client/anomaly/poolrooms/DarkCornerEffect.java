@@ -1,5 +1,6 @@
 package com.rickr.backrooms.client.anomaly.poolrooms;
 
+import com.rickr.backrooms.client.audio.FadingLoopSound;
 import com.rickr.backrooms.client.AtmosphereGrade;
 import com.rickr.backrooms.client.anomaly.AnomalyClientEffect;
 import com.rickr.backrooms.registry.ModSounds;

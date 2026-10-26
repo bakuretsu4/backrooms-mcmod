@@ -131,6 +131,23 @@ flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on 
 
 Every floor is endless; exits are spread out a few hundred blocks apart.
 
+**Finding the exit** (subtle on purpose, `world/ExitHints`, `client/hint/ExitHints`): nothing on
+screen points the way, but every level's ordinary exit can be tracked down three ways. Secret
+ways (the sunlit archway, the clay doors, the throne light) are never hinted.
+- **Listen.** Every exit gives off a faint sound of its own that fades in within about 40 blocks
+  and comes through the walls: a draft up Level 0's stairwell, the hollow drone of Level 1's,
+  Level 2's EXIT door buzzing, storm noise through Level 4's fire door, the Poolrooms' drain
+  gurgling, water rushing down Level 37's pit, highway hum through Level 9's underpass, the dark
+  breathing behind Level 94's dark doors, bubbles rising from Level 7's sunken door. Unlike the
+  rest of the level's sounds, it never moves.
+- **NightShot.** Earlier wanderers painted arrows in something that only the camcorder's
+  infrared shows. With NightShot on, a few dark arrows appear on walls and floors around you
+  (about one per dozen blocks of wall), each pointing toward the exit, or down when it lies far
+  below. Unlike the arrows drawn on Level 0's walls, they never lie.
+- **Torn notes.** About one backpack in three, and one crate or locker in five, holds a note
+  from someone who came through before: a rough direction and distance to the exit from where
+  the container stands. One note in five points the wrong way. Some mention the other two hints.
+
 **Pool water (Poolrooms, Level 37 and Level 7's sea)** is drawn by the mod itself instead of vanilla's flat blue
 water: it takes the colour of the lit room behind it, tinted from clear shallow mint/cyan to deep
 green/teal the more water you look through, bends the tile floor with slow ripples, throws moving

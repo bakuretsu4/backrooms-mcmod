@@ -1702,5 +1702,86 @@
       }
     ],
     "subtitle": "subtitles.backrooms.l7_lurch"
+  },
+  "exit_hint.level_0": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_0",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
+  },
+  "exit_hint.level_1": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_1",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
+  },
+  "exit_hint.level_2": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_2",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
+  },
+  "exit_hint.level_4": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_4",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
+  },
+  "exit_hint.poolrooms": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/poolrooms",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
+  },
+  "exit_hint.level_37": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_37",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
+  },
+  "exit_hint.level_9": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_9",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
+  },
+  "exit_hint.level_94": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_94",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
+  },
+  "exit_hint.level_7": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_7",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
   }
 }

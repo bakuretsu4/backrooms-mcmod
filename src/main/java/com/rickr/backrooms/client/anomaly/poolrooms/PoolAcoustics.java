@@ -1,5 +1,6 @@
 package com.rickr.backrooms.client.anomaly.poolrooms;
 
+import com.rickr.backrooms.client.audio.FadingLoopSound;
 import com.mojang.blaze3d.audio.Channel;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraClientState;

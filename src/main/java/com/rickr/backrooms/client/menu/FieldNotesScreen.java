@@ -23,7 +23,7 @@ public class FieldNotesScreen extends Screen {
     private static final List<Section> SECTIONS = List.of(
             new Section("what", 1),
             new Section("in", 1),
-            new Section("goal", 3),
+            new Section("goal", 4),
             new Section("levels", 9),
             new Section("monsters", 4),
             new Section("survival", 7),

@@ -1,6 +1,7 @@
 package com.rickr.backrooms.block;
 
 import com.rickr.backrooms.Backrooms;
+import com.rickr.backrooms.item.WandererNoteItem;
 import com.rickr.backrooms.registry.ModItems;
 import com.rickr.backrooms.world.BackroomsLevel;
 import net.minecraft.core.BlockPos;
@@ -81,7 +82,28 @@ public class SupplyContainerBlockEntity extends BaseContainerBlockEntity {
             // Never a completely empty container: that just feels like a bug.
             items.set(level.getRandom().nextInt(items.size()), new ItemStack(ModItems.CANNED_FOOD.get()));
         }
+        tuckInNote(level);
         setChanged();
+    }
+
+    /**
+     * Sometimes someone who came through before left a torn note in here, about where they think
+     * the exit is (see WandererNoteItem). Backpacks most often: they belonged to someone.
+     */
+    private void tuckInNote(ServerLevel level) {
+        BackroomsLevel floor = BackroomsLevel.fromDimension(level.dimension());
+        float chance = kind == SupplyKind.BACKPACK ? 0.4f : 0.2f;
+        if (floor == null || level.getRandom().nextFloat() >= chance) {
+            return;
+        }
+        int start = level.getRandom().nextInt(items.size());
+        for (int i = 0; i < items.size(); i++) {
+            int slot = (start + i) % items.size();
+            if (items.get(slot).isEmpty()) {
+                items.set(slot, WandererNoteItem.create(level, floor, worldPosition, level.getRandom()));
+                return;
+            }
+        }
     }
 
     /** The loot table for this container on this floor, falling back to the container's default table. */
