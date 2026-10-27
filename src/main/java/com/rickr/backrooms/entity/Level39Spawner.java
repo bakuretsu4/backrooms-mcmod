@@ -41,13 +41,13 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>Two zones, decided by the player's height:
  * <ul>
- *   <li><b>Tunnels</b> (below the town ground): Hounds are common down here. Up to
+ *   <li><b>Tunnels</b> (below the town ground): a Hound now and then, never a pack. Up to
  *       {@value #TUNNEL_HOUNDS_PER_PLAYER} within {@value #TUNNEL_COUNT_RANGE} blocks of each player;
  *       below that cap a one-in-{@value #TUNNEL_HOUND_CHANCE} chance per second (about one every
  *       {@value #TUNNEL_HOUND_CHANCE} seconds) to add one 24-44 blocks away, on a tunnel rim or in
  *       the water.</li>
  *   <li><b>Town</b> (on the ground): Hounds are rare (at most {@value #TOWN_HOUNDS_PER_PLAYER}, about
- *       one every five minutes, only in a dark spot), Facelings are rare too: roughly every two
+ *       one every ten minutes, only in a dark spot), Facelings are rare too: roughly every two
  *       minutes a few appear 32-56 blocks away, up to {@value #TOWN_FACELINGS_PER_PLAYER} around a
  *       player. One spawn in four is a hostile group of 3-7 ("Hostile without a cause").</li>
  * </ul>
@@ -75,14 +75,14 @@ public final class Level39Spawner {
     private static final double VIEW_CHECK_RADIUS = 64.0;
 
     // --- Hounds in the tunnels ---------------------------------------------------------------
-    public static final int TUNNEL_HOUNDS_PER_PLAYER = 3;
+    public static final int TUNNEL_HOUNDS_PER_PLAYER = 1;
     public static final int TUNNEL_COUNT_RANGE = 64;
-    private static final int TUNNEL_HOUND_CHANCE = 12;
+    private static final int TUNNEL_HOUND_CHANCE = 90;
     private static final double TUNNEL_MAX_DISTANCE = 44.0;
 
     // --- The town ----------------------------------------------------------------------------
     public static final int TOWN_HOUNDS_PER_PLAYER = 1;
-    private static final int TOWN_HOUND_CHANCE = 300;
+    private static final int TOWN_HOUND_CHANCE = 600;
     /** Town hounds only appear where the block light is at most this: the dark middle of town. */
     private static final int TOWN_HOUND_MAX_LIGHT = 6;
     public static final int TOWN_FACELINGS_PER_PLAYER = 4;

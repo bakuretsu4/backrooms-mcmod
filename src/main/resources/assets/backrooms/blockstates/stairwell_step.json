@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "backrooms:block/stairwell_step"
+    },
+    "type=top": {
+      "model": "backrooms:block/stairwell_step_top"
+    },
+    "type=double": {
+      "model": "backrooms:block/stairwell_step_double"
+    }
+  }
+}

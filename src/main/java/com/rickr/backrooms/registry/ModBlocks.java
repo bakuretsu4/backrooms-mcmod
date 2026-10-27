@@ -147,6 +147,9 @@ public final class ModBlocks {
     public static final DeferredBlock<CeilingTubeBlock> CEILING_TUBE = BLOCKS.registerBlock("ceiling_tube", CeilingTubeBlock::new,
             fixture(MapColor.SNOW, SoundType.GLASS, 12).noCollission().noOcclusion());
     /** Exit stairwells on Level 0 and Level 1. */
+    /** Half-height concrete steps of the exit stairwells' spiral (half a block per step). */
+    public static final DeferredBlock<SlabBlock> STAIRWELL_STEP = BLOCKS.registerBlock("stairwell_step", SlabBlock::new,
+            unbreakable(MapColor.STONE, SoundType.STONE));
     public static final DeferredBlock<StairBlock> CONCRETE_STAIRS = BLOCKS.registerBlock("concrete_stairs",
             props -> new StairBlock(CONCRETE_FLOOR.get().defaultBlockState(), props), unbreakable(MapColor.STONE, SoundType.STONE));
 

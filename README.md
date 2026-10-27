@@ -75,6 +75,11 @@ on to Level 9; a rare moulded-clay front door on a Level 9 house opens onto **Le
 flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on to Level 9; a very
 rare chairlift in Level 9's Crimson Field climbs into the clouds and drops you into **Level 39**.
 
+The stairwells (Levels 0, 1 and 4) are part of their level: the level's own walls inside, then a
+wide spiral of shallow half-steps around a concrete core, lit for the first half turn and then
+going down into the dark. Somewhere down there you are simply in the next level, the picture
+fading back in: no glitch, no cut.
+
 - **Level 0 (the Lobby):** thick-walled yellow maze, lit rooms and dark corridors. Arrows drawn on
   the walls point to the exit stairwell, but some of them lie. Look for the EXIT sign over a
   wooden door.
@@ -96,7 +101,7 @@ rare chairlift in Level 9's Crimson Field climbs into the clouds and drops you i
   (mattresses, supply lockers, crates), where nothing hunts you. Now and then a hallway of
   **storage lockers** opens off the halls: roll-up shutters, a few rolled up with supplies
   inside, something growling behind one or two, and a white door at the end that never opens. Car
-  **ramps** lead down to a dimmer lower floor here and there. A white stairwell leads down.
+  **ramps** lead down to a dimmer lower floor here and there. A stairwell leads down.
 - **Level 2 (the pipes):** long, narrow pale maintenance corridors with racks of rusty pipes and
   big ducts along one wall, caged lamps far apart and long pitch-dark stretches, junction rooms
   and small dark utility rooms. Find the emergency EXIT door; opening it takes everyone within
@@ -143,7 +148,9 @@ rare chairlift in Level 9's Crimson Field climbs into the clouds and drops you i
   and walk into the dark.
 - **Level 39 ("Megalophobia"):** you come up out of the Poolrooms' drain into long, white
   marble tunnels, barrel-vaulted and flooded with still turquoise water, lit by light that comes
-  from nowhere (the tunnels swallow sound). Rare iron rungs climb to hatches in the town above: a
+  from nowhere (the tunnels swallow sound). Walkways run along both sides of the water. The way
+  back up: iron rungs in a pool of light at the foot of the wall, wherever a town path crosses
+  over the tunnel, climbing to a hatch in the town above: a
   foggy night town of light-blue clapboard houses from every era (1800s saltboxes, Victorians with
   turrets, farmhouses, bungalows, Cape Cods, 1980s ranches), unpainted picket fences, dirt and rocky
   paths, hedges, bare trees, sagging power lines, the odd lattice telephone tower or abandoned
@@ -278,7 +285,10 @@ light on and the sign over the front door.
 
 ### Things that happen
 
-- **Bacteria (Levels 0 and 2):** tall black wire figure. It only knows where you are if it sees you or hears you
+- **The Bacteria (Level 0 only):** there is only ever one, a tall black wire figure. When it has
+  lost track of everyone it doesn't stay lost: it turns up again somewhere out of sight 30 to 50
+  blocks from one of you, and if you leave it far behind it catches up after a while. It only
+  knows where you are if it sees you or hears you
   sprint. In a lit room it spots you from about 24 blocks; in the dark only from about 8 (crouching
   makes both shorter, your flashlight doesn't matter). When it spots you it freezes for a moment and
   draws in one long, wrong breath, then chases. Break line of sight: it runs to where it *last saw*
@@ -322,7 +332,8 @@ light on and the sign over the front door.
   turns furious. **Facelings** wander between the houses: blank, mannequin-smooth faces, touching
   where their faces should be. Most ignore you. A few walk in packs and run at you all together
   the moment one of them sees you.
-- **Level 39's tunnels:** Hounds hunt here in numbers, faster in the water than you. **Clumps**
+- **Level 39's tunnels:** now and then a lone Hound hunts down here (never a pack; it gives up
+  quickly once it loses you). **Clumps**
   hide in the ceiling drains and side alcoves, only a few arms dangling as bait; they hunt by ear
   (sprinting and splashing carry far), knuckles crack just before one strikes with a six-block
   arm that reels you in. Go quiet and still when you hear that. **Wretches**, people far gone with

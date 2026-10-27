@@ -45,9 +45,16 @@ public final class Travel {
 
     /** Sends the player to {@code target}, searching for floor near (x, z), with the tape-glitch transition. */
     public static void sendTo(ServerPlayer player, BackroomsLevel target, int x, int z) {
+        sendTo(player, target, x, z, TransitionPayload.NOCLIP);
+    }
+
+    /** {@code kind}: NOCLIP (glitch, PLAY, the noclip sound) or STAIRS (a quiet fade in from the dark). */
+    private static void sendTo(ServerPlayer player, BackroomsLevel target, int x, int z, int kind) {
         if (sendToQuietly(player, target, x, z)) {
-            PacketDistributor.sendToPlayer(player, new TransitionPayload(TransitionPayload.NOCLIP));
-            player.playNotifySound(ModSounds.NOCLIP.get(), SoundSource.MASTER, 1.0f, 1.0f);
+            PacketDistributor.sendToPlayer(player, new TransitionPayload(kind));
+            if (kind == TransitionPayload.NOCLIP) {
+                player.playNotifySound(ModSounds.NOCLIP.get(), SoundSource.MASTER, 1.0f, 1.0f);
+            }
         }
     }
 
@@ -106,6 +113,20 @@ public final class Travel {
      * Leaving a floor forgets its checkpoint (you can't respawn back up there).
      */
     public static void useExit(ServerPlayer player, BackroomsLevel from) {
+        useExit(player, from, TransitionPayload.NOCLIP);
+    }
+
+    /**
+     * The player went below the level's bottom: down an exit stairwell (a quiet, seamless step into
+     * the next level) or by falling anywhere else (noclip).
+     */
+    public static void useExitDown(ServerPlayer player, BackroomsLevel from) {
+        long seed = BackroomsSeeds.layoutSeed(player.serverLevel(), from);
+        boolean stairs = from.layout().exits().distance(seed, player.getBlockX(), player.getBlockZ()) <= LevelLayout.STAIRWELL_RADIUS;
+        useExit(player, from, stairs ? TransitionPayload.STAIRS : TransitionPayload.NOCLIP);
+    }
+
+    private static void useExit(ServerPlayer player, BackroomsLevel from, int kind) {
         Checkpoints.clear(player);
         BackroomsLevel next = from.next();
         if (next == null) {
@@ -115,7 +136,7 @@ public final class Travel {
         ServerLevel current = player.serverLevel();
         long seed = BackroomsSeeds.layoutSeed(current, from);
         int[] exit = from.layout().exits().nearest(seed, player.getBlockX(), player.getBlockZ());
-        sendTo(player, next, exit[0], exit[1]);
+        sendTo(player, next, exit[0], exit[1], kind);
         player.sendSystemMessage(Component.translatable("message.backrooms.arrive." + next.getSerializedName()).withStyle(s -> s.withItalic(true)));
     }
 

@@ -406,6 +406,11 @@ public final class Level39Tunnels {
             }
         }
         int airTop = ceiling(tile, x, z, marble, out);
+        if (k == RIM && inFrontOfShaft(tile, x, z)) {
+            // A pool of light on the walkway at the foot of every shaft: the way back up to the
+            // town shows from far down the tunnel.
+            out.set(RIM_FEET_Y + 1, Blocks.LIGHT.defaultBlockState().setValue(LightBlock.LEVEL, SHAFT_LIGHT));
+        }
         if (k == WATER && stag && Hash.unit(tile.seed, x, z, 3980) < 0.22) {
             // Patches of greenish scum float on the still water of a stagnant run.
             out.set(RIM_FEET_Y, Level39Blocks.STAGNANT_FILM.get().defaultBlockState());
@@ -426,6 +431,20 @@ public final class Level39Tunnels {
             for (int y = 48; y <= 53; y++) out.set(y, lining);
         }
         return Math.max(airTop, top);
+    }
+
+    /** Light level at the foot of an access shaft. */
+    private static final int SHAFT_LIGHT = 14;
+
+    /** True for the walkway cell right in front of an access shaft's rungs. */
+    private static boolean inFrontOfShaft(Level39Tile tile, int x, int z) {
+        for (int k : tile.shafts) {
+            Level39Cell.Shaft shaft = tile.cell.shafts[k];
+            if (shaft.x() + shaft.ladderFacing().getStepX() == x && shaft.z() + shaft.ladderFacing().getStepZ() == z) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Level of the hidden fill lights along the foot of the walls (vanilla light blocks). */

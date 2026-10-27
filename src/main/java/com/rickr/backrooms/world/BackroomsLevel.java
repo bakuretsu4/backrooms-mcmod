@@ -35,10 +35,12 @@ import org.jetbrains.annotations.Nullable;
  * but keeping the order stable avoids surprises.
  */
 public enum BackroomsLevel implements StringRepresentable {
+    /** The only floor with the Bacteria, and only ever one of it (see BacteriaSpawner). */
     LEVEL_0("level_0", new Level0Layout(), 30, 1, 90),
     /** No Bacteria (cap 0): the garage belongs to the Smilers (blackouts and its dead zones, see SmilerSpawner). */
     LEVEL_1("level_1", new Level1Layout(), 30, 0, 1),
-    LEVEL_2("level_2", new Level2Layout(), Integer.MIN_VALUE, 2, 60),
+    /** No Bacteria (cap 0): the Smilers come with the blackouts. */
+    LEVEL_2("level_2", new Level2Layout(), Integer.MIN_VALUE, 0, 1),
     /** No monsters here (cap 0): the danger is the water itself, which makes you hallucinate. */
     POOLROOMS("poolrooms", new PoolroomsLayout(), 30, 0, 1),
     /**

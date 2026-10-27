@@ -53,6 +53,10 @@ final class Level39Vault {
         }
         double bottom = BASE_Y + row;
         double top = bottom + 1;
+        // Below the springing line the vault's sides are straight walls at R: a cell wholly inside
+        // them and wholly below Y0 is open (the walkways). Without this the curve function, which
+        // only describes the arc, would fill the rims at feet height and nobody could stand there.
+        if (top <= Y0 && ao + 0.5 <= R) return AIR;
         double cMax = barrelCeiling(Math.max(0, ao - 0.5));
         double cMin = barrelCeiling(ao + 0.5);
         if (cMin >= top) return AIR;

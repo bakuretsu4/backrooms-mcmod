@@ -171,10 +171,21 @@ public final class CamcorderHud implements LayeredDraw.Layer {
         g.fill(x1 - 2, y1 - len, x1, y1, c);
     }
 
-    /** "PLAY" when you noclip into a level, "STOP" when you escape. */
+    /** Going down a stairwell: how long the next level takes to fade in from the dark. */
+    private static final long STAIRS_FADE_MS = 1400L;
+
+    /** "PLAY" when you noclip into a level, "STOP" when you escape, a quiet fade in after the stairs. */
     private static void drawTransition(GuiGraphics g, Minecraft mc) {
         long since = System.currentTimeMillis() - CameraClientState.transitionStartMs;
         if (CameraClientState.transitionStartMs == 0 || since < 0 || since > TRANSITION_MS) {
+            return;
+        }
+        if (CameraClientState.transitionKind == TransitionPayload.STAIRS) {
+            // Down the stairs: the bottom of the shaft was dark already; the new level fades in.
+            float alpha = 1.0f - Math.min(1.0f, since / (float) STAIRS_FADE_MS);
+            if (alpha > 0.0f) {
+                g.fill(0, 0, g.guiWidth(), g.guiHeight(), ((int) (alpha * alpha * 255.0f) << 24));
+            }
             return;
         }
         boolean escape = CameraClientState.transitionKind == TransitionPayload.ESCAPE;

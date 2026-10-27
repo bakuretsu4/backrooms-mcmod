@@ -99,6 +99,34 @@ final class Level1Areas {
         return m == 4 ? 0 : m == 5 ? 1 : -1;
     }
 
+    /** Open floor kept clear in front of each fire door: this far out, and one block wider each side. */
+    private static final int DOOR_APRON = 3;
+
+    /**
+     * True for a hall column right in front of a corridor block's fire door (the hall's pillars
+     * and walls are on their own grid and could otherwise stand in the doorway). Cheap for the
+     * columns far from a block's edge, which are almost all of them.
+     */
+    static boolean doorApron(long seed, int x, int z) {
+        int lx = Math.floorMod(x, ZONE);
+        int lz = Math.floorMod(z, ZONE);
+        boolean nearX = lx < DOOR_APRON || lx >= ZONE - DOOR_APRON;
+        boolean nearZ = lz < DOOR_APRON || lz >= ZONE - DOOR_APRON;
+        if (!nearX && !nearZ) {
+            return false;
+        }
+        for (int dx = -DOOR_APRON; dx <= DOOR_APRON; dx++) {
+            for (int dz = -DOOR_APRON; dz <= DOOR_APRON; dz++) {
+                int cx = x + dx;
+                int cz = z + dz;
+                if (corridorZone(seed, cx, cz) && corridorCell(seed, cx, cz) == C_EXIT_DOOR) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /** What a column of a corridor block is (C_* constant). */
     static int corridorCell(long seed, int x, int z) {
         int zx = Math.floorDiv(x, ZONE);

@@ -1,8 +1,76 @@
 {
-  "parent": "minecraft:block/slab_top",
   "textures": {
-    "bottom": "backrooms:block/l37_tile_wall",
-    "top": "backrooms:block/l37_tile_wall",
-    "side": "backrooms:block/l37_tile_wall"
-  }
+    "particle": "backrooms:block/l37_tile_wall",
+    "tile": "backrooms:block/l37_tile_wall"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        12,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#tile"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#tile"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "texture": "#tile"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "texture": "#tile"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "texture": "#tile"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "texture": "#tile"
+        }
+      }
+    }
+  ]
 }

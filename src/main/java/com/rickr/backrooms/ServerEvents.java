@@ -48,7 +48,7 @@ public final class ServerEvents {
         NoclipIntro.tick(player);
         BackroomsLevel level = BackroomsLevel.fromDimension(player.level().dimension());
         if (level != null && player.getY() < level.transferBelowY()) {
-            Travel.useExit(player, level);
+            Travel.useExitDown(player, level);
         }
     }
 

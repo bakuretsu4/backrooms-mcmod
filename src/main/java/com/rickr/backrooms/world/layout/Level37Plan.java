@@ -733,7 +733,7 @@ public final class Level37Plan {
      *
      * @return true if (x, z) is part of that 2-thick wall (c is then filled in)
      */
-    private static boolean windows(int side, int x, int z, int edge, int phase, int pitch, int width,
+    private static boolean windows(long seed, int wx, int wz, int side, int x, int z, int edge, int phase, int pitch, int width,
                                    int yFrom, int yTo, int alongMin, int alongMax, Col c) {
         boolean xSide = side < 2;
         int depth = side == 0 ? x - edge : side == 1 ? edge - x : side == 2 ? z - edge : edge - z;
@@ -742,7 +742,8 @@ public final class Level37Plan {
         }
         int along = xSide ? z : x;
         c.solid(true);
-        if (along < alongMin || along > alongMax || Math.floorMod(along - phase, pitch) >= width) {
+        if (along < alongMin || along > alongMax || Math.floorMod(along - phase, pitch) >= width
+                || nearPassage(seed, wx, wz, side)) {
             return true;
         }
         int facing = side == 0 ? EAST3 : side == 1 ? WEST3 : side == 2 ? SOUTH3 : NORTH3;
@@ -750,6 +751,29 @@ public final class Level37Plan {
             c.extra(y, depth == 0 ? code(VOID, facing) : AIR);
         }
         return true;
+    }
+
+    // Every window range starts and ends at least 7 blocks from a room's corner: the rounded
+    // corners curve up to 6 blocks in (a radius-3 curve starting at the 3-thick wall), and a slit
+    // cut into the curve comes out as a sliced, slanting recess.
+    /** Windows keep this many blocks of plain wall either side of a passage through the same wall. */
+    private static final int WINDOW_PASSAGE_MARGIN = 2;
+
+    /**
+     * True when world column (wx, wz), in the wall on side {@code side} (0 W, 1 E, 2 N, 3 S) of its
+     * cell, is within {@value #WINDOW_PASSAGE_MARGIN} blocks of the arched passage through that wall:
+     * a window there would cut into the passage's arch.
+     */
+    private static boolean nearPassage(long seed, int wx, int wz, int side) {
+        int cx = Math.floorDiv(wx, CELL);
+        int cz = Math.floorDiv(wz, CELL);
+        int e = side == 0 ? edge(seed, cx, cz, WEST) : side == 1 ? edge(seed, cx + 1, cz, WEST)
+                : side == 2 ? edge(seed, cx, cz, NORTH) : edge(seed, cx, cz + 1, NORTH);
+        if (edgeState(e) != E_ARCH) {
+            return false;
+        }
+        int along = side < 2 ? Math.floorMod(wz, CELL) : Math.floorMod(wx, CELL);
+        return along >= edgeStart(e) - WINDOW_PASSAGE_MARGIN && along < edgeStart(e) + edgeWidth(e) + WINDOW_PASSAGE_MARGIN;
     }
 
     // ---- Handrails ----------------------------------------------------------------------------
@@ -809,7 +833,7 @@ public final class Level37Plan {
 
         if (slitSide >= 0) {
             int edgeCell = slitSide == 0 || slitSide == 2 ? BAND : CELL - 1;
-            if (windows(slitSide, lx, lz, edgeCell, Hash.range(Hash.mix(h ^ 9), 4), 4, 1, FEET_Y + 1, ceil - 2,
+            if (windows(seed, cx * CELL + lx, cz * CELL + lz, slitSide, lx, lz, edgeCell, Hash.range(Hash.mix(h ^ 9), 4), 4, 1, FEET_Y + 1, ceil - 2,
                     7, CELL - 5, c)) {
                 return;
             }
@@ -892,9 +916,9 @@ public final class Level37Plan {
         if (windowSide >= 0) {
             int edgeCell = windowSide == 0 || windowSide == 2 ? BAND : CELL - 1;
             // A grid of square windows high up (two rows), every other block.
-            boolean wall = windows(windowSide, lx, lz, edgeCell, 0, 2, 1, FEET_Y + 3, FEET_Y + 3, 6, CELL - 4, c);
+            boolean wall = windows(seed, cx * CELL + lx, cz * CELL + lz, windowSide, lx, lz, edgeCell, 0, 2, 1, FEET_Y + 3, FEET_Y + 3, 6, CELL - 4, c);
             if (wall) {
-                windows(windowSide, lx, lz, edgeCell, 0, 2, 1, FEET_Y + 5, FEET_Y + 5, 6, CELL - 4, c);
+                windows(seed, cx * CELL + lx, cz * CELL + lz, windowSide, lx, lz, edgeCell, 0, 2, 1, FEET_Y + 5, FEET_Y + 5, 6, CELL - 4, c);
                 return;
             }
         }
@@ -1002,7 +1026,10 @@ public final class Level37Plan {
             // Tall slit windows every 4 blocks: void in the second layer of wall, recess in the first.
             int voidAt = lowSide ? MID - 4 : MID + 3;
             int recessAt = lowSide ? MID - 3 : MID + 2;
-            if ((across == voidAt || across == recessAt) && Math.floorMod(along + phase, 4) == 0) {
+            // Window wall: the north (or west) wall when lowSide, else the south (or east) one.
+            int wallSide = alongX ? (lowSide ? 2 : 3) : (lowSide ? 0 : 1);
+            if ((across == voidAt || across == recessAt) && Math.floorMod(along + phase, 4) == 0
+                    && !nearPassage(seed, cx * CELL + lx, cz * CELL + lz, wallSide)) {
                 int facing = alongX ? (lowSide ? SOUTH3 : NORTH3) : (lowSide ? EAST3 : WEST3);
                 for (int y = FEET_Y + 1; y <= FEET_Y + 3; y++) {
                     c.extra(y, across == voidAt ? code(VOID, facing) : AIR);
@@ -1173,7 +1200,7 @@ public final class Level37Plan {
         int ceil = FEET_Y + height(room);
         // Windows along the low side wall light the near half; the far end stays dark.
         if (across <= BAND + 1) {
-            if (windows(alongX ? 2 : 0, lx, lz, BAND, 2, 3, 1, FEET_Y + 1, FEET_Y + 5, 4, 12, c)) {
+            if (windows(seed, cx * CELL + lx, cz * CELL + lz, alongX ? 2 : 0, lx, lz, BAND, 2, 3, 1, FEET_Y + 1, FEET_Y + 5, 4, 12, c)) {
                 return;
             }
         }
@@ -1246,7 +1273,7 @@ public final class Level37Plan {
         int z1 = slitSide == 3 ? CELL - 3 : CELL - 1;
         if (slitSide >= 0) {
             int edgeCell = slitSide == 0 || slitSide == 2 ? BAND : CELL - 1;
-            if (windows(slitSide, lx, lz, edgeCell, 1, 4, 1, FEET_Y + 1, ceil - 2, 6, CELL - 4, c)) {
+            if (windows(seed, cx * CELL + lx, cz * CELL + lz, slitSide, lx, lz, edgeCell, 1, 4, 1, FEET_Y + 1, ceil - 2, 7, CELL - 5, c)) {
                 return;
             }
         }
@@ -1312,10 +1339,10 @@ public final class Level37Plan {
         int z1 = side == 3 ? last - 2 : last;
         int edgeCell = side == 0 || side == 2 ? BAND : last;
         if (forest) {
-            if (windows(side, hx, hz, edgeCell, 2, 4, 1, FEET_Y + 1, ceil - 2, 6, last - 4, c)) {
+            if (windows(seed, x, z, side, hx, hz, edgeCell, 2, 4, 1, FEET_Y + 1, ceil - 2, 7, last - 5, c)) {
                 return;
             }
-        } else if (windows(side, hx, hz, edgeCell, 1, 5, 2, FEET_Y + 1, ceil - 3, 5, last - 4, c)) {
+        } else if (windows(seed, x, z, side, hx, hz, edgeCell, 1, 5, 2, FEET_Y + 1, ceil - 3, 7, last - 6, c)) {
             return; // the tall arcade beside the walkway
         }
         int shape = roundedRect(hx, hz, x0, x1, z0, z1, 3);
@@ -1326,6 +1353,10 @@ public final class Level37Plan {
         c.open(ceil, forest);
         // Deep water: pools between the pillars (forest) or everything beyond the walkway (colonnade).
         int pool;
+        int px0Pool = 0;
+        int px1Pool = -1;
+        int pz0Pool = 0;
+        int pz1Pool = -1;
         if (forest) {
             pool = C_OUT;
             for (int k = 0; k < 2 && pool == C_OUT; k++) {
@@ -1343,6 +1374,10 @@ public final class Level37Plan {
             int pz0 = side == 2 ? z0 + 6 : z0;
             int pz1 = side == 3 ? z1 - 6 : z1;
             pool = roundedRect(hx, hz, px0, px1, pz0, pz1, 3);
+            px0Pool = px0;
+            px1Pool = px1;
+            pz0Pool = pz0;
+            pz1Pool = pz1;
             // Ladders out of the pool onto the walkway, every 12 blocks.
             boolean xSide = side < 2;
             int along = xSide ? hz : hx;
@@ -1373,11 +1408,14 @@ public final class Level37Plan {
                 if (hz != pz - 1 && hz != pz) {
                     continue;
                 }
-                if (px - 1 < x0 + 2 || px > x1 - 2 || pz - 1 < z0 + 2 || pz > z1 - 2) {
-                    continue;
+                if (px - 1 < x0 + 3 || px > x1 - 3 || pz - 1 < z0 + 3 || pz > z1 - 3) {
+                    continue; // clear of the walls, so it never crowds an arch or a window
                 }
-                if (!forest && pool != C_IN) {
-                    continue;
+                if (!forest && !pillarInPool(px - 1, pz - 1, px0Pool, px1Pool, pz0Pool, pz1Pool)) {
+                    continue; // only whole pillars: never one half on the deck, half over the deep water
+                }
+                if (inFrontOfPassage(seed, x - hx, z - hz, px, pz, x0, x1, z0, z1)) {
+                    continue; // nothing standing in a passage's way
                 }
                 c.extras = 0;
                 c.pieceOf(circle(hx - px, hz - pz, 1, true), c.floor == F_POOL ? POOL_BOTTOM_Y + 1 : FEET_Y, ceil - 1);
@@ -1411,6 +1449,39 @@ public final class Level37Plan {
         if (c.openTo < 0 && Math.floorMod(hx, 6) == 5 && Math.floorMod(hz, 6) == 5) {
             fillLights(c, ceil);
         }
+    }
+
+    /** True when all four cells of the pillar whose north-west cell is (px, pz) are inside the pool. */
+    private static boolean pillarInPool(int px, int pz, int x0, int x1, int z0, int z1) {
+        return roundedRect(px, pz, x0, x1, z0, z1, 3) == C_IN && roundedRect(px + 1, pz, x0, x1, z0, z1, 3) == C_IN
+                && roundedRect(px, pz + 1, x0, x1, z0, z1, 3) == C_IN && roundedRect(px + 1, pz + 1, x0, x1, z0, z1, 3) == C_IN;
+    }
+
+    /**
+     * True when the hall pillar centred on corner (px, pz) (hall-local; the hall starts at world
+     * (ox, oz)) stands within 4 blocks of one of the hall's walls and in line with a passage
+     * through that wall: it would stand in the way and cut into the passage's arch.
+     */
+    private static boolean inFrontOfPassage(long seed, int ox, int oz, int px, int pz, int x0, int x1, int z0, int z1) {
+        int reach = 4;
+        for (int side = 0; side < 4; side++) {
+            int gap = side == 0 ? px - 1 - x0 : side == 1 ? x1 - px : side == 2 ? pz - 1 - z0 : z1 - pz;
+            if (gap > reach) {
+                continue;
+            }
+            // Test both cells of the pillar along that wall, as world columns in the wall itself.
+            for (int k = -1; k <= 0; k++) {
+                // (A column inside the cell that owns that wall: west/north just outside the
+                // interior, east/south on its last row, since a cell owns its east/south wall
+                // through its neighbour's edge.)
+                int wx = side == 0 ? ox + x0 - 1 : side == 1 ? ox + x1 : ox + px + k;
+                int wz = side == 2 ? oz + z0 - 1 : side == 3 ? oz + z1 : oz + pz + k;
+                if (nearPassage(seed, wx, wz, side)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

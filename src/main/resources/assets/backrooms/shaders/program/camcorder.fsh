@@ -288,27 +288,28 @@ void main() {
     }
 
     // 6a. Contact shadows (screen-space ambient occlusion), the same all over the picture. For each
-    //     of six directions we look a little way to both sides. On a flat surface 1/distance changes
-    //     evenly across the screen, so the two neighbours average out to the middle; in an inside
-    //     corner (wall meets floor, a room's corners, under a desk) both neighbours are closer, so
-    //     the middle is darkened a little. Big jumps (an object in front of a far wall) don't count.
+    //     of eight directions we look a little way to both sides. On a flat surface 1/distance
+    //     changes evenly across the screen, so the two neighbours average out to the middle; in an
+    //     inside corner (wall meets floor, a room's corners, under a desk) both neighbours are
+    //     closer, so the middle is darkened a little. Big jumps (an object in front of a far wall)
+    //     fade out of it. The directions are fixed and every term is smooth: random per-pixel
+    //     directions with a hard cut-off made grainy, crawling speckle on walls near a corner.
     float dist0 = sceneDistance(uv);
     if (ContactShadow > 0.0 && dist0 < 48.0) {
         // About half a block on screen at this distance (1.4 ~ 2 * tan(35 degrees) for a 70 degree view).
         float radiusPx = clamp(0.5 * InSize.y / (1.4 * dist0), 3.0, 40.0);
-        float rot = hash12(floor(gl_FragCoord.xy * 0.5)) * 3.14159;
         float inv0 = 1.0 / dist0;
         float occ = 0.0;
-        for (int i = 0; i < 6; i++) {
-            float a = rot + float(i) * 0.5235988; // 30 degree steps (both sides cover 360)
-            vec2 o = vec2(cos(a), sin(a)) * radiusPx * (0.6 + 0.4 * float(i & 1)) / InSize;
+        for (int i = 0; i < 8; i++) {
+            float a = float(i) * 0.3926991; // 22.5 degree steps (both sides cover 360)
+            vec2 o = vec2(cos(a), sin(a)) * radiusPx * (0.7 + 0.3 * float(i & 1)) / InSize;
             float d1 = sceneDistance(clamp(uv + o, 0.0, 1.0));
             float d2 = sceneDistance(clamp(uv - o, 0.0, 1.0));
-            float valid = step(abs(d1 - dist0), 1.5) * step(abs(d2 - dist0), 1.5);
+            float valid = smoothstep(1.5, 0.6, abs(d1 - dist0)) * smoothstep(1.5, 0.6, abs(d2 - dist0));
             float concave = (0.5 * (1.0 / d1 + 1.0 / d2) - inv0) / inv0;
-            occ += clamp(concave * 7.0, 0.0, 1.0) * valid;
+            occ += smoothstep(0.0, 0.18, concave) * valid;
         }
-        occ /= 6.0;
+        occ /= 8.0;
         col *= 1.0 - ContactShadow * occ * smoothstep(48.0, 24.0, dist0);
     }
 

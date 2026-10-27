@@ -317,7 +317,7 @@
   "menu.backrooms.notes.levels.6": "- LEVEL 9, the Suburbs: an endless foggy suburb at midnight. Follow the green EXIT arrows to a highway underpass.",
   "menu.backrooms.notes.levels.7": "- LEVEL 94, Motion (secret): a rare moulded-clay front door on a Level 9 house opens onto sunny toy-like hills, a little town and a castle on a glass mountain. Get indoors before night: Smilers come out. Houses with a dark doorway lead back to Level 9, flooded houses down to Level 7; the light behind the castle's throne leads to Level 1.",
   "menu.backrooms.notes.monsters.title": "THINGS DOWN HERE",
-  "menu.backrooms.notes.monsters.0": "- BACTERIA (Levels 0 and 2): a tall black wire figure. It only knows where you are if it sees you or hears you sprint. Break line of sight: it searches where it last saw you, then gives up.",
+  "menu.backrooms.notes.monsters.0": "- THE BACTERIA (Level 0): only ever one, a tall black wire figure, and it keeps finding you. It only knows where you are if it sees you or hears you sprint. Break line of sight: it searches where it last saw you, then gives up.",
   "menu.backrooms.notes.monsters.1": "- WATCHERS (Level 9): huge floating eyes sweeping searchlights. If one stares at you and charges its beam, get out of sight or you turn to dust.",
   "menu.backrooms.notes.monsters.2": "- THE OBSERVER (Level 9): a tall dark figure standing where the light doesn't reach. Look straight at it and it's gone.",
   "menu.backrooms.notes.monsters.3": "- SMILERS (Levels 1 and 2 in blackouts, Level 1's dead zones, Level 9's dark streets, Level 94 at night): a glowing grin in the dark. Hold your flashlight on its face until it burns away; some take longer. Never let it reach you. They can't follow you into a safe room or a house.",
@@ -933,5 +933,6 @@
   "block.backrooms.l1_extinguisher": "Fire Extinguisher Cabinet",
   "block.backrooms.l1_convex_mirror": "Convex Safety Mirror",
   "block.backrooms.l1_rack_upright": "Pallet Rack Upright",
-  "block.backrooms.l1_rack_bay": "Pallet Rack Slot"
+  "block.backrooms.l1_rack_bay": "Pallet Rack Slot",
+  "block.backrooms.stairwell_step": "Stairwell Step"
 }

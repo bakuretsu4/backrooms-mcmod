@@ -219,19 +219,27 @@ public abstract class LevelLayout {
         return Direction.from2DDataValue(Hash.range(Hash.of(seed, exitX, exitZ, 4242), 4));
     }
 
+    /** Height of one full turn of the spiral: half a block per step on the outer lane (24 tiles). */
+    private static final double SPIRAL_TURN = 12.0;
+    /** The flat landing in front of the door spans this fraction of a turn either side of it. */
+    private static final double SPIRAL_LANDING = 0.08;
+
     /**
      * One column of the exit stairwell, a square tower 11x11 centred on the exit (offsets dx, dz):
      * <ul>
      *   <li>ring 5: the level's own wall (seen from the maze) with a single doorway, a door or
      *       plain opening, and a glowing EXIT sign above it;</li>
-     *   <li>ring 4: white painted stairwell wall going all the way down the shaft;</li>
-     *   <li>ring 3: a landing by the door, then yellow-nosed stairs spiralling down one step per
-     *       block, with tube lights on the wall every quarter turn;</li>
-     *   <li>ring 2: a chain-link cage around the central well; ring 0-1 is the open well.</li>
+     *   <li>ring 4: the shaft wall: the level's own wall down to the floor, so the stairwell looks
+     *       like part of the level, then bare painted concrete going on down;</li>
+     *   <li>rings 2-3: a two-wide spiral of shallow steps, half a block each (slabs), from a landing
+     *       by the door, round and down; tube lights on the wall for the first turn only, so the
+     *       way down sinks into the dark;</li>
+     *   <li>rings 0-1: a solid concrete core the spiral turns around.</li>
      * </ul>
-     * Walking down the stairs (or falling) takes you below transferBelowY and on to the next level.
+     * Walking on down takes you below transferBelowY and into the next level, in the dark (no
+     * noclip glitch: see {@code Travel#useExitDown}).
      *
-     * @param levelWall     wall block facing the maze (ring 5)
+     * @param levelWall     wall block facing the maze (ring 5) and lining the shaft above the floor
      * @param levelWallBase same, for floor + 1 (baseboard)
      * @param woodenDoor    true: a {@code lobby_door} fills the doorway; false: an open doorway
      * @return true if this column was part of the stairwell (the caller then stops)
@@ -304,77 +312,65 @@ public abstract class LevelLayout {
                 if (doorway && (y == floor + 1 || y == floor + 2)) {
                     continue; // the opening from the door into the shaft stays air
                 }
-                out.set(y, doorway && y == floor ? landing : white);
+                if (doorway && y == floor) {
+                    out.set(y, landing);
+                } else {
+                    // The level's own wall above the floor (a baseboard at floor + 1), concrete below.
+                    out.set(y, y > floor + 1 ? levelWall : y == floor + 1 ? levelWallBase : white);
+                }
             }
             return true;
         }
 
         out.set(bottom, white);
-        if (ring == 3) {
-            int k = ringIndex(lx, lz);
-            int stepY;
-            if (k <= 1) {
-                stepY = floor; // flat landing in front of the door
-                out.set(floor, landing);
-            } else {
-                stepY = floor - (k - 1);
-                // Stairs "face" the way you walk to go UP, i.e. against the downward travel direction.
-                Direction down = rotate(travelDirection(lx, lz), quarterTurns);
-                out.set(stepY, ModBlocks.CONCRETE_STAIRS.get().defaultBlockState()
-                        .setValue(StairBlock.FACING, down.getOpposite()));
-            }
-            // A tube light on the shaft wall every few steps, at about head height: the reference
-            // stairwells are the brightest places in the Backrooms.
-            if (k == 1 || (k > 1 && k % 4 == 2)) {
-                Direction inward = rotate(inwardDirection(lx, lz), quarterTurns);
-                out.set(stepY + 2, ModBlocks.WAREHOUSE_LIGHT.get().defaultBlockState().setValue(WallLampBlock.FACING, inward));
-            }
-            return true;
-        }
-
-        if (ring == 2) {
-            // Chain-link cage around the well. Each pane links to its ring neighbours.
-            BlockState mesh = ModBlocks.CHAIN_LINK.get().defaultBlockState()
-                    .setValue(IronBarsBlock.NORTH, Math.max(Math.abs(dx), Math.abs(dz - 1)) == 2)
-                    .setValue(IronBarsBlock.SOUTH, Math.max(Math.abs(dx), Math.abs(dz + 1)) == 2)
-                    .setValue(IronBarsBlock.WEST, Math.max(Math.abs(dx - 1), Math.abs(dz)) == 2)
-                    .setValue(IronBarsBlock.EAST, Math.max(Math.abs(dx + 1), Math.abs(dz)) == 2);
+        if (ring <= 1) {
             for (int y = bottom + 1; y < ceiling; y++) {
-                out.set(y, mesh);
+                out.set(y, white); // the core the stairs turn around
             }
             return true;
         }
 
-        // Rings 0-1: the open well. One cool strip light in the middle of the stairwell ceiling.
-        if (dx == 0 && dz == 0) {
-            out.set(ceiling, ModBlocks.PIPE_LIGHT.get().defaultBlockState());
+        // Rings 2-3: the spiral. f = how far round from the door (0..1, clockwise seen from above).
+        double f = (Math.atan2(lx, -lz) / (2 * Math.PI) + 1.0) % 1.0;
+        boolean atLanding = f < SPIRAL_LANDING || f > 1.0 - SPIRAL_LANDING;
+        if (atLanding) {
+            out.set(floor, landing);
+        }
+        double along = (f - SPIRAL_LANDING + 1.0) % 1.0; // 0 where the steps start going down
+        for (int turn = 0; ; turn++) {
+            // (Under the landing this is the end of the turn coming round again, one turn lower.)
+            double surface = floor + 1 - (along + turn) * SPIRAL_TURN;
+            if (surface < bottom + 2) {
+                break;
+            }
+            setStep(out, surface, white);
+        }
+        // A tube light on the shaft wall a quarter and half a turn down (outer lane, middle of the
+        // side), and none after that: the way on down sinks into the dark, where you go through.
+        if (ring == 3 && (lx == 3 && lz == 0 || lx == 0 && lz == 3)) {
+            double surface = floor + 1 - along * SPIRAL_TURN;
+            Direction inward = rotate(inwardDirection(lx, lz), quarterTurns);
+            out.set((int) Math.floor(surface) + 2, ModBlocks.WAREHOUSE_LIGHT.get().defaultBlockState().setValue(WallLampBlock.FACING, inward));
         }
         return true;
     }
 
     /**
-     * Position of a ring-3 tile along the spiral, 0..23, counting clockwise from the tile in
-     * front of the door (local (0, -3)).
+     * One step whose walking surface is at {@code surface}, rounded to half a block: a slab when it
+     * falls on a half, otherwise a full block; with the concrete of the flight under it, so seen
+     * from below the spiral is a solid sloping band.
      */
-    private static int ringIndex(int lx, int lz) {
-        if (lz == -3) {
-            return lx >= 0 ? lx : 24 + lx;     // north side: 0..3, and 21..23 left of the door
+    private static void setStep(Column out, double surface, BlockState underside) {
+        int halves = (int) Math.round(surface * 2.0);
+        int y = Math.floorDiv(halves, 2);
+        boolean half = Math.floorMod(halves, 2) == 1;
+        if (half) {
+            out.set(y, ModBlocks.STAIRWELL_STEP.get().defaultBlockState());
+            out.set(y - 1, underside);
+        } else {
+            out.set(y - 1, ModBlocks.CONCRETE_FLOOR.get().defaultBlockState());
         }
-        if (lx == 3) {
-            return 6 + lz;                      // east side: 4..9
-        }
-        if (lz == 3) {
-            return 9 + (3 - lx);                // south side: 10..15
-        }
-        return 15 + (3 - lz);                   // west side: 16..20
-    }
-
-    /** Direction from this ring-3 tile to the next (lower) one, in the local frame. */
-    private static Direction travelDirection(int lx, int lz) {
-        if (lz == -3 && lx < 3) return Direction.EAST;
-        if (lx == 3 && lz < 3) return Direction.SOUTH;
-        if (lz == 3 && lx > -3) return Direction.WEST;
-        return Direction.NORTH;
+        out.set(y - 2, underside);
     }
 
     /** From the shaft wall toward the centre, for a ring-3 tile in the middle of a side. */

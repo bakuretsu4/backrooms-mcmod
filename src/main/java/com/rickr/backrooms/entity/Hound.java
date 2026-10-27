@@ -41,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li><b>Stare it down.</b> Look straight at it (within 16 blocks, about 2 seconds) and it
  *       hesitates and backs off for a few seconds. Only a few: it soon comes again, and every time
  *       it takes a longer stare to work.</li>
- *   <li><b>Don't hit it unless you mean it.</b> Hurting it makes it furious for 30 seconds: no more
+ *   <li><b>Don't hit it unless you mean it.</b> Hurting it makes it furious for 15 seconds: no more
  *       hesitating, a shorter growl, faster, harder bites.</li>
  *   <li><b>Stay out of the water.</b> Hounds run faster in water than on land, and splashing is
  *       loud: they hear you wading from far off.</li>
@@ -67,17 +67,17 @@ public class Hound extends Monster {
 
     // --- Senses ------------------------------------------------------------------------------
     /** How far it spots you where there is light (the tunnels are evenly lit by their orbs). */
-    private static final double SIGHT_LIT = 28.0;
+    private static final double SIGHT_LIT = 20.0;
     /** How far it spots you in the dark (the dim middle of town at night). */
-    private static final double SIGHT_DARK = 14.0;
+    private static final double SIGHT_DARK = 10.0;
     /** Block light at your eyes that counts as "lit". */
     private static final int LIT_LEVEL = 6;
     /** Crouching shrinks the sight range. */
     private static final double CROUCH_FACTOR = 0.6;
     /** It hears sprinting through rock from this far... */
-    private static final double HEAR_SPRINT = 18.0;
+    private static final double HEAR_SPRINT = 12.0;
     /** ...and wading or swimming (the splashing) even further. */
-    private static final double HEAR_SPLASH = 24.0;
+    private static final double HEAR_SPLASH = 14.0;
     private static final double SENSE_RANGE = 40.0;
     private static final int SENSE_INTERVAL = 5;
 
@@ -106,9 +106,9 @@ public class Hound extends Monster {
     private static final int GROWL_TICKS_ENRAGED = 10;
     private static final int GROWL_TICKS_AFTER_COWED = 16;
     /** It keeps chasing this long without seeing you before it starts searching. */
-    private static final int LOST_SIGHT_TICKS = 80;
-    private static final double CHASE_GIVE_UP = 40.0;
-    private static final int SEARCH_TICKS = 160;
+    private static final int LOST_SIGHT_TICKS = 50;
+    private static final double CHASE_GIVE_UP = 24.0;
+    private static final int SEARCH_TICKS = 100;
     private static final int CHASE_REPATH_TICKS = 8;
     private static final int BITE_COOLDOWN_TICKS = 24;
     private static final int BITE_COOLDOWN_ENRAGED = 16;
@@ -118,7 +118,7 @@ public class Hound extends Monster {
     private static final int LUNGE_COOLDOWN_TICKS = 50;
     private static final int LUNGE_MAX_TICKS = 14;
     /** Furious for 30 seconds after being hurt. */
-    private static final int ENRAGED_TICKS = 600;
+    private static final int ENRAGED_TICKS = 300;
 
     // --- Speeds (multipliers of MOVEMENT_SPEED) ----------------------------------------------
     // 0.32 at 1.0 is a little over 4 blocks/s: faster than walking, slower than a fresh sprint,
@@ -132,7 +132,7 @@ public class Hound extends Monster {
 
     /** In water it gets this much faster (canon: entities swim faster than wanderers). */
     private static final ResourceLocation WATER_BOOST_ID = Backrooms.id("hound_water_boost");
-    private static final AttributeModifier WATER_BOOST = new AttributeModifier(WATER_BOOST_ID, 0.4, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+    private static final AttributeModifier WATER_BOOST = new AttributeModifier(WATER_BOOST_ID, 0.15, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
     /** Bites harder while furious. */
     private static final ResourceLocation RAGE_ID = Backrooms.id("hound_rage");
     private static final AttributeModifier RAGE_DAMAGE = new AttributeModifier(RAGE_ID, 0.4, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
@@ -176,9 +176,9 @@ public class Hound extends Monster {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, 30.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.32)
-                .add(Attributes.ATTACK_DAMAGE, 5.0)
+                .add(Attributes.MAX_HEALTH, 20.0)
+                .add(Attributes.MOVEMENT_SPEED, 0.27)
+                .add(Attributes.ATTACK_DAMAGE, 3.0)
                 .add(Attributes.FOLLOW_RANGE, 40.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.3)
                 .add(Attributes.STEP_HEIGHT, 1.0)
@@ -734,7 +734,7 @@ public class Hound extends Monster {
 
     @Override
     public int getAmbientSoundInterval() {
-        return 100;
+        return 240;
     }
 
     @Nullable

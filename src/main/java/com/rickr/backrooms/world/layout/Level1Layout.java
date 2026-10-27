@@ -318,6 +318,9 @@ public final class Level1Layout extends LevelLayout {
         if (!hallZone(seed, x, z)) {
             return Level1Areas.corridorWalkable(seed, x, z);
         }
+        if (Level1Areas.doorApron(seed, x, z)) {
+            return true;
+        }
         int mx = Math.floorMod(x, GRID);
         int mz = Math.floorMod(z, GRID);
         int cx = Math.floorDiv(x, GRID);
@@ -422,6 +425,9 @@ public final class Level1Layout extends LevelLayout {
         int cz = Math.floorDiv(z, GRID);
         boolean racks = crateHall || rackBay(seed, cx, cz);
         fillCeiling(seed, x, z, mx, mz, cx, cz, sector, racks, crateHall, out);
+        if (Level1Areas.doorApron(seed, x, z)) {
+            return; // open floor in front of a fire door: no pillar or wall in the doorway
+        }
 
         if (mx < PILLAR && mz < PILLAR) {
             fillPillar(seed, cx, cz, mx, mz, out);

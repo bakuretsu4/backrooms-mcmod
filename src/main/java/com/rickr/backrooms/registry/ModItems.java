@@ -303,6 +303,7 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.L1_CINDERBLOCK);
         ITEMS.registerSimpleBlockItem(ModBlocks.L1_BLUE_TILE);
         ITEMS.registerSimpleBlockItem(ModBlocks.L1_BLUE_TILE_SLAB);
+        ITEMS.registerSimpleBlockItem(ModBlocks.STAIRWELL_STEP);
         ITEMS.registerSimpleBlockItem(ModBlocks.L1_NOCLIP_WALL);
         ITEMS.registerSimpleBlockItem(ModBlocks.L1_BRIGHT_PATCH);
         ITEMS.registerSimpleBlockItem(ModBlocks.L1_MONOCHROME_WALL);

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "backrooms:block/stairwell_wall",
+    "top": "backrooms:block/concrete_floor",
+    "side": "backrooms:block/stairwell_wall"
+  }
+}

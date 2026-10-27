@@ -891,7 +891,7 @@ final class Level39Cell {
 
     /**
      * Holes (about one per 150 blocks of tunnel) right over the water of a run, and access
-     * shafts (about one per 200 blocks) where a town path crosses over a run.
+     * shafts (the way back up: at three in four places where a town path crosses over a run).
      */
     private void placeHolesAndShafts(List<Hole> holeList, List<Shaft> shaftList) {
         for (int s = 0; s < segs.length; s++) {
@@ -915,7 +915,8 @@ final class Level39Cell {
                     continue;
                 }
                 long kh = Hash.of(seed, at, seg.fixed, 3955);
-                if (Hash.unit(kh) >= 0.3) {
+                // Most path crossings get a shaft: it is the way back up to the town.
+                if (Hash.unit(kh) >= 0.75) {
                     continue;
                 }
                 boolean tooClose = false;

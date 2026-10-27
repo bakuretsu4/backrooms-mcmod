@@ -1233,43 +1233,34 @@ def _sample(a, xs, ys):
     return top * (1 - fy) + bot * fy
 
 
-def _vein_lines(rng, kmin, kmax, width, warp, presence=0.0):
-    """Anti-aliased meandering vein lines (0..1, seamless).
-
-    The veins are the zero lines of a warped, band-limited noise (only frequencies kmin..kmax per
-    block, so the lines are smooth curves, not pixel squiggles). Dividing the noise by the length
-    of its gradient gives each pixel's distance to the line in pixels, so the line can be drawn at
-    an exact, smoothly varying width (width = half-width in px). A second noise makes veins fade in
-    and out along their length (presence: higher = fewer), so they branch and stop like real ones
-    instead of forming endless closed loops."""
-    n = G.fnoise(rng, beta=2.0, kmin=kmin, kmax=kmax)
-    wx = G.fnoise(rng, beta=3.0, kmax=6) * warp
-    wy = G.fnoise(rng, beta=3.0, kmax=6) * warp
-    n = _sample(n, X + wx, Y + wy)
-    gx = (np.roll(n, -1, 1) - np.roll(n, 1, 1)) * 0.5
-    gy = (np.roll(n, -1, 0) - np.roll(n, 1, 0)) * 0.5
-    d = np.abs(n) / (np.hypot(gx, gy) + 1e-6)
-    wv = width * (0.35 + 0.9 * G.smoothstep(-1.0, 1.2, G.fnoise(rng, beta=2.6, kmin=2)))
-    line = np.clip(wv + 0.5 - d, 0, 1) * np.clip(wv + 0.5, 0, 1)
-    fade = G.smoothstep(presence - 0.6, presence + 0.6, G.fnoise(rng, beta=2.4, kmin=2, kmax=8))
-    return line * fade
+def _isoline_veins(rng, width: float, kmax: float) -> np.ndarray:
+    """Long, continuous veins (0..1, seamless): thin lines along the zero contour of a smooth noise
+    field, gently warped so they wander. Real marble veins run on across a whole slab like this."""
+    field = G.fnoise(rng, beta=3.0, kmin=1, kmax=kmax)
+    field = field / (field.std() + 1e-9)
+    warp = G.fnoise(rng, beta=2.6, kmin=2, kmax=6) * 0.35
+    d = np.abs(field + warp)
+    return np.exp(-(d / width) ** 2)
 
 
 def _marble(rng, veins=1.0, cloud=1.0):
-    """Real white marble (like tunnel.png): soft milky blue-grey clouding with bluer drifts, a few
-    broad faint veins with a soft halo, and fine meandering blue-grey veins of varying width that
-    branch and fade out. Smooth everywhere (no pixel noise); seamless."""
+    """Polished white marble panels (like tunnel.png): a calm milky surface with a soft blue-grey
+    clouding, one long faint vein wandering across the panel and a fainter one crossing it, a gentle
+    sheen and a fine joint between the panels. Seamless."""
     img = _fill(MARBLE_WHITE)
-    big = G.fnoise(rng, beta=3.2, aniso=(1.4, 1.0))
-    c1 = G.smoothstep(-0.3, 1.6, big * cloud)
-    img = G.over(img, CLOUD, c1 * 0.55)
-    drift = G.smoothstep(0.1, 1.5, G.blur(G.fnoise(rng, beta=2.2, aniso=(1.6, 1.0), kmin=3), 1.0)) * G.smoothstep(-0.6, 0.8, big)
-    img = G.over(img, DRIFT, drift * 0.35 * cloud)
-    broad = _vein_lines(rng, 1.5, 4, 2.4 * veins, 10.0, presence=0.2)
-    img = G.over(img, VEIN_FAINT, G.blur(broad, 2.5) * 0.35)           # halo
-    img = G.over(img, VEIN_FAINT, broad * 0.4)
-    for kmin, kmax, wd, a, pres in ((2, 5, 0.8, 0.75, 0.2), (3, 8, 0.5, 0.55, 0.5), (5, 12, 0.32, 0.4, 0.7)):
-        img = G.over(img, VEIN, _vein_lines(rng, kmin, kmax, wd * veins, 7.0, presence=pres) * a * min(veins, 1.6))
+    big = G.fnoise(rng, beta=3.4, aniso=(1.4, 1.0))
+    img = G.over(img, CLOUD, G.smoothstep(-0.2, 1.8, big * cloud) * 0.3)
+    drift = G.smoothstep(0.3, 1.6, G.blur(G.fnoise(rng, beta=2.6, aniso=(1.8, 1.0), kmin=2), 1.5))
+    img = G.over(img, DRIFT, drift * 0.16 * cloud)
+    main = _isoline_veins(rng, 0.05 * veins, 3)
+    img = G.over(img, VEIN_FAINT, G.blur(main, 2.5) * 0.2)                # soft halo
+    img = G.over(img, VEIN, main * 0.3 * min(veins, 1.6))
+    minor = _isoline_veins(rng, 0.03 * veins, 4)
+    img = G.over(img, VEIN_FAINT, minor * 0.22 * min(veins, 1.6))
+    X, Y = G.grid()
+    img = G.add_lum(img, 6 * G.smoothstep(0.9, 0.0, np.abs((X + Y) / (2 * S) - 0.35) * 3))   # polish sheen
+    joint = ((X < 0.6) | (Y < 0.6)).astype(float)
+    img = G.over(img, np.array([150, 156, 166]), joint * 0.45)
     return img
 
 
@@ -1278,12 +1269,10 @@ def marble_base():
 
 
 def marble_marks(i, rng, img):
-    if i == 1:                                             # a stretch with many more veins
-        m, _, _ = _lmask(rng, (40, 34), rough=0.4, lo=0.15, hi=0.6)
-        extra = np.zeros((S, S))
-        for kmin, kmax, wd in ((3, 7, 0.7), (4, 10, 0.5), (6, 14, 0.35)):
-            extra = np.maximum(extra, _vein_lines(rng, kmin, kmax, wd, 6.0, presence=-0.2))
-        out = G.over(G.over(img, DRIFT, m * 0.2), VEIN, extra * m * 0.55)
+    if i == 1:                                             # a greyer, more clouded panel
+        m, _, _ = _lmask(rng, (60, 50), rough=0.4, lo=0.1, hi=0.7)
+        out = G.over(img, DRIFT, m * 0.22)
+        out = G.over(out, VEIN, _isoline_veins(rng, 0.04, 3) * m * 0.3)
         return out * (img.mean() / out.mean())        # as bright overall as the plain marble
     if i == 2:                                             # a hairline crack
         return G.mark_crack(img, rng, 48, (45, 75), 2)
@@ -1758,6 +1747,9 @@ def _barrel_cell(ao: int, row: int) -> int:
     if ao > 4:
         return SOLID
     bottom = BASE_Y + row
+    # Below the springing line the sides are straight walls at R: open walkways (Level39Vault.barrelCell).
+    if bottom + 1 <= VAULT_Y0 and ao + 0.5 <= VAULT_R:
+        return AIR
     c_max = _barrel_ceiling(max(0, ao - 0.5))
     c_min = _barrel_ceiling(ao + 0.5)
     return AIR if c_min >= bottom + 1 else SOLID if c_max <= bottom else PIECE
