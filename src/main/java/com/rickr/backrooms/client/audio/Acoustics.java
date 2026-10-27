@@ -122,7 +122,7 @@ public final class Acoustics {
             case LEVEL_1 -> GARAGE;
             case LEVEL_2 -> PIPES;
             case LEVEL_4 -> OFFICE;
-            case LEVEL_9, LEVEL_94 -> OUTDOORS;
+            case LEVEL_9, LEVEL_94, LEVEL_490 -> OUTDOORS;
             case LEVEL_39 -> ear.y < LEVEL39_TUNNEL_TOP ? MARBLE_TUNNEL : MEGALOPHOBIA;
             case LEVEL_7 -> SEA;
             case POOLROOMS, LEVEL_37 -> null; // nothing reverberates there (canon), muffling only

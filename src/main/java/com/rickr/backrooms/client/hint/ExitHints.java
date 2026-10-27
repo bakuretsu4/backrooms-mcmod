@@ -97,6 +97,7 @@ public final class ExitHints {
             case LEVEL_7 -> new Guidance(0.15, 120);
             case LEVEL_39 -> new Guidance(0.10, 100);
             case LEVEL_94 -> new Guidance(0.07, 80);
+            case LEVEL_490 -> new Guidance(0.05, 60);
             case LEVEL_9 -> new Guidance(0.03, 50);
         };
     }
@@ -180,6 +181,7 @@ public final class ExitHints {
             case LEVEL_94 -> ModSounds.EXIT_HINT_LEVEL_94;
             case LEVEL_7 -> ModSounds.EXIT_HINT_LEVEL_7;
             case LEVEL_39 -> ModSounds.EXIT_HINT_LEVEL_39;
+            case LEVEL_490 -> ModSounds.EXIT_HINT_LEVEL_490;
         }).get();
     }
 

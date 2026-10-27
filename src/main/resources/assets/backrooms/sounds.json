@@ -3054,5 +3054,14 @@
         "stream": true
       }
     ]
+  },
+  "exit_hint.level_490": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_490",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
   }
 }

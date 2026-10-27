@@ -52,6 +52,8 @@ public final class LevelEvents {
     private static final int ALARM_SOUND_PERIOD = 6 * 20;
     private static final int INTERCOM_TICKS = 8 * 20;
     private static final int LIGHTNING_TICKS = 30;
+    /** Penance: long enough for the late thunder to arrive while the event still runs. */
+    private static final int PENANCE_LIGHTNING_TICKS = 5 * 20;
     private static final int TWIST_TICKS = 20 * 20;
     /** The PA line repeats as a fainter echo this many ticks later, from a different direction. */
     private static final int INTERCOM_ECHO_DELAY = 7;
@@ -135,7 +137,7 @@ public final class LevelEvents {
                 playDistant(player, ModSounds.INTERCOM, 34, 2.0f, state.intercomPitch, level.getRandom());
             }
         }
-        if (state.kind == LevelEventPayload.STORM && now == state.thunderTick) {
+        if ((state.kind == LevelEventPayload.STORM || state.kind == LevelEventPayload.LIGHTNING) && now == state.thunderTick) {
             // Thunder after the flash: light is faster than sound. Far off, from a random side.
             for (ServerPlayer player : level.players()) {
                 playDistant(player, ModSounds.LEVEL4_THUNDER, 30, 4.0f, 0.85f + level.getRandom().nextFloat() * 0.25f, level.getRandom());
@@ -187,6 +189,11 @@ public final class LevelEvents {
                 if (roll < 60) { kind = LevelEventPayload.INDOOR_RAIN; duration = (120 + random.nextInt(181)) * 20; }
                 else { kind = LevelEventPayload.ECHO_QUAKE; duration = ECHO_QUAKE_TICKS; }
             }
+            // Penance: the storm. Lightning far off in the clouds, its thunder a few seconds later.
+            case LEVEL_490 -> {
+                kind = LevelEventPayload.LIGHTNING;
+                duration = PENANCE_LIGHTNING_TICKS;
+            }
             default -> {
                 if (roll < 35) { kind = LevelEventPayload.TWIST; duration = TWIST_TICKS; }
                 else if (roll < 70) { kind = LevelEventPayload.FLICKER; duration = (5 + random.nextInt(5)) * 20; }
@@ -223,8 +230,13 @@ public final class LevelEvents {
                 }
             }
             case LevelEventPayload.LIGHTNING -> {
-                for (ServerPlayer player : level.players()) {
-                    playDistant(player, ModSounds.THUNDER, 28, 4.0f, 0.8f + random.nextFloat() * 0.3f, random);
+                if (BackroomsLevel.fromDimension(level.dimension()) == BackroomsLevel.LEVEL_490) {
+                    // Far away: the thunder rolls in 1-4 s after the flash.
+                    state.thunderTick = now + 20 + random.nextInt(61);
+                } else {
+                    for (ServerPlayer player : level.players()) {
+                        playDistant(player, ModSounds.THUNDER, 28, 4.0f, 0.8f + random.nextFloat() * 0.3f, random);
+                    }
                 }
             }
             case LevelEventPayload.STORM -> state.thunderTick = now + 20 + random.nextInt(50);
@@ -278,6 +290,8 @@ public final class LevelEvents {
             // Level 39: 4-8 quiet minutes, so with the rain's own 2-5 minutes and 60% of events
             // being rain, it rains roughly every 10-20 minutes and a quake comes in between.
             case LEVEL_39 -> (240 + random.nextInt(241)) * 20;
+            // Penance: lightning every 20-50 s.
+            case LEVEL_490 -> (20 + random.nextInt(31)) * 20;
         };
     }
 

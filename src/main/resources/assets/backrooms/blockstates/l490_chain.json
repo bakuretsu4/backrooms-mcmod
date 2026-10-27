@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "twist=false": {
+      "model": "backrooms:block/l490_chain"
+    },
+    "twist=true": {
+      "model": "backrooms:block/l490_chain",
+      "y": 90
+    }
+  }
+}

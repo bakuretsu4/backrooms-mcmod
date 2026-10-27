@@ -56,7 +56,8 @@ public final class BackroomsMusic {
         if (floor != null) {
             // null = no music at all (anything playing stops).
             event.setMusic(switch (floor) {
-                case LEVEL_94, LEVEL_7 -> null;
+                // Penance: near silence, so every creak of the chains stands out.
+                case LEVEL_94, LEVEL_7, LEVEL_490 -> null;
                 case POOLROOMS, LEVEL_37 -> DREAM;
                 case LEVEL_39 -> RARE;
                 default -> LEVELS;

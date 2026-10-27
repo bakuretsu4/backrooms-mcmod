@@ -69,7 +69,7 @@ Backrooms. About three seconds, no cut.
 One path runs through every level, each exit leading naturally into the next place:
 
 ```
-Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Poolrooms --drain--> Level 37 --deep pit--> Level 7 --sunken door--> Level 39 --mill window--> Level 94 --dark doorway--> Level 9 --underpass--> Overworld
+Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Poolrooms --drain--> Level 37 --deep pit--> Level 7 --sunken door--> Level 39 --mill window--> Level 94 --dark doorway--> Level 490 --the leap--> Level 9 --underpass--> Overworld
 ```
 
 Every exit looks different, but every move from one level to the next is filmed the same way:
@@ -202,9 +202,21 @@ going down into the dark, until the picture breaks up and you are in the next le
   climbing frame, a looping upstairs hall, an animation studio and an empty throne room. Day lasts
   8 minutes (the last 30 s is dusk), night 3: at night the music stops and Smilers come out on the
   hills, so get inside a house (they can't follow you in; your sanity holds steady there). Ways
-  out: houses whose doorway is pure black lead on to Level 9, flooded houses (knee-deep water,
+  out: houses whose doorway is pure black lead on to Level 490, flooded houses (knee-deep water,
   steps going down into murk) lead to Level 7, and the light behind the throne leads to Level 1.
-- **Level 9 (the Suburbs):** the last level, through a dark doorway in Level 94. An endless suburb at midnight in thick fog that drains the colour
+- **Level 490 ("Penance"):** through a dark doorway in Level 94 you come out on a stone platform
+  hung from giant iron chains over a sea of storm cloud, at night. Fenced stone bridges (main ones
+  5 wide, side ones 3) run between more platforms every 48 blocks; some side bridges are broken
+  off in the middle (now and then a gap you could jump), and stretches of railing are gone. Black
+  chains rise from every platform corner and every bridge into the storm; lightning flickers in
+  the clouds, thunder rolls in seconds later, and the moon breaks through now and then. Old iron
+  lanterns on the railings (about half still burn) and little stone shelters with a checkpoint
+  radio are the only warmth. About 300 blocks from where you arrive, along a route of main
+  bridges, stands a great round platform ringed with chains, where the structure will rise (see
+  docs/level-490-penance.md): one stretch of its railing has broken away, and stepping off there
+  is the way on, to Level 9. Fall anywhere else and you sink into the clouds and wake at the last
+  radio you used (or on the arrival platform). No monsters yet.
+- **Level 9 (the Suburbs):** the last level, through the leap in Level 490. An endless suburb at midnight in thick fog that drains the colour
   from everything. Wet roads covered in leaves, old sodium streetlamps (most dead, some
   flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark
   forest behind the yards. Follow the green EXIT arrow signs (a few lie) to a highway underpass

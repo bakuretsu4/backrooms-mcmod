@@ -1,6 +1,7 @@
 # Level 490 "Penance" (design notes)
 
-Status: **brainstorm only, nothing built yet.**
+Status: **stage 1 built** (platforms, bridges, chains, lanterns, shelters, the storm sky, falling,
+the way in and the leap out). Stages 2-4 not built yet.
 
 ## The idea
 
@@ -121,8 +122,7 @@ One straight path through every level, each exit leading naturally into the next
 Level 0 → Level 1 → Level 2 → Level 4 → Poolrooms → Level 37 → Level 7 → Level 39 → Level 94 →
 **Level 490** → Level 9 → home.
 
-The path, datamosh transitions and thinner arrows are built for the existing levels; Level 94
-leads straight to Level 9 until Level 490 exists.
+Built: Level 94's dark doorways lead here and the leap leads to Level 9.
 
 - Level 94's main exit leads here; the exit at the top of the structure leads to Level 9.
 - Every exit has its own look, but all use the datamosh transition.
@@ -158,6 +158,19 @@ leads straight to Level 9 until Level 490 exists.
   3. the distant chains and the structures they hold (one falls now and then), the chain sounds,
      the drone;
   4. the creature.
+
+## Stage 1 as built
+
+- Grid of platforms every 48 blocks (a few missing), decks at y 200, level 512 tall; one site per
+  1024-block region, its arrival platform ~300 blocks away, a route of main bridges between them.
+- Side bridges: 3 wide, one in five broken (one in three of those a 2-block gap).
+- Chains from every platform corner and every bridge's middle up to the top of the world.
+- Lanterns on posts along the railings (about half lit); shelters with a radio on some big
+  platforms and always on the arrival platform.
+- Falling below y 150: within 32 blocks of the site's centre it is the leap (Level 9); anywhere
+  else back to the last radio used here, or the arrival platform.
+- Sky: storm overhead (two drifting cloud layers silvered toward the moon), the moon now and then
+  hidden, a moonlit cloud sea below, lightning every 20-50 s with thunder 1-4 s later.
 
 ## Name and number
 

@@ -8,6 +8,7 @@ import com.rickr.backrooms.world.layout.Level2Layout;
 import com.rickr.backrooms.world.layout.Level37Layout;
 import com.rickr.backrooms.world.layout.Level4Layout;
 import com.rickr.backrooms.world.layout.Level39Layout;
+import com.rickr.backrooms.world.layout.Level490Layout;
 import com.rickr.backrooms.world.layout.Level94Layout;
 import com.rickr.backrooms.world.layout.Level7Layout;
 import com.rickr.backrooms.world.layout.Level9Layout;
@@ -26,8 +27,9 @@ import org.jetbrains.annotations.Nullable;
  * <p>One path through every floor ({@link #next()}): Overworld --noclip--> Level 0 --stairwell-->
  * Level 1 --stairwell--> Level 2 --exit door--> Level 4 --emergency stairwell--> Poolrooms --the
  * drain--> Level 37 --a deep pool--> Level 7 --the door on the sea floor--> Level 39's flooded
- * tunnels --a superstructure window--> Level 94 --a dark-doored house--> Level 9 --the
- * underpass--> Overworld. Every move between floors datamoshes ({@link Travel}).
+ * tunnels --a superstructure window--> Level 94 --a dark-doored house--> Level 490 --the leap from
+ * the structure--> Level 9 --the underpass--> Overworld. Every move between floors datamoshes
+ * ({@link Travel}).
  *
  * <p>Rare shortcuts stay as extra ways in and out: the Poolrooms' sunlit archway skips ahead to
  * Level 39's tunnels; a clay door on a Level 9 house opens onto Level 94; Level 94's flooded houses
@@ -62,7 +64,7 @@ public enum BackroomsLevel implements StringRepresentable {
     /**
      * "Motion": endless sunny hills, a toy-like town, siren poles playing cartoon music and a castle
      * on a glass mountain. Day/night cycle ({@link Level94Clock}); Smilers come out at night. No
-     * Bacteria. Its dark-doored houses lead on to Level 9. Never left by falling: see {@code Level94Rules}.
+     * Bacteria. Its dark-doored houses lead on to Level 490. Never left by falling: see {@code Level94Rules}.
      */
     LEVEL_94("level_94", new Level94Layout(), Integer.MIN_VALUE, 0, 1),
     /**
@@ -79,7 +81,14 @@ public enum BackroomsLevel implements StringRepresentable {
      * you out (transferBelowY sits far under the tunnel floor). The way on is through a window of the
      * superstructure, to Level 94.
      */
-    LEVEL_39("level_39", new Level39Layout(), 20, 0, 1);
+    LEVEL_39("level_39", new Level39Layout(), 20, 0, 1),
+    /**
+     * "Penance": platforms and fenced stone bridges hung from colossal chains over a sea of storm
+     * cloud, at night. No Bacteria (cap 0). Falling never takes you out (Level490Rules sends you
+     * back to your last checkpoint); the way on is the leap from the strange structure at the
+     * heart of each region, to Level 9. See {@code docs/level-490-penance.md}.
+     */
+    LEVEL_490("level_490", new Level490Layout(), Integer.MIN_VALUE, 0, 1);
 
     public static final Codec<BackroomsLevel> CODEC = StringRepresentable.fromEnum(BackroomsLevel::values);
 
@@ -143,7 +152,8 @@ public enum BackroomsLevel implements StringRepresentable {
             case LEVEL_37 -> LEVEL_7;
             case LEVEL_7 -> LEVEL_39;
             case LEVEL_39 -> LEVEL_94;
-            case LEVEL_94 -> LEVEL_9;
+            case LEVEL_94 -> LEVEL_490;
+            case LEVEL_490 -> LEVEL_9;
             case LEVEL_9 -> null;
         };
     }
