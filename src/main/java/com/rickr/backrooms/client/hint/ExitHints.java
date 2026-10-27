@@ -92,7 +92,8 @@ public final class ExitHints {
             case LEVEL_2 -> new Guidance(0.55, 0);
             case LEVEL_4 -> new Guidance(0.40, 0);
             case POOLROOMS -> new Guidance(0.30, 0);
-            case LEVEL_37 -> new Guidance(0.20, 150);
+            // Its pits are only ~170 blocks apart, so a longer reach would show marks everywhere.
+            case LEVEL_37 -> new Guidance(0.20, 60);
             case LEVEL_7 -> new Guidance(0.15, 120);
             case LEVEL_39 -> new Guidance(0.10, 100);
             case LEVEL_94 -> new Guidance(0.07, 80);

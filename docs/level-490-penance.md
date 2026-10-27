@@ -137,7 +137,7 @@ leads straight to Level 9 until Level 490 exists.
   | Level 2 | 55% | anywhere |
   | Level 4 | 40% | anywhere |
   | Poolrooms | 30% | anywhere |
-  | Level 37 | 20% | ~150 |
+  | Level 37 | 20% | ~60 (its pits are close together) |
   | Level 7 | 15% | ~120 |
   | Level 39 | 10% | ~100 |
   | Level 94 | 7% | ~80 |
