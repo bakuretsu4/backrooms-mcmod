@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "backrooms:block/lobby_carpet",
+    "top": "backrooms:block/lobby_carpet",
+    "side": "backrooms:block/lobby_carpet"
+  }
+}

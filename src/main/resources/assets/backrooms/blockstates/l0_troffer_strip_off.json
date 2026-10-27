@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/l0_troffer_strip_off"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l0_troffer_strip_off",
+      "y": 90
+    }
+  }
+}

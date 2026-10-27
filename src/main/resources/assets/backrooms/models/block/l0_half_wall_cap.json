@@ -1,0 +1,185 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "backrooms:block/l0_wood_rail",
+    "paper": "backrooms:block/yellow_wallpaper",
+    "wood": "backrooms:block/l0_wood_rail"
+  },
+  "elements": [
+    {
+      "from": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "to": [
+        16.0,
+        8.0,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            8.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#paper",
+          "cullface": "north"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            8.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#paper",
+          "cullface": "south"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            8.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#paper",
+          "cullface": "east"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            8.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#paper",
+          "cullface": "west"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#paper",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        0.0,
+        8.0,
+        -0.75
+      ],
+      "to": [
+        16.0,
+        10.0,
+        16.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            6.0,
+            16.0,
+            8.0
+          ],
+          "texture": "#wood"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            6.0,
+            16.0,
+            8.0
+          ],
+          "texture": "#wood"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            6.0,
+            16.0,
+            8.0
+          ],
+          "texture": "#wood",
+          "cullface": "east"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            6.0,
+            16.0,
+            8.0
+          ],
+          "texture": "#wood",
+          "cullface": "west"
+        },
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#wood"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#wood"
+        }
+      }
+    },
+    {
+      "from": [
+        0.0,
+        10.0,
+        -0.25
+      ],
+      "to": [
+        16.0,
+        10.35,
+        16.25
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#wood"
+        },
+        "north": {
+          "uv": [
+            0.0,
+            5.65,
+            16.0,
+            6.0
+          ],
+          "texture": "#wood"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            5.65,
+            16.0,
+            6.0
+          ],
+          "texture": "#wood"
+        }
+      }
+    }
+  ]
+}

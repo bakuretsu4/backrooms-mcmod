@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "side": "backrooms:block/l0_wallpaper_chevron_baseboard_v2",
+    "top": "backrooms:block/l0_wallpaper_chevron",
+    "bottom": "backrooms:block/l0_wallpaper_chevron"
+  }
+}

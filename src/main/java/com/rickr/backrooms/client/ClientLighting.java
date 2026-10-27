@@ -26,6 +26,11 @@ import org.jetbrains.annotations.Nullable;
  * Either way the camcorder applies on top: NightShot lifts the darkness, a dead battery leaves you
  * nearly blind.
  *
+ * <p>Level 0 is the exception to the "dim fill" rule: its halls have a troffer every 3 blocks and
+ * should look bright, even and flat like Kane Pixels' footage, so in both modes it gets a strong
+ * flat fill wherever the troffer grid reaches, fading to near-black in the dark wings (see
+ * {@link #applyLevel0Fill}). Veil's lights only add soft pools and shadows on top there.
+ *
  * <p>The Poolrooms follow the same rules (dim rooms, bright pools of light) with a cool tint; their
  * glowing blocks are capped a little below white because the big atrium skylights would otherwise
  * clip and the bloom would haze the whole picture.
@@ -59,6 +64,41 @@ public final class ClientLighting {
     /** Level 2 fill: pale walls in narrow corridors bounce the lamp light along (level 10 ~ 13%). */
     private static final float LEVEL2_MAX_FILL = 0.40f;
     private static final float LEVEL2_FILL_FALLOFF = 3.5f;
+
+    // Level 0 (Kane's Lobby): bright, even, flat-lit halls; whole dark wings near black.
+    /**
+     * "No light at all" in Level 0: practically black, a hint warm, so dark wings and doorways
+     * read as solid black holes (the grade crushes the rest). Not the blue-black of other levels.
+     */
+    private static final float LEVEL0_UNLIT_R = 0.004f;
+    private static final float LEVEL0_UNLIT_G = 0.004f;
+    private static final float LEVEL0_UNLIT_B = 0.002f;
+    /**
+     * The fill in a lit hall. The halls have a troffer every 3 blocks, so everywhere under the
+     * grid sits at block light 6 or more, and from there the fill is the SAME: flat, even light
+     * like the footage (a fill that followed the light level would show light-to-dark steps).
+     * Veil's lights add the soft pools under each panel on top.
+     */
+    private static final float LEVEL0_MAX_FILL = 0.80f;
+    /** Without Veil there are no pools on top, so the fill alone is a little stronger. */
+    private static final float LEVEL0_FALLBACK_MAX_FILL = 0.92f;
+    /** Light level from which a place counts as fully lit ... */
+    private static final float LEVEL0_FULL_FROM = 6.0f;
+    /** ... and below which it is black. In between (the 5 blocks past the last lit panel) it fades. */
+    private static final float LEVEL0_DARK_BELOW = 1.0f;
+    /**
+     * A little extra right under and beside the panels (light level 7 up to 12), so the upper
+     * walls and the floor under a panel are slightly brighter than the middle of a dead patch.
+     * Small, so it doesn't step visibly from block to block.
+     */
+    private static final float LEVEL0_PANEL_BONUS = 0.08f;
+    /** The bounce off yellow wallpaper and carpet: warm, but the yellow mostly comes from the textures. */
+    private static final float LEVEL0_TINT_R = 1.0f;
+    private static final float LEVEL0_TINT_G = 0.97f;
+    private static final float LEVEL0_TINT_B = 0.86f;
+    /** During a FLICKER event the whole fill stutters between these (the panels light the halls). */
+    private static final float LEVEL0_FLICKER_DARK = 0.35f;
+    private static final float LEVEL0_FLICKER_LIT = 0.9f;
 
     // Level 9 (the Suburbs at midnight).
     /**
@@ -119,13 +159,24 @@ public final class ClientLighting {
         if (event == LevelEventPayload.BLACKOUT) {
             return true;
         }
-        if (event == LevelEventPayload.FLICKER) {
-            long bucket = System.currentTimeMillis() / 90;
-            long h = bucket * 0x9E3779B97F4A7C15L;
-            h ^= h >>> 29;
-            return (h & 7) < 3;
-        }
-        return false;
+        return event == LevelEventPayload.FLICKER && flickerDark();
+    }
+
+    /** During a FLICKER event: whether the lights are in a dark moment right now (shared stutter). */
+    private static boolean flickerDark() {
+        long bucket = System.currentTimeMillis() / 90;
+        long h = bucket * 0x9E3779B97F4A7C15L;
+        h ^= h >>> 29;
+        return (h & 7) < 3;
+    }
+
+    private static boolean isLevel0(@Nullable BackroomsLevel floor) {
+        return floor == null || floor == BackroomsLevel.LEVEL_0;
+    }
+
+    /** How bright full-bright fixture faces are: all dark together in a blackout, half in a flicker. */
+    private static float emissivePower() {
+        return Math.max(0.05f, FixturePower.mainsPower() * (FixturePower.flickering(System.currentTimeMillis()) ? 0.5f : 1.0f));
     }
 
     /**
@@ -136,8 +187,7 @@ public final class ClientLighting {
         if (BackroomsLights.isVeilLightingActive()) {
             if (fullBright) {
                 // Emissive fixtures glow white, and all go dark together in a blackout.
-                float power = FixturePower.mainsPower() * (FixturePower.flickering(System.currentTimeMillis()) ? 0.5f : 1.0f);
-                float v = Math.max(0.05f, power);
+                float v = emissivePower();
                 if (floor == BackroomsLevel.POOLROOMS) {
                     v = Math.min(v, POOLROOMS_EMISSIVE_MAX);
                 } else if (floor == BackroomsLevel.LEVEL_9) {
@@ -150,6 +200,15 @@ public final class ClientLighting {
                 colors.set(v, v, v);
             } else {
                 applyVeilFill(colors, blockLight, floor);
+            }
+        } else if (isLevel0(floor)) {
+            // Level 0 without Veil: the same flat fill, a little stronger since there are no pools
+            // of Veil light on top; the panels themselves glow white.
+            if (fullBright) {
+                float v = emissivePower();
+                colors.set(v, v, v);
+            } else {
+                applyLevel0Fill(colors, blockLight, LEVEL0_FALLBACK_MAX_FILL);
             }
         } else {
             // Garage, pipe corridors and Poolrooms are lit by long strips: gentler falloff than the
@@ -178,6 +237,10 @@ public final class ClientLighting {
 
     /** Veil mode: just a dim, steep fill; Veil does the real lighting. */
     private static void applyVeilFill(Vector3f colors, int blockLight, @Nullable BackroomsLevel floor) {
+        if (isLevel0(floor)) {
+            applyLevel0Fill(colors, blockLight, LEVEL0_MAX_FILL); // bright flat halls, black wings
+            return;
+        }
         if (floor == BackroomsLevel.LEVEL_9) {
             applyLevel9Fill(colors, blockLight);
             return;
@@ -214,7 +277,7 @@ public final class ClientLighting {
         if (FixturePower.flickering(System.currentTimeMillis())) {
             fill *= 0.5f;
         }
-        // Warm yellow in the Lobby, neutral grey concrete in the garage, a neutral cool white in
+        // Warm yellow by default, neutral grey concrete in the garage, a neutral cool white in
         // the pipes (no purple wash: the lavender is in the wall paint already) and a cool
         // lavender-blue in the Poolrooms (shaded white tile in the footage reads ~#A9A3A8).
         float tr = 1.0f;
@@ -239,6 +302,31 @@ public final class ClientLighting {
         tg = Mth.lerp(alarm, tg, 0.12f);
         tb = Mth.lerp(alarm, tb, 0.10f);
         colors.set(UNLIT_R + fill * tr, UNLIT_G + fill * tg, UNLIT_B + fill * tb);
+    }
+
+    /**
+     * Level 0 (both modes): the flat, bright light of Kane's halls. Every lit place (block light
+     * {@value #LEVEL0_FULL_FROM} and up, i.e. anywhere under the troffer grid) gets the same fill
+     * plus a small bonus right by a panel; past the last lit panel it fades to black over about
+     * five blocks, so dark wings start at their doorways. Panels flicker, die in a blackout and
+     * dim with the alarm together, so the fill follows them.
+     */
+    private static void applyLevel0Fill(Vector3f colors, int blockLight, float maxFill) {
+        float t = Mth.clamp((blockLight - LEVEL0_DARK_BELOW) / (LEVEL0_FULL_FROM - LEVEL0_DARK_BELOW), 0.0f, 1.0f);
+        float near = Mth.clamp((blockLight - LEVEL0_FULL_FROM) / (12.0f - LEVEL0_FULL_FROM), 0.0f, 1.0f);
+        float fill = maxFill * t * t * (3.0f - 2.0f * t) + LEVEL0_PANEL_BONUS * near;
+        fill *= FixturePower.mainsPower() * FixturePower.alarmDim();
+        if (FixturePower.flickering(System.currentTimeMillis())) {
+            // The fill is most of the light here, so it stutters with the tubes instead of just halving.
+            fill *= flickerDark() ? LEVEL0_FLICKER_DARK : LEVEL0_FLICKER_LIT;
+        }
+        // During the alarm the halls turn red.
+        float alarm = FixturePower.alarm();
+        float tr = Mth.lerp(alarm, LEVEL0_TINT_R, 1.0f);
+        float tg = Mth.lerp(alarm, LEVEL0_TINT_G, 0.12f);
+        float tb = Mth.lerp(alarm, LEVEL0_TINT_B, 0.10f);
+        colors.set(Math.min(1.0f, LEVEL0_UNLIT_R + fill * tr), Math.min(1.0f, LEVEL0_UNLIT_G + fill * tg),
+                Math.min(1.0f, LEVEL0_UNLIT_B + fill * tb));
     }
 
     /**

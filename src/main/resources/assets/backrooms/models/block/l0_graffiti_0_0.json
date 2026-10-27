@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/yellow_wallpaper",
+    "north": "backrooms:block/l0_graffiti_0_0",
+    "south": "backrooms:block/yellow_wallpaper",
+    "east": "backrooms:block/yellow_wallpaper",
+    "west": "backrooms:block/yellow_wallpaper",
+    "up": "backrooms:block/yellow_wallpaper",
+    "down": "backrooms:block/yellow_wallpaper"
+  }
+}

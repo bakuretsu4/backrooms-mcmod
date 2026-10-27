@@ -2,34 +2,44 @@ package com.rickr.backrooms.world.layout;
 
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.DoorHingeSide;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 /**
  * The pit room: Level 0's "Hole Variation" (https://backrooms-wiki.wikidot.com/level-0: pitch-black
- * pits in grid clusters, light reaches only a few feet down) as in Kane Pixels' "Pitfalls", where
- * the floor of a room gives way to a grid of carpeted vertical shafts
- * (https://kane-pixels-backrooms.fandom.com/wiki/The_Backrooms) and Marvin, falling in, lands
- * somewhere else entirely.
+ * pits in grid clusters, light reaches only a few feet down) built like Room 14D in Kane Pixels'
+ * "Pitfalls": a big evenly lit room whose floor is a grid of square, carpet-lined shafts, with
+ * narrow carpeted walkways between them and a plain wooden door on the far wall. Marvin, falling
+ * in, lands somewhere else entirely.
  *
- * <p>A 15x15 room with a doorway in the middle of each wall. Inside, a one-block ledge runs round
- * the walls, and the rest of the floor is a grid of 2x2 shafts with one-block carpet ridges between
- * them (the doorways line up with the middle ridges, so you can cross on them if you're careful):
+ * <p>A 19x19 room. Inside, one-block walkways run round the walls and every fourth block across
+ * the room, so the floor is a 4x4 grid of 3x3 shafts:
  * <pre>
- *   L L L L L L L L L L L L L      L ledge, = ridge, # shaft
- *   L # # = # # = # # = # # L
- *   L # # = # # = # # = # # L
- *   L = = = = = = = = = = = L
+ *   = = = = = = = = = = = = = = = = =      = walkway, # shaft
+ *   = # # # = # # # = # # # = # # # =
+ *   = # # # = # # # = # # # = # # # =
+ *   = # # # = # # # = # # # = # # # =
+ *   = = = = = = = = = = = = = = = = =
  *   ...
  * </pre>
- * The shafts are carpeted all the way down and have a floor at {@link #SHAFT_BOTTOM}, above the
+ * Three walls have a wide open doorway in the middle; the fourth (picked per room) has the wooden
+ * door instead. The doorways open onto the walkway that runs along the wall, and the middle
+ * walkway lines up with them, so you can cross the room on it if you're careful.
+ *
+ * <p>The shafts are carpeted all the way down and have a floor at {@link #SHAFT_BOTTOM}, above the
  * height where falling would take you on to Level 1. Falling in is handled by the server
- * ({@code Level0Anomalies}): the shaft seems to go on and on, then you land, hurt, far away.
+ * ({@code PitfallsBehavior}): the shaft seems to go on and on, then you land, hurt, far away.
  */
 public final class Level0Pitfalls {
-    public static final int BOX = 15;
+    public static final int BOX = 19;
     public static final int MOAT = 2;
     /** Y of the carpet at the bottom of the shafts (Level 0 sends you to Level 1 below y30). */
     public static final int SHAFT_BOTTOM = 31;
+    /** Walkways every this many blocks (so the shafts are one less across). */
+    private static final int PITCH = 4;
 
     // What one column is.
     private static final int MOAT_FLOOR = 0;
@@ -37,6 +47,7 @@ public final class Level0Pitfalls {
     private static final int DOORWAY = 2;
     private static final int LEDGE = 3;
     private static final int SHAFT = 4;
+    private static final int DOOR = 5;
 
     private Level0Pitfalls() {}
 
@@ -47,16 +58,33 @@ public final class Level0Pitfalls {
             return MOAT_FLOOR;
         }
         if (i == 0 || i == BOX - 1 || j == 0 || j == BOX - 1) {
-            int along = i == 0 || i == BOX - 1 ? j : i;
             boolean corner = (i == 0 || i == BOX - 1) && (j == 0 || j == BOX - 1);
-            return !corner && along >= 6 && along <= 8 ? DOORWAY : WALL;
+            if (corner) {
+                return WALL;
+            }
+            int along = i == 0 || i == BOX - 1 ? j : i;
+            int middle = BOX / 2;
+            if (wallSide(i, j) == doorSide(site)) {
+                return along == middle ? DOOR : WALL;
+            }
+            return Math.abs(along - middle) <= 1 ? DOORWAY : WALL;
         }
         int p = i - 1;
         int q = j - 1;
-        if (p == 0 || p == BOX - 3 || q == 0 || q == BOX - 3 || p % 3 == 0 || q % 3 == 0) {
-            return LEDGE; // the ledge round the walls and the ridges between the shafts
-        }
-        return SHAFT;
+        return p % PITCH == 0 || q % PITCH == 0 ? LEDGE : SHAFT;
+    }
+
+    /** Which wall (as a direction out of the room) a wall column (i, j) belongs to. */
+    private static Direction wallSide(int i, int j) {
+        if (i == 0) return Direction.WEST;
+        if (i == BOX - 1) return Direction.EAST;
+        if (j == 0) return Direction.NORTH;
+        return Direction.SOUTH;
+    }
+
+    /** The wall with the wooden door: random per room, but fixed by the site. */
+    private static Direction doorSide(AnomalySite site) {
+        return Direction.from2DDataValue((int) (site.salt() >>> 59) & 3);
     }
 
     /** True above one of the shafts (nothing to stand on). */
@@ -76,6 +104,7 @@ public final class Level0Pitfalls {
     static void fill(AnomalySite site, int x, int z, int floor, int ceiling, LevelLayout.Column out) {
         BlockState carpet = ModBlocks.LOBBY_CARPET.get().defaultBlockState();
         BlockState tile = ModBlocks.CEILING_TILE.get().defaultBlockState();
+        BlockState wallpaper = ModBlocks.YELLOW_WALLPAPER.get().defaultBlockState();
         int i = x - site.minX() - MOAT;
         int j = z - site.minZ() - MOAT;
         out.set(ceiling, tile);
@@ -84,21 +113,37 @@ public final class Level0Pitfalls {
                 out.set(floor, carpet);
                 out.set(floor + 1, ModBlocks.YELLOW_WALLPAPER_BASEBOARD.get().defaultBlockState());
                 for (int y = floor + 2; y < ceiling; y++) {
-                    out.set(y, ModBlocks.YELLOW_WALLPAPER.get().defaultBlockState());
+                    out.set(y, wallpaper);
+                }
+                fillBelow(floor, carpet, out);
+            }
+            case DOOR -> {
+                // Room 14D's plain wooden door, shut, in the middle of the far wall.
+                out.set(floor, carpet);
+                BlockState door = ModBlocks.LOBBY_DOOR.get().defaultBlockState()
+                        .setValue(DoorBlock.FACING, doorSide(site))
+                        .setValue(DoorBlock.HINGE, DoorHingeSide.LEFT)
+                        .setValue(DoorBlock.OPEN, false);
+                out.set(floor + 1, door.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+                out.set(floor + 2, door.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+                for (int y = floor + 3; y < ceiling; y++) {
+                    out.set(y, wallpaper);
                 }
                 fillBelow(floor, carpet, out);
             }
             case DOORWAY -> {
+                // Frameless, like every Kane opening: no lintel, the ceiling just carries on.
                 out.set(floor, carpet);
-                out.set(ceiling - 1, ModBlocks.YELLOW_WALLPAPER.get().defaultBlockState());
+                fillBelow(floor, carpet, out);
             }
             case LEDGE -> {
                 out.set(floor, carpet);
                 fillBelow(floor, carpet, out); // the carpeted sides of the shafts next to it
                 int p = i - 1;
                 int q = j - 1;
-                // Four small panels over the ridge crossings: enough light to see the grid, not the bottom.
-                if ((p == 3 || p == 9) && (q == 3 || q == 9)) {
+                // A troffer over every inner walkway crossing (4 blocks apart): the room is as evenly
+                // lit as the rest of the level, and the light still dies a few blocks down the shafts.
+                if (p % PITCH == 0 && q % PITCH == 0 && p > 0 && q > 0 && p < BOX - 3 && q < BOX - 3) {
                     out.set(ceiling, ModBlocks.FLUORESCENT_LIGHT.get().defaultBlockState());
                 }
             }

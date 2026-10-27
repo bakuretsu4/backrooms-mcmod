@@ -75,9 +75,11 @@ on to Level 9; a rare moulded-clay front door on a Level 9 house opens onto **Le
 flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on to Level 9; a very
 rare chairlift in Level 9's Crimson Field climbs into the clouds and drops you into **Level 39**.
 
-- **Level 0 (the Lobby):** thick-walled yellow maze, lit rooms and dark corridors. Arrows drawn on
-  the walls point to the exit stairwell, but some of them lie. Look for the EXIT sign over a
-  wooden door.
+- **Level 0 (the Lobby):** Kane Pixels' bright yellow halls of square pillars under a grid of
+  troffers, mazes of thick wall blocks, long corridors, the film's odd half-built rooms (half-walls,
+  window holes, ramps into low passages, mannequins, a heap of old furniture) and whole wings where
+  every light is dead. Arrows drawn on the walls point to the exit stairwell, but some of them lie.
+  Look for the EXIT sign over a wooden door between green and white hazard stripes.
 - **Level 1 (the "Habitable Zone"):** an endless underground parking structure crossed with a
   warehouse, big and high: bevelled 3x3 concrete pillars every 12 blocks under a 7-block ceiling.
   Each pillar has its number painted two blocks tall on a band in its sector's colour, and some
@@ -351,7 +353,7 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **Blackout Zones:** Patches of the maze where every light is dead, the walls are rough and the carpet is flooded. The buzz you hear seems to lead the way out, but it never stays in one place.
 - **The Manila Room:** A very rare brown wall with a wooden door. Behind it is a quiet beige room with a table, two chairs, supplies and notes from volunteers, and a piano playing from nowhere. Read the notes: the way to Level 1 is close.
 - **Shifting pillar halls:** Big bright halls full of pillars that are never quite where they were when you look back. Only the pale arches in the middle stay put.
-- **Pit rooms:** A room whose floor is a grid of pitch-black shafts. Don't fall in. You will land, hurt, somewhere very far away.
+- **Pit rooms:** A big room whose floor is a grid of carpeted square shafts with narrow walkways between them, and a wooden door on the far side. Don't fall in. You will land, hurt, somewhere very far away.
 
 **Level 1**
 - **Crate halls:** In some of the open garage halls, aisles of steel pallet racking stand in a brighter, better-lit hall. Wooden crates turn up there: you hear something settle behind you, and there is a crate that wasn't there before. When the lights fail, the crates are gone; when the power comes back, new ones are waiting. Not everything inside is worth taking.
@@ -417,7 +419,7 @@ picture and blended over about two seconds when you change level:
 
 | Level | Mood |
 |---|---|
-| Level 0 | Stale yellow light, sickly greenish shadows, thick yellow-grey air down the halls |
+| Level 0 | Kane Pixels' tapes: bright, flat, even light, yellow-green with the blue cut, troffers clipping to white, no haze; dark wings crushed to black |
 | Level 1 | Cold, damp concrete: blue shadows, little colour, grey-blue air |
 | Level 2 | Rusty-brown shadows under cold bulbs, deep corner shadows, dark oily air |
 | Level 4 | Cold fluorescent blue-grey, quiet |
@@ -517,7 +519,7 @@ saturation, hiss and a big, empty room.
 /backrooms locate                       where is the nearest exit?
 /backrooms locate saferoom              where is the nearest safe room?
 /backrooms anomaly here                 which anomalous area am I standing in?
-/backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)?
+/backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... and level_0/set/...
 /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|rain|quake|end> [seconds]
 /backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
 /backrooms sanity [players] <0-100>     set sanity (test the low-sanity effects)

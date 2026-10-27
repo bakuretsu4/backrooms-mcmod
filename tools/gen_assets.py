@@ -210,50 +210,50 @@ def _pores(img, rng, density=0.012, depth=22.0) -> np.ndarray:
 
 
 # ---------------------------------------------------------------- Level 0 ---
+# Kane Pixels' Lobby, as in his "Found Footage" frames. Colours are albedos for the
+# Level 0 lights, which are near-white with a faint cool tint, plus the camcorder grade that cuts
+# blue and adds saturation; so the textures sit a touch LESS saturated than the colours on screen
+# (wallpaper ~#B7A746, carpet ~#A08534, ceiling ~#D8D0B0 once lit and graded). Wallpaper, carpet
+# and ceiling stay within ~15% of each other: the place reads as one flat yellow.
 
-WALLPAPER = (226, 206, 110)   # x Veil light (1.0, .94, .39) -> ~#CCB633 lit
-CARPET = (198, 176, 112)      # -> ~#BCA03F lit
-CEILING = (208, 202, 186)
+WALLPAPER = (184, 170, 96)    # muted: the grade adds saturation and cuts blue, so this lands near #B7A746
+CARPET = (142, 120, 64)       # browner and ~0.75x the wall's brightness (floor tops get full face light); ~#A3893A on screen
+CEILING = (214, 207, 182)
+TBAR = (190, 184, 164)        # the painted steel T-bar grid of the dropped ceiling
 
 
-def _wallpaper(stains=True) -> np.ndarray:
-    """Lemon wallpaper: faint large damask lattice, paper mottling, a few water stains.
+def _wallpaper(stains=True, base=WALLPAPER, seed=101) -> np.ndarray:
+    """Kane's wallpaper: a soft, low-contrast blotchy damask.
 
-    stains=False leaves out the three big water stains: the wall blocks use that clean paper and
-    get their stains from the random variants instead (see Surface variants), so the same stain
-    doesn't repeat on every block.
+    Lighter blotches (about a quarter of a block) with faint darker outlines and little darker
+    hollows inside them, like a worn floral print seen through a VHS camera; brightness differs by
+    only a few percent. Matte paper grain on top. No lattice, nothing saturated.
+
+    stains=True adds two faint old water marks (used by drawings and anomaly blocks that are
+    based on the paper); the wall blocks use the clean paper and get their marks from the random
+    variants instead (see Surface variants), so the same mark doesn't repeat on every block.
     """
-    rng = rng_for(101)
-    img = fill(WALLPAPER, (S, S))
-    X, Y = grid()
-    # damask: a diamond lattice (period 64 px = 2 motifs per block) with a leaf motif inside
-    u = wrapd(X - 32, 64) / 32
-    v = wrapd(Y - 32, 64) / 32
-    lattice = np.exp(-((np.abs(u) + np.abs(v) - 1.0) / 0.07) ** 2)
-    leaf = (np.exp(-(u ** 2 / 0.012 + (v + 0.05) ** 2 / 0.10))
-            + 0.8 * np.exp(-((np.abs(u) - 0.2) ** 2 / 0.008 + (v - 0.2) ** 2 / 0.03))
-            + 0.6 * np.exp(-(u ** 2 / 0.03 + (v + 0.45) ** 2 / 0.006)))
-    pattern = lattice + np.clip(leaf, 0, 1)
-    stripes = np.cos(2 * np.pi * X / 8)          # printed paper ribbing
-    lum = (-7.0 * pattern + 1.2 * stripes
-           + fnoise(rng, beta=3.0) * 4.5
-           + fnoise(rng, beta=1.8, kmin=6) * 2.0
-           + fnoise(rng, beta=0.6, kmin=24) * 2.2
-           + fnoise(rng, beta=1.5, aniso=(1, 6), kmin=3) * 1.5)
-    img = add_lum(img, lum, (1.0, 0.97, 0.85))
-    # water stains: noisy blobs with a darker tide-line rim, brown tint
-    stain_col = np.array([150, 118, 58])
-    for cx, cy, sx, sy, a in ((30, 18, 22, 30, 0.22), (96, 92, 16, 20, 0.15), (70, 6, 30, 14, 0.18)):
-        m = blob((S, S), cx, cy, sx, sy) * (1 + 0.35 * fnoise(rng, beta=2.0))
-        if not stains:
-            continue  # (the noise above is still drawn, so the paper below stays identical)
-        inner = smoothstep(0.35, 0.6, m)
-        rim = smoothstep(0.28, 0.36, m) - smoothstep(0.36, 0.48, m)
-        img = over(img, stain_col, a * inner + 1.6 * a * np.clip(rim, 0, 1))
-    # drip runs from the top edge (wrap into the bottom, so tiling stays seamless)
-    runs = np.clip(fnoise(rng, beta=1.2, aniso=(1, 14), kmin=2), 0, None)
-    fade = np.exp(-((Y - 2) % S) / 40)
-    img = over(img, stain_col, np.clip(runs * fade * 0.06, 0, 0.12))
+    rng = rng_for(seed)
+    img = fill(base, (S, S))
+    # The blotches: band-limited noise (2-6 waves per block, a little taller than wide), cut softly.
+    n = fnoise(rng, beta=1.6, kmin=2, kmax=6.5, aniso=(1.0, 1.2))
+    n = n + 0.4 * fnoise(rng, beta=1.2, kmin=6.5, kmax=18)
+    n = blur(n / n.std(), 0.8)
+    light = smoothstep(-0.25, 0.55, n)
+    outline = np.exp(-((n - 0.1) / 0.22) ** 2)
+    hollows = smoothstep(0.9, 1.6, fnoise(rng, beta=1.4, kmin=10, kmax=24)) * light
+    lum = (6.0 * light - 3.0 * outline - 3.5 * hollows
+           + 2.0 * fnoise(rng, beta=3.0, kmin=1, kmax=3)                    # very soft unevenness
+           + 1.4 * blur(fnoise(rng, beta=0.8, kmin=24), 0.6)                 # paper grain
+           + 1.0 * rng.normal(0, 1, (S, S))
+           + 0.9 * fnoise(rng, beta=1.5, aniso=(1, 6), kmin=3))              # faint vertical streaks of the print
+    img = add_lum(img, lum - lum.mean(), (1.0, 0.96, 0.78))
+    if stains:
+        stain_col = np.array([150, 126, 62])
+        for cx, cy, sx, sy, a in ((34, 30, 18, 22, 0.08), (94, 88, 14, 16, 0.06)):
+            m = blob((S, S), cx, cy, sx, sy) * (1 + 0.35 * fnoise(rng, beta=2.0))
+            rim = smoothstep(0.28, 0.36, m) - smoothstep(0.36, 0.48, m)
+            img = over(img, stain_col, a * smoothstep(0.35, 0.6, m) + 1.4 * a * np.clip(rim, 0, 1))
     return img
 
 
@@ -261,17 +261,25 @@ def tex_yellow_wallpaper() -> None:
     save_png(_wallpaper(stains=False), TEX / "block" / "yellow_wallpaper.png")
 
 
-def _baseboard(img) -> np.ndarray:
-    """Light-grey painted baseboard on the bottom 1/8 with a small top lip and shadow."""
+def _baseboard(img, board_col=None) -> np.ndarray:
+    """Kane's slim baseboard: a painted strip in the wall colour on the bottom 16 px (2 px of 16),
+    a clearly lighter rounded top edge catching the ceiling light, a dark hairline shadow on the
+    paper above it and a slightly shaded face, so it still reads from across a hall.
+
+    board_col: the paint colour (default: the average colour of the wall it sits on).
+    """
     rng = rng_for(121)
     X, Y = grid()
-    board = _smooth_concrete(rng, (204, 202, 198), mottle=2.0, fine=0.6)
-    m = box((S, S), -1, S - 16, S + 1, S + 1)
-    img = add_lum(img, -14 * np.exp(-((Y - (S - 17)) / 1.8) ** 2) * (Y < S - 16))  # contact shadow
-    img = over(img, board, m)
-    img = add_lum(img, 18 * box((S, S), -1, S - 16, S + 1, S - 14))   # lit top lip
-    img = add_lum(img, -10 * box((S, S), -1, S - 14, S + 1, S - 13))  # lip underside
-    img = add_lum(img, -8 * box((S, S), -1, S - 2, S + 1, S + 1))     # floor scuffs
+    top = S - 16
+    col = np.asarray(board_col if board_col is not None else img.reshape(-1, 3).mean(axis=0), float)
+    board = _smooth_concrete(rng, col, mottle=1.5, fine=0.5)
+    board = add_lum(board, -10 * smoothstep(top + 4, S, Y))                          # face turns away from the light
+    img = add_lum(img, -24 * np.exp(-((Y - (top - 0.6)) / 1.0) ** 2) * (Y < top))    # dark hairline shadow on the paper
+    img = over(img, board, box((S, S), -1, top, S + 1, S + 1))
+    # the rounded top edge: a bright 3 px band rolling off into the face
+    img = add_lum(img, 36 * np.exp(-((Y - (top + 1.5)) / 1.4) ** 2) * (Y > top), (1.0, 1.0, 1.05))
+    img = add_lum(img, -10 * np.exp(-((Y - (top + 4.2)) / 0.9) ** 2))                 # under the round-over
+    img = add_lum(img, -12 * box((S, S), -1, S - 1.5, S + 1, S + 1))                   # where it meets the carpet
     return img
 
 
@@ -279,20 +287,24 @@ def tex_yellow_wallpaper_baseboard() -> None:
     save_png(_baseboard(_wallpaper(stains=False)), TEX / "block" / "yellow_wallpaper_baseboard.png")
 
 
-def _carpet(seed=102) -> np.ndarray:
-    """Coarse beige-ochre loop carpet: per-pixel speckle + 2x2 fibre clumps + soft wear."""
+def _carpet(seed=102, base=CARPET) -> np.ndarray:
+    """Kane's carpet: dry, short, tight loop pile. No pattern, just rows of small rounded loops
+    (about 5 x 4 px) with dark crevices between them, each loop a slightly different shade, and a
+    very soft unevenness. Plain enough that a whole hall reads as one even floor."""
     rng = rng_for(seed)
-    img = fill(CARPET, (S, S))
-    clump = np.kron(rng.normal(0, 1, (S // 2, S // 2)), np.ones((2, 2)))
-    lum = (rng.normal(0, 1, (S, S)) * 8.0 + clump * 6.0
-           + fnoise(rng, beta=3.0) * 5.0 + fnoise(rng, beta=1.6, kmin=8) * 3.0)
-    lum -= (rng.random((S, S)) < 0.035) * 22.0      # dark fibre tips
-    lum += (rng.random((S, S)) < 0.02) * 14.0       # light fibre tips
-    img = add_lum(img, lum, (1.0, 0.94, 0.75))
-    # Damp/dirty patches. Kept faint: they repeat on every block and read as a grid of spots;
-    # the big stains come from the floor's random variants (see Surface variants).
-    dirt = smoothstep(0.9, 2.2, fnoise(rng, beta=3.2))
-    return over(img, np.array([120, 100, 52]), dirt * 0.1)
+    X, Y = grid()
+    img = fill(base, (S, S))
+    px, py = S / 24, S / 32                       # loop pitch (whole loops per block, so it tiles)
+    row = np.floor(Y / py)
+    xs = X + (row % 2) * px / 2 + fnoise(rng, beta=2.2, kmin=3) * 0.9   # every other row offset half a loop
+    ys = Y + fnoise(rng, beta=2.2, kmin=3) * 0.6
+    u, v = wrapd(xs, px) / (px / 2), wrapd(ys, py) / (py / 2)
+    loop = np.cos(np.clip(np.hypot(u * 0.95, v), 0, 1) * np.pi / 2)    # 1 on top of a loop, 0 in the crevice
+    tone = rng.normal(0, 1, (64, 64))[np.floor(ys / py).astype(int) % 64, np.floor(xs / px).astype(int) % 64]
+    lum = (-9.0 * (1 - loop) ** 2 + 3.0 * np.clip(-v, -1, 1) * loop + 2.0 * tone * loop
+           + 1.5 * fnoise(rng, beta=3.0, kmin=1, kmax=4) + 1.0 * fnoise(rng, beta=1.5, kmin=6, kmax=20)
+           + 1.0 * rng.normal(0, 1, (S, S)))
+    return add_lum(img, lum - lum.mean(), (1.0, 0.95, 0.8))
 
 
 def tex_lobby_carpet() -> None:
@@ -308,51 +320,96 @@ def tex_lobby_carpet_arrow() -> None:
     save_png(img, TEX / "block" / "lobby_carpet_arrow.png")
 
 
-def _ceiling_tile(stain=True) -> np.ndarray:
-    """2x2 small acoustic tiles per block, fissured surface, dark seams and bevels.
-
-    stain=False drops the water-stained corner (the ceiling blocks get their stains from the
-    random variants instead, see Surface variants).
-    """
-    rng = rng_for(103)
-    img = fill(CEILING, (S, S))
+def _tbar_grid(img, width=2.2) -> np.ndarray:
+    """The dropped ceiling's grid along the block edges: `width` px of painted T-bar on each side
+    (twice that where two blocks meet), lit on its north/west lip, shaded on the other."""
     X, Y = grid()
-    tone = np.kron(rng.normal(0, 3.0, (2, 2)), np.ones((S // 2, S // 2)))
-    pits = blur((rng.random((S, S)) < 0.07) * rng.uniform(0.3, 1, (S, S)), 0.5)
-    fiss = smoothstep(0.07, 0.0, np.abs(fnoise(rng, beta=2.4, kmin=3)))
-    lum = tone - pits * 40 - fiss * 8 + fnoise(rng, beta=3.0) * 3 + rng.normal(0, 1.5, (S, S))
-    img = add_lum(img, lum, (1.0, 0.98, 0.94))
-    st = smoothstep(0.4, 0.65, blob((S, S), 100, 100, 18, 14) * (1 + 0.4 * fnoise(rng, beta=2)))
+    d = np.minimum(np.minimum(X, S - X), np.minimum(Y, S - Y))
+    bar = add_lum(fill(TBAR, (S, S)), 7 * ((X < 1.4) | (Y < 1.4)) - 6 * ((X > S - 1.4) | (Y > S - 1.4)))
+    return over(img, bar, smoothstep(width + 0.8, width, d))
+
+
+def _ceiling_tile(stain=True, seed=103) -> np.ndarray:
+    """ONE acoustic tile per block (Kane's ~1.2 m tiles), set in a thin warm T-bar grid at the
+    block edge. Warm off-white mineral fibre, fine short dark fissures and pin-holes, a soft
+    shadow where the tile sits down in the grid.
+
+    stain=True adds a faint water ring (the ceiling blocks get theirs from the random variants).
+    """
+    rng = rng_for(seed)
+    X, Y = grid()
+    img = fill(CEILING, (S, S))
+
+    def fissures(d, k):
+        for _ in range(200):
+            x, y, a = rng.uniform(0, S), rng.uniform(0, S), rng.uniform(0, np.pi)
+            step = rng.uniform(0.8, 2.4)
+            pts = [(x, y)]
+            for _ in range(2):
+                a += rng.normal(0, 0.6)
+                x, y = x + np.cos(a) * step, y + np.sin(a) * step
+                pts.append((x, y))
+            d.line([(p * k, q * k) for p, q in pts], fill=int(rng.uniform(110, 255)), width=int(k * rng.uniform(0.8, 1.5)))
+
+    fiss = pil_mask(fissures)
+    pits = blur((rng.random((S, S)) < 0.02) * rng.uniform(0.3, 1, (S, S)), 0.45)
+    lum = (-30 * fiss - 30 * pits + 2.0 * fnoise(rng, beta=3.0, kmin=1, kmax=4)
+           + 1.5 * blur(fnoise(rng, beta=0.5, kmin=20), 0.5) + 1.2 * rng.normal(0, 1, (S, S)))
+    img = add_lum(img, lum, (1.0, 0.98, 0.92))
     if stain:
-        img = over(img, np.array([168, 146, 100]), st * 0.35)     # water-stained corner
-    dx, dy = wrapd(X, 64), wrapd(Y, 64)
-    for d in (dx, dy):
-        img = add_lum(img, 10 * ((d > 1.5) & (d < 3.5)))      # lit bevel
-        img = add_lum(img, -9 * ((d < -1.5) & (d > -3.5)))    # shadowed bevel
-    seam = np.clip(smoothstep(1.8, 0.8, np.abs(dx)) + smoothstep(1.8, 0.8, np.abs(dy)), 0, 1)
-    return over(img, np.array([92, 86, 76]), seam)
+        img = mark_stain(img, rng, CEILING_STAIN, (16, 14), 0.25)
+    d = np.minimum(np.minimum(X, S - X), np.minimum(Y, S - Y))
+    img = add_lum(img, -10 * np.exp(-(d - 3.0) / 2.5) * (d > 3.0))    # the tile sits a little up in the grid
+    return _tbar_grid(img)
 
 
 def tex_ceiling_tile() -> None:
     save_png(_ceiling_tile(stain=False), TEX / "block" / "ceiling_tile.png")
 
 
+def _troffer_frame(rng, lip=10.5):
+    """The painted steel troffer frame (warm white enamel) with the T-bar rim round the outside
+    and a shadowed groove where the frame steps up to the lens. Returns (frame, lens_mask, d)."""
+    X, Y = grid()
+    d = np.minimum(np.minimum(X, S - X), np.minimum(Y, S - Y))
+    img = _smooth_concrete(rng, (230, 230, 224), mottle=1.2, fine=0.5)
+    img = add_lum(img, -20 * smoothstep(1.0, 0.0, np.abs(d - lip)) + 9 * smoothstep(1.0, 0.0, np.abs(d - lip + 2)))
+    img = _tbar_grid(img)
+    return img, box((S, S), lip + 0.5, lip + 0.5, S - lip - 0.5, S - lip - 0.5), d
+
+
+def _tube_glow(X, Y, centres, along_y=True, width=6.5):
+    """Soft bright bands where tubes sit behind a lens, and how close each pixel is to a tube end."""
+    c, a = (X, Y) if along_y else (Y, X)
+    tubes = sum(np.exp(-((c - t) / width) ** 2) for t in centres)
+    ends = smoothstep(24, 15, a) + smoothstep(S - 24, S - 15, a)
+    return tubes, ends
+
+
+def _prism(X, Y, pitch=4.0):
+    """The fine pyramid pattern of a prismatic lens (0 at the tips, 1 in the grooves)."""
+    return (np.abs(wrapd(X + Y, pitch)) + np.abs(wrapd(X - Y, pitch))) / pitch
+
+
 def _fluorescent_panel(on: bool) -> np.ndarray:
+    """Kane's square 4-tube troffer, flush in the grid: thin painted frame, prismatic lens.
+
+    Lit: a near-white, faintly cool lens (#F4FFF2-ish, so it clips and blooms) with four faint
+    brighter bands where the tubes are. Dead: the same frame with a grey lens, the four tubes and
+    their darker ends just visible through it.
+    """
     rng = rng_for(104)
-    img = _smooth_concrete(rng, (212, 212, 216), mottle=1.5, fine=0.5)  # thin painted frame
-    core = box((S, S), 8, 8, S - 8, S - 8)
-    groove = box((S, S), 6, 6, S - 6, S - 6) - core
-    img = over(img, np.array([120, 120, 126]), groove)
+    X, Y = grid()
+    img, lens, d = _troffer_frame(rng)
+    tubes, ends = _tube_glow(X, Y, [11 + (S - 22) * (i + 0.5) / 4 for i in range(4)])
+    pr = _prism(X, Y)
     if on:
-        diff = fill((255, 255, 255), (S, S))   # pure white emissive diffuser
+        diff = add_lum(fill((242, 250, 240), (S, S)), 13 * tubes * (1 - 0.5 * ends) - 2 * pr, (0.96, 1.0, 0.97))
+        diff = add_lum(diff, -6 * smoothstep(18, 11, d))               # a touch dimmer right at the frame
     else:
-        X, Y = grid()
-        diff = _smooth_concrete(rng, (160, 162, 168), mottle=1.5, fine=0.4)
-        for tx in (40, 88):           # dead tubes faintly visible through the diffuser
-            tube = np.exp(-((X - tx) / 7) ** 2)
-            ends = (smoothstep(26, 14, Y) + smoothstep(S - 26, S - 14, Y)) * tube
-            diff = add_lum(diff, tube * 10 - ends * 30)
-    return over(img, diff, core)
+        diff = add_lum(fill((170, 174, 172), (S, S)), 9 * tubes - 26 * tubes * ends - 3 * pr
+                       + 2 * fnoise(rng, beta=3.0))
+    return over(img, diff, lens)
 
 
 def tex_fluorescent_light() -> None:
@@ -365,7 +422,7 @@ def tex_fluorescent_light_off() -> None:
 
 def tex_wall_decals() -> None:
     """Black-marker drawings on wallpaper (wall_arrow_left/right, handprint, window, door)."""
-    base = _wallpaper()
+    base = _wallpaper(stains=False)   # the plain wall paper, so a drawing doesn't bring a stain with it
     rng = rng_for(130)
     left = [[(104, 66), (24, 62)], [(48, 40), (22, 62), (50, 88)]]
     save_png(marker(base.copy(), rng, left, width=7), TEX / "block" / "wall_arrow_left.png")
@@ -7435,14 +7492,95 @@ CEILING_STAIN = (168, 146, 100)
 RUST = (122, 82, 58)
 
 
+def mark_paper_scuff(img, rng, y_range=(0.45, 0.85)) -> np.ndarray:
+    """A patch where something rubbed the wallpaper: the print is worn paler and fuzzy, a few
+    short pulled fibres and one small torn edge where the paper lifted."""
+    X, Y = grid()
+    sx, sy = rng.uniform(14, 20), rng.uniform(8, 12)
+    cx, cy = _spot(rng, 1.5 * sx, 1.5 * sy, y_range)
+    m = smoothstep(0.25, 0.7, _local(cx, cy, sx, sy) * (1 + 0.5 * fnoise(rng, beta=2.0))) * _edge_fade()
+    worn = blur(img, 1.2) + 7.0 * np.array([1.0, 1.0, 0.9])          # paler, the blotches rubbed soft
+    img = lerp(img, worn, (0.8 * m)[..., None])
+    streaks = np.clip(fnoise(rng, beta=1.0, aniso=(8, 1), kmin=6), 0, None) * m   # horizontal rub marks
+    img = add_lum(img, 6 * streaks - 3 * blur(streaks, 1.0))
+    tx, ty = cx - sx * 0.4 + rng.uniform(-2, 2), cy + rng.uniform(-3, 3)
+    edge = pil_mask(lambda d, k: d.line([(tx * k, ty * k), ((tx + 5) * k, (ty - 2) * k), ((tx + 9) * k, (ty + 1) * k)],
+                                        fill=255, width=max(1, int(0.9 * k))))
+    img = add_lum(img, 18 * edge)                                    # the lifted paper edge catches the light
+    return add_lum(img, -10 * np.roll(edge, 1, axis=0))              # and casts a hairline shadow under it
+
+
+def mark_paper_seam(img, rng) -> np.ndarray:
+    """A faint horizontal joint between two lengths of wallpaper (about every 0.9 m on some
+    walls): a hairline light lip over a hairline shadow, the strip above a shade different."""
+    X, Y = grid()
+    y0 = float(rng.uniform(28, 100))
+    img = add_lum(img, 1.6 * (Y < y0) - 0.8 * (Y >= y0))
+    img = add_lum(img, 7 * np.exp(-((Y - y0 + 0.6) / 0.6) ** 2) - 8 * np.exp(-((Y - y0 - 0.7) / 0.6) ** 2))
+    return add_lum(img, 2.5 * fnoise(rng, beta=1.5, aniso=(8, 1), kmin=4) * np.exp(-((Y - y0) / 1.5) ** 2))
+
+
 def _wallpaper_marks(i, rng, img):
+    """Kane's paper is dry and clean: a faint discolouration, a scuffed patch, a faint seam."""
     if i == 1:
-        return mark_stain(img, rng, WALL_STAIN, (16, 20), 0.2)
+        return mark_damp(img, rng, (36, 32), 0.05, (1.0, 0.97, 0.85))
     if i == 2:
-        img = mark_stain(img, rng, WALL_STAIN, (12, 14), 0.17)
-        img = mark_stain(img, rng, WALL_STAIN, (8, 10), 0.15)
-        return mark_drip(img, rng, WALL_STAIN, 0.14)
-    return mark_damp(img, rng, (24, 16), 0.12, (0.9, 1.0, 1.25), y_range=(0.55, 1.0))   # damp creeping up from the carpet
+        return mark_paper_scuff(img, rng)
+    return mark_paper_seam(img, rng)
+
+
+def mark_carpet_seam(img, rng) -> np.ndarray:
+    """A straight broadloom seam across the block (runs along x): the loops either side lean
+    away, leaving a thin dark groove with a slightly lighter ridge on each side."""
+    X, Y = grid()
+    y0 = float(rng.uniform(36, 92))
+    wob = 0.4 * fnoise(rng, beta=2.0, aniso=(6, 1), kmin=2)
+    t = Y - y0 - wob
+    return add_lum(img, -16 * np.exp(-(t / 0.7) ** 2) + 5 * np.exp(-((np.abs(t) - 2.0) / 0.9) ** 2))
+
+
+def mark_carpet_worn(img, rng) -> np.ndarray:
+    """A traffic-worn lane: the pile crushed flat, so the loops show less and it looks a little
+    paler and greyer (a soft band across the block, along x)."""
+    X, Y = grid()
+    y0, w = float(rng.uniform(44, 84)), float(rng.uniform(16, 26))
+    m = np.exp(-((Y - y0 + 4 * fnoise(rng, beta=2.0, aniso=(4, 1), kmin=1)) / w) ** 2)
+    m = m * (0.7 + 0.3 * smoothstep(-1, 1, fnoise(rng, beta=2.0)))
+    flat = blur(img, 1.0) + 5.0 * np.array([1.0, 1.0, 1.08])
+    return lerp(img, flat, (0.7 * m)[..., None])
+
+
+def _carpet_marks(i, rng, img):
+    if i == 1:
+        return mark_carpet_seam(img, rng)
+    if i == 2:
+        return mark_carpet_worn(img, rng)
+    return mark_damp(mark_stain(img, rng, (104, 82, 36), (9, 8), 0.32), rng, (16, 12), 0.08)   # a rare old spill
+
+
+def mark_tile_sag(img, rng) -> np.ndarray:
+    """A ceiling tile that has sagged a little in its grid: the middle drops into shadow, a soft
+    lighter crease near the edge where it bends."""
+    X, Y = grid()
+    cx, cy = rng.uniform(52, 76), rng.uniform(52, 76)
+    r = np.hypot((X - cx) / 60, (Y - cy) / 54)
+    img = add_lum(img, -14 * np.clip(1 - r, 0, 1) ** 1.5)
+    d = np.minimum(np.minimum(X, S - X), np.minimum(Y, S - Y))
+    return add_lum(img, 4 * np.exp(-((d - 12) / 4) ** 2) * smoothstep(3, 6, d))
+
+
+def _ceiling_marks(i, rng, img):
+    if i == 1:
+        return mark_stain(img, rng, CEILING_STAIN, (16, 13), 0.3)             # water-stained ring
+    if i == 2:
+        return mark_tile_sag(img, rng)
+    return mark_damp(img, rng, (34, 30), 0.06, (1.0, 0.96, 0.8))             # faintly yellowed
+
+
+def _l0w():
+    """The film's chevron paper lives in anomaly_assets/level0_revamp.py (imported lazily: it imports this file)."""
+    import anomaly_assets.level0_revamp as m
+    return m
 
 
 def _l39w():
@@ -7456,14 +7594,9 @@ def _l39w():
 # decides how often each version is used.
 SURFACE_VARIANTS = {
     "yellow_wallpaper": (lambda: _wallpaper(stains=False), _wallpaper_marks, 4),
-    "lobby_carpet": (_carpet, lambda i, rng, img: (
-        mark_damp(img, rng, (22, 18), 0.22, (0.9, 1.0, 1.3)) if i == 1 else
-        mark_stain(img, rng, (110, 84, 40), (12, 10), 0.3) if i == 2 else
-        mark_damp(mark_stain(img, rng, (96, 70, 34), (7, 7), 0.35), rng, (16, 12), 0.1)), 4),
-    "ceiling_tile": (lambda: _ceiling_tile(stain=False), lambda i, rng, img: (
-        mark_stain(img, rng, CEILING_STAIN, (12, 10), 0.35) if i == 1 else
-        mark_stain(mark_stain(img, rng, CEILING_STAIN, (20, 16), 0.3), rng, CEILING_STAIN, (8, 8), 0.3) if i == 2 else
-        mark_damp(mark_stain(img, rng, (140, 118, 80), (16, 14), 0.4), rng, (26, 22), 0.12)), 4),
+    "lobby_carpet": (_carpet, _carpet_marks, 4),
+    "ceiling_tile": (lambda: _ceiling_tile(stain=False), _ceiling_marks, 4),
+    "l0_wallpaper_chevron": (lambda: _l0w().chevron_base(), lambda i, rng, img: _l0w().chevron_marks(i, rng, img), 3),
     "concrete_wall": (_concrete_wall, lambda i, rng, img: (
         mark_drip(mark_damp(img, rng, (20, 26), 0.12), rng, (84, 80, 88), 0.25) if i == 1 else
         mark_crack(img, rng, 26)), 3),
@@ -7516,9 +7649,10 @@ def tex_surface_variants() -> None:
     for name in SURFACE_VARIANTS:
         for i, img in enumerate(surface_variant_images(name), start=1):
             save_png(img, _blk(f"{name}_v{i}"))
-    # The wallpaper with its baseboard follows the wallpaper's variants (same stains above the board).
-    for i, img in enumerate(surface_variant_images("yellow_wallpaper"), start=1):
-        save_png(_baseboard(img), _blk(f"yellow_wallpaper_baseboard_v{i}"))
+    # The wallpapers with their baseboard follow the wallpaper's variants (same marks above the board).
+    for paper in ("yellow_wallpaper", "l0_wallpaper_chevron"):
+        for i, img in enumerate(surface_variant_images(paper), start=1):
+            save_png(_baseboard(img), _blk(f"{paper}_baseboard_v{i}"))
 
 
 def variant_models() -> None:
@@ -7530,6 +7664,7 @@ def variant_models() -> None:
     import json
     counts = {n: c for n, (_, _, c) in SURFACE_VARIANTS.items()}
     counts["yellow_wallpaper_baseboard"] = SURFACE_VARIANTS["yellow_wallpaper"][2]
+    counts["l0_wallpaper_chevron_baseboard"] = SURFACE_VARIANTS["l0_wallpaper_chevron"][2]
     for name, count in counts.items():
         plain = json.loads((ROOT / "models" / "block" / f"{name}.json").read_text())
         variants = {}

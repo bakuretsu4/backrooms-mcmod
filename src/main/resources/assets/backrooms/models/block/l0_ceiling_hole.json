@@ -1,0 +1,393 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/ceiling_tile",
+    "tile": "backrooms:block/ceiling_tile",
+    "slab": "backrooms:block/l0_plenum",
+    "edge": "backrooms:block/l0_plenum_side",
+    "duct": "backrooms:block/l0_duct",
+    "joist": "backrooms:block/l0_joist"
+  },
+  "elements": [
+    {
+      "from": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "to": [
+        2.2,
+        0.8,
+        16.0
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            2.2,
+            16.0
+          ],
+          "texture": "#tile",
+          "cullface": "down"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            15.2,
+            16.0,
+            16.0
+          ],
+          "texture": "#tile"
+        }
+      }
+    },
+    {
+      "from": [
+        13.8,
+        0.0,
+        0.0
+      ],
+      "to": [
+        16.0,
+        0.8,
+        16.0
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            13.8,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#tile",
+          "cullface": "down"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            15.2,
+            16.0,
+            16.0
+          ],
+          "texture": "#tile"
+        }
+      }
+    },
+    {
+      "from": [
+        2.2,
+        0.0,
+        0.0
+      ],
+      "to": [
+        13.8,
+        0.8,
+        2.2
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            2.2,
+            13.8,
+            13.8,
+            16.0
+          ],
+          "texture": "#tile",
+          "cullface": "down"
+        },
+        "south": {
+          "uv": [
+            2.2,
+            15.2,
+            13.8,
+            16.0
+          ],
+          "texture": "#tile"
+        }
+      }
+    },
+    {
+      "from": [
+        2.2,
+        0.0,
+        13.8
+      ],
+      "to": [
+        13.8,
+        0.8,
+        16.0
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            2.2,
+            0.0,
+            13.8,
+            2.2
+          ],
+          "texture": "#tile",
+          "cullface": "down"
+        },
+        "north": {
+          "uv": [
+            2.2,
+            15.2,
+            13.8,
+            16.0
+          ],
+          "texture": "#tile"
+        }
+      }
+    },
+    {
+      "from": [
+        0.0,
+        0.8,
+        0.0
+      ],
+      "to": [
+        0.0,
+        16.0,
+        16.0
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            15.2
+          ],
+          "texture": "#edge"
+        }
+      }
+    },
+    {
+      "from": [
+        16.0,
+        0.8,
+        0.0
+      ],
+      "to": [
+        16.0,
+        16.0,
+        16.0
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            15.2
+          ],
+          "texture": "#edge"
+        }
+      }
+    },
+    {
+      "from": [
+        0.0,
+        0.8,
+        0.0
+      ],
+      "to": [
+        16.0,
+        16.0,
+        0.0
+      ],
+      "faces": {
+        "south": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            15.2
+          ],
+          "texture": "#edge"
+        }
+      }
+    },
+    {
+      "from": [
+        0.0,
+        0.8,
+        16.0
+      ],
+      "to": [
+        16.0,
+        16.0,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            15.2
+          ],
+          "texture": "#edge"
+        }
+      }
+    },
+    {
+      "from": [
+        0.0,
+        16.0,
+        0.0
+      ],
+      "to": [
+        16.0,
+        16.0,
+        16.0
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#slab"
+        }
+      }
+    },
+    {
+      "from": [
+        0.0,
+        9.0,
+        3.0
+      ],
+      "to": [
+        16.0,
+        13.5,
+        8.5
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            0.0,
+            7.5,
+            16.0,
+            13.0
+          ],
+          "texture": "#duct"
+        },
+        "north": {
+          "uv": [
+            0.0,
+            2.5,
+            16.0,
+            7.0
+          ],
+          "texture": "#duct"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            2.5,
+            16.0,
+            7.0
+          ],
+          "texture": "#duct"
+        }
+      }
+    },
+    {
+      "from": [
+        0.0,
+        8.9,
+        3.5
+      ],
+      "to": [
+        16.0,
+        13.6,
+        8.0
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            0.0,
+            8.0,
+            16.0,
+            12.5
+          ],
+          "texture": "#duct"
+        },
+        "north": {
+          "uv": [
+            0.0,
+            2.4,
+            16.0,
+            7.1
+          ],
+          "texture": "#duct"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            2.4,
+            16.0,
+            7.1
+          ],
+          "texture": "#duct"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.0,
+          11.25,
+          5.75
+        ],
+        "axis": "x",
+        "angle": 45
+      }
+    },
+    {
+      "from": [
+        10.0,
+        13.5,
+        0.0
+      ],
+      "to": [
+        12.5,
+        16.0,
+        16.0
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            10.0,
+            0.0,
+            12.5,
+            16.0
+          ],
+          "texture": "#joist"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            2.5
+          ],
+          "texture": "#joist"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            2.5
+          ],
+          "texture": "#joist"
+        }
+      }
+    }
+  ]
+}

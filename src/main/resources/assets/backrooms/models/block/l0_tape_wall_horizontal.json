@@ -1,0 +1,50 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "backrooms:block/l0_tape",
+    "tape": "backrooms:block/l0_tape"
+  },
+  "elements": [
+    {
+      "from": [
+        0.0,
+        7.6,
+        15.9
+      ],
+      "to": [
+        16.0,
+        8.4,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            7.6,
+            16.0,
+            8.4
+          ],
+          "texture": "#tape"
+        },
+        "up": {
+          "uv": [
+            0.0,
+            15.9,
+            16.0,
+            16.0
+          ],
+          "texture": "#tape"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            0.1
+          ],
+          "texture": "#tape"
+        }
+      }
+    }
+  ]
+}

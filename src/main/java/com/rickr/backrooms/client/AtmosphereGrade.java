@@ -54,11 +54,16 @@ public final class AtmosphereGrade {
     private static final Mood NEUTRAL = new Mood(1.0f, 1.0f, 1.0f, 1, 1, 1, 1, 1, 1,
             2 / 255f, 0, 5 / 255f, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     /**
-     * Level 0: mono-yellow and stale. Sickly greenish shadows under butter-yellow highlights, a
-     * little washed out, thick yellow-grey air down the long halls, soft glow around the panels.
+     * Level 0, Kane Pixels' tapes: bright, flat and muted olive-mustard. Red and green stay level
+     * while blue is cut (~28% in the shadows, ~12% in the highlights: the textures already carry
+     * the yellow, and the troffers must stay near white), slightly less colour than the textures,
+     * gentle contrast, and blacks crushed so the dark wings are solid black. Tuned so a lit wall
+     * lands near #B7A746 and the carpet near #A3893A on screen.
+     * No distance haze at all (max 0): depth comes from the repetition and the dark wings. The
+     * haze colour is still set so anomaly moods that add haze blend from a sensible colour.
      */
-    private static final Mood LEVEL_0 = new Mood(1.02f, 1.04f, 0.88f, 0.94f, 0.98f, 0.86f, 1.04f, 1.0f, 0.88f,
-            0.016f, 0.014f, 0.012f, 0.22f, 0.20f, 0.12f, 5.0f, 0.040f, 0.38f, 0.38f, 0.16f, 0.012f);
+    private static final Mood LEVEL_0 = new Mood(1.08f, 1.04f, 0.95f, 0.97f, 1.0f, 0.72f, 0.99f, 1.0f, 0.88f,
+            0.004f, 0.004f, 0.002f, 0.40f, 0.37f, 0.18f, 30.0f, 0.010f, 0.0f, 0.30f, 0.14f, 0.010f);
     /** Level 1: cold, damp concrete. Blue shadows, grey highlights, little colour, grey-blue air. */
     private static final Mood LEVEL_1 = new Mood(1.0f, 1.08f, 0.74f, 0.90f, 0.95f, 1.06f, 1.0f, 1.0f, 1.03f,
             0.012f, 0.013f, 0.018f, 0.18f, 0.19f, 0.23f, 7.0f, 0.032f, 0.40f, 0.45f, 0.12f, 0.010f);

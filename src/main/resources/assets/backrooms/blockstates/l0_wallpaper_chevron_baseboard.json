@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "variant=0": {
+      "model": "backrooms:block/l0_wallpaper_chevron_baseboard"
+    },
+    "variant=1": {
+      "model": "backrooms:block/l0_wallpaper_chevron_baseboard_v1"
+    },
+    "variant=2": {
+      "model": "backrooms:block/l0_wallpaper_chevron_baseboard_v2"
+    },
+    "variant=3": {
+      "model": "backrooms:block/l0_wallpaper_chevron_baseboard"
+    }
+  }
+}

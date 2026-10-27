@@ -21,8 +21,27 @@ import org.jetbrains.annotations.Nullable;
  */
 public enum FixtureType {
     // id, mount, maxRun, red, green, blue, brightness, radius, hum, flickers
-    /** Level 0 ceiling panel: warm yellow pools (radius 13), like the reference footage. */
-    FLUORESCENT_LIGHT("fluorescent_light", Mount.CEILING_BLOCK, 3, 1.0f, 0.94f, 0.39f, 1.1f, 13.0f, Hum.FLUORESCENT, true),
+    /**
+     * Level 0 ceiling troffer. Halls have one every 3 blocks, so each panel only needs to light
+     * the patch of floor and wall under it: the even, flat brightness of the halls comes from the
+     * lightmap fill (see ClientLighting), and these add soft pools and soft shadows on top. Near
+     * white with a faint cool tint (the yellow comes from the walls and carpet, not the light).
+     * Short radius and low brightness keep dozens of overlapping panels from clipping the walls
+     * to white, and a small radius is also cheaper for Veil to draw.
+     */
+    FLUORESCENT_LIGHT("fluorescent_light", Mount.CEILING_BLOCK, 3, 0.94f, 0.97f, 1.0f, 0.32f, 7.5f, Hum.FLUORESCENT, true),
+    /**
+     * Level 0 film corridor light strip: a row of these reads as one continuous strip down the
+     * middle of a narrow corridor. Runs of 3 blocks make one light, the same spacing as the hall
+     * troffers; a little brighter, because a narrow corridor has no neighbouring rows of panels.
+     */
+    L0_TROFFER_STRIP("l0_troffer_strip", Mount.CEILING_BLOCK, 3, 0.94f, 0.97f, 1.0f, 0.40f, 7.0f, Hum.FLUORESCENT, true),
+    /**
+     * Level 0 EXIT sign over a door alcove: Kane's green running-man sign. Only a faint green
+     * glow on the wall around it (it is a sign, not a lamp), silent and battery-backed like the
+     * other exit signs, so it still shows in a blackout.
+     */
+    L0_EXIT_SIGN("l0_exit_sign", Mount.WALL, 2, 0.30f, 1.0f, 0.45f, 0.30f, 3.5f, Hum.NONE, false),
     /** Level 1 tube strip hanging just under the concrete ceiling: neutral white (reference #EEECFA), long reach. */
     CEILING_TUBE("ceiling_tube", Mount.HANGING_TUBE, 5, 0.96f, 0.96f, 1.0f, 0.8f, 18.0f, Hum.FLUORESCENT, true),
     /**
@@ -218,6 +237,18 @@ public enum FixtureType {
      * full strength the wall right beside a tube would clip to white.
      */
     private static final float LEVEL_2_TUBE_SCALE = 0.7f;
+    /**
+     * Outside Level 0 the Level 0 panel is used alone (Level 7's flooded room has exactly one),
+     * with no grid of neighbours and no bright Level 0 fill around it, so there it keeps the old
+     * strong, far-reaching pool.
+     */
+    private static final float LONE_PANEL_BRIGHTNESS = 1.1f;
+    private static final float LONE_PANEL_RADIUS = 13.0f;
+
+    /** Level 0 (null counts as Level 0, like in ClientLighting). */
+    private static boolean level0(@Nullable BackroomsLevel floor) {
+        return floor == null || floor == BackroomsLevel.LEVEL_0;
+    }
 
     /** How bright this fixture's Veil light is on {@code floor}. */
     public float brightnessOn(@Nullable BackroomsLevel floor) {
@@ -227,7 +258,18 @@ public enum FixtureType {
         if (this == CEILING_TUBE && floor == BackroomsLevel.LEVEL_2) {
             return brightness * LEVEL_2_TUBE_SCALE;
         }
+        if (this == FLUORESCENT_LIGHT && !level0(floor)) {
+            return LONE_PANEL_BRIGHTNESS;
+        }
         return brightness;
+    }
+
+    /** How far this fixture's Veil light reaches on {@code floor} (blocks). */
+    public float radiusOn(@Nullable BackroomsLevel floor) {
+        if (this == FLUORESCENT_LIGHT && !level0(floor)) {
+            return LONE_PANEL_RADIUS;
+        }
+        return radius;
     }
 
     /** Block -> fixture type, built the first time it's needed (registries are frozen by then). */

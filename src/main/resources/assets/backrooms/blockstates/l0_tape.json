@@ -1,0 +1,67 @@
+{
+  "variants": {
+    "facing=north,shape=horizontal": {
+      "model": "backrooms:block/l0_tape_wall_horizontal"
+    },
+    "facing=north,shape=vertical": {
+      "model": "backrooms:block/l0_tape_wall_vertical"
+    },
+    "facing=north,shape=corner": {
+      "model": "backrooms:block/l0_tape_wall_corner"
+    },
+    "facing=east,shape=horizontal": {
+      "model": "backrooms:block/l0_tape_wall_horizontal",
+      "y": 90
+    },
+    "facing=east,shape=vertical": {
+      "model": "backrooms:block/l0_tape_wall_vertical",
+      "y": 90
+    },
+    "facing=east,shape=corner": {
+      "model": "backrooms:block/l0_tape_wall_corner",
+      "y": 90
+    },
+    "facing=south,shape=horizontal": {
+      "model": "backrooms:block/l0_tape_wall_horizontal",
+      "y": 180
+    },
+    "facing=south,shape=vertical": {
+      "model": "backrooms:block/l0_tape_wall_vertical",
+      "y": 180
+    },
+    "facing=south,shape=corner": {
+      "model": "backrooms:block/l0_tape_wall_corner",
+      "y": 180
+    },
+    "facing=west,shape=horizontal": {
+      "model": "backrooms:block/l0_tape_wall_horizontal",
+      "y": 270
+    },
+    "facing=west,shape=vertical": {
+      "model": "backrooms:block/l0_tape_wall_vertical",
+      "y": 270
+    },
+    "facing=west,shape=corner": {
+      "model": "backrooms:block/l0_tape_wall_corner",
+      "y": 270
+    },
+    "facing=down,shape=horizontal": {
+      "model": "backrooms:block/l0_tape_ceiling_x"
+    },
+    "facing=down,shape=vertical": {
+      "model": "backrooms:block/l0_tape_ceiling_z"
+    },
+    "facing=down,shape=corner": {
+      "model": "backrooms:block/l0_tape_ceiling_cross"
+    },
+    "facing=up,shape=horizontal": {
+      "model": "backrooms:block/l0_tape_floor_x"
+    },
+    "facing=up,shape=vertical": {
+      "model": "backrooms:block/l0_tape_floor_z"
+    },
+    "facing=up,shape=corner": {
+      "model": "backrooms:block/l0_tape_floor_cross"
+    }
+  }
+}

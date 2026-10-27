@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/l0_troffer_strip_off",
+    "down": "backrooms:block/l0_troffer_strip_off",
+    "up": "backrooms:block/ceiling_tile",
+    "north": "backrooms:block/ceiling_tile",
+    "south": "backrooms:block/ceiling_tile",
+    "east": "backrooms:block/ceiling_tile",
+    "west": "backrooms:block/ceiling_tile"
+  }
+}
