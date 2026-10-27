@@ -26,10 +26,11 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Brings Smilers out when the lights go out, on every floor that has blackouts (Levels 0-2).
+ * Where Smilers come from. They live in the dark, beyond Level 0 (the wikis put them mostly in
+ * Levels 1 and 2, and in Level 9), so Level 0 has none: there the Bacteria hunt you instead.
  *
- * <p>Per group of players (everyone within {@value #GROUP_RADIUS} blocks counts as one group),
- * for the whole blackout:
+ * <p><b>Blackouts in Levels 1 and 2</b> ({@link #BLACKOUT_FLOORS}), per group of players (everyone
+ * within {@value #GROUP_RADIUS} blocks counts as one group), for the whole blackout:
  * <ul>
  *   <li>one Smiler a couple of seconds after the power cuts;</li>
  *   <li>in half of the blackouts, a second one 10 s in, from the other side of the group, so one
@@ -40,13 +41,19 @@ import org.jetbrains.annotations.Nullable;
  * </ul>
  * When the lights come back on every blackout Smiler fades by itself ({@link Smiler}).
  *
+ * <p><b>Places that are always dark</b> ({@link #tickDark}): Level 1's dead zones, where the power
+ * is out for good, and Level 9's streets between the lamps. Stay in the dark for a while and one
+ * comes out of it: at most one around each group of players, every 25-50 s in Level 1 and only
+ * every 1-2 minutes in Level 9 (the Neighborhood Watch is the main danger there). It appears in
+ * the dark too, never in a lit spot, and fades once you have been back in the light a few seconds.
+ *
  * <p><b>Level 94 at night</b> ({@link #tickLevel94Night}): there are no blackouts there; instead,
  * while it is night, Smilers come for anyone OUTSIDE (not in a house, not in the castle): up to
  * two around each player, a new one every 20-40 s, appearing 24-40 blocks away across the hills.
  * At dawn they fade away by themselves ({@link Smiler}).
  */
 public final class SmilerSpawner {
-    private static final Set<BackroomsLevel> FLOORS = EnumSet.of(BackroomsLevel.LEVEL_0, BackroomsLevel.LEVEL_1, BackroomsLevel.LEVEL_2);
+    private static final Set<BackroomsLevel> BLACKOUT_FLOORS = EnumSet.of(BackroomsLevel.LEVEL_1, BackroomsLevel.LEVEL_2);
     private static final int MIN_DISTANCE = 14;
     private static final int MAX_DISTANCE = 24;
     private static final double GROUP_RADIUS = 40.0;
@@ -71,6 +78,23 @@ public final class SmilerSpawner {
     /** Game tick when each player's next night Smiler may come (cleared when the night ends). */
     private static final Map<UUID, Long> NIGHT_NEXT = new HashMap<>();
 
+    // Always-dark places.
+    /**
+     * A player counts as "in the dark" below this light level: too dim to see by. The lamps give 12
+     * under them and still about 6 halfway to the next lamp; a dead zone is 0-5 (light from lamps
+     * outside it and the odd red alarm lamp leak in a little).
+     */
+    private static final int DARK_BELOW = 6;
+    /** Seconds in the dark before anything can come. */
+    private static final int DARK_SETTLE = 8;
+    /** Ticks between Smilers (min, max) on each floor that has always-dark places. */
+    private static final Map<BackroomsLevel, int[]> DARK_EVERY = Map.of(
+            BackroomsLevel.LEVEL_1, new int[] {25 * 20, 50 * 20},
+            BackroomsLevel.LEVEL_9, new int[] {60 * 20, 120 * 20});
+    /** Per player: when they went into the dark (game tick), and when the next one may come. */
+    private static final Map<UUID, Long> DARK_SINCE = new HashMap<>();
+    private static final Map<UUID, Long> DARK_NEXT = new HashMap<>();
+
     private static final class State {
         boolean blackout;
         int seconds;
@@ -90,7 +114,13 @@ public final class SmilerSpawner {
             tickLevel94Night(level, floor, level.getRandom());
             return;
         }
-        if (floor == null || !FLOORS.contains(floor) || level.getDifficulty() == Difficulty.PEACEFUL) {
+        if (floor == null || level.getDifficulty() == Difficulty.PEACEFUL) {
+            return;
+        }
+        if (DARK_EVERY.containsKey(floor) && !LevelEvents.isBlackout(floor)) {
+            tickDark(level, floor, level.getRandom());
+        }
+        if (!BLACKOUT_FLOORS.contains(floor)) {
             return;
         }
         State state = STATES.computeIfAbsent(level.dimension(), k -> new State());
@@ -118,7 +148,8 @@ public final class SmilerSpawner {
                 continue;
             }
             List<Smiler> near = level.getEntitiesOfClass(Smiler.class, player.getBoundingBox().inflate(GROUP_RADIUS));
-            if (spawnNear(level, floor, seed, player, near.isEmpty() ? null : near.get(0), random, MIN_DISTANCE, MAX_DISTANCE)) {
+            if (spawnNear(level, floor, seed, player, near.isEmpty() ? null : near.get(0), random, MIN_DISTANCE, MAX_DISTANCE,
+                    Smiler.Origin.BLACKOUT)) {
                 // Everyone in this group shares the budget, so a group of four still gets at most two.
                 for (ServerPlayer other : level.players()) {
                     if (other.distanceToSqr(player) <= GROUP_RADIUS * GROUP_RADIUS) {
@@ -160,10 +191,41 @@ public final class SmilerSpawner {
                 continue; // enough of them out here already; check again next second
             }
             if (spawnNear(level, floor, seed, player, near.isEmpty() ? null : near.get(0), random,
-                    NIGHT_MIN_DISTANCE, NIGHT_MAX_DISTANCE)) {
+                    NIGHT_MIN_DISTANCE, NIGHT_MAX_DISTANCE, Smiler.Origin.BLACKOUT)) {
                 NIGHT_NEXT.put(player.getUUID(), now + Mth.nextInt(random, NIGHT_EVERY_MIN, NIGHT_EVERY_MAX));
             }
         }
+    }
+
+    /**
+     * The always-dark trigger (once a second): a player who has been in the dark for
+     * {@value #DARK_SETTLE} s, with no Smiler around their group yet, gets one when their timer is up.
+     */
+    private static void tickDark(ServerLevel level, BackroomsLevel floor, RandomSource random) {
+        long now = level.getGameTime();
+        int[] every = DARK_EVERY.get(floor);
+        long seed = BackroomsSeeds.layoutSeed(level, floor);
+        for (ServerPlayer player : level.players()) {
+            UUID id = player.getUUID();
+            if (player.isSpectator() || player.isCreative() || SafeRooms.isSafe(player) || !inDark(level, player.blockPosition().above())) {
+                DARK_SINCE.remove(id);
+                continue;
+            }
+            long since = DARK_SINCE.computeIfAbsent(id, k -> now);
+            if (now - since < DARK_SETTLE * 20L || now < DARK_NEXT.getOrDefault(id, 0L)) {
+                continue;
+            }
+            if (!level.getEntitiesOfClass(Smiler.class, player.getBoundingBox().inflate(GROUP_RADIUS)).isEmpty()) {
+                continue; // one around this group already
+            }
+            if (spawnNear(level, floor, seed, player, null, random, MIN_DISTANCE, MAX_DISTANCE, Smiler.Origin.DARK)) {
+                DARK_NEXT.put(id, now + Mth.nextInt(random, every[0], every[1]));
+            }
+        }
+    }
+
+    private static boolean inDark(ServerLevel level, BlockPos pos) {
+        return level.getMaxLocalRawBrightness(pos) < DARK_BELOW;
     }
 
     /** Outside in Level 94: not in a house (safe room) and not inside the castle. Smilers use it too. */
@@ -178,7 +240,8 @@ public final class SmilerSpawner {
      * was found this time (it tries again next second).
      */
     private static boolean spawnNear(ServerLevel level, BackroomsLevel floor, long seed, ServerPlayer player,
-                                     @Nullable Smiler existing, RandomSource random, int minDistance, int maxDistance) {
+                                     @Nullable Smiler existing, RandomSource random, int minDistance, int maxDistance,
+                                     Smiler.Origin origin) {
         for (int attempt = 0; attempt < 6; attempt++) {
             double angle;
             if (existing != null) {
@@ -190,9 +253,10 @@ public final class SmilerSpawner {
             int distance = minDistance + random.nextInt(maxDistance - minDistance + 1);
             int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * distance);
             int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * distance);
-            // Level 94: any open ground will do. (searchWalkable only accepts "safe arrival" spots,
-            // which there means a road near houses, so out on the hills it never found anywhere.)
-            BlockPos spot = floor == BackroomsLevel.LEVEL_94
+            // Out in the open (Level 94's hills, Level 9's suburbs) any open ground will do.
+            // (searchWalkable only accepts "safe arrival" spots, which there are only certain
+            // stretches of road, so it hardly ever found anywhere.)
+            BlockPos spot = floor == BackroomsLevel.LEVEL_94 || floor == BackroomsLevel.LEVEL_9
                     ? openGround(floor.layout(), seed, x, z, 4)
                     : Travel.searchWalkable(floor.layout(), seed, x, z, 4);
             if (spot == null || !level.isLoaded(spot) || SafeRooms.isNearSafeRoom(level, spot, SAFE_ROOM_MARGIN)) {
@@ -207,20 +271,24 @@ public final class SmilerSpawner {
             if (tooClose) {
                 continue;
             }
-            return spawn(level, spot, true, random.nextInt(BOLD_CHANCE) == 0) != null;
+            // A Smiler of the dark comes out of the dark (its face would burn in a lit spot).
+            if (origin == Smiler.Origin.DARK && !inDark(level, spot.above())) {
+                continue;
+            }
+            return spawn(level, spot, origin, random.nextInt(BOLD_CHANCE) == 0) != null;
         }
         return false;
     }
 
     /** Spawns one Smiler at {@code spot}. Also used by {@code /backrooms spawn smiler}. */
     @Nullable
-    public static Smiler spawn(ServerLevel level, BlockPos spot, boolean fromBlackout, boolean bold) {
+    public static Smiler spawn(ServerLevel level, BlockPos spot, Smiler.Origin origin, boolean bold) {
         Smiler smiler = ModEntities.SMILER.get().create(level);
         if (smiler == null) {
             return null;
         }
         smiler.moveTo(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, level.getRandom().nextFloat() * 360.0f, 0.0f);
-        smiler.setFromBlackout(fromBlackout);
+        smiler.setOrigin(origin);
         smiler.setBold(bold);
         level.addFreshEntity(smiler);
         return smiler;
@@ -230,6 +298,8 @@ public final class SmilerSpawner {
     public static void reset() {
         STATES.clear();
         NIGHT_NEXT.clear();
+        DARK_SINCE.clear();
+        DARK_NEXT.clear();
     }
 
     /** Nearest walkable column within {@code radius} of (x, z), as feet position; null if none. */

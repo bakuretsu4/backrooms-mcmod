@@ -278,7 +278,7 @@ light on and the sign over the front door.
 
 ### Things that happen
 
-- **Bacteria:** tall black wire figure. It only knows where you are if it sees you or hears you
+- **Bacteria (Levels 0 and 2):** tall black wire figure. It only knows where you are if it sees you or hears you
   sprint. In a lit room it spots you from about 24 blocks; in the dark only from about 8 (crouching
   makes both shorter, your flashlight doesn't matter). When it spots you it freezes for a moment and
   draws in one long, wrong breath, then chases. Break line of sight: it runs to where it *last saw*
@@ -287,9 +287,14 @@ light on and the sign over the front door.
   NightShot on you can see it even in total darkness.
 - **Blackouts:** the lights fade out over two seconds. Only flashlights work, and the Bacteria come
   out three times as often, but they can't use the lamps to spot you either.
-- **Smilers (blackouts in Levels 0-2, and Level 94 at night):** two glowing eyes and a huge glowing grin in the dark,
-  wrapped in a faint shroud of churning dark smoke you mostly notice against a lit wall or in NightShot.
-  One comes when the lights go out, sometimes a second from the other side 10 seconds later. It
+- **Smilers (Levels 1 and 2 in blackouts, Level 1's dead zones, Level 9's dark streets, Level 94 at
+  night):** two glowing eyes and a huge glowing grin in the dark, wrapped in a faint shroud of
+  churning dark smoke you mostly notice against a lit wall or in NightShot. In Levels 1 and 2 one
+  comes when the lights go out, sometimes a second from the other side 10 seconds later. Level 1
+  has no Bacteria: it belongs to the Smilers, and they also wait in its dead zones where the power
+  is out for good; linger in the dark there and one comes out of it (in Level 9's streets between
+  the lamps too, more rarely). Step back into the light and it is gone a few seconds later. Level
+  0 has none. It
   makes no sound except a faint breath when it's a few blocks away; if it reaches you, you die.
   Hold your flashlight on its face: it squints, backs off and burns away after about 1.5 seconds
   of light in total (bursts add up). About one in six has a wider grin and takes twice as long.

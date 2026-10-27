@@ -36,7 +36,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Smilers: a glowing grin and two glowing eyes in the dark, with no body you can see (NightShot
- * shows the black, smoky shape underneath). They come out when the lights go out.
+ * shows the black, smoky shape underneath). They come out when the lights go out, and in places
+ * that are always dark (see {@link SmilerSpawner}).
  *
  * <p>The rules, all decided by the server:
  * <pre>
@@ -46,7 +47,8 @@ import org.jetbrains.annotations.Nullable;
  * FLINCH  --lit for 1.5 s in total (3 s if it's bold)-->  DISPEL
  * STALK   --within 4 blocks of its prey, not lit-->       LUNGE  (half a second, fast)
  * LUNGE   --touches its prey-->                           kills it, then DISPEL
- * any     --the blackout is over (Level 94: dawn) / its prey is in a safe room / nobody left-->  DISPEL
+ * any     --the blackout is over (Level 94: dawn; a dark area's Smiler: its prey stood in the light
+ *           for 5 s) / its prey is in a safe room / nobody left-->                                DISPEL
  * DISPEL  --1 s shrivelling away-->                       removed
  * </pre>
  *
@@ -86,6 +88,8 @@ public class Smiler extends Monster {
     private static final int NO_PREY_TICKS = 600;
     /** One spawned by command (not by a blackout) fades after 90 s. */
     private static final int COMMAND_LIFETIME = 90 * 20;
+    /** One that came out of a dark area fades once its prey has stood in the light this long. */
+    private static final int DARK_LIGHT_GRACE = 5 * 20;
 
     // --- Distances (blocks) -----------------------------------------------------------------
     private static final double PREY_RANGE = 48.0;
@@ -109,7 +113,9 @@ public class Smiler extends Monster {
     private int unlitTicks;
     private int noPreyTicks;
     private int repathIn;
-    private boolean fromBlackout;
+    private Origin origin = Origin.COMMAND;
+    /** DARK origin: how long its prey has been standing in the light. */
+    private int preyLitTicks;
     @Nullable
     private Player prey;
     @Nullable
@@ -142,9 +148,23 @@ public class Smiler extends Monster {
         builder.define(BURN, 0.0f);
     }
 
-    /** Set by the spawner: this one belongs to a blackout and fades when the lights come back. */
-    public void setFromBlackout(boolean fromBlackout) {
-        this.fromBlackout = fromBlackout;
+    /** Where a Smiler came from, which decides when it goes away (see {@link #shouldFade}). */
+    public enum Origin {
+        /** {@code /backrooms spawn smiler}: fades after 90 s. */
+        COMMAND,
+        /** A blackout (Level 94: the night): fades when the lights come back (at dawn). */
+        BLACKOUT,
+        /**
+         * A dark area that is always dark (Level 1's dead zones, Level 9's streets between the lamps):
+         * fades once its prey has been standing in the light for a few seconds. It can't follow you
+         * into the light anyway (the light burns it).
+         */
+        DARK
+    }
+
+    /** Set by the spawner. */
+    public void setOrigin(Origin origin) {
+        this.origin = origin;
     }
 
     public void setBold(boolean bold) {
@@ -347,18 +367,24 @@ public class Smiler extends Monster {
     }
 
     /**
-     * The lights are back on (for blackout Smilers), dawn in Level 94 (for its night Smilers), or a
-     * command one has had its 90 s.
+     * The lights are back on (for blackout Smilers), dawn in Level 94 (for its night Smilers), its
+     * prey has stood in the light for a while (for Smilers of the dark areas), or a command one has
+     * had its 90 s.
      */
     private boolean shouldFade() {
-        if (fromBlackout) {
-            BackroomsLevel floor = BackroomsLevel.fromDimension(level().dimension());
-            if (floor == BackroomsLevel.LEVEL_94) {
-                return Level94Clock.phase(level()) != Level94Clock.Phase.NIGHT;
+        BackroomsLevel floor = BackroomsLevel.fromDimension(level().dimension());
+        return switch (origin) {
+            case BLACKOUT -> floor == BackroomsLevel.LEVEL_94
+                    ? Level94Clock.phase(level()) != Level94Clock.Phase.NIGHT
+                    : floor == null || !LevelEvents.isBlackout(floor);
+            case DARK -> {
+                boolean preyInLight = prey != null && floor != null && !LevelEvents.isBlackout(floor)
+                        && level().getMaxLocalRawBrightness(BlockPos.containing(prey.getEyePosition())) >= LIT_LEVEL;
+                preyLitTicks = preyInLight ? preyLitTicks + 1 : 0;
+                yield preyLitTicks > DARK_LIGHT_GRACE;
             }
-            return floor == null || !LevelEvents.isBlackout(floor);
-        }
-        return tickCount > COMMAND_LIFETIME;
+            case COMMAND -> tickCount > COMMAND_LIFETIME;
+        };
     }
 
     // ------------------------------------------------------------------ senses

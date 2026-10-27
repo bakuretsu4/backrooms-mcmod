@@ -10,6 +10,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.rickr.backrooms.camera.CameraService;
 import com.rickr.backrooms.player.SanityService;
+import com.rickr.backrooms.entity.Smiler;
 import com.rickr.backrooms.entity.SmilerSpawner;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
@@ -230,7 +231,7 @@ public final class BackroomsCommand {
         BlockPos spot = spotAhead(player, 16.0);
         int spawned = 0;
         for (int i = 0; i < count; i++) {
-            if (SmilerSpawner.spawn(player.serverLevel(), spot, false, bold) != null) {
+            if (SmilerSpawner.spawn(player.serverLevel(), spot, Smiler.Origin.COMMAND, bold) != null) {
                 spawned++;
             }
         }
