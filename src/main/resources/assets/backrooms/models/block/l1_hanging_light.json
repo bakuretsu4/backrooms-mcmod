@@ -1,0 +1,143 @@
+{
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l1x_light_housing",
+    "h": "backrooms:block/l1x_light_housing",
+    "d": "backrooms:block/l1x_light_diffuser",
+    "chain": "minecraft:block/chain"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        5.5,
+        4
+      ],
+      "to": [
+        16,
+        8.5,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#h"
+        },
+        "south": {
+          "texture": "#h"
+        },
+        "up": {
+          "texture": "#h"
+        },
+        "down": {
+          "texture": "#h"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        5,
+        5
+      ],
+      "to": [
+        16,
+        5.5,
+        11
+      ],
+      "faces": {
+        "down": {
+          "texture": "#d"
+        },
+        "north": {
+          "texture": "#h"
+        },
+        "south": {
+          "texture": "#h"
+        }
+      },
+      "shade": false
+    },
+    {
+      "from": [
+        6.5,
+        8.5,
+        8
+      ],
+      "to": [
+        9.5,
+        16,
+        8
+      ],
+      "faces": {
+        "north": {
+          "texture": "#chain",
+          "uv": [
+            0,
+            0,
+            3,
+            7.5
+          ]
+        },
+        "south": {
+          "texture": "#chain",
+          "uv": [
+            0,
+            0,
+            3,
+            7.5
+          ]
+        }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "from": [
+        8,
+        8.5,
+        6.5
+      ],
+      "to": [
+        8,
+        16,
+        9.5
+      ],
+      "faces": {
+        "west": {
+          "texture": "#chain",
+          "uv": [
+            3,
+            0,
+            6,
+            7.5
+          ]
+        },
+        "east": {
+          "texture": "#chain",
+          "uv": [
+            3,
+            0,
+            6,
+            7.5
+          ]
+        }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    }
+  ]
+}

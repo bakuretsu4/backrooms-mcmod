@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/l1_hanging_light"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l1_hanging_light",
+      "y": 90
+    }
+  }
+}

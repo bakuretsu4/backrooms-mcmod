@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/l1_sprinkler_head"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l1_sprinkler_head",
+      "y": 90
+    }
+  }
+}

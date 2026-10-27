@@ -1,0 +1,16 @@
+{
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l1x_pallet_side",
+    "o": "backrooms:block/l1x_rack_orange",
+    "pt": "backrooms:block/l1x_pallet_top",
+    "ps": "backrooms:block/l1x_pallet_side",
+    "ws": "backrooms:block/l1x_wrap_side",
+    "wf": "backrooms:block/l1x_wrap_front",
+    "wt": "backrooms:block/l1x_wrap_top",
+    "bs": "backrooms:block/l1x_box_side",
+    "bf": "backrooms:block/l1x_box_front",
+    "bt": "backrooms:block/l1x_box_top",
+    "bc": "backrooms:block/l1x_box_crushed"
+  }
+}

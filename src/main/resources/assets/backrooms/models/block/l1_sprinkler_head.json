@@ -1,0 +1,158 @@
+{
+  "textures": {
+    "particle": "backrooms:block/l1x_red_pipe",
+    "pipe": "backrooms:block/l1x_red_pipe",
+    "strap": "backrooms:block/l1x_bracket",
+    "brass": "backrooms:block/l1x_brass"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        12,
+        7
+      ],
+      "to": [
+        16,
+        15,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pipe"
+        },
+        "south": {
+          "texture": "#pipe"
+        },
+        "up": {
+          "texture": "#pipe"
+        },
+        "down": {
+          "texture": "#pipe"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        15,
+        6.5
+      ],
+      "to": [
+        9,
+        16,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#strap"
+        },
+        "south": {
+          "texture": "#strap"
+        },
+        "east": {
+          "texture": "#strap"
+        },
+        "west": {
+          "texture": "#strap"
+        },
+        "down": {
+          "texture": "#strap"
+        }
+      }
+    },
+    {
+      "from": [
+        7.4,
+        10.5,
+        8.0
+      ],
+      "to": [
+        8.6,
+        12,
+        9.2
+      ],
+      "faces": {
+        "north": {
+          "texture": "#brass"
+        },
+        "south": {
+          "texture": "#brass"
+        },
+        "east": {
+          "texture": "#brass"
+        },
+        "west": {
+          "texture": "#brass"
+        },
+        "down": {
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "from": [
+        7.0,
+        10,
+        7.6
+      ],
+      "to": [
+        9.0,
+        10.5,
+        9.6
+      ],
+      "faces": {
+        "north": {
+          "texture": "#brass"
+        },
+        "south": {
+          "texture": "#brass"
+        },
+        "east": {
+          "texture": "#brass"
+        },
+        "west": {
+          "texture": "#brass"
+        },
+        "up": {
+          "texture": "#brass"
+        },
+        "down": {
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "from": [
+        7.8,
+        9.4,
+        8.3
+      ],
+      "to": [
+        8.2,
+        10,
+        8.9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pipe"
+        },
+        "south": {
+          "texture": "#pipe"
+        },
+        "east": {
+          "texture": "#pipe"
+        },
+        "west": {
+          "texture": "#pipe"
+        },
+        "up": {
+          "texture": "#pipe"
+        },
+        "down": {
+          "texture": "#pipe"
+        }
+      }
+    }
+  ]
+}

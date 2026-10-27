@@ -1,0 +1,94 @@
+{
+  "variants": {
+    "facing=north,band=0": {
+      "model": "backrooms:block/l1_pillar_corner_0"
+    },
+    "facing=east,band=0": {
+      "model": "backrooms:block/l1_pillar_corner_0",
+      "y": 90
+    },
+    "facing=south,band=0": {
+      "model": "backrooms:block/l1_pillar_corner_0",
+      "y": 180
+    },
+    "facing=west,band=0": {
+      "model": "backrooms:block/l1_pillar_corner_0",
+      "y": 270
+    },
+    "facing=north,band=1": {
+      "model": "backrooms:block/l1_pillar_corner_1"
+    },
+    "facing=east,band=1": {
+      "model": "backrooms:block/l1_pillar_corner_1",
+      "y": 90
+    },
+    "facing=south,band=1": {
+      "model": "backrooms:block/l1_pillar_corner_1",
+      "y": 180
+    },
+    "facing=west,band=1": {
+      "model": "backrooms:block/l1_pillar_corner_1",
+      "y": 270
+    },
+    "facing=north,band=2": {
+      "model": "backrooms:block/l1_pillar_corner_2"
+    },
+    "facing=east,band=2": {
+      "model": "backrooms:block/l1_pillar_corner_2",
+      "y": 90
+    },
+    "facing=south,band=2": {
+      "model": "backrooms:block/l1_pillar_corner_2",
+      "y": 180
+    },
+    "facing=west,band=2": {
+      "model": "backrooms:block/l1_pillar_corner_2",
+      "y": 270
+    },
+    "facing=north,band=3": {
+      "model": "backrooms:block/l1_pillar_corner_3"
+    },
+    "facing=east,band=3": {
+      "model": "backrooms:block/l1_pillar_corner_3",
+      "y": 90
+    },
+    "facing=south,band=3": {
+      "model": "backrooms:block/l1_pillar_corner_3",
+      "y": 180
+    },
+    "facing=west,band=3": {
+      "model": "backrooms:block/l1_pillar_corner_3",
+      "y": 270
+    },
+    "facing=north,band=4": {
+      "model": "backrooms:block/l1_pillar_corner_4"
+    },
+    "facing=east,band=4": {
+      "model": "backrooms:block/l1_pillar_corner_4",
+      "y": 90
+    },
+    "facing=south,band=4": {
+      "model": "backrooms:block/l1_pillar_corner_4",
+      "y": 180
+    },
+    "facing=west,band=4": {
+      "model": "backrooms:block/l1_pillar_corner_4",
+      "y": 270
+    },
+    "facing=north,band=5": {
+      "model": "backrooms:block/l1_pillar_corner_5"
+    },
+    "facing=east,band=5": {
+      "model": "backrooms:block/l1_pillar_corner_5",
+      "y": 90
+    },
+    "facing=south,band=5": {
+      "model": "backrooms:block/l1_pillar_corner_5",
+      "y": 180
+    },
+    "facing=west,band=5": {
+      "model": "backrooms:block/l1_pillar_corner_5",
+      "y": 270
+    }
+  }
+}

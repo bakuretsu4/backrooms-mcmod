@@ -1,5 +1,6 @@
 package com.rickr.backrooms.world.layout;
 
+import com.rickr.backrooms.block.AxisBlock;
 import com.rickr.backrooms.block.CeilingTubeBlock;
 import com.rickr.backrooms.block.FurnitureBlock;
 import com.rickr.backrooms.block.WallDecalBlock;
@@ -34,7 +35,8 @@ import org.jetbrains.annotations.Nullable;
  * {@link Level1Layout} (it knows about exits, safe rooms and anomalies).
  */
 final class Level1Areas {
-    static final int GRID = 8;
+    static final int GRID = Level1Layout.GRID;
+    private static final int PILLAR = Level1Layout.PILLAR;
 
     // ------------------------------------------------------------------------------------------
     // Sectors
@@ -456,18 +458,18 @@ final class Level1Areas {
             return x >= minX && x < minX + SIZE && z >= minZ && z < minZ + SIZE;
         }
 
-        /** Ramp position 0..14 down the slope (toward +x), or -1 off the ramp. */
+        /** Ramp position 0..14 down the slope (toward +x), or -1 off the ramp. It fills the width of the middle bay row. */
         int rampIndex(int x, int z) {
-            int a = x - (minX + 2);
-            int w = z - (minZ + 2 * GRID + 2);
-            return a >= 0 && a <= 14 && w >= 0 && w < GRID - 2 ? a : -1;
+            int a = x - (minX + PILLAR);
+            int w = z - (minZ + 2 * GRID + PILLAR);
+            return a >= 0 && a <= 14 && w >= 0 && w < GRID - PILLAR ? a : -1;
         }
 
         /** The curb along both sides of the ramp's opening in the floor above. */
         boolean curb(int x, int z) {
-            int a = x - (minX + 2);
+            int a = x - (minX + PILLAR);
             int lz = z - minZ;
-            return a >= 1 && a <= 12 && (lz == 2 * GRID + 1 || lz == 3 * GRID);
+            return a >= 1 && a <= 12 && (lz == 2 * GRID + PILLAR - 1 || lz == 3 * GRID);
         }
     }
 
@@ -490,14 +492,14 @@ final class Level1Areas {
         }
         int mx = Math.floorMod(x, GRID);
         int mz = Math.floorMod(z, GRID);
-        if (mx <= 1 && mz <= 1) {
+        if (mx < PILLAR && mz < PILLAR) {
             out.set(low + 1, ModBlocks.GARAGE_PILLAR.get().defaultBlockState());
             fill(out, low + 2, floor - 1, concrete);
             return;
         }
-        // Fewer tubes down here, hung under the floor above.
-        if (mz == 4 && mx >= 3 && mx <= 6 && Hash.unit(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID), 7421) < 0.45) {
-            out.set(floor - 1, tube(Direction.Axis.X));
+        // Fewer lights down here, hung under the floor above.
+        if (mz == 7 && mx >= 6 && mx <= 8 && Hash.unit(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID), 7421) < 0.45) {
+            out.set(floor - 1, hanging(Direction.Axis.X));
         }
     }
 
@@ -517,7 +519,7 @@ final class Level1Areas {
                 : ModBlocks.CONCRETE_FLOOR.get().defaultBlockState());
         out.set(ceiling, concrete);
         if (a % 4 == 1) {
-            out.set(ceiling - 1, tube(Direction.Axis.Z));
+            out.set(ceiling - 1, hanging(Direction.Axis.Z));
         }
     }
 
@@ -529,8 +531,14 @@ final class Level1Areas {
         }
     }
 
+    /** The flat tube strips of the corridors and the lockers (low ceilings). */
     static BlockState tube(Direction.Axis axis) {
         return ModBlocks.CEILING_TUBE.get().defaultBlockState().setValue(CeilingTubeBlock.AXIS, axis);
+    }
+
+    /** The fixtures hanging in the tall halls, on the ramps and over the lower floor. */
+    static BlockState hanging(Direction.Axis axis) {
+        return ModBlocks.L1_HANGING_LIGHT.get().defaultBlockState().setValue(AxisBlock.AXIS, axis);
     }
 
     private Level1Areas() {}

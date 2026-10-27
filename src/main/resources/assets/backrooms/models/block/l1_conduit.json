@@ -1,0 +1,61 @@
+{
+  "textures": {
+    "particle": "backrooms:block/l1x_conduit",
+    "c": "backrooms:block/l1x_conduit",
+    "strap": "backrooms:block/l1x_bracket"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        14,
+        3
+      ],
+      "to": [
+        16,
+        15.5,
+        4.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#c"
+        },
+        "south": {
+          "texture": "#c"
+        },
+        "down": {
+          "texture": "#c"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        15.5,
+        2.5
+      ],
+      "to": [
+        8,
+        16,
+        5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#strap"
+        },
+        "south": {
+          "texture": "#strap"
+        },
+        "east": {
+          "texture": "#strap"
+        },
+        "west": {
+          "texture": "#strap"
+        },
+        "down": {
+          "texture": "#strap"
+        }
+      }
+    }
+  ]
+}

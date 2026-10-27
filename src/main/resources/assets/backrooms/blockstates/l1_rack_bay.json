@@ -1,0 +1,154 @@
+{
+  "variants": {
+    "facing=north,load=0,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_0"
+    },
+    "facing=east,load=0,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_0",
+      "y": 90
+    },
+    "facing=south,load=0,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_0",
+      "y": 180
+    },
+    "facing=west,load=0,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_0",
+      "y": 270
+    },
+    "facing=north,load=0,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_0_beams"
+    },
+    "facing=east,load=0,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_0_beams",
+      "y": 90
+    },
+    "facing=south,load=0,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_0_beams",
+      "y": 180
+    },
+    "facing=west,load=0,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_0_beams",
+      "y": 270
+    },
+    "facing=north,load=1,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_1"
+    },
+    "facing=east,load=1,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_1",
+      "y": 90
+    },
+    "facing=south,load=1,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_1",
+      "y": 180
+    },
+    "facing=west,load=1,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_1",
+      "y": 270
+    },
+    "facing=north,load=1,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_1_beams"
+    },
+    "facing=east,load=1,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_1_beams",
+      "y": 90
+    },
+    "facing=south,load=1,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_1_beams",
+      "y": 180
+    },
+    "facing=west,load=1,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_1_beams",
+      "y": 270
+    },
+    "facing=north,load=2,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_2"
+    },
+    "facing=east,load=2,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_2",
+      "y": 90
+    },
+    "facing=south,load=2,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_2",
+      "y": 180
+    },
+    "facing=west,load=2,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_2",
+      "y": 270
+    },
+    "facing=north,load=2,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_2_beams"
+    },
+    "facing=east,load=2,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_2_beams",
+      "y": 90
+    },
+    "facing=south,load=2,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_2_beams",
+      "y": 180
+    },
+    "facing=west,load=2,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_2_beams",
+      "y": 270
+    },
+    "facing=north,load=3,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_3"
+    },
+    "facing=east,load=3,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_3",
+      "y": 90
+    },
+    "facing=south,load=3,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_3",
+      "y": 180
+    },
+    "facing=west,load=3,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_3",
+      "y": 270
+    },
+    "facing=north,load=3,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_3_beams"
+    },
+    "facing=east,load=3,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_3_beams",
+      "y": 90
+    },
+    "facing=south,load=3,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_3_beams",
+      "y": 180
+    },
+    "facing=west,load=3,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_3_beams",
+      "y": 270
+    },
+    "facing=north,load=4,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_4"
+    },
+    "facing=east,load=4,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_4",
+      "y": 90
+    },
+    "facing=south,load=4,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_4",
+      "y": 180
+    },
+    "facing=west,load=4,beams=false": {
+      "model": "backrooms:block/l1_rack_bay_4",
+      "y": 270
+    },
+    "facing=north,load=4,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_4_beams"
+    },
+    "facing=east,load=4,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_4_beams",
+      "y": 90
+    },
+    "facing=south,load=4,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_4_beams",
+      "y": 180
+    },
+    "facing=west,load=4,beams=true": {
+      "model": "backrooms:block/l1_rack_bay_4_beams",
+      "y": 270
+    }
+  }
+}

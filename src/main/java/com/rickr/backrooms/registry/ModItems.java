@@ -297,7 +297,6 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.L94_GLARE_PANEL);
         ITEMS.registerSimpleBlockItem(ModBlocks.L94_WHITE_TILE);
         // Level 1 anomalies: crate-hall racks, the crude paintings, condensation, the Corrupted Corridor.
-        ITEMS.registerSimpleBlockItem(ModBlocks.L1_STORAGE_SHELF);
         ITEMS.registerSimpleBlockItem(ModBlocks.L1_PAINTING);
         ITEMS.registerSimpleBlockItem(ModBlocks.L1_FLOOR_PAINTING);
         ITEMS.registerSimpleBlockItem(ModBlocks.L1_CONDENSATION);
@@ -358,7 +357,11 @@ public final class ModItems {
         // Level 1: the halls' signs, rebar and pipes, the corridors' mattresses, the storage lockers.
         for (var block : java.util.List.of(ModBlocks.L1_SIGN, ModBlocks.L1_REBAR, ModBlocks.L1_CEILING_PIPE, ModBlocks.L1_SHUTTER,
                 ModBlocks.L1_SHUTTER_GROWL, ModBlocks.L1_SHUTTER_ROLLED, ModBlocks.L1_MATTRESS, ModBlocks.L1_LOCKED_DOOR,
-                ModBlocks.L1_LOCKED_DOOR_TOP, ModBlocks.L1_PILLAR_PAINTED, ModBlocks.L1_CRACKED_CONCRETE, ModBlocks.L1_STEAMING_PUDDLE)) {
+                ModBlocks.L1_LOCKED_DOOR_TOP, ModBlocks.L1_PILLAR_PAINTED, ModBlocks.L1_CRACKED_CONCRETE, ModBlocks.L1_STEAMING_PUDDLE,
+                ModBlocks.L1_HANGING_LIGHT, ModBlocks.L1_PILLAR_CORNER, ModBlocks.L1_PILLAR_NUMBER, ModBlocks.L1_PILLAR_SIGN,
+                ModBlocks.L1_FLOOR_MARK, ModBlocks.L1_WHEEL_STOP, ModBlocks.L1_SPEED_BUMP, ModBlocks.L1_SPRINKLER_PIPE,
+                ModBlocks.L1_SPRINKLER_HEAD, ModBlocks.L1_CONDUIT, ModBlocks.L1_CABLE_TRAY, ModBlocks.L1_DUCT,
+                ModBlocks.L1_EXTINGUISHER, ModBlocks.L1_CONVEX_MIRROR, ModBlocks.L1_RACK_UPRIGHT, ModBlocks.L1_RACK_BAY)) {
             ITEMS.registerSimpleBlockItem(block);
         }
         // Level 7: the sea, the flooded entrance room and the exit ring.

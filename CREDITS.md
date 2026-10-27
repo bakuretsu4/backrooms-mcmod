@@ -2,8 +2,21 @@
 
 - Footstep sounds: Kenney Impact Sounds (CC0) https://kenney.nl
   (carpet, concrete, grass and wood samples vendored in `tools/vendor/kenney_impact/`, processed by `tools/gen_assets.py`)
+- Fluorescent light hum, flicker clicks, the power going out and coming back, Level 0's room tone,
+  Level 1's garage air and the player's breathing: field recordings from [Freesound](https://freesound.org),
+  all [CC0](https://creativecommons.org/publicdomain/zero/1.0/), vendored in `tools/vendor/freesound/`
+  (exact sources and the parts used in its `License.txt`) and processed by `tools/level_assets/recorded.py`:
+  - [Fluorescent lightbulb hum buzz (Extended)](https://freesound.org/s/638895/) by Developer_Jake
+  - [Flickering Fluorescent Light with Background Hum](https://freesound.org/s/777053/) by kentspublicdomain
+  - [fluorescent light switch on off electric hum prickly close2 two starts](https://freesound.org/s/452625/) by kyles
+  - [Faulty Fluorescent Light Starter & Hum](https://freesound.org/s/125064/) by EverydaySounds
+  - [Switch.Big.Power](https://freesound.org/s/139970/) by jessepash
+  - [parking garage empty quiet ventilation fan close rattly3](https://freesound.org/s/452292/) by kyles
+  - [Backrooms Ambience](https://freesound.org/s/626096/) by Resaural
+  - [Heavy Breathing](https://freesound.org/s/757113/) by jcdeegs123
+  - [Scared Male Heavy Breathing](https://freesound.org/s/554307/) by casiba842
 
-All other textures and sounds are generated procedurally by `tools/gen_assets.py`.
+All other textures and sounds are generated procedurally by `tools/gen_assets.py` and `tools/level_assets/`.
 
 ## Level 7 references
 

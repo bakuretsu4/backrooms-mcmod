@@ -47,7 +47,14 @@ public final class Level1AnomalyPlan {
     /** The Corrupted Corridor: at most one per 512x512 square (it is rare). */
     public static final int CORRIDOR_CELL = 512;
 
-    private static final int GRID = 8;
+    /** The hall grid (crate halls line up with it). */
+    private static final int GRID = Level1Layout.GRID;
+    private static final int PILLAR = Level1Layout.PILLAR;
+    /**
+     * The painting room and the Corrupted Corridor keep their own fixed sizes (designed on the
+     * old 8-block bays), so they don't depend on the hall grid.
+     */
+    private static final int ROOM = 8;
     private static final int FLOOR = LevelLayout.FLOOR_Y;
 
     // ==========================================================================================
@@ -56,10 +63,10 @@ public final class Level1AnomalyPlan {
 
     /** Bays along each side of a crate hall. */
     public static final int CRATE_HALL_CELLS = 3;
-    /** Its footprint: 3 bays plus the pillar rows on both sides, 26 blocks. */
-    public static final int CRATE_HALL_SIZE = CRATE_HALL_CELLS * GRID + 2;
-    /** Floor spots (mx, mz inside the bay) where crates can turn up; never blocking an aisle completely. */
-    private static final int[][] CRATE_FLOOR_SPOTS = {{2, 3}, {7, 3}, {2, 6}, {7, 6}, {4, 4}, {6, 4}};
+    /** Its footprint: 3 bays plus the pillar rows on both sides, 39 blocks. */
+    public static final int CRATE_HALL_SIZE = CRATE_HALL_CELLS * GRID + PILLAR;
+    /** Aisle floor spots (mx, mz inside the bay) where crates can turn up; never blocking an aisle completely. */
+    private static final int[][] CRATE_FLOOR_SPOTS = {{4, 4}, {9, 5}, {5, 9}, {10, 10}, {3, 10}};
 
     public static boolean isCrateHall(@Nullable AnomalySite site) {
         return site != null && CRATE_HALL.equals(site.kind());
@@ -76,31 +83,25 @@ public final class Level1AnomalyPlan {
         }
         int lx = x - site.minX();
         int lz = z - site.minZ();
-        return lx >= 2 && lx < CRATE_HALL_SIZE - 2 && lz >= 2 && lz < CRATE_HALL_SIZE - 2;
+        return lx >= PILLAR && lx < CRATE_HALL_SIZE - PILLAR && lz >= PILLAR && lz < CRATE_HALL_SIZE - PILLAR;
     }
 
-    /** The two rows of racks across each bay (mx, mz = position inside the 8-block grid cell). */
-    public static boolean crateHallShelf(int mx, int mz) {
-        return (mz == 3 || mz == 6) && mx >= 3 && mx <= 6;
+    /** The pallet racks across each bay (mx, mz = position inside the hall grid cell). */
+    public static boolean crateHallRack(int mx, int mz) {
+        return Level1Racks.rackRow(mx, mz);
     }
 
-    /** One bay column of a crate hall (the caller lays the floor and the ceiling). */
-    public static void fillCrateHallBay(int mx, int mz, int floor, int ceiling, LevelLayout.Column out) {
-        if (crateHallShelf(mx, mz)) {
-            BlockState shelf = ModBlocks.L1_STORAGE_SHELF.get().defaultBlockState();
-            out.set(floor + 1, shelf);
-            out.set(floor + 2, shelf);
-        }
-        // The crate-rich Gild sector is "better lit" than the rest: a tube over every middle aisle.
-        if (mz == 4 && mx >= 3 && mx <= 6) {
-            out.set(ceiling - 1, tube(Direction.Axis.X));
+    /** One bay column of a crate hall (the caller lays the floor, the ceiling and its services). */
+    public static void fillCrateHallBay(AnomalySite site, int x, int z, int mx, int mz, int floor, LevelLayout.Column out) {
+        if (Level1Racks.rackRow(mx, mz)) {
+            Level1Racks.fill(site.salt(), x, z, mx, mz, floor, true, out);
         }
     }
 
     /**
-     * Every spot where a crate may appear: on top of each rack (they are two blocks tall) and a
-     * few spots on the floor. Nothing else is ever built on these spots, so any crate found on one
-     * was put there by the anomaly (that's how the server knows which crates it may take away).
+     * Every spot where a crate may appear: the floor level of each rack slot (kept empty for them)
+     * and a few spots in the aisles. Nothing else is ever built on these spots, so any crate found
+     * on one was put there by the anomaly (that's how the server knows which crates it may take away).
      */
     public static List<BlockPos> crateSpots(AnomalySite site) {
         List<BlockPos> spots = new ArrayList<>();
@@ -108,9 +109,12 @@ public final class Level1AnomalyPlan {
             for (int bz = 0; bz < CRATE_HALL_CELLS; bz++) {
                 int x0 = site.minX() + bx * GRID;
                 int z0 = site.minZ() + bz * GRID;
-                for (int mx = 3; mx <= 6; mx++) {
-                    spots.add(new BlockPos(x0 + mx, FLOOR + 3, z0 + 3));
-                    spots.add(new BlockPos(x0 + mx, FLOOR + 3, z0 + 6));
+                for (int mx = PILLAR; mx < GRID; mx++) {
+                    for (int mz : new int[] {Level1Racks.ROW_NORTH, Level1Racks.ROW_SOUTH}) {
+                        if (Level1Racks.slot(mx, mz)) {
+                            spots.add(new BlockPos(x0 + mx, FLOOR + 1, z0 + mz));
+                        }
+                    }
                 }
                 for (int[] spot : CRATE_FLOOR_SPOTS) {
                     spots.add(new BlockPos(x0 + spot[0], FLOOR + 1, z0 + spot[1]));
@@ -124,8 +128,8 @@ public final class Level1AnomalyPlan {
     // Painting room
     // ==========================================================================================
 
-    /** One grid cell plus the pillar rows around it: 10 x 10 blocks, walls included. */
-    public static final int PAINTING_ROOM_SIZE = GRID + 2;
+    /** 10 x 10 blocks, walls included: two-thick walls around a 6 x 6 room. */
+    public static final int PAINTING_ROOM_SIZE = ROOM + 2;
 
     /** One spot for a painting: where, and which way a wall painting faces (null on the floor). */
     public record PaintingSpot(BlockPos pos, @Nullable Direction facing) {}
@@ -139,9 +143,9 @@ public final class Level1AnomalyPlan {
     public static boolean paintingDoorway(AnomalySite site, int lx, int lz) {
         return switch (paintingDoorSide(site)) {
             case NORTH -> lz <= 1 && (lx == 4 || lx == 5);
-            case SOUTH -> lz >= GRID && (lx == 4 || lx == 5);
+            case SOUTH -> lz >= ROOM && (lx == 4 || lx == 5);
             case WEST -> lx <= 1 && (lz == 4 || lz == 5);
-            default -> lx >= GRID && (lz == 4 || lz == 5);
+            default -> lx >= ROOM && (lz == 4 || lz == 5);
         };
     }
 
@@ -157,13 +161,13 @@ public final class Level1AnomalyPlan {
         if (lz == 2 && lx >= 3 && lx <= 6) {
             wall = Direction.NORTH;
             along = lx;
-        } else if (lz == GRID - 1 && lx >= 3 && lx <= 6) {
+        } else if (lz == ROOM - 1 && lx >= 3 && lx <= 6) {
             wall = Direction.SOUTH;
             along = lx;
         } else if (lx == 2 && lz >= 3 && lz <= 6) {
             wall = Direction.WEST;
             along = lz;
-        } else if (lx == GRID - 1 && lz >= 3 && lz <= 6) {
+        } else if (lx == ROOM - 1 && lz >= 3 && lz <= 6) {
             wall = Direction.EAST;
             along = lz;
         } else {
@@ -202,8 +206,8 @@ public final class Level1AnomalyPlan {
     /** Every painting spot of the room (for the server, which changes them). */
     public static List<PaintingSpot> paintingSpots(AnomalySite site) {
         List<PaintingSpot> spots = new ArrayList<>();
-        for (int lx = 2; lx < GRID; lx++) {
-            for (int lz = 2; lz < GRID; lz++) {
+        for (int lx = 2; lx < ROOM; lx++) {
+            for (int lz = 2; lz < ROOM; lz++) {
                 int x = site.minX() + lx;
                 int z = site.minZ() + lz;
                 if (floorPaintingSpot(lx, lz)) {
@@ -279,8 +283,10 @@ public final class Level1AnomalyPlan {
     // cinderblock walls, a = 2..4 the 3-wide floor. The site's anchor is the corner t = 0, a = 0
     // and its facing is the way you walk in (east, west, south or north).
 
-    /** 17 bays plus the closing pillar row: 138 blocks. */
-    public static final int CORRIDOR_LENGTH = 17 * GRID + 2;
+    /** 138 blocks (17 of the old 8-block bays plus a pillar row). */
+    public static final int CORRIDOR_LENGTH = 17 * ROOM + 2;
+    /** Across: 8 blocks (a = 0..7). */
+    public static final int CORRIDOR_WIDTH = ROOM;
     /** The doorway in the side wall (t = 3..4), 3 blocks tall. */
     public static final int DOOR_T = 3;
     /** First t of each sector (Sector 1 starts at the door). */

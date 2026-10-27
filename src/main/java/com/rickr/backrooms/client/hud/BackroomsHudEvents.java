@@ -15,14 +15,19 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.event.RenderHandEvent;
+import net.neoforged.neoforge.client.event.RenderHighlightEvent;
 import net.neoforged.neoforge.client.event.RenderNameTagEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.common.util.TriState;
 
 /**
- * The vanilla HUD, Backrooms style (like the reference): no crosshair or XP bar, hearts and hunger
- * drawn faint, a hotbar that slides out of view when you're not using it, and no player nametags.
- * Outside the Backrooms nothing here does anything.
+ * The vanilla HUD, Backrooms style: as little game on screen as possible, so it feels like
+ * footage, not a game. No crosshair, block outline, XP bar or hand; hearts, hunger and air hidden until they
+ * change (then they fade in for a few seconds, and stay faintly in view while your health is low);
+ * a hotbar that slides out of view when you're not using it (switching items still shows the item's
+ * name for a moment); no tutorial hints or advancement pop-ups; no player nametags.
+ * Outside the Backrooms (unless you're filming with a camcorder) nothing here does anything.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class BackroomsHudEvents {
@@ -30,12 +35,23 @@ public final class BackroomsHudEvents {
     private static final Set<ResourceLocation> HIDDEN = Set.of(
             VanillaGuiLayers.CROSSHAIR, VanillaGuiLayers.EXPERIENCE_BAR, VanillaGuiLayers.EXPERIENCE_LEVEL,
             VanillaGuiLayers.JUMP_METER);
-    /** Layers drawn see-through at {@link #FADED_ALPHA}. */
-    private static final Set<ResourceLocation> FADED = Set.of(
+    /** Status layers: hidden until something in them changes. */
+    private static final Set<ResourceLocation> STATUS = Set.of(
             VanillaGuiLayers.PLAYER_HEALTH, VanillaGuiLayers.FOOD_LEVEL, VanillaGuiLayers.ARMOR_LEVEL,
             VanillaGuiLayers.AIR_LEVEL, VanillaGuiLayers.VEHICLE_HEALTH);
-    /** Hearts / hunger / armour opacity: present if you look for them, invisible in the footage. */
-    private static final float FADED_ALPHA = 0.35f;
+    /** Status icons after a change: this opacity for {@link #STATUS_HOLD_MS}, then fading out over {@link #STATUS_FADE_MS}. */
+    private static final float STATUS_ALPHA = 0.7f;
+    private static final long STATUS_HOLD_MS = 3500L;
+    private static final float STATUS_FADE_MS = 1200.0f;
+    /** At this health or below the hearts stay faintly in view. */
+    private static final float LOW_HEALTH = 6.0f;
+    private static final float LOW_HEALTH_ALPHA = 0.4f;
+
+    private static float lastHealth = -1.0f;
+    private static int lastFood = -1;
+    private static int lastAir = -1;
+    private static int lastArmor = -1;
+    private static long lastStatusChangeMs;
 
     /** Hotbar: hides after this long without a slot change... */
     private static final long HOTBAR_HOLD_MS = 3000L;
@@ -66,6 +82,47 @@ public final class BackroomsHudEvents {
             lastSlot = slot;
             lastSlotChangeMs = System.currentTimeMillis();
         }
+        float health = mc.player.getHealth();
+        int food = mc.player.getFoodData().getFoodLevel();
+        int air = mc.player.getAirSupply();
+        int armor = mc.player.getArmorValue();
+        if (health != lastHealth || food != lastFood || air != lastAir || armor != lastArmor) {
+            lastStatusChangeMs = System.currentTimeMillis();
+            lastHealth = health;
+            lastFood = food;
+            lastAir = air;
+            lastArmor = armor;
+        }
+        // No pop-ups over the footage: tutorial hints and advancement toasts.
+        mc.getToasts().clear();
+        if (mc.options.tutorialStep != net.minecraft.client.tutorial.TutorialSteps.NONE) {
+            mc.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);
+        }
+    }
+
+    /** Status icons' opacity now: shown for a while after a change, faint while health is low, else 0. */
+    private static float statusAlpha(Minecraft mc) {
+        long since = System.currentTimeMillis() - lastStatusChangeMs;
+        float fresh = since <= STATUS_HOLD_MS ? STATUS_ALPHA
+                : Math.max(0.0f, STATUS_ALPHA * (1.0f - (since - STATUS_HOLD_MS) / STATUS_FADE_MS));
+        float low = mc.player != null && mc.player.getHealth() <= LOW_HEALTH ? LOW_HEALTH_ALPHA : 0.0f;
+        return Math.max(fresh, low);
+    }
+
+    /** No black outline round the block you look at: there's no crosshair to aim with either. */
+    @SubscribeEvent
+    public static void onBlockHighlight(RenderHighlightEvent.Block event) {
+        if (CamcorderEffect.wanted(Minecraft.getInstance())) {
+            event.setCanceled(true);
+        }
+    }
+
+    /** No hand or held item in the shot: it's a camcorder, not your eyes. */
+    @SubscribeEvent
+    public static void onRenderHand(RenderHandEvent event) {
+        if (CamcorderEffect.wanted(Minecraft.getInstance())) {
+            event.setCanceled(true);
+        }
     }
 
     /** Lowest priority, so if another mod cancels the layer we never push state we can't pop. */
@@ -79,13 +136,18 @@ public final class BackroomsHudEvents {
         GuiGraphics g = event.getGuiGraphics();
         if (HIDDEN.contains(name)) {
             event.setCanceled(true);
-        } else if (FADED.contains(name)) {
+        } else if (STATUS.contains(name)) {
+            float alpha = statusAlpha(mc);
+            if (alpha <= 0.01f) {
+                event.setCanceled(true);
+                return;
+            }
             // These icons are drawn straight away with the shader colour as a multiplier, so an
             // alpha below 1 here makes them translucent. Flush first so earlier layers aren't affected.
             g.flush();
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
-            RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, FADED_ALPHA);
+            RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, alpha);
             pendingRestore = name;
         } else if (name.equals(VanillaGuiLayers.HOTBAR)) {
             float offset = hotbarOffset();

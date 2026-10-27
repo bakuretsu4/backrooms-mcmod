@@ -176,7 +176,8 @@ public final class AtmosphereGrade {
         float power = FixturePower.mainsPower();
         float fogLight = 0.25f + 0.75f * power;
 
-        chain.setUniform("Exposure", m.exposure());
+        // Eyes adjusting: the camcorder's auto-exposure catching up after the light changes.
+        chain.setUniform("Exposure", m.exposure() * EyeAdaptation.factor(mc));
         chain.setUniform("Contrast", m.contrast());
         chain.setUniform("Saturation", m.saturation());
         chain.setUniform("ShadowR", m.shR());

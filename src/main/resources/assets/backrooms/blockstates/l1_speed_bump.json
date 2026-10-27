@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/l1_speed_bump"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l1_speed_bump",
+      "y": 90
+    }
+  }
+}

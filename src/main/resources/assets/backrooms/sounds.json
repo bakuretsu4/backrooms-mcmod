@@ -1800,5 +1800,21 @@
       }
     ],
     "subtitle": "subtitles.backrooms.l1_locker_growl"
+  },
+  "player.breath_heavy": {
+    "sounds": [
+      {
+        "name": "backrooms:player/breath_heavy",
+        "stream": true
+      }
+    ]
+  },
+  "player.breath_scared": {
+    "sounds": [
+      {
+        "name": "backrooms:player/breath_scared",
+        "stream": true
+      }
+    ]
   }
 }

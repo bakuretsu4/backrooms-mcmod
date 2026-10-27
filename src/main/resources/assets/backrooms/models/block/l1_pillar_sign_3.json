@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/concrete_wall",
+    "north": "backrooms:block/l1x_sign_3",
+    "south": "backrooms:block/concrete_wall",
+    "east": "backrooms:block/concrete_wall",
+    "west": "backrooms:block/concrete_wall",
+    "up": "backrooms:block/concrete_wall",
+    "down": "backrooms:block/concrete_wall"
+  }
+}

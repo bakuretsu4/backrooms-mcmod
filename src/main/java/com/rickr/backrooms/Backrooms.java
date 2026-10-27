@@ -10,6 +10,7 @@ import com.rickr.backrooms.registry.ModChunkGenerators;
 import com.rickr.backrooms.registry.ModCreativeTab;
 import com.rickr.backrooms.registry.ModEntities;
 import com.rickr.backrooms.registry.ModItems;
+import com.rickr.backrooms.registry.ModParticles;
 import com.rickr.backrooms.registry.ModSounds;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -35,6 +36,7 @@ public final class Backrooms {
         ModItems.ITEMS.register(modBus);
         ModEntities.ENTITIES.register(modBus);
         ModSounds.SOUNDS.register(modBus);
+        ModParticles.PARTICLES.register(modBus);
         ModChunkGenerators.CHUNK_GENERATORS.register(modBus);
         ModAttachments.ATTACHMENTS.register(modBus);
         ModCreativeTab.TABS.register(modBus);

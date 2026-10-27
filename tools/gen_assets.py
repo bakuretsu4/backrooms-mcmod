@@ -2405,44 +2405,6 @@ def mains_hum(t, f0=120.0, levels_db=(0, -10, -18, -24, -32, -40)) -> np.ndarray
                for k, db in enumerate(levels_db))
 
 
-def snd_level0_hum() -> None:
-    """12 s office room tone: soft brown noise, distant HVAC rumble, faint hum bed."""
-    rng = rng_for(401)
-    T = 12.0
-    n = int(T * SR)
-    t = np.arange(n) / SR
-    room = periodic_noise(n, rng, lambda f: hp_gain(f, 20, 2) * lp_gain(f, 450, 3) / np.maximum(f, 20))
-    hvac = periodic_noise(n, rng, lambda f: bp_gain(f, 40, 90, 3)) * drift(n, rng, 0.2, 0.08, 0.3)
-    hum = mains_hum(t, levels_db=(0, -12, -22, -30)) * drift(n, rng, 0.1)
-    room, hvac = norm(room), norm(hvac)
-    rms = np.sqrt(np.mean(room ** 2))
-    hum = hum / np.sqrt(np.mean(hum ** 2)) * rms * 10 ** (-20 / 20)    # -20 dB under the noise
-    x = room + 0.6 * hvac + hum
-    save_ogg(x, SND / "ambient" / "level0_hum.ogg", peak=0.5, loop=True)
-
-
-def snd_level1_ambience() -> None:
-    """12 s concrete garage: deep rumble, faint ventilation, rare soft drips in a big room."""
-    rng = rng_for(402)
-    T = 12.0
-    n = int(T * SR)
-    t = np.arange(n) / SR
-    rumble = periodic_noise(n, rng, lambda f: bp_gain(f, 22, 70, 3)) * drift(n, rng, 0.15, 0.08, 0.3)
-    vent = periodic_noise(n, rng, lambda f: bp_gain(f, 150, 600, 2) / np.sqrt(np.maximum(f, 20)))
-    vent *= drift(n, rng, 0.25, 0.08, 0.25)
-    room = periodic_noise(n, rng, lambda f: hp_gain(f, 20, 2) * lp_gain(f, 300, 3) / np.maximum(f, 20))
-    drips = np.zeros(n)
-    for st, f0, a in ((2.6, 950, 1.0), (8.9, 820, 0.6)):
-        dt = t_axis(0.12)
-        f = f0 * (1 + 0.5 * np.clip(dt / 0.05, 0, 1))
-        d = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-dt / 0.03) * smoothstep(0, 0.004, dt)
-        add_at(drips, d * a, st, circular=True)
-    drips = fft_filter(drips, lambda f: lp_gain(f, 1400, 2), circular=True)
-    wet = circ_conv(drips, reverb_ir(rng, 4.0, 1.3, lp=1200, predelay=0.05))
-    x = norm(rumble) * 0.8 + norm(vent) * 0.18 + norm(room) * 0.5 + norm(drips) * 0.04 + norm(wet) * 0.12
-    save_ogg(x, SND / "ambient" / "level1_ambience.ogg", peak=0.55, loop=True)
-
-
 def snd_level2_ambience() -> None:
     """12 s pipe maze: low machinery drone, slow metallic pipe resonances, soft hiss swells."""
     rng = rng_for(403)
@@ -2833,56 +2795,6 @@ def _mains_buzz(phase: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return norm(hum), norm(rasp)
 
 
-def snd_power_down() -> None:
-    rng = rng_for(1201)
-    dur = 1.5
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    t0 = 0.05
-    after = np.clip(t - t0, 0, None)
-    # the hum winds down in pitch and level after the breaker trips
-    fac = np.where(t < t0, 1.0, 0.22 + 0.78 * np.exp(-after / 0.45))
-    env = np.where(t < t0, 1.0, np.exp(-after / 0.32))
-    hum, rasp = _mains_buzz(2 * np.pi * np.cumsum(60 * fac) / SR)
-    on = (t >= t0).astype(float)
-    f = np.interp(after, [0, 0.15], [72, 36])
-    thud = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-after / 0.13) * on
-    knock = fft_filter(rng.normal(size=n), lambda fr: bp_gain(fr, 150, 2500, 2)) * np.exp(-after / 0.025) * on
-    metal = np.zeros(n)
-    add_at(metal, ring([310, 780, 1450, 2300], [0.14, 0.09, 0.06, 0.035], [1, 0.6, 0.4, 0.2], 0.8),
-           t0, circular=False)
-    x = (hum * 0.45 * env + rasp * 0.14 * env ** 1.6 + norm(thud) * 0.9
-         + norm(knock) * 0.45 + norm(metal) * 0.22)
-    x = x + 0.3 * norm(conv(x, reverb_ir(rng, 1.0, 0.3, lp=4000))[:n]) * np.abs(x).max()
-    save_ogg(x, SND / "event" / "power_down.ogg", peak=0.89, fade_in=0.01, fade_out=0.08)
-
-
-def snd_power_up() -> None:
-    rng = rng_for(1202)
-    dur = 1.5
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    x = np.zeros(n)
-    # relay clack: two sharp contacts plus a short body thunk
-    for st, a in ((0.02, 1.0), (0.036, 0.6)):
-        c = ring([1800, 3700, 5200], [0.006, 0.004, 0.003], [1, 0.7, 0.4], 0.04)
-        c += ring([180], [0.015], [0.8], 0.04)
-        c[:30] += rng.normal(size=30) * np.linspace(1, 0, 30)
-        add_at(x, c * a, st, circular=False)
-    hum, rasp = _mains_buzz(2 * np.pi * 60 * t)
-    # starter "tink" pings, each with a brief burst of buzz, then the tubes strike
-    gate = np.zeros(n)
-    for st, a in ((0.34, 0.9), (0.57, 0.7), (0.73, 1.0)):
-        p = ring([4200, 6100, 8300], [0.03, 0.02, 0.015], [1, 0.6, 0.3], 0.15)
-        add_at(x, p * a * 0.5, st, circular=False)
-        gate += np.exp(-0.5 * ((t - st - 0.03) / 0.02) ** 2) * a
-    gate += smoothstep(0.86, 1.05, t) * (1 + 0.25 * np.sin(2 * np.pi * 9 * t) * np.exp(-(t - 0.86).clip(0) / 0.2))
-    buzz = (hum * 0.5 + rasp * 0.25) * np.clip(gate, 0, 1.3)
-    x = norm(x) * 0.8 + norm(buzz) * 0.55
-    x = x + 0.2 * norm(conv(x, reverb_ir(rng, 0.8, 0.22, lp=5000))[:n]) * np.abs(x).max()
-    save_ogg(x, SND / "event" / "power_up.ogg", peak=0.89, fade_in=0.002, fade_out=0.08)
-
-
 def snd_alarm() -> None:
     rng = rng_for(1203)
     T = 6.0
@@ -2955,48 +2867,6 @@ def tex_backshroom() -> None:
 # =============================================================================
 # v2 sounds: fixture hum/blinks, footsteps, floor events, transitions
 # =============================================================================
-
-def snd_light_hum() -> None:
-    """Seamless 4 s positional fixture hum: calm 120 Hz transformer hum, no buzz/whine."""
-    rng = rng_for(1301)
-    T = 4.0
-    n = int(T * SR)
-    t = np.arange(n) / SR                    # 480 whole cycles of 120 Hz -> periodic
-    hum = mains_hum(t) + 0.06 * np.sin(2 * np.pi * 60 * t)      # touch of 60 Hz body
-    bed = periodic_noise(n, rng, lambda f: bp_gain(f, 60, 250, 2))
-    x = (norm(hum) + 0.01 * norm(bed)) * drift(n, rng, 0.1, 0.2, 0.5)
-    save_ogg(x, SND / "light" / "hum.ogg", peak=0.57, loop=True)
-
-
-def snd_light_blink() -> None:
-    """8 relay clicks / starter tinks, some with a short ballast buzz."""
-    for i in range(1, 9):
-        rng = rng_for(1310 + i)
-        dur = 0.55
-        n = int(dur * SR)
-        x = np.zeros(n)
-        nclick = 1 + i % 3
-        tt = 0.01
-        for _ in range(nclick):
-            k = int(0.004 * SR)
-            burst = rng.normal(size=k) * np.exp(-np.arange(k) / (0.0008 * SR))
-            burst = fft_filter(burst, lambda f: hp_gain(f, 1500, 2))[:k]
-            tink = ring(rng.uniform(2500, 5200, 3), rng.uniform(0.01, 0.05, 3), (1, 0.6, 0.4), 0.15)
-            body = ring([rng.uniform(300, 600)], [0.01], [0.8], 0.05)
-            add_at(x, norm(burst), tt, False)
-            add_at(x, 0.35 * norm(tink) * rng.uniform(0.4, 1.0), tt, False)
-            add_at(x, 0.4 * body, tt, False)
-            tt += rng.uniform(0.03, 0.12)
-        if i % 2 == 0:                     # brief ballast buzz as the tube strikes
-            m = int(rng.uniform(0.06, 0.18) * SR)
-            ph = 2 * np.pi * 60 * np.arange(m) / SR
-            s = np.sin(2 * ph)
-            bz = fft_filter(np.sign(s) * np.abs(s) ** 0.2, lambda f: bp_gain(f, 300, 5000, 1))[:m]
-            add_at(x, 0.3 * norm(bz) * env_adsr(m, 0.005, 0.03), tt, False)
-        ir = reverb_ir(rng, 0.4, 0.08, lp=7000)
-        x = x + 0.25 * conv(x, ir)[:n]
-        save_ogg(x, SND / "light" / f"blink{i}.ogg", peak=0.85, fade_in=0.0005, fade_out=0.05)
-
 
 VENDOR = Path(__file__).resolve().parent / "vendor"
 
@@ -8623,11 +8493,11 @@ TEXTURES = [
     tex_surface_variants, variant_models,
 ]
 SOUNDS = [
-    snd_level0_hum, snd_level1_ambience, snd_level2_ambience,
+    snd_level2_ambience,
     snd_bacteria_ambient, snd_bacteria_screech, snd_bacteria_steps, snd_bacteria_hurt,
     snd_bacteria_death, snd_bacteria_search, snd_bacteria_lost, snd_rec_beep, snd_battery_low, snd_noclip, snd_escape,
-    snd_flashlight_click, snd_wake_up, snd_power_down, snd_power_up, snd_alarm,
-    snd_light_hum, snd_light_blink, snd_footsteps, snd_intercom, snd_distant_knock,
+    snd_flashlight_click, snd_wake_up, snd_alarm,
+    snd_footsteps, snd_intercom, snd_distant_knock,
     snd_distant_creak, snd_thunder, snd_radio_static, snd_death_sting,
     snd_intro_glitch, snd_intro_impact, snd_intro_wind,
     snd_poolrooms_ambience, snd_hallucination_loop, snd_phantom_vanish, snd_drain_pull,

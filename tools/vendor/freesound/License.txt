@@ -1,0 +1,23 @@
+Field recordings from Freesound (https://freesound.org), all released under Creative Commons 0
+(public domain dedication, https://creativecommons.org/publicdomain/zero/1.0/). Downloaded as the
+site's high-quality previews, converted to 44.1 kHz mono Ogg Vorbis and trimmed to the part used.
+Processed into the mod's sounds by tools/level_assets/recorded.py.
+
+638895_fluorescent_hum.ogg            "Fluorescent lightbulb hum buzz (Extended)" by Developer_Jake
+                                        https://freesound.org/s/638895/  (5 s to 21 s)
+777053_fluorescent_flicker.ogg        "Flickering Fluorescent Light with Background Hum" by kentspublicdomain
+                                        https://freesound.org/s/777053/
+452625_fluorescent_switch_starts.ogg  "fluorescent light switch on off electric hum prickly close2 two starts" by kyles
+                                        https://freesound.org/s/452625/  (first 6 s)
+125064_faulty_starter_hum.ogg         "Faulty Fluorescent Light Starter & Hum" by EverydaySounds
+                                        https://freesound.org/s/125064/  (first 4 s)
+139970_big_breaker.ogg                "Switch.Big.Power.wav" by jessepash
+                                        https://freesound.org/s/139970/
+452292_parking_garage_vent.ogg        "parking garage empty quiet ventilation fan close rattly3" by kyles
+                                        https://freesound.org/s/452292/  (20 s to 54 s)
+626096_backrooms_ambience.ogg         "Backrooms Ambience" by Resaural
+                                        https://freesound.org/s/626096/
+757113_heavy_breathing.ogg             "Heavy Breathing" by jcdeegs123
+                                        https://freesound.org/s/757113/  (first 16 s)
+554307_scared_breathing.ogg            "Scared Male Heavy Breathing" by casiba842
+                                        https://freesound.org/s/554307/  (first 18 s)

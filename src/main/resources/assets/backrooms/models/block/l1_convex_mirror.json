@@ -1,0 +1,138 @@
+{
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l1x_bracket",
+    "m": "backrooms:block/l1x_mirror",
+    "b": "backrooms:block/l1x_bracket"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        3,
+        6
+      ],
+      "to": [
+        13,
+        13,
+        6.01
+      ],
+      "faces": {
+        "north": {
+          "texture": "#m"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          7
+        ],
+        "axis": "x",
+        "angle": -22.5
+      }
+    },
+    {
+      "from": [
+        3.5,
+        3.5,
+        6.2
+      ],
+      "to": [
+        12.5,
+        12.5,
+        7.2
+      ],
+      "faces": {
+        "south": {
+          "texture": "#b"
+        },
+        "east": {
+          "texture": "#b"
+        },
+        "west": {
+          "texture": "#b"
+        },
+        "up": {
+          "texture": "#b"
+        },
+        "down": {
+          "texture": "#b"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          7
+        ],
+        "axis": "x",
+        "angle": -22.5
+      }
+    },
+    {
+      "from": [
+        7.5,
+        7.5,
+        7.2
+      ],
+      "to": [
+        8.5,
+        8.5,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#b"
+        },
+        "south": {
+          "texture": "#b"
+        },
+        "east": {
+          "texture": "#b"
+        },
+        "west": {
+          "texture": "#b"
+        },
+        "up": {
+          "texture": "#b"
+        },
+        "down": {
+          "texture": "#b"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        6,
+        15.4
+      ],
+      "to": [
+        10,
+        10,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#b"
+        },
+        "south": {
+          "texture": "#b"
+        },
+        "east": {
+          "texture": "#b"
+        },
+        "west": {
+          "texture": "#b"
+        },
+        "up": {
+          "texture": "#b"
+        },
+        "down": {
+          "texture": "#b"
+        }
+      }
+    }
+  ]
+}

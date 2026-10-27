@@ -1,0 +1,35 @@
+{
+  "textures": {
+    "particle": "backrooms:block/l1x_duct",
+    "d": "backrooms:block/l1x_duct",
+    "g": "backrooms:block/l1x_galvanised"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        3,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#d"
+        },
+        "south": {
+          "texture": "#d"
+        },
+        "down": {
+          "texture": "#d"
+        },
+        "up": {
+          "texture": "#g"
+        }
+      }
+    }
+  ]
+}

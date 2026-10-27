@@ -1,6 +1,6 @@
 """Level 1 anomalies: textures and sounds.
 
-Crate halls (orange storage racks), the painting rooms (crude, unsettling paintings on the walls
+The painting rooms (crude, unsettling paintings on the walls
 and drawings on the floor), the fog patches (a film of condensation on the floor, drips), and
 the Corrupted Corridor, Level 1.1 (white cinderblock, blue tile, the walk-through wall, bright
 patches, black-and-white walls and floor, and the drone of its fourth sector).
@@ -42,44 +42,6 @@ def _ink(img, mask, color, alpha=0.92, rng=None) -> np.ndarray:
 
 
 # ---------------------------------------------------------------- crate halls ---
-
-def tex_level1_storage_shelf() -> None:
-    """Orange pallet racking: uprights at the sides, a beam on top, cardboard boxes on the deck."""
-    rng = G.rng_for(9101)
-    X, Y = G.grid()
-    img = G.fill((30, 29, 33), (S, S))                                     # the dark inside of the rack
-    img = G.add_lum(img, G.blur(G.fnoise(rng, beta=2.5), 2.0) * 3)
-    img = G.add_lum(img, -14 * G.smoothstep(40, 0, Y))                     # shadow under the deck above
-    # Cardboard boxes standing on the deck below (the bottom edge of the block).
-    for x0, x1, top, col in ((14, 58, 52, (148, 110, 68)), (60, 92, 74, (132, 98, 62)), (94, 116, 40, (156, 118, 74))):
-        box = G.box((S, S), x0, top, x1, S + 1)
-        face = G.add_lum(G.fill(col, (S, S)), G.fnoise(rng, beta=2.0, aniso=(1, 6)) * 5)
-        face = G.add_lum(face, -26 * G.smoothstep(top + 10, top, Y))       # the top flap edge in shadow
-        tape = G.box((S, S), (x0 + x1) / 2 - 3, top, (x0 + x1) / 2 + 3, S + 1)
-        face = G.over(face, np.array([186, 170, 130]), tape * 0.8)
-        img = G.over(img, face, box)
-        img = G.add_lum(img, -20 * np.clip(G.blur(box, 1.2) - box, 0, 1) * 2)
-    # Beam on top, uprights at the sides: painted orange steel with scuffs.
-    steel = G.add_lum(G.fill((206, 104, 34), (S, S)), G.fnoise(rng, beta=1.8) * 6)
-    scuffs = G.smoothstep(1.6, 2.2, G.fnoise(rng, beta=1.0, kmin=8))
-    steel = G.over(steel, np.array([92, 84, 80]), scuffs * 0.8)
-    frame = np.clip(G.box((S, S), -1, -1, S + 1, 13) + G.box((S, S), -1, -1, 10, S + 1)
-                    + G.box((S, S), S - 10, -1, S + 1, S + 1), 0, 1)
-    img = G.over(img, steel, frame)
-    img = G.add_lum(img, -30 * G.box((S, S), -1, 13, S + 1, 15))           # the beam's lower lip
-    for y in range(24, S, 16):                                             # punched holes in the uprights
-        for x in (5, S - 5):
-            img = G.over(img, np.array([20, 18, 20]), np.clip(1.8 - np.hypot(X - x, Y - y), 0, 1))
-    G.save_png(img, _blk("l1_storage_shelf"))
-
-    # Top: the plywood deck between two beams.
-    rng = G.rng_for(9102)
-    top = G._wood(rng, np.array([168, 138, 98]), horizontal=True)
-    top = G.over(top, steel, np.clip(G.box((S, S), -1, -1, S + 1, 10) + G.box((S, S), -1, S - 10, S + 1, S + 1), 0, 1))
-    G.save_png(top, _blk("l1_storage_shelf_top"))
-
-
-# ---------------------------------------------------------------- painting rooms ---
 
 def _sheet(rng, col, x0, y0, x1, y1, ragged=1.6):
     """A sheet of paper or canvas with a slightly ragged edge: (rgb, coverage)."""
@@ -431,7 +393,7 @@ def snd_level1_corridor_drone() -> None:
 
 
 TEXTURES = [
-    tex_level1_storage_shelf, tex_level1_paintings, tex_level1_floor_paintings, tex_level1_condensation,
+    tex_level1_paintings, tex_level1_floor_paintings, tex_level1_condensation,
     tex_level1_cinderblock, tex_level1_noclip_wall, tex_level1_blue_tile, tex_level1_bright_patch,
     tex_level1_monochrome_wall, tex_level1_monochrome_floor,
 ]

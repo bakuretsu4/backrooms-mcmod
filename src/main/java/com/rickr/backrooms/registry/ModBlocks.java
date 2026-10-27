@@ -6,6 +6,13 @@ import com.rickr.backrooms.block.ClimbingFrameBlock;
 import com.rickr.backrooms.block.ParapetBlock;
 import com.rickr.backrooms.block.ThroneLightBlock;
 import com.rickr.backrooms.block.CeilingTubeBlock;
+import com.rickr.backrooms.block.RackBayBlock;
+import com.rickr.backrooms.block.RackUprightBlock;
+import com.rickr.backrooms.block.FloorMarkBlock;
+import com.rickr.backrooms.block.PillarSignBlock;
+import com.rickr.backrooms.block.PillarNumberBigBlock;
+import com.rickr.backrooms.block.PillarCornerBlock;
+import com.rickr.backrooms.block.AxisBlock;
 import com.rickr.backrooms.block.ClayDoorBlock;
 import com.rickr.backrooms.block.RopeBlock;
 import com.rickr.backrooms.block.RebarBlock;
@@ -771,11 +778,10 @@ public final class ModBlocks {
             "reservoir_sprout", com.rickr.backrooms.block.ReservoirSproutBlock::new,
             fixture(MapColor.COLOR_RED, SoundType.GRASS, 7).noCollission().noOcclusion());
     // Level 1 anomalies (world/anomaly/level1, world/layout/Level1AnomalyPlan): the orange storage
-    // racks of the crate halls, the crude paintings (wall and floor) that change while nobody looks,
+    // the crude paintings (wall and floor) that change while nobody looks,
     // the film of condensation the low fog leaves on the floor, and the Corrupted Corridor
     // (Level 1.1): white cinderblock and blue tile, a wall you can walk into, bright patches in the
     // dark, black-and-white walls and a floor that is not really there.
-    public static final DeferredBlock<Block> L1_STORAGE_SHELF = structural("l1_storage_shelf", MapColor.COLOR_ORANGE, SoundType.METAL);
     public static final DeferredBlock<com.rickr.backrooms.block.CrudePaintingBlock> L1_PAINTING = BLOCKS.registerBlock("l1_painting",
             com.rickr.backrooms.block.CrudePaintingBlock::new, unbreakable(MapColor.COLOR_BROWN, SoundType.WOOL).noCollission().noOcclusion());
     public static final DeferredBlock<com.rickr.backrooms.block.FloorPaintingBlock> L1_FLOOR_PAINTING = BLOCKS.registerBlock("l1_floor_painting",
@@ -953,6 +959,55 @@ public final class ModBlocks {
     /** Wet concrete under a puddle that steams. */
     public static final DeferredBlock<SteamingPuddleBlock> L1_STEAMING_PUDDLE = BLOCKS.registerBlock("l1_steaming_puddle",
             SteamingPuddleBlock::new, unbreakable(MapColor.COLOR_GRAY, SoundType.STONE));
+
+    // ---- Level 1 at the "spacious" scale: pillars, floor markings, ceiling services, racks ----
+    /** A fluorescent fixture hanging on two chains: enamelled housing, a diffuser glowing underneath. */
+    public static final DeferredBlock<AxisBlock> L1_HANGING_LIGHT = BLOCKS.registerBlock("l1_hanging_light",
+            props -> new AxisBlock(props, 0, 4, 4, 16, 16, 12), fixture(MapColor.SNOW, SoundType.GLASS, 12).noCollission().noOcclusion());
+    /** A bevelled corner of a 3x3 pillar (BAND: the paint at this height). Not occluding: the bevel shows what is behind it. */
+    public static final DeferredBlock<PillarCornerBlock> L1_PILLAR_CORNER = BLOCKS.registerBlock("l1_pillar_corner",
+            PillarCornerBlock::new, unbreakable(MapColor.STONE, SoundType.STONE).noOcclusion());
+    /** Half of a big two-block pillar number on the sector's colour band. */
+    public static final DeferredBlock<PillarNumberBigBlock> L1_PILLAR_NUMBER = BLOCKS.registerBlock("l1_pillar_number",
+            PillarNumberBigBlock::new, unbreakable(MapColor.STONE, SoundType.STONE));
+    /** A garage sign on a pillar: P1, headroom, no parking, speed limit, zone. */
+    public static final DeferredBlock<PillarSignBlock> L1_PILLAR_SIGN = BLOCKS.registerBlock("l1_pillar_sign",
+            PillarSignBlock::new, unbreakable(MapColor.STONE, SoundType.STONE));
+    /** Concrete floor with a marking, a spill or a drain on it. */
+    public static final DeferredBlock<FloorMarkBlock> L1_FLOOR_MARK = BLOCKS.registerBlock("l1_floor_mark",
+            FloorMarkBlock::new, unbreakable(MapColor.STONE, SoundType.STONE));
+    /** A low concrete wheel stop at the end of a parking stall. */
+    public static final DeferredBlock<FurnitureBlock> L1_WHEEL_STOP = BLOCKS.registerBlock("l1_wheel_stop",
+            props -> new FurnitureBlock(props, Block.box(1, 0, 5, 15, 3, 11)), unbreakable(MapColor.STONE, SoundType.STONE).noOcclusion());
+    /** A yellow and black rubber speed bump across a lane. */
+    public static final DeferredBlock<AxisBlock> L1_SPEED_BUMP = BLOCKS.registerBlock("l1_speed_bump",
+            props -> new AxisBlock(props, 0, 0, 4, 16, 2, 12), unbreakable(MapColor.COLOR_YELLOW, SoundType.STONE).noOcclusion());
+    /** The red sprinkler main under the ceiling, and the same pipe with a sprinkler head hanging off it. */
+    public static final DeferredBlock<AxisBlock> L1_SPRINKLER_PIPE = BLOCKS.registerBlock("l1_sprinkler_pipe",
+            props -> new AxisBlock(props, 0, 12, 7, 16, 15, 10), unbreakable(MapColor.COLOR_RED, SoundType.METAL).noCollission().noOcclusion());
+    public static final DeferredBlock<AxisBlock> L1_SPRINKLER_HEAD = BLOCKS.registerBlock("l1_sprinkler_head",
+            props -> new AxisBlock(props, 0, 9, 7, 16, 15, 10), unbreakable(MapColor.COLOR_RED, SoundType.METAL).noCollission().noOcclusion());
+    /** A thin grey electrical conduit tight against the ceiling. */
+    public static final DeferredBlock<AxisBlock> L1_CONDUIT = BLOCKS.registerBlock("l1_conduit",
+            props -> new AxisBlock(props, 0, 14, 3, 16, 16, 5), unbreakable(MapColor.METAL, SoundType.METAL).noCollission().noOcclusion());
+    /** A galvanised ladder cable tray on hanger rods, full of cables. */
+    public static final DeferredBlock<AxisBlock> L1_CABLE_TRAY = BLOCKS.registerBlock("l1_cable_tray",
+            props -> new AxisBlock(props, 0, 9, 2, 16, 16, 14), unbreakable(MapColor.METAL, SoundType.METAL).noCollission().noOcclusion());
+    /** A big galvanised ventilation duct (two side by side make one wide duct). */
+    public static final DeferredBlock<AxisBlock> L1_DUCT = BLOCKS.registerBlock("l1_duct",
+            props -> new AxisBlock(props, 0, 3, 0, 16, 16, 16), unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** A red fire extinguisher cabinet on a pillar. */
+    public static final DeferredBlock<FurnitureBlock> L1_EXTINGUISHER = BLOCKS.registerBlock("l1_extinguisher",
+            props -> new FurnitureBlock(props, Block.box(4, 0, 12, 12, 13, 16)), unbreakable(MapColor.COLOR_RED, SoundType.METAL).noOcclusion());
+    /** A convex safety mirror on a bracket, high on a pillar corner. */
+    public static final DeferredBlock<FurnitureBlock> L1_CONVEX_MIRROR = BLOCKS.registerBlock("l1_convex_mirror",
+            props -> new FurnitureBlock(props, Block.box(3, 3, 6, 13, 13, 16)), unbreakable(MapColor.METAL, SoundType.GLASS).noCollission().noOcclusion());
+    /** A blue pallet-rack upright frame (two posts and bracing), seen side-on from the aisle. */
+    public static final DeferredBlock<RackUprightBlock> L1_RACK_UPRIGHT = BLOCKS.registerBlock("l1_rack_upright",
+            RackUprightBlock::new, unbreakable(MapColor.COLOR_BLUE, SoundType.METAL).noOcclusion());
+    /** One slot of a pallet rack: beams and what stands on them. */
+    public static final DeferredBlock<RackBayBlock> L1_RACK_BAY = BLOCKS.registerBlock("l1_rack_bay",
+            RackBayBlock::new, unbreakable(MapColor.WOOD, SoundType.WOOD).noOcclusion());
 
     // ---- Level 7 "Thalassophobia" (world/layout/Level7Layout) ---------------------------------
     // The sea under the concrete ceiling, the flooded entrance room hanging off that ceiling, and

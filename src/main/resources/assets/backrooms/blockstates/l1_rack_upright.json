@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,beams=false": {
+      "model": "backrooms:block/l1_rack_upright"
+    },
+    "facing=east,beams=false": {
+      "model": "backrooms:block/l1_rack_upright",
+      "y": 90
+    },
+    "facing=south,beams=false": {
+      "model": "backrooms:block/l1_rack_upright",
+      "y": 180
+    },
+    "facing=west,beams=false": {
+      "model": "backrooms:block/l1_rack_upright",
+      "y": 270
+    },
+    "facing=north,beams=true": {
+      "model": "backrooms:block/l1_rack_upright_beams"
+    },
+    "facing=east,beams=true": {
+      "model": "backrooms:block/l1_rack_upright_beams",
+      "y": 90
+    },
+    "facing=south,beams=true": {
+      "model": "backrooms:block/l1_rack_upright_beams",
+      "y": 180
+    },
+    "facing=west,beams=true": {
+      "model": "backrooms:block/l1_rack_upright_beams",
+      "y": 270
+    }
+  }
+}

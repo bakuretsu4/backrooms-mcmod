@@ -26,6 +26,11 @@ public enum FixtureType {
     /** Level 1 tube strip hanging just under the concrete ceiling: neutral white (reference #EEECFA), long reach. */
     CEILING_TUBE("ceiling_tube", Mount.HANGING_TUBE, 5, 0.96f, 0.96f, 1.0f, 0.8f, 18.0f, Hum.FLUORESCENT, true),
     /**
+     * Level 1's hanging fixtures (the halls are 7 high now): a touch brighter and longer reaching
+     * than the old strips, so a row of them still pools light on the floor far below.
+     */
+    L1_HANGING_LIGHT("l1_hanging_light", Mount.HANGING_TUBE, 3, 0.96f, 0.97f, 1.0f, 0.95f, 21.0f, Hum.FLUORESCENT, true),
+    /**
      * Level 1 vertical wall tube on the garage pillars and maze walls. Dimmer than the ceiling
      * strips: maze rooms are small, and lit concrete must stay mid-grey (reference #6A646B) or it
      * clips to white and the bloom hazes the whole picture.

@@ -1,7 +1,0 @@
-{
-  "parent": "minecraft:block/cube_column",
-  "textures": {
-    "end": "backrooms:block/l1_storage_shelf_top",
-    "side": "backrooms:block/l1_storage_shelf"
-  }
-}

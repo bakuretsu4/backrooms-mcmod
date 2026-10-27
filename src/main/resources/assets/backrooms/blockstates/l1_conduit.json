@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/l1_conduit"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l1_conduit",
+      "y": 90
+    }
+  }
+}

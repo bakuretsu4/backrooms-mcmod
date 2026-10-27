@@ -1,0 +1,64 @@
+{
+  "textures": {
+    "particle": "backrooms:block/l1x_red_pipe",
+    "pipe": "backrooms:block/l1x_red_pipe",
+    "strap": "backrooms:block/l1x_bracket"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        12,
+        7
+      ],
+      "to": [
+        16,
+        15,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pipe"
+        },
+        "south": {
+          "texture": "#pipe"
+        },
+        "up": {
+          "texture": "#pipe"
+        },
+        "down": {
+          "texture": "#pipe"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        15,
+        6.5
+      ],
+      "to": [
+        9,
+        16,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#strap"
+        },
+        "south": {
+          "texture": "#strap"
+        },
+        "east": {
+          "texture": "#strap"
+        },
+        "west": {
+          "texture": "#strap"
+        },
+        "down": {
+          "texture": "#strap"
+        }
+      }
+    }
+  ]
+}

@@ -1,6 +1,11 @@
 package com.rickr.backrooms.world.layout;
 
-import com.rickr.backrooms.block.CeilingTubeBlock;
+import com.rickr.backrooms.block.AxisBlock;
+import com.rickr.backrooms.block.FloorMarkBlock;
+import com.rickr.backrooms.block.FurnitureBlock;
+import com.rickr.backrooms.block.PillarCornerBlock;
+import com.rickr.backrooms.block.PillarNumberBigBlock;
+import com.rickr.backrooms.block.PillarSignBlock;
 import com.rickr.backrooms.block.PillarNumberBlock;
 import com.rickr.backrooms.block.SignDecalBlock;
 import com.rickr.backrooms.block.WallLampBlock;
@@ -53,8 +58,16 @@ import org.jetbrains.annotations.Nullable;
  * plan functions, and keep clear of exits, safe rooms and each other.
  */
 public final class Level1Layout extends LevelLayout {
-    private static final int GRID = 8;
+    /** The pillar grid: a pillar every 12 blocks ("spacious": wide bays under a high ceiling). */
+    static final int GRID = 12;
+    /** Pillars are 3x3 blocks, so the rows between them (the partitions) are 3 wide too. */
+    static final int PILLAR = 3;
     private static final int CLEARING_RADIUS = 8;
+    /** Interior height of the halls; the corridor blocks and the lockers keep the old, lower one. */
+    private static final int HALL_INTERIOR = 7;
+    private static final int LOW_INTERIOR = 5;
+    /** The painting room's own ceiling, above its floor: a 4-high room. */
+    private static final int PAINTING_ROOF = 5;
 
     // Partition states between two pillars.
     private static final int OPEN = 0;
@@ -71,16 +84,13 @@ public final class Level1Layout extends LevelLayout {
     private static final int SAFE_MOAT = 1;
     /** Safe rooms keep at least this far (chessboard distance from their centre) from an exit. */
     private static final int SAFE_EXIT_DISTANCE = 24;
-    /** Grid cells per safe-room square (128 / 8). */
-    private static final int SAFE_GRID_CELLS = SafeRoomPlan.CELL / GRID;
-
     /** The Corrupted Corridor; its 138-block length may cross into the next square. */
     private final AnomalyGrid corridorGrid = new AnomalyGrid(Level1AnomalyPlan.CORRIDOR_CELL, 1, this::planCorridor);
     /** Crate halls, painting rooms and fog patches; each always fits inside its own square. */
     private final AnomalyGrid roomGrid = new AnomalyGrid(Level1AnomalyPlan.ROOM_CELL, 0, this::planRoomSite);
 
     public Level1Layout() {
-        super(5, new ExitLocator(384, 48, 2000));
+        super(HALL_INTERIOR, new ExitLocator(384, 48, 2000));
     }
 
     // ==========================================================================================
@@ -100,12 +110,12 @@ public final class Level1Layout extends LevelLayout {
         if (!SafeRoomPlan.rolled(h)) {
             return null;
         }
-        // Grid cells a..a+1 and b..b+1, never at the square's edge.
-        int a = cellX * SAFE_GRID_CELLS + 1 + Hash.range(Hash.mix(h ^ 1), SAFE_GRID_CELLS - 3);
-        int b = cellZ * SAFE_GRID_CELLS + 1 + Hash.range(Hash.mix(h ^ 2), SAFE_GRID_CELLS - 3);
-        int footX = a * GRID + 2; // footprint: 14 x 14 blocks from here
-        int footZ = b * GRID + 2;
-        int footSize = 2 * GRID - 2;
+        // Grid cells a..a+1 and b..b+1, wholly inside the square and never at its edge.
+        int a = firstCell(cellX * SafeRoomPlan.CELL) + 1 + Hash.range(Hash.mix(h ^ 1), cellsIn(cellX * SafeRoomPlan.CELL, SafeRoomPlan.CELL) - 4);
+        int b = firstCell(cellZ * SafeRoomPlan.CELL) + 1 + Hash.range(Hash.mix(h ^ 2), cellsIn(cellZ * SafeRoomPlan.CELL, SafeRoomPlan.CELL) - 4);
+        int footX = a * GRID + PILLAR; // footprint: 21 x 21 blocks from here
+        int footZ = b * GRID + PILLAR;
+        int footSize = 2 * GRID - PILLAR;
         if (x < footX || x >= footX + footSize || z < footZ || z >= footZ + footSize) {
             return null;
         }
@@ -173,18 +183,32 @@ public final class Level1Layout extends LevelLayout {
         return r < 0.86 ? OPEN : r < 0.94 ? CHAIN : SOLID;
     }
 
+    /**
+     * The first grid cell starting inside a square that starts at {@code squareMin} (squares of
+     * other sizes than a multiple of 12 don't line up with the grid, so planners count from here).
+     */
+    private static int firstCell(int squareMin) {
+        return Math.floorDiv(squareMin + GRID - 1, GRID);
+    }
+
+    /** How many whole grid cells fit in that square from {@link #firstCell} on. */
+    private static int cellsIn(int squareMin, int size) {
+        return Math.floorDiv(squareMin + size, GRID) - firstCell(squareMin);
+    }
+
     /** Partition containing a pillar-row column (mx/mz as in {@link #fillColumn}); OPEN for bays and pillars. */
     private static int partitionAt(long seed, int x, int z) {
         int mx = Math.floorMod(x, GRID);
         int mz = Math.floorMod(z, GRID);
-        if (mz <= 1 && mx >= 2) return partition(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID), 0);
-        if (mx <= 1 && mz >= 2) return partition(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID), 1);
+        if (mz < PILLAR && mx >= PILLAR) return partition(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID), 0);
+        if (mx < PILLAR && mz >= PILLAR) return partition(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID), 1);
         return OPEN;
     }
 
     /**
-     * A vertical tube light on a stretch of wall, facing into the bay. Returns the direction the
-     * lamp faces, or null. Each wall gets one in the middle of each side, 40% of the time.
+     * A vertical tube light on a stretch of wall (walls stand in the middle of their 3-wide row),
+     * facing into a bay. Returns the direction the lamp faces, or null. Each side of a wall gets
+     * one, 40% of the time.
      */
     @Nullable
     private static Direction wallLampFace(long seed, int x, int z) {
@@ -193,15 +217,13 @@ public final class Level1Layout extends LevelLayout {
         int cx = Math.floorDiv(x, GRID);
         int cz = Math.floorDiv(z, GRID);
         Direction face;
-        int px;
-        int pz;
         int axis;
-        if (mz == 2 && mx == 4) { face = Direction.SOUTH; px = cx; pz = cz; axis = 0; }          // wall to the north
-        else if (mz == 7 && mx == 5) { face = Direction.NORTH; px = cx; pz = cz + 1; axis = 0; } // wall to the south
-        else if (mx == 2 && mz == 5) { face = Direction.EAST; px = cx; pz = cz; axis = 1; }      // wall to the west
-        else if (mx == 7 && mz == 4) { face = Direction.WEST; px = cx + 1; pz = cz; axis = 1; }  // wall to the east
+        if (mz == 0 && mx == 7) { face = Direction.NORTH; axis = 0; }
+        else if (mz == 2 && mx == 5) { face = Direction.SOUTH; axis = 0; }
+        else if (mx == 0 && mz == 5) { face = Direction.WEST; axis = 1; }
+        else if (mx == 2 && mz == 7) { face = Direction.EAST; axis = 1; }
         else return null;
-        if (partition(seed, px, pz, axis) != SOLID || darkZone(seed, x, z)) {
+        if (partition(seed, cx, cz, axis) != SOLID || darkZone(seed, x, z)) {
             return null;
         }
         return Hash.unit(seed, x, z, 52) < 0.4 ? face : null;
@@ -211,21 +233,33 @@ public final class Level1Layout extends LevelLayout {
     private static boolean rebar(long seed, int x, int z, int sector) {
         int mx = Math.floorMod(x, GRID);
         int mz = Math.floorMod(z, GRID);
-        if (!(mx == 2 || mz == 2) || mx < 2 || mz < 2) {
+        if (!(mx == PILLAR || mz == PILLAR) || mx < PILLAR || mz < PILLAR) {
             return false;
         }
         double share = sector == Level1Areas.RUST ? 0.035 : sector == Level1Areas.AQUILA ? 0.005 : 0.003;
         return Hash.unit(seed, x, z, 7430) < share;
     }
 
-    /** A rusty pipe under the ceiling along the bay row of cz (between the tube strip and the beams). */
-    private static boolean ceilingPipe(long seed, int x, int z, int sector) {
-        if (Math.floorMod(z, GRID) != 6) {
-            return false;
-        }
+    /** A rusty dripping pipe in the services row (when no duct runs there). */
+    private static boolean rustyPipe(long seed, int x, int z, int sector) {
         double share = sector == Level1Areas.RUST ? 0.6 : sector == Level1Areas.AQUILA ? 0.25 : 0.15;
-        // One decision per run of four bays, so pipes run on for a while and then stop.
-        return Hash.unit(seed, Math.floorDiv(x, 4 * GRID), Math.floorDiv(z, GRID), 7431) < share;
+        // One decision per run of three bays, so pipes run on for a while and then stop.
+        return Hash.unit(seed, Math.floorDiv(x, 3 * GRID), Math.floorDiv(z, GRID), 7431) < share;
+    }
+
+    /** A wide ventilation duct over a run of three bays (more in the warehouse sector). */
+    private static boolean duct(long seed, int x, int z, int sector) {
+        double share = sector == Level1Areas.GILD ? 0.35 : 0.18;
+        return Hash.unit(seed, Math.floorDiv(x, 3 * GRID), Math.floorDiv(z, GRID), 7473) < share;
+    }
+
+    /**
+     * Some of the warehouse sector's bays hold pallet racks (decided per bay, from its centre's
+     * sector, so a bay is either all racks or none).
+     */
+    private static boolean rackBay(long seed, int cx, int cz) {
+        return Level1Areas.sector(seed, cx * GRID + GRID / 2, cz * GRID + GRID / 2) == Level1Areas.GILD
+                && Hash.unit(seed, cx, cz, 7470) < 0.4;
     }
 
     @Override
@@ -289,16 +323,16 @@ public final class Level1Layout extends LevelLayout {
         int cx = Math.floorDiv(x, GRID);
         int cz = Math.floorDiv(z, GRID);
         boolean crateHall = Level1AnomalyPlan.inCrateHall(site, x, z);
-        if (mx <= 1 && mz <= 1) return false; // pillar
-        if (mz <= 1 || mx <= 1) {
-            int axis = mz <= 1 ? 0 : 1;
+        if (mx < PILLAR && mz < PILLAR) return false; // pillar
+        if (mz < PILLAR || mx < PILLAR) {
+            // A wall or fence stands in the middle of its row; the rows either side stay open.
+            int axis = mz < PILLAR ? 0 : 1;
             int state = crateHall ? OPEN : partition(seed, cx, cz, axis);
             int row = axis == 0 ? mz : mx;
-            if (state == SOLID) return false;
-            if (state == CHAIN) return row == 1;
-            return true;
+            return state == OPEN || row != 1;
         }
-        if (crateHall) return !Level1AnomalyPlan.crateHallShelf(mx, mz);
+        if ((crateHall || rackBay(seed, cx, cz)) && Level1Racks.rackRow(mx, mz)) return false;
+        if (crateHall) return true;
         return crateHeight(seed, x, z) == 0 && backpackFacing(seed, x, z) == null
                 && !rebar(seed, x, z, Level1Areas.sector(seed, x, z));
     }
@@ -340,7 +374,8 @@ public final class Level1Layout extends LevelLayout {
         }
         Level1Areas.LockerSite lockers = lockersAt(seed, x, z);
         if (lockers != null) {
-            Level1Areas.fillLockers(lockers, x, z, floor, ceiling, out);
+            Level1Areas.fillLockers(lockers, x, z, floor, lowCeiling(), out);
+            fillAboveLowCeiling(out);
             return;
         }
         // A ramp down: the lower floor under this part of the hall, the ramp itself, and a curb
@@ -358,7 +393,8 @@ public final class Level1Layout extends LevelLayout {
             }
         }
         if (!hallZone(seed, x, z)) {
-            Level1Areas.fillCorridors(seed, x, z, floor, ceiling, out);
+            Level1Areas.fillCorridors(seed, x, z, floor, lowCeiling(), out);
+            fillAboveLowCeiling(out);
             return;
         }
         int sector = Level1Areas.sector(seed, x, z);
@@ -373,9 +409,9 @@ public final class Level1Layout extends LevelLayout {
             int ax = Math.abs(dx);
             int az = Math.abs(dz);
             if (az == 7 && ax <= 3) {
-                out.set(ceiling - 1, tube(Direction.Axis.X));
+                out.set(ceiling - 1, hanging(Direction.Axis.X));
             } else if (ax == 7 && az <= 3) {
-                out.set(ceiling - 1, tube(Direction.Axis.Z));
+                out.set(ceiling - 1, hanging(Direction.Axis.Z));
             }
             return;
         }
@@ -384,111 +420,260 @@ public final class Level1Layout extends LevelLayout {
         int mz = Math.floorMod(z, GRID);
         int cx = Math.floorDiv(x, GRID);
         int cz = Math.floorDiv(z, GRID);
+        boolean racks = crateHall || rackBay(seed, cx, cz);
+        fillCeiling(seed, x, z, mx, mz, cx, cz, sector, racks, crateHall, out);
 
-        // Concrete beams under the ceiling along every east-west pillar row.
-        if (mz <= 1) {
-            out.set(ceiling - 1, ModBlocks.CEILING_BEAM.get().defaultBlockState());
-        }
-        if (!crateHall && ceilingPipe(seed, x, z, sector)) {
-            out.set(ceiling - 1, ModBlocks.L1_CEILING_PIPE.get().defaultBlockState());
-        }
-
-        if (mx <= 1 && mz <= 1) {
+        if (mx < PILLAR && mz < PILLAR) {
             fillPillar(seed, cx, cz, mx, mz, out);
             return;
         }
 
-        if (mz <= 1 || mx <= 1) {
-            int axis = mz <= 1 ? 0 : 1;
+        if (mz < PILLAR || mx < PILLAR) {
+            int axis = mz < PILLAR ? 0 : 1;
             // Inside a crate hall every partition is open: one big storage hall.
             int state = crateHall ? OPEN : partition(seed, cx, cz, axis);
             int row = axis == 0 ? mz : mx;
-            if (state == SOLID) {
-                int top = mz <= 1 ? ceiling - 1 : ceiling; // leave the beam on east-west rows
-                BlockState wall = sector == Level1Areas.RUST ? ModBlocks.L1_CRACKED_CONCRETE.get().defaultBlockState() : concrete;
-                for (int y = floor + 1; y < top; y++) {
-                    out.set(y, wall);
+            if (state != OPEN && row == 1) {
+                if (state == SOLID) {
+                    BlockState wall = sector == Level1Areas.RUST ? ModBlocks.L1_CRACKED_CONCRETE.get().defaultBlockState() : concrete;
+                    for (int y = floor + 1; y < ceiling - 1; y++) { // up to the beam over the row
+                        out.set(y, wall);
+                    }
+                } else {
+                    BlockState fence = ModBlocks.CHAIN_LINK.get().defaultBlockState()
+                            .setValue(IronBarsBlock.EAST, axis == 0).setValue(IronBarsBlock.WEST, axis == 0)
+                            .setValue(IronBarsBlock.NORTH, axis == 1).setValue(IronBarsBlock.SOUTH, axis == 1);
+                    for (int y = floor + 1; y <= floor + 3; y++) {
+                        out.set(y, fence);
+                    }
                 }
                 return;
             }
-            if (state == CHAIN && row == 0) {
-                BlockState fence = ModBlocks.CHAIN_LINK.get().defaultBlockState()
-                        .setValue(IronBarsBlock.EAST, axis == 0).setValue(IronBarsBlock.WEST, axis == 0)
-                        .setValue(IronBarsBlock.NORTH, axis == 1).setValue(IronBarsBlock.SOUTH, axis == 1);
-                for (int y = floor + 1; y <= floor + 3; y++) {
-                    out.set(y, fence);
-                }
-                return;
-            }
-        }
-
-        // Fixtures on the faces of nearby pillars (only on open rows, never inside a fence or wall).
-        if (crateHall || partitionAt(seed, x, z) == OPEN) {
-            Direction tubeFace = pillarTubeFace(seed, x, z);
-            if (tubeFace != null) {
-                BlockState tube = ModBlocks.WAREHOUSE_LIGHT.get().defaultBlockState().setValue(WallLampBlock.FACING, tubeFace);
-                out.set(floor + 2, tube);
-                out.set(floor + 3, tube);
-            }
-            Direction alarmFace = alarmLampFace(seed, x, z);
-            if (alarmFace != null) {
-                out.set(floor + 4, ModBlocks.RED_ALARM_LAMP.get().defaultBlockState().setValue(WallLampBlock.FACING, alarmFace));
-            }
-        }
-
-        if (mx >= 2 && mz >= 2) {
-            if (crateHall) {
-                Level1AnomalyPlan.fillCrateHallBay(mx, mz, floor, ceiling, out);
-                return;
-            }
-            // Tube strip across the bay; more of them dead in the decrepit sector.
-            double dead = sector == Level1Areas.RUST ? 0.55 : 0.3;
-            if (mz == 4 && mx >= 3 && mx <= 6 && !darkZone(seed, x, z) && Hash.unit(seed, cx, cz, 27) > dead) {
-                out.set(ceiling - 1, tube(Direction.Axis.X));
-            }
-            if (rebar(seed, x, z, sector)) {
-                out.set(floor + 1, ModBlocks.L1_REBAR.get().defaultBlockState());
-                return;
-            }
+            fillBesidePillar(seed, x, z, out);
             Direction lampFace = wallLampFace(seed, x, z);
             if (lampFace != null) {
                 BlockState lamp = ModBlocks.WAREHOUSE_LIGHT.get().defaultBlockState().setValue(WallLampBlock.FACING, lampFace);
-                out.set(floor + 2, lamp);
                 out.set(floor + 3, lamp);
+                out.set(floor + 4, lamp);
             }
-            int crates = crateHeight(seed, x, z);
-            for (int i = 0; i < crates; i++) {
-                out.set(floor + 1 + i, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
+            return;
+        }
+
+        // A bay.
+        if (racks && Level1Racks.rackRow(mx, mz)) {
+            if (crateHall) {
+                Level1AnomalyPlan.fillCrateHallBay(site, x, z, mx, mz, floor, out);
+            } else {
+                Level1Racks.fill(seed, x, z, mx, mz, floor, false, out);
             }
-            Direction backpack = backpackFacing(seed, x, z);
-            if (backpack != null) {
-                out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, backpack));
+            return;
+        }
+        if (crateHall) {
+            return; // the aisles stay clear: crates turn up there
+        }
+        if (!wet) {
+            BlockState mark = floorMark(seed, x, z, mx, mz, cx, cz, sector, racks);
+            if (mark != null) {
+                out.set(floor, mark);
             }
-            // Condensation from the low fog, where nothing else stands.
-            if (crates == 0 && backpack == null && Level1AnomalyPlan.fogPuddleAtStart(site, x, z)) {
+        }
+        if (rebar(seed, x, z, sector)) {
+            out.set(floor + 1, ModBlocks.L1_REBAR.get().defaultBlockState());
+            return;
+        }
+        int crates = crateHeight(seed, x, z);
+        for (int i = 0; i < crates; i++) {
+            out.set(floor + 1 + i, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
+        }
+        Direction backpack = backpackFacing(seed, x, z);
+        if (backpack != null) {
+            out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, backpack));
+        }
+        if (crates == 0 && backpack == null) {
+            BlockState low = racks || sector == Level1Areas.GILD ? null : parkingFixture(seed, mx, mz, cx, cz);
+            if (low != null) {
+                out.set(floor + 1, low);
+            } else if (Level1AnomalyPlan.fogPuddleAtStart(site, x, z)) {
+                // Condensation from the low fog, where nothing else stands.
                 out.set(floor + 1, ModBlocks.L1_CONDENSATION.get().defaultBlockState());
             }
         }
     }
 
+    /** The corridor blocks' and lockers' ceiling (the old 5-high Level 1). */
+    private int lowCeiling() {
+        return floorY() + LOW_INTERIOR + 1;
+    }
+
+    /** Solid concrete from just above the low ceiling up to the halls' ceiling. */
+    private void fillAboveLowCeiling(Column out) {
+        BlockState concrete = ModBlocks.CONCRETE_WALL.get().defaultBlockState();
+        for (int y = lowCeiling() + 1; y <= ceilingY(); y++) {
+            out.set(y, concrete);
+        }
+    }
+
     /**
-     * Now and then a backpack someone dropped lies on the floor of a bay: rare (about one per 400
-     * floor blocks). Returns the way it faces, or null for no backpack here.
+     * Everything under the ceiling of a hall, in rows across each bay (they all run east-west):
+     * downstand beams over every pillar row both ways; the red sprinkler main with a head every
+     * three blocks; a conduit tight to the ceiling; two hanging fixtures down the middle of the bay
+     * (over the aisles where there are racks); a wide duct or a rusty pipe; a cable tray.
+     */
+    private void fillCeiling(long seed, int x, int z, int mx, int mz, int cx, int cz, int sector, boolean racks, boolean alwaysLit,
+                             Column out) {
+        int y = ceilingY() - 1;
+        if (mx < PILLAR || mz < PILLAR) {
+            out.set(y, ModBlocks.CEILING_BEAM.get().defaultBlockState());
+            return;
+        }
+        boolean lightRow = racks ? mz == 4 || mz == 10 : mz == 7;
+        if (lightRow) {
+            // More of them dead in the decrepit sector; a crate hall is always lit (the Gild's
+            // crate halls are "better lit" than the rest), every fixture working.
+            double dead = alwaysLit ? -1 : sector == Level1Areas.RUST ? 0.55 : 0.3;
+            boolean fixture = mx >= 4 && mx <= 6 || mx >= 8 && mx <= 10;
+            if (fixture && (alwaysLit || !darkZone(seed, x, z)) && Hash.unit(seed, cx * 2 + (mx >= 8 ? 1 : 0), cz * 2 + (mz == 10 ? 1 : 0), 27) > dead) {
+                out.set(y, hanging(Direction.Axis.X));
+            }
+            return;
+        }
+        if (mz == (racks ? 7 : 4)) {
+            out.set(y, (mx % 3 == 1 ? ModBlocks.L1_SPRINKLER_HEAD : ModBlocks.L1_SPRINKLER_PIPE).get().defaultBlockState());
+            return;
+        }
+        if (mz == 5) {
+            if (sector != Level1Areas.RUST || Hash.unit(seed, cx, cz, 7471) < 0.5) {
+                out.set(y, ModBlocks.L1_CONDUIT.get().defaultBlockState());
+            }
+            return;
+        }
+        if (mz == 8 || mz == 9) {
+            if (duct(seed, x, z, sector)) {
+                out.set(y, ModBlocks.L1_DUCT.get().defaultBlockState());
+            } else if (mz == 9 && rustyPipe(seed, x, z, sector)) {
+                out.set(y, ModBlocks.L1_CEILING_PIPE.get().defaultBlockState());
+            }
+            return;
+        }
+        if (mz == 10 && !racks && Hash.unit(seed, Math.floorDiv(x, 3 * GRID), cz, 7472) < 0.6) {
+            out.set(y, ModBlocks.L1_CABLE_TRAY.get().defaultBlockState());
+        }
+    }
+
+    /**
+     * Parking markings on a bay floor (the warehouse sector gets a yellow walkway line instead).
+     * Each bay is two rows of three stalls along its pillar rows (stalls 3 wide, a white line
+     * between them, the stall number at the lane end) and a 3-wide lane down the middle: yellow
+     * dashes, a one-way arrow, now and then SLOW or a drain. Oil under the cars, tyre marks.
+     */
+    @Nullable
+    private static BlockState floorMark(long seed, int x, int z, int mx, int mz, int cx, int cz, int sector, boolean racks) {
+        long h = Hash.of(seed, x, z, 7476);
+        double r = Hash.unit(h);
+        if (racks || sector == Level1Areas.GILD) {
+            if (!racks && mz == 7) {
+                return mark(FloorMarkBlock.DASHES, Direction.EAST);
+            }
+            return r < 0.03 ? mark(FloorMarkBlock.OIL, Direction.from2DDataValue(Hash.range(Hash.mix(h), 4)))
+                    : r < 0.06 ? mark(FloorMarkBlock.TYRES, Hash.mix(h) % 2 == 0 ? Direction.EAST : Direction.WEST) : null;
+        }
+        if (mz < 6 || mz > 8) {
+            if (mx == 3 || mx == 6 || mx == 9) return mark(FloorMarkBlock.LINE, Direction.WEST);
+            if (mx == 11) return mark(FloorMarkBlock.LINE, Direction.EAST);
+            if ((mz == 5 || mz == 9) && (mx == 4 || mx == 7 || mx == 10)) {
+                // The stall number at the lane end of each stall, readable from the lane.
+                int number = FloorMarkBlock.STALL + Hash.range(Hash.of(seed, x, z, 7477), FloorMarkBlock.STALL_NUMBERS);
+                return mark(number, mz == 5 ? Direction.SOUTH : Direction.NORTH);
+            }
+            if ((mz == 4 || mz == 10) && r < 0.22) {
+                return mark(FloorMarkBlock.OIL, Direction.from2DDataValue(Hash.range(Hash.mix(h), 4)));
+            }
+            return null;
+        }
+        if (mz == 7) {
+            // One-way lanes: every bay of a row points the same way.
+            Direction way = Hash.unit(seed, 0, cz, 7478) < 0.5 ? Direction.EAST : Direction.WEST;
+            if (mx == 7) return mark(FloorMarkBlock.ARROW, way);
+            if (mx == 4 && Hash.unit(seed, cx, cz, 7479) < 0.1) return mark(FloorMarkBlock.SLOW, way.getOpposite());
+            if (mx == 10 && Hash.unit(seed, cx, cz, 7481) < 0.2) return mark(FloorMarkBlock.DRAIN, Direction.NORTH);
+            return mark(FloorMarkBlock.DASHES, Direction.EAST);
+        }
+        return r < 0.08 ? mark(FloorMarkBlock.TYRES, Hash.mix(h) % 2 == 0 ? Direction.EAST : Direction.WEST) : null;
+    }
+
+    private static BlockState mark(int variant, Direction facing) {
+        return ModBlocks.L1_FLOOR_MARK.get().defaultBlockState().setValue(FloorMarkBlock.VARIANT, variant)
+                .setValue(FloorMarkBlock.FACING, facing);
+    }
+
+    /** Wheel stops at the back of the stalls (against the pillar rows), and a speed bump across some lanes. */
+    @Nullable
+    private static BlockState parkingFixture(long seed, int mx, int mz, int cx, int cz) {
+        if ((mz == PILLAR || mz == GRID - 1) && (mx == 4 || mx == 7 || mx == 10)
+                && Hash.unit(seed, cx * 3 + mx, cz * 2 + (mz == PILLAR ? 0 : 1), 7482) < 0.85) {
+            return ModBlocks.L1_WHEEL_STOP.get().defaultBlockState();
+        }
+        if (mx == 9 && mz >= 6 && mz <= 8 && Hash.unit(seed, cx, cz, 7483) < 0.12) {
+            return ModBlocks.L1_SPEED_BUMP.get().defaultBlockState().setValue(AxisBlock.AXIS, Direction.Axis.Z);
+        }
+        return null;
+    }
+
+    /**
+     * In front of a pillar face (the face has three blocks: 0, 1 = the number, 2): on block 0 a
+     * vertical tube light up high (now and then a red alarm lamp above it), on block 2 now and
+     * then a fire extinguisher cabinet low down or a convex mirror up high.
+     */
+    private void fillBesidePillar(long seed, int x, int z, Column out) {
+        int floor = floorY();
+        for (Direction toPillar : Direction.Plane.HORIZONTAL) {
+            int px = x + toPillar.getStepX();
+            int pz = z + toPillar.getStepZ();
+            int along = toPillar.getAxis() == Direction.Axis.Z ? Math.floorMod(px, GRID) : Math.floorMod(pz, GRID);
+            if (Math.floorMod(px, GRID) >= PILLAR || Math.floorMod(pz, GRID) >= PILLAR) {
+                continue;
+            }
+            Direction face = toPillar.getOpposite();
+            long h = Hash.of(seed, Math.floorDiv(px, GRID) * 4 + face.get2DDataValue(), Math.floorDiv(pz, GRID), 7475);
+            if (along == 0) {
+                if (!darkZone(seed, px, pz) && Hash.unit(h) > 0.25) {
+                    BlockState tube = ModBlocks.WAREHOUSE_LIGHT.get().defaultBlockState().setValue(WallLampBlock.FACING, face);
+                    out.set(floor + 4, tube);
+                    out.set(floor + 5, tube);
+                }
+                if (Hash.unit(Hash.mix(h ^ 1)) < 0.05) {
+                    out.set(floor + 6, ModBlocks.RED_ALARM_LAMP.get().defaultBlockState().setValue(WallLampBlock.FACING, face));
+                }
+            } else if (along == 2) {
+                if (Hash.unit(Hash.mix(h ^ 2)) < 0.2) {
+                    out.set(floor + 2, ModBlocks.L1_EXTINGUISHER.get().defaultBlockState().setValue(FurnitureBlock.FACING, face));
+                }
+                if (Hash.unit(Hash.mix(h ^ 3)) < 0.08) {
+                    out.set(floor + 5, ModBlocks.L1_CONVEX_MIRROR.get().defaultBlockState().setValue(FurnitureBlock.FACING, face));
+                }
+            }
+            return; // a cell touches at most one pillar face
+        }
+    }
+
+    /**
+     * Now and then a backpack someone dropped lies on the floor of a bay: rare. Returns the way it
+     * faces, or null for no backpack here.
      */
     @Nullable
     private Direction backpackFacing(long seed, int x, int z) {
         int mx = Math.floorMod(x, GRID);
         int mz = Math.floorMod(z, GRID);
-        if (mx < 2 || mz < 2) {
+        if (mx < PILLAR || mz < PILLAR) {
             return null;
         }
         int cx = Math.floorDiv(x, GRID);
         int cz = Math.floorDiv(z, GRID);
         long h = Hash.of(seed, cx, cz, 54);
-        if (Hash.unit(h) >= 0.08) {
+        if (Hash.unit(h) >= 0.1 || rackBay(seed, cx, cz)) {
             return null;
         }
-        if (mx != 2 + Hash.range(Hash.mix(h ^ 1), GRID - 2) || mz != 2 + Hash.range(Hash.mix(h ^ 2), GRID - 2)) {
+        if (mx != PILLAR + Hash.range(Hash.mix(h ^ 1), GRID - PILLAR) || mz != PILLAR + Hash.range(Hash.mix(h ^ 2), GRID - PILLAR)) {
             return null;
         }
         if (crateHeight(seed, x, z) > 0) {
@@ -497,80 +682,73 @@ public final class Level1Layout extends LevelLayout {
         return Direction.from2DDataValue(Hash.range(Hash.mix(h ^ 3), 4));
     }
 
-    private static BlockState tube(Direction.Axis axis) {
-        return ModBlocks.CEILING_TUBE.get().defaultBlockState().setValue(CeilingTubeBlock.AXIS, axis);
+    private static BlockState hanging(Direction.Axis axis) {
+        return Level1Areas.hanging(axis);
     }
 
     /**
-     * A 2x2 pillar. Each of its four corner blocks carries the painted number on one face, in a
-     * pinwheel: (0,0) north, (1,0) east, (1,1) south, (0,1) west. The tube light then fits on the
-     * other half of each face.
+     * One block of a 3x3 pillar. The four corners are bevelled; the middle block of each face
+     * carries the pillar's number, two blocks tall, on a band in the sector's colour that runs all
+     * the way round. Below that the base band (dark, or hazard stripes in the warehouse sector);
+     * above it bare concrete, now and then a garage sign or an EXIT sign pointing nowhere.
      */
     private void fillPillar(long seed, int cx, int cz, int mx, int mz, Column out) {
         int floor = floorY();
         int ceiling = ceilingY();
         int sector = Level1Areas.sector(seed, cx * GRID, cz * GRID);
         BlockState concrete = ModBlocks.CONCRETE_WALL.get().defaultBlockState();
+        if (mx == 1 && mz == 1) {
+            for (int y = floor + 1; y < ceiling; y++) {
+                out.set(y, concrete);
+            }
+            return;
+        }
+        if (mx != 1 && mz != 1) {
+            Direction corner = mz == 0 ? (mx == 0 ? Direction.NORTH : Direction.EAST) : (mx == 2 ? Direction.SOUTH : Direction.WEST);
+            BlockState block = ModBlocks.L1_PILLAR_CORNER.get().defaultBlockState().setValue(PillarCornerBlock.FACING, corner);
+            for (int y = floor + 1; y < ceiling; y++) {
+                int band = y == floor + 1 ? (sector == Level1Areas.GILD ? PillarCornerBlock.BASE_HAZARD : PillarCornerBlock.BASE_DARK)
+                        : y <= floor + 3 ? PillarCornerBlock.SECTOR_BAND + sector : PillarCornerBlock.PLAIN;
+                out.set(y, block.setValue(PillarCornerBlock.BAND, band));
+            }
+            return;
+        }
+        Direction face = mz == 0 ? Direction.NORTH : mx == 2 ? Direction.EAST : mz == 2 ? Direction.SOUTH : Direction.WEST;
         BlockState cracked = ModBlocks.L1_CRACKED_CONCRETE.get().defaultBlockState();
-        // The base band: dark in the parking sectors, hazard stripes in the warehouse sector.
         out.set(floor + 1, sector == Level1Areas.GILD ? ModBlocks.L1_PILLAR_PAINTED.get().defaultBlockState()
                 : ModBlocks.GARAGE_PILLAR.get().defaultBlockState());
-        for (int y = floor + 2; y < ceiling; y++) {
-            boolean crack = sector == Level1Areas.RUST && Hash.unit(seed, cx * 2 + mx, cz * 2 + mz, 7440 + y) < 0.45;
+        int number = Hash.range(Hash.of(seed, cx, cz, 34), PillarNumberBlock.LABELS.length);
+        BlockState digits = ModBlocks.L1_PILLAR_NUMBER.get().defaultBlockState()
+                .setValue(PillarNumberBigBlock.FACING, face)
+                .setValue(PillarNumberBigBlock.NUMBER, number)
+                .setValue(PillarNumberBigBlock.SECTOR, sector);
+        out.set(floor + 2, digits.setValue(PillarNumberBigBlock.UPPER, false));
+        out.set(floor + 3, digits.setValue(PillarNumberBigBlock.UPPER, true));
+        for (int y = floor + 4; y < ceiling; y++) {
+            boolean crack = sector == Level1Areas.RUST && Hash.unit(seed, cx * 3 + mx, cz * 3 + mz, 7440 + y) < 0.45;
             out.set(y, crack ? cracked : concrete);
         }
-        Direction face = mz == 0 ? (mx == 0 ? Direction.NORTH : Direction.EAST) : (mx == 1 ? Direction.SOUTH : Direction.WEST);
-        int number = Hash.range(Hash.of(seed, cx, cz, 34), PillarNumberBlock.LABELS.length);
-        out.set(floor + 2, ModBlocks.PILLAR_NUMBER.get().defaultBlockState()
-                .setValue(PillarNumberBlock.FACING, face)
-                .setValue(PillarNumberBlock.NUMBER, number));
-        // Now and then a sign above the number, pointing nowhere (fandom: "exit signs point to
-        // nonexistent doorways or locations, often directly at blank walls").
-        long signHash = Hash.of(seed, cx * 4 + mx * 2 + mz, cz, 7441);
-        if (Hash.unit(signHash) < 0.09) {
-            out.set(floor + 3, ModBlocks.L1_SIGN.get().defaultBlockState()
+        long signHash = Hash.of(seed, cx * 4 + face.get2DDataValue(), cz, 7441);
+        double r = Hash.unit(signHash);
+        if (r < 0.07) {
+            // fandom: "exit signs point to nonexistent doorways or locations, often directly at blank walls".
+            out.set(floor + 4, ModBlocks.L1_SIGN.get().defaultBlockState()
                     .setValue(SignDecalBlock.FACING, face)
                     .setValue(SignDecalBlock.VARIANT, Level1Areas.signVariant(sector, Hash.mix(signHash))));
+        } else if (r < 0.3) {
+            out.set(floor + 4, ModBlocks.L1_PILLAR_SIGN.get().defaultBlockState()
+                    .setValue(PillarSignBlock.FACING, face)
+                    .setValue(PillarSignBlock.VARIANT, pillarSign(sector, Hash.unit(Hash.mix(signHash ^ 5)))));
         }
     }
 
-    /**
-     * If (x, z) is the spot in front of a pillar face where its tube light hangs, returns the
-     * face direction (the tube's FACING), else null. Pillar base = its north-west block.
-     */
-    @Nullable
-    private static Direction pillarTubeFace(long seed, int x, int z) {
-        int mx = Math.floorMod(x, GRID);
-        int mz = Math.floorMod(z, GRID);
-        Direction face;
-        int baseX;
-        int baseZ;
-        if (mx == 1 && mz == 7) { face = Direction.NORTH; baseX = x - 1; baseZ = z + 1; }
-        else if (mx == 2 && mz == 1) { face = Direction.EAST; baseX = x - 2; baseZ = z - 1; }
-        else if (mx == 0 && mz == 2) { face = Direction.SOUTH; baseX = x; baseZ = z - 2; }
-        else if (mx == 7 && mz == 0) { face = Direction.WEST; baseX = x + 1; baseZ = z; }
-        else return null;
-        if (darkZone(seed, baseX, baseZ)) return null;
-        // Some tubes are simply dead.
-        boolean lit = Hash.unit(seed, Math.floorDiv(baseX, GRID), Math.floorDiv(baseZ, GRID), 40 + face.get2DDataValue()) > 0.2;
-        return lit ? face : null;
-    }
-
-    /** A rare red alarm lamp high on the numbered half of a pillar face. */
-    @Nullable
-    private static Direction alarmLampFace(long seed, int x, int z) {
-        int mx = Math.floorMod(x, GRID);
-        int mz = Math.floorMod(z, GRID);
-        Direction face;
-        int baseX;
-        int baseZ;
-        if (mx == 0 && mz == 7) { face = Direction.NORTH; baseX = x; baseZ = z + 1; }
-        else if (mx == 2 && mz == 0) { face = Direction.EAST; baseX = x - 2; baseZ = z; }
-        else if (mx == 1 && mz == 2) { face = Direction.SOUTH; baseX = x - 1; baseZ = z - 2; }
-        else if (mx == 7 && mz == 1) { face = Direction.WEST; baseX = x + 1; baseZ = z - 1; }
-        else return null;
-        boolean alarm = Hash.unit(seed, Math.floorDiv(baseX, GRID), Math.floorDiv(baseZ, GRID), 45 + face.get2DDataValue()) < 0.04;
-        return alarm ? face : null;
+    /** Which garage sign: mostly the level plate, the rest headroom, no parking, speed, the zone letter. */
+    private static int pillarSign(int sector, double r) {
+        if (r < 0.35) return PillarSignBlock.LEVEL;
+        if (r < 0.55) return PillarSignBlock.HEADROOM;
+        if (r < 0.7) return PillarSignBlock.NO_PARKING;
+        if (r < 0.85) return PillarSignBlock.SPEED;
+        return PillarSignBlock.ZONE + (sector == Level1Areas.GILD ? 1 : 0);
     }
 
     /** Round wet puddles: some 6x6 cells hold one (more in the decrepit sector), with a random radius. */
@@ -597,11 +775,13 @@ public final class Level1Layout extends LevelLayout {
     private int crateHeight(long seed, int x, int z) {
         int mx = Math.floorMod(x, GRID);
         int mz = Math.floorMod(z, GRID);
-        if (mx < 2 || mx > 3 || mz < 2 || mz > 3) {
+        if (mx < PILLAR || mx > PILLAR + 1 || mz < PILLAR || mz > PILLAR + 1) {
             return 0;
         }
+        int cx = Math.floorDiv(x, GRID);
+        int cz = Math.floorDiv(z, GRID);
         double share = Level1Areas.sector(seed, x, z) == Level1Areas.GILD ? 0.28 : 0.1;
-        if (Hash.unit(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID), 29) >= share
+        if (Hash.unit(seed, cx, cz, 29) >= share || rackBay(seed, cx, cz)
                 || exits().distance(seed, x, z) <= CLEARING_RADIUS) {
             return 0;
         }
@@ -692,11 +872,13 @@ public final class Level1Layout extends LevelLayout {
         if (Hash.unit(h) >= RAMP_SHARE) {
             return null;
         }
-        int cells = RAMP_CELL / GRID;
+        int firstX = firstCell(cellX * RAMP_CELL);
+        int firstZ = firstCell(cellZ * RAMP_CELL);
+        int cells = cellsIn(cellX * RAMP_CELL, RAMP_CELL);
         for (int attempt = 0; attempt < 6; attempt++) {
             long a = Hash.mix(h + (attempt + 1) * 0x9E3779B97F4A7C15L);
-            int gx = cellX * cells + 2 + Hash.range(Hash.mix(a ^ 1), cells - 9);
-            int gz = cellZ * cells + 2 + Hash.range(Hash.mix(a ^ 2), cells - 9);
+            int gx = firstX + 2 + Hash.range(Hash.mix(a ^ 1), cells - 9);
+            int gz = firstZ + 2 + Hash.range(Hash.mix(a ^ 2), cells - 9);
             int minX = gx * GRID;
             int minZ = gz * GRID;
             int max = Level1Areas.RampSite.SIZE - 1;
@@ -737,9 +919,6 @@ public final class Level1Layout extends LevelLayout {
     private static final double CRATE_HALL_SHARE = 0.26;
     private static final double FOG_SHARE = 0.24;
     private static final double PAINTING_SHARE = 0.16;
-    /** Grid cells per 96-block anomaly square, and per 512-block corridor square. */
-    private static final int ROOM_GRID_CELLS = Level1AnomalyPlan.ROOM_CELL / GRID;
-    private static final int CORRIDOR_GRID_CELLS = Level1AnomalyPlan.CORRIDOR_CELL / GRID;
 
     @Override
     @Nullable
@@ -774,25 +953,28 @@ public final class Level1Layout extends LevelLayout {
     }
 
     /**
-     * The Corrupted Corridor of one 512x512 square, or null. A straight 8-wide band along one row
-     * (or column) of the pillar grid, 17 bays long. Its doorway is in the side wall near one end
-     * and opens onto a bay of an open garage hall, so you can always walk up to it. Tries a few
-     * spots and gives up if none keeps clear of exits and safe rooms (so it is rare).
+     * The Corrupted Corridor of one 512x512 square, or null. A straight 8-wide band down the
+     * middle of a row (or column) of bays, 138 blocks long. Its doorway is in the side wall near
+     * one end and opens onto the row of pillars beside it, so you can always walk up to it. Tries a
+     * few spots and gives up if none keeps clear of exits and safe rooms (so it is rare).
      */
     @Nullable
     private AnomalySite planCorridor(long seed, int cellX, int cellZ) {
         long h = Hash.of(seed, cellX, cellZ, 7100);
-        int bays = Level1AnomalyPlan.CORRIDOR_LENGTH / GRID; // 17, plus the closing pillar row
+        int bays = Level1AnomalyPlan.CORRIDOR_LENGTH / GRID + 1;
+        int size = Level1AnomalyPlan.CORRIDOR_CELL;
         for (int attempt = 0; attempt < 16; attempt++) {
             long a = Hash.mix(h + (attempt + 1) * 0x9E3779B97F4A7C15L);
             boolean alongX = (a & 1) == 0;
             boolean forward = (a & 2) == 0; // walking in towards +x / +z
-            int band = (alongX ? cellZ : cellX) * CORRIDOR_GRID_CELLS + 1 + Hash.range(Hash.mix(a ^ 1), CORRIDOR_GRID_CELLS - 2);
-            int start = (alongX ? cellX : cellZ) * CORRIDOR_GRID_CELLS + Hash.range(Hash.mix(a ^ 2), CORRIDOR_GRID_CELLS - bays);
+            int acrossSquare = (alongX ? cellZ : cellX) * size;
+            int alongSquare = (alongX ? cellX : cellZ) * size;
+            int band = firstCell(acrossSquare) + 1 + Hash.range(Hash.mix(a ^ 1), cellsIn(acrossSquare, size) - 2);
+            int start = firstCell(alongSquare) + Hash.range(Hash.mix(a ^ 2), cellsIn(alongSquare, size) - bays);
             int alongMin = start * GRID;
             int alongMax = alongMin + Level1AnomalyPlan.CORRIDOR_LENGTH - 1;
-            int acrossMin = band * GRID;
-            int acrossMax = acrossMin + GRID - 1;
+            int acrossMin = band * GRID + PILLAR;
+            int acrossMax = acrossMin + Level1AnomalyPlan.CORRIDOR_WIDTH - 1;
             Direction facing = alongX ? (forward ? Direction.EAST : Direction.WEST) : (forward ? Direction.SOUTH : Direction.NORTH);
             int anchor = forward ? alongMin : alongMax;
             long salt = Hash.mix(a ^ 3);
@@ -820,8 +1002,9 @@ public final class Level1Layout extends LevelLayout {
         // Clear of exits and safe rooms: test the lines of columns just outside both long sides and
         // the ends. Anything that matters (a stairwell clearing, a safe room) is wider than the
         // corridor, so if it touched the corridor it would cross one of those lines.
+        int width = Level1AnomalyPlan.CORRIDOR_WIDTH;
         for (int t = -1; t <= Level1AnomalyPlan.CORRIDOR_LENGTH; t += 3) {
-            for (int a = -1; a <= GRID; a += GRID + 1) {
+            for (int a = -1; a <= width; a += width + 1) {
                 if (blocksAnomaly(seed, Level1AnomalyPlan.corridorX(site, t, a), Level1AnomalyPlan.corridorZ(site, t, a))) {
                     return false;
                 }
@@ -861,12 +1044,12 @@ public final class Level1Layout extends LevelLayout {
         return null;
     }
 
-    /** 3x3 bays of storage racks inside an open garage hall (the Gild sector's crate-rich halls). */
+    /** 3x3 bays of pallet racks inside an open garage hall (the Gild sector's crate-rich halls). */
     @Nullable
     private static AnomalySite crateHallCandidate(long seed, int cellX, int cellZ, long a) {
-        int span = ROOM_GRID_CELLS - Level1AnomalyPlan.CRATE_HALL_CELLS;
-        int minX = (cellX * ROOM_GRID_CELLS + Hash.range(Hash.mix(a ^ 1), span)) * GRID;
-        int minZ = (cellZ * ROOM_GRID_CELLS + Hash.range(Hash.mix(a ^ 2), span)) * GRID;
+        int size = Level1AnomalyPlan.ROOM_CELL;
+        int minX = (firstCell(cellX * size) + Hash.range(Hash.mix(a ^ 1), cellsIn(cellX * size, size) - Level1AnomalyPlan.CRATE_HALL_CELLS)) * GRID;
+        int minZ = (firstCell(cellZ * size) + Hash.range(Hash.mix(a ^ 2), cellsIn(cellZ * size, size) - Level1AnomalyPlan.CRATE_HALL_CELLS)) * GRID;
         int maxX = minX + Level1AnomalyPlan.CRATE_HALL_SIZE - 1;
         int maxZ = minZ + Level1AnomalyPlan.CRATE_HALL_SIZE - 1;
         if (!hallZone(seed, minX, minZ) || !hallZone(seed, maxX, minZ) || !hallZone(seed, minX, maxZ) || !hallZone(seed, maxX, maxZ)) {
@@ -876,18 +1059,19 @@ public final class Level1Layout extends LevelLayout {
     }
 
     /**
-     * A one-bay room standing in a hall, closed on all four sides, its only doorway (in the middle
-     * of one wall) opening onto the neighbouring bay. That bay must be open hall, and the door wall
-     * must not have been a stretch of wall before: a wall lamp may hang on its far side.
+     * A small room standing in a bay (from the last column of the pillar row to the end of the
+     * bay), closed on all four sides, its only doorway (in the middle of one wall) opening onto
+     * the pillar row and the bay beyond. That partition must be open, and that bay open hall.
      */
     @Nullable
     private static AnomalySite paintingRoomCandidate(long seed, int cellX, int cellZ, long a) {
-        int cx = cellX * ROOM_GRID_CELLS + Hash.range(Hash.mix(a ^ 1), ROOM_GRID_CELLS - 1);
-        int cz = cellZ * ROOM_GRID_CELLS + Hash.range(Hash.mix(a ^ 2), ROOM_GRID_CELLS - 1);
+        int size = Level1AnomalyPlan.ROOM_CELL;
+        int cx = firstCell(cellX * size) + Hash.range(Hash.mix(a ^ 1), cellsIn(cellX * size, size) - 1);
+        int cz = firstCell(cellZ * size) + Hash.range(Hash.mix(a ^ 2), cellsIn(cellZ * size, size) - 1);
         Direction door = Direction.from2DDataValue(Hash.range(Hash.mix(a ^ 4), 4));
         int nx = cx + door.getStepX();
         int nz = cz + door.getStepZ();
-        if (!hallZone(seed, cx * GRID, cz * GRID) || !hallZone(seed, cx * GRID + GRID + 1, cz * GRID + GRID + 1)
+        if (!hallZone(seed, cx * GRID, cz * GRID) || !hallZone(seed, cx * GRID + GRID - 1, cz * GRID + GRID - 1)
                 || !hallZone(seed, nx * GRID, nz * GRID) || !hallZone(seed, nx * GRID + GRID - 1, nz * GRID + GRID - 1)) {
             return null;
         }
@@ -897,14 +1081,14 @@ public final class Level1Layout extends LevelLayout {
             case WEST -> partition(seed, cx, cz, 1);
             default -> partition(seed, cx + 1, cz, 1);
         };
-        if (doorWall == SOLID) {
+        if (doorWall != OPEN) {
             return null;
         }
-        int minX = cx * GRID;
-        int minZ = cz * GRID;
-        int size = Level1AnomalyPlan.PAINTING_ROOM_SIZE;
-        return new AnomalySite(Level1AnomalyPlan.PAINTING_ROOM, minX, minZ, minX + size - 1, minZ + size - 1,
-                minX + GRID / 2, minZ + GRID / 2, door.get2DDataValue(), Hash.mix(a ^ 3));
+        int minX = cx * GRID + PILLAR - 1;
+        int minZ = cz * GRID + PILLAR - 1;
+        int room = Level1AnomalyPlan.PAINTING_ROOM_SIZE;
+        return new AnomalySite(Level1AnomalyPlan.PAINTING_ROOM, minX, minZ, minX + room - 1, minZ + room - 1,
+                minX + 4, minZ + 4, door.get2DDataValue(), Hash.mix(a ^ 3));
     }
 
     /** A patch of low fog, 18 to 28 blocks across, anywhere in the garage. */
@@ -940,30 +1124,42 @@ public final class Level1Layout extends LevelLayout {
     }
 
     /**
-     * One column of a painting room: the four corner pillars, solid concrete walls with a single
-     * doorway, a single tube light, and the crude paintings on the walls and the floor.
+     * One column of a painting room: a cramped box of concrete standing in the hall (two-thick
+     * walls, corner posts, its own low ceiling with solid concrete above), a single doorway, a single
+     * tube light, and the crude paintings on the walls and the floor.
      */
     private void fillPaintingRoom(long seed, AnomalySite site, int x, int z, Column out) {
         BlockState concrete = ModBlocks.CONCRETE_WALL.get().defaultBlockState();
         int floor = floorY();
         int ceiling = ceilingY();
+        int roof = floor + PAINTING_ROOF;
         int lx = x - site.minX();
         int lz = z - site.minZ();
+        int far = Level1AnomalyPlan.PAINTING_ROOM_SIZE - 2;
+        boolean wallX = lx <= 1 || lx >= far;
+        boolean wallZ = lz <= 1 || lz >= far;
+        out.set(floor, ModBlocks.CONCRETE_FLOOR.get().defaultBlockState());
         int mx = Math.floorMod(x, GRID);
         int mz = Math.floorMod(z, GRID);
-        out.set(ceiling, concrete);
-        out.set(floor, ModBlocks.CONCRETE_FLOOR.get().defaultBlockState());
-        if (mz <= 1) {
-            out.set(ceiling - 1, ModBlocks.CEILING_BEAM.get().defaultBlockState());
-        }
-        if (mx <= 1 && mz <= 1) {
+        if (mx < PILLAR && mz < PILLAR) {
+            // The room's outer corner stands on a corner of the hall's pillar: keep the pillar whole.
+            out.set(ceiling, concrete);
             fillPillar(seed, Math.floorDiv(x, GRID), Math.floorDiv(z, GRID), mx, mz, out);
             return;
         }
-        if (mx <= 1 || mz <= 1) {
-            int top = mz <= 1 ? ceiling - 1 : ceiling; // leave the beam on east-west rows
+        for (int y = roof; y <= ceiling; y++) {
+            out.set(y, concrete);
+        }
+        if (wallX && wallZ) {
+            out.set(floor + 1, ModBlocks.GARAGE_PILLAR.get().defaultBlockState());
+            for (int y = floor + 2; y < roof; y++) {
+                out.set(y, concrete);
+            }
+            return;
+        }
+        if (wallX || wallZ) {
             boolean doorway = Level1AnomalyPlan.paintingDoorway(site, lx, lz);
-            for (int y = floor + 1; y < top; y++) {
+            for (int y = floor + 1; y < roof; y++) {
                 if (!(doorway && y <= floor + 3)) {
                     out.set(y, concrete);
                 }
@@ -971,7 +1167,7 @@ public final class Level1Layout extends LevelLayout {
             return;
         }
         if (lz == 4 && (lx == 4 || lx == 5)) {
-            out.set(ceiling - 1, tube(Direction.Axis.X));
+            out.set(roof - 1, Level1Areas.tube(Direction.Axis.X));
         }
         for (int y = floor + 1; y <= floor + 3; y++) {
             BlockState painting = Level1AnomalyPlan.initialPainting(site, x, y, z);
@@ -982,13 +1178,16 @@ public final class Level1Layout extends LevelLayout {
     }
 
     private static boolean paintingRoomWalkable(AnomalySite site, int x, int z) {
-        int mx = Math.floorMod(x, GRID);
-        int mz = Math.floorMod(z, GRID);
-        if (mx <= 1 && mz <= 1) {
+        int lx = x - site.minX();
+        int lz = z - site.minZ();
+        int far = Level1AnomalyPlan.PAINTING_ROOM_SIZE - 2;
+        boolean wallX = lx <= 1 || lx >= far;
+        boolean wallZ = lz <= 1 || lz >= far;
+        if (wallX && wallZ) {
             return false;
         }
-        if (mx <= 1 || mz <= 1) {
-            return Level1AnomalyPlan.paintingDoorway(site, x - site.minX(), z - site.minZ());
+        if (wallX || wallZ) {
+            return Level1AnomalyPlan.paintingDoorway(site, lx, lz);
         }
         return true;
     }

@@ -124,6 +124,9 @@ public final class ModSounds {
     // Level 7 "Thalassophobia": the hollow sea ambience (the biome's loop), and the Thing, which you
     // only ever hear: its groans from far below, the swell when it passes under you, and the gut-drop
     // lurch when you fall through the hatch (one-shots from client/Level7Client).
+    // Your own breathing (client/Breathing): panting after a sprint, quick shaky breaths when scared.
+    public static final DeferredHolder<SoundEvent, SoundEvent> BREATH_HEAVY = register("player.breath_heavy");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BREATH_SCARED = register("player.breath_scared");
     // Level 1 storage lockers: something growling behind one of the shutters (block/GrowlingShutterBlock).
     public static final DeferredHolder<SoundEvent, SoundEvent> L1_LOCKER_GROWL = register("level1.locker_growl");
     public static final DeferredHolder<SoundEvent, SoundEvent> L7_AMBIENT = register("ambient.level7");

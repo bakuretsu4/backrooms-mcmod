@@ -1,0 +1,41 @@
+{
+  "textures": {
+    "particle": "backrooms:block/l1x_cabinet_side",
+    "s": "backrooms:block/l1x_cabinet_side",
+    "f": "backrooms:block/l1x_cabinet_front"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        0,
+        12
+      ],
+      "to": [
+        13,
+        14,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#f"
+        },
+        "south": {
+          "texture": "#s"
+        },
+        "east": {
+          "texture": "#s"
+        },
+        "west": {
+          "texture": "#s"
+        },
+        "up": {
+          "texture": "#s"
+        },
+        "down": {
+          "texture": "#s"
+        }
+      }
+    }
+  ]
+}
