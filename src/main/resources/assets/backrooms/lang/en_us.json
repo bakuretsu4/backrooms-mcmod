@@ -263,7 +263,7 @@
   "menu.backrooms.notes.goal.3": "- Others came through before you. Some left notes in the crates and backpacks. And listen: an exit is never completely quiet.",
   "menu.backrooms.notes.levels.title": "THE LEVELS",
   "menu.backrooms.notes.levels.0": "- LEVEL 0, the Lobby: a thick-walled yellow maze. Look for the EXIT sign over a wooden door.",
-  "menu.backrooms.notes.levels.1": "- LEVEL 1, the garage: grey concrete corridors and parking halls with numbered pillars. A white stairwell leads down.",
+  "menu.backrooms.notes.levels.1": "- LEVEL 1, the Habitable Zone: endless open parking halls of numbered pillars, puddles and dripping pipes. The signs point nowhere. Doors under green EXIT lights lead into tight corridors where nothing hunts you. A white stairwell leads down.",
   "menu.backrooms.notes.levels.2": "- LEVEL 2, the pipes: long, narrow maintenance corridors with long pitch-dark stretches. Find the emergency EXIT door.",
   "menu.backrooms.notes.levels.3": "- LEVEL 4, the Abandoned Office: endless empty offices, rain on the windows. Safe: no monsters. Water coolers and vending machines have Almond Water. Take an emergency stairwell down.",
   "menu.backrooms.notes.levels.4": "- THE POOLROOMS: white tiles and glowing water. No monsters. Swim into the drain in the middle of a deep pool.",
@@ -645,5 +645,18 @@
   "note.backrooms.far.2": "a long walk",
   "item.backrooms.camcorder": "Camcorder",
   "item.backrooms.camcorder.tooltip": "Right-click to start or stop recording.",
-  "item.backrooms.camcorder.tooltip2": "Some places shouldn't be filmed."
+  "item.backrooms.camcorder.tooltip2": "Some places shouldn't be filmed.",
+  "block.backrooms.l1_sign": "Direction Sign",
+  "block.backrooms.l1_rebar": "Rusty Rebar",
+  "block.backrooms.l1_ceiling_pipe": "Dripping Pipe",
+  "block.backrooms.l1_shutter": "Locker Shutter",
+  "block.backrooms.l1_shutter_growl": "Locker Shutter",
+  "block.backrooms.l1_shutter_rolled": "Rolled-up Shutter",
+  "block.backrooms.l1_mattress": "Stained Mattress",
+  "block.backrooms.l1_locked_door": "White Door",
+  "block.backrooms.l1_locked_door_top": "White Door (Top)",
+  "block.backrooms.l1_pillar_painted": "Hazard-striped Concrete",
+  "block.backrooms.l1_cracked_concrete": "Cracked Concrete",
+  "block.backrooms.l1_steaming_puddle": "Steaming Puddle",
+  "subtitles.backrooms.l1_locker_growl": "Something growls behind a shutter"
 }

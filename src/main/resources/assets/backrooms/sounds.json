@@ -1783,5 +1783,22 @@
         "attenuation_distance": 44
       }
     ]
+  },
+  "level1.locker_growl": {
+    "sounds": [
+      {
+        "name": "backrooms:level1/locker_growl1",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level1/locker_growl2",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level1/locker_growl3",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.l1_locker_growl"
   }
 }

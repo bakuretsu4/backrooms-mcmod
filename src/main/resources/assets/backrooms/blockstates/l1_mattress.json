@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l1_mattress"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l1_mattress",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l1_mattress",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l1_mattress",
+      "y": 270
+    }
+  }
+}

@@ -8,6 +8,11 @@ import com.rickr.backrooms.block.ThroneLightBlock;
 import com.rickr.backrooms.block.CeilingTubeBlock;
 import com.rickr.backrooms.block.ClayDoorBlock;
 import com.rickr.backrooms.block.RopeBlock;
+import com.rickr.backrooms.block.RebarBlock;
+import com.rickr.backrooms.block.CeilingPipeBlock;
+import com.rickr.backrooms.block.GrowlingShutterBlock;
+import com.rickr.backrooms.block.SignDecalBlock;
+import com.rickr.backrooms.block.SteamingPuddleBlock;
 import com.rickr.backrooms.block.SeaDoorBlock;
 import com.rickr.backrooms.block.WaterloggedFurnitureBlock;
 import com.rickr.backrooms.block.CheckpointRadioBlock;
@@ -914,6 +919,40 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> L9_CRATER_SOIL = structural("l9_crater_soil", MapColor.DIRT, SoundType.GRAVEL);
     /** Stacked sandbags ringing a foxhole in the Crimson Field. */
     public static final DeferredBlock<Block> L9_SANDBAGS = structural("l9_sandbags", MapColor.COLOR_BROWN, SoundType.WOOL);
+
+    // ---- Level 1 halls, corridors and lockers (world/layout/Level1Layout, Level1Areas) ----------
+    /** A direction sign painted on a pillar, pointing nowhere (VARIANT: which sign; see SignDecalBlock). */
+    public static final DeferredBlock<SignDecalBlock> L1_SIGN = BLOCKS.registerBlock("l1_sign", SignDecalBlock::new,
+            unbreakable(MapColor.STONE, SoundType.STONE));
+    /** Rusty rebar sticking out of the floor: slows you down and pricks you. */
+    public static final DeferredBlock<RebarBlock> L1_REBAR = BLOCKS.registerBlock("l1_rebar", RebarBlock::new,
+            unbreakable(MapColor.TERRACOTTA_BROWN, SoundType.METAL).noCollission().noOcclusion());
+    /** A dripping rusty pipe just under the ceiling. */
+    public static final DeferredBlock<CeilingPipeBlock> L1_CEILING_PIPE = BLOCKS.registerBlock("l1_ceiling_pipe", CeilingPipeBlock::new,
+            unbreakable(MapColor.TERRACOTTA_BROWN, SoundType.METAL).noOcclusion());
+    /** A closed roll-up shutter of a storage locker. */
+    public static final DeferredBlock<Block> L1_SHUTTER = structural("l1_shutter", MapColor.METAL, SoundType.METAL);
+    /** The same shutter with something growling behind it. */
+    public static final DeferredBlock<GrowlingShutterBlock> L1_SHUTTER_GROWL = BLOCKS.registerBlock("l1_shutter_growl",
+            GrowlingShutterBlock::new, unbreakable(MapColor.METAL, SoundType.METAL));
+    /** A shutter rolled up into the top of its opening. */
+    public static final DeferredBlock<Block> L1_SHUTTER_ROLLED = BLOCKS.registerBlock("l1_shutter_rolled",
+            props -> new FurnitureBlock(props, Block.box(0, 10, 0, 16, 16, 16)), unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** A thin stained mattress on the floor of a corridor room. */
+    public static final DeferredBlock<FurnitureBlock> L1_MATTRESS = BLOCKS.registerBlock("l1_mattress",
+            props -> new FurnitureBlock(props, Block.box(0, 0, 1, 16, 5, 15)), unbreakable(MapColor.WOOL, SoundType.WOOL).noOcclusion());
+    /** The locked white door at the end of the storage lockers (bottom and top half). */
+    public static final DeferredBlock<WallDecalBlock> L1_LOCKED_DOOR = BLOCKS.registerBlock("l1_locked_door", WallDecalBlock::new,
+            unbreakable(MapColor.STONE, SoundType.STONE));
+    public static final DeferredBlock<WallDecalBlock> L1_LOCKED_DOOR_TOP = BLOCKS.registerBlock("l1_locked_door_top", WallDecalBlock::new,
+            unbreakable(MapColor.STONE, SoundType.STONE));
+    /** Pillar base painted with yellow and black hazard stripes (the warehouse sector). */
+    public static final DeferredBlock<Block> L1_PILLAR_PAINTED = structural("l1_pillar_painted", MapColor.COLOR_YELLOW, SoundType.STONE);
+    /** Concrete split by cracks (the decrepit sector). */
+    public static final DeferredBlock<Block> L1_CRACKED_CONCRETE = structural("l1_cracked_concrete", MapColor.STONE, SoundType.STONE);
+    /** Wet concrete under a puddle that steams. */
+    public static final DeferredBlock<SteamingPuddleBlock> L1_STEAMING_PUDDLE = BLOCKS.registerBlock("l1_steaming_puddle",
+            SteamingPuddleBlock::new, unbreakable(MapColor.COLOR_GRAY, SoundType.STONE));
 
     // ---- Level 7 "Thalassophobia" (world/layout/Level7Layout) ---------------------------------
     // The sea under the concrete ceiling, the flooded entrance room hanging off that ceiling, and

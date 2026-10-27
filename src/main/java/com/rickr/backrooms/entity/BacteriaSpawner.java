@@ -88,7 +88,7 @@ public final class BacteriaSpawner {
             int x = player.getBlockX() + (int) Math.round(Math.cos(angle) * distance);
             int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * distance);
             BlockPos spot = Travel.searchWalkable(floor.layout(), seed, x, z, 6);
-            if (spot == null || !level.isLoaded(spot)) {
+            if (spot == null || !level.isLoaded(spot) || floor.layout().isQuietArea(seed, spot.getX(), spot.getZ())) {
                 continue;
             }
             boolean tooClose = level.players().stream().anyMatch(p -> p.distanceToSqr(spot.getX(), spot.getY(), spot.getZ()) < MIN_DISTANCE * MIN_DISTANCE);

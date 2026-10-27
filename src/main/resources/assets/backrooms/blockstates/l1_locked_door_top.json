@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l1_locked_door_top"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l1_locked_door_top",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l1_locked_door_top",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l1_locked_door_top",
+      "y": 270
+    }
+  }
+}

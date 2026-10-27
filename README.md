@@ -77,9 +77,18 @@ flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on 
 - **Level 0 (the Lobby):** thick-walled yellow maze, lit rooms and dark corridors. Arrows drawn on
   the walls point to the exit stairwell, but some of them lie. Look for the EXIT sign over a
   wooden door.
-- **Level 1 (the garage):** a grey concrete maze of closed-off rooms, narrow corridors and dead
-  ends, opening now and then into wide parking halls with numbered pillars, tube lights,
-  chain-link fences and puddles. Another white stairwell leads down.
+- **Level 1 (the "Habitable Zone"):** an endless underground parking structure crossed with a
+  warehouse. Wide open halls of numbered concrete pillars stretch into the dark under tube strips
+  and ceiling beams, with puddles (some steaming), rusty pipes dripping under the ceiling, rebar
+  jutting from the cracked floor (it slows you and pricks), crate stacks, and signs on the pillars
+  pointing nowhere (EXIT, SALIDA, SORTIE, AUSGANG). The halls change slowly by sector: grey
+  parking, a warmer warehouse sector with hazard-striped pillars and far more crates, and a
+  decrepit one of cracked concrete, puddles and dead lights. Push-bar fire doors under green EXIT
+  signs lead into walled-off **corridor blocks**: tight white corridors lined with small rooms
+  (mattresses, supply lockers, crates), where nothing hunts you. Now and then a hallway of
+  **storage lockers** opens off the halls: roll-up shutters, a few rolled up with supplies
+  inside, something growling behind one or two, and a white door at the end that never opens. Car
+  **ramps** lead down to a dimmer lower floor here and there. A white stairwell leads down.
 - **Level 2 (the pipes):** long, narrow pale maintenance corridors with racks of rusty pipes and
   big ducts along one wall, caged lamps far apart and long pitch-dark stretches, junction rooms
   and small dark utility rooms. Find the emergency EXIT door; opening it takes everyone within
@@ -298,7 +307,7 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 
 **Level 1**
 - **Crate halls:** In some of the open garage halls, rows of orange storage racks stand in a brighter, better-lit hall. Wooden crates turn up there: you hear something settle behind you, and there is a crate that wasn't there before. When the lights fail, the crates are gone; when the power comes back, new ones are waiting. Not everything inside is worth taking.
-- **Painting rooms:** Off the narrow maze corridors, a small closed room is covered in crude paintings and drawings. Look away, or wait for the lights to go out, and they are not the pictures you remember, if they are there at all.
+- **Painting rooms:** Standing alone in a hall, a small closed room is covered in crude paintings and drawings. Look away, or wait for the lights to go out, and they are not the pictures you remember, if they are there at all.
 - **Fog patches:** Here and there a low, sourceless fog lies along the floor, the air turns grey and damp, and puddles of condensation gather and dry up again in places you weren't looking. Listen for the drips.
 - **The Corrupted Corridor (Level 1.1):** Very rarely, a doorway in a garage wall opens onto a long white-cinderblock corridor with a blue tiled floor. The further you go the worse it gets: the colours go wrong, the same stretch of hallway seems to repeat, the dark swallows your light, and the walls turn black and white and won't hold still. At the very end, a light beckons.
 

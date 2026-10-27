@@ -355,6 +355,12 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.L9_CRATER_ASPHALT_SLAB);
         ITEMS.registerSimpleBlockItem(ModBlocks.L9_CRATER_SOIL);
         ITEMS.registerSimpleBlockItem(ModBlocks.L9_SANDBAGS);
+        // Level 1: the halls' signs, rebar and pipes, the corridors' mattresses, the storage lockers.
+        for (var block : java.util.List.of(ModBlocks.L1_SIGN, ModBlocks.L1_REBAR, ModBlocks.L1_CEILING_PIPE, ModBlocks.L1_SHUTTER,
+                ModBlocks.L1_SHUTTER_GROWL, ModBlocks.L1_SHUTTER_ROLLED, ModBlocks.L1_MATTRESS, ModBlocks.L1_LOCKED_DOOR,
+                ModBlocks.L1_LOCKED_DOOR_TOP, ModBlocks.L1_PILLAR_PAINTED, ModBlocks.L1_CRACKED_CONCRETE, ModBlocks.L1_STEAMING_PUDDLE)) {
+            ITEMS.registerSimpleBlockItem(block);
+        }
         // Level 7: the sea, the flooded entrance room and the exit ring.
         for (var block : java.util.List.of(ModBlocks.L7_CONCRETE, ModBlocks.L7_RUST_METAL, ModBlocks.L7_GRATING,
                 ModBlocks.L7_CARPET, ModBlocks.L7_SILT, ModBlocks.L7_ROCK, ModBlocks.L7_BONE, ModBlocks.L7_TAR,
