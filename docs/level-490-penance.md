@@ -1,6 +1,6 @@
-# New level: the Chains (design notes)
+# Level 490 "Penance" (design notes)
 
-Status: **brainstorm only, nothing built yet.** Name and level number not chosen.
+Status: **brainstorm only, nothing built yet.**
 
 ## The idea
 
@@ -45,6 +45,8 @@ Two kinds:
   - Only a few are visible normally; lightning reveals many more hidden in the clouds.
   - Some hold other platforms or towers far away: you are not the only one hung here.
   - Mostly still; now and then one jerks taut as if pulled from below, with a deep distant clank.
+  - Rarely, a distant structure's chain snaps and you watch it drop silently into the clouds,
+    then hear the sound much later.
 
 ## Layout
 
@@ -89,6 +91,24 @@ Two kinds:
   - stay near lit lanterns: it avoids the light, so dark stretches are where it reaches you;
   - inside the structure's shaft you are safe; the outside parts of the climb are fair game.
 
+## The top and the exit
+
+- At the top, all the structure's chains meet and carry on up into the clouds: they don't end,
+  they go up into something even bigger.
+- **The exit is a jump:** you let go and step off the top into the clouds on purpose, the one fall
+  that doesn't bring you back. The datamosh transition plays as your "death" and takes you to
+  Level 9.
+- **The creature watches you leave:** no final chase. In a last lightning flash you see it whole,
+  just watching as you go.
+
+## Sound
+
+- Mostly near silence, so every sound stands out.
+- Deep creaks and groans from the near chains, especially the ones under your feet.
+- Huge far-off metallic clanks when a distant chain jolts, rolling like thunder.
+- A barely-there low drone that grows as you climb the structure.
+- Distant thunder (see Sky and weather).
+
 ## Falling
 
 Falling off sends you back to your last checkpoint **in this level**. Not more punishing than
@@ -99,7 +119,7 @@ that: the level is hard enough.
 One straight path through every level, each exit leading naturally into the next:
 
 Level 0 → Level 1 → Level 2 → Level 4 → Poolrooms → Level 37 → Level 7 → Level 39 → Level 94 →
-**the Chains** → Level 9 → home.
+**Level 490** → Level 9 → home.
 
 - Level 94's main exit leads here; the exit at the top of the structure leads to Level 9.
 - Every exit has its own look, but all use the datamosh transition.
@@ -118,13 +138,24 @@ Level 0 → Level 1 → Level 2 → Level 4 → Poolrooms → Level 37 → Level
   | Level 7 | 15% | ~120 |
   | Level 39 | 10% | ~100 |
   | Level 94 | 7% | ~80 |
-  | **the Chains** | 5% | ~60 |
+  | **Level 490** | 5% | ~60 |
   | Level 9 | 3% | ~50 |
+
+## Name and number
+
+**Level 490, "Penance".** 490 is "seventy times seven", how many times you must forgive:
+penance as something that never ends.
+
+No existing wiki level fitted, so it has its own name and number. Closest existing ones, for the
+record:
+
+- Level 108 "World of Chains" (Fandom): mostly an indoor concrete complex full of chains, and a
+  safe level with friendly entities. Opposite tone.
+- Level 63 "Tranquility" (main wiki): bridges and platforms over a sky void, but calm and safe,
+  no chains.
+- Level 505 "Sky Bridges" (small fan wikis): endless bridges between clouds, no chains or theme.
+- Level 255 "Death Factory" (main wiki): catwalks over an abyss on rusted chains, but a factory.
 
 ## Still open
 
-- What is at the top of the structure, and how the exit to Level 9 works.
-- Sounds: wind, the chains, the creature.
-- The level's name and number (a Backrooms-wiki number, or our own).
-- Whether anything happens on the distant structures held by the other chains (a light coming
-  on, a figure).
+Nothing big; details get decided while building.
