@@ -3,6 +3,7 @@ package com.rickr.backrooms.registry;
 import com.rickr.backrooms.block.AxisShapeBlock;
 import com.rickr.backrooms.block.FurnitureBlock;
 import com.rickr.backrooms.block.Level0ConduitBlock;
+import com.rickr.backrooms.block.Level0EmbeddedBlock;
 import com.rickr.backrooms.block.Level0GraffitiBlock;
 import com.rickr.backrooms.block.Level0MannequinBlock;
 import com.rickr.backrooms.block.Level0TapeBlock;
@@ -44,6 +45,8 @@ import net.neoforged.neoforge.registries.DeferredBlock;
  *       the room: EXIT_SIGN, SWITCH_BOX, CONDUIT, TAPE (TAPE also on the ceiling/floor), LADDER.</li>
  *   <li>Free-standing: HALF_WALL_CAP (on top of a wall block), the carpet ramps, MANNEQUIN (two
  *       blocks), THRONE, HAZMAT_CASE, DANGLING_CABLE (in the air block under the ceiling).</li>
+ *   <li>EMBEDDED: furniture fused into the building, in the AIR block next to the wall, floor or
+ *       ceiling it has noclipped into (see block/Level0EmbeddedBlock).</li>
  * </ul>
  */
 public final class Level0Blocks {
@@ -125,13 +128,19 @@ public final class Level0Blocks {
     /** An abandoned Async Research hard equipment case; FACING = its latch side. */
     public static final DeferredBlock<FurnitureBlock> HAZMAT_CASE = block("l0_hazmat_case",
             props -> new FurnitureBlock(props, Block.box(1.5, 0, 4, 14.5, 7, 12.5)), unbreakable(MapColor.COLOR_BLACK, SoundType.METAL).noOcclusion());
+    /**
+     * Furniture that has noclipped into the building (the film, Kane's "Static Dead End"): MOUNT =
+     * wall/floor/ceiling it is fused with, PROP = which piece, FACING turns it.
+     */
+    public static final DeferredBlock<Level0EmbeddedBlock> EMBEDDED = block("l0_embedded", Level0EmbeddedBlock::new,
+            unbreakable(MapColor.WOOD, SoundType.WOOD).noOcclusion());
 
     static {
         // Block items so builders can use every Level 0 block in creative (the mannequin needs the tall item).
         for (DeferredBlock<?> block : new DeferredBlock<?>[] {
                 CHEVRON_WALLPAPER, CHEVRON_WALLPAPER_BASEBOARD, HALF_WALL_CAP, WALL_HOLE, GRAFFITI, HAZARD_FRAME,
                 CARPET_STAIRS, CARPET_SLAB, TROFFER_STRIP, TROFFER_STRIP_OFF, CEILING_HOLE, DANGLING_CABLE,
-                EXIT_SIGN, SWITCH_BOX, CONDUIT, TAPE, LADDER, THRONE, HAZMAT_CASE}) {
+                EXIT_SIGN, SWITCH_BOX, CONDUIT, TAPE, LADDER, THRONE, HAZMAT_CASE, EMBEDDED}) {
             ModItems.ITEMS.registerSimpleBlockItem(block);
         }
         ModItems.ITEMS.registerItem("l0_mannequin", props -> new DoubleHighBlockItem(MANNEQUIN.get(), props), new Item.Properties());

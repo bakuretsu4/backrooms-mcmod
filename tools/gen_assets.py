@@ -216,38 +216,92 @@ def _pores(img, rng, density=0.012, depth=22.0) -> np.ndarray:
 # (wallpaper ~#B7A746, carpet ~#A08534, ceiling ~#D8D0B0 once lit and graded). Wallpaper, carpet
 # and ceiling stay within ~15% of each other: the place reads as one flat yellow.
 
-WALLPAPER = (184, 170, 96)    # muted: the grade adds saturation and cuts blue, so this lands near #B7A746
+WALLPAPER = (189, 175, 99)    # the pale field; with the darker print on top the paper averages ~(184,170,96), near #B7A746 lit
 CARPET = (142, 120, 64)       # browner and ~0.75x the wall's brightness (floor tops get full face light); ~#A3893A on screen
 CEILING = (214, 207, 182)
 TBAR = (190, 184, 164)        # the painted steel T-bar grid of the dropped ceiling
 
 
-def _wallpaper(stains=True, base=WALLPAPER, seed=101) -> np.ndarray:
-    """Kane's wallpaper: a soft, low-contrast blotchy damask.
+def _paper(rng, base, shape=(S, S)) -> np.ndarray:
+    """Plain matte paper in one colour: a very faint soft unevenness and fibre grain, so a flat
+    field never reads as a flat fill."""
+    lum = (1.2 * fnoise(rng, shape, beta=3.0, kmin=1, kmax=3)
+           + 0.9 * blur(fnoise(rng, shape, beta=0.8, kmin=24), 0.6)
+           + 0.6 * rng.normal(0, 1, shape))
+    return add_lum(fill(base, shape), lum - lum.mean(), (1.0, 0.97, 0.85))
 
-    Lighter blotches (about a quarter of a block) with faint darker outlines and little darker
-    hollows inside them, like a worn floral print seen through a VHS camera; brightness differs by
-    only a few percent. Matte paper grain on top. No lattice, nothing saturated.
+
+def _thread_noise(rng, amp, sigma=0.7) -> np.ndarray:
+    """One random offset per pixel column (lightly smoothed, wraps round): the dyed threads of an
+    ikat each stop at a slightly different height, which gives its edges their ragged look."""
+    k = np.fft.fftfreq(S)
+    a = np.real(np.fft.ifft(np.fft.fft(rng.normal(0, 1, S)) * np.exp(-2 * (np.pi * sigma * k) ** 2)))
+    return amp * a / a.std()
+
+
+def _flame(U, V):
+    """The soft "tulip/flame" shape of the stripe columns (U -1..1 across, V 0..1 top to point):
+    widest just below its notched top, narrowing to a point."""
+    half = np.where(V < 0.3, 0.7 + V, np.clip(1.0 - (V - 0.3) / 0.7, 0, 1))
+    notch = (V < 0.3 - 0.8 * np.abs(U)) & (np.abs(U) < 0.3)
+    return (V > 0) & (V < 1) & (np.abs(U) < half) & ~notch
+
+
+def _wallpaper_design(seed=101) -> np.ndarray:
+    """Where the print is (0..1) on the real Backrooms paper (the one the A24 film printed).
+
+    Across the paper repeat stripe bands and plain panels, two of each per block (64 px each):
+    - a band: a thin line and a pair of thin lines, a column of light "flame/tulip" shapes left
+      in a dark stripe (three per block height), then a pair of lines and a thin line again;
+    - a panel: feathered ikat chevrons, an outer ^ with an inner ^ below it, their edges ragged
+      thread by thread, with spiky tips above and long threads running down below.
+    The chevrons of the second panel sit half a repeat lower (staggered, as on the real paper).
+    Why two repeats per block and not one: a block texture has to tile with itself, so the
+    half-repeat stagger needs both panels inside the block.
+    """
+    rng = rng_for(seed)
+    X, Y = grid()
+    P = 64.0
+    xb = X % P
+    m = np.zeros((S, S))
+
+    def vline(x0, w):
+        return np.clip(np.minimum(xb - x0 + 0.5, x0 + w - xb + 0.5), 0, 1)
+
+    for x0 in (0.5, 3.5, 5.5, 23.0, 25.0, 28.0):                        # the thin lines
+        m = np.maximum(m, vline(x0, 1.0))
+    c0, c1 = 9.0, 19.5                                                   # the flame column
+    cx, tp = (c0 + c1) / 2, S / 3
+    flames = supersample((S, S), lambda x, y: _flame(((x % P) - cx) / 4.0, ((y % tp) - 5) / (tp * 0.62)))
+    m = np.maximum(m, vline(c0, c1 - c0) * (1 - 0.95 * flames))
+    p0, p1 = 30.0, 63.0                                                  # the chevron panel
+    pc, hw = (p0 + p1) / 2, (p1 - p0) / 2
+    ys = (Y + np.floor(X / P) * 64) % S                                  # the second panel half a repeat lower
+    ax = np.abs(xb - pc)
+    chev = np.zeros((S, S))
+    for apex, thick in ((10.0, 15.0), (39.0, 14.0)):                     # outer ^, inner ^ below it
+        top = _thread_noise(rng, 1.3) - np.clip(_thread_noise(rng, 1.0), 0.6, None) * 4 + 2.4
+        bottom = thick + _thread_noise(rng, 1.6) + np.clip(_thread_noise(rng, 1.0), 0.7, None) * 5 - 3.5
+        t = ys - (apex + 1.4 * ax)
+        chev = np.maximum(chev, ((t > top[None, :]) & (t < bottom[None, :]) & (ax < hw)).astype(float))
+    flecks = fnoise(rng, beta=0.8, aniso=(1, 6), kmin=10) > 1.5          # where the dye didn't take
+    chev = chev * (1 - 0.55 * flecks) * ((xb > p0) & (xb < p1))
+    return np.clip(np.maximum(m, chev), 0, 1)
+
+
+def _wallpaper(stains=True, base=WALLPAPER, seed=101) -> np.ndarray:
+    """The Lobby wallpaper: the real Backrooms design (see _wallpaper_design), printed tone on
+    tone in a yellow about 10% darker and a little more saturated than the pale field. Up close
+    it reads as a printed pattern, from across a hall as soft vertical stripes.
 
     stains=True adds two faint old water marks (used by drawings and anomaly blocks that are
     based on the paper); the wall blocks use the clean paper and get their marks from the random
     variants instead (see Surface variants), so the same mark doesn't repeat on every block.
     """
-    rng = rng_for(seed)
-    img = fill(base, (S, S))
-    # The blotches: band-limited noise (2-6 waves per block, a little taller than wide), cut softly.
-    n = fnoise(rng, beta=1.6, kmin=2, kmax=6.5, aniso=(1.0, 1.2))
-    n = n + 0.4 * fnoise(rng, beta=1.2, kmin=6.5, kmax=18)
-    n = blur(n / n.std(), 0.8)
-    light = smoothstep(-0.25, 0.55, n)
-    outline = np.exp(-((n - 0.1) / 0.22) ** 2)
-    hollows = smoothstep(0.9, 1.6, fnoise(rng, beta=1.4, kmin=10, kmax=24)) * light
-    lum = (6.0 * light - 3.0 * outline - 3.5 * hollows
-           + 2.0 * fnoise(rng, beta=3.0, kmin=1, kmax=3)                    # very soft unevenness
-           + 1.4 * blur(fnoise(rng, beta=0.8, kmin=24), 0.6)                 # paper grain
-           + 1.0 * rng.normal(0, 1, (S, S))
-           + 0.9 * fnoise(rng, beta=1.5, aniso=(1, 6), kmin=3))              # faint vertical streaks of the print
-    img = add_lum(img, lum - lum.mean(), (1.0, 0.96, 0.78))
+    rng = rng_for(seed + 1)
+    img = _paper(rng, base)
+    ink = img * np.array([0.90, 0.895, 0.84])                           # the print: ~10% darker, a bit more saturated
+    img = lerp(img, ink, _wallpaper_design(seed)[..., None])
     if stains:
         stain_col = np.array([150, 126, 62])
         for cx, cy, sx, sy, a in ((34, 30, 18, 22, 0.08), (94, 88, 14, 16, 0.06)):
@@ -7552,9 +7606,10 @@ def mark_paper_seam(img, rng) -> np.ndarray:
 
 
 def _wallpaper_marks(i, rng, img):
-    """Kane's paper is dry and clean: a faint discolouration, a scuffed patch, a faint seam."""
+    """The paper ages faintly: a subtle water stain, a scuffed patch, a faint horizontal seam.
+    The marks never move the print, so neighbouring blocks still line up."""
     if i == 1:
-        return mark_damp(img, rng, (36, 32), 0.05, (1.0, 0.97, 0.85))
+        return mark_stain(img, rng, WALL_STAIN, (18, 22), 0.1)
     if i == 2:
         return mark_paper_scuff(img, rng)
     return mark_paper_seam(img, rng)

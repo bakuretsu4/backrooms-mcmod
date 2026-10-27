@@ -1,0 +1,544 @@
+{
+  "variants": {
+    "facing=north,mount=wall,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_wall"
+    },
+    "facing=east,mount=wall,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_floor"
+    },
+    "facing=east,mount=floor,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=chair": {
+      "model": "backrooms:block/l0_embedded_chair_ceiling",
+      "y": 270
+    },
+    "facing=north,mount=wall,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_wall"
+    },
+    "facing=east,mount=wall,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_floor"
+    },
+    "facing=east,mount=floor,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=office_chair": {
+      "model": "backrooms:block/l0_embedded_office_chair_ceiling",
+      "y": 270
+    },
+    "facing=north,mount=wall,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_wall"
+    },
+    "facing=east,mount=wall,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_floor"
+    },
+    "facing=east,mount=floor,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=table": {
+      "model": "backrooms:block/l0_embedded_table_ceiling",
+      "y": 270
+    },
+    "facing=north,mount=wall,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_wall"
+    },
+    "facing=east,mount=wall,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_floor"
+    },
+    "facing=east,mount=floor,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=dresser": {
+      "model": "backrooms:block/l0_embedded_dresser_ceiling",
+      "y": 270
+    },
+    "facing=north,mount=wall,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_wall"
+    },
+    "facing=east,mount=wall,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_floor"
+    },
+    "facing=east,mount=floor,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=lamp": {
+      "model": "backrooms:block/l0_embedded_lamp_ceiling",
+      "y": 270
+    },
+    "facing=north,mount=wall,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_wall"
+    },
+    "facing=east,mount=wall,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_floor"
+    },
+    "facing=east,mount=floor,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=door": {
+      "model": "backrooms:block/l0_embedded_door_ceiling",
+      "y": 270
+    },
+    "facing=north,mount=wall,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_wall"
+    },
+    "facing=east,mount=wall,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_floor"
+    },
+    "facing=east,mount=floor,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=crt_tv": {
+      "model": "backrooms:block/l0_embedded_crt_tv_ceiling",
+      "y": 270
+    },
+    "facing=north,mount=wall,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_wall"
+    },
+    "facing=east,mount=wall,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_floor"
+    },
+    "facing=east,mount=floor,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=sofa_end": {
+      "model": "backrooms:block/l0_embedded_sofa_end_ceiling",
+      "y": 270
+    },
+    "facing=north,mount=wall,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_wall"
+    },
+    "facing=east,mount=wall,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_floor"
+    },
+    "facing=east,mount=floor,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=filing_cabinet": {
+      "model": "backrooms:block/l0_embedded_filing_cabinet_ceiling",
+      "y": 270
+    },
+    "facing=north,mount=wall,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_wall"
+    },
+    "facing=east,mount=wall,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_floor"
+    },
+    "facing=east,mount=floor,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=bookshelf": {
+      "model": "backrooms:block/l0_embedded_bookshelf_ceiling",
+      "y": 270
+    },
+    "facing=north,mount=wall,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_wall"
+    },
+    "facing=east,mount=wall,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_floor"
+    },
+    "facing=east,mount=floor,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=plastic_chair": {
+      "model": "backrooms:block/l0_embedded_plastic_chair_ceiling",
+      "y": 270
+    },
+    "facing=north,mount=wall,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_wall"
+    },
+    "facing=east,mount=wall,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_wall",
+      "y": 270
+    },
+    "facing=north,mount=floor,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_floor"
+    },
+    "facing=east,mount=floor,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_floor",
+      "y": 90
+    },
+    "facing=south,mount=floor,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_floor",
+      "y": 180
+    },
+    "facing=west,mount=floor,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_floor",
+      "y": 270
+    },
+    "facing=north,mount=ceiling,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_ceiling"
+    },
+    "facing=east,mount=ceiling,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_ceiling",
+      "y": 90
+    },
+    "facing=south,mount=ceiling,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_ceiling",
+      "y": 180
+    },
+    "facing=west,mount=ceiling,prop=mattress": {
+      "model": "backrooms:block/l0_embedded_mattress_ceiling",
+      "y": 270
+    }
+  }
+}

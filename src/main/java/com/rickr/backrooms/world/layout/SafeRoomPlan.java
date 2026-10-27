@@ -276,9 +276,16 @@ public final class SafeRoomPlan {
      * @param innerLow  inner wall layer, lowest block: the panelling below the dado line
      * @param innerHigh inner wall layer above the dado line (painted wall / wallpaper)
      * @param frame     door frame around the doorway, or null for none
+     * @param rug       true for the round rug in the middle of the floor (Level 0 has none: plain carpet)
      */
     public record Style(BlockState floor, BlockState ceiling, BlockState outerBase, BlockState outerWall,
-                        BlockState innerLow, BlockState innerHigh, @Nullable BlockState frame) {}
+                        BlockState innerLow, BlockState innerHigh, @Nullable BlockState frame, boolean rug) {
+        /** The usual style, with the round rug. */
+        public Style(BlockState floor, BlockState ceiling, BlockState outerBase, BlockState outerWall,
+                     BlockState innerLow, BlockState innerHigh, @Nullable BlockState frame) {
+            this(floor, ceiling, outerBase, outerWall, innerLow, innerHigh, frame, true);
+        }
+    }
 
     /**
      * Writes column (x, z) of the room (call only where {@link #contains} is true).
@@ -329,10 +336,10 @@ public final class SafeRoomPlan {
 
         int i = u - sideWall;
         int j = v - DOOR_WALL;
-        // A round rug in the middle of the floor.
+        // A round rug in the middle of the floor (if the level wants one).
         int di = i - doorI();
         int dj = j - midJ();
-        if (Math.abs(di) <= 1 && Math.abs(dj) <= 1) {
+        if (style.rug() && Math.abs(di) <= 1 && Math.abs(dj) <= 1) {
             int dx = di * right.getStepX() + dj * in.getStepX();
             int dz = di * right.getStepZ() + dj * in.getStepZ();
             out.set(base, ModBlocks.RUG.get().defaultBlockState().setValue(RugBlock.PART, RugBlock.part(dx, dz)));

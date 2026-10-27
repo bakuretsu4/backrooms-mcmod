@@ -32,7 +32,7 @@ public final class Level0Zones {
     public static final int FIELD = 1;
     /** Long straight corridors (Kane: 3-4 wide; film: 2-3 wide with a centre light strip). */
     public static final int CORRIDOR = 2;
-    /** The film's "builders' mistakes": half-walls, soffits, window holes, ramps into low passages. */
+    /** The film's builders' rooms: big halls with a few deliberate half-walls (see Level0Builders). */
     public static final int BUILDERS = 3;
     /** Dark wings: the same maze, every light dead from the doorway in. */
     public static final int DARK = 4;
@@ -42,7 +42,7 @@ public final class Level0Zones {
     public static final String[] NAMES = {"pillar_hall", "wall_field", "corridors", "builders_rooms", "dark_wing"};
 
     /** Share of the zone points of each kind (they add up to 1). */
-    static final double[] KIND_WEIGHTS = {0.35, 0.25, 0.15, 0.15, 0.10};
+    static final double[] KIND_WEIGHTS = {0.40, 0.25, 0.15, 0.10, 0.10};
 
     /** Size of the squares that each hold one zone point. */
     static final int CELL = 80;

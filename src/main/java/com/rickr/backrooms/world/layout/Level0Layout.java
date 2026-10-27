@@ -9,10 +9,10 @@ import static com.rickr.backrooms.world.layout.Level0Zones.HALL;
 import com.rickr.backrooms.block.AxisShapeBlock;
 import com.rickr.backrooms.block.FloorArrowBlock;
 import com.rickr.backrooms.block.Level0ConduitBlock;
+import com.rickr.backrooms.block.Level0EmbeddedBlock;
 import com.rickr.backrooms.block.Level0GraffitiBlock;
 import com.rickr.backrooms.block.Level0MannequinBlock;
 import com.rickr.backrooms.block.Level0TapeBlock;
-import com.rickr.backrooms.block.RugBlock;
 import com.rickr.backrooms.block.WallDecalBlock;
 import com.rickr.backrooms.block.WallDoorDrawingBlock;
 import com.rickr.backrooms.block.WallLampBlock;
@@ -49,7 +49,7 @@ import org.jetbrains.annotations.Nullable;
  * <p><b>Zones.</b> Each unit asks {@link Level0Zones} which kind of neighbourhood it is in (big
  * irregular areas 64-96 blocks across), and builds itself accordingly:
  * <ul>
- *   <li>{@link Level0Zones#HALL} pillar halls (~35%): nearly every wall segment is missing, the
+ *   <li>{@link Level0Zones#HALL} pillar halls (~40%): nearly every wall segment is missing, the
  *       junctions stay as square pillars on a loose, uneven grid (1x1 to 3x3), with now and then a
  *       free-standing wall block. Long sightlines.</li>
  *   <li>{@link Level0Zones#FIELD} wall-block fields (~25%): the classic thick-walled maze with
@@ -58,24 +58,26 @@ import org.jetbrains.annotations.Nullable;
  *   <li>{@link Level0Zones#CORRIDOR} corridor runs (~15%): long straight corridors carved out of
  *       solid wall, Kane's 3-4 wide with a troffer every 2 blocks down the middle, or the film's
  *       2-3 wide with one continuous light strip. Some branch, some dead-end, some go dark.</li>
- *   <li>{@link Level0Zones#BUILDERS} the film's "builders' mistakes" (~15%): chest-high partitions
- *       with wood cap rails, soffit beams across rooms, window holes, empty niches, carpeted ramps
- *       up into squeezed low passages and odd little corners, in the chevron "Classic" paper.</li>
+ *   <li>{@link Level0Zones#BUILDERS} the film's builders' rooms (~10%): big halls on their own
+ *       coarser grid, each with a few deliberate half-walls, window or niche series, a soffit or a
+ *       ramp into a low passage, in the chevron "Classic" paper. See {@link Level0Builders}; the
+ *       ordinary skeleton never builds them itself.</li>
  *   <li>{@link Level0Zones#DARK} dark wings (~10%): an enclosed maze where every troffer is dead.
  *       Rooms just outside a wing switch off their panels near it, so the dark starts at the
  *       doorway.</li>
  * </ul>
- * Near a border, units randomly take the neighbouring kind more and more often (halls, fields and
- * builders' rooms only), so one kind fades into the next over a dozen blocks.
+ * Near a border between a hall and a field, units randomly take the neighbouring kind more and
+ * more often, so one fades into the other over a dozen blocks.
  *
  * <p><b>Lights.</b> One square troffer every 3 blocks in both directions over open floor, the
  * rows sometimes shifted by one; about 3% dead. See {@link #roomLight} and {@link #corridorLight}.
  *
  * <p><b>Set pieces</b> (rare, by hash, see {@link #roomPiece}, {@link #roomWallPiece} and
- * {@link #solidFeature}): furniture heaps and the throne in pillar halls, mannequin clusters among
- * half-walls, exit-sign alcoves, switch boxes with conduit, graffiti, teal tape lines, a ladder up
- * to a hole in the wall, missing ceiling tiles with a dangling cable, an abandoned hazmat case.
- * {@link Level0Finder} finds the nearest of each for {@code /backrooms anomaly locate}.
+ * {@link #solidFeature}): furniture heaps and the throne in pillar halls, exit-sign alcoves, switch
+ * boxes with conduit, graffiti, teal tape lines, a ladder up to a hole in the wall, missing ceiling
+ * tiles (some with a dangling cable), an abandoned hazmat case, and furniture "noclipped" into the
+ * walls, floor and ceiling (see {@link #embeddedAt}). {@link Level0Finder} finds the nearest of each
+ * for {@code /backrooms anomaly locate}.
  *
  * <p><b>Exit.</b> One per 512x512 region: a wooden door, recessed between green and white hazard
  * stripes under a lit EXIT sign, into a white stairwell going down.
@@ -131,25 +133,20 @@ public final class Level0Layout extends LevelLayout {
     private static final int MISSING = 2;
     private static final int STUB_LOW = 3;   // only the half touching the lower-coordinate junction
     private static final int STUB_HIGH = 4;  // only the half touching the higher-coordinate junction
-    private static final int HALF_SOLID = 5; // a partition the whole way
-    private static final int HALF_DOOR = 6;  // a partition with a gap in it
-    /** Chances of SOLID, DOOR, MISSING, HALF_SOLID, HALF_DOOR per zone kind; the rest are stubs. */
-    private static final int[] ODDS_STATES = {SOLID, DOOR, MISSING, HALF_SOLID, HALF_DOOR};
+    /** Chances of SOLID, DOOR and MISSING per zone kind; the rest are stubs. */
+    private static final int[] ODDS_STATES = {SOLID, DOOR, MISSING};
     private static final double[][] SEGMENT_ODDS = {
-            {0.03, 0.02, 0.83, 0.00, 0.00}, // HALL: walls almost all gone; pillars and wall blocks stay
-            {0.14, 0.50, 0.20, 0.00, 0.00}, // FIELD
-            {1.00, 0.00, 0.00, 0.00, 0.00}, // CORRIDOR (corridors are carved separately)
-            {0.14, 0.24, 0.14, 0.14, 0.22}, // BUILDERS
-            {0.18, 0.58, 0.12, 0.00, 0.00}, // DARK: more enclosed, so the dark starts at doorways
+            {0.03, 0.02, 0.83}, // HALL: walls almost all gone; pillars and wall blocks stay
+            {0.14, 0.50, 0.20}, // FIELD
+            {1.00, 0.00, 0.00}, // CORRIDOR (corridors are carved separately)
+            {1.00, 0.00, 0.00}, // BUILDERS (never used: see Level0Builders)
+            {0.18, 0.58, 0.12}, // DARK: more enclosed, so the dark starts at doorways
     };
     /** Chance that a junction no wall reaches still stands as a pillar, per zone kind. */
-    private static final double[] JUNCTION_PILLAR = {0.8, 0.3, 1.0, 0.15, 0.3};
+    private static final double[] JUNCTION_PILLAR = {0.8, 0.3, 1.0, 0.3, 0.3};
 
     // Features of a solid wall segment (see solidFeature).
     static final int F_NONE = 0;
-    static final int F_WINDOW = 1;
-    static final int F_NICHE_HIGH = 2;
-    static final int F_NICHE_LOW = 3;
     static final int F_ALCOVE = 4;
     static final int F_GRAFFITI = 5;
 
@@ -166,7 +163,6 @@ public final class Level0Layout extends LevelLayout {
     static final int R_NONE = 0;
     static final int R_HEAP = 1;
     static final int R_THRONE = 2;
-    static final int R_MANNEQUINS = 3;
     static final int R_HAZMAT = 4;
     static final int R_CABLE = 5;
     static final int R_HOLE = 6;
@@ -174,7 +170,6 @@ public final class Level0Layout extends LevelLayout {
     private static final int P_HEAP = 1;
     private static final int P_THRONE = 2;
     private static final int P_LITTER = 3;
-    private static final int P_MANNEQUIN = 4;
     private static final int P_HAZMAT = 5;
     private static final int P_CABLE = 6;
     private static final int P_HOLE = 7;
@@ -185,10 +180,14 @@ public final class Level0Layout extends LevelLayout {
     static final int W_SWITCHES = 2;
     static final int W_LADDER = 3;
 
-    // Ramp pieces (see ramp).
-    private static final int RAMP_SLAB = 1;
-    private static final int RAMP_STAIRS = 2;
-    private static final int RAMP_RAISED = 3;
+    // Noclipped furniture (see embeddedAt): one chance per EMBED_CELL x EMBED_CELL square.
+    private static final int EMBED_CELL = 14;
+    private static final double EMBED_CHANCE = 0.8;
+    private static final int MOUNT_WALL = 1;
+    private static final int MOUNT_FLOOR = 2;
+    private static final int MOUNT_CEILING = 3;
+    /** Cached once: values() makes a new array on every call. */
+    private static final Level0EmbeddedBlock.Prop[] EMBED_PROPS = Level0EmbeddedBlock.Prop.values();
 
     // The exit door's alcove (see exitAlcove).
     private static final int STAIR_DOOR = 1;
@@ -226,23 +225,31 @@ public final class Level0Layout extends LevelLayout {
 
     /**
      * The zone sample of the unit whose first corner is (repX, repZ), with border mixing: close to
-     * the border between a hall, a field and a builders' zone, a unit sometimes takes the other
-     * side's kind (more often the closer it is). Corridors and dark wings keep a crisp edge.
+     * the border between a hall and a field, a unit sometimes takes the other side's kind (more
+     * often the closer it is). Corridors and dark wings keep a crisp edge. The ordinary skeleton
+     * never builds a builders' zone (its big rooms come from {@link Level0Builders}, which claims
+     * its columns first): wherever no builders' room does, the neighbouring zone's kind fills in.
      */
     private static long unit(long seed, int repX, int repZ) {
         long sample = Level0Zones.sample(seed, repX, repZ);
         int kind = Level0Zones.kind(sample);
         int other = Level0Zones.secondKind(sample);
+        if (kind == BUILDERS) {
+            kind = other == BUILDERS ? HALL : other;
+            other = kind;
+        } else if (other == BUILDERS) {
+            other = kind;
+        }
         int edge = Level0Zones.edge(sample);
         if (kind != other && edge < BLEND && blends(kind) && blends(other)
                 && Hash.unit(seed, repX, repZ, 516) < 0.5 * (1.0 - edge / (double) BLEND)) {
-            return (sample & ~7L) | other;
+            kind = other;
         }
-        return sample;
+        return (sample & ~7L) | kind;
     }
 
     private static boolean blends(int kind) {
-        return kind == HALL || kind == FIELD || kind == BUILDERS;
+        return kind == HALL || kind == FIELD;
     }
 
     /** Zone kind of the unit made of spans sx and sz. */
@@ -261,10 +268,15 @@ public final class Level0Layout extends LevelLayout {
 
     /**
      * What column (x, z) of the maze is, packed: bits 0-3 the column code ({@link #OPEN},
-     * {@link #WALL}, ...), bits 4-6 the zone kind of its unit, bits 8-9 a horizontal direction (the
-     * way a wall feature faces), bits 12+ extra data (graffiti variant/part, corridor flags).
+     * {@link #WALL}, ...), bits 4-6 the zone kind, bits 8-9 a horizontal direction (the way a wall
+     * feature, a partition rail, a mannequin or ramp stairs face), bits 12+ extra data (graffiti
+     * variant/part, corridor flags, builders' room flags).
      */
     static int mazeColumn(long seed, int x, int z, long sx, long sz) {
+        int builders = Level0Builders.column(seed, x, z);
+        if (builders >= 0) {
+            return builders | BUILDERS << 4;
+        }
         long u = unit(seed, X_WALLS.start(sx), Z_WALLS.start(sz));
         int kind = Level0Zones.kind(u);
         boolean bandX = Bands.isBand(sx);
@@ -273,7 +285,7 @@ public final class Level0Layout extends LevelLayout {
         if (kind == CORRIDOR) {
             column = corridorColumn(seed, x, z, sx, sz, Level0Zones.zoneHash(u));
         } else if (!bandX && !bandZ) {
-            column = roomPillar(seed, kind, x, z, sx, sz) || oddCorner(seed, kind, x, z, sx, sz) ? WALL : OPEN;
+            column = roomPillar(seed, kind, x, z, sx, sz) ? WALL : OPEN;
         } else if (bandX && !bandZ) {
             column = segmentColumn(seed, kind, sx, sz, z - Z_WALLS.start(sz), x - X_WALLS.start(sx), 0);
         } else if (!bandX) {
@@ -328,8 +340,6 @@ public final class Level0Layout extends LevelLayout {
             case MISSING -> OPEN;
             case STUB_LOW -> along < length / 2 ? WALL : OPEN;
             case STUB_HIGH -> along >= length - length / 2 ? WALL : OPEN;
-            case HALF_SOLID -> HALF | partitionFacing(axis);
-            case HALF_DOOR -> inDoorway(seed, wallIndex, gapIndex, length, along, axis) ? OPEN : HALF | partitionFacing(axis);
             default -> inDoorway(seed, wallIndex, gapIndex, length, along, axis) ? DOORWAY : WALL;
         };
     }
@@ -348,11 +358,6 @@ public final class Level0Layout extends LevelLayout {
         return along >= offset && along < offset + width;
     }
 
-    /** The cap rail of a partition faces across it (its rail runs along the partition). */
-    private static int partitionFacing(int axis) {
-        return (axis == 0 ? Direction.EAST : Direction.SOUTH).get2DDataValue() << 8;
-    }
-
     /** The way a wall's face looks: side 0 is the low-coordinate face, side 1 the high one. */
     static Direction faceDirection(int axis, int side) {
         if (axis == 0) {
@@ -365,12 +370,10 @@ public final class Level0Layout extends LevelLayout {
      * The one special thing about a solid wall segment, packed: bits 0-2 the feature (F_*), bit 3
      * which face, bits 4-11 where along the wall, bits 12-13 its width, bits 14-15 a variant.
      * <ul>
-     *   <li>Builders' rooms: a window hole right through the wall (40%), or an empty niche in one
-     *       face (30%, needs a wall 2+ thick).</li>
-     *   <li>Halls, fields, dark wings: rarely (1.2% of 2-thick walls) an exit-sign alcove: a door
-     *       recessed one block between hazard stripes, with a lit EXIT sign above. It is a real door,
-     *       but only into whatever room lies behind: a false hope, a few times commoner than real exits.</li>
-     *   <li>Anywhere: graffiti on one face (3%).</li>
+     *   <li>Rarely (1.2% of 2-thick walls) an exit-sign alcove: a door recessed one block between
+     *       hazard stripes, with a lit EXIT sign above. It is a real door, but only into whatever
+     *       room lies behind: a false hope, a few times commoner than real exits.</li>
+     *   <li>Graffiti on one face (3%).</li>
      * </ul>
      */
     static int solidFeature(long seed, int kind, int wallIndex, int gapIndex, int axis, int length, int thickness) {
@@ -379,13 +382,7 @@ public final class Level0Layout extends LevelLayout {
         long bits = Hash.mix(h);
         int type = F_NONE;
         int width = 1;
-        if (kind == BUILDERS && r < 0.40 && length >= 4) {
-            type = F_WINDOW;
-            width = 2;
-        } else if (kind == BUILDERS && r < 0.70 && thickness >= 2) {
-            type = (bits >>> 41 & 1) == 0 ? F_NICHE_HIGH : F_NICHE_LOW;
-            width = 1 + (int) (bits >>> 42 & 1);
-        } else if (kind != BUILDERS && r < 0.012 && thickness == 2 && length >= 3) {
+        if (r < 0.012 && thickness == 2 && length >= 3) {
             type = F_ALCOVE;
         } else if (r >= 0.97 && length >= 3) {
             type = F_GRAFFITI;
@@ -415,14 +412,6 @@ public final class Level0Layout extends LevelLayout {
             Direction out = faceDirection(axis, side);
             int facing = out.get2DDataValue() << 8;
             switch (type) {
-                case F_WINDOW -> {
-                    if (along >= offset && along < offset + width) return WINDOW;
-                }
-                case F_NICHE_HIGH, F_NICHE_LOW -> {
-                    if (across == face && along >= offset && along < offset + width) {
-                        return (type == F_NICHE_HIGH ? NICHE_HIGH : NICHE_LOW) | facing;
-                    }
-                }
                 case F_ALCOVE -> {
                     if (along == offset) return (across == face ? ALCOVE : ALCOVE_DOOR) | facing;
                     if (across == face && Math.abs(along - offset) == 1) return ALCOVE_FRAME | facing;
@@ -460,7 +449,7 @@ public final class Level0Layout extends LevelLayout {
         return (piece & 3) == W_LADDER && (piece >>> 4 & 3) == roomSide && (piece >>> 8 & 0xFF) == along;
     }
 
-    /** Where two wall bands cross: solid if a wall reaches it, a partition if one does, otherwise maybe a pillar. */
+    /** Where two wall bands cross: solid if a wall reaches it, otherwise maybe a lone pillar. */
     private static int junctionColumn(long seed, int kind, long sx, long sz) {
         long zBefore = Z_WALLS.span(seed, Z_WALLS.start(sz) - 1);
         long zAfter = Z_WALLS.span(seed, Z_WALLS.end(sz));
@@ -473,12 +462,6 @@ public final class Level0Layout extends LevelLayout {
         if (reachesHighEnd(north) || reachesLowEnd(south) || reachesHighEnd(west) || reachesLowEnd(east)) {
             return WALL;
         }
-        if (isPartition(north) || isPartition(south)) {
-            return HALF | partitionFacing(0);
-        }
-        if (isPartition(west) || isPartition(east)) {
-            return HALF | partitionFacing(1);
-        }
         return Hash.unit(seed, Bands.index(sx), Bands.index(sz), 220) < JUNCTION_PILLAR[kind] ? WALL : OPEN;
     }
 
@@ -488,10 +471,6 @@ public final class Level0Layout extends LevelLayout {
 
     private static boolean reachesLowEnd(int state) {
         return state == SOLID || state == DOOR || state == STUB_LOW;
-    }
-
-    private static boolean isPartition(int state) {
-        return state == HALF_SOLID || state == HALF_DOOR;
     }
 
     /** Side length of the pillar in the middle of a room (0 = none): 1x1 or 2x2 in halls, 2x2 in big maze rooms. */
@@ -516,26 +495,6 @@ public final class Level0Layout extends LevelLayout {
         int px = X_WALLS.start(sx) + (Bands.length(sx) - size) / 2;
         int pz = Z_WALLS.start(sz) + (Bands.length(sz) - size) / 2;
         return x >= px && x < px + size && z >= pz && z < pz + size;
-    }
-
-    /** Builders' rooms: a stray 1x1 or 1x2 lump of wall in one corner, as if the plans were wrong. */
-    private static boolean oddCorner(long seed, int kind, int x, int z, long sx, long sz) {
-        if (kind != BUILDERS || Bands.length(sx) < 4 || Bands.length(sz) < 4) {
-            return false;
-        }
-        long h = Hash.of(seed, Bands.index(sx), Bands.index(sz), 236);
-        if (Hash.unit(h) >= 0.3) {
-            return false;
-        }
-        int corner = Hash.range(Hash.mix(h), 4);
-        boolean west = (corner & 1) == 0;
-        boolean north = (corner & 2) == 0;
-        int cx = west ? X_WALLS.start(sx) : X_WALLS.end(sx) - 1;
-        int cz = north ? Z_WALLS.start(sz) : Z_WALLS.end(sz) - 1;
-        boolean longX = (Hash.mix(h) >>> 50 & 1) == 0;
-        int ex = longX ? cx + (west ? 1 : -1) : cx;
-        int ez = longX ? cz : cz + (north ? 1 : -1);
-        return (x == cx && z == cz) || (x == ex && z == ez);
     }
 
     // ==========================================================================================
@@ -632,15 +591,20 @@ public final class Level0Layout extends LevelLayout {
      */
     @Nullable
     private static BlockState roomLight(long seed, int kind, int x, int z) {
-        if (Math.floorMod(z, 3) != 1) {
-            return null;
-        }
-        int shift = Hash.unit(seed, Math.floorDiv(x, 24), Math.floorDiv(z, 3), 531) < 0.2 ? 1 : 0;
-        if (Math.floorMod(x - shift, 3) != 1) {
+        if (!onLightGrid(seed, x, z)) {
             return null;
         }
         boolean dead = kind == DARK || Hash.unit(seed, x, z, 532) < DEAD_LIGHT || nearDarkWing(seed, x, z);
         return (dead ? ModBlocks.FLUORESCENT_LIGHT_OFF : ModBlocks.FLUORESCENT_LIGHT).get().defaultBlockState();
+    }
+
+    /** True where the troffer grid puts a panel (lit or dead), if the floor below is open. */
+    private static boolean onLightGrid(long seed, int x, int z) {
+        if (Math.floorMod(z, 3) != 1) {
+            return false;
+        }
+        int shift = Hash.unit(seed, Math.floorDiv(x, 24), Math.floorDiv(z, 3), 531) < 0.2 ? 1 : 0;
+        return Math.floorMod(x - shift, 3) == 1;
     }
 
     private static boolean nearDarkWing(long seed, int x, int z) {
@@ -648,95 +612,48 @@ public final class Level0Layout extends LevelLayout {
                 || unitKindAt(seed, x, z + 3) == DARK || unitKindAt(seed, x, z - 3) == DARK;
     }
 
-    /** True if this builders' room is a ramp up into a low passage (see {@link #ramp}). */
-    static boolean rampRoom(long seed, int kind, long sx, long sz) {
-        if (kind != BUILDERS || Hash.unit(seed, Bands.index(sx), Bands.index(sz), 620) >= 0.22) {
-            return false;
-        }
-        boolean alongX = rampAlongX(seed, sx, sz);
-        int length = Bands.length(alongX ? sx : sz);
-        int width = Bands.length(alongX ? sz : sx);
-        return length >= 6 && width <= 5;
-    }
-
-    private static boolean rampAlongX(long seed, long sx, long sz) {
-        int lenX = Bands.length(sx);
-        int lenZ = Bands.length(sz);
-        return lenX != lenZ ? lenX > lenZ : (Hash.of(seed, Bands.index(sx), Bands.index(sz), 621) & 1) == 0;
+    /** True if column (x, z) belongs to a builders' room or its walls (see {@link Level0Builders}). */
+    private static boolean inBuilders(long seed, int x, int z) {
+        return Level0Builders.column(seed, x, z) >= 0;
     }
 
     /**
-     * The film's steep carpeted ramp: a builders' room, the long way, goes slab, stairs, then a floor
-     * one block higher under a ceiling one block lower (a squeezed 2-high passage), and stairs and a
-     * slab back down at the far end. Returns the piece (bits 0-1) and the stairs' uphill facing
-     * (bits 2-3), or 0.
+     * True if a builders' room claims part of this ordinary room. Builders' walls are straight and
+     * their rooms far bigger than this one, so whatever reaches in covers one of its corners.
      */
-    private static int ramp(long seed, int kind, int x, int z, long sx, long sz) {
-        if (!rampRoom(seed, kind, sx, sz)) {
-            return 0;
-        }
-        boolean alongX = rampAlongX(seed, sx, sz);
-        int length = Bands.length(alongX ? sx : sz);
-        int pos = alongX ? x - X_WALLS.start(sx) : z - Z_WALLS.start(sz);
-        Direction up = alongX ? Direction.EAST : Direction.SOUTH;
-        if (pos == 0 || pos == length - 1) {
-            return RAMP_SLAB;
-        }
-        if (pos == 1) {
-            return RAMP_STAIRS | up.get2DDataValue() << 2;
-        }
-        if (pos == length - 2) {
-            return RAMP_STAIRS | up.getOpposite().get2DDataValue() << 2;
-        }
-        return RAMP_RAISED;
-    }
-
-    /** True if this builders' room has a dropped soffit beam across it. */
-    static boolean soffitRoom(long seed, int kind, long sx, long sz) {
-        return kind == BUILDERS && Hash.unit(seed, Bands.index(sx), Bands.index(sz), 630) < 0.4
-                && !rampRoom(seed, kind, sx, sz);
-    }
-
-    /** A dropped soffit beam (ceiling - 1) crossing a builders' room from wall to wall. */
-    private static boolean soffit(long seed, int kind, int x, int z, long sx, long sz) {
-        if (!soffitRoom(seed, kind, sx, sz)) {
-            return false;
-        }
-        long h = Hash.of(seed, Bands.index(sx), Bands.index(sz), 631);
-        boolean runsAlongX = (h & 1) == 0;
-        long across = runsAlongX ? sz : sx;
-        int length = Bands.length(across);
-        if (length < 3) {
-            return false;
-        }
-        int at = (runsAlongX ? Z_WALLS : X_WALLS).start(across) + 1 + Hash.range(Hash.mix(h), length - 2);
-        return (runsAlongX ? z : x) == at;
+    private static boolean touchesBuilders(long seed, long sx, long sz) {
+        int x0 = X_WALLS.start(sx);
+        int x1 = X_WALLS.end(sx) - 1;
+        int z0 = Z_WALLS.start(sz);
+        int z1 = Z_WALLS.end(sz) - 1;
+        return inBuilders(seed, x0, z0) || inBuilders(seed, x1, z0) || inBuilders(seed, x0, z1) || inBuilders(seed, x1, z1);
     }
 
     /**
      * The set piece standing in a room, if any (R_*): in pillar halls a heap of furniture (3% of
-     * rooms 5x5 and up) or the lone throne (1%); in builders' rooms a cluster of mannequins (10% of
-     * rooms 4x4 and up); anywhere but corridors an abandoned hazmat case (1.2%), a missing ceiling
-     * tile on its own (1.5%) or one with a cable hanging out (3%). Never in a ramp room (its floor
-     * is raised).
+     * rooms 5x5 and up) or the lone throne (1%); anywhere but corridors an abandoned hazmat case
+     * (1.2%), a missing ceiling tile on its own (1.5%) or one with a cable hanging out (3%).
      */
     static int roomPiece(long seed, int kind, long sx, long sz) {
         int lenX = Bands.length(sx);
         int lenZ = Bands.length(sz);
         double r = Hash.unit(seed, Bands.index(sx), Bands.index(sz), 600);
-        if ((r >= 0.10 && r < 0.90) || r >= 0.957 || rampRoom(seed, kind, sx, sz)) {
+        if (r >= 0.04 && r < 0.90 || r >= 0.957) {
             return R_NONE;
         }
-        if (kind == HALL && lenX >= 5 && lenZ >= 5 && r < 0.04 && pillarSize(seed, kind, sx, sz) == 0) {
-            return r < 0.03 ? R_HEAP : R_THRONE;
+        int piece;
+        if (r < 0.04) {
+            if (kind != HALL || lenX < 5 || lenZ < 5 || pillarSize(seed, kind, sx, sz) != 0) {
+                return R_NONE;
+            }
+            piece = r < 0.03 ? R_HEAP : R_THRONE;
+        } else {
+            if (pillarSize(seed, kind, sx, sz) != 0) {
+                return R_NONE; // (a pillar could stand on the hazmat case's or the hole's spot)
+            }
+            piece = r < 0.912 ? R_HAZMAT : r < 0.927 ? R_HOLE : R_CABLE;
         }
-        if (kind == BUILDERS && lenX >= 4 && lenZ >= 4 && r < 0.10) {
-            return R_MANNEQUINS;
-        }
-        if (r < 0.90 || pillarSize(seed, kind, sx, sz) != 0) {
-            return R_NONE; // (a pillar could stand on the hazmat case's or the hole's spot)
-        }
-        return r < 0.912 ? R_HAZMAT : r < 0.927 ? R_HOLE : R_CABLE;
+        return touchesBuilders(seed, sx, sz) ? R_NONE : piece;
     }
 
     /** What of the room's set piece is on column (x, z): P_* in bits 0-3, a heap's height in bits 4+. */
@@ -762,10 +679,6 @@ public final class Level0Layout extends LevelLayout {
                 if (d == 0) return P_THRONE;
                 return d >= 2 && Hash.unit(seed, x, z, 607) < 0.08 ? P_LITTER : P_NONE;
             }
-            case R_MANNEQUINS -> {
-                boolean inner = x > x0 && x < x0 + lenX - 1 && z > z0 && z < z0 + lenZ - 1;
-                return inner && Hash.unit(seed, x, z, 606) < 0.25 ? P_MANNEQUIN : P_NONE;
-            }
             default -> {
                 long h = Hash.of(seed, Bands.index(sx), Bands.index(sz), 601);
                 int px = x0 + 1 + Hash.range(h, Math.max(1, lenX - 2));
@@ -790,7 +703,7 @@ public final class Level0Layout extends LevelLayout {
             return 0;
         }
         int kind = unitKind(seed, sx, sz);
-        if (kind == CORRIDOR || rampRoom(seed, kind, sx, sz)) {
+        if (kind == CORRIDOR || touchesBuilders(seed, sx, sz)) {
             return 0;
         }
         long bits = Hash.mix(h);
@@ -813,6 +726,16 @@ public final class Level0Layout extends LevelLayout {
         int length = Bands.length(gap);
         if (segmentKind == CORRIDOR || segmentState(seed, segmentKind, Bands.index(wall), Bands.index(gap), axis) != SOLID
                 || solidFeature(seed, segmentKind, Bands.index(wall), Bands.index(gap), axis, length, Bands.length(wall)) != F_NONE) {
+            return 0;
+        }
+        // The wall itself must be ordinary wall all along (not a builders' room's wall or doorway).
+        Bands wallBands = axis == 0 ? X_WALLS : Z_WALLS;
+        Bands gapBands = axis == 0 ? Z_WALLS : X_WALLS;
+        int face = (side & 1) == 0 ? wallBands.end(wall) - 1 : wallBands.start(wall);
+        int first = gapBands.start(gap);
+        int last = gapBands.end(gap) - 1;
+        if (axis == 0 ? inBuilders(seed, face, first) || inBuilders(seed, face, last)
+                : inBuilders(seed, first, face) || inBuilders(seed, last, face)) {
             return 0;
         }
         int count = type == W_SWITCHES ? Math.min(length, 1 + Hash.range(Hash.mix(bits ^ 5), 3)) : 1;
@@ -926,9 +849,6 @@ public final class Level0Layout extends LevelLayout {
                 if (rx == cx && rz == cz) {
                     out.set(ceiling, ModBlocks.FLUORESCENT_LIGHT.get().defaultBlockState()); // the one small white lamp
                 }
-                if (Math.abs(rx - cx) <= 1 && Math.abs(rz - cz) <= 1) {
-                    out.set(floor, ModBlocks.RUG.get().defaultBlockState().setValue(RugBlock.PART, RugBlock.part(rx - cx, rz - cz)));
-                }
                 if (officeCrate(seed, x, z, rx, rz, width)) {
                     out.set(floor + 1, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
                 }
@@ -1030,7 +950,8 @@ public final class Level0Layout extends LevelLayout {
                 wallpaper,
                 ModBlocks.WOOD_FLOOR.get().defaultBlockState(), // wood panelling below the dado line
                 wallpaper,
-                null), out);
+                null,
+                false), out); // plain carpet: no round rug on Level 0
     }
 
     // ==========================================================================================
@@ -1073,16 +994,16 @@ public final class Level0Layout extends LevelLayout {
         return isWalkable(seed, x, z) && anomalies.structureAt(seed, x, z) == null && rampAt(seed, x, z) == 0;
     }
 
-    /** One block higher on the raised floor and the top of the stairs of a ramp. */
+    /** One block higher on the raised floor and the top of the stairs of a builders' room ramp. */
     @Override
     public int standY(long seed, int x, int z) {
-        int part = rampAt(seed, x, z) & 3;
-        return FLOOR_Y + 1 + (part == RAMP_RAISED || part == RAMP_STAIRS ? 1 : 0);
+        int part = rampAt(seed, x, z);
+        return FLOOR_Y + 1 + (part == Level0Builders.RAMP_RAISED || part == Level0Builders.RAMP_STAIRS ? 1 : 0);
     }
 
     @Override
     public double feetY(long seed, int x, int z) {
-        return (rampAt(seed, x, z) & 3) == RAMP_SLAB ? FLOOR_Y + 1.5 : standY(seed, x, z);
+        return rampAt(seed, x, z) == Level0Builders.RAMP_SLAB ? FLOOR_Y + 1.5 : standY(seed, x, z);
     }
 
     /**
@@ -1154,7 +1075,15 @@ public final class Level0Layout extends LevelLayout {
         if (code == DOORWAY) {
             return plainMaze(seed, x, z);
         }
-        return code == OPEN && ramp(seed, column >>> 4 & 7, x, z, sx, sz) == 0 && plainMaze(seed, x, z);
+        return code == OPEN && rampPart(column) == 0 && plainMaze(seed, x, z);
+    }
+
+    /** The ramp piece (Level0Builders.RAMP_*) of a packed maze column, or 0. */
+    private static int rampPart(int column) {
+        if ((column >>> 4 & 7) != BUILDERS) {
+            return 0; // the extra bits mean something else elsewhere
+        }
+        return column >>> 12 >>> Level0Builders.RAMP_SHIFT & 3;
     }
 
     /**
@@ -1276,18 +1205,13 @@ public final class Level0Layout extends LevelLayout {
                 && !anomalies.isManilaExit(seed, x, z);
     }
 
-    /** The ramp piece at (x, z) (see {@link #ramp}), or 0 anywhere that is not a ramp. */
+    /** The ramp piece at (x, z) (Level0Builders.RAMP_*), or 0 anywhere that is not a ramp. */
     private int rampAt(long seed, int x, int z) {
-        long sx = X_WALLS.span(seed, x);
-        long sz = Z_WALLS.span(seed, z);
-        if (Bands.isBand(sx) || Bands.isBand(sz)) {
+        int column = Level0Builders.column(seed, x, z);
+        if (column < 0 || (column & 15) != OPEN || !inMaze(seed, x, z)) {
             return 0;
         }
-        int kind = unitKind(seed, sx, sz);
-        if (!rampRoom(seed, kind, sx, sz) || !inMaze(seed, x, z) || (mazeColumn(seed, x, z, sx, sz) & 15) != OPEN) {
-            return 0;
-        }
-        return ramp(seed, kind, x, z, sx, sz);
+        return column >>> 12 >>> Level0Builders.RAMP_SHIFT & 3;
     }
 
     @Override
@@ -1326,12 +1250,20 @@ public final class Level0Layout extends LevelLayout {
         if (code == DOORWAY || code == ALCOVE || code == NICHE_LOW) return true;
         if (code != OPEN) return false;
         int kind = column >>> 4 & 7;
-        if (kind == CORRIDOR || Bands.isBand(sx) || Bands.isBand(sz) || rampRoom(seed, kind, sx, sz)) {
+        if (kind == BUILDERS) {
+            return (column >>> 12 & Level0Builders.MANNEQUIN) == 0;
+        }
+        if (kind == CORRIDOR) {
             return true;
         }
-        int prop = propAt(seed, kind, x, z, sx, sz) & 15;
-        if (prop != P_NONE && prop != P_CABLE && prop != P_HOLE) return false;
-        return crateHeight(seed, x, z, sx, sz) == 0 && backpackFacing(seed, x, z, sx, sz) == null;
+        boolean room = !Bands.isBand(sx) && !Bands.isBand(sz);
+        if (room) {
+            int prop = propAt(seed, kind, x, z, sx, sz) & 15;
+            if (prop != P_NONE && prop != P_CABLE && prop != P_HOLE) return false;
+            if (crateHeight(seed, x, z, sx, sz) != 0 || backpackFacing(seed, x, z, sx, sz) != null) return false;
+        }
+        int embedded = embeddedAt(seed, x, z, kind, sx, sz);
+        return embedded == 0 || (embedded & 3) == MOUNT_CEILING;
     }
 
     // ==========================================================================================
@@ -1439,8 +1371,12 @@ public final class Level0Layout extends LevelLayout {
                 return;
             }
             case HALF -> {
+                // A builders' room partition: wallpaper below, a dark wood cap rail on top.
                 out.set(floor + 1, blackout ? rough : baseboard);
                 out.set(floor + 2, Level0Blocks.HALF_WALL_CAP.get().defaultBlockState().setValue(WallMountBlock.FACING, facing));
+                if ((column >>> 12 & Level0Builders.SOFFIT) != 0) {
+                    out.set(ceiling - 1, paper); // the soffit beam carries on overhead
+                }
                 return;
             }
             case ALCOVE -> {
@@ -1476,6 +1412,10 @@ public final class Level0Layout extends LevelLayout {
             }
             return;
         }
+        if (kind == BUILDERS) {
+            fillBuilders(seed, x, z, column, blackout, sticky ? stickyCarpet : carpet, tile, paper, out);
+            return;
+        }
         if (kind == CORRIDOR) {
             out.set(floor, sticky ? stickyCarpet : carpet);
             if (blackout) {
@@ -1490,7 +1430,8 @@ public final class Level0Layout extends LevelLayout {
         }
         boolean room = !Bands.isBand(sx) && !Bands.isBand(sz);
         if (!room) {
-            // Open floor where a wall segment or junction is missing: just carpet and the light grid.
+            // Open floor where a wall segment or junction is missing: carpet, the light grid, and
+            // now and then a piece of furniture fused into a pillar, the floor or the ceiling.
             out.set(floor, sticky ? stickyCarpet : carpet);
             if (blackout) {
                 out.set(floor + 1, fluid);
@@ -1500,11 +1441,7 @@ public final class Level0Layout extends LevelLayout {
             if (light != null) {
                 out.set(ceiling, light);
             }
-            return;
-        }
-        int ramp = ramp(seed, kind, x, z, sx, sz);
-        if (ramp != 0) {
-            fillRamp(seed, kind, x, z, ramp, blackout, carpet, tile, out);
+            placeEmbedded(seed, x, z, kind, sx, sz, out);
             return;
         }
         fillRoom(seed, kind, x, z, sx, sz, sticky ? stickyCarpet : carpet, blackout, out);
@@ -1552,30 +1489,52 @@ public final class Level0Layout extends LevelLayout {
         }
     }
 
-    /** A ramp column: slab, stairs or the raised floor of the low passage (lights in its lowered ceiling). */
-    private void fillRamp(long seed, int kind, int x, int z, int ramp, boolean blackout, BlockState carpet, BlockState tile, Column out) {
+    /**
+     * An open column of a builders' room (see {@link Level0Builders}): the ramp and raised floor of
+     * the low passage, a mannequin, the soffit beam, and the light grid (in the passage's lowered
+     * ceiling where the floor is raised).
+     */
+    private void fillBuilders(long seed, int x, int z, int column, boolean blackout, BlockState carpet, BlockState tile,
+                              BlockState paper, Column out) {
         int floor = floorY();
         int ceiling = ceilingY();
-        int part = ramp & 3;
-        if (part == RAMP_SLAB) {
+        int extra = column >>> 12;
+        Direction facing = Direction.from2DDataValue(column >>> 8 & 3);
+        int part = extra >>> Level0Builders.RAMP_SHIFT & 3;
+        boolean soffit = (extra & Level0Builders.SOFFIT) != 0;
+        boolean mannequin = (extra & Level0Builders.MANNEQUIN) != 0;
+        out.set(floor, carpet);
+        if (soffit) {
+            out.set(ceiling - 1, paper);
+        }
+        if (part == Level0Builders.RAMP_SLAB) {
             out.set(floor + 1, Level0Blocks.CARPET_SLAB.get().defaultBlockState());
-        } else if (part == RAMP_STAIRS) {
-            out.set(floor + 1, Level0Blocks.CARPET_STAIRS.get().defaultBlockState()
-                    .setValue(StairBlock.FACING, Direction.from2DDataValue(ramp >>> 2 & 3)));
-        } else {
-            out.set(floor + 1, carpet);
+        } else if (part == Level0Builders.RAMP_STAIRS) {
+            out.set(floor + 1, Level0Blocks.CARPET_STAIRS.get().defaultBlockState().setValue(StairBlock.FACING, facing));
+        } else if (part == Level0Builders.RAMP_RAISED) {
+            out.set(floor + 1, ModBlocks.LOBBY_CARPET.get().defaultBlockState());
             out.set(ceiling - 1, tile);
         }
+        if (mannequin) {
+            BlockState state = Level0Blocks.MANNEQUIN.get().defaultBlockState().setValue(WallMountBlock.FACING, facing);
+            out.set(floor + 1, state.setValue(Level0MannequinBlock.HALF, DoubleBlockHalf.LOWER));
+            out.set(floor + 2, state.setValue(Level0MannequinBlock.HALF, DoubleBlockHalf.UPPER));
+        }
         if (blackout) {
+            if (part == 0 && !mannequin) {
+                out.set(floor + 1, ModBlocks.CARPET_FLUID.get().defaultBlockState());
+            }
             return;
         }
-        BlockState light = roomLight(seed, kind, x, z);
-        if (light != null) {
-            out.set(part == RAMP_RAISED ? ceiling - 1 : ceiling, light);
+        if (!soffit) {
+            BlockState light = roomLight(seed, BUILDERS, x, z);
+            if (light != null) {
+                out.set(part == Level0Builders.RAMP_RAISED ? ceiling - 1 : ceiling, light);
+            }
         }
     }
 
-    /** An open column inside a room: floor, supplies, set pieces, wall pieces, soffit and lights. */
+    /** An open column inside a room: floor, supplies, set pieces, wall pieces, noclipped furniture and lights. */
     private void fillRoom(long seed, int kind, int x, int z, long sx, long sz, BlockState carpet, boolean blackout, Column out) {
         int floor = floorY();
         int ceiling = ceilingY();
@@ -1597,11 +1556,6 @@ public final class Level0Layout extends LevelLayout {
             }
             floorUsed = crates > 0 || backpack != null;
         }
-        boolean soffit = soffit(seed, kind, x, z, sx, sz);
-        if (soffit) {
-            out.set(ceiling - 1, kind == BUILDERS ? Level0Blocks.CHEVRON_WALLPAPER.get().defaultBlockState()
-                    : ModBlocks.YELLOW_WALLPAPER.get().defaultBlockState());
-        }
         if (blackout) {
             if (!floorUsed) {
                 out.set(floor + 1, ModBlocks.CARPET_FLUID.get().defaultBlockState()); // ankle-deep, murky
@@ -1617,13 +1571,14 @@ public final class Level0Layout extends LevelLayout {
                 out.set(ceiling - 1, Level0Blocks.DANGLING_CABLE.get().defaultBlockState()
                         .setValue(WallMountBlock.FACING, Direction.from2DDataValue(Hash.range(Hash.of(seed, x, z, 602), 4))));
             }
-        } else if (!soffit) {
+        } else {
             light = roomLight(seed, kind, x, z);
             if (light != null) {
                 out.set(ceiling, light);
             }
         }
-        placeWallPieces(seed, x, z, sx, sz, light != null || soffit || hole, floorUsed, out);
+        placeWallPieces(seed, x, z, sx, sz, light != null || hole, floorUsed, out);
+        placeEmbedded(seed, x, z, kind, sx, sz, out);
     }
 
     /** Puts down the part of a room's set piece that stands on (x, z). */
@@ -1640,14 +1595,6 @@ public final class Level0Layout extends LevelLayout {
             }
             case P_THRONE -> out.set(floor + 1, Level0Blocks.THRONE.get().defaultBlockState().setValue(WallMountBlock.FACING, roomFacing));
             case P_LITTER -> out.set(floor + 1, Level0Props.litter(seed, x, z));
-            case P_MANNEQUIN -> {
-                // They mostly look the same way, as if waiting for something; a few have turned.
-                Direction look = Hash.unit(seed, x, z, 604) < 0.25
-                        ? Direction.from2DDataValue(Hash.range(Hash.of(seed, x, z, 605), 4)) : roomFacing;
-                BlockState mannequin = Level0Blocks.MANNEQUIN.get().defaultBlockState().setValue(WallMountBlock.FACING, look);
-                out.set(floor + 1, mannequin.setValue(Level0MannequinBlock.HALF, DoubleBlockHalf.LOWER));
-                out.set(floor + 2, mannequin.setValue(Level0MannequinBlock.HALF, DoubleBlockHalf.UPPER));
-            }
             default -> out.set(floor + 1, Level0Blocks.HAZMAT_CASE.get().defaultBlockState()
                     .setValue(WallMountBlock.FACING, Direction.from2DDataValue(Hash.range(Hash.of(seed, x, z, 608), 4))));
         }
@@ -1718,7 +1665,381 @@ public final class Level0Layout extends LevelLayout {
         }
     }
 
-    /** Carpet, a piece of a round rug, or (rarely) a scuffed arrow painted on the carpet. */
+    // ==========================================================================================
+    // Noclipped furniture
+    // ==========================================================================================
+
+    /** "No spot": past the last spot of a square. Never a packed spot (those leave bit 63 clear). */
+    private static final long NO_SPOT = Long.MIN_VALUE;
+    /** Share of spots moved onto a nearby wall or pillar face (where they are seen from afar). */
+    private static final double WALL_BIAS = 0.3;
+    /** Of the spots left in the open: this share sink into the floor, the rest hang from the ceiling. */
+    private static final double FLOOR_SHARE = 0.8;
+
+    /** A spot packed as x (bits 31-61), z (bits 0-30) and "against a wall" (bit 62). */
+    private static long packSpot(int x, int z, boolean wall) {
+        return (long) (x & 0x7FFFFFFF) << 31 | (z & 0x7FFFFFFFL) | (wall ? 1L << 62 : 0L);
+    }
+
+    private static int spotX(long spot) {
+        return (int) (spot >>> 31 & 0x7FFFFFFF) << 1 >> 1;
+    }
+
+    private static int spotZ(long spot) {
+        return (int) (spot & 0x7FFFFFFF) << 1 >> 1;
+    }
+
+    private static boolean spotOnWall(long spot) {
+        return (spot >>> 62 & 1) != 0;
+    }
+
+    /**
+     * Raw spot {@code k} of the noclipped furniture of embed square (cellX, cellZ) with hash
+     * {@code h}, or {@link #NO_SPOT} past the last one. Spot 0 lies 2+ blocks inside the square;
+     * three squares in ten add 1-3 more within 2 blocks of it (a little pile that phased through
+     * together).
+     */
+    private static long embedSpot(long h, int cellX, int cellZ, int k) {
+        int ax = cellX * EMBED_CELL + 2 + Hash.range(Hash.mix(h), EMBED_CELL - 4);
+        int az = cellZ * EMBED_CELL + 2 + Hash.range(Hash.mix(h ^ 1), EMBED_CELL - 4);
+        int count = Hash.unit(Hash.mix(h ^ 2)) < 0.3 ? 2 + Hash.range(Hash.mix(h ^ 3), 3) : 1;
+        if (k >= count) {
+            return NO_SPOT;
+        }
+        if (k > 0) {
+            long hk = Hash.mix(h + k * 0x9E3779B97F4A7C15L);
+            ax += Hash.range(hk, 5) - 2;
+            az += Hash.range(Hash.mix(hk), 5) - 2;
+        }
+        return packSpot(ax, az, false);
+    }
+
+    /** Per-thread memo of {@link #spotTarget}: moving a spot looks at a dozen columns around it. */
+    private static final class SpotMemo {
+        long seed;
+        final long[] keys = new long[256];
+        final long[] values = new long[256];
+
+        SpotMemo() {
+            java.util.Arrays.fill(keys, NO_SPOT);
+        }
+    }
+
+    private static final ThreadLocal<SpotMemo> SPOT_MEMO = ThreadLocal.withInitial(SpotMemo::new);
+
+    /**
+     * Where spot {@code k} really goes: half the spots ({@link #WALL_BIAS}) move to the nearest
+     * open column within 2 blocks (and inside their square) that stands against a wall or pillar
+     * face, searched straight out from the raw spot in a hashed order, and are then marked
+     * "against a wall"; the rest stay where they are.
+     */
+    private long spotTarget(long seed, long h, int cellX, int cellZ, int k) {
+        long raw = embedSpot(h, cellX, cellZ, k);
+        if (raw == NO_SPOT) {
+            return NO_SPOT;
+        }
+        SpotMemo memo = SPOT_MEMO.get();
+        if (memo.seed != seed) {
+            java.util.Arrays.fill(memo.keys, NO_SPOT);
+            memo.seed = seed;
+        }
+        long key = Hash.mix(h + k) & ~NO_SPOT;
+        int slot = (int) key & 255;
+        if (memo.keys[slot] == key) {
+            return memo.values[slot];
+        }
+        long target = raw;
+        long hk = Hash.mix(h ^ (k + 11) * 0x632BE59BD9B4E019L);
+        if (Hash.unit(hk) < WALL_BIAS) {
+            int rx = spotX(raw);
+            int rz = spotZ(raw);
+            int start = Hash.range(Hash.mix(hk), 4);
+            search:
+            for (int step = 0; step <= 2; step++) {
+                for (int i = 0; i < (step == 0 ? 1 : 4); i++) {
+                    Direction d = Direction.from2DDataValue((start + i) & 3);
+                    int x = rx + d.getStepX() * step;
+                    int z = rz + d.getStepZ() * step;
+                    boolean inSquare = Math.floorDiv(x, EMBED_CELL) == cellX && Math.floorDiv(z, EMBED_CELL) == cellZ;
+                    if (inSquare && wallFace(seed, x, z) != null) {
+                        target = packSpot(x, z, true);
+                        break search;
+                    }
+                }
+            }
+        }
+        memo.keys[slot] = key;
+        memo.values[slot] = target;
+        return target;
+    }
+
+    /**
+     * If (x, z) is open hall or field floor against a plain wall or pillar, the direction of that
+     * wall (the first in a hashed order), else null.
+     */
+    @Nullable
+    private Direction wallFace(long seed, int x, int z) {
+        int column = mazeColumn(seed, x, z);
+        int kind = column >>> 4 & 7;
+        if ((column & 15) != OPEN || (kind != HALL && kind != FIELD)) {
+            return null;
+        }
+        int start = Hash.range(Hash.of(seed, x, z, 721), 4);
+        for (int i = 0; i < 4; i++) {
+            Direction d = Direction.from2DDataValue((start + i) & 3);
+            if (plainMazeWall(seed, x + d.getStepX(), z + d.getStepZ())) {
+                return d;
+            }
+        }
+        return null;
+    }
+
+    /** True if (x, z) is where one of the square's spots ends up. */
+    private boolean isSpot(long seed, long h, int cellX, int cellZ, int x, int z) {
+        for (int k = 0; k < 4; k++) {
+            long raw = embedSpot(h, cellX, cellZ, k);
+            if (raw == NO_SPOT) {
+                return false;
+            }
+            if (Math.abs(spotX(raw) - x) <= 2 && Math.abs(spotZ(raw) - z) <= 2) {
+                long target = spotTarget(seed, h, cellX, cellZ, k);
+                if (spotX(target) == x && spotZ(target) == z) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Furniture that has "noclipped" into the building (block/Level0EmbeddedBlock): a chair half
+     * sunk into a wall or pillar, a table halfway through the floor, a bookshelf hanging out of the
+     * ceiling. Pillar halls and wall fields only: eight in ten 14x14 squares have one spot (or a
+     * little pile of 2-4, see {@link #embedSpot}). Some spots move onto a nearby wall or pillar
+     * face, where they are seen from across the hall; the others sink into the floor or, now and
+     * then, hang from the ceiling. Roughly wall 40%, floor 45%, ceiling 15%, about one prop per 270
+     * floor blocks.
+     *
+     * <p>It never blocks the way: a floor prop needs two clear blocks all round, a wall prop two
+     * clear blocks in front, neither may stand beside a doorway or right in front of another prop,
+     * and a spot that fails is simply left empty. A ceiling prop only hangs from a plain tile, never
+     * a troffer. It keeps clear of the room's other set pieces, supplies and wall pieces (so nothing
+     * hangs above a tall prop), and of blackouts.
+     *
+     * @return 0, or the mount (bits 0-1, MOUNT_*), facing (bits 2-3), prop (bits 4-7) and, for a
+     *     wall prop sticking out one block higher (a lamp or a television), bit 8
+     */
+    private int embeddedAt(long seed, int x, int z, int kind, long sx, long sz) {
+        if (kind != HALL && kind != FIELD) {
+            return 0;
+        }
+        int cellX = Math.floorDiv(x, EMBED_CELL);
+        int cellZ = Math.floorDiv(z, EMBED_CELL);
+        long h = Hash.of(seed, cellX, cellZ, 720);
+        if (Hash.unit(h) >= EMBED_CHANCE) {
+            return 0;
+        }
+        long target = NO_SPOT;
+        for (int k = 0; k < 4; k++) {
+            long raw = embedSpot(h, cellX, cellZ, k);
+            if (raw == NO_SPOT) {
+                break;
+            }
+            if (Math.abs(spotX(raw) - x) <= 2 && Math.abs(spotZ(raw) - z) <= 2) {
+                long t = spotTarget(seed, h, cellX, cellZ, k);
+                if (spotX(t) == x && spotZ(t) == z) {
+                    target = t;
+                    break;
+                }
+            }
+        }
+        if (target == NO_SPOT || anomalies.blackoutAt(seed, x, z) != null) {
+            return 0;
+        }
+        if (!Bands.isBand(sx) && !Bands.isBand(sz)
+                && (propAt(seed, kind, x, z, sx, sz) != P_NONE || crateHeight(seed, x, z, sx, sz) != 0
+                || backpackFacing(seed, x, z, sx, sz) != null || roomWallPiece(seed, sx, sz) != 0)) {
+            return 0;
+        }
+        long p = Hash.of(seed, x, z, 722);
+        int mount;
+        Direction facing;
+        if (spotOnWall(target)) {
+            mount = MOUNT_WALL;
+            facing = wallFace(seed, x, z).getOpposite(); // away from the wall it is fused with
+        } else {
+            mount = Hash.unit(p) < FLOOR_SHARE ? MOUNT_FLOOR : MOUNT_CEILING;
+            facing = Direction.from2DDataValue(Hash.range(Hash.mix(p ^ 1), 4));
+        }
+        if (mount == MOUNT_CEILING) {
+            if (onLightGrid(seed, x, z)) {
+                return 0;
+            }
+        } else if (besideDoorway(seed, x, z) || !clearAhead(seed, x, z, facing, mount == MOUNT_FLOOR)) {
+            return 0;
+        }
+        // The full-size props reach about a block into the air beside them (and the tall wall ones
+        // into the block above, which in this column is always air): keep every horizontal
+        // neighbour clear, except the wall a wall prop is fused with.
+        if (!airAround(seed, x, z, mount, facing)) {
+            return 0;
+        }
+        int prop = Hash.range(Hash.mix(p ^ 2), EMBED_PROPS.length);
+        Level0EmbeddedBlock.Prop piece = EMBED_PROPS[prop];
+        boolean high = mount == MOUNT_WALL && (piece == Level0EmbeddedBlock.Prop.LAMP || piece == Level0EmbeddedBlock.Prop.CRT_TV)
+                && Hash.unit(Hash.mix(p ^ 3)) < 0.5;
+        return mount | facing.get2DDataValue() << 2 | prop << 4 | (high ? 1 << 8 : 0);
+    }
+
+    /** True if a doorway (or a walk-in recess) is right next to (x, z). */
+    private boolean besideDoorway(long seed, int x, int z) {
+        for (Direction d : Direction.Plane.HORIZONTAL) {
+            int code = mazeColumn(seed, x + d.getStepX(), z + d.getStepZ()) & 15;
+            if (code == DOORWAY || code == ALCOVE || code == NICHE_LOW) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * True if the two blocks in front of (x, z) are clear (all four ways round when
+     * {@code allRound}): no wall or pillar, so even the bigger props leave at least a 2-wide way
+     * past.
+     */
+    private boolean clearAhead(long seed, int x, int z, Direction facing, boolean allRound) {
+        for (int i = 0; i < 4; i++) {
+            Direction d = allRound ? Direction.from2DDataValue(i) : facing;
+            for (int step = 1; step <= 2; step++) {
+                if (solidAtEyeLevel(seed, x + d.getStepX() * step, z + d.getStepZ() * step)) {
+                    return false;
+                }
+            }
+            if (!allRound) {
+                break;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * True if all 8 neighbours of (x, z) are clear air at the prop's height: no wall or pillar, no
+     * other set piece, crate or backpack, and no other noclipped prop. A wall prop skips the wall
+     * it is fused with; beside that wall (round a pillar's corner) it still checks for props, since
+     * two props on neighbouring faces of a pillar would meet at the corner. Of two props that would
+     * touch, the one with the lower hash gives way, so one of them always stays. A ceiling prop also
+     * needs plain open hall or field around it (no lintel, soffit, tape or hanging cable).
+     */
+    private boolean airAround(long seed, int x, int z, int mount, Direction facing) {
+        long mine = Hash.of(seed, x, z, 723);
+        boolean ceiling = mount == MOUNT_CEILING;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx == 0 && dz == 0) {
+                    continue;
+                }
+                int nx = x + dx;
+                int nz = z + dz;
+                if (mount == MOUNT_WALL && dx * facing.getStepX() + dz * facing.getStepZ() < 0) {
+                    // On the wall's side: the wall itself, or the floor round the corner of a pillar.
+                    if (propOutranks(seed, nx, nz, mine)) {
+                        return false;
+                    }
+                    continue;
+                }
+                if (solidAtEyeLevel(seed, nx, nz) || cluttered(seed, nx, nz, ceiling) || propOutranks(seed, nx, nz, mine)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /** True if something stands at (x, z) a prop must not touch (see {@link #airAround}). */
+    private boolean cluttered(long seed, int x, int z, boolean ceiling) {
+        long sx = X_WALLS.span(seed, x);
+        long sz = Z_WALLS.span(seed, z);
+        int column = mazeColumn(seed, x, z, sx, sz);
+        int code = column & 15;
+        int kind = column >>> 4 & 7;
+        if (code != OPEN) {
+            // Doorways are air (lintels only matter under the ceiling); anything else is in the way.
+            return code != DOORWAY || ceiling && (kind == DARK || kind == BUILDERS);
+        }
+        if (kind == BUILDERS) {
+            return ceiling || (column >>> 12 & Level0Builders.MANNEQUIN) != 0;
+        }
+        if (kind == CORRIDOR || Bands.isBand(sx) || Bands.isBand(sz)) {
+            return false;
+        }
+        int prop = propAt(seed, kind, x, z, sx, sz) & 15;
+        if (prop != P_NONE && (ceiling || prop != P_CABLE && prop != P_HOLE)) {
+            return true;
+        }
+        if (ceiling && (roomWallPiece(seed, sx, sz) & 3) == W_TAPE) {
+            return true;
+        }
+        return crateHeight(seed, x, z, sx, sz) != 0 || backpackFacing(seed, x, z, sx, sz) != null;
+    }
+
+    /** True if another noclipped prop's spot is at (x, z) and outranks the prop with hash {@code mine}. */
+    private boolean propOutranks(long seed, int x, int z, long mine) {
+        int cellX = Math.floorDiv(x, EMBED_CELL);
+        int cellZ = Math.floorDiv(z, EMBED_CELL);
+        long h = Hash.of(seed, cellX, cellZ, 720);
+        return Hash.unit(h) < EMBED_CHANCE && isSpot(seed, h, cellX, cellZ, x, z) && Hash.of(seed, x, z, 723) > mine;
+    }
+
+    /** Puts down the noclipped prop of column (x, z), if it has one. */
+    private void placeEmbedded(long seed, int x, int z, int kind, long sx, long sz, Column out) {
+        int embedded = embeddedAt(seed, x, z, kind, sx, sz);
+        if (embedded == 0) {
+            return;
+        }
+        int mount = embedded & 3;
+        Level0EmbeddedBlock.Mount fused = mount == MOUNT_WALL ? Level0EmbeddedBlock.Mount.WALL
+                : mount == MOUNT_FLOOR ? Level0EmbeddedBlock.Mount.FLOOR : Level0EmbeddedBlock.Mount.CEILING;
+        BlockState state = Level0Blocks.EMBEDDED.get().defaultBlockState()
+                .setValue(Level0EmbeddedBlock.FACING, Direction.from2DDataValue(embedded >>> 2 & 3))
+                .setValue(Level0EmbeddedBlock.MOUNT, fused)
+                .setValue(Level0EmbeddedBlock.PROP, EMBED_PROPS[embedded >>> 4 & 15]);
+        int y = mount == MOUNT_CEILING ? ceilingY() - 1 : floorY() + 1 + (embedded >>> 8 & 1);
+        out.set(y, state);
+    }
+
+    /** For Level0Finder: the first noclipped prop of embed square (cellX, cellZ), as {x, z}, or null. */
+    @Nullable
+    int[] noclippedIn(long seed, int cellX, int cellZ) {
+        long h = Hash.of(seed, cellX, cellZ, 720);
+        if (Hash.unit(h) >= EMBED_CHANCE) {
+            return null;
+        }
+        for (int k = 0; k < 4; k++) {
+            long s = spotTarget(seed, h, cellX, cellZ, k);
+            if (s == NO_SPOT) {
+                return null;
+            }
+            int x = spotX(s);
+            int z = spotZ(s);
+            if (!inMaze(seed, x, z)) {
+                continue;
+            }
+            long sx = X_WALLS.span(seed, x);
+            long sz = Z_WALLS.span(seed, z);
+            int column = mazeColumn(seed, x, z, sx, sz);
+            if ((column & 15) == OPEN && embeddedAt(seed, x, z, column >>> 4 & 7, sx, sz) != 0) {
+                return new int[] {x, z};
+            }
+        }
+        return null;
+    }
+
+    /** Size of the squares noclipped furniture is placed in (for Level0Finder). */
+    static int embedCell() {
+        return EMBED_CELL;
+    }
+
+    /** Carpet, or (rarely) a scuffed arrow painted on the carpet. */
     private BlockState floorBlock(long seed, int x, int z, long sx, long sz, BlockState carpet) {
         int lenX = Bands.length(sx);
         int lenZ = Bands.length(sz);
@@ -1726,15 +2047,6 @@ public final class Level0Layout extends LevelLayout {
         int iz = Bands.index(sz);
         int x0 = X_WALLS.start(sx);
         int z0 = Z_WALLS.start(sz);
-        // Rugs sit in the middle of small-to-medium rooms (big rooms may have a centre pillar).
-        if (lenX >= 3 && lenZ >= 3 && lenX < 6 && lenZ < 6 && Hash.unit(seed, ix, iz, 240) < 0.07) {
-            int ox = x - (x0 + (lenX - 1) / 2);
-            int oz = z - (z0 + (lenZ - 1) / 2);
-            if (Math.abs(ox) <= 1 && Math.abs(oz) <= 1) {
-                return ModBlocks.RUG.get().defaultBlockState().setValue(RugBlock.PART, RugBlock.part(ox, oz));
-            }
-            return carpet;
-        }
         if (x == x0 + lenX / 2 && z == z0 + lenZ / 2 && Hash.unit(seed, ix, iz, 241) < 0.04) {
             int[] exit = exits().nearest(seed, x, z);
             int ex = exit[0] - x;
@@ -1753,8 +2065,8 @@ public final class Level0Layout extends LevelLayout {
     }
 
     /**
-     * Crates hide in the back corner of dead-end rooms (exactly one way in; a partition counts as a
-     * wall). Returns how many are stacked on this column (0, 1 or 2).
+     * Crates hide in the back corner of dead-end rooms (exactly one way in). Returns how many are
+     * stacked on this column (0, 1 or 2).
      */
     private static int crateHeight(long seed, int x, int z, long sx, long sz) {
         int ix = Bands.index(sx);
@@ -1791,7 +2103,7 @@ public final class Level0Layout extends LevelLayout {
     }
 
     private static boolean open(int segmentState) {
-        return segmentState != SOLID && segmentState != HALF_SOLID;
+        return segmentState != SOLID;
     }
 
     /**

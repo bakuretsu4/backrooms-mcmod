@@ -1,0 +1,395 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "shade": "backrooms:block/l39_furn_lampshade",
+    "metal": "backrooms:block/l0_gilt",
+    "particle": "backrooms:block/l39_furn_lampshade"
+  },
+  "elements": [
+    {
+      "from": [
+        4.5,
+        -11.025,
+        4.5
+      ],
+      "to": [
+        11.5,
+        -9.825,
+        11.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            9.825,
+            11.5,
+            11.025
+          ],
+          "texture": "#metal"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            9.825,
+            11.5,
+            11.025
+          ],
+          "texture": "#metal"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            9.825,
+            11.5,
+            11.025
+          ],
+          "texture": "#metal"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            9.825,
+            11.5,
+            11.025
+          ],
+          "texture": "#metal"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            4.5,
+            11.5,
+            11.5
+          ],
+          "texture": "#metal"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            4.5,
+            11.5,
+            11.5
+          ],
+          "texture": "#metal"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.0,
+          0.0,
+          8.0
+        ],
+        "axis": "x",
+        "angle": 45
+      }
+    },
+    {
+      "from": [
+        6.5,
+        -9.825,
+        6.5
+      ],
+      "to": [
+        9.5,
+        -8.825,
+        9.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            8.825,
+            9.5,
+            9.825
+          ],
+          "texture": "#metal"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            8.825,
+            9.5,
+            9.825
+          ],
+          "texture": "#metal"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            8.825,
+            9.5,
+            9.825
+          ],
+          "texture": "#metal"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            8.825,
+            9.5,
+            9.825
+          ],
+          "texture": "#metal"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            6.5,
+            9.5,
+            9.5
+          ],
+          "texture": "#metal"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            6.5,
+            9.5,
+            9.5
+          ],
+          "texture": "#metal"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.0,
+          0.0,
+          8.0
+        ],
+        "axis": "x",
+        "angle": 45
+      }
+    },
+    {
+      "from": [
+        7.4,
+        -8.825,
+        7.4
+      ],
+      "to": [
+        8.6,
+        11.975,
+        8.6
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7.4,
+            0.0,
+            8.6,
+            16.0
+          ],
+          "texture": "#metal"
+        },
+        "south": {
+          "uv": [
+            7.4,
+            0.0,
+            8.6,
+            16.0
+          ],
+          "texture": "#metal"
+        },
+        "east": {
+          "uv": [
+            7.4,
+            0.0,
+            8.6,
+            16.0
+          ],
+          "texture": "#metal"
+        },
+        "west": {
+          "uv": [
+            7.4,
+            0.0,
+            8.6,
+            16.0
+          ],
+          "texture": "#metal"
+        },
+        "up": {
+          "uv": [
+            7.4,
+            7.4,
+            8.6,
+            8.6
+          ],
+          "texture": "#metal"
+        },
+        "down": {
+          "uv": [
+            7.4,
+            7.4,
+            8.6,
+            8.6
+          ],
+          "texture": "#metal"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.0,
+          0.0,
+          8.0
+        ],
+        "axis": "x",
+        "angle": 45
+      }
+    },
+    {
+      "from": [
+        2.5,
+        10.475,
+        2.5
+      ],
+      "to": [
+        13.5,
+        19.475,
+        13.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#shade"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#shade"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#shade"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#shade"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            2.5,
+            13.5,
+            13.5
+          ],
+          "texture": "#shade"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            2.5,
+            13.5,
+            13.5
+          ],
+          "texture": "#shade"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.0,
+          0.0,
+          8.0
+        ],
+        "axis": "x",
+        "angle": 45
+      }
+    },
+    {
+      "from": [
+        7.0,
+        19.475,
+        7.0
+      ],
+      "to": [
+        9.0,
+        20.475,
+        9.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7.0,
+            11.525,
+            9.0,
+            12.525
+          ],
+          "texture": "#metal"
+        },
+        "south": {
+          "uv": [
+            7.0,
+            11.525,
+            9.0,
+            12.525
+          ],
+          "texture": "#metal"
+        },
+        "east": {
+          "uv": [
+            7.0,
+            11.525,
+            9.0,
+            12.525
+          ],
+          "texture": "#metal"
+        },
+        "west": {
+          "uv": [
+            7.0,
+            11.525,
+            9.0,
+            12.525
+          ],
+          "texture": "#metal"
+        },
+        "up": {
+          "uv": [
+            7.0,
+            7.0,
+            9.0,
+            9.0
+          ],
+          "texture": "#metal"
+        },
+        "down": {
+          "uv": [
+            7.0,
+            7.0,
+            9.0,
+            9.0
+          ],
+          "texture": "#metal"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.0,
+          0.0,
+          8.0
+        ],
+        "axis": "x",
+        "angle": 45
+      }
+    }
+  ]
+}

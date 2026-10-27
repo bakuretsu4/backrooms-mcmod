@@ -1,0 +1,87 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "top": "backrooms:block/l0_mattress_top",
+    "side": "backrooms:block/l0_mattress_side",
+    "particle": "backrooms:block/l0_mattress_top"
+  },
+  "elements": [
+    {
+      "from": [
+        0.0,
+        0.0,
+        13.25
+      ],
+      "to": [
+        16.0,
+        30.0,
+        18.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#top"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#top"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#side"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#side"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.0,
+          15.0,
+          16.0
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    }
+  ]
+}

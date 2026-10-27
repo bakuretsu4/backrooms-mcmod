@@ -45,11 +45,10 @@ CHEVRON = (190, 178, 116)     # a touch paler and creamier than Kane's paper, st
 def chevron_base() -> np.ndarray:
     """Tone-on-tone vertical columns (two per block, half a block wide) of small, shallow stacked
     chevrons, printed a shade lighter than the paper, with a faint darker line between the
-    columns and the same soft mottling as the lobby paper. Kept fine and faint: from a few
-    blocks away it should read as a texture, not as a zigzag."""
+    columns, on plain matte paper (not the lobby's printed design). Kept fine and faint: from a
+    few blocks away it should read as a texture, not as a zigzag."""
     rng = G.rng_for(60100)
-    img = G._wallpaper(stains=False, base=CHEVRON, seed=60101)
-    img = G.lerp(img, _fill(CHEVRON), 0.55)                          # only a ghost of the blotches
+    img = G._paper(G.rng_for(60101), CHEVRON)
     X, Y = G.grid()
     col = 64.0
     u = G.wrapd(X - col / 2, col)                                    # -32..32 across a column
@@ -477,10 +476,43 @@ def tex_level0_revamp_hole() -> None:
     G.save_png(G.add_lum(floor, -64 * G.smoothstep(0, 48, Y)), _blk("l0_hole_floor"))
 
 
+def tex_level0_revamp_plastic() -> None:
+    """Off-white moulded garden-chair plastic (the monobloc chair): smooth, a faint sheen, grey
+    grime in a few scuffs."""
+    rng = G.rng_for(60220)
+    img = _paint(rng, (214, 212, 204), mottle=2.5, fine=0.5)
+    grime = G.smoothstep(1.0, 2.0, G.fnoise(rng, beta=1.8))
+    G.save_png(G.over(img, np.array([150, 146, 136]), grime * 0.35), _blk("l0_plastic"))
+
+
+def tex_level0_revamp_mattress() -> None:
+    """An old mattress in blue-grey ticking: thin stripes along its length on off-white cloth,
+    a few faded stains, and the edges shaded and piped so the one thick slab reads as rounded.
+    The top is stretched over the mattress's whole length (stripes run along v); the side is
+    squeezed onto its 5 px height."""
+    rng = G.rng_for(60230)
+    X, Y = G.grid()
+    cloth = _paint(rng, (222, 218, 204), mottle=2.0, fine=0.8)
+    stripes = (np.abs(G.wrapd(X, 16)) < 1.2) | (np.abs(G.wrapd(X - 5, 16)) < 0.6)
+    top = G.over(cloth, np.array([112, 128, 146]), stripes * 0.55)
+    stain = G.smoothstep(0.9, 1.8, G.fnoise(rng, beta=2.4))
+    top = G.over(top, np.array([176, 156, 110]), stain * 0.3)
+    edge = np.minimum(np.minimum(X, S - X), np.minimum(Y, S - Y))
+    top = G.add_lum(top, -30 * G.smoothstep(14, 0, edge) + 14 * np.exp(-((edge - 9) / 2.5) ** 2))   # rounded rim
+    top = G.add_lum(top, -18 * np.exp(-((edge - 4) / 0.9) ** 2))                                     # piping
+    G.save_png(top, _blk("l0_mattress_top"))
+    side = G.over(cloth, np.array([112, 128, 146]), ((np.abs(G.wrapd(Y, 32)) < 2.5)) * 0.5)
+    side = G.add_lum(side, -36 * G.smoothstep(40, 0, Y) - 36 * G.smoothstep(S - 40, S, Y)
+                     + 16 * np.exp(-((Y - 44) / 8) ** 2))                                            # rolls over at top and bottom
+    side = G.add_lum(side, -20 * (np.exp(-((Y - 12) / 2) ** 2) + np.exp(-((Y - (S - 12)) / 2) ** 2)))   # piping
+    G.save_png(G.over(side, np.array([176, 156, 110]), stain * 0.25), _blk("l0_mattress_side"))
+
+
 TEXTURE_GENS = [tex_level0_revamp_chevron, tex_level0_revamp_materials, tex_level0_revamp_throne,
                 tex_level0_revamp_case, tex_level0_revamp_strip, tex_level0_revamp_plenum,
                 tex_level0_revamp_exit_sign, tex_level0_revamp_hazard, tex_level0_revamp_switch_box,
-                tex_level0_revamp_graffiti, tex_level0_revamp_tape, tex_level0_revamp_hole]
+                tex_level0_revamp_graffiti, tex_level0_revamp_tape, tex_level0_revamp_hole,
+                tex_level0_revamp_plastic, tex_level0_revamp_mattress]
 
 
 # =============================================================================
@@ -802,6 +834,256 @@ def _case_model() -> None:
     _im("l0_hazmat_case")
 
 
+# ---- noclipped furniture (l0_embedded) ---------------------------------------
+# Every prop is first built standing on the floor of its own block, front to the north. A mount
+# then turns it (whole quarter turns are baked into the boxes), pushes part of it out of the block
+# into the wall, floor or ceiling, and tilts it by a legal 22.5 degrees (one element rotation
+# shared by all its boxes, so it turns as one piece). The neighbour's face hides what's inside.
+
+def _faces(default, **special):
+    """A per-face texture dict: `default` everywhere, `special` on the named faces."""
+    return {f: special.get(f, default) for f in P.FACES}
+
+
+def _dresser():
+    """A full-size dresser, 1 x 1.5 blocks: carcass, overhanging top, plinth, four drawers with
+    a dark gap round each and two brass handles each."""
+    b = [((0, 1, 3.5), (16, 24, 12.5), "#wood", ()),
+         ((-0.5, 24, 3), (16.5, 25.2, 13), "#wood", ()),
+         ((0.5, 0, 4), (15.5, 1, 12), "#dark", ())]
+    for y0 in (1.6, 7.2, 12.8, 18.4):
+        b.append(((1, y0, 2.8), (15, y0 + 5, 3.5), _faces("#wood", north="#front"), ()))
+        for hx in (3.5, 10.5):
+            b.append(((hx, y0 + 2.1, 2.1), (hx + 2, y0 + 2.9, 2.8), "#brass", ()))
+    return {"wood": _ref("desk_side"), "front": _ref("desk_top"), "brass": _ref("l0_gilt"), "dark": _ref("chair_base")}, b
+
+
+def _filing_cabinet():
+    """A grey four-drawer filing cabinet, 1.4 blocks tall: drawer fronts set slightly proud with
+    gaps between, a pull handle and a label holder on each."""
+    b = [((4, 0, 2.5), (12, 22.4, 13.5), "#side", ())]
+    for y0 in (0.4, 6, 11.6, 17.2):
+        b.append(((4.2, y0, 2), (11.8, y0 + 5, 2.5), "#side", ()))
+        b.append(((6.2, y0 + 2.6, 1.4), (9.8, y0 + 3.3, 2), "#metal", ()))
+        b.append(((6.8, y0 + 3.7, 1.8), (9.2, y0 + 4.5, 2), "#label", ()))
+    return {"side": _ref("filing_cabinet_side"), "metal": _ref("l0_conduit"), "label": _ref("l0_exit_sign_edge")}, b
+
+
+def _bookshelf():
+    """A tall wooden bookshelf (1 x 1.75 blocks): sides, top, base, back, three shelves, and a
+    row of books on each shelf (one row of the book texture each), one book fallen over."""
+    b = [((0, 0, 5), (1.2, 28, 13), "#wood", ()), ((14.8, 0, 5), (16, 28, 13), "#wood", ()),
+         ((-0.4, 28, 4.6), (16.4, 29, 13.2), "#wood", ()), ((1.2, 0, 5), (14.8, 1.6, 13), "#wood", ()),
+         ((1.2, 1.6, 12.2), (14.8, 28, 13), "#wood", ())]
+    for i, y0 in enumerate((1.6, 8.4, 15.2, 22.0)):
+        if i:
+            b.append(((1.2, y0 - 0.8, 5), (14.8, y0, 12.2), "#wood", ()))
+        top = y0 + (5.4 if i < 3 else 5.2)
+        width = 14.8 if i != 2 else 11.0                                 # a gap on the third shelf
+        b.append(((1.2, y0, 6.2), (width, top, 12.2), _faces("#wood", north="#books"),
+                  {"north": [0, i * 4, 16 * (width - 1.2) / 13.6, i * 4 + 4]}))
+    b.append(((11.2, 15.2, 6.4), (14.6, 16.4, 11.8), "#wood", ()))           # the book lying flat
+    return {"wood": _ref("desk_side"), "books": _ref("l39_furn_books")}, b
+
+
+def _office_chair():
+    """A swivel office chair: five-star base (as a cross) with casters, gas column, seat pan and
+    cushion, back support and a padded backrest, two armrests."""
+    b = [((1, 1.2, 7.2), (15, 2.4, 8.8), "#base", ()), ((7.2, 1.2, 1), (8.8, 2.4, 15), "#base", ())]
+    for cx, cz in ((1.6, 8), (14.4, 8), (8, 1.6), (8, 14.4)):
+        b.append(((cx - 0.9, 0, cz - 0.9), (cx + 0.9, 1.2, cz + 0.9), "#base", ()))
+    b += [((7.1, 2.4, 7.1), (8.9, 8, 8.9), "#base", ()),
+          ((3, 8, 3), (13, 9, 13), "#base", ()),
+          ((2.6, 9, 2.4), (13.4, 11.2, 13.2), "#fabric", ()),
+          ((7.2, 9, 12.6), (8.8, 14, 14.2), "#base", ()),
+          ((3, 12.5, 12.8), (13, 25, 15.4), "#fabric", ()),
+          ((2, 9, 6), (3, 14.5, 7), "#base", ()), ((13, 9, 6), (14, 14.5, 7), "#base", ()),
+          ((1.6, 14.5, 3.5), (3.4, 15.5, 10.5), "#base", ()), ((12.6, 14.5, 3.5), (14.4, 15.5, 10.5), "#base", ())]
+    return {"fabric": _ref("chair_fabric"), "base": _ref("chair_base")}, b
+
+
+def _plastic_chair():
+    """A white monobloc garden chair: seat, splayed-looking thick legs, a slatted back, armrests."""
+    b = [((2, 7.5, 2), (14, 8.8, 14), "#plastic", ())]
+    for x0, z0 in ((2, 2), (12.2, 2), (2, 12.2), (12.2, 12.2)):
+        b.append(((x0, 0, z0), (x0 + 1.8, 7.5, z0 + 1.8), "#plastic", ()))
+    b += [((2, 8.8, 12.6), (3.4, 21, 14), "#plastic", ()), ((12.6, 8.8, 12.6), (14, 21, 14), "#plastic", ()),
+          ((3.4, 19, 12.8), (12.6, 21, 13.8), "#plastic", ()),
+          ((3.4, 15.5, 12.8), (12.6, 17, 13.8), "#plastic", ()),
+          ((3.4, 12, 12.8), (12.6, 13.5, 13.8), "#plastic", ()),
+          ((1.5, 12.5, 2.5), (3, 13.6, 12.6), "#plastic", ()), ((13, 12.5, 2.5), (14.5, 13.6, 12.6), "#plastic", ()),
+          ((1.7, 8.8, 2.6), (2.8, 12.5, 3.8), "#plastic", ()), ((13.2, 8.8, 2.6), (14.3, 12.5, 3.8), "#plastic", ())]
+    return {"plastic": _ref("l0_plastic")}, b
+
+
+EMBED_PROPS = {
+    # name: (textures, boxes); a box is (from, to, texture var or {face: var}, faces with the whole
+    # texture as a tuple, or {face: uv}). Built standing, front to the north, 1:1 size.
+    "chair": ({"wood": _ref("desk_side")}, [
+        ((2.5, 7.5, 2.5), (13.5, 9, 13.5), "#wood", ()),
+        ((3, 0, 3), (4.4, 7.5, 4.4), "#wood", ()), ((11.6, 0, 3), (13, 7.5, 4.4), "#wood", ()),
+        ((3, 0, 11.6), (4.4, 7.5, 13), "#wood", ()), ((11.6, 0, 11.6), (13, 7.5, 13), "#wood", ()),
+        ((4.4, 2.5, 3.3), (11.6, 3.3, 4.1), "#wood", ()), ((4.4, 2.5, 11.9), (11.6, 3.3, 12.7), "#wood", ()),
+        ((3, 9, 11.6), (4.4, 24, 13), "#wood", ()), ((11.6, 9, 11.6), (13, 24, 13), "#wood", ()),
+        ((2.6, 21, 11.4), (13.4, 24.2, 13.2), "#wood", ()),
+        ((5.8, 9, 11.9), (6.8, 21, 12.7), "#wood", ()), ((7.5, 9, 11.9), (8.5, 21, 12.7), "#wood", ()),
+        ((9.2, 9, 11.9), (10.2, 21, 12.7), "#wood", ())]),
+    "office_chair": _office_chair(),
+    "table": ({"top": _ref("desk_top"), "wood": _ref("desk_side")}, [
+        ((-6, 13, 0), (22, 14.6, 16), _faces("#wood", up="#top", down="#top"), ()),
+        ((-5, 10.5, 1), (21, 13, 2), "#wood", ()), ((-5, 10.5, 14), (21, 13, 15), "#wood", ()),
+        ((-5, 0, 1), (-3.4, 13, 2.6), "#wood", ()), ((19.4, 0, 1), (21, 13, 2.6), "#wood", ()),
+        ((-5, 0, 13.4), (-3.4, 13, 15), "#wood", ()), ((19.4, 0, 13.4), (21, 13, 15), "#wood", ())]),
+    "dresser": _dresser(),
+    "lamp": ({"shade": _ref("l39_furn_lampshade"), "metal": _ref("l0_gilt")}, [
+        ((4.5, 0, 4.5), (11.5, 1.2, 11.5), "#metal", ()), ((6.5, 1.2, 6.5), (9.5, 2.2, 9.5), "#metal", ()),
+        ((7.4, 2.2, 7.4), (8.6, 23, 8.6), "#metal", ()),
+        ((2.5, 21.5, 2.5), (13.5, 30.5, 13.5), "#shade", ("north", "south", "east", "west")),
+        ((7, 30.5, 7), (9, 31.5, 9), "#metal", ())]),
+    "door": ({"lower": _ref("lobby_door_bottom"), "upper": _ref("lobby_door_top"), "wood": _ref("desk_side"),
+              "brass": _ref("l0_gilt")}, [
+        ((1.5, 0, 7.2), (14.5, 15.25, 8.8), _faces("#wood", north="#lower", south="#lower"), ("north", "south")),
+        ((1.5, 15.25, 7.2), (14.5, 30.5, 8.8), _faces("#wood", north="#upper", south="#upper"), ("north", "south")),
+        ((0, 0, 6), (1.5, 32, 10), "#wood", ()), ((14.5, 0, 6), (16, 32, 10), "#wood", ()),
+        ((1.5, 30.5, 6), (14.5, 32, 10), "#wood", ()),
+        ((11.8, 14, 6.4), (13, 15.2, 7.2), "#brass", ()), ((11.8, 14, 8.8), (13, 15.2, 9.6), "#brass", ())]),
+    "crt_tv": ({"plastic": _ref("crt_plastic"), "screen": _ref("crt_screen")}, [
+        ((0.5, 0, 1), (15.5, 13, 12), _faces("#plastic", north="#screen"), ("north",)),
+        ((2.5, 1.5, 12), (13.5, 11.5, 15.5), "#plastic", ()),
+        ((4.5, 3.5, 15.5), (11.5, 9.5, 18), "#plastic", ()),
+        ((1.5, -0.6, 2), (3.5, 0, 4), "#plastic", ()), ((12.5, -0.6, 2), (14.5, 0, 4), "#plastic", ())]),
+    "sofa_end": ({"fabric": _ref("sofa_fabric"), "wood": _ref("desk_side")}, [
+        ((-12, 1.5, 0), (13, 7, 16), "#fabric", ()),
+        ((-12, 7, 0.5), (0.5, 9.8, 12), "#fabric", ()), ((0.5, 7, 0.5), (13, 9.8, 12), "#fabric", ()),
+        ((-12, 9.8, 10.5), (0.5, 18, 14), "#fabric", ()), ((0.5, 9.8, 10.5), (13, 18, 14), "#fabric", ()),
+        ((-12, 7, 14), (13, 18.5, 16), "#fabric", ()),
+        ((13, 1.5, 0), (17.5, 12.5, 16), "#fabric", ()), ((12.6, 12.5, -0.4), (17.9, 14.2, 16), "#fabric", ()),
+        ((14, 0, 1), (15.8, 1.5, 2.8), "#wood", ()), ((14, 0, 13.2), (15.8, 1.5, 15), "#wood", ())]),
+    "filing_cabinet": _filing_cabinet(),
+    "bookshelf": _bookshelf(),
+    "plastic_chair": _plastic_chair(),
+    # One thick slab (a single box, so a tilt can never break it into steps); the rounded rim and
+    # piping are in its texture.
+    "mattress": ({"top": _ref("l0_mattress_top"), "side": _ref("l0_mattress_side")}, [
+        ((0, 0, -7), (16, 5.5, 23), _faces("#side", up="#top", down="#top"), tuple(P.FACES))]),
+}
+
+# Whole quarter turns baked into the boxes (p' = M p): stand as built, upside down, lying with the
+# top pointing out of the wall (-z), on its back (front facing up), stood on end, on its side.
+_POSES = {
+    "stand": ((1, 0, 0), (0, 1, 0), (0, 0, 1)),
+    "flip": ((-1, 0, 0), (0, -1, 0), (0, 0, 1)),
+    "lay_out": ((1, 0, 0), (0, 0, 1), (0, -1, 0)),
+    "lay_flat": ((1, 0, 0), (0, 0, -1), (0, 1, 0)),
+    "on_end": ((1, 0, 0), (0, 0, 1), (0, 1, 0)),
+    "on_side": ((0, -1, 0), (1, 0, 0), (0, 0, 1)),
+}
+
+# prop: (wall, floor, ceiling) mounts as (pose, how much of it is buried 0..1, tilt (axis, angle) or None).
+# 40-70% stays visible, always at a clear angle, so it obviously cuts through the surface.
+EMBED_MOUNTS = {
+    "chair": (("stand", 0.45, ("y", 22.5)), ("stand", 0.4, ("x", 45)), ("flip", 0.45, ("z", 22.5))),
+    "office_chair": (("stand", 0.4, ("y", -22.5)), ("lay_flat", 0.35, ("x", 45)), ("flip", 0.45, ("x", 22.5))),
+    "table": (("stand", 0.4, ("z", 22.5)), ("stand", 0.45, ("z", 22.5)), ("flip", 0.4, ("x", 22.5))),
+    "dresser": (("stand", 0.5, ("y", 22.5)), ("stand", 0.45, ("x", -22.5)), ("flip", 0.5, ("z", 22.5))),
+    "lamp": (("lay_out", 0.4, ("z", 22.5)), ("stand", 0.35, ("x", 45)), ("flip", 0.4, ("x", 22.5))),
+    "door": (("stand", 0.5, ("y", 22.5)), ("lay_flat", 0.45, ("z", 22.5)), ("stand", 0.5, ("x", 22.5))),
+    # The screen always has to be the face you see: on the wall it lies on its side facing the room,
+    # on the floor it is tipped back 22.5 degrees (rear and bottom sunk, screen facing up and out),
+    # from the ceiling it hangs upside down with the screen tipped towards the room below.
+    "crt_tv": (("on_side", 0.45, ("y", -22.5)), ("stand", 0.35, ("x", 22.5)), ("flip", 0.45, ("x", -22.5))),
+    "sofa_end": (("stand", 0.45, ("y", -22.5)), ("stand", 0.45, ("z", 22.5)), ("flip", 0.5, ("z", -22.5))),
+    "filing_cabinet": (("stand", 0.5, ("y", 22.5)), ("stand", 0.5, ("z", -22.5)), ("flip", 0.45, ("x", 22.5))),
+    "bookshelf": (("stand", 0.55, ("y", -22.5)), ("stand", 0.5, ("x", 22.5)), ("flip", 0.5, ("x", 22.5))),
+    "plastic_chair": (("stand", 0.4, ("y", 22.5)), ("flip", 0.4, ("x", 22.5)), ("stand", 0.5, ("z", 22.5))),
+    "mattress": (("on_end", 0.5, ("y", 22.5)), ("stand", 0.5, ("x", 22.5)), ("stand", 0.5, ("z", -22.5))),
+}
+
+_NORMALS = {"north": (0, 0, -1), "south": (0, 0, 1), "east": (1, 0, 0), "west": (-1, 0, 0), "up": (0, 1, 0), "down": (0, -1, 0)}
+
+
+def _embed_boxes(prop, mount_index):
+    """The prop's boxes for one mount: (from, to, {new face: (texture, uv or None)}, rotation or None)."""
+    _, boxes = EMBED_PROPS[prop]
+    pose, buried, tilt = EMBED_MOUNTS[prop][mount_index]
+    M = np.array(_POSES[pose], float)
+    placed = []
+    for f, t, tex, whole in boxes:
+        a, b = M @ np.array(f, float), M @ np.array(t, float)
+        faces = {}
+        for face, n in _NORMALS.items():
+            nn = tuple(int(round(c)) for c in M @ np.array(n, float))
+            new = next(k for k, v in _NORMALS.items() if v == nn)
+            uv = whole.get(face) if isinstance(whole, dict) else ([0, 0, 16, 16] if face in whole else None)
+            faces[new] = (tex[face] if isinstance(tex, dict) else tex, uv)
+        placed.append([np.minimum(a, b), np.maximum(a, b), faces])
+    lo = np.min([p[0] for p in placed], axis=0)
+    hi = np.max([p[1] for p in placed], axis=0)
+    size = hi - lo
+    # where the prop goes: centred in x (and z on the floor/ceiling), pushed into its neighbour
+    if mount_index == 0:                                                 # wall: the wall is at z = 16
+        y0 = 8 - size[1] / 2 if pose == "lay_out" else 0.0
+        shift = np.array([8 - (lo[0] + hi[0]) / 2, y0 - lo[1], 16 + buried * size[2] - hi[2]])
+        origin = (8, y0 + size[1] / 2, 16)
+    elif mount_index == 1:                                               # floor: the floor is at y = 0
+        shift = np.array([8 - (lo[0] + hi[0]) / 2, -buried * size[1] - lo[1], 8 - (lo[2] + hi[2]) / 2])
+        origin = (8, 0, 8)
+    else:                                                                # ceiling: the ceiling is at y = 16
+        shift = np.array([8 - (lo[0] + hi[0]) / 2, 16 + buried * size[1] - hi[1], 8 - (lo[2] + hi[2]) / 2])
+        origin = (8, 16, 8)
+    rot = (origin, tilt[0], tilt[1]) if tilt else None
+    return [(p[0] + shift, p[1] + shift, p[2], rot) for p in placed]
+
+
+def _visible_box(boxes):
+    """The box around the part of the prop inside its own block (after the tilt): its collision."""
+    lo, hi = np.full(3, 16.0), np.zeros(3)
+    for f, t, _, rot in boxes:
+        corners = np.array([[x, y, z] for x in (f[0], t[0]) for y in (f[1], t[1]) for z in (f[2], t[2])])
+        if rot:
+            o, axis, ang = np.array(rot[0], float), rot[1], np.radians(rot[2])
+            c, s = np.cos(ang), np.sin(ang)
+            p = corners - o
+            x, y, z = p[:, 0].copy(), p[:, 1].copy(), p[:, 2].copy()
+            if axis == "x":
+                y, z = y * c - z * s, y * s + z * c
+            elif axis == "y":
+                x, z = x * c + z * s, -x * s + z * c
+            else:
+                x, y = x * c - y * s, x * s + y * c
+            corners = np.stack([x, y, z], axis=1) + o
+        a, b = np.clip(corners.min(axis=0), 0, 16), np.clip(corners.max(axis=0), 0, 16)
+        if np.all(b - a > 0.05):
+            lo, hi = np.minimum(lo, a), np.maximum(hi, b)
+    return [round(float(v) * 2) / 2 for v in (*lo, *hi)]
+
+
+def _embedded_models() -> None:
+    """l0_embedded: one model per prop and mount, one blockstate for facing x mount x prop.
+    Prints the collision boxes for block/Level0EmbeddedBlock (keep the two in step)."""
+    variants, mounts = {}, ("wall", "floor", "ceiling")
+    for prop, (textures, _) in EMBED_PROPS.items():
+        tex = dict(textures)
+        tex["particle"] = next(iter(textures.values()))
+        line = []
+        for mi, mount in enumerate(mounts):
+            boxes = _embed_boxes(prop, mi)
+            els = [_el(tuple(f), tuple(t), {k: v[0] for k, v in faces.items()},
+                       uv={k: v[1] for k, v in faces.items() if v[1] is not None}, rot=rot, cull=False)
+                   for f, t, faces, rot in boxes]
+            name = f"l0_embedded_{prop}_{mount}"
+            _bm(name, _model(tex, els, render=None))
+            line.append(_visible_box(boxes))
+            for facing, y in FACING_Y.items():
+                v = {"model": _ref(name)}
+                if y:
+                    v["y"] = y
+                variants[f"facing={facing},mount={mount},prop={prop}"] = v
+        print(f"    {prop.upper()}: wall {line[0]}, floor {line[1]}, ceiling {line[2]}")
+    _bs("l0_embedded", {"variants": variants})
+    _im("l0_embedded", parent=_ref("l0_embedded_chair_wall"))
+
+
 def tex_level0_revamp_models() -> None:
     """Block models, blockstates and item models for every registry/Level0Blocks id (LF JSON)."""
     _wall_models()
@@ -812,6 +1094,7 @@ def tex_level0_revamp_models() -> None:
     _mannequin_models()
     _throne_model()
     _case_model()
+    _embedded_models()
 
 
 TEXTURES = TEXTURE_GENS + [tex_level0_revamp_models]

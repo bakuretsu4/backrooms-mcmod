@@ -81,10 +81,11 @@ going down into the dark. Somewhere down there you are simply in the next level,
 fading back in: no glitch, no cut.
 
 - **Level 0 (the Lobby):** Kane Pixels' bright yellow halls of square pillars under a grid of
-  troffers, mazes of thick wall blocks, long corridors, the film's odd half-built rooms (half-walls,
-  window holes, ramps into low passages, mannequins, a heap of old furniture) and whole wings where
-  every light is dead. Arrows drawn on the walls point to the exit stairwell, but some of them lie.
-  Look for the EXIT sign over a wooden door between green and white hazard stripes.
+  troffers, mazes of thick wall blocks, long corridors, the film's big half-fitted rooms (rows of
+  half-walls and cubicles, window holes, a ramp into a low passage, mannequins, a heap of old
+  furniture) and whole wings where every light is dead. Here and there furniture has noclipped
+  into the walls, floor and ceiling. Arrows drawn on the walls point to the exit stairwell, but
+  some of them lie. Look for the EXIT sign over a wooden door between green and white hazard stripes.
 - **Level 1 (the "Habitable Zone"):** an endless underground parking structure crossed with a
   warehouse, big and high: bevelled 3x3 concrete pillars every 12 blocks under a 7-block ceiling.
   Each pillar has its number painted two blocks tall on a band in its sector's colour, and some
