@@ -298,6 +298,10 @@ public final class SafeRoomPlan {
         int v = vOf(x, z);
         int signY = base + DOOR_HEIGHT + 1;
         int doorU = across / 2;
+        // A level whose ceiling is no higher than the doorway (Level 0) has no wall left above the
+        // door to hang the signs on: they hang high on the wall beside the doorway instead.
+        boolean low = signY >= ceiling;
+        int besideU = doorU + (style.frame() != null ? 2 : 1);
         out.set(base, style.floor());
         out.set(ceiling, style.ceiling());
 
@@ -305,7 +309,7 @@ public final class SafeRoomPlan {
             // The doorway, 3 tall. The outer layer is a little recess where the SAFE sign hangs
             // over the opening; the inner layer has the lintel the sign hangs on.
             boolean outer = v == 0;
-            if (outer) {
+            if (outer && !low) {
                 out.set(signY, sign(door));
             }
             for (int y = outer ? signY + 1 : signY; y < ceiling; y++) {
@@ -331,6 +335,9 @@ public final class SafeRoomPlan {
                 }
                 out.set(y, block);
             }
+            if (low && v == 0 && u == besideU) {
+                out.set(ceiling - 1, sign(door)); // in the outer layer, readable from the maze
+            }
             return;
         }
 
@@ -347,8 +354,9 @@ public final class SafeRoomPlan {
         if (lamp(i, j)) {
             out.set(ceiling, ModBlocks.SAFE_ROOM_LAMP.get().defaultBlockState());
         }
-        if (j == 0 && i == doorI()) {
-            out.set(signY, sign(in)); // inside, over the doorway, readable from the room
+        if (j == 0 && i == doorI() + (low ? besideU - doorU : 0)) {
+            // Inside, over the doorway (or beside it), readable from the room.
+            out.set(low ? ceiling - 1 : signY, sign(in));
         }
         BlockState piece = switch (furniture(i, j)) {
             case RADIO -> faced(ModBlocks.CHECKPOINT_RADIO.get().defaultBlockState(), door);

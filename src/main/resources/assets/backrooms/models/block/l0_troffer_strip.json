@@ -1,5 +1,5 @@
 {
-  "parent": "minecraft:block/cube",
+  "parent": "minecraft:block/block",
   "textures": {
     "particle": "backrooms:block/l0_troffer_strip",
     "down": "backrooms:block/l0_troffer_strip",
@@ -8,5 +8,19 @@
     "south": "backrooms:block/ceiling_tile",
     "east": "backrooms:block/ceiling_tile",
     "west": "backrooms:block/ceiling_tile"
-  }
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "down": {"texture": "#down", "cullface": "down", "tintindex": 0},
+        "up": {"texture": "#up", "cullface": "up"},
+        "north": {"texture": "#north", "cullface": "north"},
+        "south": {"texture": "#south", "cullface": "south"},
+        "west": {"texture": "#west", "cullface": "west"},
+        "east": {"texture": "#east", "cullface": "east"}
+      }
+    }
+  ]
 }

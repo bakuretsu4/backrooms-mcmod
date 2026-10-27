@@ -3,9 +3,9 @@ package com.rickr.backrooms.client.anomaly.level0;
 import com.rickr.backrooms.client.AtmosphereGrade;
 import com.rickr.backrooms.client.anomaly.AnomalyClientEffect;
 import com.rickr.backrooms.registry.ModSounds;
+import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.layout.Level0Pitfalls;
-import com.rickr.backrooms.world.layout.LevelLayout;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -28,7 +28,7 @@ final class PitfallsEffect implements AnomalyClientEffect {
         if (player == null || !inside) {
             return;
         }
-        boolean nowFalling = player.getY() < LevelLayout.FLOOR_Y
+        boolean nowFalling = player.getY() < BackroomsLevel.LEVEL_0.layout().floorY()
                 && Level0Pitfalls.isShaft(site, player.getBlockX(), player.getBlockZ());
         if (nowFalling) {
             AtmosphereGrade.setAnomalyMood(FALLING, 1.0f);

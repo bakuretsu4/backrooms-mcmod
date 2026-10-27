@@ -27,9 +27,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.LadderBlock;
-import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoorHingeSide;
@@ -37,31 +37,39 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Level 0, "the Lobby", as in Kane Pixels' series and the A24 film: big, open, evenly and brightly
- * lit yellow spaces under a dropped ceiling, broken up by thick wall blocks, corridors, odd
- * half-built rooms, and whole wings where the lights are dead.
+ * Level 0, "the Lobby", as in Kane Pixels' series and the A24 film: a cramped, low-ceilinged maze
+ * of yellow rooms and narrow passages under a dropped ceiling, broken up by thick wall blocks,
+ * corridors, odd half-built rooms, the odd pillared hall, and whole wings where the lights are
+ * dead.
+ *
+ * <p><b>Height.</b> Three blocks of air between carpet and ceiling (see the constructor). Nothing
+ * ever hangs below the ceiling over a walkable spot (no lintels, soffits or raised floors; the Red
+ * Rooms' crawlway is the one deliberate exception), so Bacteria (2.9 tall) fits everywhere a
+ * player can walk; a change of level only ever goes down.
  *
  * <p><b>The skeleton.</b> Both axes are cut by {@link Bands} into wall bands (1-3 blocks thick) and
- * gaps (3-7 wide). That gives four kinds of "unit": a room (gap x gap), a wall segment (a band
+ * gaps (3-5 wide). That gives four kinds of "unit": a room (gap x gap), a wall segment (a band
  * across a gap, in either direction) and a junction (band x band). Every unit decides what it is
  * from its own hash, so neighbouring columns always agree and walls have clean, blunt ends.
  *
  * <p><b>Zones.</b> Each unit asks {@link Level0Zones} which kind of neighbourhood it is in (big
  * irregular areas 64-96 blocks across), and builds itself accordingly:
  * <ul>
- *   <li>{@link Level0Zones#HALL} pillar halls (~40%): nearly every wall segment is missing, the
- *       junctions stay as square pillars on a loose, uneven grid (1x1 to 3x3), with now and then a
- *       free-standing wall block. Long sightlines.</li>
- *   <li>{@link Level0Zones#FIELD} wall-block fields (~25%): the classic thick-walled maze with
- *       frameless 2-4 wide openings. The openings of parallel walls line up (they depend on the
- *       row, not the wall), so you see long vistas through them.</li>
- *   <li>{@link Level0Zones#CORRIDOR} corridor runs (~15%): long straight corridors carved out of
- *       solid wall, Kane's 3-4 wide with a troffer every 2 blocks down the middle, or the film's
- *       2-3 wide with one continuous light strip. Some branch, some dead-end, some go dark.</li>
- *   <li>{@link Level0Zones#BUILDERS} the film's builders' rooms (~10%): big halls on their own
- *       coarser grid, each with a few deliberate half-walls, window or niche series, a soffit or a
- *       ramp into a low passage, in the chevron "Classic" paper. See {@link Level0Builders}; the
- *       ordinary skeleton never builds them itself.</li>
+ *   <li>{@link Level0Zones#HALL} pillar halls (~22%): about a third of the wall segments are
+ *       missing and many more are only stubs, the junctions stay as square pillars on a loose,
+ *       uneven grid, and most bays have a pillar of their own. Open, but never more than about
+ *       a dozen blocks across.</li>
+ *   <li>{@link Level0Zones#FIELD} wall-block fields (~38%): the classic thick-walled maze of small
+ *       rooms joined by frameless 2-3 wide openings. The openings of a few parallel walls line up
+ *       (they depend on the row, not the wall), so you get short vistas through them.</li>
+ *   <li>{@link Level0Zones#CORRIDOR} corridor runs (~22%): long narrow corridors carved out of
+ *       solid wall, 2 wide (some 3), stepping sideways every 32 blocks, with small side rooms: Kane's
+ *       with a troffer every 3 blocks down the middle, the film's with one continuous light strip.
+ *       Some branch, some dead-end, some go dark.</li>
+ *   <li>{@link Level0Zones#BUILDERS} the film's builders' rooms (~8%): rooms 7-12 across on their
+ *       own coarser grid, each with a few deliberate half-walls, window or niche series, or a
+ *       step down into a sunken passage, in the chevron "Classic" paper. See
+ *       {@link Level0Builders}; the ordinary skeleton never builds them itself.</li>
  *   <li>{@link Level0Zones#DARK} dark wings (~10%): an enclosed maze where every troffer is dead.
  *       Rooms just outside a wing switch off their panels near it, so the dark starts at the
  *       doorway.</li>
@@ -70,7 +78,7 @@ import org.jetbrains.annotations.Nullable;
  * more often, so one fades into the other over a dozen blocks.
  *
  * <p><b>Lights.</b> One square troffer every 3 blocks in both directions over open floor, the
- * rows sometimes shifted by one; about 3% dead. See {@link #roomLight} and {@link #corridorLight}.
+ * rows sometimes shifted by one; about 8% dead. See {@link #roomLight} and {@link #corridorLight}.
  *
  * <p><b>Set pieces</b> (rare, by hash, see {@link #roomPiece}, {@link #roomWallPiece} and
  * {@link #solidFeature}): furniture heaps and the throne in pillar halls, exit-sign alcoves, switch
@@ -97,9 +105,15 @@ import org.jetbrains.annotations.Nullable;
  * {@link Level0Zones}.
  */
 public final class Level0Layout extends LevelLayout {
-    /** Wall bands running north-south (cut along X) and east-west (cut along Z). */
-    static final Bands X_WALLS = new Bands(32, 1, 3, 3, 7, 101);
-    static final Bands Z_WALLS = new Bands(32, 1, 3, 3, 7, 102);
+    /** Length of the blocks the wall bands are drawn in (see {@link Bands}); each block starts with a wall band. */
+    private static final int WALL_MACRO = 32;
+    /**
+     * Wall bands running north-south (cut along X) and east-west (cut along Z). The gaps between
+     * walls (the rooms) are 3-5 wide: small enough that most spaces are cramped little rooms, so
+     * the maze feels closed in, but never so narrow that two people can't pass.
+     */
+    static final Bands X_WALLS = new Bands(WALL_MACRO, 1, 3, 3, 5, 101);
+    static final Bands Z_WALLS = new Bands(WALL_MACRO, 1, 3, 3, 5, 102);
     /** Columns within this distance of the exit (outside the stairwell) are an open lobby. */
     private static final int CLEARING_RADIUS = 8;
     private static final int ARROW_RANGE = 320;
@@ -110,17 +124,20 @@ public final class Level0Layout extends LevelLayout {
     private static final int SAFE_EXIT_DISTANCE = 24;
     /** Two zone kinds mix over this many blocks on each side of their border. */
     private static final int BLEND = 12;
-    /** Share of single dead troffers in lit areas (darkness otherwise comes by zone). */
-    private static final double DEAD_LIGHT = 0.03;
+    /**
+     * Share of single dead troffers in lit areas (darkness otherwise comes by zone). About one
+     * panel in twelve is dead, so even a lit room often has a gap in its light and a dim corner.
+     */
+    private static final double DEAD_LIGHT = 0.08;
 
     // What a maze column is: the low 4 bits of a packed column (see mazeColumn).
     static final int OPEN = 0;
     static final int WALL = 1;
-    static final int DOORWAY = 2;      // walkable; a lintel above in dark wings and builders' rooms
+    static final int DOORWAY = 2;      // walkable, full height (frameless: the ceiling just carries on)
     static final int HALF = 3;         // chest-high partition with a wood cap rail
-    static final int WINDOW = 4;       // wall with a frameless 2x2 hole at eye height, right through
+    static final int WINDOW = 4;       // wall with a frameless 2-wide slot at eye height, right through
     static final int NICHE_HIGH = 5;   // wall face with an empty 1-deep recess at eye height
-    static final int NICHE_LOW = 6;    // wall face with a walk-in recess from the floor up
+    static final int NICHE_LOW = 6;    // wall face with a walk-in recess, floor to ceiling
     static final int ALCOVE = 7;       // the recess in front of an exit-sign door
     static final int ALCOVE_DOOR = 8;  // the door at the back of it
     static final int ALCOVE_FRAME = 9; // a hazard-striped jamb beside it
@@ -133,17 +150,22 @@ public final class Level0Layout extends LevelLayout {
     private static final int MISSING = 2;
     private static final int STUB_LOW = 3;   // only the half touching the lower-coordinate junction
     private static final int STUB_HIGH = 4;  // only the half touching the higher-coordinate junction
-    /** Chances of SOLID, DOOR and MISSING per zone kind; the rest are stubs. */
+    /**
+     * Chances of SOLID, DOOR and MISSING per zone kind; the rest are stubs. Every kind keeps more
+     * of its walls than it used to, so open space comes in small pieces: halls are now broken up by
+     * wall stubs and part-walls between their pillars, and fields are mostly closed rooms joined by
+     * doorways.
+     */
     private static final int[] ODDS_STATES = {SOLID, DOOR, MISSING};
     private static final double[][] SEGMENT_ODDS = {
-            {0.03, 0.02, 0.83}, // HALL: walls almost all gone; pillars and wall blocks stay
-            {0.14, 0.50, 0.20}, // FIELD
+            {0.12, 0.28, 0.32}, // HALL: a third of the walls gone; pillars, stubs and wall blocks stay
+            {0.26, 0.60, 0.04}, // FIELD: small rooms, nearly all joined by doorways
             {1.00, 0.00, 0.00}, // CORRIDOR (corridors are carved separately)
             {1.00, 0.00, 0.00}, // BUILDERS (never used: see Level0Builders)
-            {0.18, 0.58, 0.12}, // DARK: more enclosed, so the dark starts at doorways
+            {0.24, 0.60, 0.06}, // DARK: more enclosed, so the dark starts at doorways
     };
     /** Chance that a junction no wall reaches still stands as a pillar, per zone kind. */
-    private static final double[] JUNCTION_PILLAR = {0.8, 0.3, 1.0, 0.3, 0.3};
+    private static final double[] JUNCTION_PILLAR = {1.0, 0.6, 1.0, 0.4, 0.5};
 
     // Features of a solid wall segment (see solidFeature).
     static final int F_NONE = 0;
@@ -188,6 +210,12 @@ public final class Level0Layout extends LevelLayout {
     private static final int MOUNT_CEILING = 3;
     /** Cached once: values() makes a new array on every call. */
     private static final Level0EmbeddedBlock.Prop[] EMBED_PROPS = Level0EmbeddedBlock.Prop.values();
+    /**
+     * The four horizontal directions, in the same order as Direction.Plane.HORIZONTAL. Looping over
+     * that makes a new iterator object every time; this array is made once, so wall columns (which
+     * look for wall drawings in all four directions) allocate nothing.
+     */
+    private static final Direction[] HORIZONTALS = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
     // The exit door's alcove (see exitAlcove).
     private static final int STAIR_DOOR = 1;
@@ -215,7 +243,11 @@ public final class Level0Layout extends LevelLayout {
     private final Level0AnomalyPlan anomalies;
 
     public Level0Layout() {
-        super(4, new ExitLocator(512, 64, 1000));
+        // Three blocks of air between carpet (y40) and ceiling (y44): the ceiling sits just over a
+        // player's head, which is what makes the Lobby feel low and oppressive. It is also exactly
+        // enough for Bacteria (2.9 tall), so nothing may ever hang lower than the ceiling over a
+        // walkable spot.
+        super(3, new ExitLocator(512, 64, 1000));
         this.anomalies = new Level0AnomalyPlan(this);
     }
 
@@ -345,12 +377,13 @@ public final class Level0Layout extends LevelLayout {
     }
 
     /**
-     * Doorway position: its width and offset depend on the gap ("row") and on a lane of 32 walls,
-     * not on the individual wall, so the openings of neighbouring parallel walls line up into the
-     * long vistas Level 0 is known for.
+     * Doorway position: its width and offset depend on the gap ("row") and on a lane of 4 walls,
+     * not on the individual wall, so the openings of a few neighbouring parallel walls line up into
+     * the vistas Level 0 is known for, but no view runs much more than 20 blocks before a wall
+     * closes it off.
      */
     private static boolean inDoorway(long seed, int wallIndex, int gapIndex, int length, int along, int axis) {
-        int lane = Math.floorDiv(wallIndex, 32);
+        int lane = Math.floorDiv(wallIndex, 4);
         long h = Hash.of(seed, gapIndex, lane, 210 + axis);
         double r = Hash.unit(h);
         int width = length <= 2 ? length : length >= 6 && r < 0.25 ? 4 : length >= 5 && r < 0.5 ? 3 : 2;
@@ -473,13 +506,18 @@ public final class Level0Layout extends LevelLayout {
         return state == SOLID || state == DOOR || state == STUB_LOW;
     }
 
-    /** Side length of the pillar in the middle of a room (0 = none): 1x1 or 2x2 in halls, 2x2 in big maze rooms. */
+    /** Side length of the pillar in the middle of a room (0 = none): 1x1 or 2x2 in halls, 2x2 in the biggest maze rooms. */
     private static int pillarSize(long seed, int kind, long sx, long sz) {
         int lenX = Bands.length(sx);
         int lenZ = Bands.length(sz);
         long h = Hash.of(seed, Bands.index(sx), Bands.index(sz), 230);
         if (kind == HALL) {
-            return lenX >= 5 && lenZ >= 5 && Hash.unit(h) < 0.35 ? (Hash.unit(Hash.mix(h)) < 0.4 ? 1 : 2) : 0;
+            // Most hall bays get a pillar (2x2 only where there is room round it), so no stretch of
+            // a hall stays wide open.
+            if (lenX < 4 || lenZ < 4 || Hash.unit(h) >= 0.6) {
+                return 0;
+            }
+            return lenX >= 5 && lenZ >= 5 && Hash.unit(Hash.mix(h)) >= 0.4 ? 2 : 1;
         }
         if (kind == FIELD || kind == DARK) {
             return lenX >= 6 && lenZ >= 6 && Hash.unit(h) < 0.45 ? 2 : 0;
@@ -502,39 +540,60 @@ public final class Level0Layout extends LevelLayout {
     // ==========================================================================================
 
     /**
-     * A corridor zone is solid wall with straight corridors cut through it: one along every gap
-     * "row" of the zone's axis (a fifth of the rows stay solid), a few cross corridors along gaps of
-     * the other axis, and now and then a plug of wall where a corridor crosses a wall band (a dead
-     * end). The zone point's hash picks the axis and Kane's or the film's style.
+     * A corridor zone is solid wall with narrow corridors cut through it: one along most gap "rows"
+     * of the zone's axis (a quarter of the rows stay solid), cross corridors along some gaps of the
+     * other axis, and now and then a plug of wall where a corridor crosses a wall band (a dead
+     * end). A corridor does not run dead straight: at the start of every 32-block stretch it steps
+     * sideways, so you never see far down it. Now and then it opens out into a small side room
+     * (the whole room-sized cell around it is left open). The zone point's hash picks the axis and
+     * Kane's or the film's style.
      */
     private static int corridorColumn(long seed, int x, int z, long sx, long sz, int zoneHash) {
         boolean alongX = (zoneHash & 1) == 0;
         boolean film = (zoneHash >>> 8 & 0xFF) < 115; // about 45%
         long row = alongX ? sz : sx;
         long run = alongX ? sx : sz;
+        Bands rowBands = alongX ? Z_WALLS : X_WALLS;
+        Bands runBands = alongX ? X_WALLS : Z_WALLS;
         int across = alongX ? z : x;
         int along = alongX ? x : z;
         int flags = 0;
-        if (!Bands.isBand(row) && Hash.unit(seed, Bands.index(row), zoneHash, 525) >= 0.2) {
-            int strip = strip(seed, row, zoneHash, 0, film, alongX ? Z_WALLS : X_WALLS, across);
+        boolean bay = false;
+        if (!Bands.isBand(row) && Hash.unit(seed, Bands.index(row), zoneHash, 525) >= 0.25) {
+            // Each 32-block stretch ("leg") of the corridor has its own sideways position.
+            int leg = Math.floorDiv(along, WALL_MACRO);
+            int strip = strip(seed, row, zoneHash ^ leg * 0x61C88647, film);
+            int pos = across - rowBands.start(row);
+            int from = strip & 15;
+            int to = from + (strip >>> 4);
+            // The wall band at the start of a leg joins the two legs: open across both of them.
+            boolean jog = Bands.isBand(run) && runBands.start(run) == leg * WALL_MACRO;
+            if (jog) {
+                int before = strip(seed, row, zoneHash ^ (leg - 1) * 0x61C88647, film);
+                from = Math.min(from, before & 15);
+                to = Math.max(to, (before & 15) + (before >>> 4));
+            }
             boolean plugged = Bands.isBand(run) && Hash.unit(seed, Bands.index(run), Bands.index(row), 527) < 0.05;
-            if (strip >= 0 && !plugged) {
+            if (pos >= from && pos < to && !plugged) {
                 flags |= C_MAIN;
-                if ((strip & 15) == ((strip >>> 4) - 1) / 2) flags |= C_MAIN_CENTRE;
+                if (!jog && pos == (strip & 15) + ((strip >>> 4) - 1) / 2) flags |= C_MAIN_CENTRE;
                 if (Hash.unit(seed, Math.floorDiv(along, 24), Bands.index(row), 528) < 0.12) flags |= C_DIM;
             }
+            // A small side room: the whole room-sized cell the corridor passes through stays open.
+            bay = !Bands.isBand(run) && Hash.unit(seed, Bands.index(row), Bands.index(run), 530) < 0.2;
         }
-        if (!Bands.isBand(run) && Hash.unit(seed, Bands.index(run), zoneHash, 526) < 0.3) {
-            int strip = strip(seed, run, zoneHash, 1, film, alongX ? X_WALLS : Z_WALLS, along);
-            if (strip >= 0) {
+        if (!Bands.isBand(run) && Hash.unit(seed, Bands.index(run), zoneHash, 526) < 0.35) {
+            int strip = strip(seed, run, zoneHash ^ 0x5BD1E995, film);
+            int pos = along - runBands.start(run) - (strip & 15);
+            if (pos >= 0 && pos < strip >>> 4) {
                 flags |= C_CROSS;
-                if ((strip & 15) == ((strip >>> 4) - 1) / 2) flags |= C_CROSS_CENTRE;
+                if (pos == ((strip >>> 4) - 1) / 2) flags |= C_CROSS_CENTRE;
                 if ((flags & C_MAIN) == 0 && Hash.unit(seed, Math.floorDiv(across, 24), Bands.index(run), 529) < 0.12) {
                     flags |= C_DIM;
                 }
             }
         }
-        if ((flags & (C_MAIN | C_CROSS)) == 0) {
+        if ((flags & (C_MAIN | C_CROSS)) == 0 && !bay) {
             return WALL;
         }
         if (alongX) flags |= C_ALONG_X;
@@ -543,21 +602,22 @@ public final class Level0Layout extends LevelLayout {
     }
 
     /**
-     * Where a corridor runs inside a gap: Kane's are 3-4 wide, the film's 2-3. Returns the position
-     * across the corridor (bits 0-3) and its width (bits 4-7), or -1 outside it.
+     * Where a corridor runs inside a gap: its offset from the gap's start (bits 0-3) and its width
+     * (bits 4-7). Corridors are 2 wide, just enough to pass someone; a few (more often Kane's than
+     * the film's) are 3.
      */
-    private static int strip(long seed, long gap, int zoneHash, int which, boolean film, Bands bands, int coord) {
+    private static int strip(long seed, long gap, int salt, boolean film) {
         int length = Bands.length(gap);
-        long h = Hash.of(seed, Bands.index(gap), zoneHash, 522 + which);
-        int width = Math.min(length, (film ? 2 : 3) + (Hash.unit(h) < 0.5 ? 1 : 0));
+        long h = Hash.of(seed, Bands.index(gap), salt, 522);
+        int width = Math.min(length, Hash.unit(h) < (film ? 0.10 : 0.25) ? 3 : 2);
         int offset = Hash.range(Hash.mix(h), length - width + 1);
-        int pos = coord - bands.start(gap) - offset;
-        return pos >= 0 && pos < width ? pos | width << 4 : -1;
+        return offset | width << 4;
     }
 
     /**
-     * Corridor lights run down the middle: Kane's a square troffer every 2 blocks, the film's one
-     * continuous strip. Some stretches (about one in eight) are dead and dark.
+     * Corridor lights run down the middle: Kane's a square troffer every 3 blocks (pools of light
+     * with dimmer stretches between them under the low ceiling), the film's one continuous strip.
+     * Some stretches (about one in eight) are dead and dark.
      */
     @Nullable
     private static BlockState corridorLight(long seed, int x, int z, int column) {
@@ -573,7 +633,7 @@ public final class Level0Layout extends LevelLayout {
             BlockState strip = (dim ? Level0Blocks.TROFFER_STRIP_OFF : Level0Blocks.TROFFER_STRIP).get().defaultBlockState();
             return strip.setValue(AxisShapeBlock.AXIS, runsX ? Direction.Axis.X : Direction.Axis.Z);
         }
-        if (Math.floorMod(runsX ? x : z, 2) != 0) {
+        if (Math.floorMod(runsX ? x : z, 3) != 0) {
             return null;
         }
         boolean dead = dim || Hash.unit(seed, x, z, 532) < DEAD_LIGHT;
@@ -581,13 +641,13 @@ public final class Level0Layout extends LevelLayout {
     }
 
     // ==========================================================================================
-    // Rooms: lights, ramps, soffits, set pieces
+    // Rooms: lights, ramps, set pieces
     // ==========================================================================================
 
     /**
      * The troffer grid: one every 3 blocks in both directions over open floor (some 24-block
      * stretches of a row shifted by one). Dead in dark wings, and in lit areas within 3 blocks of
-     * one, so a wing goes black right at its doorway; otherwise 3% dead.
+     * one, so a wing goes black right at its doorway; otherwise {@link #DEAD_LIGHT} (9%) dead.
      */
     @Nullable
     private static BlockState roomLight(long seed, int kind, int x, int z) {
@@ -669,10 +729,11 @@ public final class Level0Layout extends LevelLayout {
         int d = Math.max(Math.abs(x - (x0 + lenX / 2)), Math.abs(z - (z0 + lenZ / 2)));
         switch (piece) {
             case R_HEAP -> {
-                // A rough mound: three high in the middle, lower and patchier further out.
+                // A rough mound: two high in the middle (a gap still shows under the low ceiling),
+                // lower and patchier further out.
                 if (d > 2) return P_NONE;
                 double r = Hash.unit(seed, x, z, 641);
-                int height = d == 0 ? 3 : d == 1 ? (r < 0.6 ? 2 : 1) : (r < 0.45 ? 1 : 0);
+                int height = d == 0 ? 2 : d == 1 ? (r < 0.45 ? 2 : 1) : (r < 0.45 ? 1 : 0);
                 return height == 0 ? P_NONE : P_HEAP | height << 4;
             }
             case R_THRONE -> {
@@ -756,8 +817,9 @@ public final class Level0Layout extends LevelLayout {
         if (Hash.unit(h) >= 0.2) {
             return 0;
         }
-        int width = 14 + Hash.range(Hash.mix(h ^ 1), 7);
-        int depth = 10 + Hash.range(Hash.mix(h ^ 2), 6);
+        // 12-16 by 9-12 with its walls: still the biggest plain room around, but no open hall.
+        int width = 12 + Hash.range(Hash.mix(h ^ 1), 5);
+        int depth = 9 + Hash.range(Hash.mix(h ^ 2), 4);
         int x0 = 6 + Hash.range(Hash.mix(h ^ 3), OFFICE_GRID - 12 - width);
         int z0 = 6 + Hash.range(Hash.mix(h ^ 4), OFFICE_GRID - 12 - depth);
         return 1L << 40 | (long) x0 << 24 | (long) z0 << 16 | (long) width << 8 | depth;
@@ -838,11 +900,14 @@ public final class Level0Layout extends LevelLayout {
                     out.set(floor + 2, ModBlocks.WALL_WINDOW_DRAWING.get().defaultBlockState().setValue(WallDecalBlock.FACING, Direction.SOUTH));
                 }
             }
-            case OFFICE_DOORWAY -> out.set(ceiling - 1, grey);
+            case OFFICE_DOORWAY -> {
+                // A plain full-height opening: under the low ceiling a lintel would leave too little headroom.
+            }
             case OFFICE_INSIDE -> {
                 Direction lamp = officeLamp(rx, rz, width, depth);
                 if (lamp != null) {
-                    out.set(floor + 3, ModBlocks.RED_ALARM_LAMP.get().defaultBlockState().setValue(WallLampBlock.FACING, lamp));
+                    // High on the wall, right under the ceiling.
+                    out.set(ceiling - 1, ModBlocks.RED_ALARM_LAMP.get().defaultBlockState().setValue(WallLampBlock.FACING, lamp));
                 }
                 int cx = width / 2;
                 int cz = depth / 2;
@@ -890,12 +955,38 @@ public final class Level0Layout extends LevelLayout {
         return plan;
     }
 
+    /**
+     * The safe-room plan this thread looked up last. Every column asks for the plan of its 128x128
+     * square, and worldgen fills column after column of the same square, so keeping the last answer
+     * saves building a new plan object (and its hashes) for nearly every column.
+     */
+    private static final class SafeMemo {
+        boolean valid;
+        long seed;
+        int cellX;
+        int cellZ;
+        @Nullable
+        SafeRoomPlan plan;
+    }
+
+    private static final ThreadLocal<SafeMemo> SAFE_MEMO = ThreadLocal.withInitial(SafeMemo::new);
+
     /** Where the safe room of a 128x128 square would go (before checking it's allowed there), or null. */
     @Nullable
     private static SafeRoomPlan safeRoomPlan(long seed, int cellX, int cellZ) {
+        SafeMemo memo = SAFE_MEMO.get();
+        if (memo.valid && memo.seed == seed && memo.cellX == cellX && memo.cellZ == cellZ) {
+            return memo.plan;
+        }
         // 7x7 or 9x9 inside, with walls two blocks thick (11 or 13 across).
         int size = Hash.unit(seed, cellX, cellZ, 401) < 0.5 ? 11 : 13;
-        return SafeRoomPlan.jittered(seed, cellX, cellZ, 400, size, SAFE_MOAT, 2);
+        SafeRoomPlan plan = SafeRoomPlan.jittered(seed, cellX, cellZ, 400, size, SAFE_MOAT, 2);
+        memo.valid = true;
+        memo.seed = seed;
+        memo.cellX = cellX;
+        memo.cellZ = cellZ;
+        memo.plan = plan;
+        return plan;
     }
 
     /** Never near an exit stairwell, never overlapping a front office (or the walkway around it). */
@@ -994,16 +1085,16 @@ public final class Level0Layout extends LevelLayout {
         return isWalkable(seed, x, z) && anomalies.structureAt(seed, x, z) == null && rampAt(seed, x, z) == 0;
     }
 
-    /** One block higher on the raised floor and the top of the stairs of a builders' room ramp. */
+    /** One block lower in the sunken passage of a builders' room (and half a block on its step). */
     @Override
     public int standY(long seed, int x, int z) {
         int part = rampAt(seed, x, z);
-        return FLOOR_Y + 1 + (part == Level0Builders.RAMP_RAISED || part == Level0Builders.RAMP_STAIRS ? 1 : 0);
+        return FLOOR_Y + (part == Level0Builders.RAMP_SUNK || part == Level0Builders.RAMP_SLAB ? 0 : 1);
     }
 
     @Override
     public double feetY(long seed, int x, int z) {
-        return rampAt(seed, x, z) == Level0Builders.RAMP_SLAB ? FLOOR_Y + 1.5 : standY(seed, x, z);
+        return rampAt(seed, x, z) == Level0Builders.RAMP_SLAB ? FLOOR_Y + 0.5 : standY(seed, x, z);
     }
 
     /**
@@ -1262,8 +1353,9 @@ public final class Level0Layout extends LevelLayout {
             if (prop != P_NONE && prop != P_CABLE && prop != P_HOLE) return false;
             if (crateHeight(seed, x, z, sx, sz) != 0 || backpackFacing(seed, x, z, sx, sz) != null) return false;
         }
-        int embedded = embeddedAt(seed, x, z, kind, sx, sz);
-        return embedded == 0 || (embedded & 3) == MOUNT_CEILING;
+        // Any noclipped prop is in the way: even one hanging out of the ceiling leaves only two
+        // blocks under it, too low for anything taller than a person.
+        return embeddedAt(seed, x, z, kind, sx, sz) == 0;
     }
 
     // ==========================================================================================
@@ -1361,9 +1453,10 @@ public final class Level0Layout extends LevelLayout {
                 return;
             }
             case WINDOW, NICHE_HIGH -> {
-                // A frameless hole at eye height (right through the wall, or one block deep).
+                // A frameless slot at eye height (right through the wall, or one block deep), one
+                // block tall so that wall still shows above it under the low ceiling.
                 out.set(floor + 1, base);
-                fillUp(floor + 4, ceiling, paper, out);
+                fillUp(floor + 3, ceiling, paper, out);
                 return;
             }
             case NICHE_LOW -> {
@@ -1374,14 +1467,11 @@ public final class Level0Layout extends LevelLayout {
                 // A builders' room partition: wallpaper below, a dark wood cap rail on top.
                 out.set(floor + 1, blackout ? rough : baseboard);
                 out.set(floor + 2, Level0Blocks.HALF_WALL_CAP.get().defaultBlockState().setValue(WallMountBlock.FACING, facing));
-                if ((column >>> 12 & Level0Builders.SOFFIT) != 0) {
-                    out.set(ceiling - 1, paper); // the soffit beam carries on overhead
-                }
                 return;
             }
             case ALCOVE -> {
-                // Hazard-striped header across the top of the recess; the EXIT sign hangs under it,
-                // on the wall above the door.
+                // The lit EXIT sign hangs on the wall above the door, right under the low ceiling
+                // (on a taller level a hazard-striped header would fill the space above it).
                 out.set(floor + 3, Level0Blocks.EXIT_SIGN.get().defaultBlockState().setValue(WallMountBlock.FACING, facing));
                 fillUp(floor + 4, ceiling, hazard, out);
                 return;
@@ -1403,17 +1493,16 @@ public final class Level0Layout extends LevelLayout {
         boolean sticky = red >= 0 && Hash.unit(seed, x, z, 3291) < 1.0 - red / 7.0;
         BlockState stickyCarpet = ModBlocks.STICKY_CARPET.get().defaultBlockState();
         if (code == DOORWAY) {
+            // Full height and frameless: a lintel under the low ceiling would leave too little
+            // headroom, so the ceiling just carries on through every opening.
             out.set(floor, sticky ? stickyCarpet : carpet);
-            if (kind == DARK || kind == BUILDERS || blackout) {
-                out.set(ceiling - 1, paper); // a lintel: the dark starts right here
-            }
             if (blackout) {
                 out.set(floor + 1, fluid);
             }
             return;
         }
         if (kind == BUILDERS) {
-            fillBuilders(seed, x, z, column, blackout, sticky ? stickyCarpet : carpet, tile, paper, out);
+            fillBuilders(seed, x, z, column, blackout, sticky ? stickyCarpet : carpet, out);
             return;
         }
         if (kind == CORRIDOR) {
@@ -1490,30 +1579,25 @@ public final class Level0Layout extends LevelLayout {
     }
 
     /**
-     * An open column of a builders' room (see {@link Level0Builders}): the ramp and raised floor of
-     * the low passage, a mannequin, the soffit beam, and the light grid (in the passage's lowered
-     * ceiling where the floor is raised).
+     * An open column of a builders' room (see {@link Level0Builders}): the step and floor of the
+     * sunken passage, a mannequin, and the light grid.
      */
-    private void fillBuilders(long seed, int x, int z, int column, boolean blackout, BlockState carpet, BlockState tile,
-                              BlockState paper, Column out) {
+    private void fillBuilders(long seed, int x, int z, int column, boolean blackout, BlockState carpet, Column out) {
         int floor = floorY();
         int ceiling = ceilingY();
         int extra = column >>> 12;
         Direction facing = Direction.from2DDataValue(column >>> 8 & 3);
         int part = extra >>> Level0Builders.RAMP_SHIFT & 3;
-        boolean soffit = (extra & Level0Builders.SOFFIT) != 0;
         boolean mannequin = (extra & Level0Builders.MANNEQUIN) != 0;
-        out.set(floor, carpet);
-        if (soffit) {
-            out.set(ceiling - 1, paper);
-        }
         if (part == Level0Builders.RAMP_SLAB) {
-            out.set(floor + 1, Level0Blocks.CARPET_SLAB.get().defaultBlockState());
-        } else if (part == Level0Builders.RAMP_STAIRS) {
-            out.set(floor + 1, Level0Blocks.CARPET_STAIRS.get().defaultBlockState().setValue(StairBlock.FACING, facing));
-        } else if (part == Level0Builders.RAMP_RAISED) {
-            out.set(floor + 1, ModBlocks.LOBBY_CARPET.get().defaultBlockState());
-            out.set(ceiling - 1, tile);
+            // The step down: a carpet slab where the floor would be, half a block lower.
+            out.set(floor, Level0Blocks.CARPET_SLAB.get().defaultBlockState());
+        } else if (part == Level0Builders.RAMP_SUNK) {
+            // The sunken passage: the carpet one block down, so it keeps a full 4 blocks of headroom.
+            out.set(floor, Blocks.AIR.defaultBlockState());
+            out.set(floor - 1, carpet);
+        } else {
+            out.set(floor, carpet);
         }
         if (mannequin) {
             BlockState state = Level0Blocks.MANNEQUIN.get().defaultBlockState().setValue(WallMountBlock.FACING, facing);
@@ -1526,11 +1610,9 @@ public final class Level0Layout extends LevelLayout {
             }
             return;
         }
-        if (!soffit) {
-            BlockState light = roomLight(seed, BUILDERS, x, z);
-            if (light != null) {
-                out.set(part == Level0Builders.RAMP_RAISED ? ceiling - 1 : ceiling, light);
-            }
+        BlockState light = roomLight(seed, BUILDERS, x, z);
+        if (light != null) {
+            out.set(ceiling, light);
         }
     }
 
@@ -1604,7 +1686,7 @@ public final class Level0Layout extends LevelLayout {
      * The room's wall piece (see {@link #roomWallPiece}) where it touches column (x, z): tape along
      * the wall, up it and across the ceiling; switch boxes with conduit; a ladder.
      *
-     * @param ceilingBusy true if the ceiling here has a light, a soffit or a hole (no tape on it)
+     * @param ceilingBusy true if the ceiling here has a light or a hole (no tape on it)
      * @param floorUsed   true if something already stands on the floor here (no ladder or switches)
      */
     private void placeWallPieces(long seed, int x, int z, long sx, long sz, boolean ceilingBusy, boolean floorUsed, Column out) {
@@ -1893,7 +1975,7 @@ public final class Level0Layout extends LevelLayout {
 
     /** True if a doorway (or a walk-in recess) is right next to (x, z). */
     private boolean besideDoorway(long seed, int x, int z) {
-        for (Direction d : Direction.Plane.HORIZONTAL) {
+        for (Direction d : HORIZONTALS) {
             int code = mazeColumn(seed, x + d.getStepX(), z + d.getStepZ()) & 15;
             if (code == DOORWAY || code == ALCOVE || code == NICHE_LOW) {
                 return true;
@@ -1928,7 +2010,7 @@ public final class Level0Layout extends LevelLayout {
      * it is fused with; beside that wall (round a pillar's corner) it still checks for props, since
      * two props on neighbouring faces of a pillar would meet at the corner. Of two props that would
      * touch, the one with the lower hash gives way, so one of them always stays. A ceiling prop also
-     * needs plain open hall or field around it (no lintel, soffit, tape or hanging cable).
+     * needs plain open hall or field around it (no tape or hanging cable).
      */
     private boolean airAround(long seed, int x, int z, int mount, Direction facing) {
         long mine = Hash.of(seed, x, z, 723);
@@ -1963,8 +2045,8 @@ public final class Level0Layout extends LevelLayout {
         int code = column & 15;
         int kind = column >>> 4 & 7;
         if (code != OPEN) {
-            // Doorways are air (lintels only matter under the ceiling); anything else is in the way.
-            return code != DOORWAY || ceiling && (kind == DARK || kind == BUILDERS);
+            // Doorways are open floor to ceiling; anything else is in the way.
+            return code != DOORWAY;
         }
         if (kind == BUILDERS) {
             return ceiling || (column >>> 12 & Level0Builders.MANNEQUIN) != 0;
@@ -2078,6 +2160,9 @@ public final class Level0Layout extends LevelLayout {
         int x1 = X_WALLS.end(sx) - 1;
         int z0 = Z_WALLS.start(sz);
         int z1 = Z_WALLS.end(sz) - 1;
+        if (x != x0 && x != x1 || z != z0 && z != z1) {
+            return 0; // crates only ever stand in a corner: skip the wall lookups everywhere else
+        }
         boolean west = open(xSegment(seed, X_WALLS.span(seed, x0 - 1), sz));
         boolean east = open(xSegment(seed, X_WALLS.span(seed, x1 + 1), sz));
         boolean north = open(zSegment(seed, Z_WALLS.span(seed, z0 - 1), sx));
@@ -2182,7 +2267,7 @@ public final class Level0Layout extends LevelLayout {
     /** The window doodle goes one block to the right of a door drawing (as seen by the viewer). */
     @Nullable
     private Direction windowFace(long seed, int x, int z) {
-        for (Direction face : Direction.Plane.HORIZONTAL) {
+        for (Direction face : HORIZONTALS) {
             Direction toDoor = face.getClockWise();
             int doorX = x + toDoor.getStepX();
             int doorZ = z + toDoor.getStepZ();

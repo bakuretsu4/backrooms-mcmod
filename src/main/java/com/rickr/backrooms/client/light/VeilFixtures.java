@@ -49,8 +49,8 @@ final class VeilFixtures {
      * Level 0 has a troffer every 3 blocks, so the light budget only reaches about 10 blocks out
      * and lights would pop on and off at that edge as you walk. There, each light fades out over
      * the outer part of the picked set instead: from this fraction of the farthest picked light's
-     * distance it starts to dim, and the farthest is dark. (The even brightness further out comes
-     * from the lightmap fill, see ClientLighting.)
+     * distance it starts to dim, and the farthest is dark. (The light further out comes from the
+     * lightmap fill, see ClientLighting.)
      */
     private static final float LEVEL0_FADE_FROM = 0.6f;
     /**
@@ -171,7 +171,8 @@ final class VeilFixtures {
             entry.light = light;
             entry.seen = true;
             if (light.type != FixtureType.RED_ALARM_LAMP) {
-                setBrightness(entry, light.type.brightnessOn(floor) * light.level * scale * edgeFade(light, fadeEnd, fadeFrom));
+                setBrightness(entry, light.type.brightnessOn(floor) * tubeBrightness(light, floor) * light.level * scale
+                        * edgeFade(light, fadeEnd, fadeFrom));
             }
             // The nearest few streetlamps (selected is nearest first) get their glow cone.
             if (light.type.isStreetlamp() && conesLeft > 0) {
@@ -274,12 +275,33 @@ final class VeilFixtures {
         return Math.round(smooth * 16.0f) / 16.0f;
     }
 
+    /** True for the Level 0 ceiling tubes, which each get their own small brightness and colour difference. */
+    private static boolean level0Tube(FixtureLight light, @Nullable BackroomsLevel floor) {
+        boolean level0 = floor == null || floor == BackroomsLevel.LEVEL_0;
+        return level0 && (light.type == FixtureType.FLUORESCENT_LIGHT || light.type == FixtureType.L0_TROFFER_STRIP);
+    }
+
+    /** A Level 0 tube's own brightness factor (0.85-1.15, see FixturePower#tubeBrightness); 1 for everything else. */
+    private static float tubeBrightness(FixtureLight light, @Nullable BackroomsLevel floor) {
+        return level0Tube(light, floor) ? FixturePower.tubeBrightness(light.key) : 1.0f;
+    }
+
     private static PointLightData newPoint(FixtureLight light, @Nullable BackroomsLevel floor) {
         FixtureType type = light.type;
+        float r = type.red;
+        float g = type.green;
+        float b = type.blue;
+        if (level0Tube(light, floor)) {
+            // Tubes age differently: some a touch warm, cool or greenish (fixed per tube).
+            float[] tint = FixturePower.tubeTint(light.key);
+            r *= tint[0];
+            g *= tint[1];
+            b *= tint[2];
+        }
         return new PointLightData()
                 .setPosition(light.x, light.y, light.z)
                 .setRadius(type.radiusOn(floor))
-                .setColor(type.red, type.green, type.blue)
+                .setColor(r, g, b)
                 .setBrightness(0.0f)
                 // Shadows: without this a lamp lights the far side of the wall into the next room.
                 .setOcclusionEnabled(true);

@@ -3,9 +3,9 @@ package com.rickr.backrooms.client.anomaly.level0;
 import com.rickr.backrooms.client.AtmosphereGrade;
 import com.rickr.backrooms.client.anomaly.AnomalyClientEffect;
 import com.rickr.backrooms.registry.ModSounds;
+import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.layout.Level0RedRooms;
-import com.rickr.backrooms.world.layout.LevelLayout;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
@@ -44,10 +44,12 @@ final class RedRoomsEffect implements AnomalyClientEffect {
         Level0LoopSound[] sounds = hums.get(site);
         if (sounds == null || sounds[0].dead()) {
             double[][] centres = Level0RedRooms.roomCentres(site);
+            // Up by the red lamps, just under Level 0's ceiling.
+            double y = BackroomsLevel.LEVEL_0.layout().ceilingY() - 0.5;
             sounds = new Level0LoopSound[centres.length];
             for (int i = 0; i < centres.length; i++) {
                 sounds[i] = new Level0LoopSound(ModSounds.L0_RED_ROOMS_HUM.get(), SoundSource.AMBIENT,
-                        centres[i][0], LevelLayout.FLOOR_Y + 3.5, centres[i][1], false).play();
+                        centres[i][0], y, centres[i][1], false).play();
                 sounds[i].target = HUM_VOLUME;
             }
             if (hums.size() > 16) {

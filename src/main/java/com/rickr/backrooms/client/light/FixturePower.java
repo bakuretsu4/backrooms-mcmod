@@ -22,6 +22,11 @@ import net.minecraft.world.phys.Vec3;
  * <p>Separately, Level 9 lamps whose block is in mode=flicker are "broken": they stutter on
  * their own irregular rhythm all the time ({@link #brokenLampOn}).
  *
+ * <p>On Level 0 a few tubes are faulty all the time, chosen by position ({@link #level0Fault}):
+ * most stutter now and then ({@link #faultyTubeOn}), a few hang on as dim, slowly pulsing dying
+ * tubes ({@link #dyingTubeLevel}). Every tube also gets its own small brightness and colour
+ * difference ({@link #tubeBrightness}, {@link #tubeTint}), like real tubes of different ages.
+ *
  * <p>And Level 2's caged lamps hang on series circuits that fail now and then, every lamp of a
  * circuit at once ({@link #level2CircuitOn}).
  *
@@ -209,6 +214,110 @@ public final class FixturePower {
         long period = 1 + ((seed >>> 8) & 0xFFFF) % 3;
         long bucket = (nowMs / 50) / period;
         return (mix(seed + bucket * 0x9E3779B97F4A7C15L) & 0xFF) >= 115;
+    }
+
+    // --- Level 0 tubes -------------------------------------------------------------------------
+    // Real office ceilings are never perfectly even: every tube has aged differently, and a few
+    // are failing. Everything here is a pure function of the fixture's position (its key) and the
+    // clock, so it needs no block change, no world seed and no network message, and every player
+    // sees the same tubes misbehave at the same moment.
+
+    /** {@link #level0Fault}: a healthy tube. */
+    public static final int TUBE_OK = 0;
+    /** {@link #level0Fault}: a faulty tube that stutters off now and then. */
+    public static final int TUBE_STUTTER = 1;
+    /** {@link #level0Fault}: a dying tube that only glows dimly, pulsing slowly. */
+    public static final int TUBE_DYING = 2;
+    /** Out of 1024: how many lit Level 0 tubes are faulty (about 6%) ... */
+    private static final int FAULTY_TUBES = 62;
+    /** ... and how many of those (out of 1024 of the faulty ones) are dying instead of stuttering (about 1 in 5). */
+    private static final int DYING_SHARE = 205;
+    /** A stuttering tube has one "episode" this long: 5 to 25 seconds, its own length per tube ... */
+    private static final long STUTTER_EPISODE_MIN_MS = 5000L;
+    private static final long STUTTER_EPISODE_SPREAD_MS = 20000L;
+    /** ... with one burst of stuttering in it, 0.3 to 2 seconds long. */
+    private static final long STUTTER_BURST_MIN_MS = 300L;
+    private static final long STUTTER_BURST_SPREAD_MS = 1700L;
+    /** A dying tube glows at this share of a healthy one, plus up to {@link #DYING_PULSE} more. */
+    private static final float DYING_BASE = 0.22f;
+    private static final float DYING_PULSE = 0.16f;
+    /** Each tube's brightness lies within this much of normal (0.15 = plus or minus 15%). */
+    private static final float TUBE_BRIGHTNESS_SPREAD = 0.15f;
+
+    /**
+     * Is this Level 0 tube healthy ({@link #TUBE_OK}), stuttering ({@link #TUBE_STUTTER}) or
+     * dying ({@link #TUBE_DYING})? Decided by its position only. BackroomsLights decides which
+     * fixtures may be faulty at all (never exit or safe-room lamps).
+     */
+    public static int level0Fault(long key) {
+        long h = mix(key ^ 0x3C6EF372FE94F82BL);
+        if ((h & 0x3FF) >= FAULTY_TUBES) {
+            return TUBE_OK;
+        }
+        return ((h >>> 10) & 0x3FF) < DYING_SHARE ? TUBE_DYING : TUBE_STUTTER;
+    }
+
+    /**
+     * A stuttering Level 0 tube: on, except for one short burst in every episode. Each tube has
+     * its own episode length (5-25 s) and offset, so no two tubes stutter in step. In a burst
+     * (0.3-2 s, different each time) the tube clicks on and off every 60-140 ms, on a little less
+     * than half of the time, like a starter that can't strike the tube.
+     */
+    public static boolean faultyTubeOn(long key, long nowMs) {
+        long seed = mix(key ^ 0x7F4A7C159E3779B9L);
+        long episodeMs = STUTTER_EPISODE_MIN_MS + (seed & 0xFFFF) % STUTTER_EPISODE_SPREAD_MS;
+        long t = nowMs + ((seed >>> 16) & 0xFFFFFF) % episodeMs;
+        long episode = t / episodeMs;
+        long within = t % episodeMs;
+        long h = mix(seed + episode * 0x9E3779B97F4A7C15L);
+        long burstLength = STUTTER_BURST_MIN_MS + (h & 0xFFFF) % STUTTER_BURST_SPREAD_MS;
+        long burstStart = ((h >>> 16) & 0xFFFF) % (episodeMs - burstLength);
+        if (within < burstStart || within >= burstStart + burstLength) {
+            return true;
+        }
+        long slotMs = 60L + ((seed >>> 40) & 0xFF) % 81L;
+        return (mix(h ^ ((within - burstStart) / slotMs)) & 0xFF) < 110;
+    }
+
+    /**
+     * A dying Level 0 tube's brightness (share of a healthy tube): a dim glow that swells and
+     * fades slowly (each tube its own 3-7 s rhythm), so it reads as an old tube on its way out
+     * rather than a broken one.
+     */
+    public static float dyingTubeLevel(long key, long nowMs) {
+        long seed = mix(key ^ 0x1B873593CC9E2D51L);
+        double periodMs = 3000.0 + (seed & 0xFFFF) % 4000L;
+        double phase = ((seed >>> 16) & 0xFFFF) / 65536.0;
+        double wave = 0.5 + 0.5 * Math.sin((nowMs / periodMs + phase) * Math.PI * 2.0);
+        // Squared, so it lingers at the dim end and only briefly swells.
+        return DYING_BASE + DYING_PULSE * (float) (wave * wave);
+    }
+
+    /** This Level 0 tube's own brightness factor, 0.85-1.15 (tubes age differently). */
+    public static float tubeBrightness(long key) {
+        long h = mix(key ^ 0x2545F4914F6CDD1DL);
+        float u = (h & 0xFFFF) / 65535.0f;
+        return 1.0f + TUBE_BRIGHTNESS_SPREAD * (2.0f * u - 1.0f);
+    }
+
+    /**
+     * This Level 0 tube's colour, multiplied onto the fixture's own colour: most are as made, some
+     * a little warm (old tubes yellow), some cooler, a few faintly green (a tube near the end of its
+     * life). Small shifts, so the hall still reads as one colour of light. Returns {r, g, b}.
+     */
+    public static float[] tubeTint(long key) {
+        long h = mix(key ^ 0x6C8E9CF570932BD5L);
+        int roll = (int) (h & 0xFF);
+        if (roll < 112) {
+            return new float[] {1.0f, 1.0f, 1.0f}; // as made
+        }
+        if (roll < 176) {
+            return new float[] {1.0f, 0.97f, 0.88f}; // warm, yellowed
+        }
+        if (roll < 228) {
+            return new float[] {0.94f, 0.98f, 1.0f}; // cool
+        }
+        return new float[] {0.93f, 1.0f, 0.88f}; // faintly green
     }
 
     /** The 0..1 power of one fixture right now (before the camcorder battery). */

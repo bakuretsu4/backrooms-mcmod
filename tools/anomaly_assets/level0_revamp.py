@@ -601,9 +601,17 @@ def _floor_models() -> None:
 def _ceiling_models() -> None:
     for name in ("l0_troffer_strip", "l0_troffer_strip_off"):
         tile = _ref("ceiling_tile")
-        _bm(name, {"parent": "minecraft:block/cube", "textures": {
+        model = {"parent": "minecraft:block/cube", "textures": {
             "particle": _ref(name), "down": _ref(name), "up": tile, "north": tile, "south": tile,
-            "east": tile, "west": tile}})
+            "east": tile, "west": tile}}
+        if name == "l0_troffer_strip":
+            # The lit strip's lens is tinted (tintindex 0) so a faulty strip can be drawn grey while
+            # it is dark (block/Level0TubeGlow); a lit strip's tint is white, so it looks unchanged.
+            faces = {side: {"texture": "#" + side, "cullface": side} for side in ("up", "north", "south", "west", "east")}
+            faces["down"] = {"texture": "#down", "cullface": "down", "tintindex": 0}
+            model["parent"] = "minecraft:block/block"
+            model["elements"] = [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": faces}]
+        _bm(name, model)
         P._axis_state(name)
         _im(name)
 

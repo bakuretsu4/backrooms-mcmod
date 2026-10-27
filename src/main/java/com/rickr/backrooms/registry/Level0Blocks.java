@@ -6,6 +6,7 @@ import com.rickr.backrooms.block.Level0ConduitBlock;
 import com.rickr.backrooms.block.Level0EmbeddedBlock;
 import com.rickr.backrooms.block.Level0GraffitiBlock;
 import com.rickr.backrooms.block.Level0MannequinBlock;
+import com.rickr.backrooms.block.Level0TubeGlow;
 import com.rickr.backrooms.block.Level0TapeBlock;
 import com.rickr.backrooms.block.SurfaceBlock;
 import com.rickr.backrooms.block.WallDecalBlock;
@@ -86,9 +87,11 @@ public final class Level0Blocks {
     /**
      * One block of the film's long narrow corridor light: a strip of lens running along AXIS down
      * the middle of a ceiling block, so a row of them reads as one continuous strip. Light 12.
+     * Glows full-bright, except while a faulty strip is dark (see block/Level0TubeGlow).
      */
     public static final DeferredBlock<AxisShapeBlock> TROFFER_STRIP = block("l0_troffer_strip",
-            props -> new AxisShapeBlock(props, Shapes.block()), fixture(MapColor.SNOW, SoundType.GLASS, 12));
+            props -> new AxisShapeBlock(props, Shapes.block()),
+            fixture(MapColor.SNOW, SoundType.GLASS, 12).emissiveRendering(Level0TubeGlow::emissive));
     /** The same strip, dead: grey lens, the tube faintly visible. */
     public static final DeferredBlock<AxisShapeBlock> TROFFER_STRIP_OFF = block("l0_troffer_strip_off",
             props -> new AxisShapeBlock(props, Shapes.block()), unbreakable(MapColor.COLOR_LIGHT_GRAY, SoundType.GLASS));

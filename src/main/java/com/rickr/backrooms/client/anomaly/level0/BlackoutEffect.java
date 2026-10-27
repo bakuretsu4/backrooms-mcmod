@@ -4,8 +4,8 @@ import com.rickr.backrooms.client.AtmosphereGrade;
 import com.rickr.backrooms.client.anomaly.AnomalyClientEffect;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
+import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.layout.Level0Blackout;
-import com.rickr.backrooms.world.layout.LevelLayout;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
@@ -30,7 +30,8 @@ final class BlackoutEffect implements AnomalyClientEffect {
             0.95f, 1.0f, 0.78f, 0.98f, 1.0f, 0.88f,
             0.002f, 0.002f, 0.002f, 0.02f, 0.02f, 0.015f, 2.0f, 0.085f, 0.70f, 0.50f, 0.08f, 0.025f);
     private static final float BUZZ_VOLUME = 0.8f;
-    private static final double BUZZ_HEIGHT = LevelLayout.FLOOR_Y + 3.6;
+    /** How far under the ceiling the buzz sits: up among the dead tubes. */
+    private static final double BUZZ_BELOW_CEILING = 0.4;
 
     /** Where one zone's buzz is and what it is doing. */
     private static final class Buzz {
@@ -78,7 +79,7 @@ final class BlackoutEffect implements AnomalyClientEffect {
                     // Suddenly right behind you: no fade, it just is.
                     Vec3 look = player.getLookAngle();
                     Vec3 flat = new Vec3(look.x, 0.0, look.z).normalize();
-                    sound.moveTo(player.getX() - flat.x * 2.5, BUZZ_HEIGHT, player.getZ() - flat.z * 2.5);
+                    sound.moveTo(player.getX() - flat.x * 2.5, buzzHeight(), player.getZ() - flat.z * 2.5);
                     buzz.nextMoveMs = now + 2500 + random.nextInt(1500);
                 } else {
                     buzz.pending = wayOut(site, player);
@@ -102,6 +103,11 @@ final class BlackoutEffect implements AnomalyClientEffect {
         double angle = base + (random.nextDouble() * 2.0 - 1.0) * Math.toRadians(70);
         double rx = (site.maxX() - site.minX()) / 2.0 + 3.0;
         double rz = (site.maxZ() - site.minZ()) / 2.0 + 3.0;
-        return new Vec3(cx + Math.cos(angle) * rx, BUZZ_HEIGHT, cz + Math.sin(angle) * rz);
+        return new Vec3(cx + Math.cos(angle) * rx, buzzHeight(), cz + Math.sin(angle) * rz);
+    }
+
+    /** Height of the buzz, from Level 0's own ceiling, so it follows the layout if that changes. */
+    private static double buzzHeight() {
+        return BackroomsLevel.LEVEL_0.layout().ceilingY() - BUZZ_BELOW_CEILING;
     }
 }

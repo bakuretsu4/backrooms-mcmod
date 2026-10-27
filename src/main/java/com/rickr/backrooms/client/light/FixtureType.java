@@ -23,19 +23,25 @@ public enum FixtureType {
     // id, mount, maxRun, red, green, blue, brightness, radius, hum, flickers
     /**
      * Level 0 ceiling troffer. Halls have one every 3 blocks, so each panel only needs to light
-     * the patch of floor and wall under it: the even, flat brightness of the halls comes from the
-     * lightmap fill (see ClientLighting), and these add soft pools and soft shadows on top. Near
-     * white with a faint cool tint (the yellow comes from the walls and carpet, not the light).
-     * Short radius and low brightness keep dozens of overlapping panels from clipping the walls
-     * to white, and a small radius is also cheaper for Veil to draw.
+     * the patch of floor and wall under it: most of the brightness comes from the lightmap fill
+     * (see ClientLighting), which follows the vanilla block light, so it is brightest under a
+     * panel and darker in corners and behind walls; these add soft pools and shadows on top. Near
+     * white with a faint cool tint (the yellow comes from the walls and carpet, not the light);
+     * each tube on Level 0 also gets its own small brightness and tint difference (see
+     * FixturePower#tubeBrightness). The ceiling is low (the floor is 2.5 blocks under the light),
+     * so a short radius is enough: it keeps the pool under the panel, doesn't reach through a
+     * doorway into the next room, keeps dozens of overlapping panels from clipping the walls to
+     * white, and is cheaper for Veil to draw. (Outside Level 0 it is used alone; see
+     * {@link #LONE_PANEL_BRIGHTNESS}.)
      */
-    FLUORESCENT_LIGHT("fluorescent_light", Mount.CEILING_BLOCK, 3, 0.94f, 0.97f, 1.0f, 0.32f, 7.5f, Hum.FLUORESCENT, true),
+    FLUORESCENT_LIGHT("fluorescent_light", Mount.CEILING_BLOCK, 3, 0.94f, 0.97f, 1.0f, 0.34f, 5.5f, Hum.FLUORESCENT, true),
     /**
      * Level 0 film corridor light strip: a row of these reads as one continuous strip down the
      * middle of a narrow corridor. Runs of 3 blocks make one light, the same spacing as the hall
-     * troffers; a little brighter, because a narrow corridor has no neighbouring rows of panels.
+     * troffers; a little brighter, because a narrow corridor has no neighbouring rows of panels,
+     * and a little shorter, so a corridor's light stays in the corridor.
      */
-    L0_TROFFER_STRIP("l0_troffer_strip", Mount.CEILING_BLOCK, 3, 0.94f, 0.97f, 1.0f, 0.40f, 7.0f, Hum.FLUORESCENT, true),
+    L0_TROFFER_STRIP("l0_troffer_strip", Mount.CEILING_BLOCK, 3, 0.94f, 0.97f, 1.0f, 0.38f, 5.0f, Hum.FLUORESCENT, true),
     /**
      * Level 0 EXIT sign over a door alcove: Kane's green running-man sign. Only a faint green
      * glow on the wall around it (it is a sign, not a lamp), silent and battery-backed like the

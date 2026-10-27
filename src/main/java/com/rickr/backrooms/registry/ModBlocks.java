@@ -112,8 +112,9 @@ public final class ModBlocks {
             unbreakable(MapColor.COLOR_RED, SoundType.WOOL));
     // Ceiling versions: plain, a water ring, a sagging tile, a faintly yellowed tile.
     public static final DeferredBlock<SurfaceBlock> CEILING_TILE = surface("ceiling_tile", MapColor.SAND, SoundType.WOOD, 8, 1, 1, 2);
+    // Glows full-bright, except while a faulty Level 0 tube is dark (see block/Level0TubeGlow).
     public static final DeferredBlock<Block> FLUORESCENT_LIGHT = BLOCKS.registerBlock("fluorescent_light", Block::new,
-            fixture(MapColor.SNOW, SoundType.GLASS, 12));
+            fixture(MapColor.SNOW, SoundType.GLASS, 12).emissiveRendering(com.rickr.backrooms.block.Level0TubeGlow::emissive));
     public static final DeferredBlock<Block> FLUORESCENT_LIGHT_OFF = structural("fluorescent_light_off", MapColor.COLOR_LIGHT_GRAY, SoundType.GLASS);
     public static final DeferredBlock<WallDecalBlock> WALL_ARROW_LEFT = decal("wall_arrow_left");
     public static final DeferredBlock<WallDecalBlock> WALL_ARROW_RIGHT = decal("wall_arrow_right");

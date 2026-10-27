@@ -228,7 +228,9 @@ final class FixtureClusters {
             // (cy is the middle of the head block, so its bottom face is at cy - 0.5.)
             case LAMP_HEAD -> ly = cy - 0.75;
         }
-        return new FixtureLight(key, type, lx, ly, lz, cx, cy, cz, facing, broken);
+        FixtureLight light = new FixtureLight(key, type, lx, ly, lz, cx, cy, cz, facing, broken);
+        light.blocks = blocks.toLongArray();
+        return light;
     }
 
     private static Direction openSide(BlockPos pos, BlockGetter world, BlockPos.MutableBlockPos cursor) {

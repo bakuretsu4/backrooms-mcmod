@@ -4,9 +4,9 @@ import com.rickr.backrooms.world.Hash;
 import java.util.Arrays;
 
 /**
- * The big "neighbourhoods" of Level 0: which kind of space you are walking through. Kane Pixels'
- * Level 0 is mostly huge pillared halls, broken up by mazes of thick wall blocks, long corridors,
- * the film's odd half-built rooms, and whole wings where every light is dead.
+ * The big "neighbourhoods" of Level 0: which kind of space you are walking through. Most of the
+ * Lobby is a tight maze of thick wall blocks and narrow corridors, opening now and then into a
+ * pillared hall, with the film's odd half-built rooms and whole wings where every light is dead.
  *
  * <p><b>How the zones are drawn.</b> The world is cut into 80x80 squares and each square gets one
  * random point somewhere inside it. Every column belongs to the nearest point (a "Voronoi"
@@ -26,13 +26,13 @@ import java.util.Arrays;
  * allocated per column.
  */
 public final class Level0Zones {
-    /** Kane's open pillar halls: the dominant space. */
+    /** Kane's pillar halls: the most open space, broken up by pillars and wall stubs. */
     public static final int HALL = 0;
-    /** Wall-block fields: the classic thick-walled maze with lined-up doorways. */
+    /** Wall-block fields: the classic thick-walled maze of small rooms with lined-up doorways. */
     public static final int FIELD = 1;
-    /** Long straight corridors (Kane: 3-4 wide; film: 2-3 wide with a centre light strip). */
+    /** Long narrow corridors, 2 wide (some 3), Kane's with troffers, the film's with a centre light strip. */
     public static final int CORRIDOR = 2;
-    /** The film's builders' rooms: big halls with a few deliberate half-walls (see Level0Builders). */
+    /** The film's builders' rooms: rooms 7-12 across with a few deliberate half-walls (see Level0Builders). */
     public static final int BUILDERS = 3;
     /** Dark wings: the same maze, every light dead from the doorway in. */
     public static final int DARK = 4;
@@ -41,8 +41,12 @@ public final class Level0Zones {
     /** Names for /backrooms anomaly locate (see Level0Finder). */
     public static final String[] NAMES = {"pillar_hall", "wall_field", "corridors", "builders_rooms", "dark_wing"};
 
-    /** Share of the zone points of each kind (they add up to 1). */
-    static final double[] KIND_WEIGHTS = {0.40, 0.25, 0.15, 0.10, 0.10};
+    /**
+     * Share of the zone points of each kind (they add up to 1). Open pillar halls used to be 40% of
+     * the level; they are now a minority, so most of the Lobby is tight walled maze and corridors
+     * and the big open spaces feel rare (and more unsettling when you find one).
+     */
+    static final double[] KIND_WEIGHTS = {0.22, 0.38, 0.22, 0.08, 0.10};
 
     /** Size of the squares that each hold one zone point. */
     static final int CELL = 80;

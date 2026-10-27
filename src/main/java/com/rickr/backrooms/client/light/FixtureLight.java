@@ -27,6 +27,13 @@ public final class FixtureLight {
      * time (see {@link FixturePower#brokenLampOn}).
      */
     public final boolean broken;
+    /**
+     * The packed positions of the blocks this light is made of (null for lights not built from
+     * blocks, like Level 39's facade windows). A faulty Level 0 tube uses it to darken the glow of
+     * every block of its strip together (see block/Level0TubeGlow).
+     */
+    @Nullable
+    public long[] blocks;
 
     // Runtime state, updated every client tick by BackroomsLights.
     /** 0..1 power from events (blackout fade, flicker, alarm dimming). */

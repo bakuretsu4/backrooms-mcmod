@@ -30,7 +30,7 @@ final class Level0Finder {
             kinds.add(ZONE + name);
         }
         for (String name : new String[] {"furniture_heap", "throne", "mannequins", "hazmat_case", "ceiling_hole", "ceiling_cable",
-                "tape", "switch_boxes", "ladder", "exit_alcove", "graffiti", "window", "niche", "ramp", "soffit", "noclipped"}) {
+                "tape", "switch_boxes", "ladder", "exit_alcove", "graffiti", "window", "niche", "ramp", "noclipped"}) {
             kinds.add(SET + name);
         }
         KINDS = List.copyOf(kinds);
@@ -79,8 +79,6 @@ final class Level0Finder {
                     (s, sx, sz) -> Level0Builders.isRoom(s, sx, sz) && Level0Builders.hasMannequins(s, sx, sz));
             case "ramp" -> nearestRoom(layout, seed, x, z, kind, bigX, bigZ,
                     (s, sx, sz) -> Level0Builders.isRoom(s, sx, sz) && (Level0Builders.plan(s, sx, sz) & 15) == Level0Builders.L_PASSAGE);
-            case "soffit" -> nearestRoom(layout, seed, x, z, kind, bigX, bigZ,
-                    (s, sx, sz) -> Level0Builders.isRoom(s, sx, sz) && Level0Builders.hasSoffit(s, sx, sz));
             case "window" -> nearestWall(layout, seed, x, z, kind, bigX, bigZ, buildersWall(Level0Builders.F_WINDOWS));
             case "niche" -> nearestWall(layout, seed, x, z, kind, bigX, bigZ, buildersWall(Level0Builders.F_NICHES));
             case "noclipped" -> nearestNoclipped(layout, seed, x, z, kind);

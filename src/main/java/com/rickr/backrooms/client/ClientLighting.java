@@ -26,10 +26,12 @@ import org.jetbrains.annotations.Nullable;
  * Either way the camcorder applies on top: NightShot lifts the darkness, a dead battery leaves you
  * nearly blind.
  *
- * <p>Level 0 is the exception to the "dim fill" rule: its halls have a troffer every 3 blocks and
- * should look bright, even and flat like Kane Pixels' footage, so in both modes it gets a strong
- * flat fill wherever the troffer grid reaches, fading to near-black in the dark wings (see
- * {@link #applyLevel0Fill}). Veil's lights only add soft pools and shadows on top there.
+ * <p>Level 0 is the exception to the "dim fill" rule: its halls have a troffer every 3 blocks, so
+ * in both modes most of their light comes from a fill that follows the vanilla block light (see
+ * {@link #applyLevel0Fill}): brightest under a panel, dimmer between panels, darker again in
+ * corners, at the foot of walls and behind pillars (block light flows around walls, so it is the
+ * one signal that knows about them), fading to near-black in the dark wings. Veil's lights add
+ * soft pools and shadows on top there.
  *
  * <p>The Poolrooms follow the same rules (dim rooms, bright pools of light) with a cool tint; their
  * glowing blocks are capped a little below white because the big atrium skylights would otherwise
@@ -84,7 +86,7 @@ public final class ClientLighting {
      */
     private static final float LEVEL2_DEAD_SECTION_FILL = 0.2f;
 
-    // Level 0 (Kane's Lobby): bright, even, flat-lit halls; whole dark wings near black.
+    // Level 0 (Kane's Lobby): dim, uneven office light; whole dark wings near black.
     /**
      * "No light at all" in Level 0: practically black, a hint warm, so dark wings and doorways
      * read as solid black holes (the grade crushes the rest). Not the blue-black of other levels.
@@ -93,24 +95,29 @@ public final class ClientLighting {
     private static final float LEVEL0_UNLIT_G = 0.004f;
     private static final float LEVEL0_UNLIT_B = 0.002f;
     /**
-     * The fill in a lit hall. The halls have a troffer every 3 blocks, so everywhere under the
-     * grid sits at block light 6 or more, and from there the fill is the SAME: flat, even light
-     * like the footage (a fill that followed the light level would show light-to-dark steps).
-     * Veil's lights add the soft pools under each panel on top.
+     * The fill at full strength ({@link #LEVEL0_FULL_FROM} and up). Below that it follows the block
+     * light down a curve, so the light is uneven like a real office: with the 3-high ceiling the
+     * floor right under a panel sits at block light 9 (fill ~0.72), between panels at 7 (~0.39),
+     * and a corner or a wall foot away from the panels at 5 (~0.16). Veil's pools add a little on
+     * top, mostly under the panels.
      */
-    private static final float LEVEL0_MAX_FILL = 0.80f;
+    private static final float LEVEL0_MAX_FILL = 0.92f;
     /** Without Veil there are no pools on top, so the fill alone is a little stronger. */
-    private static final float LEVEL0_FALLBACK_MAX_FILL = 0.92f;
-    /** Light level from which a place counts as fully lit ... */
-    private static final float LEVEL0_FULL_FROM = 6.0f;
-    /** ... and below which it is black. In between (the 5 blocks past the last lit panel) it fades. */
-    private static final float LEVEL0_DARK_BELOW = 1.0f;
+    private static final float LEVEL0_FALLBACK_MAX_FILL = 1.0f;
     /**
-     * A little extra right under and beside the panels (light level 7 up to 12), so the upper
-     * walls and the floor under a panel are slightly brighter than the middle of a dead patch.
-     * Small, so it doesn't step visibly from block to block.
+     * Light level from which the fill stops growing. Above it are only the upper walls and the
+     * ceiling right beside a panel: a troffer shines down, so those must not get brighter than
+     * the floor under it (they would glow, the opposite of a real room).
      */
-    private static final float LEVEL0_PANEL_BONUS = 0.08f;
+    private static final float LEVEL0_FULL_FROM = 10.0f;
+    /** Light level at and below which it is black: the last blocks of reach, the mouth of a dark wing. */
+    private static final float LEVEL0_DARK_BELOW = 2.0f;
+    /**
+     * How steeply the fill falls between those two (1 = straight line). 1.8 makes the floor under
+     * a panel about 1.8 times as bright as the floor between panels (Veil's pools on top keep it
+     * near that) and gives dark corners, while room centres and corridor floors stay well readable.
+     */
+    private static final float LEVEL0_FILL_CURVE = 1.8f;
     /** The bounce off yellow wallpaper and carpet: warm, but the yellow mostly comes from the textures. */
     private static final float LEVEL0_TINT_R = 1.0f;
     private static final float LEVEL0_TINT_G = 0.97f;
@@ -221,8 +228,8 @@ public final class ClientLighting {
                 applyVeilFill(colors, blockLight, floor);
             }
         } else if (isLevel0(floor)) {
-            // Level 0 without Veil: the same flat fill, a little stronger since there are no pools
-            // of Veil light on top; the panels themselves glow white.
+            // Level 0 without Veil: the same uneven fill, a little stronger since there are no
+            // pools of Veil light on top; the panels themselves glow white.
             if (fullBright) {
                 float v = emissivePower();
                 colors.set(v, v, v);
@@ -257,7 +264,7 @@ public final class ClientLighting {
     /** Veil mode: just a dim, steep fill; Veil does the real lighting. */
     private static void applyVeilFill(Vector3f colors, int blockLight, @Nullable BackroomsLevel floor) {
         if (isLevel0(floor)) {
-            applyLevel0Fill(colors, blockLight, LEVEL0_MAX_FILL); // bright flat halls, black wings
+            applyLevel0Fill(colors, blockLight, LEVEL0_MAX_FILL); // uneven office light, black wings
             return;
         }
         if (floor == BackroomsLevel.LEVEL_9) {
@@ -330,16 +337,17 @@ public final class ClientLighting {
     }
 
     /**
-     * Level 0 (both modes): the flat, bright light of Kane's halls. Every lit place (block light
-     * {@value #LEVEL0_FULL_FROM} and up, i.e. anywhere under the troffer grid) gets the same fill
-     * plus a small bonus right by a panel; past the last lit panel it fades to black over about
-     * five blocks, so dark wings start at their doorways. Panels flicker, die in a blackout and
-     * dim with the alarm together, so the fill follows them.
+     * Level 0 (both modes): dim, uneven office light. The fill follows the vanilla block light:
+     * from {@value #LEVEL0_FULL_FROM} up (beside a panel) it is full, below that it falls along a
+     * curve, and at {@value #LEVEL0_DARK_BELOW} and below it is black. Block light flows around
+     * walls and drops by one per block, so this makes pools under the panels, dimmer floor between
+     * them, and darker corners, wall feet and the far side of pillars: shadows that respect walls,
+     * which Veil's lights alone don't. Panels flicker, die in a blackout and dim with the alarm
+     * together, so the fill follows them.
      */
     private static void applyLevel0Fill(Vector3f colors, int blockLight, float maxFill) {
         float t = Mth.clamp((blockLight - LEVEL0_DARK_BELOW) / (LEVEL0_FULL_FROM - LEVEL0_DARK_BELOW), 0.0f, 1.0f);
-        float near = Mth.clamp((blockLight - LEVEL0_FULL_FROM) / (12.0f - LEVEL0_FULL_FROM), 0.0f, 1.0f);
-        float fill = maxFill * t * t * (3.0f - 2.0f * t) + LEVEL0_PANEL_BONUS * near;
+        float fill = maxFill * (float) Math.pow(t, LEVEL0_FILL_CURVE);
         fill *= FixturePower.mainsPower() * FixturePower.alarmDim();
         if (FixturePower.flickering(System.currentTimeMillis())) {
             // The fill is most of the light here, so it stutters with the tubes instead of just halving.

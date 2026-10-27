@@ -25,7 +25,9 @@ import net.minecraft.world.level.block.state.properties.Half;
  *
  * <p>Across the middle stands a pale wall with archways: the wiki's "Arch Variation", the most
  * stable of the rooms, which doesn't shift. It is the one landmark you can steer by. The carpet
- * along it is wetter, as the wiki says.
+ * along it is wetter, as the wiki says. Under Level 0's low ceiling each archway is 3 wide: its
+ * middle is open to the ceiling, and its two top corners are rounded off, so only the middle
+ * counts as walkable (the corners leave less than 3 blocks of headroom).
  */
 public final class Level0PillarHall {
     public static final int BOX = 35;
@@ -155,7 +157,7 @@ public final class Level0PillarHall {
 
     static boolean isWalkable(AnomalySite site, int x, int z) {
         int r = role(site, p(site, x), q(site, z));
-        return r != WALL && r != ARCH_PIER && r != SLOT;
+        return r != WALL && r != ARCH_PIER && r != SLOT && r != ARCH_SHOULDER_LOW && r != ARCH_SHOULDER_HIGH;
     }
 
     static void fill(AnomalySite site, int x, int z, int floor, int ceiling, LevelLayout.Column out) {
@@ -178,25 +180,28 @@ public final class Level0PillarHall {
                     out.set(y, wallpaper);
                 }
             }
-            case DOORWAY -> out.set(ceiling - 1, wallpaper);
+            case DOORWAY -> {
+                // Full height: the ceiling just carries on (a lintel would leave too little headroom).
+            }
             case ARCH_PIER -> {
                 for (int y = floor + 1; y < ceiling; y++) {
                     out.set(y, arch);
                 }
             }
             case ARCH_SHOULDER_LOW, ARCH_SHOULDER_HIGH -> {
-                // Upside-down stairs round off the top corners of the archway. Their lower half sits
-                // on the side of the pier next to them.
+                // Upside-down stairs round off the top corners of the archway, right under the
+                // ceiling. Their lower half sits on the side of the pier next to them, and the pale
+                // arch carries on across the ceiling above the opening.
                 boolean low = role(site, p, q) == ARCH_SHOULDER_LOW;
                 Direction towardPier = eastWest ? (low ? Direction.WEST : Direction.EAST) : (low ? Direction.NORTH : Direction.SOUTH);
-                out.set(ceiling - 2, ModBlocks.ARCH_WALL_STAIRS.get().defaultBlockState()
+                out.set(ceiling - 1, ModBlocks.ARCH_WALL_STAIRS.get().defaultBlockState()
                         .setValue(StairBlock.FACING, towardPier)
                         .setValue(StairBlock.HALF, Half.TOP));
-                out.set(ceiling - 1, arch);
+                out.set(ceiling, arch);
                 wetCarpet(floor, out);
             }
             case ARCH_CENTRE -> {
-                out.set(ceiling - 1, arch);
+                out.set(ceiling, arch);
                 wetCarpet(floor, out);
             }
             case FLOOR -> {

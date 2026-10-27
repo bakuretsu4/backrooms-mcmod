@@ -210,10 +210,8 @@ public final class Level0ManilaRoom {
                 }
             }
             case INNER_DOORWAY -> {
+                // Full height: under Level 0's low ceiling a lintel would leave too little headroom.
                 out.set(floor, wood);
-                for (int y = floor + 3; y < ceiling; y++) {
-                    out.set(y, manila);
-                }
             }
             case ROOM -> {
                 out.set(floor, wood);

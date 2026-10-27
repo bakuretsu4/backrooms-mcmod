@@ -340,24 +340,20 @@ public final class Level0RedRooms {
                 out.set(floor + 2, ModBlocks.RED_WALL_TALLY.get().defaultBlockState()
                         .setValue(WallDecalBlock.FACING, toWorld(site, Direction.EAST)));
             }
-            case 'O', 'd' -> {
-                out.set(floor, sticky);
-                out.set(ceiling - 1, peeling); // lintel, like any maze doorway
-            }
-            case 'v' -> out.set(floor, sticky);
+            // Doorways are full height, like every maze opening under Level 0's low ceiling.
+            case 'O', 'd', 'v' -> out.set(floor, sticky);
             case 'V' -> {
                 out.set(floor, sticky);
                 out.set(ceiling, ModBlocks.FLUORESCENT_LIGHT.get().defaultBlockState());
             }
-            case 'D', 'P' -> {
-                out.set(floor, redCarpet);
-                out.set(ceiling - 1, red);
-            }
+            case 'D', 'P' -> out.set(floor, redCarpet);
             case 'h', 'c' -> {
-                // Two blocks tall: you can just walk through, with the ceiling right above your head.
+                // Two blocks tall: you can just walk through, with crimson right above your head.
+                // (The one deliberately low place in Level 0: it is part of the loop.)
                 out.set(floor, redCarpet);
-                out.set(floor + 3, red);
-                out.set(floor + 4, red);
+                for (int y = floor + 3; y <= ceiling; y++) {
+                    out.set(y, red);
+                }
             }
             case 'L' -> {
                 out.set(floor, redCarpet);

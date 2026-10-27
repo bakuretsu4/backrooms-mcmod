@@ -80,12 +80,14 @@ wide spiral of shallow half-steps around a concrete core, lit for the first half
 going down into the dark. Somewhere down there you are simply in the next level, the picture
 fading back in: no glitch, no cut.
 
-- **Level 0 (the Lobby):** Kane Pixels' bright yellow halls of square pillars under a grid of
-  troffers, mazes of thick wall blocks, long corridors, the film's big half-fitted rooms (rows of
-  half-walls and cubicles, window holes, a ramp into a low passage, mannequins, a heap of old
-  furniture) and whole wings where every light is dead. Here and there furniture has noclipped
-  into the walls, floor and ceiling. Arrows drawn on the walls point to the exit stairwell, but
-  some of them lie. Look for the EXIT sign over a wooden door between green and white hazard stripes.
+- **Level 0 (the Lobby):** Kane Pixels' yellow maze under a low ceiling (three blocks, just over
+  your head) and a grid of troffers: cramped little rooms behind thick wall blocks joined by 2-wide
+  doorways, narrow winding corridors with small side rooms, now and then a hall of square pillars
+  (never wide open), the film's half-fitted rooms (rows of half-walls and cubicles, window slots, a
+  step down into a sunken passage, mannequins, a heap of old furniture) and whole wings where every
+  light is dead. Here and there furniture has noclipped into the walls, floor and ceiling. Arrows
+  drawn on the walls point to the exit stairwell, but some of them lie. Look for the EXIT sign over
+  a wooden door between green and white hazard stripes.
 - **Level 1 (the "Habitable Zone"):** an endless underground parking structure crossed with a
   warehouse, big and high: bevelled 3x3 concrete pillars every 12 blocks under a 7-block ceiling.
   Each pillar has its number painted two blocks tall on a band in its sector's colour, and some
@@ -437,7 +439,7 @@ picture and blended over about two seconds when you change level:
 
 | Level | Mood |
 |---|---|
-| Level 0 | Kane Pixels' tapes: bright, flat, even light, yellow-green with the blue cut, troffers clipping to white, no haze; dark wings crushed to black |
+| Level 0 | Kane Pixels' tapes, dimmer and moodier: uneven light that pools under each troffer and falls off into darker corners and wall feet (walls cast real shadows), each tube a little different in brightness and tint, about one in sixteen faulty (stuttering with a click every 5-25 s, or a dim, slowly pulsing dying tube), yellow-green with the blue cut, no haze; dark wings crushed to black |
 | Level 1 | Cold, damp concrete: blue shadows, little colour, grey-blue air |
 | Level 2 | Warm amber pools from the caged lamps receding down the line, rust-brown shadows, pipe chases sunk in darkness, a light warm heat haze |
 | Level 4 | Cold fluorescent blue-grey, quiet |

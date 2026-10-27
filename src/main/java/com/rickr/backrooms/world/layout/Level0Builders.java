@@ -4,43 +4,48 @@ import com.rickr.backrooms.world.Hash;
 import net.minecraft.core.Direction;
 
 /**
- * The film's "builders' rooms" in Level 0: big halls (12-24 blocks across, sometimes more) that
- * someone fitted out without a plan, but each with only a few deliberate features. They are built
- * on their own coarse grid, separate from the ordinary maze skeleton of {@link Level0Layout}:
- * {@link #X_BIG} and {@link #Z_BIG} cut the world into big rooms with 2-3 thick walls.
+ * The film's "builders' rooms" in Level 0: rooms (about 7-12 blocks across) that someone fitted
+ * out without a plan, but each with only a few deliberate features. They are built on their own
+ * coarse grid, separate from the ordinary maze skeleton of {@link Level0Layout}: {@link #X_BIG}
+ * and {@link #Z_BIG} cut the world into rooms with 2-3 thick walls.
  *
  * <p><b>Which rooms.</b> A big room belongs to the builders' zone when its centre lies in a
  * {@link Level0Zones#BUILDERS} zone; it then claims its own columns and its walls (a wall or
  * corner between a builders' room and anything else still belongs to the builders' room, so the
  * zone always ends at a proper wall with doorways in it). Everywhere else the ordinary maze runs.
  *
- * <p><b>Walls.</b> Every wall has one frameless doorway, 3-4 wide, with a lintel. Between two
- * builders' rooms a wall is sometimes missing, making one bigger hall. Some long walls carry a
- * deliberate series of 2-3 window holes (right through the wall) or 2-4 empty niches (one face),
- * evenly spaced, on the longer side of the doorway.
+ * <p><b>Walls.</b> Every wall has one frameless full-height doorway, 3-4 wide. Between two builders'
+ * rooms a wall is sometimes missing, making one longer room. Some long walls carry a deliberate
+ * series of 2-3 window slots (right through the wall, at eye height) or 2-4 empty niches (one
+ * face), evenly spaced, on the longer side of the doorway.
  *
  * <p><b>Rooms.</b> Each room picks one half-wall layout, always leaving the middle clear:
  * <ul>
  *   <li>open: nothing at all;</li>
  *   <li>runs: a long straight partition 3-4 blocks out from a long wall (both long walls in wide
- *       rooms), stopping 3 blocks short of the end walls, with a 3-wide gap in very long ones;</li>
+ *       rooms), stopping 2-3 blocks short of the end walls, with a 3-wide gap in long ones;</li>
  *   <li>cubicles: a row of partitions sticking out 3 blocks from a long wall, every 4 blocks (or
  *       every 5 with an L-shaped foot), so they make bays, sometimes with mannequins in them;</li>
  *   <li>split: a partition straight across the middle from wall to wall, with a 4-wide gap in the
  *       centre;</li>
- *   <li>passage: a carpeted ramp at one end of a long wall climbs into a squeezed low passage (floor
- *       one block up, ceiling one block down) running the length of the room behind a full wall.</li>
+ *   <li>passage: a carpeted step at one end of a long wall leads down into a sunken passage (floor
+ *       one block down) running the length of the room behind a full wall. Under the low Level 0
+ *       ceiling the film's raised passage would leave no headroom, so this one goes down instead.</li>
  * </ul>
- * Pieces never stand closer than 3 blocks to each other or to a wall unless they touch it. Some
- * rooms also have a dropped soffit beam running their full length.
+ * Pieces never stand closer than 3 blocks to each other or to a wall unless they touch it (2 in
+ * the shortest rooms), and no partition is ever a lone 1-block stub. The half-walls stay open
+ * above: under Level 0's 3-high ceiling there is no room for the film's soffit beams.
  *
  * <p>All answers are packed ints, like {@link Level0Layout#mazeColumn} (which calls
  * {@link #column} first), so nothing is allocated.
  */
 final class Level0Builders {
-    /** The big rooms' grid: walls 2-3 thick, rooms 12-20 wide (the last of each 72 a little wider). */
-    static final Bands X_BIG = new Bands(72, 2, 3, 12, 20, 103);
-    static final Bands Z_BIG = new Bands(72, 2, 3, 12, 20, 104);
+    /**
+     * The rooms' grid: walls 2-3 thick, rooms 8-11 wide plus a last one per 24 blocks of 7-12 (the
+     * block's leftover), so every room is 7-12 across: small enough never to feel like a hall.
+     */
+    static final Bands X_BIG = new Bands(24, 2, 3, 8, 11, 103);
+    static final Bands Z_BIG = new Bands(24, 2, 3, 8, 11, 104);
 
     // Room layouts.
     static final int L_OPEN = 0;
@@ -55,13 +60,13 @@ final class Level0Builders {
     static final int F_NICHES = 2;
 
     // Extra data of a builders' column (bits 12+ of the packed column).
-    static final int SOFFIT = 1;
     static final int MANNEQUIN = 2;
     /** Bits 2-3 of the extra data: the ramp piece, one of the RAMP_* values (0 = none). */
     static final int RAMP_SHIFT = 2;
+    /** The step down into the sunken passage: a carpet slab in place of the floor (half a block down). */
     static final int RAMP_SLAB = 1;
-    static final int RAMP_STAIRS = 2;
-    static final int RAMP_RAISED = 3;
+    /** The sunken passage itself: the floor one block down. */
+    static final int RAMP_SUNK = 2;
 
     /**
      * The big spans this thread looked up last. Worldgen asks for column after column in a row,
@@ -224,11 +229,6 @@ final class Level0Builders {
         return layout | side << 4;
     }
 
-    /** True if the room has a soffit beam down its full length (45%, never over a passage). */
-    static boolean hasSoffit(long seed, long bx, long bz) {
-        return (plan(seed, bx, bz) & 15) != L_PASSAGE && Hash.unit(Hash.mix(roomHash(seed, bx, bz) ^ 3)) < 0.45;
-    }
-
     /** True if the bays of a cubicle room have mannequins standing in them (half of them). */
     static boolean hasMannequins(long seed, long bx, long bz) {
         return (plan(seed, bx, bz) & 15) == L_CUBICLES && Hash.unit(Hash.mix(roomHash(seed, bx, bz) ^ 4)) < 0.5;
@@ -251,18 +251,18 @@ final class Level0Builders {
         Direction outOfWall = side == 0 ? plusB : plusB.getOpposite();
         int partitionAcrossB = plusB.get2DDataValue() << 8; // a partition running along a
         int partitionAcrossA = plusA.get2DDataValue() << 8; // a partition running along b
-        boolean soffitLine = (plan & 15) != L_PASSAGE && Hash.unit(Hash.mix(roomHash(seed, bx, bz) ^ 3)) < 0.45
-                && b == 2 + Hash.range(Hash.mix(bits ^ 5), Math.max(1, breadth - 4));
-        int soffit = soffitLine ? SOFFIT << 12 : 0;
 
         switch (plan & 15) {
             case L_RUNS -> {
-                int distance = 3 + (int) (bits >>> 21 & 1);
-                boolean both = breadth >= 15 && (bits >>> 22 & 1) == 0;
+                // 3-4 blocks out from the wall (3 in narrow rooms, so the open side stays 3+ wide),
+                // and in rooms wide enough for it a second run along the other long wall.
+                int distance = 3 + (breadth >= 9 ? (int) (bits >>> 21 & 1) : 0);
+                boolean both = breadth >= 2 * distance + 5 && (bits >>> 22 & 1) == 0;
                 boolean onLine = fromWall == distance || (both && breadth - 1 - fromWall == distance);
-                boolean gap = length - 6 > 14 && Math.abs(a - length / 2) <= 1;
-                if (onLine && a >= 3 && a <= length - 4 && !gap) {
-                    return Level0Layout.HALF | partitionAcrossB | soffit;
+                int margin = length >= 10 ? 3 : 2; // how far short of the end walls it stops
+                boolean gap = length - 2 * margin > 8 && Math.abs(a - length / 2) <= 1;
+                if (onLine && a >= margin && a <= length - 1 - margin && !gap) {
+                    return Level0Layout.HALF | partitionAcrossB;
                 }
             }
             case L_CUBICLES -> {
@@ -276,10 +276,10 @@ final class Level0Builders {
                 boolean byDoor = divider >= (door & 0xFF) - 1 && divider <= (door & 0xFF) + (door >>> 8);
                 if (inRow && !byDoor && fromWall <= 2) {
                     if (a == divider) {
-                        return Level0Layout.HALF | partitionAcrossA | soffit;
+                        return Level0Layout.HALF | partitionAcrossA;
                     }
                     if (feet && fromWall == 2 && a == divider + 1) {
-                        return Level0Layout.HALF | partitionAcrossB | soffit;
+                        return Level0Layout.HALF | partitionAcrossB;
                     }
                 }
                 // Mannequins stand in the bays, looking out into the room (a few have turned).
@@ -287,29 +287,32 @@ final class Level0Builders {
                         && hasMannequins(seed, bx, bz) && Hash.unit(seed, x, z, 715) < 0.3) {
                     Direction look = Hash.unit(seed, x, z, 716) < 0.25
                             ? Direction.from2DDataValue(Hash.range(Hash.of(seed, x, z, 717), 4)) : outOfWall;
-                    return Level0Layout.OPEN | look.get2DDataValue() << 8 | (MANNEQUIN << 12) | soffit;
+                    return Level0Layout.OPEN | look.get2DDataValue() << 8 | (MANNEQUIN << 12);
                 }
             }
             case L_SPLIT -> {
+                // Each side of the 4-wide gap is only built if it is at least 2 long (no lone stubs).
                 int gapStart = breadth / 2 - 2 + Hash.range(Hash.mix(bits ^ 6), 3) - 1;
-                if (a == length / 2 && (b < gapStart || b >= gapStart + 4)) {
-                    return Level0Layout.HALF | partitionAcrossA | soffit;
+                boolean left = b < gapStart && gapStart >= 2;
+                boolean right = b >= gapStart + 4 && breadth - gapStart - 4 >= 2;
+                if (a == length / 2 && (left || right)) {
+                    return Level0Layout.HALF | partitionAcrossA;
                 }
             }
             case L_PASSAGE -> {
                 if (fromWall == 3 && a <= length - 3) {
-                    return Level0Layout.WALL; // the full wall between the room and the low passage
+                    return Level0Layout.WALL; // the full wall between the room and the sunken passage
                 }
                 if (fromWall < 3) {
-                    int part = a == length - 1 ? RAMP_SLAB : a == length - 2 ? RAMP_STAIRS : RAMP_RAISED;
-                    // The stairs climb towards the far end (a = 0).
-                    return Level0Layout.OPEN | plusA.getOpposite().get2DDataValue() << 8 | part << RAMP_SHIFT << 12;
+                    // A half-block step at the open end, then the passage one block down.
+                    int part = a >= length - 2 ? RAMP_SLAB : RAMP_SUNK;
+                    return Level0Layout.OPEN | part << RAMP_SHIFT << 12;
                 }
             }
             default -> {
             }
         }
-        return Level0Layout.OPEN | soffit;
+        return Level0Layout.OPEN;
     }
 
     /** The big wall along long side {@code side} of a room (the one its layout leans on). */
