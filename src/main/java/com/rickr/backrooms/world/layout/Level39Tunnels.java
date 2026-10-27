@@ -53,6 +53,8 @@ public final class Level39Tunnels {
     /** A drain feature's y: inside the drain shaft, just over the crown of the vault. */
     public static final int DRAIN_Y = 48;
     private static final int DRAIN_SPACING = 55;
+    /** Highest air block of a side alcove (feet y41 to y43: three blocks tall). */
+    private static final int ALCOVE_TOP = 43;
     private static final int ARCH_SPACING = 45;
 
     /** What a tunnel feature is (see {@link #featuresNear}). */
@@ -224,14 +226,20 @@ public final class Level39Tunnels {
             }
             return c;
         }
-        // Alcoves (side arches) open in the wall.
+        // Alcoves (side arches) open in the wall: 3 wide, one flat ceiling (a stepped one read as
+        // a stack of boxes), and marble all round, including the columns just past each side
+        // (without them the alcove's side walls were the bare rock the tunnels are cut through).
         int side = sideArchSide(seg);
         int archT = sideArchAt(seg, t);
         if (archT != Integer.MIN_VALUE && o * side >= 5 && o * side <= 8) {
             if (o * side == 8) {
                 return pack(WALL, 0, stag);
             }
-            return pack(ALCOVE, t == archT ? 44 : 43, stag);
+            return pack(ALCOVE, ALCOVE_TOP, stag);
+        }
+        if (archT == Integer.MIN_VALUE && o * side >= 6 && o * side <= 8
+                && (sideArchAt(seg, t - 1) != Integer.MIN_VALUE || sideArchAt(seg, t + 1) != Integer.MIN_VALUE)) {
+            return pack(WALL, 0, stag); // just past the alcove's side
         }
         if (ao <= 3 && t >= waterLo && t <= waterHi) {
             int c = pack(WATER, vaultTop(ao), stag);

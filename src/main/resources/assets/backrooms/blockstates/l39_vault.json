@@ -18,12 +18,6 @@
     "facing=south,o=3,row=5": {
       "model": "backrooms:block/l39/vault/vault_south_3_5"
     },
-    "facing=south,o=4,row=0": {
-      "model": "backrooms:block/l39_vault_empty"
-    },
-    "facing=south,o=4,row=1": {
-      "model": "backrooms:block/l39_vault_empty"
-    },
     "facing=south,o=4,row=2": {
       "model": "backrooms:block/l39/vault/vault_south_4_2"
     },
@@ -117,6 +111,12 @@
     "facing=south,o=3,row=7": {
       "model": "backrooms:block/l39_marble"
     },
+    "facing=south,o=4,row=0": {
+      "model": "backrooms:block/l39_marble"
+    },
+    "facing=south,o=4,row=1": {
+      "model": "backrooms:block/l39_marble"
+    },
     "facing=south,o=4,row=5": {
       "model": "backrooms:block/l39_marble"
     },
@@ -161,12 +161,6 @@
     },
     "facing=west,o=3,row=5": {
       "model": "backrooms:block/l39/vault/vault_west_3_5"
-    },
-    "facing=west,o=4,row=0": {
-      "model": "backrooms:block/l39_vault_empty"
-    },
-    "facing=west,o=4,row=1": {
-      "model": "backrooms:block/l39_vault_empty"
     },
     "facing=west,o=4,row=2": {
       "model": "backrooms:block/l39/vault/vault_west_4_2"
@@ -261,6 +255,12 @@
     "facing=west,o=3,row=7": {
       "model": "backrooms:block/l39_marble"
     },
+    "facing=west,o=4,row=0": {
+      "model": "backrooms:block/l39_marble"
+    },
+    "facing=west,o=4,row=1": {
+      "model": "backrooms:block/l39_marble"
+    },
     "facing=west,o=4,row=5": {
       "model": "backrooms:block/l39_marble"
     },
@@ -305,12 +305,6 @@
     },
     "facing=north,o=3,row=5": {
       "model": "backrooms:block/l39/vault/vault_north_3_5"
-    },
-    "facing=north,o=4,row=0": {
-      "model": "backrooms:block/l39_vault_empty"
-    },
-    "facing=north,o=4,row=1": {
-      "model": "backrooms:block/l39_vault_empty"
     },
     "facing=north,o=4,row=2": {
       "model": "backrooms:block/l39/vault/vault_north_4_2"
@@ -405,6 +399,12 @@
     "facing=north,o=3,row=7": {
       "model": "backrooms:block/l39_marble"
     },
+    "facing=north,o=4,row=0": {
+      "model": "backrooms:block/l39_marble"
+    },
+    "facing=north,o=4,row=1": {
+      "model": "backrooms:block/l39_marble"
+    },
     "facing=north,o=4,row=5": {
       "model": "backrooms:block/l39_marble"
     },
@@ -449,12 +449,6 @@
     },
     "facing=east,o=3,row=5": {
       "model": "backrooms:block/l39/vault/vault_east_3_5"
-    },
-    "facing=east,o=4,row=0": {
-      "model": "backrooms:block/l39_vault_empty"
-    },
-    "facing=east,o=4,row=1": {
-      "model": "backrooms:block/l39_vault_empty"
     },
     "facing=east,o=4,row=2": {
       "model": "backrooms:block/l39/vault/vault_east_4_2"
@@ -547,6 +541,12 @@
       "model": "backrooms:block/l39_marble"
     },
     "facing=east,o=3,row=7": {
+      "model": "backrooms:block/l39_marble"
+    },
+    "facing=east,o=4,row=0": {
+      "model": "backrooms:block/l39_marble"
+    },
+    "facing=east,o=4,row=1": {
       "model": "backrooms:block/l39_marble"
     },
     "facing=east,o=4,row=5": {

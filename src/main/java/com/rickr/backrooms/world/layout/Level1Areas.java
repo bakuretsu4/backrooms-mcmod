@@ -320,9 +320,15 @@ final class Level1Areas {
                 boolean edgeX = lx == 0 || lx == ZONE - 1;
                 Direction out1 = edgeX ? (lx == 0 ? Direction.WEST : Direction.EAST) : (lz == 0 ? Direction.NORTH : Direction.SOUTH);
                 int laneIndex = lane((edgeX ? lz : lx) - 1);
+                // A double door: each leaf hinged on its outer side, so the pair swings apart. Vanilla
+                // puts a LEFT hinge on the side its facing turns counter-clockwise to (DoorBlock's
+                // shapes: an east-facing door opened on a left hinge lies along its north edge);
+                // lane 1 lies one block further along the wall (+z on an x edge, +x on a z edge).
+                Direction plusAlong = edgeX ? Direction.SOUTH : Direction.EAST;
+                boolean partnerClockwise = laneIndex == 0 ? out1.getClockWise() == plusAlong : out1.getClockWise() != plusAlong;
                 BlockState door = ModBlocks.FIRE_DOOR.get().defaultBlockState()
                         .setValue(DoorBlock.FACING, out1)
-                        .setValue(DoorBlock.HINGE, laneIndex == 0 ? DoorHingeSide.LEFT : DoorHingeSide.RIGHT);
+                        .setValue(DoorBlock.HINGE, partnerClockwise ? DoorHingeSide.LEFT : DoorHingeSide.RIGHT);
                 out.set(floor + 1, door.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
                 out.set(floor + 2, door.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
                 out.set(floor + 3, ModBlocks.EXIT_SIGN.get().defaultBlockState());

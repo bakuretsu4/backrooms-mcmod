@@ -1,6 +1,8 @@
 {
   "replace": false,
   "values": [
-    "backrooms:l37_pool_ladder"
+    "backrooms:l37_pool_ladder",
+    "backrooms:l39_rungs",
+    "backrooms:l0_ladder"
   ]
 }
