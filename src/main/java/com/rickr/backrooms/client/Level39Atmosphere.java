@@ -63,10 +63,10 @@ public final class Level39Atmosphere extends DimensionSpecialEffects {
     private static final float GLOW_FOG_R = 0.68f;
     private static final float GLOW_FOG_G = 0.70f;
     private static final float GLOW_FOG_B = 0.73f;
-    /** Tunnels: pale turquoise air over the water, lit by the orbs (not white: the vault must not wash out). */
-    private static final float TUNNEL_FOG_R = 0.48f;
-    private static final float TUNNEL_FOG_G = 0.62f;
-    private static final float TUNNEL_FOG_B = 0.64f;
+    /** Tunnels: dim turquoise air over the water (not white: the far end of a run must not wash out). */
+    private static final float TUNNEL_FOG_R = 0.20f;
+    private static final float TUNNEL_FOG_G = 0.28f;
+    private static final float TUNNEL_FOG_B = 0.30f;
     /** Stagnant tunnel segments: orbs dead, a dark green film on everything. */
     private static final float STAGNANT_FOG_R = 0.06f;
     private static final float STAGNANT_FOG_G = 0.10f;
@@ -127,15 +127,16 @@ public final class Level39Atmosphere extends DimensionSpecialEffects {
     private static final float INDOOR_MAX_FILL = 0.45f;
     private static final float INDOOR_FILL_FALLOFF = 1.4f;
     /**
-     * Tunnels: lit evenly everywhere by the orbs every ten blocks (canon: lit by invisible orbs),
-     * so even "unlit" marble is bright; the orbs' own block light adds a little more on top. Kept
-     * under clipping: white marble must keep its blue-grey veins and the water its turquoise.
+     * Tunnels: lit by the orbs every ten blocks (canon: lit by invisible orbs). Each orb throws a
+     * pool of light that fades toward the next one, so the white marble shows its curves instead
+     * of reading as one flat white; far from any orb it is a dim cool grey, never dark. Kept under
+     * clipping: white marble must keep its blue-grey veins and the water its turquoise.
      */
-    private static final float TUNNEL_UNLIT_R = 0.40f;
-    private static final float TUNNEL_UNLIT_G = 0.43f;
-    private static final float TUNNEL_UNLIT_B = 0.445f;
-    private static final float TUNNEL_MAX_FILL = 0.24f;
-    private static final float TUNNEL_FILL_FALLOFF = 1.0f;
+    private static final float TUNNEL_UNLIT_R = 0.22f;
+    private static final float TUNNEL_UNLIT_G = 0.245f;
+    private static final float TUNNEL_UNLIT_B = 0.26f;
+    private static final float TUNNEL_MAX_FILL = 0.45f;
+    private static final float TUNNEL_FILL_FALLOFF = 2.0f;
     /** A stagnant segment's orbs are dead: there it is really dark. */
     private static final float STAGNANT_UNLIT_R = 0.025f;
     private static final float STAGNANT_UNLIT_G = 0.035f;

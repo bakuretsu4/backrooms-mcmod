@@ -598,8 +598,10 @@ public final class Level39Tunnels {
     }
 
     /**
-     * A junction piece where a run comes into a chamber (see {@code Level39Vault.junctionPiece}),
-     * or null. Only the run along the cell's own side matters: the others are under the dome there.
+     * A piece where two curved ceilings meet, or null: a junction piece where a run comes into a
+     * chamber (see {@code Level39Vault.junctionPiece}; only the run along the cell's own side
+     * matters, the others are under the dome there), or a corner piece where a run turns
+     * ({@code Level39Vault.cornerPiece}).
      */
     @Nullable
     private static BlockState junctionCell(Level39Tile tile, int x, int z, int row) {
@@ -608,6 +610,13 @@ public final class Level39Tunnels {
             Level39Cell.Node node = cell.nodes[n];
             int dx = x - node.x();
             int dz = z - node.z();
+            if (node.degree() == 2 && Math.abs(dx) <= 9 && Math.abs(dz) <= 9) {
+                BlockState piece = cornerCell(tile, node, dx, dz, row);
+                if (piece != null) {
+                    return piece;
+                }
+                continue;
+            }
             if (node.degree() < 3 || Math.abs(dx) > 8 || Math.abs(dz) > 8) {
                 continue;
             }
@@ -633,6 +642,36 @@ public final class Level39Tunnels {
             }
         }
         return null;
+    }
+
+    /** The corner piece at (dx, dz) from a two-run node, if the runs there turn (not straight on). */
+    @Nullable
+    private static BlockState cornerCell(Level39Tile tile, Level39Cell.Node node, int dx, int dz, int row) {
+        Direction first = null;
+        Direction second = null;
+        for (int s : tile.segs) {
+            Level39Cell.Seg seg = tile.cell.segs[s];
+            if (seg.fixed() != (seg.alongX() ? node.z() : node.x())) {
+                continue;
+            }
+            int at = seg.alongX() ? node.x() : node.z();
+            Direction leaves = at == seg.a() ? (seg.alongX() ? Direction.EAST : Direction.SOUTH)
+                    : at == seg.b() ? (seg.alongX() ? Direction.WEST : Direction.NORTH) : null;
+            if (leaves == null) {
+                continue;
+            }
+            if (first == null) {
+                first = leaves;
+            } else {
+                second = leaves;
+            }
+        }
+        if (first == null || second == null || first.getAxis() == second.getAxis()) {
+            return null; // straight on: one barrel, nothing to meet
+        }
+        // Turned like the dome: the piece whose runs leave toward `turn` and its counter-clockwise neighbour.
+        Direction turn = second == first.getCounterClockWise() ? first : second;
+        return Level39Vault.cornerPiece(turn, dx, dz, row);
     }
 
     /** The access shafts of this tile that stand in column (x, z): rungs up to a hatch. */

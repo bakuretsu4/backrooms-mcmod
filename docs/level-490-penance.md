@@ -144,6 +144,21 @@ leads straight to Level 9 until Level 490 exists.
   | **Level 490** | 5% | ~60 |
   | Level 9 | 3% | ~50 |
 
+## Build decisions
+
+- **Climb:** about 300 blocks from the bridges to the top of the structure; the level is about
+  512 blocks tall. The chains above it are drawn as part of the sky (like Level 39's far facade).
+- **Distance:** the structure stands about 300 blocks from where you arrive.
+- **Bridges:** main bridges 5 wide, side and broken ones 3 wide.
+- **Build order**, playable after each stage:
+  1. platforms, bridges and broken spans, railings, lanterns, shelters, shackles; the storm sky
+     with moon, fog banks and lightning; falling sends you to your checkpoint; the way in from
+     Level 94 and the jump out to Level 9;
+  2. the eldritch structure and its climb (inside spiral shaft, outside ledges and ladders);
+  3. the distant chains and the structures they hold (one falls now and then), the chain sounds,
+     the drone;
+  4. the creature.
+
 ## Name and number
 
 **Level 490, "Penance".** 490 is "seventy times seven", how many times you must forgive:
