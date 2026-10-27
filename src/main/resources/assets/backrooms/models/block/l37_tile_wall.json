@@ -1,6 +1,63 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/block",
   "textures": {
-    "all": "backrooms:block/l37_tile_wall"
-  }
+    "particle": "backrooms:block/l37_tile_wall",
+    "all": "backrooms:block/l37_tile_wall",
+    "upright": "backrooms:block/l37_tile_wall_upright"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "shade": false,
+      "faces": {
+        "north": {
+          "texture": "#upright",
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#upright",
+          "cullface": "south"
+        },
+        "east": {
+          "texture": "#upright",
+          "cullface": "east"
+        },
+        "west": {
+          "texture": "#upright",
+          "cullface": "west"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "up": {
+          "texture": "#all",
+          "cullface": "up"
+        },
+        "down": {
+          "texture": "#all",
+          "cullface": "down"
+        }
+      }
+    }
+  ]
 }
