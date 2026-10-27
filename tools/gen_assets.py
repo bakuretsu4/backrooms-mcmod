@@ -3020,31 +3020,31 @@ def _repitch(x, ratio) -> np.ndarray:
 
 
 def snd_footsteps() -> None:
-    """Real footstep recordings (Kenney Impact Sounds, CC0; see CREDITS.md).
+    """Real footstep recordings (Kenney Impact Sounds, CC0; see CREDITS.md), made light and soft:
+    someone walking carefully, not stomping.
 
-    Walk: lowpassed ~4 kHz, quieter (-6 dB), slight pitch/level variation.
-    Run:  full band, a little low-end thump under the impact, louder.
+    The heavy "thud" of a footstep is its low body (below ~250 Hz) and its ring afterwards, so
+    both go: the low end is cut, only the first moment of each step is kept (a fast decay), the
+    pitch goes up a touch and the very top is softened. Walk: quiet, the faintest scuff. Run: a
+    little brighter and louder, but no thump under it.
     """
-    # per-surface seed offsets keep the older carpet/concrete files byte-identical
+    # per-surface seed offsets keep each surface's variations stable
     for surface, seed_off in (("carpet", 0), ("concrete", 20), ("grass", 40), ("wood", 60)):
         for i in range(1, 6):
             src = _trim(_load_mono(VENDOR / "kenney_impact" / f"footstep_{surface}_{i - 1:03d}.ogg"))
             for run in (False, True):
                 rng = rng_for(1400 + seed_off + (10 if run else 0) + i)
-                x = _repitch(src, rng.uniform(0.95, 1.04))
-                if run:
-                    x = np.concatenate([x, np.zeros(int(0.05 * SR))])
-                    tt = np.arange(len(x)) / SR
-                    thump = np.sin(2 * np.pi * rng.uniform(60, 80) * tt) * np.exp(-tt / 0.035)
-                    thump *= smoothstep(0, 0.003, tt)
-                    x = norm(x) + 0.3 * thump
-                    peak = 0.8
-                else:
-                    x = fft_filter(x, lambda f: lp_gain(f, 4000, 2))[:len(x)]
-                    peak = 0.4 * 10 ** (rng.uniform(-1, 1) / 20)     # -6 dB, +/-1 dB variation
+                x = _repitch(src, rng.uniform(1.04, 1.12))
+                # Wood floors boom: their cut sits higher so only the knock of the heel is left.
+                low_cut = (420.0 if surface == "wood" else 280.0) * (0.85 if run else 1.0)
+                x = fft_filter(x, lambda f, c=low_cut: hp_gain(f, c, 4) * lp_gain(f, 6000, 2))[:len(x)]
+                decay = 0.045 if run else 0.032
+                tt = np.arange(len(x)) / SR
+                x = (x * np.exp(-np.maximum(tt - 0.006, 0.0) / decay))[:int((0.006 + 4 * decay) * SR)]
+                peak = (0.45 if run else 0.3) * 10 ** (rng.uniform(-1, 1) / 20)   # +/-1 dB variation
                 kind = "run" if run else "walk"
                 save_ogg(x, SND / "step" / f"{surface}_{kind}{i}.ogg", peak=peak,
-                         fade_in=0.001, fade_out=0.015)
+                         fade_in=0.001, fade_out=0.01)
 
 
 INTERCOM_LINES = (

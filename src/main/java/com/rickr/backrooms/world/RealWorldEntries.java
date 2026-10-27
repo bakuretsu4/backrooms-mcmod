@@ -12,7 +12,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerWakeUpEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -28,7 +27,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *       you're through. Back in the light (or company) it heals again over ~5 s.</li>
  *   <li><b>Filming it:</b> the same, with a camcorder recording in your hand (right-click it): the
  *       camera finds the seams in about 5 s, and the tape breaks up as it does.</li>
- *   <li><b>A night's sleep:</b> sleep through the night and you don't wake up in your bed.</li>
+ *   <li><b>A bed:</b> lie down in one and, a moment later, you sink straight through it.</li>
  * </ul>
  * "Dark" is light level 3 or less where your eyes are; "enclosed" is no open sky above you.
  */
@@ -43,6 +42,8 @@ public final class RealWorldEntries {
     private static final int PUSH_GAP_TICKS = 16;
     private static final int PUSHES_BEFORE_CHANCE = 1;
     private static final int PUSH_ONE_IN = 2;
+    /** Ticks lying in a bed before you sink through it (the night never gets a chance to pass). */
+    private static final int SLEEP_TICKS = 30;
     /** The client is told the thinness again once it has changed this much. */
     private static final float SEND_STEP = 0.02f;
 
@@ -69,6 +70,9 @@ public final class RealWorldEntries {
         }
         State s = STATES.get(player.getUUID());
         boolean real = !Travel.inBackrooms(player.level()) && !player.isSpectator();
+        if (real && player.isSleeping() && player.getSleepTimer() >= SLEEP_TICKS) {
+            NoclipIntro.start(player); // no-op while it's already running
+        }
         if (!real) {
             if (s != null && (s.recording || s.thin > 0.0f)) {
                 s.recording = false;
@@ -120,15 +124,6 @@ public final class RealWorldEntries {
         s.lastPushTick = player.tickCount;
         if (s.pushStreak > PUSHES_BEFORE_CHANCE && player.getRandom().nextInt(PUSH_ONE_IN) == 0) {
             s.pushStreak = 0;
-            NoclipIntro.start(player);
-        }
-    }
-
-    /** A full night's sleep (not getting up in the middle of it): you never wake up at home. */
-    @SubscribeEvent
-    public static void onWakeUp(PlayerWakeUpEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player && !event.wakeImmediately() && !event.updateLevel()
-                && !Travel.inBackrooms(player.level())) {
             NoclipIntro.start(player);
         }
     }

@@ -10,8 +10,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Server side of noclipping into the Backrooms (every way in ends here: suffocating in a block,
- * pushing into a wall in the dark, filming the dark, staying alone in it too long, a night's
- * sleep; see {@link RealWorldEntries}). We don't move the player at once: first their client
+ * pushing into a wall in the dark, filming the dark, staying alone in it too long, lying down
+ * in a bed; see {@link RealWorldEntries}). We don't move the player at once: first their client
  * freezes and breaks up the picture for {@link #LAG_TICKS} (client/intro/NoclipTransition), then
  * we move them to Level 0 and the client moshes the old picture into the new one.
  * While a player is in this window, suffocation damage is ignored.
@@ -44,6 +44,9 @@ public final class NoclipIntro {
             return;
         }
         PENDING.remove(player.getUUID());
+        if (player.isSleeping()) {
+            player.stopSleepInBed(true, false); // through the bed: you arrive on your feet
+        }
         Travel.sendToQuietly(player, BackroomsLevel.LEVEL_0, player.getBlockX(), player.getBlockZ());
         PacketDistributor.sendToPlayer(player, new IntroCutscenePayload(IntroCutscenePayload.ARRIVED));
         player.sendSystemMessage(Component.translatable("message.backrooms.noclip").withStyle(s -> s.withItalic(true).withColor(0xC8B45A)));

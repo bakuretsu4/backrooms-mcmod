@@ -16,7 +16,7 @@ Lithium, FerriteCore, ModernFix, Entity Culling, ImmediatelyFast and Dynamic FPS
 
 | Action | How |
 |---|---|
-| Get in | Reality has seams in the dark (see **Getting in** below): keep walking into a wall somewhere dark and enclosed, stay alone in the dark too long, film the dark with a **Camcorder** (craft: iron ingots around a glass pane and redstone; right-click to record), or sleep through a night. Suffocating inside a block still works too. |
+| Get in | Reality has seams in the dark (see **Getting in** below): keep walking into a wall somewhere dark and enclosed, stay alone in the dark too long, film the dark with a **Camcorder** (craft: iron ingots around a glass pane and redstone; right-click to record), or lie down in a bed. Suffocating inside a block still works too. |
 | Flashlight | `R`. Everyone sees your beam. Uses the camcorder battery. |
 | NightShot (infrared) | `N` (drains the battery 3x faster) |
 | Camcorder REC overlay | `H` (off by default) |
@@ -54,7 +54,8 @@ less at your eyes and "enclosed" as no open sky above you:
 - **Film it:** the same with a Camcorder recording in your hand (right-click it: the camcorder
   look and REC overlay switch on). It finds the seams in about 5 seconds, the tape breaking up as
   it does.
-- **Sleep:** sleep through the night and you don't wake up in your bed.
+- **A bed:** lie down in one and, a moment later, the view sinks straight down through it (the
+  mattress, the floor, the ground) as the picture breaks up.
 - **Suffocating inside a block** (sand or gravel falling on you) still works.
 
 However you go, the picture fails like a video stream that has lost its keyframes

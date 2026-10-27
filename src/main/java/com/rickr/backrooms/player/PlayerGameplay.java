@@ -53,7 +53,7 @@ public final class PlayerGameplay {
     private static final double WALK_STRIDE = 1.7;
     private static final double RUN_STRIDE = 2.3;
     private static final float WALK_VOLUME = 0.15f;
-    private static final float RUN_VOLUME = 1.0f;
+    private static final float RUN_VOLUME = 0.45f;
     /** Walking through water is never quiet: wading steps are much louder than a dry shuffle. */
     private static final float WADE_WALK_VOLUME = 0.55f;
 

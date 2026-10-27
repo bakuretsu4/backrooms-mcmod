@@ -15,6 +15,7 @@ import com.rickr.backrooms.network.IntroCutscenePayload;
 import com.rickr.backrooms.registry.ModSounds;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.InBedChatScreen;
 import net.minecraft.client.gui.screens.ReceivingLevelScreen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.Input;
@@ -22,6 +23,9 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Marker;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -31,6 +35,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import net.neoforged.neoforge.client.event.RenderBlockScreenEffectEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.event.RenderHandEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -47,7 +53,8 @@ import org.slf4j.LoggerFactory;
  * keyframes ("datamoshing"), and the real world smears and bleeds into Level 0 with no cut.
  * <ol>
  *   <li><b>Lag</b> (server sends {@code FREEZE}, ~0.5 s): the real world stutters, drops frames and
- *       crumbles into low-bitrate blocks.</li>
+ *       crumbles into low-bitrate blocks. If you are lying in a bed, the view sinks down through
+ *       it (through the mattress, the floor, the ground) as it does.</li>
  *   <li><b>Held</b>: the server moves you to Level 0. The last broken frame stays on screen while
  *       the new world loads (no "Loading terrain" screen, no black).</li>
  *   <li><b>Mosh</b> (~2 s): the old picture is not replaced. Its blocks are dragged along with your
@@ -78,6 +85,9 @@ public final class NoclipTransition {
     private static final long LAG_TIMEOUT_MS = 6000;
     /** The view drifts this much each tick during the mosh (degrees): you look around as you arrive. */
     private static final float DRIFT_DEG = 0.7f;
+    /** Lying in a bed: the view sinks this far (blocks) over this long, speeding up like a fall. */
+    private static final double SINK_DEPTH = 3.0;
+    private static final long SINK_MS = 700;
 
     private enum Stage { NONE, LAG, HELD, MOSH }
 
@@ -98,6 +108,15 @@ public final class NoclipTransition {
      */
     @Nullable
     private static ClientLevel lagLevel;
+    /**
+     * Sinking through the bed: we film from this client-only entity (a Marker has no model)
+     * instead of your player, so the view can go down through the mattress while you lie still.
+     */
+    @Nullable
+    private static Marker sinkCamera;
+    private static Vec3 sinkFrom = Vec3.ZERO;
+    private static float sinkYaw;
+    private static float sinkPitch;
 
     @Nullable
     private static ShaderInstance shader;
@@ -143,6 +162,9 @@ public final class NoclipTransition {
                 begin(Stage.LAG, now);
                 lagLevel = mc.level;
                 steps = 0;
+                if (mc.player != null && mc.player.isSleeping()) {
+                    startSink(mc);
+                }
                 mc.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.INTRO_GLITCH.get(), 1.0f, 1.0f));
             } else if (CameraClientState.introPhase == IntroCutscenePayload.ARRIVED && stage != Stage.NONE) {
                 begin(Stage.HELD, now);
@@ -153,6 +175,7 @@ public final class NoclipTransition {
             case LAG -> {
                 if (t > LAG_TIMEOUT_MS) {
                     stage = Stage.NONE;
+                    stopSink(mc);
                 }
             }
             case HELD -> {
@@ -195,6 +218,9 @@ public final class NoclipTransition {
         long now = System.currentTimeMillis();
         if (stage == Stage.LAG && mc.level != lagLevel) {
             begin(Stage.HELD, now); // we've been moved: hold the last broken frame from here
+        }
+        if (stage != Stage.LAG) {
+            stopSink(mc); // in the new world you are on your feet: back to your own eyes
         }
         if (fresh) {
             copy(main, out); // the first frame we hold is the real world as it is
@@ -259,6 +285,57 @@ public final class NoclipTransition {
         lastPitch = camera.getXRot();
     }
 
+    private static void startSink(Minecraft mc) {
+        Camera camera = mc.gameRenderer.getMainCamera();
+        sinkFrom = camera.getPosition();
+        sinkYaw = camera.getYRot();
+        sinkPitch = camera.getXRot();
+        sinkCamera = new Marker(EntityType.MARKER, mc.level);
+        placeSinkCamera(0.0);
+        mc.setCameraEntity(sinkCamera);
+    }
+
+    private static void stopSink(Minecraft mc) {
+        if (sinkCamera == null) {
+            return;
+        }
+        if (mc.player != null && mc.getCameraEntity() == sinkCamera) {
+            mc.setCameraEntity(mc.player);
+        }
+        sinkCamera = null;
+    }
+
+    /** The sinking view this frame; the same value for "last tick" too, so it doesn't smear. */
+    private static void placeSinkCamera(double down) {
+        double y = sinkFrom.y - down;
+        sinkCamera.setPos(sinkFrom.x, y, sinkFrom.z);
+        sinkCamera.xo = sinkCamera.xOld = sinkFrom.x;
+        sinkCamera.yo = sinkCamera.yOld = y;
+        sinkCamera.zo = sinkCamera.zOld = sinkFrom.z;
+        sinkCamera.setYRot(sinkYaw);
+        sinkCamera.yRotO = sinkYaw;
+        sinkCamera.setXRot(sinkPitch);
+        sinkCamera.xRotO = sinkPitch;
+    }
+
+    /** Every frame: sink a little further, speeding up (a fall, not a lift). */
+    @SubscribeEvent
+    public static void onRenderFrame(RenderFrameEvent.Pre event) {
+        if (sinkCamera == null || stage != Stage.LAG) {
+            return;
+        }
+        double t = Mth.clamp((System.currentTimeMillis() - stageStartMs) / (double) SINK_MS, 0.0, 1.0);
+        placeSinkCamera(SINK_DEPTH * t * t);
+    }
+
+    /** While we film from the sinking camera, the game would draw your sleeping body in front of it. */
+    @SubscribeEvent
+    public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
+        if (sinkCamera != null && event.getEntity() == Minecraft.getInstance().player) {
+            event.setCanceled(true);
+        }
+    }
+
     /** (Re)creates the buffers at the screen's size; true when they are new (nothing in them yet). */
     private static boolean ensureTargets(RenderTarget main) {
         if (out != null && out.width == main.width && out.height == main.height) {
@@ -300,6 +377,14 @@ public final class NoclipTransition {
             }
         }
         out = outNext = scene = prevScene = null;
+    }
+
+    /** In bed, the "Leave Bed" chat screen stays open: don't draw it over the footage. */
+    @SubscribeEvent
+    public static void onScreenRenderBed(ScreenEvent.Render.Pre event) {
+        if (stage != Stage.NONE && event.getScreen() instanceof InBedChatScreen) {
+            event.setCanceled(true);
+        }
     }
 
     /** "Loading terrain..." after the dimension change: keep showing the broken frame instead. */
@@ -356,6 +441,7 @@ public final class NoclipTransition {
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         stage = Stage.NONE;
         lagLevel = null;
+        sinkCamera = null;
         seenPacketMs = CameraClientState.introStartMs = 0;
         free();
     }
