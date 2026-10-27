@@ -1,81 +1,199 @@
 package com.rickr.backrooms.world.layout;
 
+import static com.rickr.backrooms.world.layout.Level0Zones.BUILDERS;
+import static com.rickr.backrooms.world.layout.Level0Zones.CORRIDOR;
+import static com.rickr.backrooms.world.layout.Level0Zones.DARK;
+import static com.rickr.backrooms.world.layout.Level0Zones.FIELD;
+import static com.rickr.backrooms.world.layout.Level0Zones.HALL;
+
+import com.rickr.backrooms.block.AxisShapeBlock;
 import com.rickr.backrooms.block.FloorArrowBlock;
+import com.rickr.backrooms.block.Level0ConduitBlock;
+import com.rickr.backrooms.block.Level0GraffitiBlock;
+import com.rickr.backrooms.block.Level0MannequinBlock;
+import com.rickr.backrooms.block.Level0TapeBlock;
 import com.rickr.backrooms.block.RugBlock;
 import com.rickr.backrooms.block.WallDecalBlock;
 import com.rickr.backrooms.block.WallDoorDrawingBlock;
 import com.rickr.backrooms.block.WallLampBlock;
+import com.rickr.backrooms.block.WallMountBlock;
+import com.rickr.backrooms.registry.Level0Blocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.LadderBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoorHingeSide;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Level 0, "the Lobby": mono-yellow wallpaper, damp carpet, a low drop ceiling and buzzing
- * fluorescent panels.
+ * Level 0, "the Lobby", as in Kane Pixels' series and the A24 film: big, open, evenly and brightly
+ * lit yellow spaces under a dropped ceiling, broken up by thick wall blocks, corridors, odd
+ * half-built rooms, and whole wings where the lights are dead.
  *
- * <p><b>Floor plan.</b> A thick-walled maze. Both axes are cut by {@link Bands} into wall bands
- * (1-3 blocks thick) and gaps (rooms/corridors, 3-7 wide; doorways 2-3). Where an X wall band crosses a
- * Z gap we get a wall "segment"; each segment is solid, has a doorway, is missing entirely, or is
- * a half-length stub. Where two wall bands cross we get a "junction", which is solid whenever a
- * wall touches it, and otherwise may stay as a free-standing pillar.
+ * <p><b>The skeleton.</b> Both axes are cut by {@link Bands} into wall bands (1-3 blocks thick) and
+ * gaps (3-7 wide). That gives four kinds of "unit": a room (gap x gap), a wall segment (a band
+ * across a gap, in either direction) and a junction (band x band). Every unit decides what it is
+ * from its own hash, so neighbouring columns always agree and walls have clean, blunt ends.
  *
- * <p><b>Tunnel vistas.</b> The doorway position in a segment depends on the row (the gap it spans)
- * and not on which wall it is in, so the doorways of many parallel walls line up. Looking through
- * one, you see a nested series of door frames (the walls have a lintel above each doorway).
+ * <p><b>Zones.</b> Each unit asks {@link Level0Zones} which kind of neighbourhood it is in (big
+ * irregular areas 64-96 blocks across), and builds itself accordingly:
+ * <ul>
+ *   <li>{@link Level0Zones#HALL} pillar halls (~35%): nearly every wall segment is missing, the
+ *       junctions stay as square pillars on a loose, uneven grid (1x1 to 3x3), with now and then a
+ *       free-standing wall block. Long sightlines.</li>
+ *   <li>{@link Level0Zones#FIELD} wall-block fields (~25%): the classic thick-walled maze with
+ *       frameless 2-4 wide openings. The openings of parallel walls line up (they depend on the
+ *       row, not the wall), so you see long vistas through them.</li>
+ *   <li>{@link Level0Zones#CORRIDOR} corridor runs (~15%): long straight corridors carved out of
+ *       solid wall, Kane's 3-4 wide with a troffer every 2 blocks down the middle, or the film's
+ *       2-3 wide with one continuous light strip. Some branch, some dead-end, some go dark.</li>
+ *   <li>{@link Level0Zones#BUILDERS} the film's "builders' mistakes" (~15%): chest-high partitions
+ *       with wood cap rails, soffit beams across rooms, window holes, empty niches, carpeted ramps
+ *       up into squeezed low passages and odd little corners, in the chevron "Classic" paper.</li>
+ *   <li>{@link Level0Zones#DARK} dark wings (~10%): an enclosed maze where every troffer is dead.
+ *       Rooms just outside a wing switch off their panels near it, so the dark starts at the
+ *       doorway.</li>
+ * </ul>
+ * Near a border, units randomly take the neighbouring kind more and more often (halls, fields and
+ * builders' rooms only), so one kind fades into the next over a dozen blocks.
  *
- * <p><b>Zones.</b> 48x48 zones are tight mazes, ordinary rooms, or big pillared halls. Light comes
- * in 8x8 ceiling patches; half the level is in "lit" zones where many patches have panels, the
- * other half is nearly dark.
+ * <p><b>Lights.</b> One square troffer every 3 blocks in both directions over open floor, the
+ * rows sometimes shifted by one; about 3% dead. See {@link #roomLight} and {@link #corridorLight}.
  *
- * <p><b>Exit.</b> One per 512x512 region: a wooden door in a wall opening into a white stairwell
- * with stairs going down. Arrows drawn on walls point toward it... mostly.
+ * <p><b>Set pieces</b> (rare, by hash, see {@link #roomPiece}, {@link #roomWallPiece} and
+ * {@link #solidFeature}): furniture heaps and the throne in pillar halls, mannequin clusters among
+ * half-walls, exit-sign alcoves, switch boxes with conduit, graffiti, teal tape lines, a ladder up
+ * to a hole in the wall, missing ceiling tiles with a dangling cable, an abandoned hazmat case.
+ * {@link Level0Finder} finds the nearest of each for {@code /backrooms anomaly locate}.
+ *
+ * <p><b>Exit.</b> One per 512x512 region: a wooden door, recessed between green and white hazard
+ * stripes under a lit EXIT sign, into a white stairwell going down.
  *
  * <p><b>Safe rooms.</b> About 60% of the 128x128 squares hide one somewhere in the maze: a cosy
- * office room (wood panelling under the yellow wallpaper, beige carpet, a warm lamp) behind thick
- * walls with one doorway. A 1-wide strip of plain floor runs all around it, so the doorway always
- * leads back into the maze. See {@link SafeRoomPlan}.
+ * office room behind thick walls with one doorway, and a 1-wide strip of plain floor all around it
+ * so the doorway always leads back into the maze. See {@link SafeRoomPlan}.
  *
  * <p><b>Anomalies.</b> Five kinds of anomalous area, placed by {@link Level0AnomalyPlan}: the Red
- * Rooms ({@link Level0RedRooms}, with peeling wallpaper and sticky carpet in the maze around them
- * as a warning), Blackout Zones (the maze with no lights, rough walls and fluid on the carpet; see
- * {@link Level0Blackout}), the Manila Room ({@link Level0ManilaRoom}, with a flickering wall to
- * Level 1 in the maze nearby), a pillar hall that rearranges itself ({@link Level0PillarHall}) and a
- * room whose floor is a grid of pits ({@link Level0Pitfalls}). The first four replace the maze in a
- * rectangle (like the front office); blackouts change the maze in place.
+ * Rooms ({@link Level0RedRooms}), Blackout Zones ({@link Level0Blackout}, the maze in place with
+ * no lights, rough walls and fluid on the carpet), the Manila Room ({@link Level0ManilaRoom}), a
+ * pillar hall that rearranges itself ({@link Level0PillarHall}) and Room 14D's grid of pits
+ * ({@link Level0Pitfalls}).
+ *
+ * <p><b>Speed.</b> Every answer is computed from hashes (a few dozen per column) and packed into
+ * ints, so {@link #fillColumn} allocates nothing; the zone answers are memoised by
+ * {@link Level0Zones}.
  */
 public final class Level0Layout extends LevelLayout {
     /** Wall bands running north-south (cut along X) and east-west (cut along Z). */
-    private static final Bands X_WALLS = new Bands(32, 1, 3, 3, 7, 101);
-    private static final Bands Z_WALLS = new Bands(32, 1, 3, 3, 7, 102);
+    static final Bands X_WALLS = new Bands(32, 1, 3, 3, 7, 101);
+    static final Bands Z_WALLS = new Bands(32, 1, 3, 3, 7, 102);
     /** Columns within this distance of the exit (outside the stairwell) are an open lobby. */
     private static final int CLEARING_RADIUS = 8;
     private static final int ARROW_RANGE = 320;
-    private static final int ZONE = 48;
     private static final int OFFICE_GRID = 96;
     /** Safe rooms: a free strip this wide runs all around each one, joining it to the maze. */
     private static final int SAFE_MOAT = 1;
     /** Safe rooms keep at least this far (chessboard distance from their centre) from an exit. */
     private static final int SAFE_EXIT_DISTANCE = 24;
+    /** Two zone kinds mix over this many blocks on each side of their border. */
+    private static final int BLEND = 12;
+    /** Share of single dead troffers in lit areas (darkness otherwise comes by zone). */
+    private static final double DEAD_LIGHT = 0.03;
 
-    // What a maze column is.
-    private static final int OPEN = 0;
-    private static final int WALL = 1;
-    private static final int DOORWAY = 2; // walkable, with a lintel above
+    // What a maze column is: the low 4 bits of a packed column (see mazeColumn).
+    static final int OPEN = 0;
+    static final int WALL = 1;
+    static final int DOORWAY = 2;      // walkable; a lintel above in dark wings and builders' rooms
+    static final int HALF = 3;         // chest-high partition with a wood cap rail
+    static final int WINDOW = 4;       // wall with a frameless 2x2 hole at eye height, right through
+    static final int NICHE_HIGH = 5;   // wall face with an empty 1-deep recess at eye height
+    static final int NICHE_LOW = 6;    // wall face with a walk-in recess from the floor up
+    static final int ALCOVE = 7;       // the recess in front of an exit-sign door
+    static final int ALCOVE_DOOR = 8;  // the door at the back of it
+    static final int ALCOVE_FRAME = 9; // a hazard-striped jamb beside it
+    static final int GRAFFITI = 10;    // wall with words smeared on one face
+    static final int WALL_HOLE = 11;   // wall with a dark square hole at the top of a ladder
 
     // What a wall segment is.
-    private static final int SOLID = 0;
+    static final int SOLID = 0;
     private static final int DOOR = 1;
     private static final int MISSING = 2;
-    private static final int STUB_LOW = 3;  // only the half touching the lower-coordinate junction
-    private static final int STUB_HIGH = 4; // only the half touching the higher-coordinate junction
+    private static final int STUB_LOW = 3;   // only the half touching the lower-coordinate junction
+    private static final int STUB_HIGH = 4;  // only the half touching the higher-coordinate junction
+    private static final int HALF_SOLID = 5; // a partition the whole way
+    private static final int HALF_DOOR = 6;  // a partition with a gap in it
+    /** Chances of SOLID, DOOR, MISSING, HALF_SOLID, HALF_DOOR per zone kind; the rest are stubs. */
+    private static final int[] ODDS_STATES = {SOLID, DOOR, MISSING, HALF_SOLID, HALF_DOOR};
+    private static final double[][] SEGMENT_ODDS = {
+            {0.03, 0.02, 0.83, 0.00, 0.00}, // HALL: walls almost all gone; pillars and wall blocks stay
+            {0.14, 0.50, 0.20, 0.00, 0.00}, // FIELD
+            {1.00, 0.00, 0.00, 0.00, 0.00}, // CORRIDOR (corridors are carved separately)
+            {0.14, 0.24, 0.14, 0.14, 0.22}, // BUILDERS
+            {0.18, 0.58, 0.12, 0.00, 0.00}, // DARK: more enclosed, so the dark starts at doorways
+    };
+    /** Chance that a junction no wall reaches still stands as a pillar, per zone kind. */
+    private static final double[] JUNCTION_PILLAR = {0.8, 0.3, 1.0, 0.15, 0.3};
+
+    // Features of a solid wall segment (see solidFeature).
+    static final int F_NONE = 0;
+    static final int F_WINDOW = 1;
+    static final int F_NICHE_HIGH = 2;
+    static final int F_NICHE_LOW = 3;
+    static final int F_ALCOVE = 4;
+    static final int F_GRAFFITI = 5;
+
+    // Corridor flags (bits 12+ of a packed corridor column).
+    private static final int C_MAIN = 1;
+    private static final int C_CROSS = 2;
+    private static final int C_MAIN_CENTRE = 4;
+    private static final int C_CROSS_CENTRE = 8;
+    private static final int C_DIM = 16;
+    private static final int C_ALONG_X = 32;
+    private static final int C_FILM = 64;
+
+    // Things stood in a room (see roomPiece / propAt).
+    static final int R_NONE = 0;
+    static final int R_HEAP = 1;
+    static final int R_THRONE = 2;
+    static final int R_MANNEQUINS = 3;
+    static final int R_HAZMAT = 4;
+    static final int R_CABLE = 5;
+    static final int R_HOLE = 6;
+    private static final int P_NONE = 0;
+    private static final int P_HEAP = 1;
+    private static final int P_THRONE = 2;
+    private static final int P_LITTER = 3;
+    private static final int P_MANNEQUIN = 4;
+    private static final int P_HAZMAT = 5;
+    private static final int P_CABLE = 6;
+    private static final int P_HOLE = 7;
+
+    // Things on a room's wall (see roomWallPiece).
+    static final int W_NONE = 0;
+    static final int W_TAPE = 1;
+    static final int W_SWITCHES = 2;
+    static final int W_LADDER = 3;
+
+    // Ramp pieces (see ramp).
+    private static final int RAMP_SLAB = 1;
+    private static final int RAMP_STAIRS = 2;
+    private static final int RAMP_RAISED = 3;
+
+    // The exit door's alcove (see exitAlcove).
+    private static final int STAIR_DOOR = 1;
+    private static final int JAMB = 2;
+    private static final int MOUTH = 3;
 
     // What a "front office" column is.
     private static final int NO_OFFICE = -1;
@@ -84,6 +202,15 @@ public final class Level0Layout extends LevelLayout {
     private static final int OFFICE_WALL = 2;
     private static final int OFFICE_YELLOW_WALL = 3;
     private static final int OFFICE_DOORWAY = 4;
+
+    /** The anomaly kinds plus the zone and set-piece names /backrooms anomaly locate can find. */
+    private static final List<String> LOCATE_KINDS;
+
+    static {
+        List<String> kinds = new ArrayList<>(Level0AnomalyPlan.KINDS);
+        kinds.addAll(Level0Finder.KINDS);
+        LOCATE_KINDS = Collections.unmodifiableList(kinds);
+    }
 
     /** Where the anomalous areas are (see {@link Level0AnomalyPlan}). */
     private final Level0AnomalyPlan anomalies;
@@ -94,95 +221,265 @@ public final class Level0Layout extends LevelLayout {
     }
 
     // ==========================================================================================
+    // Zones
+    // ==========================================================================================
+
+    /**
+     * The zone sample of the unit whose first corner is (repX, repZ), with border mixing: close to
+     * the border between a hall, a field and a builders' zone, a unit sometimes takes the other
+     * side's kind (more often the closer it is). Corridors and dark wings keep a crisp edge.
+     */
+    private static long unit(long seed, int repX, int repZ) {
+        long sample = Level0Zones.sample(seed, repX, repZ);
+        int kind = Level0Zones.kind(sample);
+        int other = Level0Zones.secondKind(sample);
+        int edge = Level0Zones.edge(sample);
+        if (kind != other && edge < BLEND && blends(kind) && blends(other)
+                && Hash.unit(seed, repX, repZ, 516) < 0.5 * (1.0 - edge / (double) BLEND)) {
+            return (sample & ~7L) | other;
+        }
+        return sample;
+    }
+
+    private static boolean blends(int kind) {
+        return kind == HALL || kind == FIELD || kind == BUILDERS;
+    }
+
+    /** Zone kind of the unit made of spans sx and sz. */
+    static int unitKind(long seed, long sx, long sz) {
+        return Level0Zones.kind(unit(seed, X_WALLS.start(sx), Z_WALLS.start(sz)));
+    }
+
+    /** Zone kind of the unit containing column (x, z). */
+    static int unitKindAt(long seed, int x, int z) {
+        return unitKind(seed, X_WALLS.span(seed, x), Z_WALLS.span(seed, z));
+    }
+
+    // ==========================================================================================
     // Maze
     // ==========================================================================================
 
-    /** 0 = tight maze, 1 = ordinary rooms, 2 = big open hall. */
-    private static int zoneKind(long seed, int x, int z) {
-        double v = zone(seed, x, z, ZONE, 11);
-        return v < 0.33 ? 0 : v < 0.82 ? 1 : 2;
+    /**
+     * What column (x, z) of the maze is, packed: bits 0-3 the column code ({@link #OPEN},
+     * {@link #WALL}, ...), bits 4-6 the zone kind of its unit, bits 8-9 a horizontal direction (the
+     * way a wall feature faces), bits 12+ extra data (graffiti variant/part, corridor flags).
+     */
+    static int mazeColumn(long seed, int x, int z, long sx, long sz) {
+        long u = unit(seed, X_WALLS.start(sx), Z_WALLS.start(sz));
+        int kind = Level0Zones.kind(u);
+        boolean bandX = Bands.isBand(sx);
+        boolean bandZ = Bands.isBand(sz);
+        int column;
+        if (kind == CORRIDOR) {
+            column = corridorColumn(seed, x, z, sx, sz, Level0Zones.zoneHash(u));
+        } else if (!bandX && !bandZ) {
+            column = roomPillar(seed, kind, x, z, sx, sz) || oddCorner(seed, kind, x, z, sx, sz) ? WALL : OPEN;
+        } else if (bandX && !bandZ) {
+            column = segmentColumn(seed, kind, sx, sz, z - Z_WALLS.start(sz), x - X_WALLS.start(sx), 0);
+        } else if (!bandX) {
+            column = segmentColumn(seed, kind, sz, sx, x - X_WALLS.start(sx), z - Z_WALLS.start(sz), 1);
+        } else {
+            column = junctionColumn(seed, kind, sx, sz);
+        }
+        return column | kind << 4;
     }
 
-    private static int segmentState(long seed, int wallIndex, int gapIndex, int axis, int repX, int repZ) {
-        int kind = zoneKind(seed, repX, repZ);
+    private static int mazeColumn(long seed, int x, int z) {
+        return mazeColumn(seed, x, z, X_WALLS.span(seed, x), Z_WALLS.span(seed, z));
+    }
+
+    static int segmentState(long seed, int kind, int wallIndex, int gapIndex, int axis) {
+        if (kind == CORRIDOR) {
+            return SOLID; // only asked by neighbours: corridor zones are mostly solid wall
+        }
         double r = Hash.unit(seed, wallIndex, gapIndex, 200 + axis);
-        double solid = kind == 0 ? 0.25 : kind == 1 ? 0.12 : 0.03;
-        double door = solid + (kind == 0 ? 0.55 : kind == 1 ? 0.55 : 0.12);
-        double missing = door + (kind == 0 ? 0.08 : kind == 1 ? 0.18 : 0.75);
-        if (r < solid) return SOLID;
-        if (r < door) return DOOR;
-        if (r < missing) return MISSING;
+        double[] odds = SEGMENT_ODDS[kind];
+        for (int i = 0; i < odds.length; i++) {
+            r -= odds[i];
+            if (r < 0) {
+                return ODDS_STATES[i];
+            }
+        }
         return Hash.unit(seed, wallIndex, gapIndex, 202 + axis) < 0.5 ? STUB_LOW : STUB_HIGH;
     }
 
     /** State of the segment of X wall band {@code xWall} that spans Z gap {@code zGap}. */
-    private static int xSegment(long seed, long xWall, long zGap) {
-        return segmentState(seed, Bands.index(xWall), Bands.index(zGap), 0, X_WALLS.start(xWall), Z_WALLS.start(zGap));
+    static int xSegment(long seed, long xWall, long zGap) {
+        return segmentState(seed, unitKind(seed, xWall, zGap), Bands.index(xWall), Bands.index(zGap), 0);
     }
 
     /** State of the segment of Z wall band {@code zWall} that spans X gap {@code xGap}. */
-    private static int zSegment(long seed, long zWall, long xGap) {
-        return segmentState(seed, Bands.index(zWall), Bands.index(xGap), 1, X_WALLS.start(xGap), Z_WALLS.start(zWall));
+    static int zSegment(long seed, long zWall, long xGap) {
+        return segmentState(seed, unitKind(seed, xGap, zWall), Bands.index(zWall), Bands.index(xGap), 1);
     }
 
-    /** Column kind from the maze alone (ignores the exit and the front office). */
-    private static int mazeKind(long seed, int x, int z, long sx, long sz) {
-        boolean wallX = Bands.isBand(sx);
-        boolean wallZ = Bands.isBand(sz);
-        if (!wallX && !wallZ) {
-            return roomPillar(seed, x, z, sx, sz) ? WALL : OPEN;
-        }
-        if (wallX && !wallZ) {
-            return segmentColumn(seed, xSegment(seed, sx, sz), Bands.index(sx), sz, Z_WALLS, z, 0);
-        }
-        if (!wallX) {
-            return segmentColumn(seed, zSegment(seed, sz, sx), Bands.index(sz), sx, X_WALLS, x, 1);
-        }
-        return junctionSolid(seed, sx, sz) ? WALL : OPEN;
-    }
-
-    private static int mazeKind(long seed, int x, int z) {
-        return mazeKind(seed, x, z, X_WALLS.span(seed, x), Z_WALLS.span(seed, z));
-    }
-
-    /** One column inside a wall segment; {@code along} is the coordinate along the segment. */
-    private static int segmentColumn(long seed, int state, int wallIndex, long gap, Bands gapBands, int along, int axis) {
+    /**
+     * One column inside a wall segment: {@code along} runs along the wall (0 at the gap's start),
+     * {@code across} through its thickness (0 at the low-coordinate face). Axis 0: a north-south
+     * wall (an X band); axis 1: an east-west wall.
+     */
+    private static int segmentColumn(long seed, int kind, long wall, long gap, int along, int across, int axis) {
+        int wallIndex = Bands.index(wall);
+        int gapIndex = Bands.index(gap);
         int length = Bands.length(gap);
-        int pos = along - gapBands.start(gap);
-        switch (state) {
-            case SOLID:
-                return WALL;
-            case MISSING:
-                return OPEN;
-            case STUB_LOW:
-                return pos < length / 2 ? WALL : OPEN;
-            case STUB_HIGH:
-                return pos >= length - length / 2 ? WALL : OPEN;
-            default: {
-                // Doorway. Its width and offset depend on the gap ("row") and on a 48-block lane of
-                // walls, not on the individual wall, so neighbouring walls' doorways line up.
-                int lane = Math.floorDiv(wallIndex, 32);
-                long h = Hash.of(seed, Bands.index(gap), lane, 210 + axis);
-                int width = length <= 2 ? length : length >= 5 && Hash.unit(h) < 0.4 ? 3 : 2;
-                int offset = Hash.range(Hash.mix(h), length - width + 1);
-                return pos >= offset && pos < offset + width ? DOORWAY : WALL;
+        int state = segmentState(seed, kind, wallIndex, gapIndex, axis);
+        return switch (state) {
+            case SOLID -> solidColumn(seed, kind, wall, gap, along, across, axis);
+            case MISSING -> OPEN;
+            case STUB_LOW -> along < length / 2 ? WALL : OPEN;
+            case STUB_HIGH -> along >= length - length / 2 ? WALL : OPEN;
+            case HALF_SOLID -> HALF | partitionFacing(axis);
+            case HALF_DOOR -> inDoorway(seed, wallIndex, gapIndex, length, along, axis) ? OPEN : HALF | partitionFacing(axis);
+            default -> inDoorway(seed, wallIndex, gapIndex, length, along, axis) ? DOORWAY : WALL;
+        };
+    }
+
+    /**
+     * Doorway position: its width and offset depend on the gap ("row") and on a lane of 32 walls,
+     * not on the individual wall, so the openings of neighbouring parallel walls line up into the
+     * long vistas Level 0 is known for.
+     */
+    private static boolean inDoorway(long seed, int wallIndex, int gapIndex, int length, int along, int axis) {
+        int lane = Math.floorDiv(wallIndex, 32);
+        long h = Hash.of(seed, gapIndex, lane, 210 + axis);
+        double r = Hash.unit(h);
+        int width = length <= 2 ? length : length >= 6 && r < 0.25 ? 4 : length >= 5 && r < 0.5 ? 3 : 2;
+        int offset = Hash.range(Hash.mix(h), length - width + 1);
+        return along >= offset && along < offset + width;
+    }
+
+    /** The cap rail of a partition faces across it (its rail runs along the partition). */
+    private static int partitionFacing(int axis) {
+        return (axis == 0 ? Direction.EAST : Direction.SOUTH).get2DDataValue() << 8;
+    }
+
+    /** The way a wall's face looks: side 0 is the low-coordinate face, side 1 the high one. */
+    static Direction faceDirection(int axis, int side) {
+        if (axis == 0) {
+            return side == 0 ? Direction.WEST : Direction.EAST;
+        }
+        return side == 0 ? Direction.NORTH : Direction.SOUTH;
+    }
+
+    /**
+     * The one special thing about a solid wall segment, packed: bits 0-2 the feature (F_*), bit 3
+     * which face, bits 4-11 where along the wall, bits 12-13 its width, bits 14-15 a variant.
+     * <ul>
+     *   <li>Builders' rooms: a window hole right through the wall (40%), or an empty niche in one
+     *       face (30%, needs a wall 2+ thick).</li>
+     *   <li>Halls, fields, dark wings: rarely (1.2% of 2-thick walls) an exit-sign alcove: a door
+     *       recessed one block between hazard stripes, with a lit EXIT sign above. It is a real door,
+     *       but only into whatever room lies behind: a false hope, a few times commoner than real exits.</li>
+     *   <li>Anywhere: graffiti on one face (3%).</li>
+     * </ul>
+     */
+    static int solidFeature(long seed, int kind, int wallIndex, int gapIndex, int axis, int length, int thickness) {
+        long h = Hash.of(seed, wallIndex, gapIndex, 232 + axis);
+        double r = Hash.unit(h);
+        long bits = Hash.mix(h);
+        int type = F_NONE;
+        int width = 1;
+        if (kind == BUILDERS && r < 0.40 && length >= 4) {
+            type = F_WINDOW;
+            width = 2;
+        } else if (kind == BUILDERS && r < 0.70 && thickness >= 2) {
+            type = (bits >>> 41 & 1) == 0 ? F_NICHE_HIGH : F_NICHE_LOW;
+            width = 1 + (int) (bits >>> 42 & 1);
+        } else if (kind != BUILDERS && r < 0.012 && thickness == 2 && length >= 3) {
+            type = F_ALCOVE;
+        } else if (r >= 0.97 && length >= 3) {
+            type = F_GRAFFITI;
+            width = 2;
+        }
+        if (type == F_NONE) {
+            return F_NONE;
+        }
+        int side = (int) (bits >>> 40) & 1;
+        int offset = type == F_ALCOVE
+                ? 1 + Hash.range(Hash.mix(bits), length - 2)
+                : Hash.range(Hash.mix(bits), length - width + 1);
+        int variant = (int) (bits >>> 44) & 3;
+        return type | side << 3 | offset << 4 | width << 12 | variant << 14;
+    }
+
+    private static int solidColumn(long seed, int kind, long wall, long gap, int along, int across, int axis) {
+        int length = Bands.length(gap);
+        int thickness = Bands.length(wall);
+        int feature = solidFeature(seed, kind, Bands.index(wall), Bands.index(gap), axis, length, thickness);
+        int type = feature & 7;
+        if (type != F_NONE) {
+            int side = feature >>> 3 & 1;
+            int offset = feature >>> 4 & 0xFF;
+            int width = feature >>> 12 & 3;
+            int face = side == 0 ? 0 : thickness - 1;
+            Direction out = faceDirection(axis, side);
+            int facing = out.get2DDataValue() << 8;
+            switch (type) {
+                case F_WINDOW -> {
+                    if (along >= offset && along < offset + width) return WINDOW;
+                }
+                case F_NICHE_HIGH, F_NICHE_LOW -> {
+                    if (across == face && along >= offset && along < offset + width) {
+                        return (type == F_NICHE_HIGH ? NICHE_HIGH : NICHE_LOW) | facing;
+                    }
+                }
+                case F_ALCOVE -> {
+                    if (along == offset) return (across == face ? ALCOVE : ALCOVE_DOOR) | facing;
+                    if (across == face && Math.abs(along - offset) == 1) return ALCOVE_FRAME | facing;
+                }
+                default -> {
+                    // Graffiti, two blocks wide. Part 0 is the left half as seen from the room; the
+                    // viewer's left is the face direction turned clockwise.
+                    if (across == face && along >= offset && along < offset + 2) {
+                        Direction left = out.getClockWise();
+                        int leftStep = axis == 0 ? left.getStepZ() : left.getStepX();
+                        int part = (along == offset) == (leftStep > 0) ? 1 : 0;
+                        int variant = feature >>> 14 & 3;
+                        return GRAFFITI | facing | (variant | part << 2) << 12;
+                    }
+                }
+            }
+            return WALL;
+        }
+        // A plain wall: maybe the hole a ladder in the room in front of it leads up to.
+        for (int side = 0; side < 2; side++) {
+            if (across == (side == 0 ? 0 : thickness - 1) && ladderHole(seed, wall, gap, axis, side, along)) {
+                return WALL_HOLE | faceDirection(axis, side).get2DDataValue() << 8;
             }
         }
+        return WALL;
     }
 
-    /** Where two wall bands cross: solid if any wall reaches it, otherwise maybe a lone pillar. */
-    private static boolean junctionSolid(long seed, long sx, long sz) {
+    /** True if the room on {@code side} of this wall has its ladder against it at {@code along}. */
+    private static boolean ladderHole(long seed, long wall, long gap, int axis, int side, int along) {
+        Bands wallBands = axis == 0 ? X_WALLS : Z_WALLS;
+        long room = wallBands.span(seed, side == 0 ? wallBands.start(wall) - 1 : wallBands.end(wall));
+        int piece = axis == 0 ? roomWallPiece(seed, room, gap) : roomWallPiece(seed, gap, room);
+        // The room sees this wall on its east/west (axis 0) or south/north (axis 1) side.
+        int roomSide = axis == 0 ? (side == 0 ? 1 : 0) : (side == 0 ? 3 : 2);
+        return (piece & 3) == W_LADDER && (piece >>> 4 & 3) == roomSide && (piece >>> 8 & 0xFF) == along;
+    }
+
+    /** Where two wall bands cross: solid if a wall reaches it, a partition if one does, otherwise maybe a pillar. */
+    private static int junctionColumn(long seed, int kind, long sx, long sz) {
         long zBefore = Z_WALLS.span(seed, Z_WALLS.start(sz) - 1);
         long zAfter = Z_WALLS.span(seed, Z_WALLS.end(sz));
         long xBefore = X_WALLS.span(seed, X_WALLS.start(sx) - 1);
         long xAfter = X_WALLS.span(seed, X_WALLS.end(sx));
-        if (reachesHighEnd(xSegment(seed, sx, zBefore)) || reachesLowEnd(xSegment(seed, sx, zAfter))
-                || reachesHighEnd(zSegment(seed, sz, xBefore)) || reachesLowEnd(zSegment(seed, sz, xAfter))) {
-            return true;
+        int north = xSegment(seed, sx, zBefore);
+        int south = xSegment(seed, sx, zAfter);
+        int west = zSegment(seed, sz, xBefore);
+        int east = zSegment(seed, sz, xAfter);
+        if (reachesHighEnd(north) || reachesLowEnd(south) || reachesHighEnd(west) || reachesLowEnd(east)) {
+            return WALL;
         }
-        int kind = zoneKind(seed, X_WALLS.start(sx), Z_WALLS.start(sz));
-        double pillarChance = kind == 0 ? 0.1 : kind == 1 ? 0.25 : 0.7;
-        return Hash.unit(seed, Bands.index(sx), Bands.index(sz), 220) < pillarChance;
+        if (isPartition(north) || isPartition(south)) {
+            return HALF | partitionFacing(0);
+        }
+        if (isPartition(west) || isPartition(east)) {
+            return HALF | partitionFacing(1);
+        }
+        return Hash.unit(seed, Bands.index(sx), Bands.index(sz), 220) < JUNCTION_PILLAR[kind] ? WALL : OPEN;
     }
 
     private static boolean reachesHighEnd(int state) {
@@ -193,16 +490,334 @@ public final class Level0Layout extends LevelLayout {
         return state == SOLID || state == DOOR || state == STUB_LOW;
     }
 
-    /** Big rooms (6x6 and up) sometimes get a 2x2 pillar in the middle. */
-    private static boolean roomPillar(long seed, int x, int z, long sx, long sz) {
+    private static boolean isPartition(int state) {
+        return state == HALF_SOLID || state == HALF_DOOR;
+    }
+
+    /** Side length of the pillar in the middle of a room (0 = none): 1x1 or 2x2 in halls, 2x2 in big maze rooms. */
+    private static int pillarSize(long seed, int kind, long sx, long sz) {
         int lenX = Bands.length(sx);
         int lenZ = Bands.length(sz);
-        if (lenX < 6 || lenZ < 6 || Hash.unit(seed, Bands.index(sx), Bands.index(sz), 230) >= 0.45) {
+        long h = Hash.of(seed, Bands.index(sx), Bands.index(sz), 230);
+        if (kind == HALL) {
+            return lenX >= 5 && lenZ >= 5 && Hash.unit(h) < 0.35 ? (Hash.unit(Hash.mix(h)) < 0.4 ? 1 : 2) : 0;
+        }
+        if (kind == FIELD || kind == DARK) {
+            return lenX >= 6 && lenZ >= 6 && Hash.unit(h) < 0.45 ? 2 : 0;
+        }
+        return 0;
+    }
+
+    private static boolean roomPillar(long seed, int kind, int x, int z, long sx, long sz) {
+        int size = pillarSize(seed, kind, sx, sz);
+        if (size == 0) {
             return false;
         }
-        int px = X_WALLS.start(sx) + lenX / 2 - 1;
-        int pz = Z_WALLS.start(sz) + lenZ / 2 - 1;
-        return x >= px && x <= px + 1 && z >= pz && z <= pz + 1;
+        int px = X_WALLS.start(sx) + (Bands.length(sx) - size) / 2;
+        int pz = Z_WALLS.start(sz) + (Bands.length(sz) - size) / 2;
+        return x >= px && x < px + size && z >= pz && z < pz + size;
+    }
+
+    /** Builders' rooms: a stray 1x1 or 1x2 lump of wall in one corner, as if the plans were wrong. */
+    private static boolean oddCorner(long seed, int kind, int x, int z, long sx, long sz) {
+        if (kind != BUILDERS || Bands.length(sx) < 4 || Bands.length(sz) < 4) {
+            return false;
+        }
+        long h = Hash.of(seed, Bands.index(sx), Bands.index(sz), 236);
+        if (Hash.unit(h) >= 0.3) {
+            return false;
+        }
+        int corner = Hash.range(Hash.mix(h), 4);
+        boolean west = (corner & 1) == 0;
+        boolean north = (corner & 2) == 0;
+        int cx = west ? X_WALLS.start(sx) : X_WALLS.end(sx) - 1;
+        int cz = north ? Z_WALLS.start(sz) : Z_WALLS.end(sz) - 1;
+        boolean longX = (Hash.mix(h) >>> 50 & 1) == 0;
+        int ex = longX ? cx + (west ? 1 : -1) : cx;
+        int ez = longX ? cz : cz + (north ? 1 : -1);
+        return (x == cx && z == cz) || (x == ex && z == ez);
+    }
+
+    // ==========================================================================================
+    // Corridor zones
+    // ==========================================================================================
+
+    /**
+     * A corridor zone is solid wall with straight corridors cut through it: one along every gap
+     * "row" of the zone's axis (a fifth of the rows stay solid), a few cross corridors along gaps of
+     * the other axis, and now and then a plug of wall where a corridor crosses a wall band (a dead
+     * end). The zone point's hash picks the axis and Kane's or the film's style.
+     */
+    private static int corridorColumn(long seed, int x, int z, long sx, long sz, int zoneHash) {
+        boolean alongX = (zoneHash & 1) == 0;
+        boolean film = (zoneHash >>> 8 & 0xFF) < 115; // about 45%
+        long row = alongX ? sz : sx;
+        long run = alongX ? sx : sz;
+        int across = alongX ? z : x;
+        int along = alongX ? x : z;
+        int flags = 0;
+        if (!Bands.isBand(row) && Hash.unit(seed, Bands.index(row), zoneHash, 525) >= 0.2) {
+            int strip = strip(seed, row, zoneHash, 0, film, alongX ? Z_WALLS : X_WALLS, across);
+            boolean plugged = Bands.isBand(run) && Hash.unit(seed, Bands.index(run), Bands.index(row), 527) < 0.05;
+            if (strip >= 0 && !plugged) {
+                flags |= C_MAIN;
+                if ((strip & 15) == ((strip >>> 4) - 1) / 2) flags |= C_MAIN_CENTRE;
+                if (Hash.unit(seed, Math.floorDiv(along, 24), Bands.index(row), 528) < 0.12) flags |= C_DIM;
+            }
+        }
+        if (!Bands.isBand(run) && Hash.unit(seed, Bands.index(run), zoneHash, 526) < 0.3) {
+            int strip = strip(seed, run, zoneHash, 1, film, alongX ? X_WALLS : Z_WALLS, along);
+            if (strip >= 0) {
+                flags |= C_CROSS;
+                if ((strip & 15) == ((strip >>> 4) - 1) / 2) flags |= C_CROSS_CENTRE;
+                if ((flags & C_MAIN) == 0 && Hash.unit(seed, Math.floorDiv(across, 24), Bands.index(run), 529) < 0.12) {
+                    flags |= C_DIM;
+                }
+            }
+        }
+        if ((flags & (C_MAIN | C_CROSS)) == 0) {
+            return WALL;
+        }
+        if (alongX) flags |= C_ALONG_X;
+        if (film) flags |= C_FILM;
+        return OPEN | flags << 12;
+    }
+
+    /**
+     * Where a corridor runs inside a gap: Kane's are 3-4 wide, the film's 2-3. Returns the position
+     * across the corridor (bits 0-3) and its width (bits 4-7), or -1 outside it.
+     */
+    private static int strip(long seed, long gap, int zoneHash, int which, boolean film, Bands bands, int coord) {
+        int length = Bands.length(gap);
+        long h = Hash.of(seed, Bands.index(gap), zoneHash, 522 + which);
+        int width = Math.min(length, (film ? 2 : 3) + (Hash.unit(h) < 0.5 ? 1 : 0));
+        int offset = Hash.range(Hash.mix(h), length - width + 1);
+        int pos = coord - bands.start(gap) - offset;
+        return pos >= 0 && pos < width ? pos | width << 4 : -1;
+    }
+
+    /**
+     * Corridor lights run down the middle: Kane's a square troffer every 2 blocks, the film's one
+     * continuous strip. Some stretches (about one in eight) are dead and dark.
+     */
+    @Nullable
+    private static BlockState corridorLight(long seed, int x, int z, int column) {
+        int flags = column >>> 12;
+        boolean main = (flags & C_MAIN_CENTRE) != 0;
+        if (!main && (flags & C_CROSS_CENTRE) == 0) {
+            return null;
+        }
+        boolean alongX = (flags & C_ALONG_X) != 0;
+        boolean runsX = main == alongX; // a cross corridor runs the other way
+        boolean dim = (flags & C_DIM) != 0;
+        if ((flags & C_FILM) != 0) {
+            BlockState strip = (dim ? Level0Blocks.TROFFER_STRIP_OFF : Level0Blocks.TROFFER_STRIP).get().defaultBlockState();
+            return strip.setValue(AxisShapeBlock.AXIS, runsX ? Direction.Axis.X : Direction.Axis.Z);
+        }
+        if (Math.floorMod(runsX ? x : z, 2) != 0) {
+            return null;
+        }
+        boolean dead = dim || Hash.unit(seed, x, z, 532) < DEAD_LIGHT;
+        return (dead ? ModBlocks.FLUORESCENT_LIGHT_OFF : ModBlocks.FLUORESCENT_LIGHT).get().defaultBlockState();
+    }
+
+    // ==========================================================================================
+    // Rooms: lights, ramps, soffits, set pieces
+    // ==========================================================================================
+
+    /**
+     * The troffer grid: one every 3 blocks in both directions over open floor (some 24-block
+     * stretches of a row shifted by one). Dead in dark wings, and in lit areas within 3 blocks of
+     * one, so a wing goes black right at its doorway; otherwise 3% dead.
+     */
+    @Nullable
+    private static BlockState roomLight(long seed, int kind, int x, int z) {
+        if (Math.floorMod(z, 3) != 1) {
+            return null;
+        }
+        int shift = Hash.unit(seed, Math.floorDiv(x, 24), Math.floorDiv(z, 3), 531) < 0.2 ? 1 : 0;
+        if (Math.floorMod(x - shift, 3) != 1) {
+            return null;
+        }
+        boolean dead = kind == DARK || Hash.unit(seed, x, z, 532) < DEAD_LIGHT || nearDarkWing(seed, x, z);
+        return (dead ? ModBlocks.FLUORESCENT_LIGHT_OFF : ModBlocks.FLUORESCENT_LIGHT).get().defaultBlockState();
+    }
+
+    private static boolean nearDarkWing(long seed, int x, int z) {
+        return unitKindAt(seed, x + 3, z) == DARK || unitKindAt(seed, x - 3, z) == DARK
+                || unitKindAt(seed, x, z + 3) == DARK || unitKindAt(seed, x, z - 3) == DARK;
+    }
+
+    /** True if this builders' room is a ramp up into a low passage (see {@link #ramp}). */
+    static boolean rampRoom(long seed, int kind, long sx, long sz) {
+        if (kind != BUILDERS || Hash.unit(seed, Bands.index(sx), Bands.index(sz), 620) >= 0.22) {
+            return false;
+        }
+        boolean alongX = rampAlongX(seed, sx, sz);
+        int length = Bands.length(alongX ? sx : sz);
+        int width = Bands.length(alongX ? sz : sx);
+        return length >= 6 && width <= 5;
+    }
+
+    private static boolean rampAlongX(long seed, long sx, long sz) {
+        int lenX = Bands.length(sx);
+        int lenZ = Bands.length(sz);
+        return lenX != lenZ ? lenX > lenZ : (Hash.of(seed, Bands.index(sx), Bands.index(sz), 621) & 1) == 0;
+    }
+
+    /**
+     * The film's steep carpeted ramp: a builders' room, the long way, goes slab, stairs, then a floor
+     * one block higher under a ceiling one block lower (a squeezed 2-high passage), and stairs and a
+     * slab back down at the far end. Returns the piece (bits 0-1) and the stairs' uphill facing
+     * (bits 2-3), or 0.
+     */
+    private static int ramp(long seed, int kind, int x, int z, long sx, long sz) {
+        if (!rampRoom(seed, kind, sx, sz)) {
+            return 0;
+        }
+        boolean alongX = rampAlongX(seed, sx, sz);
+        int length = Bands.length(alongX ? sx : sz);
+        int pos = alongX ? x - X_WALLS.start(sx) : z - Z_WALLS.start(sz);
+        Direction up = alongX ? Direction.EAST : Direction.SOUTH;
+        if (pos == 0 || pos == length - 1) {
+            return RAMP_SLAB;
+        }
+        if (pos == 1) {
+            return RAMP_STAIRS | up.get2DDataValue() << 2;
+        }
+        if (pos == length - 2) {
+            return RAMP_STAIRS | up.getOpposite().get2DDataValue() << 2;
+        }
+        return RAMP_RAISED;
+    }
+
+    /** True if this builders' room has a dropped soffit beam across it. */
+    static boolean soffitRoom(long seed, int kind, long sx, long sz) {
+        return kind == BUILDERS && Hash.unit(seed, Bands.index(sx), Bands.index(sz), 630) < 0.4
+                && !rampRoom(seed, kind, sx, sz);
+    }
+
+    /** A dropped soffit beam (ceiling - 1) crossing a builders' room from wall to wall. */
+    private static boolean soffit(long seed, int kind, int x, int z, long sx, long sz) {
+        if (!soffitRoom(seed, kind, sx, sz)) {
+            return false;
+        }
+        long h = Hash.of(seed, Bands.index(sx), Bands.index(sz), 631);
+        boolean runsAlongX = (h & 1) == 0;
+        long across = runsAlongX ? sz : sx;
+        int length = Bands.length(across);
+        if (length < 3) {
+            return false;
+        }
+        int at = (runsAlongX ? Z_WALLS : X_WALLS).start(across) + 1 + Hash.range(Hash.mix(h), length - 2);
+        return (runsAlongX ? z : x) == at;
+    }
+
+    /**
+     * The set piece standing in a room, if any (R_*): in pillar halls a heap of furniture (3% of
+     * rooms 5x5 and up) or the lone throne (1%); in builders' rooms a cluster of mannequins (10% of
+     * rooms 4x4 and up); anywhere but corridors an abandoned hazmat case (1.2%), a missing ceiling
+     * tile on its own (1.5%) or one with a cable hanging out (3%). Never in a ramp room (its floor
+     * is raised).
+     */
+    static int roomPiece(long seed, int kind, long sx, long sz) {
+        int lenX = Bands.length(sx);
+        int lenZ = Bands.length(sz);
+        double r = Hash.unit(seed, Bands.index(sx), Bands.index(sz), 600);
+        if ((r >= 0.10 && r < 0.90) || r >= 0.957 || rampRoom(seed, kind, sx, sz)) {
+            return R_NONE;
+        }
+        if (kind == HALL && lenX >= 5 && lenZ >= 5 && r < 0.04 && pillarSize(seed, kind, sx, sz) == 0) {
+            return r < 0.03 ? R_HEAP : R_THRONE;
+        }
+        if (kind == BUILDERS && lenX >= 4 && lenZ >= 4 && r < 0.10) {
+            return R_MANNEQUINS;
+        }
+        if (r < 0.90 || pillarSize(seed, kind, sx, sz) != 0) {
+            return R_NONE; // (a pillar could stand on the hazmat case's or the hole's spot)
+        }
+        return r < 0.912 ? R_HAZMAT : r < 0.927 ? R_HOLE : R_CABLE;
+    }
+
+    /** What of the room's set piece is on column (x, z): P_* in bits 0-3, a heap's height in bits 4+. */
+    private static int propAt(long seed, int kind, int x, int z, long sx, long sz) {
+        int piece = roomPiece(seed, kind, sx, sz);
+        if (piece == R_NONE) {
+            return P_NONE;
+        }
+        int x0 = X_WALLS.start(sx);
+        int z0 = Z_WALLS.start(sz);
+        int lenX = Bands.length(sx);
+        int lenZ = Bands.length(sz);
+        int d = Math.max(Math.abs(x - (x0 + lenX / 2)), Math.abs(z - (z0 + lenZ / 2)));
+        switch (piece) {
+            case R_HEAP -> {
+                // A rough mound: three high in the middle, lower and patchier further out.
+                if (d > 2) return P_NONE;
+                double r = Hash.unit(seed, x, z, 641);
+                int height = d == 0 ? 3 : d == 1 ? (r < 0.6 ? 2 : 1) : (r < 0.45 ? 1 : 0);
+                return height == 0 ? P_NONE : P_HEAP | height << 4;
+            }
+            case R_THRONE -> {
+                if (d == 0) return P_THRONE;
+                return d >= 2 && Hash.unit(seed, x, z, 607) < 0.08 ? P_LITTER : P_NONE;
+            }
+            case R_MANNEQUINS -> {
+                boolean inner = x > x0 && x < x0 + lenX - 1 && z > z0 && z < z0 + lenZ - 1;
+                return inner && Hash.unit(seed, x, z, 606) < 0.25 ? P_MANNEQUIN : P_NONE;
+            }
+            default -> {
+                long h = Hash.of(seed, Bands.index(sx), Bands.index(sz), 601);
+                int px = x0 + 1 + Hash.range(h, Math.max(1, lenX - 2));
+                int pz = z0 + 1 + Hash.range(Hash.mix(h), Math.max(1, lenZ - 2));
+                if (x != px || z != pz) return P_NONE;
+                return piece == R_HAZMAT ? P_HAZMAT : piece == R_HOLE ? P_HOLE : P_CABLE;
+            }
+        }
+    }
+
+    /**
+     * Something on one wall of a room, packed: bits 0-1 the kind (W_*), bits 4-5 the wall (0 west,
+     * 1 east, 2 north, 3 south), bits 8-15 where along it, bits 16+ how many. Only on a plain solid
+     * wall. Teal tape (3.5% of rooms) runs along the wall, up it and across the ceiling; switch boxes
+     * with conduit (5%); a ladder up to a hole in the wall (1.5%).
+     */
+    static int roomWallPiece(long seed, long sx, long sz) {
+        long h = Hash.of(seed, Bands.index(sx), Bands.index(sz), 610);
+        double r = Hash.unit(h);
+        int type = r < 0.035 ? W_TAPE : r < 0.085 ? W_SWITCHES : r < 0.10 ? W_LADDER : W_NONE;
+        if (type == W_NONE) {
+            return 0;
+        }
+        int kind = unitKind(seed, sx, sz);
+        if (kind == CORRIDOR || rampRoom(seed, kind, sx, sz)) {
+            return 0;
+        }
+        long bits = Hash.mix(h);
+        int side = Hash.range(bits, 4);
+        long wall;
+        long gap;
+        int axis;
+        int segmentKind;
+        if (side < 2) {
+            wall = X_WALLS.span(seed, side == 0 ? X_WALLS.start(sx) - 1 : X_WALLS.end(sx));
+            gap = sz;
+            axis = 0;
+            segmentKind = unitKind(seed, wall, sz);
+        } else {
+            wall = Z_WALLS.span(seed, side == 2 ? Z_WALLS.start(sz) - 1 : Z_WALLS.end(sz));
+            gap = sx;
+            axis = 1;
+            segmentKind = unitKind(seed, sx, wall);
+        }
+        int length = Bands.length(gap);
+        if (segmentKind == CORRIDOR || segmentState(seed, segmentKind, Bands.index(wall), Bands.index(gap), axis) != SOLID
+                || solidFeature(seed, segmentKind, Bands.index(wall), Bands.index(gap), axis, length, Bands.length(wall)) != F_NONE) {
+            return 0;
+        }
+        int count = type == W_SWITCHES ? Math.min(length, 1 + Hash.range(Hash.mix(bits ^ 5), 3)) : 1;
+        int offset = Hash.range(Hash.mix(bits ^ 1), length - count + 1);
+        return type | side << 4 | offset << 8 | count << 16;
     }
 
     // ==========================================================================================
@@ -433,21 +1048,41 @@ public final class Level0Layout extends LevelLayout {
         anomalies.near(seed, x, z, radius, out);
     }
 
+    /**
+     * The nearest anomaly of {@code kind}, or (for the debug names in {@link Level0Finder#KINDS},
+     * like {@code level_0/zone/pillar_hall} or {@code level_0/set/furniture_heap}) the nearest
+     * zone or set piece of that kind, so the same command finds them.
+     */
     @Override
     @Nullable
     public AnomalySite nearestAnomaly(long seed, int x, int z, String kind) {
+        if (Level0Finder.KINDS.contains(kind)) {
+            return Level0Finder.nearest(this, seed, x, z, kind);
+        }
         return anomalies.nearest(seed, x, z, kind);
     }
 
     @Override
     public List<String> anomalyKinds() {
-        return Level0AnomalyPlan.KINDS;
+        return LOCATE_KINDS;
     }
 
-    /** Nobody arrives (or respawns) inside an anomalous structure: you have to walk in. */
+    /** Nobody arrives (or respawns) inside an anomalous structure or on a ramp: you have to walk in. */
     @Override
     public boolean isSafeArrival(long seed, int x, int z) {
-        return isWalkable(seed, x, z) && anomalies.structureAt(seed, x, z) == null;
+        return isWalkable(seed, x, z) && anomalies.structureAt(seed, x, z) == null && rampAt(seed, x, z) == 0;
+    }
+
+    /** One block higher on the raised floor and the top of the stairs of a ramp. */
+    @Override
+    public int standY(long seed, int x, int z) {
+        int part = rampAt(seed, x, z) & 3;
+        return FLOOR_Y + 1 + (part == RAMP_RAISED || part == RAMP_STAIRS ? 1 : 0);
+    }
+
+    @Override
+    public double feetY(long seed, int x, int z) {
+        return (rampAt(seed, x, z) & 3) == RAMP_SLAB ? FLOOR_Y + 1.5 : standY(seed, x, z);
     }
 
     /**
@@ -494,33 +1129,52 @@ public final class Level0Layout extends LevelLayout {
         return true;
     }
 
-    /** A maze wall outside exits, offices and safe rooms (never asks the anomaly plan: the planner uses it). */
-    boolean plainMazeWall(long seed, int x, int z) {
+    /** True where the column is plain maze: outside exits, offices and safe rooms (never asks the anomaly plan). */
+    private boolean plainMaze(long seed, int x, int z) {
         return exits().distance(seed, x, z) > CLEARING_RADIUS && officeAt(seed, x, z) == NO_OFFICE
-                && mazeKind(seed, x, z) == WALL && safeRoomNear(seed, x, z) == null;
+                && safeRoomNear(seed, x, z) == null;
     }
 
-    /** Open maze floor (or a doorway) outside exits, offices and safe rooms. */
+    /** Plain maze, and not inside an anomalous structure either (Level0Finder only reports these). */
+    boolean inMaze(long seed, int x, int z) {
+        return plainMaze(seed, x, z) && anomalies.structureAt(seed, x, z) == null;
+    }
+
+    /** A plain full-height maze wall outside exits, offices and safe rooms (never asks the anomaly plan: the planner uses it). */
+    boolean plainMazeWall(long seed, int x, int z) {
+        return (mazeColumn(seed, x, z) & 15) == WALL && plainMaze(seed, x, z);
+    }
+
+    /** Open maze floor (or a doorway) at floor level outside exits, offices and safe rooms. */
     boolean plainMazeOpen(long seed, int x, int z) {
-        return exits().distance(seed, x, z) > CLEARING_RADIUS && officeAt(seed, x, z) == NO_OFFICE
-                && mazeKind(seed, x, z) != WALL && safeRoomNear(seed, x, z) == null;
+        long sx = X_WALLS.span(seed, x);
+        long sz = Z_WALLS.span(seed, z);
+        int column = mazeColumn(seed, x, z, sx, sz);
+        int code = column & 15;
+        if (code == DOORWAY) {
+            return plainMaze(seed, x, z);
+        }
+        return code == OPEN && ramp(seed, column >>> 4 & 7, x, z, sx, sz) == 0 && plainMaze(seed, x, z);
     }
 
     /**
-     * Does the spot suit an anomaly that likes {@code zone}: 0 tight maze, 1 ordinary rooms, 2 big
-     * halls (see {@link #zoneKind}), 3 the unlit half of the level.
+     * Does the spot suit an anomaly that likes {@code zone}: 0 the tight maze (wall fields), 1
+     * ordinary rooms (fields and builders' rooms), 2 big halls, 3 the dark wings.
      */
     boolean zonePrefers(long seed, int x, int z, int zone) {
-        return zone == 3 ? isUnlitZone(seed, x, z) : zoneKind(seed, x, z) == zone;
+        int kind = Level0Zones.kindAt(seed, x, z);
+        return switch (zone) {
+            case 0 -> kind == FIELD;
+            case 1 -> kind == FIELD || kind == BUILDERS;
+            case 2 -> kind == HALL;
+            default -> kind == DARK;
+        };
     }
 
-    /** True in the dark fifth of the level where hardly any ceiling panel works (see {@link #ceilingLight}). */
+    /** True in a dark wing, where every ceiling panel is dead (see {@link Level0Zones#DARK}). */
     public boolean isUnlitZone(long seed, int x, int z) {
-        return zone(seed, x, z, 32, 13) >= UNLIT_ZONE_FROM;
+        return unitKindAt(seed, x, z) == DARK;
     }
-
-    /** Zone noise at or above this is a dark zone (about a fifth of the level). */
-    private static final double UNLIT_ZONE_FROM = 0.8;
 
     private void fillStructure(AnomalySite site, int x, int z, Column out) {
         switch (site.kind()) {
@@ -563,21 +1217,53 @@ public final class Level0Layout extends LevelLayout {
     }
 
     // ==========================================================================================
-    // Column queries shared by fillColumn / isWalkable / decals / lights
+    // Column queries shared by fillColumn / isWalkable / decals
     // ==========================================================================================
+
+    /**
+     * The exit door's alcove, seen from column (x, z) at offset (dx, dz) from the exit: the door
+     * column of the stairwell wall (STAIR_DOOR), the hazard-striped jambs one block out on each side
+     * of it (JAMB), the mouth between them (MOUTH), or 0.
+     */
+    private static int exitAlcove(long seed, int x, int z, int dx, int dz) {
+        int ring = Math.max(Math.abs(dx), Math.abs(dz));
+        if (ring != STAIRWELL_RADIUS && ring != STAIRWELL_RADIUS + 1) {
+            return 0;
+        }
+        // The same local frame as LevelLayout.stairwell: turned so the door is on the north side.
+        Direction doorSide = stairwellDoorSide(seed, x - dx, z - dz);
+        int quarterTurns = (doorSide.get2DDataValue() + 2) % 4;
+        int lx = dx;
+        int lz = dz;
+        for (int i = 0; i < quarterTurns; i++) {
+            int t = lx;
+            lx = lz;
+            lz = -t;
+        }
+        if (lz != -ring) {
+            return 0;
+        }
+        if (ring == STAIRWELL_RADIUS) {
+            return lx == 0 ? STAIR_DOOR : 0;
+        }
+        return lx == 0 ? MOUTH : Math.abs(lx) == 1 ? JAMB : 0;
+    }
 
     /** True if the column is solid at eye level (walls of the maze, office or stairwell). */
     private boolean solidAtEyeLevel(long seed, int x, int z) {
-        int d = exits().distance(seed, x, z);
+        int dx = exits().dx(seed, x, z);
+        int dz = exits().dz(seed, x, z);
+        int d = Math.max(Math.abs(dx), Math.abs(dz));
         if (d <= STAIRWELL_RADIUS) return true;
-        if (d <= CLEARING_RADIUS) return false;
+        if (d <= CLEARING_RADIUS) return exitAlcove(seed, x, z, dx, dz) == JAMB;
         SafeRoomPlan safe = safeRoomNear(seed, x, z);
         if (safe != null) return safe.role(x, z) == SafeRoomPlan.WALL;
         int office = officeAt(seed, x, z);
         if (office != NO_OFFICE) return office == OFFICE_WALL || office == OFFICE_YELLOW_WALL;
         AnomalySite site = anomalies.structureAt(seed, x, z);
         if (site != null) return structureSolid(site, x, z);
-        return mazeKind(seed, x, z) == WALL;
+        int code = mazeColumn(seed, x, z) & 15;
+        return code == WALL || code == GRAFFITI || code == WALL_HOLE || code == ALCOVE_FRAME || code == ALCOVE_DOOR;
     }
 
     /**
@@ -590,18 +1276,27 @@ public final class Level0Layout extends LevelLayout {
                 && !anomalies.isManilaExit(seed, x, z);
     }
 
-    /** A plain maze floor column (where ceiling panels may hang). Never inside a blackout zone. */
-    private boolean isMazeRoom(long seed, int x, int z) {
-        return exits().distance(seed, x, z) > CLEARING_RADIUS && officeAt(seed, x, z) == NO_OFFICE
-                && mazeKind(seed, x, z) == OPEN && safeRoomNear(seed, x, z) == null
-                && anomalies.structureAt(seed, x, z) == null && anomalies.blackoutAt(seed, x, z) == null;
+    /** The ramp piece at (x, z) (see {@link #ramp}), or 0 anywhere that is not a ramp. */
+    private int rampAt(long seed, int x, int z) {
+        long sx = X_WALLS.span(seed, x);
+        long sz = Z_WALLS.span(seed, z);
+        if (Bands.isBand(sx) || Bands.isBand(sz)) {
+            return 0;
+        }
+        int kind = unitKind(seed, sx, sz);
+        if (!rampRoom(seed, kind, sx, sz) || !inMaze(seed, x, z) || (mazeColumn(seed, x, z, sx, sz) & 15) != OPEN) {
+            return 0;
+        }
+        return ramp(seed, kind, x, z, sx, sz);
     }
 
     @Override
     public boolean isWalkable(long seed, int x, int z) {
-        int d = exits().distance(seed, x, z);
+        int dx = exits().dx(seed, x, z);
+        int dz = exits().dz(seed, x, z);
+        int d = Math.max(Math.abs(dx), Math.abs(dz));
         if (d <= STAIRWELL_RADIUS) return false;
-        if (d <= CLEARING_RADIUS) return true;
+        if (d <= CLEARING_RADIUS) return exitAlcove(seed, x, z, dx, dz) != JAMB;
         SafeRoomPlan safe = safeRoomNear(seed, x, z);
         if (safe != null) {
             return !safe.contains(x, z) || safe.isWalkable(x, z);
@@ -626,9 +1321,16 @@ public final class Level0Layout extends LevelLayout {
         }
         long sx = X_WALLS.span(seed, x);
         long sz = Z_WALLS.span(seed, z);
-        int kind = mazeKind(seed, x, z, sx, sz);
-        if (kind == WALL) return false;
-        if (kind == DOORWAY) return true;
+        int column = mazeColumn(seed, x, z, sx, sz);
+        int code = column & 15;
+        if (code == DOORWAY || code == ALCOVE || code == NICHE_LOW) return true;
+        if (code != OPEN) return false;
+        int kind = column >>> 4 & 7;
+        if (kind == CORRIDOR || Bands.isBand(sx) || Bands.isBand(sz) || rampRoom(seed, kind, sx, sz)) {
+            return true;
+        }
+        int prop = propAt(seed, kind, x, z, sx, sz) & 15;
+        if (prop != P_NONE && prop != P_CABLE && prop != P_HOLE) return false;
         return crateHeight(seed, x, z, sx, sz) == 0 && backpackFacing(seed, x, z, sx, sz) == null;
     }
 
@@ -642,6 +1344,7 @@ public final class Level0Layout extends LevelLayout {
         BlockState baseboard = ModBlocks.YELLOW_WALLPAPER_BASEBOARD.get().defaultBlockState();
         BlockState carpet = ModBlocks.LOBBY_CARPET.get().defaultBlockState();
         BlockState tile = ModBlocks.CEILING_TILE.get().defaultBlockState();
+        BlockState hazard = Level0Blocks.HAZARD_FRAME.get().defaultBlockState();
         int floor = floorY();
         int ceiling = ceilingY();
         int dx = exits().dx(seed, x, z);
@@ -649,15 +1352,34 @@ public final class Level0Layout extends LevelLayout {
         int exitDistance = Math.max(Math.abs(dx), Math.abs(dz));
 
         if (stairwell(seed, dx, dz, x - dx, z - dz, wallpaper, baseboard, true, out)) {
+            if (exitAlcove(seed, x, z, dx, dz) == STAIR_DOOR) {
+                out.set(floor + 3, hazard); // a striped header over the door (the lit sign hangs in front)
+            }
             return;
         }
         if (exitDistance <= CLEARING_RADIUS) {
-            // Open, well-lit lobby around the stairwell so the door is easy to spot.
+            // Open, well-lit lobby around the stairwell so the door is easy to spot. The door sits in
+            // an alcove between hazard-striped jambs, under a lit EXIT sign.
             out.set(floor, carpet);
             int ax = Math.abs(dx);
             int az = Math.abs(dz);
             boolean panel = (ax == 7 && (az == 3 || az == 4)) || (az == 7 && (ax == 3 || ax == 4));
             out.set(ceiling, panel ? ModBlocks.FLUORESCENT_LIGHT.get().defaultBlockState() : tile);
+            int alcove = exitAlcove(seed, x, z, dx, dz);
+            if (alcove == JAMB) {
+                for (int y = floor + 1; y <= floor + 3; y++) {
+                    out.set(y, hazard);
+                }
+                for (int y = floor + 4; y < ceiling; y++) {
+                    out.set(y, wallpaper);
+                }
+            } else if (alcove == MOUTH) {
+                Direction outward = stairwellDoorSide(seed, x - dx, z - dz);
+                out.set(floor + 3, Level0Blocks.EXIT_SIGN.get().defaultBlockState().setValue(WallMountBlock.FACING, outward));
+                for (int y = floor + 4; y < ceiling; y++) {
+                    out.set(y, hazard);
+                }
+            }
             return;
         }
         SafeRoomPlan safe = safeRoomNear(seed, x, z);
@@ -678,7 +1400,10 @@ public final class Level0Layout extends LevelLayout {
 
         long sx = X_WALLS.span(seed, x);
         long sz = Z_WALLS.span(seed, z);
-        int kind = mazeKind(seed, x, z, sx, sz);
+        int column = mazeColumn(seed, x, z, sx, sz);
+        int code = column & 15;
+        int kind = column >>> 4 & 7;
+        Direction facing = Direction.from2DDataValue(column >>> 8 & 3);
         // A blackout zone is the same maze with no lights, rough dark walls and fluid on the carpet.
         boolean blackout = anomalies.blackoutAt(seed, x, z) != null;
         // Near the Red Rooms the wallpaper peels off crimson and the carpet turns sticky, more and
@@ -686,64 +1411,310 @@ public final class Level0Layout extends LevelLayout {
         double red = blackout ? -1 : redRoomsDistance(seed, x, z);
         BlockState rough = ModBlocks.BLACKOUT_WALLPAPER.get().defaultBlockState();
         BlockState fluid = ModBlocks.CARPET_FLUID.get().defaultBlockState();
+        // The film's builders' rooms have the chevron "Classic" paper; everywhere else Kane's.
+        BlockState paper = blackout ? rough : kind == BUILDERS ? Level0Blocks.CHEVRON_WALLPAPER.get().defaultBlockState() : wallpaper;
+        BlockState base = blackout ? rough : kind == BUILDERS ? Level0Blocks.CHEVRON_WALLPAPER_BASEBOARD.get().defaultBlockState() : baseboard;
         out.set(ceiling, tile);
-        if (kind == WALL) {
-            out.set(floor, carpet);
-            if (anomalies.isManilaExit(seed, x, z)) {
-                // The flickering wall the Manila Room's volunteers write about: walk into it to reach Level 1.
+        out.set(floor, carpet);
+        switch (code) {
+            case WALL, GRAFFITI, WALL_HOLE -> {
+                fillWall(seed, x, z, code, column, facing, blackout, red, paper, base, out);
+                return;
+            }
+            case ALCOVE_FRAME -> {
                 for (int y = floor + 1; y <= floor + 3; y++) {
-                    out.set(y, ModBlocks.FLICKERING_WALL.get().defaultBlockState());
+                    out.set(y, hazard);
                 }
-                for (int y = floor + 4; y < ceiling; y++) {
-                    out.set(y, wallpaper);
-                }
+                fillUp(floor + 4, ceiling, paper, out);
                 return;
             }
-            if (blackout) {
-                for (int y = floor + 1; y < ceiling; y++) {
-                    out.set(y, rough);
-                }
+            case WINDOW, NICHE_HIGH -> {
+                // A frameless hole at eye height (right through the wall, or one block deep).
+                out.set(floor + 1, base);
+                fillUp(floor + 4, ceiling, paper, out);
                 return;
             }
-            boolean peeling = red >= 0 && Hash.unit(seed, x, z, 3290) < 1.0 - red / (Level0AnomalyPlan.RED_RING + 1);
-            out.set(floor + 1, baseboard);
-            for (int y = floor + 2; y < ceiling; y++) {
-                out.set(y, peeling ? ModBlocks.PEELING_WALLPAPER.get().defaultBlockState() : wallpaper);
+            case NICHE_LOW -> {
+                fillUp(floor + 4, ceiling, paper, out);
+                return;
             }
-            if (!peeling) {
-                drawDecals(seed, x, z, out);
+            case HALF -> {
+                out.set(floor + 1, blackout ? rough : baseboard);
+                out.set(floor + 2, Level0Blocks.HALF_WALL_CAP.get().defaultBlockState().setValue(WallMountBlock.FACING, facing));
+                return;
             }
-            return;
+            case ALCOVE -> {
+                // Hazard-striped header across the top of the recess; the EXIT sign hangs under it,
+                // on the wall above the door.
+                out.set(floor + 3, Level0Blocks.EXIT_SIGN.get().defaultBlockState().setValue(WallMountBlock.FACING, facing));
+                fillUp(floor + 4, ceiling, hazard, out);
+                return;
+            }
+            case ALCOVE_DOOR -> {
+                BlockState door = ModBlocks.LOBBY_DOOR.get().defaultBlockState()
+                        .setValue(DoorBlock.FACING, facing)
+                        .setValue(DoorBlock.HINGE, DoorHingeSide.LEFT)
+                        .setValue(DoorBlock.OPEN, false);
+                out.set(floor + 1, door.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+                out.set(floor + 2, door.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+                fillUp(floor + 3, ceiling, paper, out);
+                return;
+            }
+            default -> {
+                // OPEN or DOORWAY, below.
+            }
         }
         boolean sticky = red >= 0 && Hash.unit(seed, x, z, 3291) < 1.0 - red / 7.0;
         BlockState stickyCarpet = ModBlocks.STICKY_CARPET.get().defaultBlockState();
-        if (kind == DOORWAY) {
+        if (code == DOORWAY) {
             out.set(floor, sticky ? stickyCarpet : carpet);
-            out.set(ceiling - 1, blackout ? rough : wallpaper); // lintel: this is what frames the "tunnel" view
+            if (kind == DARK || kind == BUILDERS || blackout) {
+                out.set(ceiling - 1, paper); // a lintel: the dark starts right here
+            }
             if (blackout) {
                 out.set(floor + 1, fluid);
             }
             return;
         }
-
-        out.set(floor, sticky ? stickyCarpet : floorBlock(seed, x, z, sx, sz, carpet));
-        int crates = crateHeight(seed, x, z, sx, sz);
-        for (int i = 0; i < crates; i++) {
-            out.set(floor + 1 + i, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
+        if (kind == CORRIDOR) {
+            out.set(floor, sticky ? stickyCarpet : carpet);
+            if (blackout) {
+                out.set(floor + 1, fluid);
+                return;
+            }
+            BlockState light = corridorLight(seed, x, z, column);
+            if (light != null) {
+                out.set(ceiling, light);
+            }
+            return;
         }
-        Direction backpack = backpackFacing(seed, x, z, sx, sz);
-        if (backpack != null) {
-            out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, backpack));
+        boolean room = !Bands.isBand(sx) && !Bands.isBand(sz);
+        if (!room) {
+            // Open floor where a wall segment or junction is missing: just carpet and the light grid.
+            out.set(floor, sticky ? stickyCarpet : carpet);
+            if (blackout) {
+                out.set(floor + 1, fluid);
+                return;
+            }
+            BlockState light = roomLight(seed, kind, x, z);
+            if (light != null) {
+                out.set(ceiling, light);
+            }
+            return;
+        }
+        int ramp = ramp(seed, kind, x, z, sx, sz);
+        if (ramp != 0) {
+            fillRamp(seed, kind, x, z, ramp, blackout, carpet, tile, out);
+            return;
+        }
+        fillRoom(seed, kind, x, z, sx, sz, sticky ? stickyCarpet : carpet, blackout, out);
+    }
+
+    private static void fillUp(int from, int ceiling, BlockState state, Column out) {
+        for (int y = from; y < ceiling; y++) {
+            out.set(y, state);
+        }
+    }
+
+    /** A full-height wall column, with its decal, graffiti or ladder hole. */
+    private void fillWall(long seed, int x, int z, int code, int column, Direction facing, boolean blackout, double red,
+                          BlockState paper, BlockState base, Column out) {
+        int floor = floorY();
+        int ceiling = ceilingY();
+        if (code == WALL && anomalies.isManilaExit(seed, x, z)) {
+            // The flickering wall the Manila Room's volunteers write about: walk into it to reach Level 1.
+            for (int y = floor + 1; y <= floor + 3; y++) {
+                out.set(y, ModBlocks.FLICKERING_WALL.get().defaultBlockState());
+            }
+            fillUp(floor + 4, ceiling, paper, out);
+            return;
         }
         if (blackout) {
-            if (crates == 0 && backpack == null) {
-                out.set(floor + 1, fluid); // ankle-deep, murky
+            fillUp(floor + 1, ceiling, paper, out);
+            return;
+        }
+        boolean peeling = red >= 0 && Hash.unit(seed, x, z, 3290) < 1.0 - red / (Level0AnomalyPlan.RED_RING + 1);
+        out.set(floor + 1, base);
+        fillUp(floor + 2, ceiling, peeling ? ModBlocks.PEELING_WALLPAPER.get().defaultBlockState() : paper, out);
+        if (peeling) {
+            return;
+        }
+        if (code == GRAFFITI) {
+            int extra = column >>> 12;
+            out.set(floor + 2, Level0Blocks.GRAFFITI.get().defaultBlockState()
+                    .setValue(WallDecalBlock.FACING, facing)
+                    .setValue(Level0GraffitiBlock.VARIANT, extra & 3)
+                    .setValue(Level0GraffitiBlock.PART, extra >>> 2 & 1));
+        } else if (code == WALL_HOLE) {
+            out.set(ceiling - 1, Level0Blocks.WALL_HOLE.get().defaultBlockState().setValue(WallDecalBlock.FACING, facing));
+        } else {
+            drawDecals(seed, x, z, out);
+        }
+    }
+
+    /** A ramp column: slab, stairs or the raised floor of the low passage (lights in its lowered ceiling). */
+    private void fillRamp(long seed, int kind, int x, int z, int ramp, boolean blackout, BlockState carpet, BlockState tile, Column out) {
+        int floor = floorY();
+        int ceiling = ceilingY();
+        int part = ramp & 3;
+        if (part == RAMP_SLAB) {
+            out.set(floor + 1, Level0Blocks.CARPET_SLAB.get().defaultBlockState());
+        } else if (part == RAMP_STAIRS) {
+            out.set(floor + 1, Level0Blocks.CARPET_STAIRS.get().defaultBlockState()
+                    .setValue(StairBlock.FACING, Direction.from2DDataValue(ramp >>> 2 & 3)));
+        } else {
+            out.set(floor + 1, carpet);
+            out.set(ceiling - 1, tile);
+        }
+        if (blackout) {
+            return;
+        }
+        BlockState light = roomLight(seed, kind, x, z);
+        if (light != null) {
+            out.set(part == RAMP_RAISED ? ceiling - 1 : ceiling, light);
+        }
+    }
+
+    /** An open column inside a room: floor, supplies, set pieces, wall pieces, soffit and lights. */
+    private void fillRoom(long seed, int kind, int x, int z, long sx, long sz, BlockState carpet, boolean blackout, Column out) {
+        int floor = floorY();
+        int ceiling = ceilingY();
+        out.set(floor, floorBlock(seed, x, z, sx, sz, carpet));
+        int prop = propAt(seed, kind, x, z, sx, sz);
+        int propType = prop & 15;
+        boolean blocked = propType != P_NONE && propType != P_CABLE && propType != P_HOLE;
+        boolean floorUsed = blocked;
+        if (blocked) {
+            placeProp(seed, x, z, sx, sz, prop, out);
+        } else {
+            int crates = crateHeight(seed, x, z, sx, sz);
+            for (int i = 0; i < crates; i++) {
+                out.set(floor + 1 + i, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
+            }
+            Direction backpack = backpackFacing(seed, x, z, sx, sz);
+            if (backpack != null) {
+                out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, backpack));
+            }
+            floorUsed = crates > 0 || backpack != null;
+        }
+        boolean soffit = soffit(seed, kind, x, z, sx, sz);
+        if (soffit) {
+            out.set(ceiling - 1, kind == BUILDERS ? Level0Blocks.CHEVRON_WALLPAPER.get().defaultBlockState()
+                    : ModBlocks.YELLOW_WALLPAPER.get().defaultBlockState());
+        }
+        if (blackout) {
+            if (!floorUsed) {
+                out.set(floor + 1, ModBlocks.CARPET_FLUID.get().defaultBlockState()); // ankle-deep, murky
             }
             return; // and not a single working lamp
         }
-        BlockState light = ceilingLight(seed, x, z);
-        if (light != null) {
-            out.set(ceiling, light);
+        BlockState light = null;
+        boolean hole = propType == P_CABLE || propType == P_HOLE;
+        if (hole) {
+            // A missing ceiling tile: a dark recess, sometimes with a loose cable hanging out of it.
+            out.set(ceiling, Level0Blocks.CEILING_HOLE.get().defaultBlockState());
+            if (propType == P_CABLE) {
+                out.set(ceiling - 1, Level0Blocks.DANGLING_CABLE.get().defaultBlockState()
+                        .setValue(WallMountBlock.FACING, Direction.from2DDataValue(Hash.range(Hash.of(seed, x, z, 602), 4))));
+            }
+        } else if (!soffit) {
+            light = roomLight(seed, kind, x, z);
+            if (light != null) {
+                out.set(ceiling, light);
+            }
+        }
+        placeWallPieces(seed, x, z, sx, sz, light != null || soffit || hole, floorUsed, out);
+    }
+
+    /** Puts down the part of a room's set piece that stands on (x, z). */
+    private void placeProp(long seed, int x, int z, long sx, long sz, int prop, Column out) {
+        int floor = floorY();
+        long room = Hash.of(seed, Bands.index(sx), Bands.index(sz), 603);
+        Direction roomFacing = Direction.from2DDataValue(Hash.range(room, 4));
+        switch (prop & 15) {
+            case P_HEAP -> {
+                int height = prop >>> 4;
+                for (int i = 0; i < height; i++) {
+                    out.set(floor + 1 + i, Level0Props.heapPiece(seed, x, floor + 1 + i, z));
+                }
+            }
+            case P_THRONE -> out.set(floor + 1, Level0Blocks.THRONE.get().defaultBlockState().setValue(WallMountBlock.FACING, roomFacing));
+            case P_LITTER -> out.set(floor + 1, Level0Props.litter(seed, x, z));
+            case P_MANNEQUIN -> {
+                // They mostly look the same way, as if waiting for something; a few have turned.
+                Direction look = Hash.unit(seed, x, z, 604) < 0.25
+                        ? Direction.from2DDataValue(Hash.range(Hash.of(seed, x, z, 605), 4)) : roomFacing;
+                BlockState mannequin = Level0Blocks.MANNEQUIN.get().defaultBlockState().setValue(WallMountBlock.FACING, look);
+                out.set(floor + 1, mannequin.setValue(Level0MannequinBlock.HALF, DoubleBlockHalf.LOWER));
+                out.set(floor + 2, mannequin.setValue(Level0MannequinBlock.HALF, DoubleBlockHalf.UPPER));
+            }
+            default -> out.set(floor + 1, Level0Blocks.HAZMAT_CASE.get().defaultBlockState()
+                    .setValue(WallMountBlock.FACING, Direction.from2DDataValue(Hash.range(Hash.of(seed, x, z, 608), 4))));
+        }
+    }
+
+    /**
+     * The room's wall piece (see {@link #roomWallPiece}) where it touches column (x, z): tape along
+     * the wall, up it and across the ceiling; switch boxes with conduit; a ladder.
+     *
+     * @param ceilingBusy true if the ceiling here has a light, a soffit or a hole (no tape on it)
+     * @param floorUsed   true if something already stands on the floor here (no ladder or switches)
+     */
+    private void placeWallPieces(long seed, int x, int z, long sx, long sz, boolean ceilingBusy, boolean floorUsed, Column out) {
+        int piece = roomWallPiece(seed, sx, sz);
+        if (piece == 0) {
+            return;
+        }
+        int floor = floorY();
+        int ceiling = ceilingY();
+        int type = piece & 3;
+        int side = piece >>> 4 & 3;
+        int offset = piece >>> 8 & 0xFF;
+        int count = piece >>> 16 & 0xFF;
+        int x0 = X_WALLS.start(sx);
+        int z0 = Z_WALLS.start(sz);
+        Direction away = side == 0 ? Direction.EAST : side == 1 ? Direction.WEST : side == 2 ? Direction.SOUTH : Direction.NORTH;
+        boolean edge = side == 0 ? x == x0 : side == 1 ? x == X_WALLS.end(sx) - 1 : side == 2 ? z == z0 : z == Z_WALLS.end(sz) - 1;
+        int along = side < 2 ? z - z0 : x - x0;
+        switch (type) {
+            case W_TAPE -> {
+                BlockState tape = Level0Blocks.TAPE.get().defaultBlockState();
+                if (edge) {
+                    out.set(floor + 2, tape.setValue(Level0TapeBlock.FACING, away).setValue(Level0TapeBlock.SHAPE, Level0TapeBlock.Shape.HORIZONTAL));
+                    if (along == offset) {
+                        BlockState up = tape.setValue(Level0TapeBlock.FACING, away).setValue(Level0TapeBlock.SHAPE, Level0TapeBlock.Shape.VERTICAL);
+                        for (int y = floor + 3; y < ceiling - 1; y++) {
+                            out.set(y, up);
+                        }
+                        out.set(ceiling - 1, ceilingBusy ? up : tape.setValue(Level0TapeBlock.FACING, away).setValue(Level0TapeBlock.SHAPE, Level0TapeBlock.Shape.CORNER));
+                    }
+                } else if (along == offset && !ceilingBusy) {
+                    // ...and on across the ceiling, straight out from the wall.
+                    out.set(ceiling - 1, tape.setValue(Level0TapeBlock.FACING, Direction.DOWN)
+                            .setValue(Level0TapeBlock.SHAPE, side < 2 ? Level0TapeBlock.Shape.HORIZONTAL : Level0TapeBlock.Shape.VERTICAL));
+                }
+            }
+            case W_SWITCHES -> {
+                if (edge && !floorUsed && along >= offset && along < offset + count) {
+                    out.set(floor + 2, Level0Blocks.SWITCH_BOX.get().defaultBlockState().setValue(WallMountBlock.FACING, away));
+                    BlockState conduit = Level0Blocks.CONDUIT.get().defaultBlockState()
+                            .setValue(WallMountBlock.FACING, away).setValue(Level0ConduitBlock.VERTICAL, true);
+                    out.set(floor + 1, conduit);
+                    if (along == offset) {
+                        fillUp(floor + 3, ceiling, conduit, out); // the feed comes down from the ceiling
+                    }
+                }
+            }
+            case W_LADDER -> {
+                if (edge && !floorUsed && along == offset) {
+                    BlockState ladder = Level0Blocks.LADDER.get().defaultBlockState().setValue(LadderBlock.FACING, away);
+                    for (int y = floor + 1; y < ceiling - 1; y++) {
+                        out.set(y, ladder);
+                    }
+                }
+            }
+            default -> {
+            }
         }
     }
 
@@ -782,8 +1753,8 @@ public final class Level0Layout extends LevelLayout {
     }
 
     /**
-     * Crates hide in the back corner of dead-end rooms (exactly one way in). Returns how many are
-     * stacked on this column (0, 1 or 2).
+     * Crates hide in the back corner of dead-end rooms (exactly one way in; a partition counts as a
+     * wall). Returns how many are stacked on this column (0, 1 or 2).
      */
     private static int crateHeight(long seed, int x, int z, long sx, long sz) {
         int ix = Bands.index(sx);
@@ -795,10 +1766,10 @@ public final class Level0Layout extends LevelLayout {
         int x1 = X_WALLS.end(sx) - 1;
         int z0 = Z_WALLS.start(sz);
         int z1 = Z_WALLS.end(sz) - 1;
-        boolean west = xSegment(seed, X_WALLS.span(seed, x0 - 1), sz) != SOLID;
-        boolean east = xSegment(seed, X_WALLS.span(seed, x1 + 1), sz) != SOLID;
-        boolean north = zSegment(seed, Z_WALLS.span(seed, z0 - 1), sx) != SOLID;
-        boolean south = zSegment(seed, Z_WALLS.span(seed, z1 + 1), sx) != SOLID;
+        boolean west = open(xSegment(seed, X_WALLS.span(seed, x0 - 1), sz));
+        boolean east = open(xSegment(seed, X_WALLS.span(seed, x1 + 1), sz));
+        boolean north = open(zSegment(seed, Z_WALLS.span(seed, z0 - 1), sx));
+        boolean south = open(zSegment(seed, Z_WALLS.span(seed, z1 + 1), sx));
         int ways = (west ? 1 : 0) + (east ? 1 : 0) + (north ? 1 : 0) + (south ? 1 : 0);
         if (ways != 1) {
             return 0;
@@ -819,6 +1790,10 @@ public final class Level0Layout extends LevelLayout {
         return Hash.unit(seed, ix, iz, 252) < 0.3 ? 2 : 1;
     }
 
+    private static boolean open(int segmentState) {
+        return segmentState != SOLID && segmentState != HALF_SOLID;
+    }
+
     /**
      * Now and then someone's backpack lies on the floor of a room: rare (about one per 800 floor
      * blocks), at most one per room. Returns the way it faces, or null for no backpack here.
@@ -834,41 +1809,10 @@ public final class Level0Layout extends LevelLayout {
         }
         int bx = X_WALLS.start(sx) + Hash.range(Hash.mix(h ^ 1), Bands.length(sx));
         int bz = Z_WALLS.start(sz) + Hash.range(Hash.mix(h ^ 2), Bands.length(sz));
-        if (x != bx || z != bz || roomPillar(seed, x, z, sx, sz) || crateHeight(seed, x, z, sx, sz) > 0) {
+        if (x != bx || z != bz || crateHeight(seed, x, z, sx, sz) > 0) {
             return null;
         }
         return Direction.from2DDataValue(Hash.range(Hash.mix(h ^ 3), 4));
-    }
-
-    /**
-     * Ceiling panels: 8x8 patches, each with four 1x2 panels 4 blocks apart. Level 0 is known for
-     * its endless buzzing fluorescent light, so most of it is lit: in "lit" zones (about 80% of the
-     * level) two patches in three are on; the rare dark zones have almost none, but dead panels
-     * still show under the flashlight. Real darkness is left to the Blackout Zones (world/anomaly).
-     * A panel is dropped whenever either of its two blocks would hang over a wall.
-     */
-    @Nullable
-    private BlockState ceilingLight(long seed, int x, int z) {
-        int px = Math.floorDiv(x, 8);
-        int pz = Math.floorDiv(z, 8);
-        boolean alongZ = Hash.unit(seed, px, pz, 19) < 0.5;
-        int across = alongZ ? Math.floorMod(x, 8) : Math.floorMod(z, 8);
-        int along = alongZ ? Math.floorMod(z, 8) : Math.floorMod(x, 8);
-        if (across != 2 && across != 6) return null;
-        if (along != 1 && along != 2 && along != 5 && along != 6) return null;
-        int partnerStep = along == 1 || along == 5 ? 1 : -1;
-        int partnerX = alongZ ? x : x + partnerStep;
-        int partnerZ = alongZ ? z + partnerStep : z;
-        if (!isMazeRoom(seed, partnerX, partnerZ)) return null;
-
-        boolean litZone = !isUnlitZone(seed, x, z);
-        boolean patchLit = Hash.unit(seed, px, pz, 17) < (litZone ? 0.65 : 0.05);
-        int panel = (across == 6 ? 2 : 0) + (along >= 5 ? 1 : 0);
-        boolean dead = Hash.unit(seed, px * 4 + panel, pz, 21) < 0.08;
-        if (patchLit) {
-            return (dead ? ModBlocks.FLUORESCENT_LIGHT_OFF : ModBlocks.FLUORESCENT_LIGHT).get().defaultBlockState();
-        }
-        return Hash.unit(seed, px, pz, 18) < 0.35 ? ModBlocks.FLUORESCENT_LIGHT_OFF.get().defaultBlockState() : null;
     }
 
     // ==========================================================================================

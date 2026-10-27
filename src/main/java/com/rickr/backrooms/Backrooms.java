@@ -32,6 +32,8 @@ public final class Backrooms {
         // CLIENT config on clients, so this is harmless on a dedicated server.
         container.registerConfig(ModConfig.Type.CLIENT, ClientSettings.SPEC);
         // Deferred registers: blocks, items, entities, sounds, our chunk generator type, player data.
+        // Level 0 revamp: the film's partitions, light strips, exit alcove, tape lines and props.
+        com.rickr.backrooms.registry.Level0Blocks.bootstrap();
         // Level 39 Hounds/Facelings (and Clumps, Skin-stealers, Wretches): loads their registrations.
         com.rickr.backrooms.registry.Level39Mobs.bootstrap();
         // Level 39 "Megalophobia": the town, superstructure and tunnel blocks (and their items).

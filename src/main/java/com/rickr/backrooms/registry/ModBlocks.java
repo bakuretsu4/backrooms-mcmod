@@ -102,14 +102,16 @@ public final class ModBlocks {
     // The big surfaces come in a few texture versions (plain first; the numbers are relative
     // chances, see block/SurfaceBlock). The counts must match tools/gen_assets.py SURFACE_VARIANTS.
     public static final DeferredBlock<SurfaceBlock> YELLOW_WALLPAPER = surface("yellow_wallpaper", MapColor.COLOR_YELLOW, SoundType.WOOD, 6, 2, 1, 1);
-    /** The bottom wall block, with the thin light-grey baseboard strip. */
+    /** The bottom wall block, with Kane's slim baseboard in the wall colour. */
     public static final DeferredBlock<SurfaceBlock> YELLOW_WALLPAPER_BASEBOARD = surface("yellow_wallpaper_baseboard", MapColor.COLOR_YELLOW, SoundType.WOOD, 6, 2, 1, 1);
-    public static final DeferredBlock<SurfaceBlock> LOBBY_CARPET = surface("lobby_carpet", MapColor.TERRACOTTA_YELLOW, SoundType.WOOL, 5, 1, 1, 1);
+    // Carpet versions: plain, a broadloom seam, a traffic-worn lane, a rare old spill.
+    public static final DeferredBlock<SurfaceBlock> LOBBY_CARPET = surface("lobby_carpet", MapColor.TERRACOTTA_YELLOW, SoundType.WOOL, 10, 1, 3, 1);
     public static final DeferredBlock<FloorArrowBlock> LOBBY_CARPET_ARROW = BLOCKS.registerBlock("lobby_carpet_arrow", FloorArrowBlock::new,
             unbreakable(MapColor.TERRACOTTA_YELLOW, SoundType.WOOL));
     public static final DeferredBlock<RugBlock> RUG = BLOCKS.registerBlock("rug", RugBlock::new,
             unbreakable(MapColor.COLOR_RED, SoundType.WOOL));
-    public static final DeferredBlock<SurfaceBlock> CEILING_TILE = surface("ceiling_tile", MapColor.SAND, SoundType.WOOD, 6, 2, 1, 1);
+    // Ceiling versions: plain, a water ring, a sagging tile, a faintly yellowed tile.
+    public static final DeferredBlock<SurfaceBlock> CEILING_TILE = surface("ceiling_tile", MapColor.SAND, SoundType.WOOD, 8, 1, 1, 2);
     public static final DeferredBlock<Block> FLUORESCENT_LIGHT = BLOCKS.registerBlock("fluorescent_light", Block::new,
             fixture(MapColor.SNOW, SoundType.GLASS, 12));
     public static final DeferredBlock<Block> FLUORESCENT_LIGHT_OFF = structural("fluorescent_light_off", MapColor.COLOR_LIGHT_GRAY, SoundType.GLASS);

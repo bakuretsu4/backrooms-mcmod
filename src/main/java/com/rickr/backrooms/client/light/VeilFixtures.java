@@ -1,5 +1,6 @@
 package com.rickr.backrooms.client.light;
 
+import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.world.BackroomsLevel;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.VeilRenderer;
@@ -43,6 +44,15 @@ final class VeilFixtures {
     private static final float LAMP_CONE_BRIGHTNESS = 0.3f;
     /** How visible the beam is in the air (the flashlight uses 0.3). */
     private static final float LAMP_CONE_INSCATTER = 0.45f;
+
+    /**
+     * Level 0 has a troffer every 3 blocks, so the light budget only reaches about 10 blocks out
+     * and lights would pop on and off at that edge as you walk. There, each light fades out over
+     * the outer part of the picked set instead: from this fraction of the farthest picked light's
+     * distance it starts to dim, and the farthest is dark. (The even brightness further out comes
+     * from the lightmap fill, see ClientLighting.)
+     */
+    private static final float LEVEL0_FADE_FROM = 0.6f;
 
     private static final class Entry {
         FixtureLight light;
@@ -116,6 +126,14 @@ final class VeilFixtures {
             entry.seen = false;
         }
         int conesLeft = floor == BackroomsLevel.LEVEL_9 ? LAMP_CONES : 0;
+        // Level 0: how far away the farthest picked light is (for the edge fade). Only when the
+        // budget is full: otherwise every light in range is on and nothing pops at the edge.
+        double fadeEnd = 0.0;
+        if ((floor == null || floor == BackroomsLevel.LEVEL_0) && selected.size() >= ClientSettings.quality().maxLights) {
+            for (FixtureLight light : selected) {
+                fadeEnd = Math.max(fadeEnd, Math.sqrt(light.distSq));
+            }
+        }
         for (FixtureLight light : selected) {
             Entry entry = ACTIVE.get(light.key);
             if (entry != null && (!entry.valid() || !entry.light.samePlace(light))) {
@@ -125,13 +143,13 @@ final class VeilFixtures {
                 entry = null;
             }
             if (entry == null) {
-                entry = new Entry(light, lights.addLight(newPoint(light)));
+                entry = new Entry(light, lights.addLight(newPoint(light, floor)));
                 ACTIVE.put(light.key, entry);
             }
             entry.light = light;
             entry.seen = true;
             if (light.type != FixtureType.RED_ALARM_LAMP) {
-                setBrightness(entry, light.type.brightnessOn(floor) * light.level * scale);
+                setBrightness(entry, light.type.brightnessOn(floor) * light.level * scale * edgeFade(light, fadeEnd));
             }
             // The nearest few streetlamps (selected is nearest first) get their glow cone.
             if (light.type.isStreetlamp() && conesLeft > 0) {
@@ -218,11 +236,26 @@ final class VeilFixtures {
         }
     }
 
-    private static PointLightData newPoint(FixtureLight light) {
+    /**
+     * 1 for lights well inside the picked set, easing to 0 for the farthest one (Level 0 only;
+     * {@code fadeEnd} is 0 elsewhere, which means no fade). Rounded to sixteenths so a light that
+     * is fading doesn't push a new brightness to Veil every single tick.
+     */
+    private static float edgeFade(FixtureLight light, double fadeEnd) {
+        if (fadeEnd <= 0.0) {
+            return 1.0f;
+        }
+        double from = fadeEnd * LEVEL0_FADE_FROM;
+        double t = Math.min(1.0, Math.max(0.0, (fadeEnd - Math.sqrt(light.distSq)) / (fadeEnd - from)));
+        float smooth = (float) (t * t * (3.0 - 2.0 * t));
+        return Math.round(smooth * 16.0f) / 16.0f;
+    }
+
+    private static PointLightData newPoint(FixtureLight light, @Nullable BackroomsLevel floor) {
         FixtureType type = light.type;
         return new PointLightData()
                 .setPosition(light.x, light.y, light.z)
-                .setRadius(type.radius)
+                .setRadius(type.radiusOn(floor))
                 .setColor(type.red, type.green, type.blue)
                 .setBrightness(0.0f)
                 // Shadows: without this a lamp lights the far side of the wall into the next room.

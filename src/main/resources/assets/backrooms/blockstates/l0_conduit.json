@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,vertical=true": {
+      "model": "backrooms:block/l0_conduit_vertical"
+    },
+    "facing=north,vertical=false": {
+      "model": "backrooms:block/l0_conduit_horizontal"
+    },
+    "facing=east,vertical=true": {
+      "model": "backrooms:block/l0_conduit_vertical",
+      "y": 90
+    },
+    "facing=east,vertical=false": {
+      "model": "backrooms:block/l0_conduit_horizontal",
+      "y": 90
+    },
+    "facing=south,vertical=true": {
+      "model": "backrooms:block/l0_conduit_vertical",
+      "y": 180
+    },
+    "facing=south,vertical=false": {
+      "model": "backrooms:block/l0_conduit_horizontal",
+      "y": 180
+    },
+    "facing=west,vertical=true": {
+      "model": "backrooms:block/l0_conduit_vertical",
+      "y": 270
+    },
+    "facing=west,vertical=false": {
+      "model": "backrooms:block/l0_conduit_horizontal",
+      "y": 270
+    }
+  }
+}

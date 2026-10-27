@@ -22,10 +22,13 @@ import net.minecraft.world.phys.Vec3;
  * now and then is suddenly right behind you. The picture gets darker the deeper in you go.
  */
 final class BlackoutEffect implements AnomalyClientEffect {
-    /** Deep dark: low exposure, washed-out colour, black haze that swallows the far end of a hall. */
-    private static final AtmosphereGrade.Mood DARK = new AtmosphereGrade.Mood(0.72f, 1.12f, 0.70f,
-            0.92f, 0.96f, 0.90f, 0.98f, 0.98f, 0.94f,
-            0.004f, 0.004f, 0.004f, 0.02f, 0.02f, 0.015f, 2.0f, 0.085f, 0.70f, 0.50f, 0.08f, 0.025f);
+    /**
+     * Deep dark: about 30% under Level 0's exposure, washed-out colour that keeps the level's
+     * yellow-green cast, a black haze that swallows the far end of a hall, crushed blacks.
+     */
+    private static final AtmosphereGrade.Mood DARK = new AtmosphereGrade.Mood(0.75f, 1.10f, 0.65f,
+            0.95f, 1.0f, 0.78f, 0.98f, 1.0f, 0.88f,
+            0.002f, 0.002f, 0.002f, 0.02f, 0.02f, 0.015f, 2.0f, 0.085f, 0.70f, 0.50f, 0.08f, 0.025f);
     private static final float BUZZ_VOLUME = 0.8f;
     private static final double BUZZ_HEIGHT = LevelLayout.FLOOR_Y + 3.6;
 

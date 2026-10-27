@@ -9,14 +9,16 @@ import net.minecraft.client.player.LocalPlayer;
 
 /**
  * The shifting pillar hall on the client. The wiki says pillar rooms "can sometimes stretch for
- * miles" (https://backrooms-wiki.wikidot.com/level-0): inside, the yellow haze thickens and starts
- * closer, so the far walls melt away and the lattice seems to go on forever. (The pillars
- * themselves are moved by the server while you're not looking.)
+ * miles" (https://backrooms-wiki.wikidot.com/level-0): inside, a pale yellow haze (the colour
+ * of a lit wall) appears, the one place in Level 0 that has any, so the far walls melt away and
+ * the lattice seems to go on forever. (The pillars themselves are moved by the server while
+ * you're not looking.)
  */
 final class PeripheralShiftEffect implements AnomalyClientEffect {
-    private static final AtmosphereGrade.Mood ENDLESS = new AtmosphereGrade.Mood(1.02f, 1.02f, 0.86f,
-            0.94f, 0.98f, 0.86f, 1.04f, 1.0f, 0.88f,
-            0.018f, 0.016f, 0.012f, 0.24f, 0.22f, 0.13f, 3.0f, 0.065f, 0.62f, 0.36f, 0.18f, 0.018f);
+    /** Level 0's grade, plus the haze and a slightly restless auto-iris. */
+    private static final AtmosphereGrade.Mood ENDLESS = new AtmosphereGrade.Mood(1.08f, 1.02f, 0.92f,
+            0.97f, 1.0f, 0.72f, 0.99f, 1.0f, 0.88f,
+            0.006f, 0.006f, 0.003f, 0.40f, 0.37f, 0.18f, 6.0f, 0.050f, 0.55f, 0.30f, 0.18f, 0.018f);
 
     @Override
     public void tick(Minecraft mc, AnomalySite site, boolean inside, float secondsInside) {

@@ -23,10 +23,13 @@ import net.minecraft.sounds.SoundSource;
  * </ul>
  */
 final class RedRoomsEffect implements AnomalyClientEffect {
-    /** Darkroom red: crimson shadows and highlights, a little dim, close red haze, heavy corners. */
-    private static final AtmosphereGrade.Mood RED = new AtmosphereGrade.Mood(0.94f, 1.10f, 0.95f,
+    /**
+     * Darkroom red: crimson shadows and highlights, a little under Level 0's exposure, close red
+     * haze (Level 0 itself has none, so the haze is part of the warning), heavy corners.
+     */
+    private static final AtmosphereGrade.Mood RED = new AtmosphereGrade.Mood(0.99f, 1.08f, 0.92f,
             1.12f, 0.72f, 0.70f, 1.10f, 0.80f, 0.76f,
-            0.020f, 0.004f, 0.004f, 0.20f, 0.03f, 0.03f, 4.0f, 0.050f, 0.45f, 0.45f, 0.20f, 0.020f);
+            0.012f, 0.002f, 0.002f, 0.20f, 0.03f, 0.03f, 4.0f, 0.050f, 0.45f, 0.45f, 0.20f, 0.020f);
     private static final double WARNING_RANGE = 16.0;
     private static final float HUM_VOLUME = 0.6f;
 

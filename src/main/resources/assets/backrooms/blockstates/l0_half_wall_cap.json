@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l0_half_wall_cap"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l0_half_wall_cap",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l0_half_wall_cap",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l0_half_wall_cap",
+      "y": 270
+    }
+  }
+}

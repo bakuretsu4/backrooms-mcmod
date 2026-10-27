@@ -1,0 +1,149 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "backrooms:block/l0_conduit",
+    "pipe": "backrooms:block/l0_conduit"
+  },
+  "elements": [
+    {
+      "from": [
+        7.0,
+        0.0,
+        14.75
+      ],
+      "to": [
+        9.0,
+        16.0,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7.0,
+            0.0,
+            9.0,
+            16.0
+          ],
+          "texture": "#pipe"
+        },
+        "south": {
+          "uv": [
+            7.0,
+            0.0,
+            9.0,
+            16.0
+          ],
+          "texture": "#pipe",
+          "cullface": "south"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            0.0,
+            1.25,
+            16.0
+          ],
+          "texture": "#pipe"
+        },
+        "west": {
+          "uv": [
+            14.75,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#pipe"
+        },
+        "up": {
+          "uv": [
+            7.0,
+            14.75,
+            9.0,
+            16.0
+          ],
+          "texture": "#pipe",
+          "cullface": "up"
+        },
+        "down": {
+          "uv": [
+            7.0,
+            0.0,
+            9.0,
+            1.25
+          ],
+          "texture": "#pipe",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        6.4,
+        7.0,
+        14.5
+      ],
+      "to": [
+        9.6,
+        8.0,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.4,
+            8.0,
+            9.6,
+            9.0
+          ],
+          "texture": "#pipe"
+        },
+        "south": {
+          "uv": [
+            6.4,
+            8.0,
+            9.6,
+            9.0
+          ],
+          "texture": "#pipe",
+          "cullface": "south"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            8.0,
+            1.5,
+            9.0
+          ],
+          "texture": "#pipe"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            8.0,
+            16.0,
+            9.0
+          ],
+          "texture": "#pipe"
+        },
+        "up": {
+          "uv": [
+            6.4,
+            14.5,
+            9.6,
+            16.0
+          ],
+          "texture": "#pipe"
+        },
+        "down": {
+          "uv": [
+            6.4,
+            0.0,
+            9.6,
+            1.5
+          ],
+          "texture": "#pipe"
+        }
+      }
+    }
+  ]
+}

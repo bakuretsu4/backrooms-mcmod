@@ -1,0 +1,79 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "backrooms:block/l0_exit_sign",
+    "face": "backrooms:block/l0_exit_sign",
+    "edge": "backrooms:block/l0_exit_sign_edge"
+  },
+  "elements": [
+    {
+      "from": [
+        1.0,
+        4.0,
+        15.0
+      ],
+      "to": [
+        15.0,
+        11.0,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            8.0
+          ],
+          "texture": "#face"
+        },
+        "south": {
+          "uv": [
+            1.0,
+            5.0,
+            15.0,
+            12.0
+          ],
+          "texture": "#edge",
+          "cullface": "south"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            5.0,
+            1.0,
+            12.0
+          ],
+          "texture": "#edge"
+        },
+        "west": {
+          "uv": [
+            15.0,
+            5.0,
+            16.0,
+            12.0
+          ],
+          "texture": "#edge"
+        },
+        "up": {
+          "uv": [
+            1.0,
+            15.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#edge"
+        },
+        "down": {
+          "uv": [
+            1.0,
+            0.0,
+            15.0,
+            1.0
+          ],
+          "texture": "#edge"
+        }
+      }
+    }
+  ]
+}
