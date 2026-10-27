@@ -2,11 +2,13 @@ package com.rickr.backrooms.world.layout;
 
 import com.rickr.backrooms.block.WallLampBlock;
 import com.rickr.backrooms.registry.ModBlocks;
+import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import java.util.List;
 import java.util.function.Consumer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoorBlock;
@@ -128,6 +130,17 @@ public abstract class LevelLayout {
      */
     public boolean arrivalNeedsSpace() {
         return true;
+    }
+
+    /**
+     * The exact spot (the block a player's feet are in) where someone travelling here from
+     * {@code from} should land near (x, z), or null to use the usual search for a safe column.
+     * Level 39 has two floors in every column (the town and the tunnels under it): travellers from
+     * the Poolrooms' drain come out in the flooded tunnels, everyone else in town.
+     */
+    @Nullable
+    public BlockPos preferredArrival(long seed, int x, int z, @Nullable BackroomsLevel from) {
+        return null;
     }
 
     /**

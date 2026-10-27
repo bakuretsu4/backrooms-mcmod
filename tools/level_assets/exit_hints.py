@@ -12,6 +12,7 @@ placement), quiet and low so it reads as part of the level until you notice it s
   level_9     highway traffic humming through the underpass
   level_94    the dark behind the door, breathing
   level_7     bubbles rising from the sunken door, a low hum
+  level_39    the sweet electric hum of a lit mill window with something living in it
 
 Run only these with:  python tools/gen_assets.py exit_hint
 """
@@ -140,6 +141,16 @@ def snd_exit_hint_level_7() -> None:
     _save(x, "level_7")
 
 
+def snd_exit_hint_level_39() -> None:
+    # The Window's lure: a sweet, slightly beating electric hum (two close partials) over a soft
+    # high shimmer of light through glass, swelling slowly as if the window breathes.
+    rng = G.rng_for(7411)
+    hum = 0.5 * _tone(120) + 0.35 * _tone(240.5) + 0.2 * _tone(361) + 0.12 * _tone(480)
+    shimmer = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 2500, 6000, 2))
+    x = hum * _swell(4.0, 0.4) + 0.25 * G.norm(shimmer) * _swell(2.0, 0.6, 1.0)
+    _save(x, "level_39", peak=0.42)
+
+
 def tex_exit_hint_ir_arrow() -> None:
     """A spray-painted arrow pointing right (+u), white on transparent (tinted when drawn), with
     ragged edges and runs. Drawn dark, in NightShot only: the paint swallows the infrared lamp."""
@@ -181,4 +192,4 @@ def tex_exit_hint_wanderer_note() -> None:
 TEXTURES = [tex_exit_hint_ir_arrow, tex_exit_hint_wanderer_note]
 SOUNDS = [snd_exit_hint_level_0, snd_exit_hint_level_1, snd_exit_hint_level_2, snd_exit_hint_level_4,
           snd_exit_hint_poolrooms, snd_exit_hint_level_37, snd_exit_hint_level_9, snd_exit_hint_level_94,
-          snd_exit_hint_level_7]
+          snd_exit_hint_level_7, snd_exit_hint_level_39]

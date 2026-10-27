@@ -1,0 +1,49 @@
+{
+  "variants": {
+    "facing=north,row=0": {
+      "model": "backrooms:block/l39_tower_window_0"
+    },
+    "facing=north,row=1": {
+      "model": "backrooms:block/l39_tower_window_1"
+    },
+    "facing=north,row=2": {
+      "model": "backrooms:block/l39_tower_window_2"
+    },
+    "facing=east,row=0": {
+      "model": "backrooms:block/l39_tower_window_0",
+      "y": 90
+    },
+    "facing=east,row=1": {
+      "model": "backrooms:block/l39_tower_window_1",
+      "y": 90
+    },
+    "facing=east,row=2": {
+      "model": "backrooms:block/l39_tower_window_2",
+      "y": 90
+    },
+    "facing=south,row=0": {
+      "model": "backrooms:block/l39_tower_window_0",
+      "y": 180
+    },
+    "facing=south,row=1": {
+      "model": "backrooms:block/l39_tower_window_1",
+      "y": 180
+    },
+    "facing=south,row=2": {
+      "model": "backrooms:block/l39_tower_window_2",
+      "y": 180
+    },
+    "facing=west,row=0": {
+      "model": "backrooms:block/l39_tower_window_0",
+      "y": 270
+    },
+    "facing=west,row=1": {
+      "model": "backrooms:block/l39_tower_window_1",
+      "y": 270
+    },
+    "facing=west,row=2": {
+      "model": "backrooms:block/l39_tower_window_2",
+      "y": 270
+    }
+  }
+}

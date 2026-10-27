@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l39_sash_window_lit"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l39_sash_window_lit",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l39_sash_window_lit",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l39_sash_window_lit",
+      "y": 270
+    }
+  }
+}

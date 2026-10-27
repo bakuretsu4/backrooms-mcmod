@@ -21,6 +21,7 @@ public final class Anomalies {
         com.rickr.backrooms.world.anomaly.level9.Level9Anomalies.register();
         com.rickr.backrooms.world.anomaly.level0.Level0Anomalies.register();
         com.rickr.backrooms.world.anomaly.level2.Level2Anomalies.register();
+        com.rickr.backrooms.world.anomaly.level39.Level39Anomalies.register();
     }
 
     public static void register(String kind, AnomalyBehavior behavior) {

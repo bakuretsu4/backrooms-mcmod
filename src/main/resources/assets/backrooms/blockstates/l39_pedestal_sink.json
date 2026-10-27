@@ -1,0 +1,38 @@
+{
+  "variants": {
+    "facing=north,inverted=false": {
+      "model": "backrooms:block/l39_pedestal_sink"
+    },
+    "facing=north,inverted=true": {
+      "model": "backrooms:block/l39_pedestal_sink",
+      "x": 180,
+      "y": 180
+    },
+    "facing=east,inverted=false": {
+      "model": "backrooms:block/l39_pedestal_sink",
+      "y": 90
+    },
+    "facing=east,inverted=true": {
+      "model": "backrooms:block/l39_pedestal_sink",
+      "x": 180,
+      "y": 270
+    },
+    "facing=south,inverted=false": {
+      "model": "backrooms:block/l39_pedestal_sink",
+      "y": 180
+    },
+    "facing=south,inverted=true": {
+      "model": "backrooms:block/l39_pedestal_sink",
+      "x": 180
+    },
+    "facing=west,inverted=false": {
+      "model": "backrooms:block/l39_pedestal_sink",
+      "y": 270
+    },
+    "facing=west,inverted=true": {
+      "model": "backrooms:block/l39_pedestal_sink",
+      "x": 180,
+      "y": 90
+    }
+  }
+}

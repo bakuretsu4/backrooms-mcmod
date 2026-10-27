@@ -54,8 +54,11 @@ public final class UnderwaterView {
     @Nullable
     private static WaterStyle levelStyle() {
         Minecraft mc = Minecraft.getInstance();
-        return mc.level == null ? null : WaterStyle.at(BackroomsLevel.fromDimension(mc.level.dimension()),
-                mc.gameRenderer.getMainCamera().getPosition().x);
+        if (mc.level == null) {
+            return null;
+        }
+        var eye = mc.gameRenderer.getMainCamera().getPosition();
+        return WaterStyle.at(BackroomsLevel.fromDimension(mc.level.dimension()), eye.x, eye.y, eye.z);
     }
 
     /** True while the camera is inside water in a level whose water we draw. */

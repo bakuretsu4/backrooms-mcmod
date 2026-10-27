@@ -27,6 +27,7 @@ public final class AnomalyClientEffects {
         com.rickr.backrooms.client.anomaly.level9.Level9AnomalyEffects.register();
         com.rickr.backrooms.client.anomaly.level0.Level0AnomalyEffects.register();
         com.rickr.backrooms.client.anomaly.level2.Level2AnomalyEffects.register();
+        com.rickr.backrooms.client.anomaly.level39.Level39AnomalyEffects.register();
     }
 
     public static void register(String kind, AnomalyClientEffect effect) {

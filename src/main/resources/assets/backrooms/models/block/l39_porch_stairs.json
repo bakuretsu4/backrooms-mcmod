@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/stairs",
+  "textures": {
+    "bottom": "backrooms:block/l39_porch_planks",
+    "top": "backrooms:block/l39_porch_planks",
+    "side": "backrooms:block/l39_porch_planks"
+  }
+}

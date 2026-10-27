@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l39_wheelbarrow"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l39_wheelbarrow",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l39_wheelbarrow",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l39_wheelbarrow",
+      "y": 270
+    }
+  }
+}

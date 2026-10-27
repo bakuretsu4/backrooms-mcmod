@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l39_bush"
+      },
+      {
+        "model": "backrooms:block/l39_bush",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l39_bush",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l39_bush",
+        "y": 270
+      }
+    ]
+  }
+}

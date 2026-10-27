@@ -114,7 +114,22 @@ public enum FixtureType {
     // the Blackout. A dim pool that still reaches the far wall and the floor, so a brownout reads as
     // violet-lit corridors rather than black; silent and steady; battery-backed (see FixturePower),
     // so it never takes part in blackouts, flickers or the lamp circuits failing.
-    L2_EMERGENCY_LIGHT("l2_emergency_light", Mount.WALL, 1, 0.62f, 0.30f, 1.0f, 1.3f, 12.0f, Hum.NONE, false);
+    L2_EMERGENCY_LIGHT("l2_emergency_light", Mount.WALL, 1, 0.62f, 0.30f, 1.0f, 1.3f, 12.0f, Hum.NONE, false),
+    // Level 39. The tunnels' "invisible orbs": a lightless-looking block at the vault apex every 10
+    // blocks; cool white with a hint of the water's turquoise, silent and steady. The lightmap
+    // already lights the tunnels bright and evenly (client/Level39Atmosphere), so the orbs only
+    // add soft pools and shadows on top; stronger would clip the white marble.
+    L39_ORB("l39_orb_light", Mount.HANGING_TUBE, 1, 0.90f, 1.0f, 1.0f, 0.5f, 16.0f, Hum.NONE, false),
+    // The occasional lit house window (about 1 house in 12): a dim warm lamp somewhere inside.
+    L39_LIT_WINDOW("l39_sash_window_lit", Mount.CUBE, 1, 1.0f, 0.74f, 0.45f, 0.7f, 7.0f, Hum.NONE, false),
+    // The superstructure's windows near you: not a block (there are far too many window blocks),
+    // the lights are placed from the facade grid by client/Level39Lights. Cool white pools along
+    // the wall; moderate, so up close the brick, stone and muntins stay visible.
+    L39_FACADE_WINDOW("l39_facade_window_light", Mount.CUBE, 1, 0.86f, 0.92f, 1.0f, 0.8f, 14.0f, Hum.NONE, false),
+    // The houses' bare bulbs screwed upside down into the popcorn ceilings: about a third still
+    // glow, warm and dim (only the lit ones count, see of()). Neighbouring lit bulbs of the dense
+    // ceilings merge into one light, so a bulb-studded room doesn't eat the whole light budget.
+    L39_BULB("l39_ceiling_bulb", Mount.HANGING_TUBE, 3, 1.0f, 0.80f, 0.56f, 0.55f, 7.0f, Hum.NONE, false);
 
     /** Which looping buzz a fixture makes (positional, the nearest few lit ones play). */
     public enum Hum {
@@ -240,6 +255,10 @@ public enum FixtureType {
         }
         FixtureType type = map.get(state.getBlock());
         if (type != null && modeOf(state) == LampMode.DEAD) {
+            return null;
+        }
+        // Level 39's house bulbs: the dead ones (lit = false) give no light at all.
+        if (type == L39_BULB && state.hasProperty(BlockStateProperties.LIT) && !state.getValue(BlockStateProperties.LIT)) {
             return null;
         }
         // A two-tall vending machine glows once, from its upper half.

@@ -46,7 +46,9 @@ import org.jetbrains.annotations.Nullable;
  *       (how far are the walls? is there a ceiling?). Small rooms ring short and close, big ones
  *       long and wide, open air hardly at all. Each level adds its materials: Level 0's carpet
  *       and Level 4's offices soak up the highs, Level 1's bare concrete garage rings, Level 2's
- *       painted pipe tunnels are tight and hard.</li>
+ *       painted pipe tunnels are tight and hard. Level 39's town rings like a colossal hall
+ *       (the superstructure encloses it, so open air above does not weaken the echo there),
+ *       while its marble tunnels below swallow sound: short and dry.</li>
  *   <li>The two pool levels (the Poolrooms and Level 37) get <b>no reverb</b>: in canon nothing
  *       reverberates properly there (see client/anomaly/poolrooms/PoolAcoustics, which also
  *       makes their sounds die out). They do get muffling.</li>
@@ -72,9 +74,16 @@ public final class Acoustics {
     /**
      * What a level's surfaces do to sound: how much reverb at most, how long it rings at full
      * size, how much of the highs the walls swallow (gainHf, decayHfRatio) and how "grainy" the
-     * echo is (diffusion; hard narrow pipes are less smooth).
+     * echo is (diffusion; hard narrow pipes are less smooth). {@code skyDamp} is how much open sky
+     * above you weakens the echo (open air doesn't ring); {@code lateMul} scales the late echo's
+     * loudness and how long it takes to come back (a colossal hall answers late and loud).
      */
-    private record Material(float wet, float decayMul, float gainHf, float decayHfRatio, float diffusion) {}
+    private record Material(float wet, float decayMul, float gainHf, float decayHfRatio, float diffusion,
+                            float skyDamp, float lateMul) {
+        Material(float wet, float decayMul, float gainHf, float decayHfRatio, float diffusion) {
+            this(wet, decayMul, gainHf, decayHfRatio, diffusion, 0.85f, 1.0f);
+        }
+    }
 
     // Level 0: carpet and wallpaper drink the highs; mid-size rooms. The hum carries, the echo is soft.
     private static final Material LOBBY = new Material(0.7f, 0.85f, 0.45f, 0.45f, 0.85f);
@@ -88,9 +97,20 @@ public final class Acoustics {
     private static final Material OUTDOORS = new Material(0.45f, 0.75f, 0.55f, 0.6f, 0.8f);
     // Level 7: a vast concrete ceiling over open water: long, dark, smooth echoes (the groans roll on).
     private static final Material SEA = new Material(0.7f, 1.6f, 0.6f, 0.6f, 1.0f);
+    // Level 39's town: the superstructure encloses it like one gigantic hall, so it is "outdoors"
+    // that echoes enormously (canon: heavily echoed). Long decay (~9 s in the open), loud late
+    // echoes coming back from the far facades, highs fading as they travel. The empty air above
+    // does NOT weaken it (skyDamp 0): above you is the superstructure's ceiling, not sky.
+    private static final Material MEGALOPHOBIA = new Material(0.95f, 2.6f, 0.6f, 0.55f, 1.0f, 0.0f, 2.2f);
+    // Level 39's tunnels: canon says the marble dampens sound. Short, soft and dry-ish, the highs
+    // swallowed, little late echo, even though the tunnels are long and hard-walled.
+    private static final Material MARBLE_TUNNEL = new Material(0.4f, 0.35f, 0.35f, 0.35f, 1.0f, 0.85f, 0.6f);
+
+    /** Level 39: the tunnels (and the holes/shafts leading down to them) lie below this height. */
+    private static final double LEVEL39_TUNNEL_TOP = 60.0;
 
     @Nullable
-    private static Material material(@Nullable BackroomsLevel level) {
+    private static Material material(@Nullable BackroomsLevel level, Vec3 ear) {
         if (level == null) {
             return null;
         }
@@ -100,6 +120,7 @@ public final class Acoustics {
             case LEVEL_2 -> PIPES;
             case LEVEL_4 -> OFFICE;
             case LEVEL_9, LEVEL_94 -> OUTDOORS;
+            case LEVEL_39 -> ear.y < LEVEL39_TUNNEL_TOP ? MARBLE_TUNNEL : MEGALOPHOBIA;
             case LEVEL_7 -> SEA;
             case POOLROOMS, LEVEL_37 -> null; // nothing reverberates there (canon), muffling only
         };
@@ -168,7 +189,7 @@ public final class Acoustics {
         float walls = walls(mc.level, mc.gameRenderer.getMainCamera(), sound);
         t.gain = gainFor(walls);
         t.gainHf = hfFor(walls);
-        t.reverb = material(level) != null;
+        t.reverb = material(level, mc.gameRenderer.getMainCamera().getPosition()) != null;
         TRACKED.put(sound, t);
     }
 
@@ -198,7 +219,7 @@ public final class Acoustics {
         ticks++;
         Camera camera = mc.gameRenderer.getMainCamera();
         if (ticks % ROOM_EVERY == 0) {
-            Material material = material(level);
+            Material material = material(level, camera.getPosition());
             Room target = material == null ? Room.DRY : measure(world, camera.getPosition(), material);
             room = room.lerp(target, ROOM_EASE);
             roomDry = material == null && room.wet() < 0.005f;
@@ -320,7 +341,10 @@ public final class Acoustics {
         // 0 = a cupboard, 1 = a hall some 25 blocks across or more.
         float size = Mth.clamp((mean - 2.0f) / 22.0f, 0.0f, 1.0f);
         float decay = Mth.lerp(size, 0.5f, 3.4f) * m.decayMul();
-        float wet = m.wet() * Mth.lerp(size, 0.7f, 1.0f) * (1.0f - 0.85f * skyShare);
+        // Open sky above weakens the echo (by the material's skyDamp; Level 39's town has none).
+        float open = skyShare * m.skyDamp();
+        float wet = m.wet() * Mth.lerp(size, 0.7f, 1.0f) * (1.0f - open);
+        float earlyOpen = Math.min(1.0f, skyShare * m.skyDamp() / 0.85f);
         return new Room(
                 Mth.clamp(wet, 0.0f, 1.0f),
                 Mth.clamp(decay, 0.1f, 20.0f),
@@ -328,10 +352,11 @@ public final class Acoustics {
                 Mth.clamp(m.gainHf(), 0.0f, 1.0f),
                 Mth.lerp(size, 0.6f, 1.0f),
                 m.diffusion(),
-                Mth.lerp(size, 1.2f, 0.5f) * (1.0f - skyShare),   // small rooms: a strong early slap off the walls
-                Mth.lerp(size, 0.004f, 0.035f),
-                Mth.lerp(size, 1.2f, 1.8f),
-                Mth.lerp(size, 0.008f, 0.045f));
+                Mth.lerp(size, 1.2f, 0.5f) * (1.0f - earlyOpen),   // small rooms: a strong early slap off the walls
+                // OpenAL limits: reflections delay <= 0.3 s, late delay <= 0.1 s, late gain <= 10.
+                Mth.clamp(Mth.lerp(size, 0.004f, 0.035f) * m.lateMul(), 0.0f, 0.3f),
+                Mth.clamp(Mth.lerp(size, 1.2f, 1.8f) * m.lateMul(), 0.0f, 10.0f),
+                Mth.clamp(Mth.lerp(size, 0.008f, 0.045f) * m.lateMul(), 0.0f, 0.1f));
     }
 
     private static Vec3[] rays() {

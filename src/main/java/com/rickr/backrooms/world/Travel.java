@@ -5,6 +5,8 @@ import com.rickr.backrooms.network.TransitionPayload;
 import com.rickr.backrooms.player.Checkpoints;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.anomaly.Teleports;
+import com.rickr.backrooms.world.layout.Level39AnomalyPlan;
+import com.rickr.backrooms.world.layout.Level39Layout;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -15,6 +17,8 @@ import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
@@ -53,11 +57,47 @@ public final class Travel {
         if (level == null) {
             return false;
         }
-        BlockPos spot = findSafeSpot(level, target, x, z);
+        long seed = BackroomsSeeds.layoutSeed(level, target);
+        // Some floors pick the spot themselves depending on where you come from (Level 39: the
+        // Poolrooms' drain empties into its tunnels, not onto its streets).
+        BackroomsLevel from = BackroomsLevel.fromDimension(player.level().dimension());
+        BlockPos preferred = target.layout().preferredArrival(seed, x, z, from);
+        BlockPos spot = preferred != null ? preferred : findSafeSpot(level, target, x, z);
         // Feet exactly on the surface: Level 9's sidewalks are half slabs (feet at y + 0.5).
-        double feet = target.layout().feetY(BackroomsSeeds.layoutSeed(level, target), spot.getX(), spot.getZ());
+        double feet = preferred != null ? preferred.getY() : target.layout().feetY(seed, spot.getX(), spot.getZ());
         CameraService.startTape(player);
         teleport(player, level, new Vec3(spot.getX() + 0.5, feet, spot.getZ() + 0.5));
+        return true;
+    }
+
+    /** How high above the town a gondola rider appears in Level 39 (under the rendered cloud ceiling). */
+    private static final double LEVEL39_SKY_Y = 250.0;
+    /** Slow Falling for the drift down through the clouds: about 25 seconds. */
+    private static final int LEVEL39_SKY_FALL_TICKS = 25 * 20;
+
+    /**
+     * The side entrance to Level 39: the gondola in Level 9's Crimson Field carries you up into the
+     * whiteout, and you noclip through the ceiling of the superstructure. You appear high above the
+     * town near (x, z) and drift down on Slow Falling; {@link Level39Rules} makes sure the landing
+     * never hurts. Returns false if Level 39 isn't loaded.
+     */
+    public static boolean sendToLevel39Sky(ServerPlayer player, int x, int z) {
+        BackroomsLevel target = BackroomsLevel.LEVEL_39;
+        ServerLevel level = player.server.getLevel(target.dimension());
+        if (level == null) {
+            return false;
+        }
+        Checkpoints.clear(player); // a move between floors: the old checkpoint no longer applies
+        // Far east lies the bigger-inside copy region, not the town: come down over an ordinary town.
+        int townX = Level39AnomalyPlan.isCopy(x) ? Level39Layout.local(x) : x;
+        BlockPos ground = findSafeSpot(level, target, townX, z);
+        CameraService.startTape(player);
+        Level39Rules.markSkyArrival(player);
+        teleport(player, level, new Vec3(ground.getX() + 0.5, LEVEL39_SKY_Y, ground.getZ() + 0.5));
+        player.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, LEVEL39_SKY_FALL_TICKS, 0, false, false, true));
+        PacketDistributor.sendToPlayer(player, new TransitionPayload(TransitionPayload.NOCLIP));
+        player.playNotifySound(ModSounds.NOCLIP.get(), SoundSource.MASTER, 1.0f, 1.0f);
+        player.sendSystemMessage(Component.translatable("message.backrooms.arrive.level_39").withStyle(s -> s.withItalic(true)));
         return true;
     }
 

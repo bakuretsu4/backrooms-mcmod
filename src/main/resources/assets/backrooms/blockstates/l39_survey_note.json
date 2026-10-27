@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "facing=north,note=0": {
+      "model": "backrooms:block/l39_survey_note_0"
+    },
+    "facing=north,note=1": {
+      "model": "backrooms:block/l39_survey_note_1"
+    },
+    "facing=north,note=2": {
+      "model": "backrooms:block/l39_survey_note_2"
+    },
+    "facing=north,note=3": {
+      "model": "backrooms:block/l39_survey_note_3"
+    },
+    "facing=east,note=0": {
+      "model": "backrooms:block/l39_survey_note_0",
+      "y": 90
+    },
+    "facing=east,note=1": {
+      "model": "backrooms:block/l39_survey_note_1",
+      "y": 90
+    },
+    "facing=east,note=2": {
+      "model": "backrooms:block/l39_survey_note_2",
+      "y": 90
+    },
+    "facing=east,note=3": {
+      "model": "backrooms:block/l39_survey_note_3",
+      "y": 90
+    },
+    "facing=south,note=0": {
+      "model": "backrooms:block/l39_survey_note_0",
+      "y": 180
+    },
+    "facing=south,note=1": {
+      "model": "backrooms:block/l39_survey_note_1",
+      "y": 180
+    },
+    "facing=south,note=2": {
+      "model": "backrooms:block/l39_survey_note_2",
+      "y": 180
+    },
+    "facing=south,note=3": {
+      "model": "backrooms:block/l39_survey_note_3",
+      "y": 180
+    },
+    "facing=west,note=0": {
+      "model": "backrooms:block/l39_survey_note_0",
+      "y": 270
+    },
+    "facing=west,note=1": {
+      "model": "backrooms:block/l39_survey_note_1",
+      "y": 270
+    },
+    "facing=west,note=2": {
+      "model": "backrooms:block/l39_survey_note_2",
+      "y": 270
+    },
+    "facing=west,note=3": {
+      "model": "backrooms:block/l39_survey_note_3",
+      "y": 270
+    }
+  }
+}

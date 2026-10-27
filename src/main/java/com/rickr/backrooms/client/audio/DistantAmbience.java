@@ -1,6 +1,8 @@
 package com.rickr.backrooms.client.audio;
 
 import com.rickr.backrooms.Backrooms;
+import com.rickr.backrooms.client.Level39ClientState;
+import com.rickr.backrooms.registry.Level39Sounds;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.Level94Clock;
@@ -48,8 +50,11 @@ public final class DistantAmbience {
     /** Pitch varies by up to 6% either way, so even the same file sounds a little different each time. */
     private static final float PITCH_JITTER = 0.06f;
 
-    /** When a sound may play. Only Level 94 has a day and a night; everything else is ANY. */
-    private enum When { ANY, DAY, NIGHT }
+    /**
+     * When a sound may play. Only Level 94 has a day and a night; Level 39 has the town above and
+     * the tunnels below, each with its own sounds; everything else is ANY.
+     */
+    private enum When { ANY, DAY, NIGHT, TOWN, TUNNEL }
 
     /** One sound in a level's list: how often it is picked compared with the others, and how loud. */
     private record Entry(DeferredHolder<SoundEvent, SoundEvent> sound, int weight, float volume, When when) {}
@@ -128,6 +133,21 @@ public final class DistantAmbience {
                 new Entry(ModSounds.DISTANT_L94_WATER_TOWER_CREAK, 2, 1.4f, When.ANY),
                 new Entry(ModSounds.DISTANT_L94_RAT_SKITTER, 3, 0.8f, When.NIGHT),
                 new Entry(ModSounds.DISTANT_L94_CARTOON_TIPTOE, 2, 1.0f, When.NIGHT))));
+        // Level 39: the vast, echoing town (its far sounds carry: volumes above 1.0 stretch their
+        // range across the open streets) and the damped marble tunnels below. In the tunnels the
+        // superstructure's groan comes through the rock, quieter. (The hallucinated house screams
+        // and the noises from the holes are real events played by the anomaly code, not here.)
+        SCHEDULES.put(BackroomsLevel.LEVEL_39, new Schedule(22, 50, List.of(
+                new Entry(Level39Sounds.DISTANT_GROAN, 4, 1.6f, When.TOWN),
+                new Entry(Level39Sounds.DISTANT_METAL_SLAM, 3, 1.6f, When.TOWN),
+                new Entry(Level39Sounds.DISTANT_DOG_BARK, 2, 1.5f, When.TOWN),
+                new Entry(Level39Sounds.DISTANT_SCREEN_DOOR, 2, 1.2f, When.TOWN),
+                new Entry(Level39Sounds.DISTANT_WIND_CHIME, 3, 1.0f, When.TOWN),
+                new Entry(Level39Sounds.DISTANT_TELEPHONE, 1, 1.2f, When.TOWN),
+                new Entry(Level39Sounds.DISTANT_ASH_RATTLE, 2, 0.9f, When.TOWN),
+                new Entry(Level39Sounds.DISTANT_TUNNEL_DRIP, 4, 0.7f, When.TUNNEL),
+                new Entry(Level39Sounds.DISTANT_TUNNEL_SPLASH, 2, 0.8f, When.TUNNEL),
+                new Entry(Level39Sounds.DISTANT_GROAN, 2, 0.6f, When.TUNNEL))));
     }
 
     private static final RandomSource RANDOM = RandomSource.create();
@@ -202,7 +222,14 @@ public final class DistantAmbience {
             case ANY -> true;
             case DAY -> Level94Clock.phase(level) == Level94Clock.Phase.DAY;
             case NIGHT -> Level94Clock.isNight(level);
+            case TOWN -> !inLevel39Tunnels();
+            case TUNNEL -> inLevel39Tunnels();
         };
+    }
+
+    /** Level 39: is the camera down in the tunnels (or a hole leading to them)? */
+    private static boolean inLevel39Tunnels() {
+        return Level39ClientState.inTunnels(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition());
     }
 
     /** Plays the sound out in the world, 14-40 blocks away in a random direction, about at ear height. */
@@ -213,11 +240,20 @@ public final class DistantAmbience {
         double x = eye.x + Mth.cos(angle) * distance;
         double y = eye.y + Mth.nextDouble(RANDOM, -1.0, 1.5);
         double z = eye.z + Mth.sin(angle) * distance;
+        // Level 39: the superstructure's sounds come from high up.
+        if (isFromSuperstructure(entry)) {
+            y = eye.y + Mth.nextDouble(RANDOM, 12.0, 30.0);
+        }
         float pitch = 1.0f + (RANDOM.nextFloat() * 2.0f - 1.0f) * PITCH_JITTER;
         // LINEAR attenuation and relative = false: a real position in the world that fades with
         // distance (relative = true would glue the sound to the player's head).
         mc.getSoundManager().play(new SimpleSoundInstance(entry.sound().get().getLocation(), SoundSource.AMBIENT,
                 entry.volume(), pitch, RANDOM, false, 0, SoundInstance.Attenuation.LINEAR, x, y, z, false));
+    }
+
+    private static boolean isFromSuperstructure(Entry entry) {
+        return entry.when() == When.TOWN && (entry.sound() == Level39Sounds.DISTANT_GROAN
+                || entry.sound() == Level39Sounds.DISTANT_METAL_SLAM || entry.sound() == Level39Sounds.DISTANT_ASH_RATTLE);
     }
 
     private DistantAmbience() {}

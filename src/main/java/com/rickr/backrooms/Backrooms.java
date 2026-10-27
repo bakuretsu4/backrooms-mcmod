@@ -32,6 +32,18 @@ public final class Backrooms {
         // CLIENT config on clients, so this is harmless on a dedicated server.
         container.registerConfig(ModConfig.Type.CLIENT, ClientSettings.SPEC);
         // Deferred registers: blocks, items, entities, sounds, our chunk generator type, player data.
+        // Level 39 Hounds/Facelings (and Clumps, Skin-stealers, Wretches): loads their registrations.
+        com.rickr.backrooms.registry.Level39Mobs.bootstrap();
+        // Level 39 "Megalophobia": the town, superstructure and tunnel blocks (and their items).
+        com.rickr.backrooms.registry.Level39Blocks.bootstrap();
+        // Level 39: the town/tunnel ambience, the indoor storm, echo quakes and far-off sounds.
+        com.rickr.backrooms.registry.Level39Sounds.bootstrap();
+        // Level 39 houses: wallpapers, floors, popcorn ceilings and bulbs, knock walls, period furniture.
+        com.rickr.backrooms.registry.Level39HouseBlocks.bootstrap();
+        // Level 39 anomalies: Window Shadows, the Hydrolitis plague and their sounds.
+        com.rickr.backrooms.world.anomaly.level39.Level39AnomalyRegistry.bootstrap(modBus);
+        // The side entrance to Level 39: the chairlift in Level 9's Crimson Field (blocks, seat, sounds).
+        com.rickr.backrooms.world.anomaly.level39.gondola.GondolaRegistry.bootstrap();
         ModBlocks.BLOCKS.register(modBus);
         ModItems.ITEMS.register(modBus);
         ModEntities.ENTITIES.register(modBus);

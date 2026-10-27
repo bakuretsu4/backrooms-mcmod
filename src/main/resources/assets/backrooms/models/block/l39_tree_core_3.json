@@ -1,0 +1,148 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l39_tree_bark",
+    "bark": "backrooms:block/l39_tree_bark",
+    "end": "backrooms:block/l39_tree_end",
+    "twig": "backrooms:block/l39_twigs"
+  },
+  "elements": [
+    {
+      "from": [
+        5.0,
+        3.5,
+        6.14
+      ],
+      "to": [
+        11.0,
+        12.5,
+        9.86
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            5.0,
+            3.5,
+            11.0,
+            12.5
+          ],
+          "texture": "#bark"
+        },
+        "south": {
+          "uv": [
+            5.0,
+            3.5,
+            11.0,
+            12.5
+          ],
+          "texture": "#bark"
+        },
+        "east": {
+          "uv": [
+            6.14,
+            3.5,
+            9.86,
+            12.5
+          ],
+          "texture": "#bark"
+        },
+        "west": {
+          "uv": [
+            6.14,
+            3.5,
+            9.86,
+            12.5
+          ],
+          "texture": "#bark"
+        },
+        "up": {
+          "uv": [
+            5.0,
+            6.14,
+            11.0,
+            9.86
+          ],
+          "texture": "#end"
+        },
+        "down": {
+          "uv": [
+            5.0,
+            6.14,
+            11.0,
+            9.86
+          ],
+          "texture": "#end"
+        }
+      }
+    },
+    {
+      "from": [
+        6.14,
+        3.5,
+        5.0
+      ],
+      "to": [
+        9.86,
+        12.5,
+        11.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.14,
+            3.5,
+            9.86,
+            12.5
+          ],
+          "texture": "#bark"
+        },
+        "south": {
+          "uv": [
+            6.14,
+            3.5,
+            9.86,
+            12.5
+          ],
+          "texture": "#bark"
+        },
+        "east": {
+          "uv": [
+            5.0,
+            3.5,
+            11.0,
+            12.5
+          ],
+          "texture": "#bark"
+        },
+        "west": {
+          "uv": [
+            5.0,
+            3.5,
+            11.0,
+            12.5
+          ],
+          "texture": "#bark"
+        },
+        "up": {
+          "uv": [
+            6.14,
+            5.0,
+            9.86,
+            11.0
+          ],
+          "texture": "#end"
+        },
+        "down": {
+          "uv": [
+            6.14,
+            5.0,
+            9.86,
+            11.0
+          ],
+          "texture": "#end"
+        }
+      }
+    }
+  ]
+}

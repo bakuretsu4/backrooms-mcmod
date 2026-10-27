@@ -1,0 +1,356 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "backrooms:block/l39_spindle",
+    "spindle": "backrooms:block/l39_spindle",
+    "rail": "backrooms:block/l39_handrail"
+  },
+  "elements": [
+    {
+      "from": [
+        6.0,
+        0.0,
+        6.0
+      ],
+      "to": [
+        10.0,
+        2.5,
+        10.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.0,
+            13.5,
+            10.0,
+            16.0
+          ],
+          "texture": "#spindle"
+        },
+        "south": {
+          "uv": [
+            6.0,
+            13.5,
+            10.0,
+            16.0
+          ],
+          "texture": "#spindle"
+        },
+        "east": {
+          "uv": [
+            6.0,
+            13.5,
+            10.0,
+            16.0
+          ],
+          "texture": "#spindle"
+        },
+        "west": {
+          "uv": [
+            6.0,
+            13.5,
+            10.0,
+            16.0
+          ],
+          "texture": "#spindle"
+        },
+        "up": {
+          "uv": [
+            6.0,
+            6.0,
+            10.0,
+            10.0
+          ],
+          "texture": "#spindle"
+        },
+        "down": {
+          "uv": [
+            6.0,
+            6.0,
+            10.0,
+            10.0
+          ],
+          "texture": "#spindle",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        6.75,
+        2.5,
+        6.75
+      ],
+      "to": [
+        9.25,
+        5.5,
+        9.25
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.75,
+            10.5,
+            9.25,
+            13.5
+          ],
+          "texture": "#spindle"
+        },
+        "south": {
+          "uv": [
+            6.75,
+            10.5,
+            9.25,
+            13.5
+          ],
+          "texture": "#spindle"
+        },
+        "east": {
+          "uv": [
+            6.75,
+            10.5,
+            9.25,
+            13.5
+          ],
+          "texture": "#spindle"
+        },
+        "west": {
+          "uv": [
+            6.75,
+            10.5,
+            9.25,
+            13.5
+          ],
+          "texture": "#spindle"
+        }
+      }
+    },
+    {
+      "from": [
+        6.4,
+        5.5,
+        6.4
+      ],
+      "to": [
+        9.6,
+        9.5,
+        9.6
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.4,
+            6.5,
+            9.6,
+            10.5
+          ],
+          "texture": "#spindle"
+        },
+        "south": {
+          "uv": [
+            6.4,
+            6.5,
+            9.6,
+            10.5
+          ],
+          "texture": "#spindle"
+        },
+        "east": {
+          "uv": [
+            6.4,
+            6.5,
+            9.6,
+            10.5
+          ],
+          "texture": "#spindle"
+        },
+        "west": {
+          "uv": [
+            6.4,
+            6.5,
+            9.6,
+            10.5
+          ],
+          "texture": "#spindle"
+        }
+      }
+    },
+    {
+      "from": [
+        6.75,
+        9.5,
+        6.75
+      ],
+      "to": [
+        9.25,
+        13.0,
+        9.25
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.75,
+            3.0,
+            9.25,
+            6.5
+          ],
+          "texture": "#spindle"
+        },
+        "south": {
+          "uv": [
+            6.75,
+            3.0,
+            9.25,
+            6.5
+          ],
+          "texture": "#spindle"
+        },
+        "east": {
+          "uv": [
+            6.75,
+            3.0,
+            9.25,
+            6.5
+          ],
+          "texture": "#spindle"
+        },
+        "west": {
+          "uv": [
+            6.75,
+            3.0,
+            9.25,
+            6.5
+          ],
+          "texture": "#spindle"
+        }
+      }
+    },
+    {
+      "from": [
+        5.5,
+        13.0,
+        5.5
+      ],
+      "to": [
+        10.5,
+        15.0,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            5.5,
+            1.0,
+            10.5,
+            3.0
+          ],
+          "texture": "#rail"
+        },
+        "south": {
+          "uv": [
+            5.5,
+            1.0,
+            10.5,
+            3.0
+          ],
+          "texture": "#rail"
+        },
+        "east": {
+          "uv": [
+            5.5,
+            1.0,
+            10.5,
+            3.0
+          ],
+          "texture": "#rail"
+        },
+        "west": {
+          "uv": [
+            5.5,
+            1.0,
+            10.5,
+            3.0
+          ],
+          "texture": "#rail"
+        },
+        "up": {
+          "uv": [
+            5.5,
+            5.5,
+            10.5,
+            10.5
+          ],
+          "texture": "#rail"
+        },
+        "down": {
+          "uv": [
+            5.5,
+            5.5,
+            10.5,
+            10.5
+          ],
+          "texture": "#rail"
+        }
+      }
+    },
+    {
+      "from": [
+        6.0,
+        15.0,
+        6.0
+      ],
+      "to": [
+        10.0,
+        15.75,
+        10.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.0,
+            0.25,
+            10.0,
+            1.0
+          ],
+          "texture": "#rail"
+        },
+        "south": {
+          "uv": [
+            6.0,
+            0.25,
+            10.0,
+            1.0
+          ],
+          "texture": "#rail"
+        },
+        "east": {
+          "uv": [
+            6.0,
+            0.25,
+            10.0,
+            1.0
+          ],
+          "texture": "#rail"
+        },
+        "west": {
+          "uv": [
+            6.0,
+            0.25,
+            10.0,
+            1.0
+          ],
+          "texture": "#rail"
+        },
+        "up": {
+          "uv": [
+            6.0,
+            6.0,
+            10.0,
+            10.0
+          ],
+          "texture": "#rail"
+        }
+      }
+    }
+  ]
+}

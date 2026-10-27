@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l39_woodpile"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l39_woodpile",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l39_woodpile",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l39_woodpile",
+      "y": 270
+    }
+  }
+}

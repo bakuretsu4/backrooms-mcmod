@@ -1,0 +1,53 @@
+{
+  "variants": {
+    "axis=x": [
+      {
+        "model": "backrooms:block/l39_clothesline_0",
+        "weight": 3
+      },
+      {
+        "model": "backrooms:block/l39_clothesline_1",
+        "weight": 3
+      },
+      {
+        "model": "backrooms:block/l39_clothesline_2",
+        "weight": 2
+      },
+      {
+        "model": "backrooms:block/l39_clothesline_3",
+        "weight": 2
+      },
+      {
+        "model": "backrooms:block/l39_clothesline_4",
+        "weight": 4
+      }
+    ],
+    "axis=z": [
+      {
+        "model": "backrooms:block/l39_clothesline_0",
+        "weight": 3,
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l39_clothesline_1",
+        "weight": 3,
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l39_clothesline_2",
+        "weight": 2,
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l39_clothesline_3",
+        "weight": 2,
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l39_clothesline_4",
+        "weight": 4,
+        "y": 90
+      }
+    ]
+  }
+}

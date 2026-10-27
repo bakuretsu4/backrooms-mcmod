@@ -144,6 +144,7 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_9 = register("exit_hint.level_9");
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_94 = register("exit_hint.level_94");
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_7 = register("exit_hint.level_7");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_39 = register("exit_hint.level_39");
     // Music (original pieces from tools/gen_assets.py, played by client/BackroomsMusic on the music
     // channel): the main theme on the title menu, a mix of the theme and a dark ambient piece in
     // most levels, and a dreamier piece (or the theme) in the Poolrooms and Level 37.

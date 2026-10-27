@@ -30,6 +30,11 @@ public final class Level9Sites {
     public static final String FOXHOLE = "level_9/foxhole";
     /** Level 9.1 itself: big tiles covering the whole Crimson Field region. */
     public static final String CRIMSON_FIELD = "level_9/crimson_field";
+    /**
+     * A rare chairlift line in the field: the side entrance to Level 39. Its shape (station,
+     * towers, cable) is worked out by {@code world/anomaly/level39/gondola/GondolaLine}.
+     */
+    public static final String GONDOLA = "level_9/gondola";
 
     // ---- The Crimson Field region -------------------------------------------------------------------
     /**

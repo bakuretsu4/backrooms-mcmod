@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l39_sash_window_shade"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l39_sash_window_shade",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l39_sash_window_shade",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l39_sash_window_shade",
+      "y": 270
+    }
+  }
+}

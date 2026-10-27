@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "backrooms:block/l39_linoleum",
+    "bottom": "backrooms:block/l39_popcorn_ceiling",
+    "side": "backrooms:block/l39_linoleum_side"
+  }
+}

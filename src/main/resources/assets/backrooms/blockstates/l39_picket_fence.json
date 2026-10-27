@@ -1,0 +1,32 @@
+{
+  "variants": {
+    "axis=x,style=0": {
+      "model": "backrooms:block/l39_picket_fence_0"
+    },
+    "axis=x,style=1": {
+      "model": "backrooms:block/l39_picket_fence_1"
+    },
+    "axis=x,style=2": {
+      "model": "backrooms:block/l39_picket_fence_2"
+    },
+    "axis=x,style=3": {
+      "model": "backrooms:block/l39_picket_fence_3"
+    },
+    "axis=z,style=0": {
+      "model": "backrooms:block/l39_picket_fence_0",
+      "y": 90
+    },
+    "axis=z,style=1": {
+      "model": "backrooms:block/l39_picket_fence_1",
+      "y": 90
+    },
+    "axis=z,style=2": {
+      "model": "backrooms:block/l39_picket_fence_2",
+      "y": 90
+    },
+    "axis=z,style=3": {
+      "model": "backrooms:block/l39_picket_fence_3",
+      "y": 90
+    }
+  }
+}

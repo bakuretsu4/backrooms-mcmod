@@ -35,6 +35,9 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>Level 4 (the Abandoned Office) has its own cold fill, which also carries the lightning flash
  * of its storm; see {@link Level4Atmosphere}.
+ *
+ * <p>Level 39 (Megalophobia) is a blue-grey night that turns cool and bright near the glowing
+ * facades, with bright even tunnels below; see {@link Level39Atmosphere#applyFill}.
  */
 public final class ClientLighting {
     private static final float FLOOR = 0.07f;
@@ -87,6 +90,8 @@ public final class ClientLighting {
      * they're small, so this doesn't haze the picture the way a big skylight would.
      */
     private static final float LEVEL9_EMISSIVE_MAX = 0.95f;
+    /** Level 39: full-bright faces (gallery lights, lit glass) stop just under the bloom threshold. */
+    private static final float LEVEL39_EMISSIVE_MAX = 0.85f;
     /**
      * Level 9.1, the Crimson Field, has no lamps at all, so "unlit" there would be a black screen.
      * A faint cold glow from the overcast sky instead: the grass reads as dark blue-grey stalks,
@@ -137,6 +142,10 @@ public final class ClientLighting {
                     v = Math.min(v, POOLROOMS_EMISSIVE_MAX);
                 } else if (floor == BackroomsLevel.LEVEL_9) {
                     v = Math.min(v, LEVEL9_EMISSIVE_MAX);
+                } else if (floor == BackroomsLevel.LEVEL_39) {
+                    // Level 39's gallery lights and lit glass: kept under the bloom threshold, so
+                    // up close the facade shows its muntins, brick and stone instead of a white-out.
+                    v = Math.min(v, LEVEL39_EMISSIVE_MAX);
                 }
                 colors.set(v, v, v);
             } else {
@@ -154,10 +163,14 @@ public final class ClientLighting {
                     : floor == BackroomsLevel.LEVEL_4 ? 1.5f
                     // Level 37: daylight bounced around white tile; soft and bright.
                     : floor == BackroomsLevel.LEVEL_37 ? 1.1f
+                    // Level 39: big light-15 facades and orbs; a soft curve keeps the dim town readable.
+                    : floor == BackroomsLevel.LEVEL_39 ? 1.3f
                     : 1.8f;
             applyFallback(colors, falloff);
             if (floor == BackroomsLevel.LEVEL_4) {
                 Level4Atmosphere.adjustFallback(colors, blockLight);
+            } else if (floor == BackroomsLevel.LEVEL_39) {
+                Level39Atmosphere.adjustFallback(colors); // readable floor + cool glow near the facades
             }
         }
         applyCamcorder(colors);
@@ -175,6 +188,10 @@ public final class ClientLighting {
         }
         if (floor == BackroomsLevel.LEVEL_37) {
             Level37Atmosphere.applyFill(colors, blockLight); // warm daylight bounce off white tile
+            return;
+        }
+        if (floor == BackroomsLevel.LEVEL_39) {
+            Level39Atmosphere.applyFill(colors, blockLight); // facade glow, orb-lit tunnels
             return;
         }
         float b = Mth.clamp(blockLight / 15.0f, 0.0f, 1.0f);

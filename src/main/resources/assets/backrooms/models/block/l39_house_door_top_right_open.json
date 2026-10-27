@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/door_top_right_open",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "bottom": "backrooms:block/l39_house_door_bottom",
+    "top": "backrooms:block/l39_house_door_top"
+  }
+}

@@ -7,6 +7,7 @@ import com.rickr.backrooms.world.layout.Level1Layout;
 import com.rickr.backrooms.world.layout.Level2Layout;
 import com.rickr.backrooms.world.layout.Level37Layout;
 import com.rickr.backrooms.world.layout.Level4Layout;
+import com.rickr.backrooms.world.layout.Level39Layout;
 import com.rickr.backrooms.world.layout.Level94Layout;
 import com.rickr.backrooms.world.layout.Level7Layout;
 import com.rickr.backrooms.world.layout.Level9Layout;
@@ -23,11 +24,12 @@ import org.jetbrains.annotations.Nullable;
  * using {@link BackroomsChunkGenerator} with a different {@link LevelLayout}.
  *
  * <p>Order of escape: Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2
- * --exit door--> Level 4 --emergency stairwell--> Poolrooms --the drain--> Level 9 --the underpass-->
- * Overworld. Secret branch: a rare sunlit archway in the Poolrooms leads to Level 37 ("Sublimity"),
- * and diving into one of its deep pools brings you out in Level 9. Second secret: a rare clay door
- * on a Level 9 house opens onto Level 94 ("Motion"); its dark-doored houses lead back to Level 9 and
- * the throne room of its castle sends you to Level 1.
+ * --exit door--> Level 4 --emergency stairwell--> Poolrooms --the drain--> Level 39's flooded tunnels
+ * --a superstructure window--> Level 9 --the underpass--> Overworld. Secret branch: a rare sunlit
+ * archway in the Poolrooms leads to Level 37 ("Sublimity"), and diving into one of its deep pools
+ * brings you out in Level 9. Second secret: a rare clay door on a Level 9 house opens onto Level 94
+ * ("Motion"); its dark-doored houses lead back to Level 9 and the throne room of its castle sends
+ * you to Level 1. Side entrance: the gondola in Level 9's Crimson Field drops you over Level 39's town.
  *
  * <p>New floors are added at the END of this enum: saved data and commands refer to floors by name,
  * but keeping the order stable avoids surprises.
@@ -61,7 +63,15 @@ public enum BackroomsLevel implements StringRepresentable {
      * house in Level 94; the door in the stone platform deep under the sea leads on to Level 9
      * (see {@code Level7Rules}). No monsters you can see: the Thing is only ever felt.
      */
-    LEVEL_7("level_7", new Level7Layout(), Integer.MIN_VALUE, 0, 1);
+    LEVEL_7("level_7", new Level7Layout(), Integer.MIN_VALUE, 0, 1),
+    /**
+     * "Megalophobia": a foggy night town of light-blue houses, walled in on every side by a colossal
+     * glowing mill facade, with flooded marble tunnels below. No Bacteria (cap 0): it has its own
+     * creatures. The holes in town drop into the tunnels of this same level, so falling never takes
+     * you out (transferBelowY sits far under the tunnel floor). The way on is through a window of the
+     * superstructure, to Level 9.
+     */
+    LEVEL_39("level_39", new Level39Layout(), 20, 0, 1);
 
     public static final Codec<BackroomsLevel> CODEC = StringRepresentable.fromEnum(BackroomsLevel::values);
 
@@ -116,7 +126,9 @@ public enum BackroomsLevel implements StringRepresentable {
             case LEVEL_1 -> LEVEL_2;
             case LEVEL_2 -> LEVEL_4;
             case LEVEL_4 -> POOLROOMS;
-            case POOLROOMS, LEVEL_37, LEVEL_94, LEVEL_7 -> LEVEL_9;
+            // The Poolrooms drain now opens into Level 39's flooded tunnels.
+            case POOLROOMS -> LEVEL_39;
+            case LEVEL_37, LEVEL_94, LEVEL_7, LEVEL_39 -> LEVEL_9;
             case LEVEL_9 -> null;
         };
     }

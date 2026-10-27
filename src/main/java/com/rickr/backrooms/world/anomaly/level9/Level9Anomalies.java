@@ -4,6 +4,8 @@ import com.rickr.backrooms.world.anomaly.Anomalies;
 import com.rickr.backrooms.world.anomaly.AnomalyBehavior;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.anomaly.Teleports;
+import com.rickr.backrooms.world.anomaly.level39.gondola.GondolaChair;
+import com.rickr.backrooms.world.anomaly.level39.gondola.GondolaStation;
 import com.rickr.backrooms.world.layout.Level9Layout;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import java.util.HashMap;
@@ -31,6 +33,7 @@ public final class Level9Anomalies {
         Anomalies.register(Level9Sites.FIELD_WALKWAY, new FieldWalkway());
         Anomalies.register(Level9Sites.CRIMSON_FIELD, new Field());
         Anomalies.register(Level9Sites.FOXHOLE, new Foxhole());
+        Anomalies.register(Level9Sites.GONDOLA, new Gondola());
         Anomalies.register(Level9Sites.TWIN_HOUSES, new TwinHouses());
         Anomalies.register(Level9Sites.CLIPPED_HOUSES, new ClippedHouses());
     }
@@ -102,6 +105,25 @@ public final class Level9Anomalies {
                 }
             }
             level.setBlock(hatch, state.setValue(TrapDoorBlock.OPEN, false), Block.UPDATE_ALL);
+        }
+    }
+
+    /**
+     * A chairlift line, the side entrance to Level 39 (world/anomaly/level39/gondola): the field
+     * goes on as usual around it, except that the Gloom can't reach you once you're up on the
+     * cable; the station puts out a new chair after each rider ({@link GondolaStation}).
+     */
+    private static final class Gondola implements AnomalyBehavior {
+        @Override
+        public void tick(ServerPlayer player, AnomalySite site, long seed, int ticksInside) {
+            if (!GondolaChair.isRiding(player)) {
+                CrimsonField.fieldTick(player);
+            }
+        }
+
+        @Override
+        public void siteTick(ServerLevel level, AnomalySite site, long seed) {
+            GondolaStation.siteTick(level, site);
         }
     }
 

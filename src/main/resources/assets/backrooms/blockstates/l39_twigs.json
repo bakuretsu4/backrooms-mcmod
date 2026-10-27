@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l39_twigs"
+      },
+      {
+        "model": "backrooms:block/l39_twigs",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l39_twigs",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l39_twigs",
+        "y": 270
+      }
+    ]
+  }
+}

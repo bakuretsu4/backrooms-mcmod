@@ -1,4 +1,107 @@
 {
+  "entity.hound.growl": {
+    "sounds": [
+      "backrooms:entity/hound_growl1",
+      "backrooms:entity/hound_growl2"
+    ],
+    "subtitle": "subtitles.backrooms.hound.growl"
+  },
+  "entity.hound.snarl": {
+    "sounds": [
+      "backrooms:entity/hound_snarl1",
+      "backrooms:entity/hound_snarl2"
+    ],
+    "subtitle": "subtitles.backrooms.hound.snarl"
+  },
+  "entity.hound.breath": {
+    "sounds": [
+      "backrooms:entity/hound_breath1",
+      "backrooms:entity/hound_breath2",
+      "backrooms:entity/hound_breath3"
+    ],
+    "subtitle": "subtitles.backrooms.hound.breath"
+  },
+  "entity.hound.step": {
+    "sounds": [
+      "backrooms:entity/hound_step1",
+      "backrooms:entity/hound_step2",
+      "backrooms:entity/hound_step3",
+      "backrooms:entity/hound_step4"
+    ],
+    "subtitle": "subtitles.backrooms.hound.step"
+  },
+  "entity.hound.splash": {
+    "sounds": [
+      "backrooms:entity/hound_splash1",
+      "backrooms:entity/hound_splash2",
+      "backrooms:entity/hound_splash3"
+    ],
+    "subtitle": "subtitles.backrooms.hound.splash"
+  },
+  "entity.hound.bite": {
+    "sounds": [
+      "backrooms:entity/hound_bite1",
+      "backrooms:entity/hound_bite2"
+    ],
+    "subtitle": "subtitles.backrooms.hound.bite"
+  },
+  "entity.hound.whine": {
+    "sounds": [
+      "backrooms:entity/hound_whine1",
+      "backrooms:entity/hound_whine2"
+    ],
+    "subtitle": "subtitles.backrooms.hound.whine"
+  },
+  "entity.hound.hurt": {
+    "sounds": [
+      "backrooms:entity/hound_hurt1",
+      "backrooms:entity/hound_hurt2"
+    ],
+    "subtitle": "subtitles.backrooms.hound.hurt"
+  },
+  "entity.hound.death": {
+    "sounds": [
+      "backrooms:entity/hound_death"
+    ],
+    "subtitle": "subtitles.backrooms.hound.death"
+  },
+  "entity.faceling.wheeze": {
+    "sounds": [
+      "backrooms:entity/faceling_wheeze1",
+      "backrooms:entity/faceling_wheeze2",
+      "backrooms:entity/faceling_wheeze3"
+    ],
+    "subtitle": "subtitles.backrooms.faceling.wheeze"
+  },
+  "entity.faceling.rasp": {
+    "sounds": [
+      "backrooms:entity/faceling_rasp1",
+      "backrooms:entity/faceling_rasp2"
+    ],
+    "subtitle": "subtitles.backrooms.faceling.rasp"
+  },
+  "entity.faceling.step": {
+    "sounds": [
+      "backrooms:entity/faceling_step1",
+      "backrooms:entity/faceling_step2",
+      "backrooms:entity/faceling_step3",
+      "backrooms:entity/faceling_step4"
+    ],
+    "subtitle": "subtitles.backrooms.faceling.step"
+  },
+  "entity.faceling.hurt": {
+    "sounds": [
+      "backrooms:entity/faceling_hurt1",
+      "backrooms:entity/faceling_hurt2"
+    ],
+    "subtitle": "subtitles.backrooms.faceling.hurt"
+  },
+  "entity.faceling.death": {
+    "sounds": [
+      "backrooms:entity/faceling_death"
+    ],
+    "subtitle": "subtitles.backrooms.faceling.death"
+  },
   "ambient.level0_hum": {
     "sounds": [
       {
@@ -1644,6 +1747,450 @@
     ],
     "subtitle": "subtitles.backrooms.distant.level94.rat_skitter"
   },
+  "ambient.level39_town": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/level39_town",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39.town_ambience"
+  },
+  "ambient.level39_tunnel": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/level39_tunnel",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39.tunnel_ambience"
+  },
+  "ambient.level39_rain": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/level39_rain",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39.rain_inside"
+  },
+  "level39.wall_crack": {
+    "sounds": [
+      {
+        "name": "backrooms:level39/wall_crack1",
+        "attenuation_distance": 64
+      },
+      {
+        "name": "backrooms:level39/wall_crack2",
+        "attenuation_distance": 64
+      },
+      {
+        "name": "backrooms:level39/wall_crack3",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39.wall_crack"
+  },
+  "level39.echo_boom": {
+    "sounds": [
+      {
+        "name": "backrooms:level39/echo_boom1",
+        "attenuation_distance": 96
+      },
+      {
+        "name": "backrooms:level39/echo_boom2",
+        "attenuation_distance": 96
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39.echo_boom"
+  },
+  "level39.quake_rumble": {
+    "sounds": [
+      {
+        "name": "backrooms:level39/quake_rumble",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39.quake_rumble"
+  },
+  "level39.window_rattle": {
+    "sounds": [
+      {
+        "name": "backrooms:level39/window_rattle1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "backrooms:level39/window_rattle2",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39.window_rattle"
+  },
+  "level39.radio_garbled": {
+    "sounds": [
+      {
+        "name": "backrooms:level39/radio_garbled1"
+      },
+      {
+        "name": "backrooms:level39/radio_garbled2"
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39.radio_garbled"
+  },
+  "distant.level39.superstructure_groan": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level39/superstructure_groan1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/superstructure_groan2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/superstructure_groan3",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level39.superstructure_groan"
+  },
+  "distant.level39.metal_slam": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level39/metal_slam1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/metal_slam2",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level39.metal_slam"
+  },
+  "distant.level39.dog_bark": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level39/dog_bark1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/dog_bark2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/dog_bark3",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level39.dog_bark"
+  },
+  "distant.level39.screen_door": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level39/screen_door1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/screen_door2",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level39.screen_door"
+  },
+  "distant.level39.wind_chime": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level39/wind_chime1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/wind_chime2",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level39.wind_chime"
+  },
+  "distant.level39.telephone": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level39/telephone1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/telephone2",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level39.telephone"
+  },
+  "distant.level39.ash_rattle": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level39/ash_rattle1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/ash_rattle2",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level39.ash_rattle"
+  },
+  "distant.level39.tunnel_drip": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level39/tunnel_drip1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/tunnel_drip2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/tunnel_drip3",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level39.tunnel_drip"
+  },
+  "distant.level39.tunnel_splash": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level39/tunnel_splash1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level39/tunnel_splash2",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level39.tunnel_splash"
+  },
+  "level39_anoms.window_wake": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/window_wake",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.window_wake"
+  },
+  "level39_anoms.window_lure": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/window_lure1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "backrooms:level39_anoms/window_lure2",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.window_lure"
+  },
+  "level39_anoms.window_blinds": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/window_blinds1",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "backrooms:level39_anoms/window_blinds2",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.window_blinds"
+  },
+  "level39_anoms.window_shriek": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/window_shriek",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.window_shriek"
+  },
+  "level39_anoms.glass_shards": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/glass_shards1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "backrooms:level39_anoms/glass_shards2",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.glass_shards"
+  },
+  "level39_anoms.window_grab": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/window_grab",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.window_grab"
+  },
+  "level39_anoms.window_fumes": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/window_fumes",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.window_fumes"
+  },
+  "level39_anoms.window_noclip": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/window_noclip",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.window_noclip"
+  },
+  "level39_anoms.ash_smell": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/ash_smell1",
+        "attenuation_distance": 8
+      },
+      {
+        "name": "backrooms:level39_anoms/ash_smell2",
+        "attenuation_distance": 8
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.ash_smell"
+  },
+  "level39_anoms.house_scream": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/house_scream1",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "backrooms:level39_anoms/house_scream2",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "backrooms:level39_anoms/house_scream3",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.house_scream"
+  },
+  "level39_anoms.hole_scrape": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/hole_scrape1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "backrooms:level39_anoms/hole_scrape2",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.hole_scrape"
+  },
+  "level39_anoms.hole_breath": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/hole_breath",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.hole_breath"
+  },
+  "level39_anoms.hole_growl": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/hole_growl",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.hole_growl"
+  },
+  "level39_anoms.hole_climb": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/hole_climb",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.hole_climb"
+  },
+  "level39_anoms.hydrolitis_chills": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/hydrolitis_chills1",
+        "attenuation_distance": 8
+      },
+      {
+        "name": "backrooms:level39_anoms/hydrolitis_chills2",
+        "attenuation_distance": 8
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.hydrolitis_chills"
+  },
+  "level39_anoms.hydrolitis_heartbeat": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/hydrolitis_heartbeat",
+        "attenuation_distance": 8
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.hydrolitis_heartbeat"
+  },
+  "level39_anoms.hydrolitis_retch": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/hydrolitis_retch",
+        "attenuation_distance": 8
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.hydrolitis_retch"
+  },
+  "level39_anoms.hydrolitis_whisper": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/hydrolitis_whisper1",
+        "attenuation_distance": 8
+      },
+      {
+        "name": "backrooms:level39_anoms/hydrolitis_whisper2",
+        "attenuation_distance": 8
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.hydrolitis_whisper"
+  },
+  "level39_anoms.door_vanish": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/door_vanish",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.door_vanish"
+  },
+  "level39_anoms.bigger_inside": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/bigger_inside",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.bigger_inside"
+  },
+  "level39_anoms.camp_stash": {
+    "sounds": [
+      {
+        "name": "backrooms:level39_anoms/camp_stash",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level39_anoms.camp_stash"
+  },
   "distant.level94.cartoon_tiptoe": {
     "sounds": [
       {
@@ -1660,6 +2207,216 @@
       }
     ],
     "subtitle": "subtitles.backrooms.distant.level94.cartoon_tiptoe"
+  },
+  "entity.clump.creak": {
+    "sounds": [
+      "backrooms:entity/clump_creak1",
+      "backrooms:entity/clump_creak2",
+      "backrooms:entity/clump_creak3"
+    ],
+    "subtitle": "subtitles.backrooms.clump.creak"
+  },
+  "entity.clump.crack": {
+    "sounds": [
+      "backrooms:entity/clump_crack1",
+      "backrooms:entity/clump_crack2",
+      "backrooms:entity/clump_crack3"
+    ],
+    "subtitle": "subtitles.backrooms.clump.crack"
+  },
+  "entity.clump.clap": {
+    "sounds": [
+      "backrooms:entity/clump_clap1",
+      "backrooms:entity/clump_clap2"
+    ],
+    "subtitle": "subtitles.backrooms.clump.clap"
+  },
+  "entity.clump.pound": {
+    "sounds": [
+      "backrooms:entity/clump_pound1",
+      "backrooms:entity/clump_pound2"
+    ],
+    "subtitle": "subtitles.backrooms.clump.pound"
+  },
+  "entity.clump.strike": {
+    "sounds": [
+      "backrooms:entity/clump_strike"
+    ],
+    "subtitle": "subtitles.backrooms.clump.strike"
+  },
+  "entity.clump.grab": {
+    "sounds": [
+      "backrooms:entity/clump_grab1",
+      "backrooms:entity/clump_grab2"
+    ],
+    "subtitle": "subtitles.backrooms.clump.grab"
+  },
+  "entity.clump.drag": {
+    "sounds": [
+      "backrooms:entity/clump_drag1",
+      "backrooms:entity/clump_drag2"
+    ],
+    "subtitle": "subtitles.backrooms.clump.drag"
+  },
+  "entity.clump.hurt": {
+    "sounds": [
+      "backrooms:entity/clump_hurt"
+    ],
+    "subtitle": "subtitles.backrooms.clump.hurt"
+  },
+  "entity.clump.death": {
+    "sounds": [
+      "backrooms:entity/clump_death"
+    ],
+    "subtitle": "subtitles.backrooms.clump.death"
+  },
+  "entity.skin_stealer.mimic": {
+    "sounds": [
+      "backrooms:entity/skin_stealer_mimic1",
+      "backrooms:entity/skin_stealer_mimic2",
+      "backrooms:entity/skin_stealer_mimic3",
+      "backrooms:entity/skin_stealer_mimic4",
+      "backrooms:entity/skin_stealer_mimic5"
+    ],
+    "subtitle": "subtitles.backrooms.skin_stealer.mimic"
+  },
+  "entity.skin_stealer.breath": {
+    "sounds": [
+      "backrooms:entity/skin_stealer_breath1",
+      "backrooms:entity/skin_stealer_breath2"
+    ],
+    "subtitle": "subtitles.backrooms.skin_stealer.breath"
+  },
+  "entity.skin_stealer.step": {
+    "sounds": [
+      "backrooms:entity/skin_stealer_step1",
+      "backrooms:entity/skin_stealer_step2",
+      "backrooms:entity/skin_stealer_step3"
+    ],
+    "subtitle": "subtitles.backrooms.skin_stealer.step"
+  },
+  "entity.skin_stealer.hunt": {
+    "sounds": [
+      "backrooms:entity/skin_stealer_hunt"
+    ],
+    "subtitle": "subtitles.backrooms.skin_stealer.hunt"
+  },
+  "entity.skin_stealer.tear": {
+    "sounds": [
+      "backrooms:entity/skin_stealer_tear1",
+      "backrooms:entity/skin_stealer_tear2"
+    ],
+    "subtitle": "subtitles.backrooms.skin_stealer.tear"
+  },
+  "entity.skin_stealer.hurt": {
+    "sounds": [
+      "backrooms:entity/skin_stealer_hurt"
+    ],
+    "subtitle": "subtitles.backrooms.skin_stealer.hurt"
+  },
+  "entity.skin_stealer.death": {
+    "sounds": [
+      "backrooms:entity/skin_stealer_death"
+    ],
+    "subtitle": "subtitles.backrooms.skin_stealer.death"
+  },
+  "entity.wretch.moan": {
+    "sounds": [
+      "backrooms:entity/wretch_moan1",
+      "backrooms:entity/wretch_moan2",
+      "backrooms:entity/wretch_moan3"
+    ],
+    "subtitle": "subtitles.backrooms.wretch.moan"
+  },
+  "entity.wretch.sob": {
+    "sounds": [
+      "backrooms:entity/wretch_sob1",
+      "backrooms:entity/wretch_sob2",
+      "backrooms:entity/wretch_sob3"
+    ],
+    "subtitle": "subtitles.backrooms.wretch.sob"
+  },
+  "entity.wretch.scream": {
+    "sounds": [
+      "backrooms:entity/wretch_scream1",
+      "backrooms:entity/wretch_scream2"
+    ],
+    "subtitle": "subtitles.backrooms.wretch.scream"
+  },
+  "entity.wretch.splash": {
+    "sounds": [
+      "backrooms:entity/wretch_splash1",
+      "backrooms:entity/wretch_splash2",
+      "backrooms:entity/wretch_splash3"
+    ],
+    "subtitle": "subtitles.backrooms.wretch.splash"
+  },
+  "entity.wretch.drink": {
+    "sounds": [
+      "backrooms:entity/wretch_drink1",
+      "backrooms:entity/wretch_drink2"
+    ],
+    "subtitle": "subtitles.backrooms.wretch.drink"
+  },
+  "entity.wretch.step": {
+    "sounds": [
+      "backrooms:entity/wretch_step1",
+      "backrooms:entity/wretch_step2",
+      "backrooms:entity/wretch_step3"
+    ],
+    "subtitle": "subtitles.backrooms.wretch.step"
+  },
+  "entity.wretch.hurt": {
+    "sounds": [
+      "backrooms:entity/wretch_hurt1",
+      "backrooms:entity/wretch_hurt2"
+    ],
+    "subtitle": "subtitles.backrooms.wretch.hurt"
+  },
+  "entity.wretch.death": {
+    "sounds": [
+      "backrooms:entity/wretch_death"
+    ],
+    "subtitle": "subtitles.backrooms.wretch.death"
+  },
+  "gondola.wind": {
+    "sounds": [
+      {
+        "name": "backrooms:gondola/wind",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.gondola.wind"
+  },
+  "gondola.cable_creak": {
+    "sounds": [
+      {
+        "name": "backrooms:gondola/cable_creak",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.gondola.cable_creak"
+  },
+  "gondola.sheave_clack": {
+    "sounds": [
+      {
+        "name": "backrooms:gondola/sheave_clack",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.backrooms.gondola.sheave_clack"
+  },
+  "gondola.board": {
+    "sounds": [
+      "backrooms:gondola/board"
+    ],
+    "subtitle": "subtitles.backrooms.gondola.board"
+  },
+  "gondola.whiteout": {
+    "sounds": [
+      "backrooms:gondola/whiteout"
+    ],
+    "subtitle": "subtitles.backrooms.gondola.whiteout"
   },
   "ambient.level7": {
     "sounds": [
@@ -1779,6 +2536,15 @@
     "sounds": [
       {
         "name": "backrooms:exit_hint/level_7",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
+  },
+  "exit_hint.level_39": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_39",
         "stream": true,
         "attenuation_distance": 44
       }

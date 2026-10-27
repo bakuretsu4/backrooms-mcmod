@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "backrooms:block/l39_path_mud",
+    "top": "backrooms:block/l39_path_mud",
+    "side": "backrooms:block/l39_path_mud"
+  }
+}
