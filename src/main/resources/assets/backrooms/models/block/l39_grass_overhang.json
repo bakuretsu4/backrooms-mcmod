@@ -1,0 +1,176 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "ambientocclusion": false,
+  "textures": {
+    "grass": "backrooms:block/l39_yard_grass",
+    "side": "backrooms:block/l39_yard_grass_side",
+    "soil": "backrooms:block/l39_soil",
+    "edge": "backrooms:block/l39_grass_overhang_edge",
+    "roots": "backrooms:block/l39_roots",
+    "particle": "backrooms:block/l39_yard_grass"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        9,
+        1
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "up": {
+          "texture": "#grass"
+        },
+        "down": {
+          "texture": "#soil"
+        },
+        "north": {
+          "texture": "#side"
+        },
+        "east": {
+          "texture": "#side"
+        },
+        "west": {
+          "texture": "#side"
+        },
+        "south": {
+          "texture": "#soil",
+          "cullface": "south"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        3,
+        0.5
+      ],
+      "to": [
+        16,
+        16,
+        0.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#edge",
+          "uv": [
+            0,
+            0,
+            16,
+            13
+          ]
+        },
+        "south": {
+          "texture": "#edge",
+          "uv": [
+            16,
+            0,
+            0,
+            13
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        2,
+        4
+      ],
+      "to": [
+        16,
+        9,
+        4
+      ],
+      "faces": {
+        "north": {
+          "texture": "#roots",
+          "uv": [
+            0,
+            0,
+            16,
+            7
+          ]
+        },
+        "south": {
+          "texture": "#roots",
+          "uv": [
+            16,
+            0,
+            0,
+            7
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        2,
+        9
+      ],
+      "to": [
+        16,
+        9,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#roots",
+          "uv": [
+            0,
+            0,
+            16,
+            7
+          ]
+        },
+        "south": {
+          "texture": "#roots",
+          "uv": [
+            16,
+            0,
+            0,
+            7
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        8,
+        2,
+        1
+      ],
+      "to": [
+        8,
+        9,
+        16
+      ],
+      "faces": {
+        "west": {
+          "texture": "#roots",
+          "uv": [
+            0,
+            0,
+            15,
+            7
+          ]
+        },
+        "east": {
+          "texture": "#roots",
+          "uv": [
+            15,
+            0,
+            0,
+            7
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,446 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "thick": "0"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_core_0"
+      }
+    },
+    {
+      "when": {
+        "thick": "0",
+        "down": "center"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_c_0"
+      }
+    },
+    {
+      "when": {
+        "thick": "0",
+        "down": "north"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_0"
+      }
+    },
+    {
+      "when": {
+        "thick": "0",
+        "down": "east"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_0",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "thick": "0",
+        "down": "south"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_0",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "thick": "0",
+        "down": "west"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_0",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "thick": "0",
+        "up_c": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_c_0"
+      }
+    },
+    {
+      "when": {
+        "thick": "0",
+        "up_n": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_0"
+      }
+    },
+    {
+      "when": {
+        "thick": "0",
+        "up_e": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_0",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "thick": "0",
+        "up_s": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_0",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "thick": "0",
+        "up_w": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_0",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "thick": "1"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_core_1"
+      }
+    },
+    {
+      "when": {
+        "thick": "1",
+        "down": "center"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_c_1"
+      }
+    },
+    {
+      "when": {
+        "thick": "1",
+        "down": "north"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_1"
+      }
+    },
+    {
+      "when": {
+        "thick": "1",
+        "down": "east"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_1",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "thick": "1",
+        "down": "south"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_1",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "thick": "1",
+        "down": "west"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_1",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "thick": "1",
+        "up_c": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_c_1"
+      }
+    },
+    {
+      "when": {
+        "thick": "1",
+        "up_n": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_1"
+      }
+    },
+    {
+      "when": {
+        "thick": "1",
+        "up_e": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_1",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "thick": "1",
+        "up_s": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_1",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "thick": "1",
+        "up_w": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_1",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "thick": "2"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_core_2"
+      }
+    },
+    {
+      "when": {
+        "thick": "2",
+        "down": "center"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_c_2"
+      }
+    },
+    {
+      "when": {
+        "thick": "2",
+        "down": "north"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_2"
+      }
+    },
+    {
+      "when": {
+        "thick": "2",
+        "down": "east"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_2",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "thick": "2",
+        "down": "south"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_2",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "thick": "2",
+        "down": "west"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_2",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "thick": "2",
+        "up_c": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_c_2"
+      }
+    },
+    {
+      "when": {
+        "thick": "2",
+        "up_n": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_2"
+      }
+    },
+    {
+      "when": {
+        "thick": "2",
+        "up_e": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_2",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "thick": "2",
+        "up_s": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_2",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "thick": "2",
+        "up_w": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_2",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "thick": "3"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_core_3"
+      }
+    },
+    {
+      "when": {
+        "thick": "3",
+        "down": "center"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_c_3"
+      }
+    },
+    {
+      "when": {
+        "thick": "3",
+        "down": "north"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_3"
+      }
+    },
+    {
+      "when": {
+        "thick": "3",
+        "down": "east"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_3",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "thick": "3",
+        "down": "south"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_3",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "thick": "3",
+        "down": "west"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_down_n_3",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "thick": "3",
+        "up_c": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_c_3"
+      }
+    },
+    {
+      "when": {
+        "thick": "3",
+        "up_n": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_3"
+      }
+    },
+    {
+      "when": {
+        "thick": "3",
+        "up_e": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_3",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "thick": "3",
+        "up_s": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_3",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "thick": "3",
+        "up_w": "true"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_up_n_3",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "thick": "0",
+        "up_c": "false",
+        "up_n": "false",
+        "up_e": "false",
+        "up_s": "false",
+        "up_w": "false"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_tip_0"
+      }
+    },
+    {
+      "when": {
+        "thick": "1",
+        "up_c": "false",
+        "up_n": "false",
+        "up_e": "false",
+        "up_s": "false",
+        "up_w": "false"
+      },
+      "apply": {
+        "model": "backrooms:block/l39_tree_tip_1"
+      }
+    }
+  ]
+}

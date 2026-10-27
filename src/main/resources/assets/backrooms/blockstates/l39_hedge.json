@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l39_hedge"
+      },
+      {
+        "model": "backrooms:block/l39_hedge",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l39_hedge",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l39_hedge",
+        "y": 270
+      }
+    ]
+  }
+}

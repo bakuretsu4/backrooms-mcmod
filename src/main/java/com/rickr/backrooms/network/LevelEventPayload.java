@@ -50,6 +50,17 @@ public record LevelEventPayload(int kind, int remainingTicks, int elapsedTicks) 
      * apart from the others so new events added for other levels never clash with it.
      */
     public static final int OBTRUSIVE_WATER = 37;
+    /**
+     * Level 39 only, the indoor storm: the superstructure's own climate rains on the town from the
+     * cloud ceiling for a few minutes (client/Level39Weather: rain, rain sounds).
+     */
+    public static final int INDOOR_RAIN = 39;
+    /**
+     * Level 39 only: a superstructure boom far away whose echoes build into a quake. The quake
+     * itself travels as its own message ({@link Level39QuakePayload}, see world/Level39Quakes), so
+     * a quake set off by a player can happen during the rain too; this kind only marks the event.
+     */
+    public static final int ECHO_QUAKE = 40;
 
     public static final Type<LevelEventPayload> TYPE = new Type<>(Backrooms.id("level_event"));
     public static final StreamCodec<ByteBuf, LevelEventPayload> STREAM_CODEC = StreamCodec.composite(

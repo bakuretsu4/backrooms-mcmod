@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "backrooms:block/l39_yard_grass",
+    "side": "backrooms:block/l39_yard_grass_side",
+    "bottom": "backrooms:block/l39_soil"
+  }
+}

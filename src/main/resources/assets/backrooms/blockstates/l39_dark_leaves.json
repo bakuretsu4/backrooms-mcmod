@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l39_dark_leaves"
+      },
+      {
+        "model": "backrooms:block/l39_dark_leaves",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l39_dark_leaves",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l39_dark_leaves",
+        "y": 270
+      }
+    ]
+  }
+}

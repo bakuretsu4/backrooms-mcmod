@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "backrooms:block/l39_shingles",
+    "top": "backrooms:block/l39_shingles",
+    "side": "backrooms:block/l39_shingles"
+  }
+}

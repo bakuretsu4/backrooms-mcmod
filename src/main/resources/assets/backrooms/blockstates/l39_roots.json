@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l39_roots"
+      },
+      {
+        "model": "backrooms:block/l39_roots",
+        "y": 90
+      }
+    ]
+  }
+}

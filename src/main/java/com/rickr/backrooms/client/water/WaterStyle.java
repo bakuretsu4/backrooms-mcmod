@@ -1,7 +1,10 @@
 package com.rickr.backrooms.client.water;
 
+import com.rickr.backrooms.client.Level39ClientState;
+import com.rickr.backrooms.client.Level39Weather;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.layout.PoolroomsLayout;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
@@ -93,6 +96,51 @@ public record WaterStyle(int shallowColor, float shallowAlpha, int deepColor, fl
             0.18f, 0.0f, 9.0f);
 
     /**
+     * Level 39's tunnels (reference tunnel.png): clear, glassy, bright turquoise over a pale marble
+     * and tile floor. Very transparent (the floor stays readable through the whole 2 blocks of
+     * water), a calm surface with gentle caustics, the turquoise deepening only when you look down
+     * the length of the tunnel. Lit from above by the invisible orbs: no sun glints.
+     */
+    public static final WaterStyle LEVEL_39 = new WaterStyle(
+            0x48D8D2, 0.12f, 0x0F8C98, 0.78f, 7.0f,
+            0x3CB8B8, 22.0f, 0xDCE6EA, 0.55f,
+            0.35f, 0.6f, STRAIGHT_DOWN, 0xF2FBFF, 0.0f,
+            2.4f, 0.6f, 1.15f,
+            0.18f, 0.0f, 22.0f);
+
+    /**
+     * Level 39's stagnant segments, where the Hydrolitis plague lives: the same water gone still
+     * and sick. A murky green film, short visibility, hardly any caustics (the orbs are dead).
+     */
+    public static final WaterStyle LEVEL_39_STAGNANT = new WaterStyle(
+            0x4E8A6E, 0.32f, 0x123A2A, 0.95f, 3.0f,
+            0x1C3A2C, 8.0f, 0x30403A, 0.15f,
+            0.15f, 0.5f, STRAIGHT_DOWN, 0xD8F0E0, 0.0f,
+            0.9f, 0.9f, 0.75f,
+            0.10f, 0.0f, 8.0f);
+
+    /**
+     * Level 39's town puddles: still, dark water a block deep over mud. Almost a black mirror:
+     * the screen-space reflection shows the glowing facades and the fog in it, as in the photo's
+     * wet yard. No caustics; barely a ripple (the rain variant below ripples more).
+     */
+    public static final WaterStyle LEVEL_39_PUDDLE = new WaterStyle(
+            0x2A2E30, 0.35f, 0x0C0F12, 0.92f, 1.5f,
+            0x14181A, 6.0f, 0x8A9096, 0.0f,
+            0.08f, 0.3f, STRAIGHT_DOWN, 0xE8EEF4, 0.0f,
+            0.4f, 0.8f, 0.6f,
+            0.18f, 0.0f, 6.0f);
+    /** The same puddles while the indoor storm rains on them: the surface pocked with drops. */
+    public static final WaterStyle LEVEL_39_PUDDLE_RAIN = new WaterStyle(
+            0x2A2E30, 0.35f, 0x0C0F12, 0.92f, 1.5f,
+            0x14181A, 6.0f, 0x8A9096, 0.0f,
+            0.7f, 0.5f, STRAIGHT_DOWN, 0xE8EEF4, 0.0f,
+            0.4f, 0.8f, 0.6f,
+            0.18f, 0.0f, 6.0f);
+    /** Puddles switch to the rippled look once the rain is this strong (0..1). */
+    private static final float PUDDLE_RAIN_THRESHOLD = 0.3f;
+
+    /**
      * Level 7, the open sea under the concrete ceiling: murky grey-green, never clear. A thin
      * layer over the pale silt of the shallows still shows the bottom, but six blocks of water
      * (the shelf) is already mostly the water's own colour and the deep is near black. The surface
@@ -116,15 +164,31 @@ public record WaterStyle(int shallowColor, float shallowAlpha, int deepColor, fl
         return switch (level) {
             case POOLROOMS -> POOLROOMS;
             case LEVEL_37 -> LEVEL_37;
+            case LEVEL_39 -> LEVEL_39;
             case LEVEL_7 -> LEVEL_7;
             default -> null;
         };
     }
 
-    /** The water look at world column x of a level: the Poolrooms' Reservoir has its own red water. */
+    /**
+     * The water look around the camera at (x, y, z) of a level: the Poolrooms' Reservoir has its own
+     * red water; in Level 39 the town puddles, the tunnels and their stagnant segments differ.
+     * (The renderer uses one look per frame, chosen where you are: you never see both the
+     * puddles and the tunnel water at once.)
+     */
     @Nullable
-    public static WaterStyle at(@Nullable BackroomsLevel level, double x) {
-        return level == BackroomsLevel.POOLROOMS && PoolroomsLayout.inReservoir(x) ? SANGUINE : forLevel(level);
+    public static WaterStyle at(@Nullable BackroomsLevel level, double x, double y, double z) {
+        if (level == BackroomsLevel.POOLROOMS && PoolroomsLayout.inReservoir(x)) {
+            return SANGUINE;
+        }
+        if (level == BackroomsLevel.LEVEL_39) {
+            Vec3 eye = new Vec3(x, y, z);
+            if (!Level39ClientState.inTunnels(eye)) {
+                return Level39Weather.rain() > PUDDLE_RAIN_THRESHOLD ? LEVEL_39_PUDDLE_RAIN : LEVEL_39_PUDDLE;
+            }
+            return Level39ClientState.inStagnantWater(eye) ? LEVEL_39_STAGNANT : LEVEL_39;
+        }
+        return forLevel(level);
     }
 
     static float red(int rgb) {

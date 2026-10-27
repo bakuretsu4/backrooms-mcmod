@@ -41,6 +41,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * <p>Level 4 (the Abandoned Office) has no scares, only its storm: every 1-3 minutes lightning
  * strikes outside (STORM). The clients flash the windows ({@code Level4Atmosphere}); the server
  * sends the thunder a second or two later.
+ *
+ * <p>Level 39 (Megalophobia) has no knocks either, only its superstructure's moods: INDOOR_RAIN,
+ * 2-5 minutes of rain falling from the cloud ceiling ({@code client/Level39Weather}), and
+ * ECHO_QUAKE, a boom high up the facade whose echoes build into a quake ({@link Level39Quakes}).
  */
 public final class LevelEvents {
     /** The first event comes about a minute and a half after someone arrives on a floor. */
@@ -55,6 +59,8 @@ public final class LevelEvents {
     private static final int STORM_TICKS = 6 * 20;
     /** Pool levels: the first obtrusive-water spell comes 4-5 minutes after someone arrives. */
     private static final int POOL_FIRST_DELAY = 4 * 60 * 20;
+    /** Level 39: the echo quake event covers the boom, its echoes and the quake (the client's show). */
+    private static final int ECHO_QUAKE_TICKS = 12 * 20;
 
     private static final class State {
         int kind = LevelEventPayload.NONE;
@@ -92,7 +98,7 @@ public final class LevelEvents {
         // cuts, alarms or footsteps-in-the-dark there. (Level 4's only events are its storms.)
         // Level 94 has its own day and night instead (Level94Clock), and Level 7 its Thing (Level7Client).
         boolean calm = floor == BackroomsLevel.POOLROOMS || floor == BackroomsLevel.LEVEL_4 || floor == BackroomsLevel.LEVEL_37
-                || floor == BackroomsLevel.LEVEL_94 || floor == BackroomsLevel.LEVEL_7;
+                || floor == BackroomsLevel.LEVEL_94 || floor == BackroomsLevel.LEVEL_7 || floor == BackroomsLevel.LEVEL_39;
         // Knocks and creaks are indoor sounds; the Suburbs stay silent between their own events.
         if (!calm && floor != BackroomsLevel.LEVEL_9) {
             tickAmbience(level, random);
@@ -106,7 +112,8 @@ public final class LevelEvents {
             return;
         }
 
-        if ((!calm || floor == BackroomsLevel.LEVEL_4 || isPoolLevel(floor)) && now >= state.nextTick) {
+        if ((!calm || floor == BackroomsLevel.LEVEL_4 || floor == BackroomsLevel.LEVEL_39 || isPoolLevel(floor))
+                && now >= state.nextTick) {
             startRandom(level, floor, state, random);
         }
     }
@@ -174,6 +181,12 @@ public final class LevelEvents {
                 kind = LevelEventPayload.OBTRUSIVE_WATER;
                 duration = (20 + random.nextInt(21)) * 20;
             }
+            // Level 39: the superstructure's own weather (rain from its cloud ceiling, 2-5 min) or a
+            // boom far up the facade whose echoes build into a quake.
+            case LEVEL_39 -> {
+                if (roll < 60) { kind = LevelEventPayload.INDOOR_RAIN; duration = (120 + random.nextInt(181)) * 20; }
+                else { kind = LevelEventPayload.ECHO_QUAKE; duration = ECHO_QUAKE_TICKS; }
+            }
             default -> {
                 if (roll < 35) { kind = LevelEventPayload.TWIST; duration = TWIST_TICKS; }
                 else if (roll < 70) { kind = LevelEventPayload.FLICKER; duration = (5 + random.nextInt(5)) * 20; }
@@ -222,6 +235,7 @@ public final class LevelEvents {
                     MangledFog.begin(level, now, state.endTick); // the cold before the fog
                 }
             }
+            case LevelEventPayload.ECHO_QUAKE -> Level39Quakes.superstructureBoom(level, random);
             default -> {}
         }
         broadcast(level, state, now);
@@ -261,6 +275,9 @@ public final class LevelEvents {
             // Level 4: a lightning strike outside every 1-3 minutes.
             case LEVEL_4 -> (60 + random.nextInt(121)) * 20;
             case LEVEL_9 -> (40 + random.nextInt(31)) * 20;
+            // Level 39: 4-8 quiet minutes, so with the rain's own 2-5 minutes and 60% of events
+            // being rain, it rains roughly every 10-20 minutes and a quake comes in between.
+            case LEVEL_39 -> (240 + random.nextInt(241)) * 20;
         };
     }
 
@@ -353,6 +370,7 @@ public final class LevelEvents {
     public static void reset() {
         STATES.clear();
         MangledFog.reset();
+        Level39Quakes.reset();
     }
 
     private static LevelEventPayload payload(State state, long now) {

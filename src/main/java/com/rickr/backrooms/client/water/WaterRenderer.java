@@ -37,8 +37,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Draws the pool water of the Poolrooms and Level 37 (vanilla's water faces are switched off
- * there, see {@link VanillaWaterHider}).
+ * Draws the pool water of the Poolrooms and Level 37, and Level 39's tunnel water and town puddles
+ * (vanilla's water faces are switched off there, see {@link VanillaWaterHider}). The look comes
+ * from {@link WaterStyle#at}, chosen where the camera is.
  *
  * <p><b>When:</b> right after the whole level has been drawn AND lit. Veil adds its dynamic lights
  * onto the picture at the very end of {@code LevelRenderer.renderLevel}, and NeoForge's
@@ -128,7 +129,7 @@ public final class WaterRenderer {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         WaterStyle levelStyle = mc.level == null || mc.player == null ? null
-                : WaterStyle.at(BackroomsLevel.fromDimension(mc.level.dimension()), mc.player.getX());
+                : WaterStyle.at(BackroomsLevel.fromDimension(mc.level.dimension()), mc.player.getX(), mc.player.getEyeY(), mc.player.getZ());
         boolean available = surfaceShader != null && underwaterShader != null
                 && (levelStyle == null || !VanillaWaterHider.shaderPackInUse());
         VanillaWaterHider.setRendererAvailable(available);

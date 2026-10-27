@@ -1,0 +1,152 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l39_roof_shingles",
+    "edge": "backrooms:block/l39_roof_shingles",
+    "sN": "backrooms:block/l39_roof_shingles",
+    "uN": "backrooms:block/l39_roof_underside",
+    "sS": "backrooms:block/l39_roof_shingles_s",
+    "uS": "backrooms:block/l39_roof_underside"
+  },
+  "elements": [
+    {
+      "from": [
+        0.0,
+        3.15,
+        8.0
+      ],
+      "to": [
+        16.0,
+        4.0,
+        16.0
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0.0,
+            8.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#sN"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            16.0,
+            16.0,
+            8.0
+          ],
+          "texture": "#uN"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            12.0,
+            16.0,
+            12.85
+          ],
+          "texture": "#edge"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            12.0,
+            8.0,
+            12.85
+          ],
+          "texture": "#edge"
+        },
+        "west": {
+          "uv": [
+            8.0,
+            12.0,
+            16.0,
+            12.85
+          ],
+          "texture": "#edge"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.0,
+          4.0,
+          12.0
+        ],
+        "axis": "x",
+        "angle": 45,
+        "rescale": true
+      }
+    },
+    {
+      "from": [
+        0.0,
+        3.15,
+        0.0
+      ],
+      "to": [
+        16.0,
+        4.0,
+        8.0
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            8.0
+          ],
+          "texture": "#sS"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            8.0,
+            16.0,
+            0.0
+          ],
+          "texture": "#uS"
+        },
+        "north": {
+          "uv": [
+            0.0,
+            12.0,
+            16.0,
+            12.85
+          ],
+          "texture": "#edge"
+        },
+        "east": {
+          "uv": [
+            8.0,
+            12.0,
+            16.0,
+            12.85
+          ],
+          "texture": "#edge"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            12.0,
+            8.0,
+            12.85
+          ],
+          "texture": "#edge"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.0,
+          4.0,
+          4.0
+        ],
+        "axis": "x",
+        "angle": -45,
+        "rescale": true
+      }
+    }
+  ]
+}

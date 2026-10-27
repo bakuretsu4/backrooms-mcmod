@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "backrooms:block/l39_gondola_deck",
+    "top": "backrooms:block/l39_gondola_deck",
+    "side": "backrooms:block/l39_gondola_deck"
+  }
+}

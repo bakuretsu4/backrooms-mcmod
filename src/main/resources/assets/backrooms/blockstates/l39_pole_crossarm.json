@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/l39_pole_crossarm"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l39_pole_crossarm",
+      "y": 90
+    }
+  }
+}

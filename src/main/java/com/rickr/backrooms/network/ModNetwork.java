@@ -110,6 +110,13 @@ public final class ModNetwork {
         // Level 9 anomalies: where the Mangled fog's black pillar stands (the clients draw it).
         registrar.playToClient(Level9PillarPayload.TYPE, Level9PillarPayload.STREAM_CODEC,
                 (payload, context) -> com.rickr.backrooms.client.anomaly.level9.MangledPillar.receive(payload.phase(), payload.x(), payload.z()));
+
+        // Level 39: the layout seed (so the client can work out tunnels, facade and holes itself),
+        // and echo quakes (the client plays the echoes, rumble, shaking and dust).
+        registrar.playToClient(Level39StatePayload.TYPE, Level39StatePayload.STREAM_CODEC,
+                (payload, context) -> com.rickr.backrooms.client.Level39ClientState.receiveSeed(payload.layoutSeed()));
+        registrar.playToClient(Level39QuakePayload.TYPE, Level39QuakePayload.STREAM_CODEC,
+                (payload, context) -> com.rickr.backrooms.client.Level39QuakeEffects.receive(payload.x(), payload.y(), payload.z(), payload.strength()));
     }
 
     private ModNetwork() {}

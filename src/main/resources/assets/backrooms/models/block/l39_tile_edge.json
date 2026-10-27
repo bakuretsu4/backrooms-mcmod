@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/l39_tile_rim",
+    "north": "backrooms:block/l39_tile_edge",
+    "up": "backrooms:block/l39_tile_edge_top",
+    "south": "backrooms:block/l39_tile_rim",
+    "east": "backrooms:block/l39_tile_rim",
+    "west": "backrooms:block/l39_tile_rim",
+    "down": "backrooms:block/l39_tile_rim"
+  }
+}

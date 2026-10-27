@@ -1,0 +1,174 @@
+{
+  "variants": {
+    "facing=north,inverted=false,left=0": {
+      "model": "backrooms:block/l39_icebox"
+    },
+    "facing=north,inverted=false,left=1": {
+      "model": "backrooms:block/l39_icebox"
+    },
+    "facing=north,inverted=false,left=2": {
+      "model": "backrooms:block/l39_icebox"
+    },
+    "facing=north,inverted=false,left=3": {
+      "model": "backrooms:block/l39_icebox"
+    },
+    "facing=north,inverted=false,left=4": {
+      "model": "backrooms:block/l39_icebox"
+    },
+    "facing=north,inverted=true,left=0": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 180
+    },
+    "facing=north,inverted=true,left=1": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 180
+    },
+    "facing=north,inverted=true,left=2": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 180
+    },
+    "facing=north,inverted=true,left=3": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 180
+    },
+    "facing=north,inverted=true,left=4": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 180
+    },
+    "facing=east,inverted=false,left=0": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 90
+    },
+    "facing=east,inverted=false,left=1": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 90
+    },
+    "facing=east,inverted=false,left=2": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 90
+    },
+    "facing=east,inverted=false,left=3": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 90
+    },
+    "facing=east,inverted=false,left=4": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 90
+    },
+    "facing=east,inverted=true,left=0": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 270
+    },
+    "facing=east,inverted=true,left=1": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 270
+    },
+    "facing=east,inverted=true,left=2": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 270
+    },
+    "facing=east,inverted=true,left=3": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 270
+    },
+    "facing=east,inverted=true,left=4": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 270
+    },
+    "facing=south,inverted=false,left=0": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 180
+    },
+    "facing=south,inverted=false,left=1": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 180
+    },
+    "facing=south,inverted=false,left=2": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 180
+    },
+    "facing=south,inverted=false,left=3": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 180
+    },
+    "facing=south,inverted=false,left=4": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 180
+    },
+    "facing=south,inverted=true,left=0": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180
+    },
+    "facing=south,inverted=true,left=1": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180
+    },
+    "facing=south,inverted=true,left=2": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180
+    },
+    "facing=south,inverted=true,left=3": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180
+    },
+    "facing=south,inverted=true,left=4": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180
+    },
+    "facing=west,inverted=false,left=0": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 270
+    },
+    "facing=west,inverted=false,left=1": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 270
+    },
+    "facing=west,inverted=false,left=2": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 270
+    },
+    "facing=west,inverted=false,left=3": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 270
+    },
+    "facing=west,inverted=false,left=4": {
+      "model": "backrooms:block/l39_icebox",
+      "y": 270
+    },
+    "facing=west,inverted=true,left=0": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 90
+    },
+    "facing=west,inverted=true,left=1": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 90
+    },
+    "facing=west,inverted=true,left=2": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 90
+    },
+    "facing=west,inverted=true,left=3": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 90
+    },
+    "facing=west,inverted=true,left=4": {
+      "model": "backrooms:block/l39_icebox",
+      "x": 180,
+      "y": 90
+    }
+  }
+}

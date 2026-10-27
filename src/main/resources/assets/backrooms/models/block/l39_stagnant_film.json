@@ -1,0 +1,44 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:translucent",
+  "ambientocclusion": false,
+  "textures": {
+    "film": "backrooms:block/l39_stagnant_film",
+    "particle": "backrooms:block/l39_stagnant_film"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0.2,
+        0
+      ],
+      "to": [
+        16,
+        0.2,
+        16
+      ],
+      "shade": false,
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#film"
+        },
+        "down": {
+          "uv": [
+            0,
+            16,
+            16,
+            0
+          ],
+          "texture": "#film"
+        }
+      }
+    }
+  ]
+}

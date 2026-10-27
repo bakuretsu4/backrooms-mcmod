@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "backrooms:block/l39_mud_slab"
+    },
+    "type=top": {
+      "model": "backrooms:block/l39_mud_slab_top"
+    },
+    "type=double": {
+      "model": "backrooms:block/l39_path_mud"
+    }
+  }
+}

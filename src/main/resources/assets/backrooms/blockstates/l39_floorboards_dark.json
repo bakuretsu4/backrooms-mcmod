@@ -1,0 +1,32 @@
+{
+  "variants": {
+    "inverted=false,variant=0": {
+      "model": "backrooms:block/l39_floorboards_dark"
+    },
+    "inverted=false,variant=1": {
+      "model": "backrooms:block/l39_floorboards_dark_v1"
+    },
+    "inverted=false,variant=2": {
+      "model": "backrooms:block/l39_floorboards_dark_v2"
+    },
+    "inverted=false,variant=3": {
+      "model": "backrooms:block/l39_floorboards_dark"
+    },
+    "inverted=true,variant=0": {
+      "model": "backrooms:block/l39_floorboards_dark",
+      "x": 180
+    },
+    "inverted=true,variant=1": {
+      "model": "backrooms:block/l39_floorboards_dark_v1",
+      "x": 180
+    },
+    "inverted=true,variant=2": {
+      "model": "backrooms:block/l39_floorboards_dark_v2",
+      "x": 180
+    },
+    "inverted=true,variant=3": {
+      "model": "backrooms:block/l39_floorboards_dark",
+      "x": 180
+    }
+  }
+}

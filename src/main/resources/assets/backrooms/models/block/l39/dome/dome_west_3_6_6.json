@@ -1,0 +1,13 @@
+{
+  "loader": "neoforge:obj",
+  "model": "backrooms:models/block/l39/dome/dome_west_3_6_6.obj",
+  "flip_v": true,
+  "shade_quads": false,
+  "emissive_ambient": false,
+  "automatic_culling": true,
+  "ambientocclusion": false,
+  "textures": {
+    "marble": "backrooms:block/l39_marble",
+    "particle": "backrooms:block/l39_marble"
+  }
+}

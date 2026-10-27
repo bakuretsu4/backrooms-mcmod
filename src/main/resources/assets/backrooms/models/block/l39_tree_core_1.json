@@ -1,0 +1,80 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l39_tree_bark",
+    "bark": "backrooms:block/l39_tree_bark",
+    "end": "backrooms:block/l39_tree_end",
+    "twig": "backrooms:block/l39_twigs"
+  },
+  "elements": [
+    {
+      "from": [
+        6.75,
+        6.125,
+        6.75
+      ],
+      "to": [
+        9.25,
+        9.875,
+        9.25
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.75,
+            6.125,
+            9.25,
+            9.875
+          ],
+          "texture": "#bark"
+        },
+        "south": {
+          "uv": [
+            6.75,
+            6.125,
+            9.25,
+            9.875
+          ],
+          "texture": "#bark"
+        },
+        "east": {
+          "uv": [
+            6.75,
+            6.125,
+            9.25,
+            9.875
+          ],
+          "texture": "#bark"
+        },
+        "west": {
+          "uv": [
+            6.75,
+            6.125,
+            9.25,
+            9.875
+          ],
+          "texture": "#bark"
+        },
+        "up": {
+          "uv": [
+            6.75,
+            6.75,
+            9.25,
+            9.25
+          ],
+          "texture": "#end"
+        },
+        "down": {
+          "uv": [
+            6.75,
+            6.75,
+            9.25,
+            9.25
+          ],
+          "texture": "#end"
+        }
+      }
+    }
+  ]
+}

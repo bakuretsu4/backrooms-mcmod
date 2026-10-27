@@ -67,12 +67,13 @@ Backrooms. About three seconds, no cut.
 ### The way out
 
 ```
-Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Poolrooms --drain--> Level 9 --underpass--> Overworld
+Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Poolrooms --drain--> Level 39 --mill window--> Level 9 --underpass--> Overworld
 ```
 
 Secret branches: a rare sunlit archway in the Poolrooms leads to **Level 37**, whose deep pits lead
 on to Level 9; a rare moulded-clay front door on a Level 9 house opens onto **Level 94**, and a
-flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on to Level 9.
+flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on to Level 9; a very
+rare chairlift in Level 9's Crimson Field climbs into the clouds and drops you into **Level 39**.
 
 - **Level 0 (the Lobby):** thick-walled yellow maze, lit rooms and dark corridors. Arrows drawn on
   the walls point to the exit stairwell, but some of them lie. Look for the EXIT sign over a
@@ -109,7 +110,8 @@ flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on 
 - **The Poolrooms:** dim white-tiled rooms and long water channels lit by a few tubes, glowing
   cyan pools with underwater lamps and moving light ripples, and now and then a tall atrium full
   of daylight. No monsters. The way out is the drain: a dark-tiled shaft in the middle of a deep
-  pool, lit by lamps around its edge. Swim into it and it pulls you down.
+  pool, lit by lamps around its edge. Swim into it and it pulls you down into Level 39's flooded
+  tunnels.
   Somewhere (about once every 300 x 300 blocks) a dim, dry room has a **sunlit archway** in its
   north wall: a round arch lined with fine white mosaic, warm daylight pouring out of it. Walk
   into the light.
@@ -132,6 +134,21 @@ flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on 
   flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark
   forest behind the yards. Follow the green EXIT arrow signs (a few lie) to a highway underpass
   and walk into the dark.
+- **Level 39 ("Megalophobia"):** you come up out of the Poolrooms' drain into long, white
+  marble tunnels, barrel-vaulted and flooded with still turquoise water, lit by light that comes
+  from nowhere (the tunnels swallow sound). Rare iron rungs climb to hatches in the town above: a
+  foggy night town of light-blue clapboard houses from every era (1800s saltboxes, Victorians with
+  turrets, farmhouses, bungalows, Cape Cods, 1980s ranches), unpainted picket fences, dirt and rocky
+  paths, hedges, bare trees, sagging power lines, the odd lattice telephone tower or abandoned
+  park. All around it, colossal, a 1900s mill wall rises into the clouds: rows upon rows of bright
+  windows, so big it has its own weather (it rains in the town now and then), and everything you
+  do echoes off it for seconds. Loud noises can echo into an earthquake. Food and Almond Water you
+  bring vanish when you arrive. The houses hold almond water on pantry shelves, in old fridges and
+  in cellars, but the front doors are mostly locked or fake: punch through a rotten wall section
+  (it takes a few seconds, and it is loud). Some houses are wrong (see Anomalous areas). Holes in
+  the ground drop back into the tunnels. The way on is through the mill: walk into one of the
+  glowing ground-floor windows that wakes up, and survive its grab for three seconds against the
+  glass, and you noclip through it into Level 9.
 - **Level 94 ("Motion"):** reached only through a rare clay front door on a Level 9 house (about
   one unlocked house in forty). Endless rolling hills of felt grass under a painted sky with fat
   cartoon clouds, winding roads, little cream houses with red roofs (some enterable, with a CRT TV
@@ -286,6 +303,24 @@ light on and the sign over the front door.
   Look straight at it and it's gone.
 - **Level 9 events:** streetlamps die in waves; the fog rolls in thick while something enormous
   rumbles somewhere out in it.
+- **Level 39's town:** rarely, a **Hound** prowls the paths: a starved human on all fours, long
+  black hair hiding a mouth full of needle teeth. It growls before it charges (hide when you hear
+  it); hold its gaze for two seconds and it backs off for a moment, but it learns. Hit it and it
+  turns furious. **Facelings** wander between the houses: blank, mannequin-smooth faces, touching
+  where their faces should be. Most ignore you. A few walk in packs and run at you all together
+  the moment one of them sees you.
+- **Level 39's tunnels:** Hounds hunt here in numbers, faster in the water than you. **Clumps**
+  hide in the ceiling drains and side alcoves, only a few arms dangling as bait; they hunt by ear
+  (sprinting and splashing carry far), knuckles crack just before one strikes with a six-block
+  arm that reels you in. Go quiet and still when you hear that. **Wretches**, people far gone with
+  Roth syndrome, moan at the water's edge; they flee from light and noise but lash out if you
+  corner them. **Skin-stealers** stalk anyone who is alone, calling out in a garbled voice (sometimes
+  your own last chat line); look straight at one and it slinks away, walk up to it and it charges.
+- **Echo quakes (Level 39):** booms from the superstructure echo four times off the walls and can
+  build into a quake: the ground shakes, dust and coal ash fall, windows rattle. Slamming doors,
+  bells, hard landings and breaking walls add up, and enough noise sets one off.
+- **Indoor rain (Level 39):** the superstructure's own clouds rain on the town for a few minutes
+  every quarter of an hour or so.
 - **Battery:** lasts 40 minutes; flashlight and NightShot drain it faster. It recharges in the
   real world.
 - Dying in the Backrooms: *you can't escape.*
@@ -340,12 +375,25 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **Clipped houses:** Now and then two houses have grown into each other. Walls run through the middle of rooms, furniture sticks out of walls, and there are two front doors. Some of the walls in there aren't quite solid.
 - **Twin houses:** Two identical houses stand side by side. Leave one by its back door and you may find you aren't where you think you are. The front door always leads out.
 - **Grass walkways and Level 9.1:** Rarely, a paved path runs between two houses and on into the woods, getting colder as it goes, to a clearing of tall grass. Stand in the middle of the clearing and you are in the Crimson Field: endless grass at night under a red glow that pulses on the horizon. Don't walk toward the glow. To get home, follow the path back to where it started; the rare foxhole hatches in the ground lead elsewhere, one way only.
+- **The chairlift (side entrance to Level 39):** Very rarely, somewhere in the Crimson Field, you hear a cable creaking before you see it: a small frozen lift station and steel towers marching off into the fog, each taller than the last, with empty frosted chairs creeping along the line. Sit in the chair waiting at the station and it carries you up into a white-out; you can still hop off in the first second, after that the bar stays locked. Where it lets you go, you fall through the clouds into Level 39.
 
 **Level 94**
 - **Furniture drift:** The closer you get to the castle, the less of the houses is left: whole houses on the far hills, single rooms nearer in, and closest of all only heaps of furniture, which turn towards the castle when nobody is looking. Check the sinks.
 - **The wandering door:** Somewhere on the castle's plateau or inside it stands a door with no wall around it. Look away and it may be somewhere else. Everyone who walks through it ends up in the same place.
 - **The blinding hall:** Upstairs in the castle, behind the looping hall, is a hall so bright it whites out your eyes. Nothing chasing you can keep track of you in there.
 - **Supplies:** The town fountain flows with Almond Water, the water towers have a tap at their base, and every milk van has a crate of Almond Milk at its back doors.
+
+**Level 39**
+- **Hostile windows:** Most stretches of the mill wall are infested with Windows. Come within ten blocks of an inhabited ground-floor window and it wakes: the light swells and pulses, the blinds tremble, a dark long-armed shape stands behind them and coal ash drifts out. Stare and it pulls your eyes in. Linger and it shrieks and throws glass, and up close it breathes paralysing fumes; get within three blocks of the glass and it grabs you and drags you over the sill. Tear free past four and a half blocks, or survive three seconds pressed against the glass and you noclip through it (the way to Level 9). More than four people together and they stay quiet.
+- **Inverted, merged, cut and floating houses:** Some houses stand on their roofs, two houses of different eras have grown into one, some are sliced clean in half like a dollhouse, and some hover a few blocks off the ground with no foundation at all.
+- **Odd furniture:** Furniture on the walls, stacked, or hanging upside down from the ceiling.
+- **Flooded rooms:** One room of the house is filled to the ceiling with water.
+- **Bigger on the inside:** The rare house whose front door is unlocked opens onto an entry hall, and past it an endless run of rooms under a ceiling studded with bare bulbs that the house could never hold. Walk back through the hall to leave.
+- **Vanishing doors:** In some houses, a door you walk through is a wall when you turn around. It comes back once nobody is near, or after a while.
+- **Screams from the houses:** Now and then a scream comes from a house window and the colour drains from the picture. Only you hear it. It isn't real.
+- **Sounds from the holes:** If you hear scraping, then breathing, then a growl coming out of a hole in the ground, run: something is climbing up.
+- **Hydrolitis:** The rare dark stretches of tunnel, where the light orbs are out and green motes hang over a filmy surface, carry the Hydrolitis plague. Wade there and it builds up: fever and chills, then weakness, nausea and delirium. Almond water cures it.
+- **The M.E.G. survey camp:** Somewhere in each town the M.E.G.'s last expedition left a tent, crates and field notes (right-click to read). One of the crates has a false bottom.
 
 ### The camcorder picture
 
@@ -413,11 +461,18 @@ saturation, hiss and a big, empty room.
 - **Mix:** the levels' background loops sit at about the same loudness, many lamps humming
   together are turned down so their drone never buries everything else, and the music sits a
   little above the level instead of over it.
+- **Level 39 "Megalophobia"** (`client/Level39Audio`, `client/Level39QuakeEffects`): the town
+  rings like one colossal hall (the superstructure encloses it, so its echo is long and loud even
+  in the open), while the marble tunnels below swallow sound. Its own loops follow you between
+  town and tunnels; far off you hear the superstructure groan, metal doors slam with long echoes
+  and telephones ring in empty houses. Radios only garble here. Loud sounds echo and can build into a quake
+  (camera shake, rumble, dust, rattling windows); the superstructure's own climate rains on the
+  town now and then.
 
 ## Operator commands
 
 ```
-/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7
+/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7, level_39
 /backrooms time94 <day|dusk|night|dawn> jump Level 94's day/night clock (testing)
 /backrooms escape [players]             send players back to reality
 /backrooms battery [players] [percent]  set camcorder battery
@@ -425,12 +480,21 @@ saturation, hiss and a big, empty room.
 /backrooms locate saferoom              where is the nearest safe room?
 /backrooms anomaly here                 which anomalous area am I standing in?
 /backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)?
-/backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|end> [seconds]
+/backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|rain|quake|end> [seconds]
 /backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
 /backrooms sanity [players] <0-100>     set sanity (test the low-sanity effects)
 /backrooms spawn bacteria [count]       spawn Bacteria ~12 blocks in front of you (they only hunt survival players)
 /backrooms spawn smiler [count|bold]    spawn Smilers ~16 blocks in front of you (start a blackout first)
 /backrooms spawn <watcher|observer> [players]   Level 9 test spawns
+/backrooms spawn hound [count]          Level 39: Hounds ~14 blocks in front of you (they only hunt survival players)
+/backrooms spawn faceling [hostile] [count]   Level 39: Stranger Facelings, or a hostile pack (default 5)
+/backrooms spawn clump [ceiling|alcove] Level 39: a Clump in the nearest drain or alcove
+/backrooms spawn skin_stealer [hungry|fed]   Level 39: a Skin-stealer
+/backrooms spawn wretch [count]         Level 39: Wretches
+/backrooms window wake                  Level 39: wake the nearest lit facade window
+/backrooms hole stir                    Level 39: make the nearest hole start its sounds (a Hound follows)
+/backrooms hydrolitis [check|clear|set <0-1000>] [players]   Level 39: Hydrolitis infection
+/backrooms gondola ride                 Level 9: board the nearest chairlift (testing)
 ```
 
 ## Building
@@ -468,10 +532,10 @@ Keys are `[seconds, x, eye height, z, yaw, pitch]`. The HUD is hidden while reco
 | Package | What lives there |
 |---|---|
 | `world` | Level definitions, the infinite chunk generator, exits, travel, floor events, safe rooms (`SafeRooms`) |
-| `world/layout` | One floor plan per level (pure functions of seed + x/z); Level 37's plan is integer codes (`Level37Plan`) turned into blocks by `Level37Layout`; each level's anomalous areas are planned in `<Level>AnomalyPlan` |
+| `world/layout` | One floor plan per level (pure functions of seed + x/z); Level 37's plan is integer codes (`Level37Plan`) turned into blocks by `Level37Layout`; Level 39 is split into the town cell plan (`Level39Cell`, cached 128-block tiles in `Level39Tile`), houses (`Level39Houses*`, one cached voxel plan per house), the mill (`Level39Superstructure`) and the tunnels (`Level39Tunnels`, `Level39Vault`); each level's anomalous areas are planned in `<Level>AnomalyPlan` |
 | `world/anomaly` | Anomalous areas: site planner (`AnomalyGrid`), behaviour registry (`Anomalies`), server driver and client sync (`AnomalyService`), seamless teleports (`Teleports`), "is anyone looking?" (`Observation`); one sub-package per level |
 | `client/anomaly` | Client side of the anomalous areas: which sites are near (`AnomalyClientState`), per-level picture moods, sounds and overlays; one sub-package per level |
-| `entity` | The Bacteria and its spawner |
+| `entity` | The Bacteria and its spawner; Level 39's mobs (`Hound`, `Faceling`, `Clump`, `SkinStealer`, `Wretch`) and their spawning (`Level39Spawner`, `TunnelDwellers`) |
 | `camera` | Camcorder battery/flashlight/NightShot server rules, flashlight sync |
 | `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`) |
 | `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas) |
@@ -480,7 +544,7 @@ Keys are `[seconds, x, eye height, z, yaw, pitch]`. The HUD is hidden while reco
 | `client/water` | Pool water (also Level 7's sea): surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), underwater fog and its darkening with depth (`UnderwaterView`) |
 | `client/audio` | Wall muffling and room reverb through OpenAL EFX (`Acoustics`, `AcousticsEfx`); distant one-off sounds per level (`DistantAmbience`) |
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`) |
-| `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`); lets anomaly teleports update the server's movement check (`ServerGamePacketListenerAccessor`) |
+| `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`); lets anomaly teleports update the server's movement check, and keeps players held in the air (Level 39's sky arrival, window grabs, the chairlift) from being kicked for "flying" (`ServerGamePacketListenerAccessor`) |
 | `client/camera` | Handheld camera shake, roll, smoothing |
 | `client/hud` | Minimal HUD, stamina line |
 | `client/trailer` | Dev-only trailer camera and frame recorder (`TrailerRecorder`, off unless started with `-Dbackrooms.trailerDir`) |

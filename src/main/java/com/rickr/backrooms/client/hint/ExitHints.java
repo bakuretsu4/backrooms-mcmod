@@ -151,6 +151,7 @@ public final class ExitHints {
             case LEVEL_9 -> ModSounds.EXIT_HINT_LEVEL_9;
             case LEVEL_94 -> ModSounds.EXIT_HINT_LEVEL_94;
             case LEVEL_7 -> ModSounds.EXIT_HINT_LEVEL_7;
+            case LEVEL_39 -> ModSounds.EXIT_HINT_LEVEL_39;
         }).get();
     }
 

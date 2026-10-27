@@ -1,0 +1,11 @@
+{
+  "type": "backrooms:megalophobia",
+  "generator": {
+    "type": "backrooms:backrooms",
+    "level": "level_39",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "backrooms:level_39"
+    }
+  }
+}

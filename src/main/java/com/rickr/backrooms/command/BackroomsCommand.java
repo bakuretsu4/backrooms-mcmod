@@ -36,7 +36,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Operator tools for hosting sessions with friends:
  * <pre>
- * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7 (default: level_0)
+ * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7, level_39 (default: level_0)
  * /backrooms escape [targets]          send players back to reality
  * /backrooms battery [targets] [pct]   set camcorder batteries (default: full)
  * /backrooms sanity [targets] <0-100>   set sanity (for testing the low-sanity effects)
@@ -101,6 +101,9 @@ public final class BackroomsCommand {
                         .then(eventNode("lampwave", LevelEventPayload.LAMP_WAVE, 25))
                         .then(eventNode("storm", LevelEventPayload.STORM, 6))
                         .then(eventNode("water", LevelEventPayload.OBTRUSIVE_WATER, 30))
+                        // Level 39: rain from the superstructure's cloud ceiling, and a boom whose echoes build into a quake.
+                        .then(eventNode("rain", LevelEventPayload.INDOOR_RAIN, 180))
+                        .then(eventNode("quake", LevelEventPayload.ECHO_QUAKE, 12))
                         .then(Commands.literal("end").executes(ctx -> event(ctx, LevelEventPayload.NONE, 0))))
                 // Level 94 (Sky slice): jump the day/night clock to the start of a phase.
                 .then(Commands.literal("time94")
@@ -166,7 +169,7 @@ public final class BackroomsCommand {
     }
 
     private static final SimpleCommandExceptionType UNKNOWN_LEVEL = new SimpleCommandExceptionType(
-            Component.literal("Unknown level. Try level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94 or level_7."));
+            Component.literal("Unknown level. Try level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7 or level_39."));
 
     private static BackroomsLevel levelArgument(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         BackroomsLevel level = BackroomsLevel.byName(StringArgumentType.getString(ctx, "level"));

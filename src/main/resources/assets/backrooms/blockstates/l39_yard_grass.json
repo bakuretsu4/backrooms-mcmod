@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "variant=0": {
+      "model": "backrooms:block/l39_yard_grass"
+    },
+    "variant=1": {
+      "model": "backrooms:block/l39_yard_grass_v1"
+    },
+    "variant=2": {
+      "model": "backrooms:block/l39_yard_grass_v2"
+    },
+    "variant=3": {
+      "model": "backrooms:block/l39_yard_grass_v3"
+    }
+  }
+}

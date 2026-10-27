@@ -9,6 +9,8 @@ import com.rickr.backrooms.world.Hash;
 import com.rickr.backrooms.world.anomaly.AnomalyGrid;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.anomaly.level9.Level9Sites;
+import com.rickr.backrooms.world.anomaly.level39.gondola.GondolaBuild;
+import com.rickr.backrooms.world.anomaly.level39.gondola.GondolaLine;
 import com.rickr.backrooms.world.layout.LevelLayout.Column;
 import java.util.List;
 import java.util.function.Consumer;
@@ -63,15 +65,27 @@ import static com.rickr.backrooms.world.layout.Level9Layout.LW;
  * ({@code field_walkway}), so you arrive on the same path you left by; walking back to its start
  * (where a scrap of sidewalk and a dead streetlamp stand in the grass) takes you home. Foxholes
  * ({@code foxhole}, one 144x144 square in two) are rings of sandbags with a red lamp around a
- * wooden hatch in the ground. The whole region is also covered by {@code crimson_field} tiles, so
- * the client always has a site telling it to draw the field's sky, mist and sounds.
+ * wooden hatch in the ground. Rarely (one 512x512 square in three) a chairlift line
+ * ({@code gondola}) stands in the grass: a small frosted loading station and steel towers
+ * marching off into the fog, each taller than the last; its chair carries you up into the
+ * whiteout and out into Level 39's sky ({@code world/anomaly/level39/gondola}). The whole region
+ * is also covered by {@code crimson_field} tiles, so the client always has a site telling it to
+ * draw the field's sky, mist and sounds.
  */
 final class Level9AnomalyPlan {
     static final List<String> KINDS = List.of(Level9Sites.CLIPPED_HOUSES, Level9Sites.TWIN_HOUSES,
-            Level9Sites.GRASS_WALKWAY, Level9Sites.FIELD_WALKWAY, Level9Sites.FOXHOLE, Level9Sites.CRIMSON_FIELD);
+            Level9Sites.GRASS_WALKWAY, Level9Sites.FIELD_WALKWAY, Level9Sites.FOXHOLE, Level9Sites.GONDOLA,
+            Level9Sites.CRIMSON_FIELD);
 
     private static final int SUBURB_CELL = 176;
     private static final int FOXHOLE_CELL = 144;
+    /** Chairlift lines: at most one per square this big, wholly inside it (a line is ~300 long). */
+    private static final int GONDOLA_CELL = 512;
+    /** Share of field squares that have a line (only ever one in a few: it's a rare way out). */
+    private static final double GONDOLA_CHANCE = 1.0 / 3.0;
+    /** Lines keep this far inside their square, and this far from foxholes and walkways (blocks). */
+    private static final int GONDOLA_MARGIN = 16;
+    private static final int GONDOLA_CLEARANCE = 6;
     /** Search this many squares for /backrooms anomaly locate. */
     private static final int LOCATE_RINGS = 10;
     /** A walkway needs at least this much woods behind its lot (blocks). */
@@ -82,11 +96,13 @@ final class Level9AnomalyPlan {
     private final Level9Layout layout;
     private final AnomalyGrid suburb;
     private final AnomalyGrid foxholes;
+    private final AnomalyGrid gondolas;
 
     Level9AnomalyPlan(Level9Layout layout) {
         this.layout = layout;
         this.suburb = new AnomalyGrid(SUBURB_CELL, 0, this::planSuburb);
         this.foxholes = new AnomalyGrid(FOXHOLE_CELL, 0, this::planFoxhole);
+        this.gondolas = new AnomalyGrid(GONDOLA_CELL, 0, this::planGondola);
     }
 
     // ==========================================================================================
@@ -103,7 +119,11 @@ final class Level9AnomalyPlan {
             return fox;
         }
         AnomalySite walk = fieldWalkwayAt(seed, x, z);
-        return walk != null ? walk : fieldTile(x, z);
+        if (walk != null) {
+            return walk;
+        }
+        AnomalySite lift = gondolas.at(seed, x, z);
+        return lift != null ? lift : fieldTile(x, z);
     }
 
     void sitesNear(long seed, int x, int z, int radius, Consumer<AnomalySite> out) {
@@ -118,6 +138,7 @@ final class Level9AnomalyPlan {
             return;
         }
         foxholes.near(seed, x, z, radius, out);
+        gondolas.near(seed, x, z, radius, out);
         suburb.near(seed, x - Level9Sites.FIELD_DX, z, radius + Level9Sites.FIELD_START_EXTRA, site -> {
             if (site.kind().equals(Level9Sites.GRASS_WALKWAY)) {
                 AnomalySite field = Level9Sites.toField(site);
@@ -144,6 +165,9 @@ final class Level9AnomalyPlan {
         return switch (kind) {
             case Level9Sites.CRIMSON_FIELD -> fieldTile(Math.max(x, Level9Sites.FIELD_MIN_X), z);
             case Level9Sites.FOXHOLE -> foxholes.nearest(seed, Math.max(x, Level9Sites.FIELD_MIN_X + FOXHOLE_CELL), z,
+                    site -> true, LOCATE_RINGS);
+            // "gondola" works too: it's what people type, and it is the only lift there is.
+            case Level9Sites.GONDOLA, "gondola" -> gondolas.nearest(seed, Math.max(x, Level9Sites.FIELD_MIN_X + GONDOLA_CELL), z,
                     site -> true, LOCATE_RINGS);
             case Level9Sites.FIELD_WALKWAY -> {
                 AnomalySite walk = suburb.nearest(seed, suburbX, z, site -> site.kind().equals(Level9Sites.GRASS_WALKWAY), LOCATE_RINGS);
@@ -331,6 +355,77 @@ final class Level9AnomalyPlan {
         int rr = Level9Sites.FOXHOLE_RADIUS;
         return new AnomalySite(Level9Sites.FOXHOLE, ax - rr, az - rr, ax + rr, az + rr, ax, az,
                 Hash.range(Hash.mix(h ^ 3), 4), Hash.mix(h ^ 4) & 0xFFFFL);
+    }
+
+    /**
+     * A chairlift line, in one field square in three. It runs in a random compass direction from
+     * its station and must fit wholly inside its square (so lines never overlap), well clear of
+     * every foxhole and walkway (it is drawn in their place otherwise). A few placements are
+     * tried; if none is clear the square simply has no lift. The line's towers come from the salt
+     * ({@link GondolaLine}).
+     */
+    @Nullable
+    private AnomalySite planGondola(long seed, int cellX, int cellZ) {
+        int x0 = cellX * GONDOLA_CELL;
+        int z0 = cellZ * GONDOLA_CELL;
+        if (x0 < Level9Sites.FIELD_MIN_X + GONDOLA_MARGIN) {
+            return null;
+        }
+        long h = Hash.of(seed, cellX, cellZ, 7740);
+        if (Hash.unit(h) >= GONDOLA_CHANCE) {
+            return null;
+        }
+        // Positive 32-bit salt: the towers, and where in Level 39 the ride comes out.
+        long salt = Hash.mix(h ^ 0x60D0L) & 0xFFFFFFFFL;
+        for (int attempt = 0; attempt < 6; attempt++) {
+            long ha = Hash.mix(h + 0x9E3779B97F4A7C15L * (attempt + 1));
+            int facing = Hash.range(ha, 4);
+            // The rectangle the line covers if its station stood at (0, 0): shift it into the square.
+            AnomalySite shape = GondolaLine.site(0, 0, facing, salt);
+            int ax0 = x0 + GONDOLA_MARGIN - shape.minX();
+            int ax1 = x0 + GONDOLA_CELL - 1 - GONDOLA_MARGIN - shape.maxX();
+            int az0 = z0 + GONDOLA_MARGIN - shape.minZ();
+            int az1 = z0 + GONDOLA_CELL - 1 - GONDOLA_MARGIN - shape.maxZ();
+            if (ax1 < ax0 || az1 < az0) {
+                continue;
+            }
+            int ax = ax0 + Hash.range(Hash.mix(ha ^ 1), ax1 - ax0 + 1);
+            int az = az0 + Hash.range(Hash.mix(ha ^ 2), az1 - az0 + 1);
+            AnomalySite site = GondolaLine.site(ax, az, facing, salt);
+            if (!gondolaBlocked(seed, site)) {
+                return site;
+            }
+        }
+        return null;
+    }
+
+    /** True if a foxhole or a field walkway comes within GONDOLA_CLEARANCE of the line's rectangle. */
+    private boolean gondolaBlocked(long seed, AnomalySite line) {
+        int m = GONDOLA_CLEARANCE;
+        // Foxholes always lie wholly inside their own square, so these squares are all there is to check.
+        for (int cx = Math.floorDiv(line.minX() - m, FOXHOLE_CELL); cx <= Math.floorDiv(line.maxX() + m, FOXHOLE_CELL); cx++) {
+            for (int cz = Math.floorDiv(line.minZ() - m, FOXHOLE_CELL); cz <= Math.floorDiv(line.maxZ() + m, FOXHOLE_CELL); cz++) {
+                AnomalySite fox = foxholes.site(seed, cx, cz);
+                if (fox != null && overlaps(line, fox, m)) {
+                    return true;
+                }
+            }
+        }
+        int cx = (line.minX() + line.maxX()) / 2;
+        int cz = (line.minZ() + line.maxZ()) / 2;
+        int radius = Math.max(line.maxX() - line.minX(), line.maxZ() - line.minZ()) / 2 + 1 + m + Level9Sites.FIELD_START_EXTRA;
+        boolean[] clash = {false};
+        suburb.near(seed, cx - Level9Sites.FIELD_DX, cz, radius, site -> {
+            if (site.kind().equals(Level9Sites.GRASS_WALKWAY) && overlaps(line, Level9Sites.toField(site), m)) {
+                clash[0] = true;
+            }
+        });
+        return clash[0];
+    }
+
+    private static boolean overlaps(AnomalySite a, AnomalySite b, int margin) {
+        return a.minX() - margin <= b.maxX() && b.minX() <= a.maxX() + margin
+                && a.minZ() - margin <= b.maxZ() && b.minZ() <= a.maxZ() + margin;
     }
 
     // ==========================================================================================
@@ -745,7 +840,7 @@ final class Level9AnomalyPlan {
     // Blocks: the Crimson Field
     // ==========================================================================================
 
-    /** One column of Level 9.1: ground, knee-to-waist-high grass, and the odd walkway or foxhole. */
+    /** One column of Level 9.1: ground, knee-to-waist-high grass, and the odd walkway, foxhole or lift. */
     void fillField(long seed, int x, int z, Column out) {
         BlockState ground = ModBlocks.LAWN_GRASS.get().defaultBlockState();
         out.set(FLOOR_Y, ground);
@@ -758,6 +853,10 @@ final class Level9AnomalyPlan {
         if (fox != null) {
             fillFoxhole(fox, x, z, out);
             return;
+        }
+        AnomalySite lift = gondolas.at(seed, x, z);
+        if (lift != null && GondolaBuild.fill(lift, x, z, out)) {
+            return; // the station, or a tower's pier and braces (grass grows between the towers)
         }
         if (Hash.unit(seed, x, z, 7710) < 0.92) {
             out.set(FLOOR_Y + 2, ModBlocks.L9_FIELD_GRASS.get().defaultBlockState());

@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l39_stagnant_film"
+      },
+      {
+        "model": "backrooms:block/l39_stagnant_film",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l39_stagnant_film",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l39_stagnant_film",
+        "y": 270
+      }
+    ]
+  }
+}

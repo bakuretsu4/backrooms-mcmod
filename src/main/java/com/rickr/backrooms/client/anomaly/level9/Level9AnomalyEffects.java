@@ -40,6 +40,7 @@ public final class Level9AnomalyEffects {
         AnomalyClientEffects.register(Level9Sites.GRASS_WALKWAY, Level9AnomalyEffects::walkway);
         AnomalyClientEffects.register(Level9Sites.CRIMSON_FIELD, Level9AnomalyEffects::field);
         AnomalyClientEffects.register(Level9Sites.CLIPPED_HOUSES, Level9AnomalyEffects::clipped);
+        AnomalyClientEffects.register(Level9Sites.GONDOLA, com.rickr.backrooms.client.anomaly.level39.gondola.GondolaSiteEffect::tick);
     }
 
     /**

@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/l39_clothesline_post"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l39_clothesline_post",
+      "y": 90
+    }
+  }
+}

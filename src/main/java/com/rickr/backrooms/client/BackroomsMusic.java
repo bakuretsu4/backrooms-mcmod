@@ -20,7 +20,8 @@ import net.neoforged.neoforge.client.event.SelectMusicEvent;
  *   <li><b>In the Backrooms:</b> instead of the vanilla game music, now and then one of our own
  *       pieces, with long silences in between like Minecraft's music: the theme or the dark
  *       ambient piece in most levels, the dreamy piece (or the theme) in the Poolrooms and
- *       Level 37. Level 94 has none: its siren poles play their own tune.</li>
+ *       Level 37. Level 94 has none: its siren poles play their own tune. Level 39 is meant to be
+ *       quiet and huge: only the dark piece, and only every 10 to 25 minutes.</li>
  *   <li><b>Real world:</b> vanilla music as normal.</li>
  * </ul>
  *
@@ -39,6 +40,8 @@ public final class BackroomsMusic {
      */
     private static final Music LEVELS = new Music(ModSounds.MUSIC_BACKROOMS, 3600, 9600, true);
     private static final Music DREAM = new Music(ModSounds.MUSIC_DREAM, 3600, 9600, true);
+    /** Level 39: very rare; the echoing silence of the town is the soundtrack. */
+    private static final Music RARE = new Music(ModSounds.MUSIC_BACKROOMS, 12000, 30000, true);
 
     @SubscribeEvent
     public static void onSelectMusic(SelectMusicEvent event) {
@@ -55,6 +58,7 @@ public final class BackroomsMusic {
             event.setMusic(switch (floor) {
                 case LEVEL_94, LEVEL_7 -> null;
                 case POOLROOMS, LEVEL_37 -> DREAM;
+                case LEVEL_39 -> RARE;
                 default -> LEVELS;
             });
             return;

@@ -26,6 +26,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
+import com.rickr.backrooms.client.Level39Lights;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -307,6 +308,10 @@ public final class BackroomsLights {
 
     private static void rebuild(ClientLevel level, BlockPos center) {
         List<FixtureLight> built = FixtureClusters.build(INDEX, level, center.getX(), center.getZ(), BUILD_RANGE);
+        if (BackroomsLevel.fromDimension(level.dimension()) == BackroomsLevel.LEVEL_39) {
+            // Level 39's facade windows are lit from its bay grid, not from blocks (far too many).
+            Level39Lights.addFacadeLights(built, center.getX(), center.getZ());
+        }
         // Carry the flicker state over so a rebuild mid-flicker doesn't click every lamp.
         Long2ObjectOpenHashMap<FixtureLight> old = new Long2ObjectOpenHashMap<>(lights.size());
         for (FixtureLight light : lights) {

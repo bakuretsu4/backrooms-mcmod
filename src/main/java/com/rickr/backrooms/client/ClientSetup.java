@@ -52,6 +52,13 @@ public final class ClientSetup {
         event.registerEntityRenderer(ModEntities.OBSERVER.get(), ObserverRenderer::new);
         // Blackouts on Levels 0-2: a glowing face drawn as a billboard.
         event.registerEntityRenderer(ModEntities.SMILER.get(), SmilerRenderer::new);
+        // Level 39: Hounds (tunnels) and Facelings (town), code-built models.
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level39Mobs.HOUND.get(), HoundRenderer::new);
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level39Mobs.FACELING.get(), FacelingRenderer::new);
+        // Level 39 tunnels: Clumps, Skin-stealers and Wretches, code-built models.
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level39Mobs.CLUMP.get(), ClumpRenderer::new);
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level39Mobs.SKIN_STEALER.get(), SkinStealerRenderer::new);
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level39Mobs.WRETCH.get(), WretchRenderer::new);
         // Level 94: parked cars and milk vans, drawn whole by their anchor block's renderer.
         event.registerBlockEntityRenderer(ModBlockEntities.L94_VEHICLE.get(), VehicleRenderer::new);
     }
@@ -60,6 +67,13 @@ public final class ClientSetup {
     public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(BacteriaModel.LAYER, BacteriaModel::createBodyLayer);
         event.registerLayerDefinition(SmilerModel.LAYER, SmilerModel::createLayer);
+        // Level 39 Hounds and Facelings.
+        event.registerLayerDefinition(HoundModel.LAYER, HoundModel::createBodyLayer);
+        event.registerLayerDefinition(FacelingModel.LAYER, FacelingModel::createBodyLayer);
+        // Level 39 Clumps, Skin-stealers and Wretches.
+        event.registerLayerDefinition(ClumpModel.LAYER, ClumpModel::createLayer);
+        event.registerLayerDefinition(SkinStealerModel.LAYER, SkinStealerModel::createLayer);
+        event.registerLayerDefinition(WretchModel.LAYER, WretchModel::createLayer);
         // Level 94 vehicles (Props slice).
         event.registerLayerDefinition(VehicleModel.CAR_LAYER, VehicleModel::createCarLayer);
         event.registerLayerDefinition(VehicleModel.VAN_LAYER, VehicleModel::createVanLayer);

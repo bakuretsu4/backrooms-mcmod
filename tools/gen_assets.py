@@ -7773,6 +7773,12 @@ def _wallpaper_marks(i, rng, img):
     return mark_damp(img, rng, (24, 16), 0.12, (0.9, 1.0, 1.25), y_range=(0.55, 1.0))   # damp creeping up from the carpet
 
 
+def _l39w():
+    """Level 39 world textures live in anomaly_assets/level39.py (imported lazily: it imports this file)."""
+    import anomaly_assets.level39 as m
+    return m
+
+
 # name: (base image, marks for version i (1..n-1), n = number of versions incl. the plain one).
 # n must match the number of weights the block gets in ModBlocks (block/SurfaceBlock), which also
 # decides how often each version is used.
@@ -7812,6 +7818,13 @@ SURFACE_VARIANTS = {
         mark_crack(img, rng, 28, (40, 60), 3) if i == 1 else
         mark_patch(img, rng, (44, 44, 48)) if i == 2 else
         mark_damp(img, rng, (18, 14), 0.3, (1.0, 0.97, 0.9))), 4),
+    "l39_yard_grass": (lambda: _l39w().yard_grass_base(), lambda i, rng, img: _l39w().yard_grass_marks(i, rng, img), 4),
+    "l39_yard_dirt": (lambda: _l39w().yard_dirt_base(), lambda i, rng, img: _l39w().yard_dirt_marks(i, rng, img), 3),
+    "l39_path_dirt": (lambda: _l39w().path_dirt_base(), lambda i, rng, img: _l39w().path_dirt_marks(i, rng, img), 4),
+    "l39_path_gravel": (lambda: _l39w().path_gravel_base(), lambda i, rng, img: _l39w().path_gravel_marks(i, rng, img), 3),
+    "l39_clapboard": (lambda: _l39w().clapboard_base(), lambda i, rng, img: _l39w().clapboard_marks(i, rng, img), 4),
+    "l39_mill_brick": (lambda: _l39w().mill_brick_base(), lambda i, rng, img: _l39w().mill_brick_marks(i, rng, img), 4),
+    "l39_marble": (lambda: _l39w().marble_base(), lambda i, rng, img: _l39w().marble_marks(i, rng, img), 4),
 }
 
 

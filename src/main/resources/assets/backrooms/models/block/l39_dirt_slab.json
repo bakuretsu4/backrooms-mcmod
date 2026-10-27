@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "backrooms:block/l39_yard_dirt",
+    "top": "backrooms:block/l39_yard_dirt",
+    "side": "backrooms:block/l39_yard_dirt"
+  }
+}

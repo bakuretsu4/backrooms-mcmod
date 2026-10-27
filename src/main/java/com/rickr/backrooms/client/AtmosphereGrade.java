@@ -90,6 +90,29 @@ public final class AtmosphereGrade {
     private static final Mood LEVEL_94_NIGHT = new Mood(1.0f, 1.04f, 0.80f, 0.86f, 0.92f, 1.12f, 1.02f, 1.0f, 0.94f,
             0.008f, 0.010f, 0.022f, 0.05f, 0.06f, 0.10f, 14.0f, 0.020f, 0.40f, 0.30f, 0.20f, 0.010f);
     /**
+     * Level 39 in mid-town: the 1940s night photo. Almost no colour, cool blue-grey shadows,
+     * slightly cool highlights, luminous grey air, a lifted black (moody but clearly readable)
+     * and a soft glow so the windows bloom.
+     */
+    private static final Mood LEVEL_39_TOWN = new Mood(1.08f, 1.04f, 0.72f, 0.92f, 0.96f, 1.06f, 1.0f, 1.0f, 1.02f,
+            0.028f, 0.030f, 0.036f, 0.26f, 0.27f, 0.29f, 12.0f, 0.016f, 0.34f, 0.30f, 0.22f, 0.010f);
+    /**
+     * Level 39 right under the superstructure: the air itself lit pale silver by the windows. Less
+     * glow and haze than one would think: up close the brick, stone and muntins must stay crisp.
+     */
+    private static final Mood LEVEL_39_FACADE = new Mood(1.0f, 1.06f, 0.70f, 0.92f, 0.96f, 1.06f, 0.98f, 0.99f, 1.01f,
+            0.030f, 0.031f, 0.035f, 0.55f, 0.57f, 0.60f, 14.0f, 0.012f, 0.30f, 0.30f, 0.12f, 0.010f);
+    /**
+     * Level 39's tunnels (tunnel.png): bright, clean and still. White marble that keeps its
+     * blue-grey veins (a touch under neutral exposure, a little more contrast), vivid turquoise
+     * water (extra colour), pale turquoise air, little bloom so the vault doesn't clip.
+     */
+    private static final Mood LEVEL_39_TUNNEL = new Mood(0.94f, 1.05f, 1.12f, 0.92f, 1.0f, 1.03f, 0.98f, 1.0f, 1.01f,
+            0.024f, 0.030f, 0.032f, 0.46f, 0.60f, 0.62f, 18.0f, 0.010f, 0.18f, 0.26f, 0.10f, 0.006f);
+    /** A stagnant (Hydrolitis) tunnel segment: orbs dead, sick green-black air. */
+    private static final Mood LEVEL_39_STAGNANT = new Mood(0.98f, 1.08f, 0.80f, 0.90f, 1.04f, 0.94f, 0.98f, 1.02f, 0.94f,
+            0.008f, 0.012f, 0.010f, 0.05f, 0.09f, 0.07f, 4.0f, 0.040f, 0.45f, 0.40f, 0.18f, 0.012f);
+    /**
      * Level 7 above the water: the fog of bone dust. Colour almost gone, cold grey shadows, and a
      * thick pale haze that swallows the sea a few dozen blocks out.
      */
@@ -139,6 +162,10 @@ public final class AtmosphereGrade {
             case POOLROOMS -> POOLROOMS;
             case LEVEL_37 -> LEVEL_37;
             case LEVEL_9 -> LEVEL_9;
+            // Level 39: town (cold grey, silvering toward the facades), tunnels (bright turquoise),
+            // stagnant segments (dark green), following where you are.
+            case LEVEL_39 -> LEVEL_39_TOWN.lerp(LEVEL_39_FACADE, Level39Atmosphere.proximity() * Level39Atmosphere.proximity())
+                    .lerp(LEVEL_39_TUNNEL.lerp(LEVEL_39_STAGNANT, Level39Atmosphere.stagnant()), Level39Atmosphere.tunnel());
             case LEVEL_94 -> mc.level == null ? LEVEL_94_DAY : LEVEL_94_NIGHT.lerp(LEVEL_94_DAY, Level94Clock.daylight(mc.level, 0.0f));
             // Level 7: the haze changes with your depth (Level7Client measures it).
             case LEVEL_7 -> !Level7Client.underwater() ? LEVEL_7_AIR : LEVEL_7_WATER.lerp(LEVEL_7_DEEP, Level7Client.deepness());

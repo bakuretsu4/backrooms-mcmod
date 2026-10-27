@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/l39_swing_bar"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l39_swing_bar",
+      "y": 90
+    }
+  }
+}

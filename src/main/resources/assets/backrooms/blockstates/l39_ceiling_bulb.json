@@ -1,0 +1,18 @@
+{
+  "variants": {
+    "hanging=false,lit=false": {
+      "model": "backrooms:block/l39_ceiling_bulb",
+      "x": 180
+    },
+    "hanging=true,lit=false": {
+      "model": "backrooms:block/l39_ceiling_bulb"
+    },
+    "hanging=false,lit=true": {
+      "model": "backrooms:block/l39_ceiling_bulb_lit",
+      "x": 180
+    },
+    "hanging=true,lit=true": {
+      "model": "backrooms:block/l39_ceiling_bulb_lit"
+    }
+  }
+}
