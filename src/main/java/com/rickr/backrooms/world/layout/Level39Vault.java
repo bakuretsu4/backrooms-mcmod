@@ -1,8 +1,16 @@
 package com.rickr.backrooms.world.layout;
 
 import com.rickr.backrooms.block.DomeBlock;
+import com.rickr.backrooms.block.JunctionBlock;
 import com.rickr.backrooms.block.VaultBlock;
 import com.rickr.backrooms.registry.Level39Blocks;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.util.BitSet;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -16,7 +24,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * radius {@value #DOME_WALL} to its wall. The same formulas generate the piece models in
  * tools/anomaly_assets/level39.py, so piece and model always agree.
  *
- * <p>Each cell is AIR (wholly under the curve), SOLID (wholly over it) or a piece.
+ * <p>Each cell is AIR (wholly under the curve), SOLID (wholly over it) or a piece. Where a run's
+ * barrel comes into a chamber, the cells both curves cross get a {@link JunctionBlock} piece
+ * meshed from the true meeting of the two (see {@link #junctionPiece}).
  */
 final class Level39Vault {
     /** Height of the barrel vault's centre (the springing line of the arc). */
@@ -34,6 +44,13 @@ final class Level39Vault {
     static final int AIR = 0;
     static final int SOLID = 1;
     static final int PIECE = 2;
+
+    /**
+     * The cells (by {@link JunctionBlock} PIECE) where a run's barrel meeting a chamber's dome
+     * needs its own piece. Worked out by tools/anomaly_assets/level39.py with the models, so the
+     * pieces placed here always have a model.
+     */
+    private static final BitSet JUNCTION_CELLS = loadJunctionCells();
 
     private Level39Vault() {}
 
@@ -117,6 +134,68 @@ final class Level39Vault {
         return Level39Blocks.DOME.get().defaultBlockState()
                 .setValue(DomeBlock.FACING, facing)
                 .setValue(DomeBlock.PIECE, (a * 9 + b) * 10 + row);
+    }
+
+    /**
+     * The junction piece for the cell (dx, dz) from a chamber's centre, for the run that leaves
+     * the chamber toward {@code run}, or null if the plain vault and dome pieces are right there.
+     */
+    static BlockState junctionPiece(Direction run, int dx, int dz, int row) {
+        // Turn (dx, dz) back into the frame where the run leaves toward SOUTH (as DomePiece does).
+        int across;
+        int along;
+        switch (run) {
+            case SOUTH -> {
+                across = dx;
+                along = dz;
+            }
+            case WEST -> {
+                across = dz;
+                along = -dx;
+            }
+            case NORTH -> {
+                across = -dx;
+                along = -dz;
+            }
+            default -> {
+                across = -dz;
+                along = dx;
+            }
+        }
+        if (along < 4 || along > 8 || across < -4 || across > 4 || row < 0 || row > 9) {
+            return null;
+        }
+        int piece = ((along - 4) * 9 + across + 4) * 10 + row;
+        if (!JUNCTION_CELLS.get(piece)) {
+            return null;
+        }
+        return Level39Blocks.JUNCTION.get().defaultBlockState()
+                .setValue(JunctionBlock.FACING, run)
+                .setValue(JunctionBlock.PIECE, piece);
+    }
+
+    private static BitSet loadJunctionCells() {
+        BitSet cells = new BitSet(JunctionBlock.PIECES);
+        String path = "/data/backrooms/level39/junction_cells.txt";
+        try (InputStream in = Level39Vault.class.getResourceAsStream(path)) {
+            if (in == null) {
+                throw new IllegalStateException("missing " + path);
+            }
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+            for (String line; (line = reader.readLine()) != null; ) {
+                if (line.isBlank() || line.startsWith("#")) {
+                    continue;
+                }
+                String[] parts = line.trim().split("\\s+");
+                int across = Integer.parseInt(parts[0]);
+                int along = Integer.parseInt(parts[1]);
+                int row = Integer.parseInt(parts[2]);
+                cells.set(((along - 4) * 9 + across + 4) * 10 + row);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return cells;
     }
 
     /** The (a, b) a cell (dx, dz) turns into (see {@link #domePiece}); returns a * 16 + b. */

@@ -1610,6 +1610,7 @@ def tex_l39_world_models() -> None:
     _window_models()
     _vault_models()
     _dome_models()
+    _junction_models()
     _hole_models()
 
     # Tile edge: north = navy tile face toward the water, up = rim with the dark-blue line on its north edge.
@@ -2245,6 +2246,165 @@ def _dome_models() -> None:
                     variants[f"facing={facing},piece={piece}"] = {"model": f"backrooms:block/l39/dome/{name}"}
     _state("l39_dome", variants, compact=True)
     _item_block("l39_dome", "l39/dome/dome_south_3_3_8")
+
+
+# ---- Junction pieces: where a run's barrel vault comes into a domed chamber ----------------
+# Seen from the chamber, the barrel (a half cylinder) cuts into the dome (a sphere): the true
+# surface is their union, meeting in a sharp crease. Built block by block from the two separate
+# piece sets, that crease came out as a saw-tooth ring of steps round every arch, with odd bright
+# and dark faces where pieces were cut off. These cells get their own pieces, meshed from the exact
+# union. Canonical: the run leaves the chamber toward +z (SOUTH); `across` = x offset from the
+# chamber's centre, `along` = z offset; FACING turns it like the dome (WEST = run toward -x...).
+JUNCTION_ALONG = range(4, 9)                 # 4..8 blocks from the centre along the run
+JUNCTION_ACROSS = range(-4, 5)               # inside the barrel's half-width (4.5)
+JUNCTION_ROWS = range(10)
+JUNCTION_SAMPLES = 9                          # per axis, for deciding which cells need a piece
+JUNCTION_MESH = 16                            # marching-cubes cells per block
+
+
+def _sdf_barrel(X, Y, Z):
+    """> 0 inside the barrel's air (run along z through x = 0), same shape as Level39Vault."""
+    above = Y >= VAULT_Y0
+    d_arc = VAULT_R - np.sqrt(X * X + (Y - VAULT_Y0) ** 2)
+    d_wall = VAULT_R - np.abs(X)
+    return np.where(above, d_arc, d_wall)
+
+
+def _sdf_dome(X, Y, Z):
+    """> 0 inside the chamber's air: under the sphere and inside its round wall."""
+    r = np.sqrt(X * X + Z * Z)
+    return np.minimum(DOME_R - np.sqrt(X * X + Z * Z + (Y - DOME_Y0) ** 2), DOME_WALL - r)
+
+
+def junction_cells() -> list:
+    """(across, along, row) of every cell where the union is neither the barrel's nor the dome's
+    shape alone. The same list is written for the Java side (data/backrooms/level39/junction_cells.txt)."""
+    k = (np.arange(JUNCTION_SAMPLES) + 0.5) / JUNCTION_SAMPLES
+    gx, gy, gz = np.meshgrid(k, k, k, indexing="ij")
+    cells = []
+    for along in JUNCTION_ALONG:
+        for across in JUNCTION_ACROSS:
+            for row in JUNCTION_ROWS:
+                X, Y, Z = across - 0.5 + gx, BASE_Y + row + gy, along - 0.5 + gz
+                fb, fd = _sdf_barrel(X, Y, Z) > 0, _sdf_dome(X, Y, Z) > 0
+                union = fb | fd
+                if union.all() or not union.any():
+                    continue
+                if (union != fb).any() and (union != fd).any():
+                    cells.append((across, along, row))
+    return cells
+
+
+def junction_piece_index(across: int, along: int, row: int) -> int:
+    return ((along - JUNCTION_ALONG.start) * len(JUNCTION_ACROSS) + (across - JUNCTION_ACROSS.start)) * len(JUNCTION_ROWS) + row
+
+
+def _junction_faces(across: int, along: int, row: int):
+    """The cell's solid (marble outside the union's air) as triangles in block-local coordinates,
+    with normals: smooth on the curves (the surface each triangle lies on), flat on the cell's faces."""
+    from skimage.measure import marching_cubes
+    n, pad = JUNCTION_MESH, 1
+    s = (np.arange(-pad, n + pad + 1)) / n
+    gx, gy, gz = np.meshgrid(s, s, s, indexing="ij")
+    X, Y, Z = across - 0.5 + gx, BASE_Y + row + gy, along - 0.5 + gz
+    f = np.maximum(_sdf_barrel(X, Y, Z), _sdf_dome(X, Y, Z))        # > 0 in air
+    outside = (gx < 0) | (gx > 1) | (gy < 0) | (gy > 1) | (gz < 0) | (gz > 1)
+    f = np.where(outside, 1.0 / n, f)                                   # air round the cell closes the solid
+    verts, tris, _, _ = marching_cubes(-f, level=0.0, spacing=(1.0 / n,) * 3)
+    verts = np.clip(verts - pad / n, 0.0, 1.0)
+    faces = []
+    eps = 1e-6
+    caps = {}                                   # (axis, 0 or 1) -> the flat triangles on that face
+    for tri in tris:
+        ps = [tuple(verts[i]) for i in tri]
+        P = np.array(ps)
+        cap = None
+        for ax in range(3):
+            for val in (0.0, 1.0):
+                if np.all(np.abs(P[:, ax] - val) < eps):
+                    cap = (ax, val)
+        if cap is not None:
+            caps.setdefault(cap, []).append(P)
+            continue
+        else:
+            W = P + np.array([across - 0.5, BASE_Y + row, along - 0.5])
+            c = W.mean(axis=0)
+            on_barrel = _sdf_barrel(*c) < _sdf_dome(*c)                # the surface the solid follows here
+            ns = []
+            for x, y, z in W:
+                if on_barrel:
+                    g = (-x, -(y - VAULT_Y0), 0.0) if y >= VAULT_Y0 else (-np.sign(x), 0.0, 0.0)
+                elif DOME_R - np.sqrt(x * x + z * z + (y - DOME_Y0) ** 2) < DOME_WALL - np.sqrt(x * x + z * z):
+                    g = (-x, -(y - DOME_Y0), -z)
+                else:
+                    g = (-x, 0.0, -z)
+                g = np.array(g, float)
+                ns.append(tuple(g / (np.linalg.norm(g) + 1e-12)))
+        a_, b_, c_ = (np.array(p) for p in ps)
+        if np.dot(np.cross(b_ - a_, c_ - a_), np.mean(ns, axis=0)) < 0:
+            ps, ns = ps[::-1], ns[::-1]
+        if np.linalg.norm(np.cross(np.array(ps[1]) - ps[0], np.array(ps[2]) - ps[0])) < 1e-10:
+            continue
+        faces.append((ps, ns))
+    # Marching cubes cuts the flat faces into hundreds of tiny triangles; merge each face's into one
+    # outline and fill that with as few triangles as its corners need (same edge points, no cracks).
+    from shapely import constrained_delaunay_triangles
+    from shapely.geometry import Polygon
+    from shapely.ops import unary_union
+    for (ax, val), tris2 in caps.items():
+        u, v = [k for k in range(3) if k != ax]
+        region = unary_union([Polygon([(p[u], p[v]) for p in tri2]) for tri2 in tris2]).buffer(0)
+        nrm = [0.0, 0.0, 0.0]
+        nrm[ax] = -1.0 if val == 0.0 else 1.0
+        for tri2 in constrained_delaunay_triangles(region).geoms:
+            ps = []
+            for cu, cv in list(tri2.exterior.coords)[:3]:
+                p = [0.0, 0.0, 0.0]
+                p[ax], p[u], p[v] = val, cu, cv
+                ps.append(tuple(p))
+            a_, b_, c_ = (np.array(p) for p in ps)
+            cr = np.cross(b_ - a_, c_ - a_)
+            if np.linalg.norm(cr) < 1e-10:
+                continue
+            if np.dot(cr, nrm) < 0:
+                ps = ps[::-1]
+            faces.append((ps, [tuple(nrm)] * 3))
+    return faces
+
+
+def _junction_models() -> None:
+    """Junction pieces (block/JunctionBlock: facing, piece) as OBJ meshes, plus the cell list."""
+    folder = ASSETS / "models" / "block" / "l39" / "junction"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "l39_marble.mtl").write_text("newmtl marble\nKd 1.0 1.0 1.0\nmap_Kd #marble\n", newline="\n")
+    cells = junction_cells()
+    keep = {junction_piece_index(*cell) for cell in cells}
+    variants = {}
+    total = len(JUNCTION_ALONG) * len(JUNCTION_ACROSS) * len(JUNCTION_ROWS)
+    for piece in range(total):
+        if piece not in keep:
+            for facing, _ in CURVE_ROT:
+                variants[f"facing={facing},piece={piece}"] = {"model": _ref("l39_marble")}
+    for across, along, row in cells:
+        piece = junction_piece_index(across, along, row)
+        canon = _junction_faces(across, along, row)
+        for facing, turns in CURVE_ROT:
+            faces = []
+            for ps, ns in canon:
+                wps = [_turn(p, turns) for p in ps]
+                wns = [_turn(nv, turns, 0.0) for nv in ns]
+                tri_n = np.cross(np.array(wps[1]) - wps[0], np.array(wps[2]) - wps[0])
+                faces.append((wps, wns, [_planar_uv(p, tri_n) for p in wps], [_shade(nv) for nv in wns]))
+            name = f"junction_{facing}_{across + 4}_{along}_{row}"
+            _write_obj(folder, name, faces)
+            variants[f"facing={facing},piece={piece}"] = {"model": f"backrooms:block/l39/junction/{name}"}
+    _state("l39_junction", variants, compact=True)
+    _item_block("l39_junction", f"l39/junction/junction_south_{cells[0][0] + 4}_{cells[0][1]}_{cells[0][2]}")
+    table = ASSETS.parent.parent / "data" / "backrooms" / "level39" / "junction_cells.txt"
+    table.parent.mkdir(parents=True, exist_ok=True)
+    table.write_text("# across along row: cells that use a junction piece (tools/anomaly_assets/level39.py)\n"
+                     + "".join(f"{a} {b} {r}\n" for a, b, r in cells), newline="\n")
+    print(f"  junction pieces: {len(cells)}")
 
 
 def _hole_models() -> None:

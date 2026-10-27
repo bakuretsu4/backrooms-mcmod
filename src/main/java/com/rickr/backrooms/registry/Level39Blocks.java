@@ -2,6 +2,7 @@ package com.rickr.backrooms.registry;
 
 import com.rickr.backrooms.block.AxisShapeBlock;
 import com.rickr.backrooms.block.DomeBlock;
+import com.rickr.backrooms.block.JunctionBlock;
 import com.rickr.backrooms.block.FieldGrassBlock;
 import com.rickr.backrooms.block.FurnitureBlock;
 import com.rickr.backrooms.block.HouseDoorBlock;
@@ -272,6 +273,9 @@ public final class Level39Blocks {
     /** Pieces of the round wall and dome of the junction chambers (see block/DomeBlock). */
     public static final DeferredBlock<DomeBlock> DOME = block("l39_dome", DomeBlock::new,
             unbreakable(MapColor.QUARTZ, SoundType.STONE).noOcclusion());
+    /** Where a run's barrel vault meets a chamber's dome (see block/JunctionBlock). */
+    public static final DeferredBlock<JunctionBlock> JUNCTION = block("l39_junction", JunctionBlock::new,
+            unbreakable(MapColor.QUARTZ, SoundType.STONE).noOcclusion());
     /** The plain white panelled doors in the round-arched wall at a dead end (always locked). */
     public static final DeferredBlock<HouseDoorBlock> PANEL_DOOR = block("l39_panel_door",
             props -> new HouseDoorBlock(BlockSetType.OAK, props), unbreakable(MapColor.SNOW, SoundType.WOOD).noOcclusion());
@@ -305,7 +309,7 @@ public final class Level39Blocks {
                 MILL_BRICK, MILL_BRICK_SOOTY, MILL_BRICK_BLACK, MASS, ROOF_TAR, GRANITE, GRANITE_STAIRS, MILL_WINDOW, TOWER_WINDOW,
                 BOARDED_WINDOW, BRICKED_WINDOW,
                 GALLERY_PANEL, GALLERY_LIGHT, GALLERY_FLOOR,
-                MARBLE, MARBLE_STAINED, TILE_RIM, TILE_EDGE, TILE_FLOOR, VAULT, DOME, HATCH, RUNGS, ORB_LIGHT, STAGNANT_FILM, DRAIN_LINING}) {
+                MARBLE, MARBLE_STAINED, TILE_RIM, TILE_EDGE, TILE_FLOOR, VAULT, DOME, JUNCTION, HATCH, RUNGS, ORB_LIGHT, STAGNANT_FILM, DRAIN_LINING}) {
             ModItems.ITEMS.registerSimpleBlockItem(block);
         }
         ModItems.ITEMS.registerItem("l39_house_door", props -> new DoubleHighBlockItem(HOUSE_DOOR.get(), props), new Item.Properties());

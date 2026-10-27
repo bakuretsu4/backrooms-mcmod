@@ -4,7 +4,8 @@ Generates every binary texture (PNG) and sound (mono 44.1 kHz
 OGG Vorbis) used by the mod. Fully deterministic: every asset uses its own fixed
 RNG seed, so re-running produces identical output.
 
-Requirements: numpy, Pillow, soundfile (libsndfile with OGG/Vorbis support).
+Requirements: numpy, Pillow, soundfile (libsndfile with OGG/Vorbis support); for the
+Level 39 junction pieces also scikit-image and shapely.
 
 Usage:  python tools/gen_assets.py [name_filter ...]
         (filters: only run generators whose function name contains one of them)

@@ -543,6 +543,10 @@ public final class Level39Tunnels {
      */
     @Nullable
     private static BlockState ceilingCell(Level39Tile tile, int x, int z, int row) {
+        BlockState junction = junctionCell(tile, x, z, row);
+        if (junction != null) {
+            return junction;
+        }
         Level39Cell cell = tile.cell;
         BlockState piece = null;
         double pieceHeight = Double.NEGATIVE_INFINITY;
@@ -591,6 +595,44 @@ public final class Level39Tunnels {
             }
         }
         return piece != null ? piece : Level39Blocks.MARBLE.get().defaultBlockState();
+    }
+
+    /**
+     * A junction piece where a run comes into a chamber (see {@code Level39Vault.junctionPiece}),
+     * or null. Only the run along the cell's own side matters: the others are under the dome there.
+     */
+    @Nullable
+    private static BlockState junctionCell(Level39Tile tile, int x, int z, int row) {
+        Level39Cell cell = tile.cell;
+        for (int n : tile.nodes) {
+            Level39Cell.Node node = cell.nodes[n];
+            int dx = x - node.x();
+            int dz = z - node.z();
+            if (node.degree() < 3 || Math.abs(dx) > 8 || Math.abs(dz) > 8) {
+                continue;
+            }
+            for (int s : tile.segs) {
+                Level39Cell.Seg seg = cell.segs[s];
+                int at = seg.alongX() ? node.x() : node.z();
+                if (seg.fixed() != (seg.alongX() ? node.z() : node.x()) || at < seg.a() || at > seg.b()) {
+                    continue;
+                }
+                // the run leaves the chamber on each side the segment carries on past the node
+                if (seg.b() > at) {
+                    BlockState piece = Level39Vault.junctionPiece(seg.alongX() ? Direction.EAST : Direction.SOUTH, dx, dz, row);
+                    if (piece != null) {
+                        return piece;
+                    }
+                }
+                if (seg.a() < at) {
+                    BlockState piece = Level39Vault.junctionPiece(seg.alongX() ? Direction.WEST : Direction.NORTH, dx, dz, row);
+                    if (piece != null) {
+                        return piece;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /** The access shafts of this tile that stand in column (x, z): rungs up to a hatch. */

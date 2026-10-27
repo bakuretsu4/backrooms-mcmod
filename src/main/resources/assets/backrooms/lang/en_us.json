@@ -955,5 +955,6 @@
   "block.backrooms.l1_convex_mirror": "Convex Safety Mirror",
   "block.backrooms.l1_rack_upright": "Pallet Rack Upright",
   "block.backrooms.l1_rack_bay": "Pallet Rack Slot",
-  "block.backrooms.stairwell_step": "Stairwell Step"
+  "block.backrooms.stairwell_step": "Stairwell Step",
+  "block.backrooms.l39_junction": "Marble Vault Junction"
 }
