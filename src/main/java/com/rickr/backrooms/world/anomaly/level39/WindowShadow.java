@@ -2,6 +2,7 @@ package com.rickr.backrooms.world.anomaly.level39;
 
 import com.rickr.backrooms.mixin.ServerGamePacketListenerAccessor;
 import com.rickr.backrooms.player.SanityService;
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.Travel;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
@@ -307,7 +308,8 @@ public class WindowShadow extends Entity {
         ServerPlayer best = null;
         double bestD = Double.MAX_VALUE;
         for (ServerPlayer p : near) {
-            if (p.isCreative() || inFront(p.position()) < 0.0) {
+            // Someone hiding in furniture (player/HidingService) isn't seen by the window either.
+            if (p.isCreative() || HidingService.isHidden(p) || inFront(p.position()) < 0.0) {
                 continue;
             }
             double d = p.getEyePosition().distanceTo(centre);

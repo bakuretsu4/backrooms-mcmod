@@ -126,6 +126,37 @@
           "weight": 92
         }
       ]
+    },
+    {
+      "rolls": 1.0,
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "backrooms:chalk",
+          "weight": 30
+        },
+        {
+          "type": "minecraft:item",
+          "name": "backrooms:flare",
+          "weight": 15,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1,
+                "max": 2
+              },
+              "add": false
+            }
+          ]
+        },
+        {
+          "type": "minecraft:empty",
+          "weight": 55
+        }
+      ]
     }
   ],
   "random_sequence": "backrooms:supplies/crate/level_4"

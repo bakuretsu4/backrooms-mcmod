@@ -245,9 +245,10 @@ public final class BacteriaSpawner {
         ONES.clear();
     }
 
-    /** Players in a safe room don't count: it never comes for them. */
+    /** Players in a safe room, or hiding in furniture, don't count: it never comes for them. */
     private static boolean canHaveSpawns(ServerPlayer player) {
-        return !player.isSpectator() && !player.isCreative() && !SafeRooms.isSafe(player);
+        return !player.isSpectator() && !player.isCreative() && !SafeRooms.isSafe(player)
+                && !com.rickr.backrooms.player.HidingService.isHidden(player);
     }
 
     /**

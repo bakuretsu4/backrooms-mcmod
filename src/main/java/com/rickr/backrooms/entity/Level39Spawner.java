@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.registry.Level39Mobs;
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
 import com.rickr.backrooms.world.SafeRooms;
@@ -104,8 +105,8 @@ public final class Level39Spawner {
         }
         long seed = BackroomsSeeds.layoutSeed(level, BackroomsLevel.LEVEL_39);
         for (ServerPlayer player : level.players()) {
-            if (player.isSpectator() || SafeRooms.isSafe(player)) {
-                continue; // nothing new shows up for someone resting in a safe room
+            if (player.isSpectator() || SafeRooms.isSafe(player) || HidingService.isHidden(player)) {
+                continue; // nothing new shows up for someone resting in a safe room or hiding in furniture
             }
             Zone zone = zoneOf(player);
             if (zone == Zone.TUNNELS) {

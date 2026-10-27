@@ -1,5 +1,6 @@
 package com.rickr.backrooms.entity;
 
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.SafeRooms;
 import java.util.UUID;
@@ -169,8 +170,9 @@ public class Observer extends PathfinderMob {
             discard();
             return;
         }
-        if (SafeRooms.isSafe(victim)) {
-            vanish(false); // they're in a safe room: it quietly isn't there any more
+        if (SafeRooms.isSafe(victim) || HidingService.isHiddenFrom(victim, this)) {
+            // They're in a safe room, or hiding in furniture where it can't see them: it quietly isn't there any more.
+            vanish(false);
             return;
         }
         faceVictim(victim);

@@ -2,6 +2,7 @@ package com.rickr.backrooms.entity;
 
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.registry.Level39Mobs;
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.SafeRooms;
 import java.util.HashMap;
@@ -68,9 +69,12 @@ import org.joml.Vector3f;
  * STALK --close and you look away / stalked long enough--> CHARGE --fed / lost you--> WANDER / STALK
  * any --badly hurt--> RETREAT (runs, vanishes out of sight)
  * </pre>
+ *
+ * <p>It loses anyone who hides in furniture ({@code player/HidingService}), unless it saw them get
+ * in: then it drags them out and charges.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
-public class SkinStealer extends Monster {
+public class SkinStealer extends Monster implements HidingService.Seeker {
     public enum Mode { WANDER, STALK, FROZEN, CHARGE, RETREAT }
 
     private static final Mode[] MODES = Mode.values();
@@ -575,9 +579,26 @@ public class SkinStealer extends Monster {
         return player.getViewVector(1.0f).dot(to.scale(1.0 / distance)) > WATCH_COS && player.hasLineOfSight(this);
     }
 
+    /** Someone it may hunt: not in a safe room, and not hiding in furniture (unless it saw them get in). */
     private boolean isHuntable(@Nullable Player player) {
         return player != null && player.isAlive() && !player.isRemoved() && !player.isSpectator()
-                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player);
+                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player)
+                && !HidingService.isHiddenFrom(player, this);
+    }
+
+    /** A fed one is docile: it doesn't look for anyone. */
+    @Override
+    public boolean isSeeking() {
+        return isHungry();
+    }
+
+    /** It dragged someone out of their hiding place: it charges. */
+    @Override
+    public void onPulledOut(ServerPlayer player) {
+        if (mode != Mode.RETREAT) {
+            prey = player;
+            startCharge();
+        }
     }
 
     private boolean anyPlayerCanSee() {

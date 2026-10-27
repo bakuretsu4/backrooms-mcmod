@@ -1,5 +1,6 @@
 package com.rickr.backrooms.entity;
 
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.LevelEvents;
@@ -9,6 +10,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.util.Mth;
@@ -47,8 +49,12 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>Safe rooms ({@code world/SafeRooms}) are off limits: it never walks into one, and it can't
  * see or hear anyone inside. Reaching a safe room in a chase counts as escaping.
+ *
+ * <p>Nor can it see or hear anyone hiding in furniture ({@code player/HidingService}), unless it
+ * saw them get in: then it comes over and drags them out, and the chase goes on. Hiding mid-chase
+ * makes it search where it last saw you, then give up.
  */
-public class Bacteria extends Monster {
+public class Bacteria extends Monster implements HidingService.Seeker {
     /** What the Bacteria is doing right now. The order matters: it is synced as a byte. */
     public enum Mode { WANDER, DRIFT, SPOTTED, CHASE, SEARCH }
 
@@ -355,9 +361,10 @@ public class Bacteria extends Monster {
         // WANDER: now and then a rough guess at where someone is, otherwise short strolls.
         if (--nextGuessIn <= 0) {
             nextGuessIn = GUESS_MIN_TICKS + random.nextInt(GUESS_MAX_TICKS - GUESS_MIN_TICKS);
-            // (Never someone hiding in a safe room: it doesn't know they're there.)
+            // (Never someone hiding in a safe room or in furniture: it doesn't know they're there.)
             Player nearest = level().getNearestPlayer(getX(), getY(), getZ(), GUESS_RANGE,
-                    EntitySelector.NO_CREATIVE_OR_SPECTATOR.and(entity -> !SafeRooms.isSafe(entity)));
+                    EntitySelector.NO_CREATIVE_OR_SPECTATOR.and(entity -> !SafeRooms.isSafe(entity)
+                            && !HidingService.isHiddenFrom(entity, this)));
             if (nearest != null) {
                 double ox = (random.nextDouble() * 2.0 - 1.0) * GUESS_ERROR;
                 double oz = (random.nextDouble() * 2.0 - 1.0) * GUESS_ERROR;
@@ -597,6 +604,10 @@ public class Bacteria extends Monster {
      * off for this purpose, even though the light blocks themselves stay in the world.
      */
     private boolean isLit(Player player) {
+        // Standing in a burning flare's light is like standing under a lamp (blackout or not).
+        if (FlareEntity.litByFlare(level(), player.getEyePosition())) {
+            return true;
+        }
         BackroomsLevel floor = BackroomsLevel.fromDimension(level().dimension());
         if (floor != null && LevelEvents.isBlackout(floor)) {
             return false;
@@ -604,10 +615,20 @@ public class Bacteria extends Monster {
         return level().getMaxLocalRawBrightness(BlockPos.containing(player.getEyePosition())) >= LIT_LEVEL;
     }
 
-    /** Someone it may notice and chase. Players inside a safe room are out of its reach: it can't see or hear them. */
+    /**
+     * Someone it may notice and chase. Players inside a safe room are out of its reach: it can't
+     * see or hear them. Nor someone hiding in furniture, unless it saw them get in.
+     */
     private boolean isHuntable(@Nullable Player player) {
         return player != null && player.isAlive() && !player.isRemoved() && !player.isSpectator()
-                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player);
+                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player)
+                && !HidingService.isHiddenFrom(player, this);
+    }
+
+    /** It dragged someone out of their hiding place: straight into a chase (it saw them get in). */
+    @Override
+    public void onPulledOut(ServerPlayer player) {
+        reacquire(player);
     }
 
     private boolean anyPlayerCanSee() {

@@ -4,6 +4,7 @@ import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraData;
 import com.rickr.backrooms.registry.ModAttachments;
 import com.rickr.backrooms.registry.ModSounds;
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.LevelEvents;
 import com.rickr.backrooms.world.BackroomsSeeds;
@@ -56,8 +57,12 @@ import org.jetbrains.annotations.Nullable;
  * you can hear it breathing (its only sound) even with your back to it. It can't be hurt, but
  * light always works on it. About one in six is "bold" (a visibly wider grin) and needs twice as
  * much light.
+ *
+ * <p>It can't find anyone hiding in furniture ({@code player/HidingService}) unless it saw them get
+ * in: then it drifts over and drags them out. Otherwise it drifts to where it last had them and
+ * waits there until it fades like any Smiler without prey.
  */
-public class Smiler extends Monster {
+public class Smiler extends Monster implements HidingService.Seeker {
     /** What it is doing. The order matters: it is synced as a byte. */
     public enum Mode { APPEAR, STALK, FLINCH, LUNGE, DISPEL }
 
@@ -120,6 +125,9 @@ public class Smiler extends Monster {
     private Player prey;
     @Nullable
     private Player lighter;
+    /** Where its prey hid in furniture: it drifts over there and waits (until it fades as usual). */
+    @Nullable
+    private Vec3 hidAt;
 
     // Client-side: when the synced mode last changed, for the face animation.
     private Mode clientMode = Mode.APPEAR;
@@ -230,7 +238,14 @@ public class Smiler extends Monster {
             return;
         }
         if (tickCount % 20 == 0 || !isValidPrey(prey)) {
+            Player old = prey;
             prey = findPrey();
+            if (prey == null && HidingService.isHidden(old)) {
+                hidAt = old.position();
+            }
+        }
+        if (prey != null) {
+            hidAt = null;
         }
         noPreyTicks = prey == null ? noPreyTicks + 1 : 0;
         if (noPreyTicks > NO_PREY_TICKS) {
@@ -284,6 +299,17 @@ public class Smiler extends Monster {
 
     private void tickStalk() {
         if (prey == null) {
+            if (hidAt != null) {
+                // Its prey hid: drift over to where it was and wait there.
+                if (--repathIn <= 0) {
+                    repathIn = REPATH_TICKS;
+                    getNavigation().moveTo(hidAt.x, hidAt.y, hidAt.z, STALK_SPEED);
+                }
+                if (distanceToSqr(hidAt) < 4.0) {
+                    hidAt = null;
+                }
+                return;
+            }
             getNavigation().stop();
             return;
         }
@@ -405,10 +431,17 @@ public class Smiler extends Monster {
         return best;
     }
 
+    /** Someone it may stalk: not in a safe room, not sheltering, not hiding in furniture (unless it saw them get in). */
     private boolean isValidPrey(@Nullable Player player) {
         return player != null && player.isAlive() && !player.isRemoved() && !player.isSpectator() && !player.isCreative()
                 && player.level() == level() && distanceToSqr(player) < PREY_RANGE * PREY_RANGE && !SafeRooms.isSafe(player)
-                && !inLevel94Shelter(player);
+                && !inLevel94Shelter(player) && !HidingService.isHiddenFrom(player, this);
+    }
+
+    /** It dragged someone out of their hiding place: they're its prey now, and the stalk goes on. */
+    @Override
+    public void onPulledOut(ServerPlayer player) {
+        prey = player;
     }
 
     /** Level 94: the castle is as safe as a house (houses are safe rooms already, see above). */
@@ -458,6 +491,10 @@ public class Smiler extends Monster {
      * night are drawn by {@link Level94Clock}), so sky light would "burn" every Smiler outdoors.
      */
     private boolean inLitSpot() {
+        // A burning flare is its own light (it works in a blackout too): Smilers back off from it.
+        if (FlareEntity.litByFlare(level(), facePosition())) {
+            return true;
+        }
         BackroomsLevel floor = BackroomsLevel.fromDimension(level().dimension());
         if (floor != null && LevelEvents.isBlackout(floor)) {
             return false;

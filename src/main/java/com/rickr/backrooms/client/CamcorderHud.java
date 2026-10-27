@@ -69,8 +69,9 @@ public final class CamcorderHud implements LayeredDraw.Layer {
         if (Travel.inBackrooms(mc.level)) {
             heartRate(g, font, w - m + jx, m + 18 + jy, now);
         }
-        // "SAFE ROOM" and "CHECKPOINT SAVED" also show with the OSD hidden.
+        // "SAFE ROOM", "CHECKPOINT SAVED" and "HIDING" also show with the OSD hidden.
         SafeRoomOsd.render(g, font, m + jx, m + jy, osdVisible || CameraClientState.realRecording, now);
+        HidingOsd.render(g, font, m + jx, m + jy, osdVisible || CameraClientState.realRecording);
 
         boolean showOsd = osdVisible || CameraClientState.realRecording; // filming the real world
         if (!showOsd) {

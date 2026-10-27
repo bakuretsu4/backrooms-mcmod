@@ -3,6 +3,7 @@ package com.rickr.backrooms.entity;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.registry.ModEntities;
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.SafeRooms;
 import com.rickr.backrooms.world.layout.LevelLayout;
@@ -84,8 +85,8 @@ public final class Level9Spawner {
             return;
         }
         for (ServerPlayer player : level.players()) {
-            if (player.isSpectator() || SafeRooms.isSafe(player)) {
-                continue; // nothing new shows up for someone resting in a safe room
+            if (player.isSpectator() || SafeRooms.isSafe(player) || HidingService.isHidden(player)) {
+                continue; // nothing new shows up for someone resting in a safe room or hiding in furniture
             }
             tickWatchers(level, player);
             tickObserver(level, player);

@@ -101,6 +101,16 @@ public final class ModNetwork {
             }
         });
 
+        // Hiding in furniture: who is hiding (everyone draws nothing there; the hider's view goes
+        // inside), and the hider's jump (get out) and sneak (hold your breath) keys.
+        registrar.playToClient(HidingPayload.TYPE, HidingPayload.STREAM_CODEC,
+                (payload, context) -> com.rickr.backrooms.player.HidingClientState.receive(payload.entries()));
+        registrar.playToServer(HideInputPayload.TYPE, HideInputPayload.STREAM_CODEC, (payload, context) -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.rickr.backrooms.player.HidingService.onInput(player, payload.action());
+            }
+        });
+
         registrar.playToServer(CameraTogglePayload.TYPE, CameraTogglePayload.STREAM_CODEC, (payload, context) -> {
             if (context.player() instanceof ServerPlayer player) {
                 CameraService.toggle(player, payload.toggle());

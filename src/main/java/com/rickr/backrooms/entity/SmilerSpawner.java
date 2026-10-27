@@ -1,6 +1,7 @@
 package com.rickr.backrooms.entity;
 
 import com.rickr.backrooms.registry.ModEntities;
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
 import com.rickr.backrooms.world.LevelEvents;
@@ -143,7 +144,7 @@ public final class SmilerSpawner {
         }
         long seed = BackroomsSeeds.layoutSeed(level, floor);
         for (ServerPlayer player : level.players()) {
-            if (player.isSpectator() || player.isCreative() || SafeRooms.isSafe(player)
+            if (player.isSpectator() || player.isCreative() || SafeRooms.isSafe(player) || HidingService.isHidden(player)
                     || state.sent.getOrDefault(player.getUUID(), 0) >= wanted) {
                 continue;
             }
@@ -172,7 +173,7 @@ public final class SmilerSpawner {
         long now = level.getGameTime();
         long seed = BackroomsSeeds.layoutSeed(level, floor);
         for (ServerPlayer player : level.players()) {
-            if (player.isSpectator() || player.isCreative() || !isOutsideInLevel94(seed, player)) {
+            if (player.isSpectator() || player.isCreative() || HidingService.isHidden(player) || !isOutsideInLevel94(seed, player)) {
                 continue;
             }
             Long next = NIGHT_NEXT.get(player.getUUID());
@@ -207,7 +208,8 @@ public final class SmilerSpawner {
         long seed = BackroomsSeeds.layoutSeed(level, floor);
         for (ServerPlayer player : level.players()) {
             UUID id = player.getUUID();
-            if (player.isSpectator() || player.isCreative() || SafeRooms.isSafe(player) || !inDark(level, player.blockPosition().above())) {
+            if (player.isSpectator() || player.isCreative() || SafeRooms.isSafe(player) || HidingService.isHidden(player)
+                    || !inDark(level, player.blockPosition().above())) {
                 DARK_SINCE.remove(id);
                 continue;
             }

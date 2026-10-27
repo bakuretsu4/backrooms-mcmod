@@ -732,6 +732,68 @@
     ],
     "subtitle": "subtitles.backrooms.bandage_wrap"
   },
+  "item.chalk.draw": {
+    "sounds": [
+      "backrooms:chalk/draw1",
+      "backrooms:chalk/draw2",
+      "backrooms:chalk/draw3"
+    ],
+    "subtitle": "subtitles.backrooms.chalk_draw"
+  },
+  "block.chalk_mark.wipe": {
+    "sounds": [
+      "backrooms:chalk/wipe1",
+      "backrooms:chalk/wipe2"
+    ],
+    "subtitle": "subtitles.backrooms.chalk_wipe"
+  },
+  "item.flare.strike": {
+    "sounds": [
+      {
+        "name": "backrooms:supplies/flare_strike",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.backrooms.flare_strike"
+  },
+  "entity.flare.hiss": {
+    "sounds": [
+      {
+        "name": "backrooms:supplies/flare_hiss",
+        "attenuation_distance": 16,
+        "volume": 0.45
+      }
+    ],
+    "subtitle": "subtitles.backrooms.flare_hiss"
+  },
+  "entity.flare.hiss_underwater": {
+    "sounds": [
+      {
+        "name": "backrooms:supplies/flare_hiss_underwater",
+        "attenuation_distance": 16,
+        "volume": 0.4
+      }
+    ],
+    "subtitle": "subtitles.backrooms.flare_hiss_underwater"
+  },
+  "entity.flare.sputter": {
+    "sounds": [
+      {
+        "name": "backrooms:supplies/flare_sputter",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.backrooms.flare_sputter"
+  },
+  "item.glowstick.crack": {
+    "sounds": [
+      {
+        "name": "backrooms:supplies/glowstick_crack",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.glowstick_crack"
+  },
   "block.checkpoint_radio.save": {
     "sounds": [
       {
@@ -2929,6 +2991,55 @@
       }
     ],
     "subtitle": "subtitles.backrooms.l1_locker_growl"
+  },
+  "hide.locker_in": {
+    "sounds": [
+      "backrooms:hide/locker_in1",
+      "backrooms:hide/locker_in2"
+    ],
+    "subtitle": "subtitles.backrooms.hide.locker_in"
+  },
+  "hide.locker_out": {
+    "sounds": [
+      "backrooms:hide/locker_out1",
+      "backrooms:hide/locker_out2"
+    ],
+    "subtitle": "subtitles.backrooms.hide.locker_out"
+  },
+  "hide.wardrobe_in": {
+    "sounds": [
+      "backrooms:hide/wardrobe_in1",
+      "backrooms:hide/wardrobe_in2"
+    ],
+    "subtitle": "subtitles.backrooms.hide.wardrobe_in"
+  },
+  "hide.wardrobe_out": {
+    "sounds": [
+      "backrooms:hide/wardrobe_out1",
+      "backrooms:hide/wardrobe_out2"
+    ],
+    "subtitle": "subtitles.backrooms.hide.wardrobe_out"
+  },
+  "hide.shuffle_in": {
+    "sounds": [
+      "backrooms:hide/shuffle_in1",
+      "backrooms:hide/shuffle_in2"
+    ],
+    "subtitle": "subtitles.backrooms.hide.shuffle_in"
+  },
+  "hide.shuffle_out": {
+    "sounds": [
+      "backrooms:hide/shuffle_out1",
+      "backrooms:hide/shuffle_out2"
+    ],
+    "subtitle": "subtitles.backrooms.hide.shuffle_out"
+  },
+  "hide.gasp": {
+    "sounds": [
+      "backrooms:hide/gasp1",
+      "backrooms:hide/gasp2"
+    ],
+    "subtitle": "subtitles.backrooms.hide.gasp"
   },
   "player.breath_heavy": {
     "sounds": [

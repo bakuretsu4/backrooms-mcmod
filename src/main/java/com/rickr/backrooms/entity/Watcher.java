@@ -3,6 +3,7 @@ package com.rickr.backrooms.entity;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraData;
 import com.rickr.backrooms.camera.CameraService;
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.layout.LevelLayout;
@@ -60,8 +61,11 @@ import org.joml.Vector3f;
  * </pre>
  * It always flies at "cruise altitude" (about 9 blocks above the road), only over open air: it never
  * flies into houses or trees, and patrols by following road columns.
+ *
+ * <p>It neither sees nor hears anyone hiding in furniture ({@code player/HidingService}), unless it
+ * saw them get in: then it keeps them in its light as if they were standing in the open.
  */
-public class Watcher extends FlyingMob {
+public class Watcher extends FlyingMob implements HidingService.Seeker {
     // ---- Tweakables ------------------------------------------------------------------------
     /** How far it can see you, in blocks. */
     public static final double VISION_RANGE = 28.0;
@@ -427,12 +431,35 @@ public class Watcher extends FlyingMob {
                 return true;
             }
         }
+        // A burning flare draws it like a flashlight does: it comes over to look at it.
+        FlareEntity flare = FlareEntity.nearestBurning(level, position(), ELECTRONICS_RANGE);
+        if (flare != null) {
+            startInvestigate(level, flare.position());
+            return true;
+        }
         return false;
     }
 
-    /** Someone it may watch and turn to dust. Players inside a safe room are left alone (that also cancels a charging beam). */
-    private static boolean isValidPrey(ServerPlayer player) {
-        return player.isAlive() && !player.isSpectator() && !player.isCreative() && !SafeRooms.isSafe(player);
+    /**
+     * Someone it may watch and turn to dust. Players inside a safe room are left alone (that also
+     * cancels a charging beam), and so is anyone hiding in furniture, unless it saw them get in.
+     */
+    private boolean isValidPrey(ServerPlayer player) {
+        return player.isAlive() && !player.isSpectator() && !player.isCreative() && !SafeRooms.isSafe(player)
+                && !HidingService.isHiddenFrom(player, this);
+    }
+
+    /** It dragged someone out of their hiding place (only possible when low enough): stare them down. */
+    @Override
+    public void onPulledOut(ServerPlayer player) {
+        if (state == State.STARE || state == State.CHARGE) {
+            return;
+        }
+        targetId = player.getUUID();
+        pointOfInterest = player.position();
+        lostTicks = 0;
+        setState(State.STARE);
+        entityData.set(TARGET, player.getId());
     }
 
     /** Within range (longer with a flashlight), optionally inside the cone, and nothing in between. */

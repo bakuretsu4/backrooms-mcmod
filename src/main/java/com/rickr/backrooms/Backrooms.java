@@ -50,6 +50,12 @@ public final class Backrooms {
         com.rickr.backrooms.world.anomaly.level39.Level39AnomalyRegistry.bootstrap(modBus);
         // The side entrance to Level 39: the chairlift in Level 9's Crimson Field (blocks, seat, sounds).
         com.rickr.backrooms.world.anomaly.level39.gondola.GondolaRegistry.bootstrap();
+        // Chalk: the chalk stick and the marks players draw with it on walls, floors and ceilings.
+        com.rickr.backrooms.registry.ChalkRegistry.bootstrap();
+        // Flares and glowsticks: the items, the thrown light entities and their sounds.
+        com.rickr.backrooms.registry.LightSupplies.bootstrap();
+        // Hiding in furniture: getting in and out of lockers and wardrobes, crawling under desks and beds, gasping.
+        com.rickr.backrooms.registry.HidingAudio.bootstrap();
         ModBlocks.BLOCKS.register(modBus);
         ModItems.ITEMS.register(modBus);
         ModEntities.ENTITIES.register(modBus);

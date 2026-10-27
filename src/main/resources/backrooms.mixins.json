@@ -8,6 +8,7 @@
     "ServerGamePacketListenerAccessor"
   ],
   "client": [
+    "client.CameraMixin",
     "client.ChannelAccessor",
     "client.LevelRendererMixin",
     "client.LiquidBlockRendererMixin",

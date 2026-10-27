@@ -155,6 +155,7 @@ public final class BackroomsLights {
             if (veil) {
                 VeilFixtures.freeAll();
                 Flashlights.freeAll();
+                ThrownLights.freeAll();
             }
         }
         veilActive = veil;
@@ -244,6 +245,8 @@ public final class BackroomsLights {
         }
         FixtureSounds.tick(lights);
         if (veil) {
+            // Thrown flares/glowsticks first: the fixtures get the slots they leave free.
+            ThrownLights.tick(level, mc.gameRenderer.getMainCamera().getPosition());
             select(floor);
             VeilFixtures.sync(SELECTED, CameraClientState.battery <= 0.0f ? 0.25f : 1.0f, floor);
         }
@@ -375,6 +378,7 @@ public final class BackroomsLights {
         float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         Flashlights.frame(event.getCamera(), partialTick, mc.level, mc.player);
         VeilFixtures.frame(System.currentTimeMillis());
+        ThrownLights.frame(partialTick, System.currentTimeMillis());
     }
 
     @SubscribeEvent
@@ -450,6 +454,7 @@ public final class BackroomsLights {
         if (VEIL_LOADED && !IRIS_LOADED) {
             VeilFixtures.freeAll();
             Flashlights.freeAll();
+            ThrownLights.freeAll();
         }
     }
 
@@ -575,6 +580,7 @@ public final class BackroomsLights {
     private static void select(BackroomsLevel floor) {
         ClientSettings.Quality quality = ClientSettings.quality();
         int budget = floor == BackroomsLevel.LEVEL_9 ? quality.maxLights - VeilFixtures.LAMP_CONES : quality.maxLights;
+        budget -= ThrownLights.reserved(); // flares and glowsticks share the same budget
         SHOWN.clear();
         for (FixtureLight light : SELECTED) {
             SHOWN.add(light.key);

@@ -61,6 +61,9 @@ public final class ClientSetup {
         event.registerEntityRenderer(com.rickr.backrooms.registry.Level39Mobs.WRETCH.get(), WretchRenderer::new);
         // Level 94: parked cars and milk vans, drawn whole by their anchor block's renderer.
         event.registerBlockEntityRenderer(ModBlockEntities.L94_VEHICLE.get(), VehicleRenderer::new);
+        // Thrown flares and glowsticks: small code-built sticks with a full-bright tip/tube.
+        event.registerEntityRenderer(com.rickr.backrooms.registry.LightSupplies.FLARE_ENTITY.get(), ThrownLightRenderer::new);
+        event.registerEntityRenderer(com.rickr.backrooms.registry.LightSupplies.GLOWSTICK_ENTITY.get(), ThrownLightRenderer::new);
     }
 
     @SubscribeEvent

@@ -2,6 +2,7 @@ package com.rickr.backrooms.entity;
 
 import com.rickr.backrooms.camera.CameraData;
 import com.rickr.backrooms.camera.CameraService;
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.registry.Level39Mobs;
 import com.rickr.backrooms.world.SafeRooms;
 import net.minecraft.core.BlockPos;
@@ -403,9 +404,14 @@ public class Wretch extends Monster {
         return stack.getItem() instanceof BlockItem block && block.getBlock().defaultBlockState().getLightEmission() > 0;
     }
 
+    /**
+     * Someone that can frighten it. A player hiding in furniture ({@code player/HidingService})
+     * is neither seen nor heard, so doesn't. (It never hunts anyone, so it never looks for hiders.)
+     */
     private boolean isThreat(@Nullable Player player) {
         return player != null && player.isAlive() && !player.isRemoved() && !player.isSpectator()
-                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player);
+                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player)
+                && !HidingService.isHiddenFrom(player, this);
     }
 
     /** A water block next to (or just below) where it stands, within a few blocks, to drink from. */

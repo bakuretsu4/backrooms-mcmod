@@ -17,13 +17,16 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Your own breathing, close to the microphone: heavy panting after a sprint (it eases off as your
  * stamina comes back) and quick, shaky breaths when something is near (the same danger the
- * camcorder picture reacts to). Silent when you're rested and nothing is around.
+ * camcorder picture reacts to). Silent when you're rested and nothing is around. Hiding in
+ * furniture you always hear yourself breathe, until you hold your breath (see HidingClient).
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Breathing {
     private static final float EXERTION_VOLUME = 0.55f;
     private static final float FEAR_VOLUME = 0.45f;
     private static final float FADE = 0.03f;
+    /** Hiding in furniture, your breathing is always a little audible (until you hold it). */
+    private static final float HIDING_FEAR = 0.5f;
     @Nullable
     private static FadingLoopSound panting;
     @Nullable
@@ -41,6 +44,12 @@ public final class Breathing {
             exertion = 1.0f;
         }
         float fear = Mth.clamp((CamcorderEffect.danger() - 0.2f) / 0.6f, 0.0f, 1.0f);
+        if (HidingClient.holdingBreath()) {
+            return; // hiding and holding your breath: not a sound
+        }
+        if (HidingClient.hiding()) {
+            fear = Math.max(fear, HIDING_FEAR); // hiding, you hear yourself breathe (and so can a monster close by)
+        }
         if (exertion > 0.02f) {
             panting = feed(mc, panting, ModSounds.BREATH_HEAVY.get(), EXERTION_VOLUME * exertion);
         }

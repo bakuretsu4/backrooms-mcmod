@@ -1,6 +1,7 @@
 package com.rickr.backrooms.world.anomaly.level39;
 
 import com.rickr.backrooms.world.anomaly.AnomalyBehavior;
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.layout.Level39AnomalyPlan;
 import com.rickr.backrooms.world.layout.Level39Layout;
@@ -28,7 +29,7 @@ final class HostileWindows implements AnomalyBehavior {
     @Override
     public void siteTick(ServerLevel level, AnomalySite site, long seed) {
         for (ServerPlayer player : level.players()) {
-            if (player.isSpectator() || !site.near(player.getBlockX(), player.getBlockZ(), 2)
+            if (player.isSpectator() || HidingService.isHidden(player) || !site.near(player.getBlockX(), player.getBlockZ(), 2)
                     || player.getY() > Level39Sites.glassBottom(Level39Sites.HUNTING_STOREYS) + 4) {
                 continue;
             }

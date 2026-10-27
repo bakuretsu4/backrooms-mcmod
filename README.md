@@ -250,6 +250,11 @@ Each floor leans its own way: Level 0 has more almond water, Level 1 more batter
 bandages, the Poolrooms more almond water and pills, Level 9 ordinary kitchen food (cookies,
 apples, bread). Camcorder batteries stay rare everywhere.
 
+Light and route-marking supplies come from their own roll, so they never crowd out the food or
+the batteries: chalk is common in Level 0, 1 and 4 crates and backpacks (rare elsewhere),
+glowsticks (1-3) turn up in backpacks and lockers on every level, and flares are found in lockers
+and crates on Levels 1, 2, 4 and 9 (rare elsewhere).
+
 | Item | What it does |
 |---|---|
 | Canned Food / Backshroom / Bread | Food. 1 can in 20 has gone bad; backshrooms can make you sick. |
@@ -258,6 +263,9 @@ apples, bread). Camcorder batteries stay rare everywhere.
 | Calm Pills | Hold right-click for 1 s: restores 25 sanity. |
 | Bandage | Hold right-click for 1.5 s: heals 2 hearts plus Regeneration I for 5 s. |
 | Camcorder Battery | Right-click to swap in a fresh battery. |
+| Chalk | 64 marks per stick. Right-click a wall, floor or ceiling to draw the current symbol in white chalk; sneak + right-click (anywhere: air, wall or mark, nothing gets drawn) to switch between arrow, cross and circle (the action bar says which). On a wall the arrow points towards the edge of the block you click nearest to (left, right, up or down); on the floor and ceiling it points the way you face. Drawing on a mark replaces it; one punch wipes it off. Everyone sees the marks and they stay in the world. They look nothing like Level 0's own painted arrows (dark brown and solid), so you can tell yours from the level's lies. |
+| Flare | Right-click: strike it and throw it a short way. It burns bright red-orange for 75 s (even underwater), sputters out, and smokes for a while. Smilers won't stay in its light, the Bacteria see you in it like under a lamp, and Level 9's Neighborhood Watch comes to look at it. Can't be picked up. |
+| Glowstick | Right-click: crack it and toss it at your feet. A soft green glow for 8 minutes (it fades over the last 30 s), good for marking your way together with chalk. Right-click a lying one to pick it up again; it keeps the time it has left. No effect on monsters. |
 
 ### Sanity
 
@@ -293,6 +301,36 @@ light on and the sign over the front door.
   **CHECKPOINT SAVED** on the camcorder). If you die on that level you wake up on the floor in front
   of the radio. Dying anywhere else still sends you back to the real world, and leaving the level
   through its exit forgets the checkpoint. Clicking the radio again just saves again.
+
+### Hiding
+
+You can hide in furniture that is already there: a **Supply Locker** (or the filing cabinet that
+is really one), an **office desk** (Level 4's offices and cubicles, Level 0's furniture heaps,
+Level 94's drawing desks), a Level 39 **wardrobe**, or under a **bed** (Level 9 and Level 39
+houses). Upside-down furniture doesn't count.
+
+- **Sneak + right-click** to get in; **jump** to get out (you step out in front). A plain
+  right-click still opens a locker. One person per hiding place, and spectators and creative
+  players can't hide.
+- **Inside** you can't move, hit or use anything, and your flashlight stays off. The view sits in
+  the furniture (up near the vents in a locker, at eye height in a wardrobe, low under a desk, at
+  floor level under a bed) and looks out of its open side, turning about 70 degrees each way. The
+  camcorder shows **HIDING** under where SAFE ROOM goes. Other players see nothing there.
+- **Hold your breath:** hold sneak, up to 10 s (your air bar runs down). Let go after more than
+  6 s, or run out, and you gasp out loud. While you breathe normally, a monster within 3 blocks
+  has about a 1 in 4 chance each second to hear you and drag you out.
+- **Monsters** (the Bacteria, Hounds, Clumps, Smilers, Facelings, Watchers, Skin-stealers) can't
+  see, hear or chase you while you hide, unless one saw you get in (it had you in sight in the last
+  2 seconds): that one comes over and pulls you out, then attacks. Otherwise it searches where it
+  last saw you and gives up as usual. Nothing new spawns for you while you hide, Wretches aren't
+  frightened by you and Level 39's windows don't see you. A monster within 16 blocks still makes
+  it nerve-racking: your sanity drains a little.
+- **Pulled out:** opening a hiding place someone is in (a friend right-clicking it) drags them out
+  too. You're shoved out in front and can't hide again for 3 seconds.
+- Breaking the furniture, logging out, dying, changing level or being teleported just ends the
+  hiding; your body was waiting in front of the furniture the whole time, so you never end up
+  stuck in a block. Getting in and out creaks a locker or wardrobe door or scuffs along the floor
+  (`tools/anomaly_assets/hiding_audio.py`), quietly.
 
 ### Things that happen
 
@@ -604,14 +642,14 @@ Keys are `[seconds, x, eye height, z, yaw, pitch]`. The HUD is hidden while reco
 | `client/anomaly` | Client side of the anomalous areas: which sites are near (`AnomalyClientState`), per-level picture moods, sounds and overlays; one sub-package per level |
 | `entity` | The Bacteria and its spawner; Level 39's mobs (`Hound`, `Faceling`, `Clump`, `SkinStealer`, `Wretch`) and their spawning (`Level39Spawner`, `TunnelDwellers`) |
 | `camera` | Camcorder battery/flashlight/NightShot server rules, flashlight sync |
-| `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`) |
+| `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`), hiding in furniture (`HidingService`, which furniture and where the view sits: `HidingSpots`) |
 | `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas) |
 | `network` | Packets between server and clients |
 | `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`) |
 | `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
 | `client/water` | Pool water (also Level 7's sea): surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), underwater fog and its darkening with depth (`UnderwaterView`) |
 | `client/audio` | Wall muffling and room reverb through OpenAL EFX (`Acoustics`, `AcousticsEfx`); distant one-off sounds per level (`DistantAmbience`) |
-| `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`) |
+| `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`); moves your view inside the furniture while you hide (`CameraMixin`) |
 | `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`); lets anomaly teleports update the server's movement check, and keeps players held in the air (Level 39's sky arrival, window grabs, the chairlift) from being kicked for "flying" (`ServerGamePacketListenerAccessor`) |
 | `client/camera` | Handheld camera shake, roll, smoothing |
 | `client/hud` | Minimal HUD, stamina line |

@@ -71,8 +71,9 @@ final class WindowEffect implements AnomalyClientEffect {
             }
         }
 
-        // Come closer.
-        if (inside && distance < PULL_RANGE && distance > 0.05 && !player.isSpectator() && !mc.isPaused()) {
+        // Come closer (not while you hide in furniture: your body is held still there).
+        if (inside && distance < PULL_RANGE && distance > 0.05 && !player.isSpectator() && !mc.isPaused()
+                && !com.rickr.backrooms.client.HidingClient.hiding()) {
             double t = 1.0 - distance / PULL_RANGE;
             double strength = PULL_MIN + (PULL_MAX - PULL_MIN) * t;
             player.setDeltaMovement(player.getDeltaMovement().add(dx / distance * strength, 0.0, dz / distance * strength));

@@ -1,5 +1,6 @@
 package com.rickr.backrooms.entity;
 
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.registry.Level39Mobs;
 import com.rickr.backrooms.world.SafeRooms;
 import net.minecraft.core.BlockPos;
@@ -8,6 +9,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.DifficultyInstance;
@@ -61,8 +63,12 @@ import org.jetbrains.annotations.Nullable;
  * STRIKE --hit--> DRAG (pull, then bite) --hurt / timeout--> RETRACT --> LURK
  * STRIKE --miss--> RETRACT
  * </pre>
+ *
+ * <p>Being blind, it never sees anyone hide in furniture ({@code player/HidingService}), and it
+ * can't hear a hider either... except their breathing, if its hole is within 3 blocks of the
+ * hiding place: then it hauls them out and strikes.
  */
-public class Clump extends Monster {
+public class Clump extends Monster implements HidingService.Seeker {
     /** What the Clump is doing. The order matters: it is synced as a byte. */
     public enum State { LURK, LISTEN, TENSE, STRIKE, DRAG, RETRACT }
 
@@ -680,9 +686,27 @@ public class Clump extends Monster {
         return player.position().add(0.0, player.getBbHeight() * 0.55, 0.0);
     }
 
+    /** Someone it may hunt: not in a safe room, and not hiding in furniture. */
     private boolean isPrey(@Nullable Player player) {
         return player != null && player.isAlive() && !player.isRemoved() && !player.isSpectator()
-                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player);
+                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player)
+                && !HidingService.isHiddenFrom(player, this);
+    }
+
+    /** Blind: it can't see anyone get into a hiding place. */
+    @Override
+    public boolean seesHiding() {
+        return false;
+    }
+
+    /** It heard a hider breathe and hauled them out: strike at once, as if they touched the bait. */
+    @Override
+    public void onPulledOut(ServerPlayer player) {
+        if (state == State.LURK || state == State.LISTEN) {
+            prey = player;
+            quietTicks = 0;
+            startTense(true);
+        }
     }
 
     // ------------------------------------------------------------------ vanilla hooks

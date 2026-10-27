@@ -1,0 +1,976 @@
+{
+  "variants": {
+    "facing=north,rotation=0,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_0"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_0"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_0"
+      }
+    ],
+    "facing=north,rotation=1,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_1"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_1"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_1"
+      }
+    ],
+    "facing=north,rotation=2,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_2"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_2"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_2"
+      }
+    ],
+    "facing=north,rotation=3,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_3"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_3"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_3"
+      }
+    ],
+    "facing=north,rotation=0,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2"
+      }
+    ],
+    "facing=north,rotation=1,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2"
+      }
+    ],
+    "facing=north,rotation=2,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2"
+      }
+    ],
+    "facing=north,rotation=3,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2"
+      }
+    ],
+    "facing=north,rotation=0,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2"
+      }
+    ],
+    "facing=north,rotation=1,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2"
+      }
+    ],
+    "facing=north,rotation=2,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2"
+      }
+    ],
+    "facing=north,rotation=3,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1"
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2"
+      }
+    ],
+    "facing=east,rotation=0,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_0",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_0",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_0",
+        "y": 90
+      }
+    ],
+    "facing=east,rotation=1,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_1",
+        "y": 90
+      }
+    ],
+    "facing=east,rotation=2,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_2",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_2",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_2",
+        "y": 90
+      }
+    ],
+    "facing=east,rotation=3,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_3",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_3",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_3",
+        "y": 90
+      }
+    ],
+    "facing=east,rotation=0,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 90
+      }
+    ],
+    "facing=east,rotation=1,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 90
+      }
+    ],
+    "facing=east,rotation=2,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 90
+      }
+    ],
+    "facing=east,rotation=3,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 90
+      }
+    ],
+    "facing=east,rotation=0,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 90
+      }
+    ],
+    "facing=east,rotation=1,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 90
+      }
+    ],
+    "facing=east,rotation=2,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 90
+      }
+    ],
+    "facing=east,rotation=3,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 90
+      }
+    ],
+    "facing=south,rotation=0,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_0",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_0",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_0",
+        "y": 180
+      }
+    ],
+    "facing=south,rotation=1,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_1",
+        "y": 180
+      }
+    ],
+    "facing=south,rotation=2,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_2",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_2",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_2",
+        "y": 180
+      }
+    ],
+    "facing=south,rotation=3,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_3",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_3",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_3",
+        "y": 180
+      }
+    ],
+    "facing=south,rotation=0,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 180
+      }
+    ],
+    "facing=south,rotation=1,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 180
+      }
+    ],
+    "facing=south,rotation=2,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 180
+      }
+    ],
+    "facing=south,rotation=3,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 180
+      }
+    ],
+    "facing=south,rotation=0,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 180
+      }
+    ],
+    "facing=south,rotation=1,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 180
+      }
+    ],
+    "facing=south,rotation=2,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 180
+      }
+    ],
+    "facing=south,rotation=3,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 180
+      }
+    ],
+    "facing=west,rotation=0,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_0",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_0",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_0",
+        "y": 270
+      }
+    ],
+    "facing=west,rotation=1,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_1",
+        "y": 270
+      }
+    ],
+    "facing=west,rotation=2,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_2",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_2",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_2",
+        "y": 270
+      }
+    ],
+    "facing=west,rotation=3,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_3",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_3",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_3",
+        "y": 270
+      }
+    ],
+    "facing=west,rotation=0,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 270
+      }
+    ],
+    "facing=west,rotation=1,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 270
+      }
+    ],
+    "facing=west,rotation=2,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 270
+      }
+    ],
+    "facing=west,rotation=3,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "y": 270
+      }
+    ],
+    "facing=west,rotation=0,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 270
+      }
+    ],
+    "facing=west,rotation=1,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 270
+      }
+    ],
+    "facing=west,rotation=2,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 270
+      }
+    ],
+    "facing=west,rotation=3,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "y": 270
+      }
+    ],
+    "facing=up,rotation=0,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_0",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_0",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_0",
+        "x": 270
+      }
+    ],
+    "facing=up,rotation=1,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_1",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_1",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_1",
+        "x": 270
+      }
+    ],
+    "facing=up,rotation=2,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_2",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_2",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_2",
+        "x": 270
+      }
+    ],
+    "facing=up,rotation=3,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_3",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_3",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_3",
+        "x": 270
+      }
+    ],
+    "facing=up,rotation=0,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "x": 270
+      }
+    ],
+    "facing=up,rotation=1,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "x": 270
+      }
+    ],
+    "facing=up,rotation=2,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "x": 270
+      }
+    ],
+    "facing=up,rotation=3,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "x": 270
+      }
+    ],
+    "facing=up,rotation=0,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "x": 270
+      }
+    ],
+    "facing=up,rotation=1,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "x": 270
+      }
+    ],
+    "facing=up,rotation=2,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "x": 270
+      }
+    ],
+    "facing=up,rotation=3,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "x": 270
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "x": 270
+      }
+    ],
+    "facing=down,rotation=0,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_0",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_0",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_0",
+        "x": 90
+      }
+    ],
+    "facing=down,rotation=1,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_1",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_1",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_1",
+        "x": 90
+      }
+    ],
+    "facing=down,rotation=2,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_2",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_2",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_2",
+        "x": 90
+      }
+    ],
+    "facing=down,rotation=3,symbol=arrow": [
+      {
+        "model": "backrooms:block/chalk_mark_arrow_0_3",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_1_3",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_arrow_2_3",
+        "x": 90
+      }
+    ],
+    "facing=down,rotation=0,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "x": 90
+      }
+    ],
+    "facing=down,rotation=1,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "x": 90
+      }
+    ],
+    "facing=down,rotation=2,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "x": 90
+      }
+    ],
+    "facing=down,rotation=3,symbol=cross": [
+      {
+        "model": "backrooms:block/chalk_mark_cross_0",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_1",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_cross_2",
+        "x": 90
+      }
+    ],
+    "facing=down,rotation=0,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "x": 90
+      }
+    ],
+    "facing=down,rotation=1,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "x": 90
+      }
+    ],
+    "facing=down,rotation=2,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "x": 90
+      }
+    ],
+    "facing=down,rotation=3,symbol=circle": [
+      {
+        "model": "backrooms:block/chalk_mark_circle_0",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_1",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/chalk_mark_circle_2",
+        "x": 90
+      }
+    ]
+  }
+}

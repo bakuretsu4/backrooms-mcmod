@@ -86,6 +86,9 @@ public final class CameraService {
             data.setNightShot(!data.nightShot());
             player.playNotifySound(ModSounds.REC_BEEP.get(), SoundSource.MASTER, 0.6f, data.nightShot() ? 1.2f : 0.9f);
         } else if (which == CameraTogglePayload.FLASHLIGHT) {
+            if (!data.flashlight() && com.rickr.backrooms.player.HidingService.isHidden(player)) {
+                return; // hiding in furniture: a light would give you away
+            }
             data.setFlashlight(!data.flashlight());
             player.playNotifySound(ModSounds.FLASHLIGHT_CLICK.get(), SoundSource.MASTER, 0.8f, data.flashlight() ? 1.1f : 0.9f);
         }

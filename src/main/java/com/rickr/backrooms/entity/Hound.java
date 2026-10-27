@@ -2,12 +2,14 @@ package com.rickr.backrooms.entity;
 
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.registry.Level39Mobs;
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.world.SafeRooms;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -56,8 +58,12 @@ import org.jetbrains.annotations.Nullable;
  * </pre>
  * The mode is synced to clients so the model can pose (low creeping stalk, quivering growl with
  * the jaw half open, full gallop, the pounce, the cringe).
+ *
+ * <p>Someone hiding in furniture ({@code player/HidingService}) can't be seen or heard, unless the
+ * Hound saw them get in: then it goes over and drags them out. Hiding while it stalks or hunts
+ * you sends it searching where it last saw you.
  */
-public class Hound extends Monster {
+public class Hound extends Monster implements HidingService.Seeker {
     /** What the Hound is doing right now. The order matters: it is synced as a byte. */
     public enum Mode { PROWL, STALK, GROWL, CHASE, LUNGE, COWED, SEARCH }
 
@@ -346,7 +352,7 @@ public class Hound extends Monster {
 
     private void tickStalk() {
         if (!isHuntable(prey)) {
-            loseInterest();
+            lostOrHidden();
             return;
         }
         if (tickStare()) {
@@ -372,7 +378,7 @@ public class Hound extends Monster {
 
     private void tickGrowl() {
         if (!isHuntable(prey)) {
-            loseInterest();
+            lostOrHidden();
             return;
         }
         if (tickStare()) {
@@ -621,6 +627,25 @@ public class Hound extends Monster {
         setMode(Mode.PROWL);
     }
 
+    /** The prey slipped away: if it hid in furniture, search where it was last seen; else forget it. */
+    private void lostOrHidden() {
+        if (HidingService.isHidden(prey)) {
+            startSearch();
+        } else {
+            loseInterest();
+        }
+    }
+
+    /** It dragged someone out of their hiding place: a short snarl, then the chase. */
+    @Override
+    public void onPulledOut(ServerPlayer player) {
+        prey = player;
+        setTarget(player);
+        lastSeen = player.position();
+        unseenTicks = 0;
+        startGrowl(GROWL_TICKS_ENRAGED);
+    }
+
     private void setMode(Mode next) {
         mode = next;
         modeTicks = 0;
@@ -699,9 +724,11 @@ public class Hound extends Monster {
         return distanceSqr <= range * range && getSensing().hasLineOfSight(player);
     }
 
+    /** Someone it may hunt: not in a safe room, and not hiding in furniture (unless it saw them get in). */
     private boolean isHuntable(@Nullable Player player) {
         return player != null && player.isAlive() && !player.isRemoved() && !player.isSpectator()
-                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player);
+                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player)
+                && !HidingService.isHiddenFrom(player, this);
     }
 
     // ------------------------------------------------------------------ vanilla hooks

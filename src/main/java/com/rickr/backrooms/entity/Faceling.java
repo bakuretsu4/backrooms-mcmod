@@ -1,11 +1,13 @@
 package com.rickr.backrooms.entity;
 
+import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.registry.Level39Mobs;
 import com.rickr.backrooms.world.SafeRooms;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.DifficultyInstance;
@@ -45,8 +47,11 @@ import org.jetbrains.annotations.Nullable;
  * <p>Whether one is hostile is decided when it spawns ({@link #setHostile}). The behaviour is a
  * small state machine ({@link Action}) synced to clients so the model can play the slow walk, the
  * face touch, the stare and the sprint.
+ *
+ * <p>Nobody hiding in furniture ({@code player/HidingService}) is seen or stared at. A hostile one
+ * that saw you get in comes and drags you out; otherwise hiding counts as losing sight of you.
  */
-public class Faceling extends Monster {
+public class Faceling extends Monster implements HidingService.Seeker {
     /** What it is doing now. The order matters: it is synced as a byte. */
     public enum Action { WANDER, STAND, STARE, TOUCH, FLEE, CHASE }
 
@@ -239,7 +244,8 @@ public class Faceling extends Monster {
     /** After a walk: stand, touch its face, or stare at someone nearby. */
     private void pickIdle() {
         getNavigation().stop();
-        Player near = level().getNearestPlayer(getX(), getY(), getZ(), 14.0, EntitySelector.NO_SPECTATORS);
+        Player near = level().getNearestPlayer(getX(), getY(), getZ(), 14.0,
+                EntitySelector.NO_SPECTATORS.and(entity -> !HidingService.isHidden(entity)));
         int roll = random.nextInt(10);
         if (near != null && roll < 4 && getSensing().hasLineOfSight(near)) {
             setAction(Action.STARE, 80 + random.nextInt(120));
@@ -270,7 +276,8 @@ public class Faceling extends Monster {
     /** The head follows you; the body turns slowly after it. It never comes closer. */
     private void tickStare() {
         getNavigation().stop();
-        Player near = level().getNearestPlayer(getX(), getY(), getZ(), 20.0, EntitySelector.NO_SPECTATORS);
+        Player near = level().getNearestPlayer(getX(), getY(), getZ(), 20.0,
+                EntitySelector.NO_SPECTATORS.and(entity -> !HidingService.isHidden(entity)));
         if (near != null) {
             getLookControl().setLookAt(near, 4.0f, 10.0f);
         }
@@ -284,11 +291,13 @@ public class Faceling extends Monster {
             calmDown();
             return;
         }
-        if (!isHuntable(target) || distanceToSqr(target) > CHASE_GIVE_UP * CHASE_GIVE_UP) {
+        // Hiding in furniture (where it didn't see you get in) counts as being out of sight.
+        boolean hid = HidingService.isHiddenFrom(target, this);
+        if (!hid && !isHuntable(target) || distanceToSqr(target) > CHASE_GIVE_UP * CHASE_GIVE_UP) {
             calmDown();
             return;
         }
-        if (getSensing().hasLineOfSight(target)) {
+        if (!hid && getSensing().hasLineOfSight(target)) {
             unseenTicks = 0;
             lastSeen = target.position();
             getLookControl().setLookAt(target, 30.0f, 30.0f);
@@ -369,9 +378,23 @@ public class Faceling extends Monster {
         return best;
     }
 
+    /** Someone it may chase: not in a safe room, and not hiding in furniture (unless it saw them get in). */
     private boolean isHuntable(@Nullable Player player) {
         return player != null && player.isAlive() && !player.isRemoved() && !player.isSpectator()
-                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player);
+                && !player.isCreative() && player.level() == level() && !SafeRooms.isSafe(player)
+                && !HidingService.isHiddenFrom(player, this);
+    }
+
+    /** Only the hostile ones look for hiders; Strangers don't care where you are. */
+    @Override
+    public boolean isSeeking() {
+        return hostile;
+    }
+
+    /** It dragged someone out of their hiding place: the whole group comes at them. */
+    @Override
+    public void onPulledOut(ServerPlayer player) {
+        alertGroup(player);
     }
 
     // ------------------------------------------------------------------ vanilla hooks
