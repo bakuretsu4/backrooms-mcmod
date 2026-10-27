@@ -955,7 +955,7 @@ public final class Level37Plan {
         if (Math.floorMod(lx, 6) == 4 && Math.floorMod(lz, 6) == 4) {
             fillLights(c, ceil);
         }
-        if (lx == MID + 4 && lz == z0 + 1 && Hash.unit(Hash.mix(h ^ 3)) < 0.35) {
+        if (lx == MID + 4 && lz == z0 + 1 && Hash.unit(Hash.mix(h ^ 3)) < 0.17) {
             c.extra(FEET_Y, code(BACKPACK, Hash.range(Hash.mix(h ^ 4), 4)));
             return;
         }
@@ -1282,7 +1282,7 @@ public final class Level37Plan {
                 }
                 int step = Math.min(k, SPIRAL_TREADS + 1);
                 tread(2 * FEET_Y + step, c, false);
-                if (k == SPIRAL_TREADS + 3 && Hash.unit(Hash.mix(h ^ 1)) < 0.5) {
+                if (k == SPIRAL_TREADS + 3 && Hash.unit(Hash.mix(h ^ 1)) < 0.25) {
                     c.extra(FEET_Y + (SPIRAL_TREADS + 1) / 2, code(BACKPACK, Hash.range(Hash.mix(h ^ 2), 4)));
                 }
             }

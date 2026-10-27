@@ -255,7 +255,7 @@ Your heart rate (top-right, always shown in the Backrooms) is your sanity: 70 BP
   you; below 50 the camcorder picture darkens at the edges in time with your heart, loses colour
   and a black figure stands at the edge of your view until you look at it; below 30 you hear your
   heartbeat and the readout blinks red, and the Bacteria find you more often; below 15 the figure
-  sometimes screams and charges at you down the corridor. None of it is real.
+  sometimes breathes in and charges at you down the corridor. None of it is real.
 
 ### Safe rooms & checkpoints
 
@@ -281,8 +281,9 @@ light on and the sign over the front door.
 - **Bacteria:** tall black wire figure. It only knows where you are if it sees you or hears you
   sprint. In a lit room it spots you from about 24 blocks; in the dark only from about 8 (crouching
   makes both shorter, your flashlight doesn't matter). When it spots you it freezes for a moment and
-  screams, then chases. Break line of sight: it runs to where it *last saw* you, searches for a few
-  seconds (you hear its wires ticking), and when it gives up you hear a long falling creak. With
+  draws in one long, wrong breath, then chases. Break line of sight: it runs to where it *last saw*
+  you, searches for a few seconds (you hear it sniffing), and when it gives up you hear a slow sigh
+  moving away. It is quiet: wet, slow breathing and soft clicks, never a shriek. With
   NightShot on you can see it even in total darkness.
 - **Blackouts:** the lights fade out over two seconds. Only flashlights work, and the Bacteria come
   out three times as often, but they can't use the lamps to spot you either.
@@ -484,8 +485,13 @@ saturation, hiss and a big, empty room.
   catching and dropping out, a blackout is a big breaker clunking and the floor's hum sagging and
   dying in the concrete, and when the power comes back the starters tick before the hum swells
   in. Level 0's room tone and Level 1's garage air (a ventilation fan rattling far off in an empty
-  car park) are field recordings too, and so is your breathing.
-- **Mix:** the levels' background loops sit at about the same loudness, many lamps humming
+  car park) are field recordings too, and so is your breathing. The Bacteria's sounds are the same
+  breathing recordings slowed down, some played backwards, with soft wet clicks
+  (`tools/level_assets/bacteria.py`).
+- **Mix:** quiet on purpose. Every level's background loop is heard at the same loudness (about
+  -30 LUFS, set by its `volume` in `sounds.json`); hums, buzzes and drones stay around -27 and
+  nothing else (creatures, alarms, the camcorder's beeps) goes above about -18, so a scare stands
+  out without blasting. Backpacks open and close silently. Many lamps humming
   together are turned down so their drone never buries everything else, and the music sits a
   little above the level instead of over it.
 - **Level 39 "Megalophobia"** (`client/Level39Audio`, `client/Level39QuakeEffects`): the town

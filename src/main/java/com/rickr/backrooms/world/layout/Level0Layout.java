@@ -820,7 +820,7 @@ public final class Level0Layout extends LevelLayout {
     }
 
     /**
-     * Now and then someone's backpack lies on the floor of a room: rare (about one per 400 floor
+     * Now and then someone's backpack lies on the floor of a room: rare (about one per 800 floor
      * blocks), at most one per room. Returns the way it faces, or null for no backpack here.
      */
     @Nullable
@@ -829,7 +829,7 @@ public final class Level0Layout extends LevelLayout {
             return null; // rooms only, not the gaps in walls
         }
         long h = Hash.of(seed, Bands.index(sx), Bands.index(sz), 255);
-        if (Hash.unit(h) >= 0.06) {
+        if (Hash.unit(h) >= 0.03) {
             return null;
         }
         int bx = X_WALLS.start(sx) + Hash.range(Hash.mix(h ^ 1), Bands.length(sx));

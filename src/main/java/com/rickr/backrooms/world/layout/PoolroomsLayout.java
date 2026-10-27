@@ -699,8 +699,8 @@ public final class PoolroomsLayout extends LevelLayout {
     }
 
     /**
-     * Dropped backpacks: each cell has four candidate spots, each used one time in ten, but only
-     * where the spot is a dry walkway (the caller checks that). That is about one backpack per 400
+     * Dropped backpacks: each cell has four candidate spots, each used one time in twenty, but only
+     * where the spot is a dry walkway (the caller checks that). That is about one backpack per 800
      * dry blocks. Returns the backpack's facing, or null.
      */
     @Nullable
@@ -714,7 +714,7 @@ public final class PoolroomsLayout extends LevelLayout {
         int cz = Math.floorDiv(z, CELL);
         for (int k = 0; k < 4; k++) {
             long h = Hash.of(seed, cx, cz, 79 + k);
-            if (Hash.unit(h) >= 0.1
+            if (Hash.unit(h) >= 0.05
                     || mx != 1 + Hash.range(Hash.mix(h), CELL - 1)
                     || mz != 1 + Hash.range(Hash.mix(h ^ 1), CELL - 1)) {
                 continue;

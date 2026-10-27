@@ -256,7 +256,7 @@ final class Level1Areas {
                 height[0] = 1 + Hash.range(Hash.mix(h ^ 13), 2);
                 return ModBlocks.SUPPLY_CRATE.get().defaultBlockState();
             }
-        } else if (r < 0.52) {
+        } else if (r < 0.495) {
             if (u == fu && v == fv) {
                 return ModBlocks.BACKPACK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, intoV);
             }
@@ -439,7 +439,7 @@ final class Level1Areas {
             double r = Hash.unit(Hash.mix(site.salt() ^ (unit * 131L + side)));
             if (r < 0.4) {
                 out.set(floor + 1, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
-            } else if (r < 0.65) {
+            } else if (r < 0.52) {
                 Direction toAisle = site.alongX() ? (side == 0 ? Direction.SOUTH : Direction.NORTH) : (side == 0 ? Direction.EAST : Direction.WEST);
                 out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, toAisle));
             }

@@ -41,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li>below 50: the camcorder picture gets worse (see {@link #shaderSanity()}), and a black
  *       figure stands at the edge of your view... until you look at it;</li>
  *   <li>below 30: you hear your own heartbeat, faster and louder the lower you go;</li>
- *   <li>below 15: sometimes the figure screams and runs at you down the corridor. It's not real.</li>
+ *   <li>below 15: sometimes the figure breathes in and runs at you down the corridor. It's not real.</li>
  * </ul>
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
@@ -313,14 +313,14 @@ public final class SanityClientEffects {
         return false;
     }
 
-    /** Fake chase: the figure appears ~10 blocks ahead of you down the corridor and screams. */
+    /** Fake chase: the figure appears ~10 blocks ahead of you down the corridor and breathes in. */
     private static boolean spawnChase(ClientLevel level, LocalPlayer player, long now) {
         Vec3 dir = horizontal(player.getYRot());
         for (double distance = 10.0; distance >= 7.0; distance -= 1.0) {
             Vec3 spot = findFloor(level, player.getX() + dir.x * distance, player.getY(), player.getZ() + dir.z * distance);
             if (spot != null && canSee(level, player, spot)) {
                 showFigure(spot, true, now);
-                // The Bacteria's screech, lower and slower: something wrong with it.
+                // The Bacteria's inhale, lower and slower: something wrong with it.
                 level.playLocalSound(spot.x, spot.y + 2.0, spot.z, ModSounds.BACTERIA_SCREECH.get(), SoundSource.HOSTILE,
                         1.0f, 0.7f, false);
                 return true;

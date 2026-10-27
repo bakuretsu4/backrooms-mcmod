@@ -41,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
  * <pre>
  * WANDER  --sees you-->           SPOTTED --15 ticks--> CHASE --3 s without seeing you--> SEARCH
  * WANDER  --hears a sprint / every 30-60 s a rough guess--> DRIFT --arrives--> WANDER
- * SEARCH  --sees or hears you--> CHASE      SEARCH --8 s, nothing--> WANDER ("lost" creak)
+ * SEARCH  --sees or hears you--> CHASE      SEARCH --8 s, nothing--> WANDER ("lost" sigh)
  * </pre>
  * The mode is synced to clients so the model can pose and the camcorder can glitch.
  *
@@ -80,7 +80,7 @@ public class Bacteria extends Monster {
     private static final int LOST_SIGHT_TICKS = 60;
     /** How long it searches before giving up. */
     private static final int SEARCH_TICKS = 160;
-    /** How often the search ticking sound plays. */
+    /** How often the search sniffing plays. */
     private static final int SEARCH_SOUND_TICKS = 40;
     /** A drift that takes longer than this is abandoned. */
     private static final int DRIFT_MAX_TICKS = 600;
@@ -306,7 +306,7 @@ public class Bacteria extends Monster {
 
     /**
      * Safe rooms are off limits: if the next step of its path (or the spot it stands on) is
-     * inside one, it stops at the door. A hunt ends there as if it lost you (the "lost" creak
+     * inside one, it stops at the door. A hunt ends there as if it lost you (the "lost" sigh
      * tells you you made it). True if it stopped this tick.
      */
     private boolean keepOutOfSafeRooms() {
@@ -378,7 +378,7 @@ public class Bacteria extends Monster {
             giveUp(false);
             return;
         }
-        // Frozen, staring: this pause (plus the start of the screech) is the player's warning.
+        // Frozen, staring: this pause (plus the start of its long inhale) is the player's warning.
         getNavigation().stop();
         getLookControl().setLookAt(prey, 180.0f, 180.0f);
         if (modeTicks >= SPOTTED_TICKS) {
@@ -390,12 +390,12 @@ public class Bacteria extends Monster {
 
     private void tickChase() {
         if (prey != null && prey.isDeadOrDying()) {
-            // Got them. No "lost" creak: that sound must only ever mean "you escaped".
+            // Got them. No "lost" sigh: that sound must only ever mean "you escaped".
             giveUp(false);
             return;
         }
         if (prey != null && SafeRooms.isSafe(prey)) {
-            // You made it into a safe room: it gives up at once ("lost" creak, quiet minute).
+            // You made it into a safe room: it gives up at once ("lost" sigh, quiet minute).
             giveUp(true);
             return;
         }
@@ -452,7 +452,7 @@ public class Bacteria extends Monster {
                 return;
             }
         }
-        // Quiet wire ticking while it looks for you: you can hear that it is close.
+        // Quiet sniffing while it looks for you: you can hear that it is close.
         if (modeTicks % SEARCH_SOUND_TICKS == 1) {
             playSound(ModSounds.BACTERIA_SEARCH.get(), 0.8f, 0.9f + random.nextFloat() * 0.2f);
         }
@@ -478,10 +478,10 @@ public class Bacteria extends Monster {
         setTarget(player);
         getNavigation().stop();
         setMode(Mode.SPOTTED);
-        playSound(ModSounds.BACTERIA_SCREECH.get(), 3.0f, 0.9f + random.nextFloat() * 0.2f);
+        playSound(ModSounds.BACTERIA_SCREECH.get(), 1.5f, 0.9f + random.nextFloat() * 0.2f);
     }
 
-    /** Found you again while searching: no freeze this time, but it still screams (the tell). */
+    /** Found you again while searching: no freeze this time, but it still breathes in (the tell). */
     private void reacquire(Player player) {
         prey = player;
         lastSeen = player.position();
@@ -490,7 +490,7 @@ public class Bacteria extends Monster {
         pathGoal = null;
         setTarget(player);
         setMode(Mode.CHASE);
-        playSound(ModSounds.BACTERIA_SCREECH.get(), 3.0f, 0.9f + random.nextFloat() * 0.2f);
+        playSound(ModSounds.BACTERIA_SCREECH.get(), 1.5f, 0.9f + random.nextFloat() * 0.2f);
     }
 
     private void startSearch() {
@@ -499,7 +499,7 @@ public class Bacteria extends Monster {
         getNavigation().moveTo(lastSeen.x, lastSeen.y, lastSeen.z, SEARCH_SPEED);
     }
 
-    /** Back to wandering. {@code escaped}: someone got away, so play the "lost" creak and give them a quiet minute. */
+    /** Back to wandering. {@code escaped}: someone got away, so play the "lost" sigh and give them a quiet minute. */
     private void giveUp(boolean escaped) {
         prey = null;
         setTarget(null);
@@ -508,8 +508,8 @@ public class Bacteria extends Monster {
         // No guessing for at least 30 s after losing someone.
         nextGuessIn = GUESS_MIN_TICKS + random.nextInt(GUESS_MAX_TICKS - GUESS_MIN_TICKS);
         if (escaped) {
-            // The "lost" creak tells players they made it.
-            playSound(ModSounds.BACTERIA_LOST.get(), 1.5f, 0.9f + random.nextFloat() * 0.2f);
+            // The "lost" sigh tells players they made it.
+            playSound(ModSounds.BACTERIA_LOST.get(), 1.0f, 0.9f + random.nextFloat() * 0.2f);
             if (level() instanceof ServerLevel serverLevel) {
                 BacteriaSpawner.quietAround(serverLevel, position());
             }

@@ -3,7 +3,7 @@
 - Footstep sounds: Kenney Impact Sounds (CC0) https://kenney.nl
   (carpet, concrete, grass and wood samples vendored in `tools/vendor/kenney_impact/`, processed by `tools/gen_assets.py`)
 - Fluorescent light hum, flicker clicks, the power going out and coming back, Level 0's room tone,
-  Level 1's garage air and the player's breathing: field recordings from [Freesound](https://freesound.org),
+  Level 1's garage air, the player's breathing and the Bacteria (slowed and reversed breathing): field recordings from [Freesound](https://freesound.org),
   all [CC0](https://creativecommons.org/publicdomain/zero/1.0/), vendored in `tools/vendor/freesound/`
   (exact sources and the parts used in its `License.txt`) and processed by `tools/level_assets/recorded.py`:
   - [Fluorescent lightbulb hum buzz (Extended)](https://freesound.org/s/638895/) by Developer_Jake

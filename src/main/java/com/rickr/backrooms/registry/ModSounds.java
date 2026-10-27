@@ -95,9 +95,7 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SANITY_WHISPER = register("sanity.whisper");
     public static final DeferredHolder<SoundEvent, SoundEvent> SANITY_HEARTBEAT = register("sanity.heartbeat");
     public static final DeferredHolder<SoundEvent, SoundEvent> SANITY_KNOCK = register("sanity.knock");
-    // Supplies: backpack zipper, locker latch, pill bottle rattle, bandage being wrapped.
-    public static final DeferredHolder<SoundEvent, SoundEvent> BACKPACK_OPEN = register("block.backpack.open");
-    public static final DeferredHolder<SoundEvent, SoundEvent> BACKPACK_CLOSE = register("block.backpack.close");
+    // Supplies: locker latch, pill bottle rattle, bandage being wrapped.
     public static final DeferredHolder<SoundEvent, SoundEvent> LOCKER_OPEN = register("block.supply_locker.open");
     public static final DeferredHolder<SoundEvent, SoundEvent> LOCKER_CLOSE = register("block.supply_locker.close");
     public static final DeferredHolder<SoundEvent, SoundEvent> PILLS_RATTLE = register("item.calm_pills.rattle");

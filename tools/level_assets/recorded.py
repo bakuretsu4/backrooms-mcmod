@@ -5,7 +5,10 @@ air, Level 0's room tone and the breathing are built from CC0 field recordings (
 License.txt and CREDITS.md), cleaned up and looped, with a little synthesis layered in where it
 helps (the deep rumble under the garage, drips far off, the hum winding down when a breaker trips).
 
-Each sound is set to the loudness the synthesized one it replaces had, so the mix stays balanced.
+Loudness (LUFS, how loud it sounds) is set per sound, quiet on purpose: the level loops are
+heard at about -30 (their sounds.json volume does the last step), one lamp's hum close up at -27
+(several near you add up), flicker clicks -31, the power going out or coming back -25, breathing
+-29 (out of breath) and -31 (scared).
 
 Run only these with:  python tools/gen_assets.py recorded_
 """
@@ -46,13 +49,24 @@ def _rms(x: np.ndarray) -> float:
     return float(np.sqrt(np.mean(x ** 2)))
 
 
-def _like(x: np.ndarray, mean_db: float, peak: float = 0.95) -> np.ndarray:
-    """Scale to a mean level (dB re full scale, as ffmpeg's volumedetect measures it), but never
-    past `peak` (a soft limiter takes the rare peaks down instead)."""
-    x = x / (_rms(x) + 1e-12) * 10 ** (mean_db / 20)
-    over = np.abs(x) > peak * 0.8
+def lufs(x: np.ndarray) -> float:
+    """Integrated loudness (LUFS, EBU R128: how loud it sounds, not just its level), by ffmpeg."""
+    import subprocess
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".wav") as tmp:
+        sf.write(tmp.name, np.asarray(x, np.float32), SR, subtype="FLOAT")
+        out = subprocess.run(["ffmpeg", "-nostats", "-i", tmp.name, "-filter_complex", "apad=pad_dur=0.5,ebur128", "-f", "null", "-"],
+                             capture_output=True, text=True).stderr
+    return float([line for line in out.splitlines() if line.strip().startswith("I:")][-1].split()[1])
+
+
+def loud(x: np.ndarray, target: float, peak: float = 0.9) -> np.ndarray:
+    """Scale to a loudness in LUFS, but never past `peak` (a soft limiter takes the rare peaks
+    down instead). The targets live with each sound; see the table in this module's docstring."""
+    x = x * 10 ** ((target - lufs(x)) / 20)
+    knee = peak * 0.8
+    over = np.abs(x) > knee
     if over.any():
-        knee = peak * 0.8
         x = np.where(over, np.sign(x) * (knee + (peak - knee) * np.tanh((np.abs(x) - knee) / (peak - knee))), x)
     return x
 
@@ -95,7 +109,7 @@ def snd_recorded_light_hum() -> None:
     """The positional hum of one fluorescent fixture: a real ballast buzz (120/240 Hz), 8 s loop."""
     x = _clean(_rec("638895_fluorescent_hum"), lo=70)
     x = _loop(x[int(1.0 * SR):], 8.0, 0.6)
-    _save(_like(x, -10.9, peak=0.8), G.SND / "light" / "hum.ogg", loop=True)
+    _save(loud(x, -27.0), G.SND / "light" / "hum.ogg", loop=True)
 
 
 def snd_recorded_light_blink() -> None:
@@ -119,7 +133,7 @@ def snd_recorded_light_blink() -> None:
     for i, (_, name, t, seg) in enumerate(chosen, start=1):
         seg = seg * G.env_adsr(len(seg), 0.002, 0.12)
         print(f"  blink{i}: {name} at {t:.2f} s")
-        _save(_like(seg, -24.0, peak=0.6), G.SND / "light" / f"blink{i}.ogg")
+        _save(loud(seg, -31.0, peak=0.5), G.SND / "light" / f"blink{i}.ogg")
 
 
 def _breaker() -> np.ndarray:
@@ -160,7 +174,7 @@ def snd_recorded_power_down() -> None:
     x = G.norm(x) + 0.55 * G.norm(hum)
     wet = G.conv(x, G.reverb_ir(rng, 1.8, 0.55, lp=3500, predelay=0.02))[:n]
     x = x + 0.35 * G.norm(wet) * np.abs(x).max()
-    _save(_like(x, -19.2, peak=0.8), G.SND / "event" / "power_down.ogg", fade_out=0.15)
+    _save(loud(x, -25.0, peak=0.7), G.SND / "event" / "power_down.ogg", fade_out=0.15)
 
 
 def snd_recorded_power_up() -> None:
@@ -183,7 +197,7 @@ def snd_recorded_power_up() -> None:
     x = G.norm(x) + 0.5 * G.norm(hum)
     wet = G.conv(x, G.reverb_ir(rng, 1.2, 0.35, lp=4500, predelay=0.02))[:n]
     x = x + 0.25 * G.norm(wet) * np.abs(x).max()
-    _save(_like(x, -14.6, peak=0.8), G.SND / "event" / "power_up.ogg", fade_out=0.12)
+    _save(loud(x, -25.0, peak=0.7), G.SND / "event" / "power_up.ogg", fade_out=0.12)
 
 
 def snd_recorded_level1_ambience() -> None:
@@ -204,7 +218,7 @@ def snd_recorded_level1_ambience() -> None:
     drips = G.fft_filter(drips, lambda f: G.lp_gain(f, 1400, 2), circular=True)
     wet = G.circ_conv(drips, G.reverb_ir(rng, 4.0, 1.3, lp=1200, predelay=0.05))
     x = G.norm(air) + 0.35 * G.norm(rumble) + 0.03 * G.norm(drips) + 0.1 * G.norm(wet)
-    _save(_like(x, -17.8), G.SND / "ambient" / "level1_ambience.ogg", loop=True)
+    _save(loud(x, -24.0), G.SND / "ambient" / "level1_ambience.ogg", loop=True)
 
 
 def snd_recorded_level0_hum() -> None:
@@ -216,7 +230,7 @@ def snd_recorded_level0_hum() -> None:
     n = len(room_rec)
     bed = G.periodic_noise(n, rng, lambda f: G.hp_gain(f, 20, 2) * G.lp_gain(f, 450, 3) / np.maximum(f, 20))
     x = G.norm(room_rec) + 0.25 * G.norm(bed)
-    _save(_like(x, -18.3), G.SND / "ambient" / "level0_hum.ogg", loop=True)
+    _save(loud(x, -24.0), G.SND / "ambient" / "level0_hum.ogg", loop=True)
 
 
 def _quiet_near(x: np.ndarray, at: float, search: float) -> int:
@@ -241,13 +255,13 @@ def _breath_loop(name: str, start: float, length: float) -> np.ndarray:
 def snd_recorded_breath_heavy() -> None:
     """Out of breath after a sprint: deep, fast breaths close to the microphone."""
     x = _breath_loop("757113_heavy_breathing", 1.0, 12.0)
-    _save(_like(x, -21.0, peak=0.7), G.SND / "player" / "breath_heavy.ogg", loop=True)
+    _save(loud(x, -29.0, peak=0.6), G.SND / "player" / "breath_heavy.ogg", loop=True)
 
 
 def snd_recorded_breath_scared() -> None:
     """Something is near: quick, shaky, held-back breathing."""
     x = _breath_loop("554307_scared_breathing", 1.0, 14.0)
-    _save(_like(x, -23.0, peak=0.7), G.SND / "player" / "breath_scared.ogg", loop=True)
+    _save(loud(x, -31.0, peak=0.6), G.SND / "player" / "breath_scared.ogg", loop=True)
 
 
 TEXTURES: list = []

@@ -903,8 +903,8 @@ public final class Level9Layout extends LevelLayout {
             backFence = Hash.unit(seed, idx, k, 956) < 0.6 ? 2 : 1;
             glitch = !unlocked && Hash.unit(seed, idx, k, 957) < 0.04;
             crate = Hash.unit(seed, idx, k, 958) < 0.3;
-            porchBackpack = Hash.unit(seed, idx, k, 961) < 0.06;
-            drivewayBackpack = garage && Hash.unit(seed, idx, k, 962) < 0.08;
+            porchBackpack = Hash.unit(seed, idx, k, 961) < 0.03;
+            drivewayBackpack = garage && Hash.unit(seed, idx, k, 962) < 0.04;
             backpackFacing = Direction.from2DDataValue(Hash.range(Hash.of(seed, idx, k, 963), 4));
             clayDoor = unlocked && Hash.unit(seed, idx, k, 964) < 1.0 / 40.0;
             // The top storey's wall plate / ceiling layer; the roof's first stairs sit at this height

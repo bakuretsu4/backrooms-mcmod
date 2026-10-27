@@ -125,10 +125,10 @@ public class SupplyContainerBlockEntity extends BaseContainerBlockEntity {
         return ResourceKey.create(Registries.LOOT_TABLE, Backrooms.id("supplies/" + kind.lootName() + "/" + name));
     }
 
-    /** Called (server side) when a player's menu opens; plays the open sound (creak, zipper, latch). */
+    /** Called (server side) when a player's menu opens; plays the open sound (creak, latch; backpacks are silent). */
     @Override
     public void startOpen(Player player) {
-        if (!player.isSpectator() && level != null) {
+        if (!player.isSpectator() && level != null && kind.openSound() != null) {
             level.playSound(null, worldPosition, kind.openSound(), SoundSource.BLOCKS, 0.8f, 0.9f + level.getRandom().nextFloat() * 0.15f);
         }
     }
@@ -136,7 +136,7 @@ public class SupplyContainerBlockEntity extends BaseContainerBlockEntity {
     /** Called (server side) when a player's menu closes. */
     @Override
     public void stopOpen(Player player) {
-        if (!player.isSpectator() && level != null) {
+        if (!player.isSpectator() && level != null && kind.closeSound() != null) {
             level.playSound(null, worldPosition, kind.closeSound(), SoundSource.BLOCKS, 0.7f, 0.9f + level.getRandom().nextFloat() * 0.15f);
         }
     }

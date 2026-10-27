@@ -670,7 +670,7 @@ public final class Level1Layout extends LevelLayout {
         int cx = Math.floorDiv(x, GRID);
         int cz = Math.floorDiv(z, GRID);
         long h = Hash.of(seed, cx, cz, 54);
-        if (Hash.unit(h) >= 0.1 || rackBay(seed, cx, cz)) {
+        if (Hash.unit(h) >= 0.05 || rackBay(seed, cx, cz)) {
             return null;
         }
         if (mx != PILLAR + Hash.range(Hash.mix(h ^ 1), GRID - PILLAR) || mz != PILLAR + Hash.range(Hash.mix(h ^ 2), GRID - PILLAR)) {

@@ -432,7 +432,7 @@ public final class Level2Layout extends LevelLayout {
     private static int corridorBackpack(long seed, int gx, int gz, int axis, int along) {
         long h = Hash.of(seed, gx, gz, 350 + axis);
         // Positions 5..13 stay clear of junction rooms (which reach 2 blocks into the corridor).
-        if (Hash.unit(h) >= 0.12 || along != 5 + Hash.range(Hash.mix(h), 9)) {
+        if (Hash.unit(h) >= 0.06 || along != 5 + Hash.range(Hash.mix(h), 9)) {
             return WALK;
         }
         return withFacing(BACKPACK, Direction.from2DDataValue(Hash.range(Hash.mix(h ^ 1), 4)));

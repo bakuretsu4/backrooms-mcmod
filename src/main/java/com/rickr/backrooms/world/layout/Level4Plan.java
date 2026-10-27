@@ -811,7 +811,8 @@ final class Level4Plan {
         if (a == 4 && b == 4) {
             double s = Hash.unit(Hash.mix(h ^ 5));
             if (s < 0.6) return furniture(base, CRATE, plusB, s < 0.2 ? 1 : 0);
-            return furniture(base, BACKPACK, Hash.range(Hash.mix(h ^ 6), 4), 0);
+            if (s < 0.8) return furniture(base, BACKPACK, Hash.range(Hash.mix(h ^ 6), 4), 0);
+            return base;
         }
         return base;
     }
@@ -888,7 +889,7 @@ final class Level4Plan {
         if (depth == 1 && iu == 3) {
             // Beside the chair, against the side partition (the front row stays free to walk in).
             if (r >= 0.15 && r < 0.27) return furniture(base, BOXES, toFront, Hash.unit(Hash.mix(h ^ 5)) < 0.3 ? 1 : 0);
-            if (r >= 0.27 && r < 0.29) return furniture(base, BACKPACK, Hash.range(Hash.mix(h ^ 6), 4), 0);
+            if (r >= 0.27 && r < 0.28) return furniture(base, BACKPACK, Hash.range(Hash.mix(h ^ 6), 4), 0);
         }
         return base;
     }

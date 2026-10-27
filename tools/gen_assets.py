@@ -2463,36 +2463,6 @@ def _crackle(rng, dur, density, f_lo=2500) -> np.ndarray:
     return conv(x, ring([3200, 5100], [0.0015, 0.001], [1, 0.6], 0.01))[:n]
 
 
-def snd_bacteria_ambient() -> None:
-    specs = [
-        # (seed, dur, weights: clicks, crackle, creak, rattle)
-        (501, 1.7, (1.0, 0.35, 0.0, 0.8)),
-        (502, 1.3, (0.8, 0.2, 1.0, 0.0)),
-        (503, 2.3, (0.5, 0.6, 0.5, 1.0)),
-    ]
-    for i, (seed, dur, (wc, wk, wr, wg)) in enumerate(specs, 1):
-        rng = rng_for(seed)
-        n = int(dur * SR)
-        times = np.sort(rng.uniform(0.02, dur - 0.1, int(rng.integers(7, 14))))
-        # bunch some clicks into quick wet bursts
-        times = np.concatenate([times, times[::3] + rng.uniform(0.01, 0.03)])
-        wet = clicks(rng, times, dur, 700, 1800, 0.004, 0.012)
-        dry = clicks(rng, times + 0.004, dur, 2500, 4800, 0.0015, 0.004)
-        x = np.zeros(n)
-        x += wc * norm(wet * 0.7 + dry * 0.5)
-        x += wk * norm(_crackle(rng, dur, 220)) * np.clip(np.sin(np.pi * np.arange(n) / n) * 1.5, 0, 1)
-        if wr:
-            cr = norm(_creak(rng, dur * 0.8, 25, 70, [310, 690, 1450]))
-            x += wr * 0.8 * np.pad(cr, (int(dur * 0.1 * SR), n))[:n]
-        if wg:
-            rd = dur * 0.75
-            g = _rattle(rng, rd, 70 + 10 * i, 105 + 8 * i, 22 + 3 * i)
-            x += wg * np.pad(norm(g), (int(dur * 0.15 * SR), n))[:n] * 0.7
-        ir = reverb_ir(rng, 0.6, 0.12, lp=5000)
-        x = x + 0.25 * norm(conv(x, ir)[:n]) * np.abs(x).max()
-        save_ogg(x, SND / "entity" / f"bacteria_ambient{i}.ogg", peak=0.85, fade_out=0.05)
-
-
 def _scream(rng, dur, f_pts, f1_pts, f2_pts, env_pts, drive=5.0, bits=6, hold=2,
             detune=1.059, sub=0.35) -> np.ndarray:
     n = int(dur * SR)
@@ -2512,147 +2482,6 @@ def _scream(rng, dur, f_pts, f1_pts, f2_pts, env_pts, drive=5.0, bits=6, hold=2,
     x = norm(x) * e
     d = bitcrush(dist(x, drive), bits, hold)
     return 0.75 * d + 0.25 * x
-
-
-def _metal_tail(rng, x, tail_level=0.4) -> np.ndarray:
-    n = len(x)
-    ir = ring([1130, 1790, 2650, 3420], [0.5, 0.42, 0.35, 0.28], [1, 0.7, 0.55, 0.35], 1.2)
-    ir = ir / np.abs(ir).max() * 0.02 + reverb_ir(rng, 1.2, 0.35, lp=6000) * 0.5
-    wet = conv(x, ir)[:n]
-    return x + tail_level * norm(wet) * np.abs(x).max()
-
-
-def snd_bacteria_screech() -> None:
-    rng = rng_for(601)
-    dur = 2.7
-    x = _scream(rng, dur,
-                f_pts=[(0, 170), (0.3, 640), (0.8, 720), (1.25, 930), (1.7, 760), (2.1, 520), (dur, 420)],
-                f1_pts=[(0, 700), (0.5, 1050), (1.5, 1150), (dur, 850)],
-                f2_pts=[(0, 1700), (0.5, 2500), (1.5, 2700), (dur, 2000)],
-                env_pts=[(0, 0), (0.08, 0.8), (0.4, 1.0), (1.6, 1.0), (2.15, 0.25), (2.35, 0), (dur, 0)])
-    save_ogg(_metal_tail(rng, x, 0.45), SND / "entity" / "bacteria_screech1.ogg", peak=0.89, fade_out=0.15)
-
-    rng = rng_for(602)
-    dur = 2.5
-    x = _scream(rng, dur,
-                f_pts=[(0, 1150), (0.2, 980), (0.55, 620), (0.7, 380), (0.85, 820), (1.3, 1020),
-                       (1.75, 690), (dur, 300)],
-                f1_pts=[(0, 1100), (0.7, 750), (1.0, 1200), (dur, 800)],
-                f2_pts=[(0, 2800), (0.7, 1900), (1.0, 2700), (dur, 1800)],
-                env_pts=[(0, 0), (0.04, 1.0), (0.6, 0.85), (0.72, 0.35), (0.86, 1.0), (1.55, 0.9),
-                         (1.95, 0.15), (2.1, 0), (dur, 0)],
-                drive=7.0, bits=5, hold=3, detune=1.12, sub=0.5)
-    save_ogg(_metal_tail(rng, x, 0.5), SND / "entity" / "bacteria_screech2.ogg", peak=0.89, fade_out=0.15)
-
-
-def snd_bacteria_steps() -> None:
-    for i, (seed, dur) in enumerate(((701, 0.22), (702, 0.28), (703, 0.25)), 1):
-        rng = rng_for(seed)
-        n = int(dur * SR)
-        t = np.arange(n) / SR
-        t0 = 0.006
-        tt = np.clip(t - t0, 0, None)
-        on = (t >= t0).astype(float)
-        f = np.interp(tt, [0, 0.06], [rng.uniform(100, 130), rng.uniform(42, 52)])
-        thud = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-tt / rng.uniform(0.035, 0.055)) * on
-        muff = fft_filter(rng.normal(size=n), lambda fr: lp_gain(fr, 380, 2)) * np.exp(-tt / 0.03) * on
-        scuff = fft_filter(rng.normal(size=n), lambda fr: bp_gain(fr, 900, 3500, 1)) * np.exp(-tt / 0.02) * on
-        ctimes = [t0 + 0.001, t0 + rng.uniform(0.014, 0.03), t0 + rng.uniform(0.05, 0.09)]
-        if i == 2:
-            ctimes.append(t0 + rng.uniform(0.11, 0.15))
-        clk = clicks(rng, ctimes, dur, 2600, 5200, 0.0012, 0.003)
-        x = norm(thud) + 0.5 * norm(muff) + 0.12 * norm(scuff) + 0.45 * norm(clk)
-        save_ogg(x, SND / "entity" / f"bacteria_step{i}.ogg", peak=0.85, fade_in=0.001, fade_out=0.03)
-
-
-def snd_bacteria_hurt() -> None:
-    rng = rng_for(801)
-    dur = 0.6
-    x = _scream(rng, dur,
-                f_pts=[(0, 620), (0.1, 1350), (0.25, 1100), (0.45, 700), (dur, 560)],
-                f1_pts=[(0, 900), (0.2, 1200), (dur, 800)],
-                f2_pts=[(0, 2400), (0.2, 3000), (dur, 2100)],
-                env_pts=[(0, 0), (0.015, 1.0), (0.3, 0.8), (0.5, 0.15), (dur, 0)],
-                drive=6.0, bits=6, hold=2, detune=1.08, sub=0.3)
-    save_ogg(_metal_tail(rng, x, 0.25), SND / "entity" / "bacteria_hurt.ogg", peak=0.89, fade_out=0.05)
-
-
-def snd_bacteria_death() -> None:
-    rng = rng_for(901)
-    dur = 2.0
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    x = _scream(rng, dur,
-                f_pts=[(0, 700), (0.18, 1050), (0.5, 760), (1.0, 380), (1.4, 150), (dur, 90)],
-                f1_pts=[(0, 1000), (0.4, 1150), (1.4, 600), (dur, 450)],
-                f2_pts=[(0, 2600), (0.4, 2800), (1.4, 1500), (dur, 1100)],
-                env_pts=[(0, 0), (0.03, 1.0), (0.6, 0.9), (1.2, 0.5), (1.55, 0.12), (1.75, 0), (dur, 0)],
-                drive=8.0, bits=5, hold=3, detune=1.1, sub=0.6)
-    dens = np.interp(t, [0, 0.8, 1.3, 1.7, dur], [20, 120, 500, 260, 0])
-    crk = np.zeros(n)
-    k = rng.random(n) < dens / SR
-    crk[k] = rng.choice([-1, 1], k.sum()) * rng.random(k.sum()) ** 2
-    crk = conv(crk, ring([2400, 4100, 900], [0.002, 0.0012, 0.004], [1, 0.6, 0.5], 0.02))[:n]
-    wet_clk = clicks(rng, np.sort(rng.uniform(1.2, 1.85, 12)), dur, 700, 1600, 0.005, 0.012)
-    y = _metal_tail(rng, x, 0.3) + 0.45 * norm(crk) + 0.35 * norm(wet_clk)
-    save_ogg(y, SND / "entity" / "bacteria_death.ogg", peak=0.89, fade_out=0.08)
-
-
-def snd_bacteria_search() -> None:
-    """Searching: quiet, fast wire ticking with a sniffing rasp. Plays every 2 s while it hunts
-    for you, so a hidden player can hear how close it is and which way it's moving."""
-    for i, (seed, dur) in enumerate(((1001, 1.4), (1002, 1.7)), 1):
-        rng = rng_for(seed)
-        n = int(dur * SR)
-        t = np.arange(n) / SR
-        # Bursts of 4-7 quick ticks, like wire fingers tapping along a wall.
-        times = []
-        start = 0.03
-        while start < dur - 0.25:
-            k = int(rng.integers(4, 8))
-            gap = rng.uniform(0.025, 0.045)
-            times.extend(start + np.arange(k) * gap + rng.uniform(-0.004, 0.004, k))
-            start += k * gap + rng.uniform(0.12, 0.3)
-        ticks = clicks(rng, np.array(times), dur, 2200, 4600, 0.0012, 0.003, amp_pow=1.5)
-        # Two short inhaled rasps (band-limited noise swells), the "sniffing".
-        rasp = np.zeros(n)
-        for s0 in rng.uniform(0.1, dur - 0.5, 2):
-            m = int(0.28 * SR)
-            seg = fft_filter(rng.normal(size=m), lambda f: bp_gain(f, 1800, 5200, 2))[:m]
-            seg *= np.sin(np.pi * np.arange(m) / m) ** 2
-            add_at(rasp, seg, s0, circular=False)
-        x = norm(ticks) + 0.35 * norm(rasp) + 0.3 * norm(_crackle(rng, dur, 90))
-        x *= np.clip(np.sin(np.pi * t / dur) * 1.4, 0, 1)
-        x = x + 0.2 * norm(conv(x, reverb_ir(rng, 0.5, 0.1, lp=5000))[:n]) * np.abs(x).max()
-        save_ogg(x, SND / "entity" / f"bacteria_search{i}.ogg", peak=0.8, fade_out=0.05)
-
-
-def snd_bacteria_lost() -> None:
-    """Giving up: a long creak that falls in pitch, with ticks thinning out as it moves away.
-    It's the 'you made it' signal, so it must sound like the opposite of the screech."""
-    rng = rng_for(1101)
-    dur = 2.2
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    # Creak whose pulse rate only falls (60 -> 14 per second): the wires slowing and settling.
-    cdur = dur * 0.9
-    cn = int(cdur * SR)
-    ct = np.arange(cn) / SR
-    rate = np.interp(ct, [0, cdur], [60, 14]) * (1 + smooth_jitter(rng, cn, 8, 0.25))
-    ph = np.cumsum(rate) / SR
-    pulses = np.zeros(cn)
-    pulses[np.nonzero(np.diff(np.floor(ph)) > 0)[0]] = 1.0
-    pulses *= rng.uniform(0.4, 1.0, cn)
-    cr = conv(pulses, ring([260, 590, 1240], [0.012, 0.009, 0.006], [1, 0.7, 0.4], 0.06))[:cn]
-    cr = np.pad(cr, (0, n))[:n]
-    times = np.sort(rng.uniform(0.05, dur - 0.2, 26))
-    keep = rng.random(len(times)) > times / dur  # fewer and fewer ticks toward the end
-    ticks = clicks(rng, times[keep], dur, 1500, 3800, 0.002, 0.005)
-    x = norm(cr) + 0.4 * norm(ticks)
-    x = fft_filter(x, lambda f: lp_gain(f, 5200, 2))[:n]
-    x *= np.interp(t, [0, 0.05, 1.0, dur], [0, 1, 0.7, 0])
-    x = x + 0.3 * norm(conv(x, reverb_ir(rng, 0.9, 0.25, lp=3500))[:n]) * np.abs(x).max()
-    save_ogg(x, SND / "entity" / "bacteria_lost.ogg", peak=0.82, fade_out=0.2)
 
 
 # =============================================================================
@@ -3777,33 +3606,6 @@ def tex_supply_locker_front() -> None:
 
 
 # --- Supply sounds ----------------------------------------------------------------------------
-
-def _zipper(rng, dur, rate_pts, f_lo=1800, f_hi=5200) -> np.ndarray:
-    """A zipper run: one tiny click per tooth, rate following rate_pts, over fabric hiss."""
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    rate = np.interp(t, np.linspace(0, dur, len(rate_pts)), rate_pts) * (1 + smooth_jitter(rng, n, 10, 0.2))
-    phase = np.cumsum(rate) / SR
-    ticks = np.nonzero(np.diff(np.floor(phase)) > 0)[0] / SR
-    x = clicks(rng, ticks, dur + 0.05, f_lo, f_hi, 0.0008, 0.002)[:n]
-    hiss = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 2000, 9000, 1))[:n]
-    hiss *= np.interp(t, np.linspace(0, dur, len(rate_pts)), rate_pts) / max(rate_pts)
-    return norm(x) + 0.35 * norm(hiss)
-
-
-def snd_zipper_open() -> None:
-    """~0.7 s zipper pulled open: speeds up, then slows at the end of the track."""
-    rng = rng_for(3130)
-    x = _zipper(rng, 0.7, [60, 260, 320, 180, 40])
-    save_ogg(x, SND / "supplies" / "zipper_open.ogg", peak=0.7, fade_in=0.002, fade_out=0.04)
-
-
-def snd_zipper_close() -> None:
-    """~0.55 s zipper pulled shut: a quick steady run ending in a soft stop."""
-    rng = rng_for(3131)
-    x = _zipper(rng, 0.55, [120, 300, 300, 240, 30], f_lo=1500, f_hi=4400)
-    save_ogg(x, SND / "supplies" / "zipper_close.ogg", peak=0.7, fade_in=0.002, fade_out=0.04)
-
 
 def _clank(rng, dur, freqs, decay) -> np.ndarray:
     """Struck sheet metal: a sharp noise transient into a few inharmonic ringing modes."""
@@ -8507,8 +8309,7 @@ TEXTURES = [
 ]
 SOUNDS = [
     snd_level2_ambience,
-    snd_bacteria_ambient, snd_bacteria_screech, snd_bacteria_steps, snd_bacteria_hurt,
-    snd_bacteria_death, snd_bacteria_search, snd_bacteria_lost, snd_rec_beep, snd_battery_low, snd_noclip, snd_escape,
+    snd_rec_beep, snd_battery_low, snd_noclip, snd_escape,
     snd_flashlight_click, snd_wake_up, snd_alarm,
     snd_footsteps, snd_intercom, snd_distant_knock,
     snd_distant_creak, snd_thunder, snd_radio_static, snd_death_sting,
@@ -8518,7 +8319,7 @@ SOUNDS = [
     snd_watcher_spot, snd_watcher_beam, snd_watcher_dust, snd_observer_vanish, snd_leaf_steps,
     snd_smiler_breath,
     snd_sanity_whisper, snd_sanity_heartbeat, snd_sanity_knock,
-    snd_zipper_open, snd_zipper_close, snd_locker_open, snd_locker_close, snd_pills_rattle, snd_bandage_wrap,
+    snd_locker_open, snd_locker_close, snd_pills_rattle, snd_bandage_wrap,
     snd_checkpoint_save,
     snd_water_wade, snd_water_splash,
     *L4_SOUNDS,
