@@ -4,6 +4,7 @@
   "package": "com.rickr.backrooms.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "DriftPacketListenerMixin",
     "LivingEntityMixin",
     "ServerGamePacketListenerAccessor"
   ],

@@ -110,7 +110,7 @@ public class PhantomFriend extends PathfinderMob {
     /** UUID of the player being copied: the client looks up their skin with it. */
     private static final EntityDataAccessor<Optional<UUID>> MIMIC_ID =
             SynchedEntityData.defineId(PhantomFriend.class, EntityDataSerializers.OPTIONAL_UUID);
-    /** Their name, for the name tag (works even if they log off later). */
+    /** Their name, wherever the game names it (works even if they log off later). */
     private static final EntityDataAccessor<String> MIMIC_NAME =
             SynchedEntityData.defineId(PhantomFriend.class, EntityDataSerializers.STRING);
     /** True while the right arm is raised and waving. */
@@ -248,7 +248,10 @@ public class PhantomFriend extends PathfinderMob {
 
     // ---- Behaves like a player, but can't be touched, hurt, pushed or saved -----------------
 
-    /** Shows the copied player's name (name tag, and anywhere else the game names it). */
+    /**
+     * Uses the copied player's name wherever the game names it. No name tag is drawn in the
+     * Backrooms (client/hud/BackroomsHudEvents), for real players and copies alike.
+     */
     @Override
     public Component getName() {
         String name = entityData.get(MIMIC_NAME);

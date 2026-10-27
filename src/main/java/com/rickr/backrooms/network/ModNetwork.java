@@ -111,6 +111,10 @@ public final class ModNetwork {
             }
         });
 
+        // Separate realities: the blocks the drifted player sees differently (their clicks on them do nothing).
+        registrar.playToClient(DriftPayload.TYPE, DriftPayload.STREAM_CODEC,
+                (payload, context) -> com.rickr.backrooms.client.DriftClient.receive(payload.faked()));
+
         registrar.playToServer(CameraTogglePayload.TYPE, CameraTogglePayload.STREAM_CODEC, (payload, context) -> {
             if (context.player() instanceof ServerPlayer player) {
                 CameraService.toggle(player, payload.toggle());

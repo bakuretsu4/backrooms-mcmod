@@ -16,6 +16,8 @@ import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
 import com.rickr.backrooms.world.LevelEvents;
 import com.rickr.backrooms.world.Travel;
+import com.rickr.backrooms.world.RealityDrift;
+import org.jetbrains.annotations.Nullable;
 import com.rickr.backrooms.world.anomaly.AnomalyService;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.Level94Clock;
@@ -43,6 +45,7 @@ import net.minecraft.world.phys.Vec3;
  * /backrooms sanity [targets] <0-100>   set sanity (for testing the low-sanity effects)
  * /backrooms locate                    distance/direction to the nearest exit (for testing)
  * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|end> [seconds]   start/stop an event on this floor
+ * /backrooms drift <player> [sealed|door|lights|end]   separate realities: that player sees the room differently from the nearest friend (end = snap back)
  * /backrooms spawn bacteria [count]   spawn Bacteria about 12 blocks in front of you (for testing)
  * /backrooms spawn smiler [count|bold]  spawn Smilers about 16 blocks in front of you (start a blackout first)
  * /backrooms locate saferoom          distance/direction to the nearest safe room (for testing)
@@ -106,6 +109,15 @@ public final class BackroomsCommand {
                         .then(eventNode("rain", LevelEventPayload.INDOOR_RAIN, 180))
                         .then(eventNode("quake", LevelEventPayload.ECHO_QUAKE, 12))
                         .then(Commands.literal("end").executes(ctx -> event(ctx, LevelEventPayload.NONE, 0))))
+                // Separate realities: force one for a player (with the nearest other player, or alone), or end it.
+                .then(Commands.literal("drift")
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .executes(ctx -> drift(ctx, null))
+                                .then(Commands.literal("sealed").executes(ctx -> drift(ctx, RealityDrift.Variant.SEALED)))
+                                .then(Commands.literal("door").executes(ctx -> drift(ctx, RealityDrift.Variant.DOOR)))
+                                .then(Commands.literal("lights").executes(ctx -> drift(ctx, RealityDrift.Variant.LIGHTS)))
+                                .then(Commands.literal("end").executes(ctx -> report(ctx,
+                                        RealityDrift.endByCommand(EntityArgument.getPlayer(ctx, "player")))))))
                 // Level 94 (Sky slice): jump the day/night clock to the start of a phase.
                 .then(Commands.literal("time94")
                         .then(Commands.literal("day").executes(ctx -> time94(ctx, 0)))
@@ -139,6 +151,20 @@ public final class BackroomsCommand {
             return 0;
         }
         LevelEvents.force(level, floor, kind, seconds * 20);
+        return 1;
+    }
+
+    private static int drift(CommandContext<CommandSourceStack> ctx, @Nullable RealityDrift.Variant variant) throws CommandSyntaxException {
+        return report(ctx, RealityDrift.force(EntityArgument.getPlayer(ctx, "player"), variant));
+    }
+
+    /** Shows a drift command's answer as success (grey) or failure (red). */
+    private static int report(CommandContext<CommandSourceStack> ctx, RealityDrift.CommandResult result) {
+        if (!result.success()) {
+            ctx.getSource().sendFailure(Component.literal(result.message()));
+            return 0;
+        }
+        ctx.getSource().sendSuccess(() -> Component.literal(result.message()), true);
         return 1;
     }
 

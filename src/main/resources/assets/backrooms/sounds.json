@@ -3041,6 +3041,12 @@
     ],
     "subtitle": "subtitles.backrooms.hide.gasp"
   },
+  "drift.snap_back": {
+    "sounds": [
+      "backrooms:drift/snap_back"
+    ],
+    "subtitle": "subtitles.backrooms.drift.snap_back"
+  },
   "player.breath_heavy": {
     "sounds": [
       {

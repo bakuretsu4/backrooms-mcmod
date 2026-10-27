@@ -1,0 +1,7 @@
+{
+  "parent": "backrooms:block/l1_hanging_light",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "d": "backrooms:block/l1x_light_diffuser_off"
+  }
+}

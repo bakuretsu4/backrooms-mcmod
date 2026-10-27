@@ -277,11 +277,15 @@ Your heart rate (top-right, always shown in the Backrooms) is your sanity: 70 BP
   Watcher, an Observer or a Smiler, and during blackouts.
 - **Restores** in a safe room (fast), next to a friend in the light (slowly), out in the real world,
   and with Almond Water (+35) or Calm Pills (+25). Creative/spectator players aren't affected.
-- **When it's low** (only you notice): below 70 you hear whispers, knocks and footsteps right behind
-  you; below 50 the camcorder picture darkens at the edges in time with your heart, loses colour
-  and a black figure stands at the edge of your view until you look at it; below 30 you hear your
-  heartbeat and the readout blinks red, and the Bacteria find you more often; below 15 the figure
-  sometimes breathes in and charges at you down the corridor. None of it is real.
+- **When it's low** (mostly only you notice): below 70 you hear whispers, knocks and footsteps
+  right behind you; below 50 the camcorder picture darkens at the edges in time with your heart,
+  loses colour and a black figure stands at the edge of your view until you look at it; below 30
+  you hear your heartbeat and the readout blinks red, and the Bacteria find you more often; below
+  15 the figure sometimes breathes in and charges at you down the corridor. None of it is real.
+- **Shared panic** (`player/SharedHeartbeat`): while you hear your own heartbeat (below 30), other
+  players within 12 blocks hear it too, faintly and coming from you, at your heart rate. Walls muffle
+  it like any other sound. Spectators don't make or hear it, hiding doesn't stop it, monsters can't
+  hear it, and it costs the listener no sanity.
 
 ### Safe rooms & checkpoints
 
@@ -394,6 +398,16 @@ houses). Upside-down furniture doesn't count.
   bells, hard landings and breaking walls add up, and enough noise sets one off.
 - **Indoor rain (Level 39):** the superstructure's own clouds rain on the town for a few minutes
   every quarter of an hour or so.
+- **Separate realities (Levels 0, 1 and 4, with friends):** rarely, about once in 25 minutes that
+  two of you spend 3 to 12 blocks apart (outside safe rooms, not hiding, no blackout or alarm),
+  one of you sees the room differently. A doorway you just came through is walled up, a door
+  stands in a wall that has none (it never opens), or the lights around you are dead while your
+  friend's are on. Walls and doors change while you aren't looking; there is no sound and no
+  effect, your friend simply says "what door?". Walk up to each other and it snaps back, with a
+  soft thump in your ears. It also ends after a minute or two, or if either of you wanders off,
+  dies, hides or leaves. The same two people get it at most once every 10 minutes. Nothing is
+  changed in the world: the server only shows that one player different blocks
+  (`world/RealityDrift`), so a restart always leaves the real room.
 - **Battery:** lasts 40 minutes; flashlight and NightShot drain it faster. It recharges in the
   real world.
 - Dying in the Backrooms: *you can't escape.*
@@ -503,6 +517,9 @@ The camera also reacts like a real one:
   tutorial hints or advancement pop-ups. Hearts, hunger and air appear only for a few seconds when
   they change (and stay faintly in view while your health is low); the hotbar slides away when
   you're not switching items (`client/hud/BackroomsHudEvents`).
+- **No name tags** (`client/hud/BackroomsHudEvents`): while you are in any Backrooms level nobody
+  has a name floating over their head, players or anything pretending to be one, so you only
+  know who's who by finding them. Chat, the player list and the overworld are unchanged.
 - **Your breathing** (`client/Breathing`): heavy breathing after a sprint that eases off as you get
   your breath back, and quick, shaky breaths when something is near.
 
@@ -586,6 +603,7 @@ saturation, hiss and a big, empty room.
 /backrooms anomaly here                 which anomalous area am I standing in?
 /backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... and level_0/set/...
 /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|rain|quake|end> [seconds]
+/backrooms drift <player> [sealed|door|lights|end]   separate realities now: that player sees a sealed doorway, a door or dead lights (with the nearest friend, or alone); end = snap back
 /backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
 /backrooms sanity [players] <0-100>     set sanity (test the low-sanity effects)
 /backrooms spawn bacteria [count]       spawn Bacteria ~12 blocks in front of you (they only hunt survival players)
@@ -642,7 +660,7 @@ Keys are `[seconds, x, eye height, z, yaw, pitch]`. The HUD is hidden while reco
 | `client/anomaly` | Client side of the anomalous areas: which sites are near (`AnomalyClientState`), per-level picture moods, sounds and overlays; one sub-package per level |
 | `entity` | The Bacteria and its spawner; Level 39's mobs (`Hound`, `Faceling`, `Clump`, `SkinStealer`, `Wretch`) and their spawning (`Level39Spawner`, `TunnelDwellers`) |
 | `camera` | Camcorder battery/flashlight/NightShot server rules, flashlight sync |
-| `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`), hiding in furniture (`HidingService`, which furniture and where the view sits: `HidingSpots`) |
+| `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`), hiding in furniture (`HidingService`, which furniture and where the view sits: `HidingSpots`), friends hearing a panicking player's heartbeat (`SharedHeartbeat`) |
 | `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas) |
 | `network` | Packets between server and clients |
 | `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`) |

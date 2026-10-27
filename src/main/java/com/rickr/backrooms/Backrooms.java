@@ -56,6 +56,8 @@ public final class Backrooms {
         com.rickr.backrooms.registry.LightSupplies.bootstrap();
         // Hiding in furniture: getting in and out of lockers and wardrobes, crawling under desks and beds, gasping.
         com.rickr.backrooms.registry.HidingAudio.bootstrap();
+        // Separate realities: Level 1's dead lamps for the "lights out" drift, and the snap-back thump.
+        com.rickr.backrooms.registry.DriftRegistry.bootstrap();
         ModBlocks.BLOCKS.register(modBus);
         ModItems.ITEMS.register(modBus);
         ModEntities.ENTITIES.register(modBus);

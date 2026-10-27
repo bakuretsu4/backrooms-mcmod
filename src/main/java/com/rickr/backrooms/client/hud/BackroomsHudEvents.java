@@ -3,12 +3,11 @@ package com.rickr.backrooms.client.hud;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.client.CamcorderEffect;
-import com.rickr.backrooms.entity.PhantomFriend;
+import com.rickr.backrooms.world.Travel;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,8 +25,9 @@ import net.neoforged.neoforge.common.util.TriState;
  * footage, not a game. No crosshair, block outline, XP bar or hand; hearts, hunger and air hidden until they
  * change (then they fade in for a few seconds, and stay faintly in view while your health is low);
  * a hotbar that slides out of view when you're not using it (switching items still shows the item's
- * name for a moment); no tutorial hints or advancement pop-ups; no player nametags.
- * Outside the Backrooms (unless you're filming with a camcorder) nothing here does anything.
+ * name for a moment); no tutorial hints or advancement pop-ups; no name tags above anyone's head.
+ * Outside the Backrooms (unless you're filming with a camcorder) nothing here does anything; the
+ * name tags follow only the dimension, so in the overworld they are always vanilla.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class BackroomsHudEvents {
@@ -189,12 +189,22 @@ public final class BackroomsHudEvents {
         return x * x * (3.0f - 2.0f * x) * HOTBAR_SLIDE_PX;
     }
 
-    /** No floating player names in the Backrooms: you only know who's who by finding them. */
+    /**
+     * No floating names in the Backrooms: you only know who's who by finding them.
+     *
+     * <p>This hides EVERY entity's tag, not just players'. Impostors copy a player's name and skin
+     * (the Poolrooms' PhantomFriend, Skin-stealers, anything added later): if real players had no
+     * tag but an impostor had one, or the other way round, the tag alone would give it away.
+     * Hiding them all keeps the rule simple and covers future impostors without a list to update.
+     *
+     * <p>Checked against the dimension you are in (not the camcorder), so the overworld stays
+     * vanilla even while filming there. Only the floating tag is touched: chat, the tab list and
+     * death messages still use the names.
+     */
     @SubscribeEvent
     public static void onNameTag(RenderNameTagEvent event) {
-        // The phantom friend hides its tag too, or it would be the only "player" wearing one.
-        boolean playerLike = event.getEntity() instanceof Player || event.getEntity() instanceof PhantomFriend;
-        if (playerLike && CamcorderEffect.wanted(Minecraft.getInstance())) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null && Travel.inBackrooms(mc.level)) {
             event.setCanRender(TriState.FALSE);
         }
     }

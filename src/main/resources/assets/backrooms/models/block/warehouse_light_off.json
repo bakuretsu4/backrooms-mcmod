@@ -1,0 +1,7 @@
+{
+  "parent": "backrooms:block/warehouse_light",
+  "textures": {
+    "particle": "backrooms:block/warehouse_light_off",
+    "lamp": "backrooms:block/warehouse_light_off"
+  }
+}

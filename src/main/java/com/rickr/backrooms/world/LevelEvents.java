@@ -346,6 +346,15 @@ public final class LevelEvents {
         return state != null && (state.kind == LevelEventPayload.BLACKOUT || state.kind == LevelEventPayload.FLICKER);
     }
 
+    /**
+     * True during a blackout or the alarm on this floor. Separate realities ({@link RealityDrift})
+     * wait for quiet: in the dark or under a klaxon nobody would notice the room is different.
+     */
+    public static boolean isBlackoutOrAlarm(BackroomsLevel floor) {
+        State state = STATES.get(floor);
+        return state != null && (state.kind == LevelEventPayload.BLACKOUT || state.kind == LevelEventPayload.ALARM);
+    }
+
     /** Operator command: start an event right now ({@code NONE} ends the current one). */
     public static void force(ServerLevel level, BackroomsLevel floor, int kind, int durationTicks) {
         State state = STATES.computeIfAbsent(floor, f -> new State());

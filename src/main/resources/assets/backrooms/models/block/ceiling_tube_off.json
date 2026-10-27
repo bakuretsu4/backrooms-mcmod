@@ -1,0 +1,7 @@
+{
+  "parent": "backrooms:block/ceiling_tube",
+  "textures": {
+    "particle": "backrooms:block/ceiling_tube_off",
+    "lamp": "backrooms:block/ceiling_tube_off"
+  }
+}

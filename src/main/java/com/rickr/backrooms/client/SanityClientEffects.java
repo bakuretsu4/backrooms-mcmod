@@ -40,7 +40,8 @@ import org.jetbrains.annotations.Nullable;
  *   <li>below 70: now and then a whisper, a knock or a single footstep right behind you;</li>
  *   <li>below 50: the camcorder picture gets worse (see {@link #shaderSanity()}), and a black
  *       figure stands at the edge of your view... until you look at it;</li>
- *   <li>below 30: you hear your own heartbeat, faster and louder the lower you go;</li>
+ *   <li>below 30: you hear your own heartbeat, faster and louder the lower you go (friends near you
+ *       hear a faint copy, sent by the server: player/SharedHeartbeat);</li>
  *   <li>below 15: sometimes the figure breathes in and runs at you down the corridor. It's not real.</li>
  * </ul>
  */
@@ -48,12 +49,9 @@ import org.jetbrains.annotations.Nullable;
 public final class SanityClientEffects {
     private static final float SOUNDS_BELOW = 70.0f;
     private static final float VISUALS_BELOW = 50.0f;
-    private static final float HEARTBEAT_BELOW = 30.0f;
+    /** Shared with the server (SanityData), which plays a faint copy to friends nearby. */
+    private static final float HEARTBEAT_BELOW = SanityData.HEARTBEAT_BELOW;
     private static final float CHASE_BELOW = 15.0f;
-
-    /** Heart rate shown on the HUD and used for the heartbeat: 70 BPM when sane, 160 at 0. */
-    private static final float CALM_BPM = 70.0f;
-    private static final float PANIC_BPM = 160.0f;
 
     /** The silhouette's billboard size in blocks (a little taller than a player). */
     private static final float FIGURE_WIDTH = 1.3f;
@@ -105,9 +103,9 @@ public final class SanityClientEffects {
         return shown;
     }
 
-    /** Heart rate for the HUD: 70 BPM at sanity 100 up to 160 BPM at 0. */
+    /** Heart rate for the HUD: 70 BPM at sanity 100 up to 160 BPM at 0 (the rule is in SanityData). */
     public static int bpm() {
-        return Math.round(Mth.lerp(1.0f - shown / SanityData.MAX, CALM_BPM, PANIC_BPM));
+        return SanityData.bpm(shown);
     }
 
     /** 0 = sane (picture exactly unchanged) .. 1 = broken. Starts below 50 sanity. */
