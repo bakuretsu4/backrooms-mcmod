@@ -49,18 +49,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Noclipping into the Backrooms, filmed: the picture fails like a video stream that has lost its
- * keyframes ("datamoshing"), and the real world smears and bleeds into Level 0 with no cut.
+ * Every move between places, filmed: noclipping out of reality into Level 0 and every exit from
+ * one floor to the next. The picture fails like a video stream that has lost its keyframes
+ * ("datamoshing"), and the old place smears and bleeds into the new one with no cut.
  * <ol>
- *   <li><b>Lag</b> (server sends {@code FREEZE}, ~0.5 s): the real world stutters, drops frames and
+ *   <li><b>Lag</b> (server sends {@code FREEZE}, ~0.5 s): the picture stutters, drops frames and
  *       crumbles into low-bitrate blocks. If you are lying in a bed, the view sinks down through
  *       it (through the mattress, the floor, the ground) as it does.</li>
- *   <li><b>Held</b>: the server moves you to Level 0. The last broken frame stays on screen while
+ *   <li><b>Held</b>: the server moves you. The last broken frame stays on screen while
  *       the new world loads (no "Loading terrain" screen, no black).</li>
  *   <li><b>Mosh</b> (~2 s): the old picture is not replaced. Its blocks are dragged along with your
  *       camera's motion (the view drifts a little by itself; looking around smears it more),
- *       Level 0's edges are added on top of it, and more and more blocks are coded fresh from
- *       Level 0, until it snaps clean.</li>
+ *       the new place's edges are added on top of it, and more and more blocks are coded fresh
+ *       from it, until it snaps clean.</li>
  * </ol>
  * It all happens to the finished picture right after the world is drawn, before the camcorder
  * filter, so the tape look films it like everything else. The steps run at a fixed, choppy
@@ -71,7 +72,7 @@ import org.slf4j.LoggerFactory;
 public final class NoclipTransition {
     private static final Logger LOGGER = LoggerFactory.getLogger("backrooms/noclip");
 
-    /** Lag stage length (the server waits {@code NoclipIntro.LAG_TICKS} before moving you). */
+    /** Lag stage length (the server waits {@code Travel.MOSH_TICKS} before moving you). */
     private static final long LAG_MS = 500;
     private static final long MOSH_MS = 2000;
     /** Decoder steps: one every this many ms, sometimes twice as long (a dropped frame). */

@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -123,14 +122,13 @@ public final class CorruptedCorridorBehavior implements AnomalyBehavior {
         int x = (int) Math.floor(player.getX() + Math.cos(angle) * distance);
         int z = (int) Math.floor(player.getZ() + Math.sin(angle) * distance);
         // The arrival search never picks a spot inside an anomaly (Level1Layout.isSafeArrival).
-        Travel.sendTo(player, BackroomsLevel.LEVEL_1, x, z);
+        Travel.sendTo(player, BackroomsLevel.LEVEL_1, x, z, null);
     }
 
     /** The beckoning light: on to Level 2, like taking the exit stairwell. */
     private static void intoTheLight(ServerPlayer player) {
         Checkpoints.clear(player);
-        Travel.sendTo(player, BackroomsLevel.LEVEL_2, player.getBlockX(), player.getBlockZ());
-        player.sendSystemMessage(Component.translatable("message.backrooms.arrive.level_2").withStyle(s -> s.withItalic(true)));
+        Travel.sendTo(player, BackroomsLevel.LEVEL_2, player.getBlockX(), player.getBlockZ(), Travel.arrivalMessage(BackroomsLevel.LEVEL_2));
     }
 
     /** Fell through the floor of Sector 4: you wake up just inside the entrance, dazed. */

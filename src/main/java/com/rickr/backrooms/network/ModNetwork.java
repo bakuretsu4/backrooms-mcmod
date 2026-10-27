@@ -31,12 +31,11 @@ public final class ModNetwork {
             CameraClientState.tapeSyncMs = System.currentTimeMillis();
         });
 
-        registrar.playToClient(TransitionPayload.TYPE, TransitionPayload.STREAM_CODEC, (payload, context) -> {
-            CameraClientState.transitionKind = payload.kind();
-            CameraClientState.transitionStartMs = System.currentTimeMillis();
+        registrar.playToClient(EscapePayload.TYPE, EscapePayload.STREAM_CODEC, (payload, context) -> {
+            CameraClientState.escapeStartMs = System.currentTimeMillis();
         });
 
-        // Noclipping in (freeze -> held -> mosh). Plain fields; client/intro/NoclipTransition reads them.
+        // Every move between floors (freeze -> held -> mosh). Plain fields; client/intro/NoclipTransition reads them.
         registrar.playToClient(IntroCutscenePayload.TYPE, IntroCutscenePayload.STREAM_CODEC, (payload, context) -> {
             CameraClientState.introPhase = payload.phase();
             CameraClientState.introStartMs = System.currentTimeMillis();

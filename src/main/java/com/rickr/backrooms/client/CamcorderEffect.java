@@ -4,7 +4,6 @@ import com.rickr.backrooms.config.ClientSettings;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraClientState;
-import com.rickr.backrooms.network.TransitionPayload;
 import com.rickr.backrooms.client.camera.HandheldCamera;
 import com.rickr.backrooms.client.intro.NoclipTransition;
 import com.rickr.backrooms.client.light.BackroomsLights;
@@ -139,11 +138,8 @@ public final class CamcorderEffect {
         }
         long now = System.currentTimeMillis();
         float seconds = (float) ((System.nanoTime() / 1.0e9) % 3600.0);
-        long sinceTransition = now - CameraClientState.transitionStartMs;
-        float transition = sinceTransition >= 0 && sinceTransition < TRANSITION_MS ? 1.0f - sinceTransition / TRANSITION_MS : 0.0f;
-        if (CameraClientState.transitionKind == TransitionPayload.STAIRS) {
-            transition = 0.0f; // down the stairs: no tape glitch, it's one continuous shot
-        }
+        long sinceEscape = now - CameraClientState.escapeStartMs;
+        float transition = sinceEscape >= 0 && sinceEscape < TRANSITION_MS ? 1.0f - sinceEscape / TRANSITION_MS : 0.0f;
         // Filming the dark in the real world: the tape breaks up more and more as reality thins.
         if (CameraClientState.realRecording) {
             transition = Math.max(transition, CameraClientState.realThin * CameraClientState.realThin);

@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>Nothing hunts you here and your sanity slowly comes back. The way on is down: one of the
  * round pits of deep, dark water. Dive (the current takes over, see {@code Level37Rules}) and once
- * you sink below {@link #TRANSFER_BELOW_Y} you come out in Level 9.
+ * you sink below {@link #TRANSFER_BELOW_Y} you come out in Level 7.
  *
  * <p>Anomalous areas (a void opening, a dark opening back to the Poolrooms, looping tunnels) are
  * placed by {@link Level37AnomalyPlan}; their behaviour is in {@code world/anomaly/level37}.

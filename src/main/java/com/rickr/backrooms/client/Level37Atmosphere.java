@@ -32,8 +32,7 @@ import org.joml.Vector3f;
  *   <li><b>Haze:</b> a soft warm-white haze in the bright rooms that turns into dim olive gloom in
  *       the dark tunnels: the fog colour follows how much light is around you.</li>
  *   <li><b>Walking into the light:</b> in the Poolrooms, nearing a sunlit archway slowly whitens
- *       the screen; arriving in Level 37 from there starts fully white and fades in over a few
- *       seconds. No tape glitch, no black frames: this way in is gentle.</li>
+ *       the screen (the move itself datamoshes, like every move between floors).</li>
  * </ul>
  * Under water the Water renderer's own fog applies instead.
  */
@@ -74,10 +73,6 @@ public final class Level37Atmosphere implements LayeredDraw.Layer {
     // ---- Glow ------------------------------------------------------------------------------------
     /** Overexposed warm white. */
     private static final int GLOW_RGB = 0xFFF6E2;
-    /** On arrival: fully white this long ... */
-    private static final long ARRIVE_HOLD_MS = 250L;
-    /** ... then fading in over this long. */
-    private static final float ARRIVE_FADE_MS = 2800.0f;
     /** In the Poolrooms the screen starts whitening this far from the archway's light (blocks) ... */
     private static final double APPROACH_FROM = 7.0;
     /** ... and is this white when you are right at it. */
@@ -86,8 +81,6 @@ public final class Level37Atmosphere implements LayeredDraw.Layer {
     /** 0..1: how bright it is around you (smoothed vanilla block light at your eyes). */
     private static float brightness = 1.0f;
     private static float approach;
-    private static long arrivedMs;
-    private static BackroomsLevel lastFloor;
 
     /** True when the client is in Level 37. */
     public static boolean inLevel37() {
@@ -103,18 +96,13 @@ public final class Level37Atmosphere implements LayeredDraw.Layer {
     }
 
     // ------------------------------------------------------------------------------------------
-    // Ticking: brightness around you, arrival, the archway's pull of light
+    // Ticking: brightness around you, the archway's pull of light
     // ------------------------------------------------------------------------------------------
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         BackroomsLevel floor = mc.level == null ? null : BackroomsLevel.fromDimension(mc.level.dimension());
-        if (floor == BackroomsLevel.LEVEL_37 && lastFloor == BackroomsLevel.POOLROOMS) {
-            arrivedMs = System.currentTimeMillis(); // came in through the sunlit archway
-            approach = 0.0f;
-        }
-        lastFloor = floor;
         if (mc.player == null || mc.level == null) {
             return;
         }
@@ -173,27 +161,9 @@ public final class Level37Atmosphere implements LayeredDraw.Layer {
         event.registerAboveAll(Backrooms.id("level37_glow"), new Level37Atmosphere());
     }
 
-    /** 0..1 how white the screen is right now. */
-    private static float glow() {
-        float arrive = 0.0f;
-        if (arrivedMs != 0L) {
-            long since = System.currentTimeMillis() - arrivedMs;
-            if (since < ARRIVE_HOLD_MS) {
-                arrive = 1.0f;
-            } else {
-                float t = 1.0f - (since - ARRIVE_HOLD_MS) / ARRIVE_FADE_MS;
-                arrive = t <= 0.0f ? 0.0f : t * t;
-                if (t <= 0.0f) {
-                    arrivedMs = 0L;
-                }
-            }
-        }
-        return Math.max(arrive, approach);
-    }
-
     @Override
     public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
-        float alpha = glow();
+        float alpha = approach;
         if (alpha <= 0.003f) {
             return;
         }

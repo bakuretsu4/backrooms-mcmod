@@ -16,7 +16,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * The ways out of reality and into the Backrooms (all of them end in {@link NoclipIntro}). Besides
+ * The ways out of reality and into the Backrooms (all of them end in {@link Travel#enterBackrooms}). Besides
  * the old one (suffocating inside a block, {@code ServerEvents}):
  * <ul>
  *   <li><b>Noclipping through a wall:</b> keep walking into a wall somewhere dark and enclosed and
@@ -71,7 +71,7 @@ public final class RealWorldEntries {
         State s = STATES.get(player.getUUID());
         boolean real = !Travel.inBackrooms(player.level()) && !player.isSpectator();
         if (real && player.isSleeping() && player.getSleepTimer() >= SLEEP_TICKS) {
-            NoclipIntro.start(player); // no-op while it's already running
+            Travel.enterBackrooms(player); // no-op while it's already running
         }
         if (!real) {
             if (s != null && (s.recording || s.thin > 0.0f)) {
@@ -90,7 +90,7 @@ public final class RealWorldEntries {
         if (s.recording && !holdingCamcorder(player)) {
             s.recording = false; // put the camera down: the recording stops
         }
-        if (!NoclipIntro.isPending(player)) {
+        if (!Travel.isMoving(player)) {
             if (darkAndEnclosed(player) && alone(player)) {
                 s.thin += 1.0f / (s.recording ? FILMING_TICKS : ALONE_TICKS);
             } else {
@@ -99,7 +99,7 @@ public final class RealWorldEntries {
             if (s.thin >= 1.0f) {
                 s.thin = 0.0f;
                 s.recording = false;
-                NoclipIntro.start(player);
+                Travel.enterBackrooms(player);
             }
         }
         sync(player, s);
@@ -115,7 +115,7 @@ public final class RealWorldEntries {
 
     /** From the client: still walking into a wall. */
     public static void onWallPush(ServerPlayer player) {
-        if (Travel.inBackrooms(player.level()) || NoclipIntro.isPending(player) || !darkAndEnclosed(player)
+        if (Travel.inBackrooms(player.level()) || Travel.isMoving(player) || !darkAndEnclosed(player)
                 || !wallInFront(player)) {
             return;
         }
@@ -124,7 +124,7 @@ public final class RealWorldEntries {
         s.lastPushTick = player.tickCount;
         if (s.pushStreak > PUSHES_BEFORE_CHANCE && player.getRandom().nextInt(PUSH_ONE_IN) == 0) {
             s.pushStreak = 0;
-            NoclipIntro.start(player);
+            Travel.enterBackrooms(player);
         }
     }
 

@@ -211,7 +211,7 @@ public final class BackroomsCommand {
             if (level == BackroomsLevel.LEVEL_0 && !Travel.inBackrooms(player.level())) {
                 Travel.enterBackrooms(player); // the full noclip intro
             } else {
-                Travel.sendTo(player, level, player.getBlockX(), player.getBlockZ());
+                Travel.sendTo(player, level, player.getBlockX(), player.getBlockZ(), Travel.arrivalMessage(level));
             }
         }
         return players.size();

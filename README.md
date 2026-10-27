@@ -66,19 +66,25 @@ Backrooms. About three seconds, no cut.
 
 ### The way out
 
+One path runs through every level, each exit leading naturally into the next place:
+
 ```
-Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Poolrooms --drain--> Level 39 --mill window--> Level 9 --underpass--> Overworld
+Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Poolrooms --drain--> Level 37 --deep pit--> Level 7 --sunken door--> Level 39 --mill window--> Level 94 --dark doorway--> Level 9 --underpass--> Overworld
 ```
 
-Secret branches: a rare sunlit archway in the Poolrooms leads to **Level 37**, whose deep pits lead
-on to Level 9; a rare moulded-clay front door on a Level 9 house opens onto **Level 94**, and a
-flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on to Level 9; a very
-rare chairlift in Level 9's Crimson Field climbs into the clouds and drops you into **Level 39**.
+Every exit looks different, but every move from one level to the next is filmed the same way:
+the same datamosh as noclipping in, the old place smearing into the new one. Only escaping back
+to reality has its own ending (the tape stops).
+
+Rare shortcuts stay as extra ways in and out: a sunlit archway in the Poolrooms skips ahead to
+**Level 39**'s flooded tunnels; a moulded-clay front door on a Level 9 house opens onto
+**Level 94**, whose flooded houses lead down to **Level 7** and whose castle throne leads back to
+**Level 1**; a very rare chairlift in Level 9's Crimson Field climbs into the clouds and drops you
+into **Level 39**'s town.
 
 The stairwells (Levels 0, 1 and 4) are part of their level: the level's own walls inside, then a
 wide spiral of shallow half-steps around a concrete core, lit for the first half turn and then
-going down into the dark. Somewhere down there you are simply in the next level, the picture
-fading back in: no glitch, no cut.
+going down into the dark, until the picture breaks up and you are in the next level.
 
 - **Level 0 (the Lobby):** Kane Pixels' yellow maze under a low ceiling (three blocks, just over
   your head) and a grid of troffers: cramped little rooms behind thick wall blocks joined by 2-wide
@@ -133,15 +139,13 @@ fading back in: no glitch, no cut.
 - **The Poolrooms:** dim white-tiled rooms and long water channels lit by a few tubes, glowing
   cyan pools with underwater lamps and moving light ripples, and now and then a tall atrium full
   of daylight. No monsters. The way out is the drain: a dark-tiled shaft in the middle of a deep
-  pool, lit by lamps around its edge. Swim into it and it pulls you down into Level 39's flooded
-  tunnels.
+  pool, lit by lamps around its edge. Swim into it and it pulls you down into Level 37.
   Somewhere (about once every 300 x 300 blocks) a dim, dry room has a **sunlit archway** in its
   north wall: a round arch lined with fine white mosaic, warm daylight pouring out of it. Walk
-  into the light.
-- **Level 37 ("Sublimity"):** reached only through the Poolrooms' sunlit archway (the screen
-  whitens and fades in, no tape glitch). Pristine cream-white mosaic on every surface, floors
-  flooded ankle-deep in clear sea-green water, deep pools with no ledge and chrome ladders,
-  forests of round pillars standing in the water, wavy walls and rounded corners, round arches
+  into the light: a shortcut that skips ahead to Level 39's flooded tunnels.
+- **Level 37 ("Sublimity"):** reached down the Poolrooms' drain. Pristine cream-white mosaic on
+  every surface, floors flooded ankle-deep in clear sea-green water, deep pools with no ledge and
+  chrome ladders, forests of round pillars standing in the water, wavy walls and rounded corners, round arches
   and circular tunnels fading into darkness, domed rotundas with an oculus and glowing arched
   alcoves, a spiral stair of floating treads climbing a light well toward the sun. Warm daylight
   comes from nowhere: skylights and tall slit windows open onto a dazzling white void and throw
@@ -151,13 +155,26 @@ fading back in: no glitch, no cut.
   the spiral stairs hold almond water and calm pills. The way on is down: a round rotunda with a
   **pit of deep, dark water** in its middle (one every ~170 blocks; `/backrooms locate` points to
   it). Walk down the floating treads into the water and dive; a gentle current draws you down
-  the shaft and out into Level 9.
-- **Level 9 (the Suburbs):** an endless suburb at midnight in thick fog that drains the colour
-  from everything. Wet roads covered in leaves, old sodium streetlamps (most dead, some
-  flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark
-  forest behind the yards. Follow the green EXIT arrow signs (a few lie) to a highway underpass
-  and walk into the dark.
-- **Level 39 ("Megalophobia"):** you come up out of the Poolrooms' drain into long, white
+  the shaft and out into Level 7.
+- **Level 7 ("Thalassophobia"):** reached by diving down Level 37's pit (or, as a shortcut, down
+  the stairs of a flooded house in Level 94, about one exit house in three). You come up in a
+  small flooded sitting room (bookcase, coffee
+  table, armchair, a radio and a crate on the dry landing) hanging from a concrete ceiling over an
+  endless dark sea in a thick pale fog. Open a hatch in the landing and drop; the rope by the
+  other hatch climbs back up (hold jump). Around the room is a shallow shelf of pale silt, then a
+  sheer drop to a carpeted sea floor about 150 blocks down, with rock stacks, tar, scrap and the
+  ribs of giant fish. You can hold your breath about ten times longer than normal here. The way
+  out is a wooden door lying in a round stone platform on the sea floor, ringed by pillars and
+  huge pipes, 150 blocks west of the room: swim into it and you come out in Level 39's flooded tunnels. No monsters,
+  but something enormous lives in the water: you hear it groan far below, feel the water heave
+  when it passes under you, and once in a while a vast dark shape glides past at the edge of what
+  you can see. Your sanity drains in the water, faster the deeper you go; the room calms you. The
+  sea is drawn like the pool water (below), in its own murky grey-green: a rippled surface that
+  mirrors the concrete above and lets the pale shallows show through, and underneath a dim teal
+  murk that turns black and closes in as you go down. Far off, waves slap against rock, the
+  ceiling drips and the giant pipes thump.
+
+- **Level 39 ("Megalophobia"):** you come up out of Level 7's sunken door into long, white
   marble tunnels, barrel-vaulted and flooded with still turquoise water, lit by light that comes
   from nowhere (the tunnels swallow sound). Walkways run along both sides of the water. The way
   back up: iron rungs in a pool of light at the foot of the wall, wherever a town path crosses
@@ -173,9 +190,10 @@ fading back in: no glitch, no cut.
   (it takes a few seconds, and it is loud). Some houses are wrong (see Anomalous areas). Holes in
   the ground drop back into the tunnels. The way on is through the mill: walk into one of the
   glowing ground-floor windows that wakes up, and survive its grab for three seconds against the
-  glass, and you noclip through it into Level 9.
-- **Level 94 ("Motion"):** reached only through a rare clay front door on a Level 9 house (about
-  one unlocked house in forty). Endless rolling hills of felt grass under a painted sky with fat
+  glass, and you noclip through it into Level 94.
+- **Level 94 ("Motion"):** reached through a window of Level 39's mill (you come out at a
+  crossroads), or through a rare clay front door on a Level 9 house (about one unlocked house in
+  forty). Endless rolling hills of felt grass under a painted sky with fat
   cartoon clouds, winding roads, little cream houses with red roofs (some enterable, with a CRT TV
   showing static), house fragments on the hills, water towers, parked old cars and milk vans, siren
   poles that play a happy tune by day, and a town with a chess-king fountain. Far away a white
@@ -184,25 +202,13 @@ fading back in: no glitch, no cut.
   climbing frame, a looping upstairs hall, an animation studio and an empty throne room. Day lasts
   8 minutes (the last 30 s is dusk), night 3: at night the music stops and Smilers come out on the
   hills, so get inside a house (they can't follow you in; your sanity holds steady there). Ways
-  out: houses whose doorway is pure black lead back to Level 9, flooded houses (knee-deep water,
+  out: houses whose doorway is pure black lead on to Level 9, flooded houses (knee-deep water,
   steps going down into murk) lead to Level 7, and the light behind the throne leads to Level 1.
-- **Level 7 ("Thalassophobia"):** reached only down the stairs of a flooded house in Level 94
-  (about one exit house in three). You come up in a small flooded sitting room (bookcase, coffee
-  table, armchair, a radio and a crate on the dry landing) hanging from a concrete ceiling over an
-  endless dark sea in a thick pale fog. Open a hatch in the landing and drop; the rope by the
-  other hatch climbs back up (hold jump). Around the room is a shallow shelf of pale silt, then a
-  sheer drop to a carpeted sea floor about 150 blocks down, with rock stacks, tar, scrap and the
-  ribs of giant fish. You can hold your breath about ten times longer than normal here. The way
-  out is a wooden door lying in a round stone platform on the sea floor, ringed by pillars and
-  huge pipes, 150 blocks west of the room: swim into it and you come out in Level 9. No monsters,
-  but something enormous lives in the water: you hear it groan far below, feel the water heave
-  when it passes under you, and once in a while a vast dark shape glides past at the edge of what
-  you can see. Your sanity drains in the water, faster the deeper you go; the room calms you. The
-  sea is drawn like the pool water (below), in its own murky grey-green: a rippled surface that
-  mirrors the concrete above and lets the pale shallows show through, and underneath a dim teal
-  murk that turns black and closes in as you go down. Far off, waves slap against rock, the
-  ceiling drips and the giant pipes thump.
-
+- **Level 9 (the Suburbs):** the last level, through a dark doorway in Level 94. An endless suburb at midnight in thick fog that drains the colour
+  from everything. Wet roads covered in leaves, old sodium streetlamps (most dead, some
+  flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark
+  forest behind the yards. Follow the green EXIT arrow signs (a few lie) to a highway underpass
+  and walk into the dark, back to reality.
 Every floor is endless; exits are spread out a few hundred blocks apart.
 
 **Finding the exit** (subtle on purpose, `world/ExitHints`, `client/hint/ExitHints`): nothing on
@@ -215,9 +221,11 @@ ways (the sunlit archway, the clay doors, the throne light) are never hinted.
   breathing behind Level 94's dark doors, bubbles rising from Level 7's sunken door. Unlike the
   rest of the level's sounds, it never moves.
 - **NightShot.** Earlier wanderers painted arrows in something that only the camcorder's
-  infrared shows. With NightShot on, a few dark arrows appear on walls and floors around you
-  (about one per dozen blocks of wall), each pointing toward the exit, or down when it lies far
-  below. Unlike the arrows drawn on Level 0's walls, they never lie.
+  infrared shows. With NightShot on, a few dark arrows appear on walls and floors around you, each
+  pointing toward the exit, or down when it lies far below. Unlike the arrows drawn on Level 0's
+  walls, they never lie. They thin out along the path: about one per dozen blocks of wall on
+  Level 0, fewer on every level after it, and from Level 37 on they only show near the exit (Level
+  9: a rare one within 50 blocks).
 - **Torn notes.** About one backpack in three, and one crate or locker in five, holds a note
   from someone who came through before: a rough direction and distance to the exit from where
   the container stands. One note in five points the wrong way. Some mention the other two hints.

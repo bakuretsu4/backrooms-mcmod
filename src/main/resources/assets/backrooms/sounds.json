@@ -282,14 +282,6 @@
     ],
     "subtitle": "subtitles.backrooms.battery_low"
   },
-  "camcorder.noclip": {
-    "sounds": [
-      {
-        "name": "backrooms:camcorder/noclip",
-        "volume": 0.85
-      }
-    ]
-  },
   "camcorder.escape": {
     "sounds": [
       "backrooms:camcorder/escape"

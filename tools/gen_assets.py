@@ -2521,38 +2521,6 @@ def snd_battery_low() -> None:
     save_ogg(x, SND / "camcorder" / "battery_low.ogg", peak=0.7, fade_in=0.001, fade_out=0.005)
 
 
-def snd_noclip() -> None:
-    rng = rng_for(1001)
-    dur = 2.5
-    n = int(dur * SR)
-    t = np.arange(n) / SR
-    depth = np.clip(t / 1.6, 0, 1) ** 1.5
-    wow = (0.06 * np.sin(2 * np.pi * 1.3 * t) + 0.03 * np.sin(2 * np.pi * 0.7 * t + 1)
-           + 0.02 * np.sin(2 * np.pi * 11.0 * t)) * (0.3 + 1.7 * depth) + smooth_jitter(rng, n, 20, 0.03) * depth
-    speed = 1 + wow
-    tone = np.zeros(n)
-    for f, a in ((110, 0.5), (165, 0.35), (220, 0.4), (330, 0.25), (440, 0.15), (60, 0.3)):
-        tone += a * np.sin(2 * np.pi * np.cumsum(f * speed) / SR)
-    hiss = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 1500, 9000, 1))
-    tape = (norm(tone) * 0.6 + 0.15 * norm(hiss)) * np.interp(t, [0, 0.1, 1.55, 1.75], [0, 1, 1, 0.2])
-    # swept whoosh
-    fc = np.interp(t, [0, 0.6, 1.5, 1.9, dur], [250, 900, 4200, 1200, 200])
-    who = svf(rng.normal(size=n), fc, 2.5)
-    who = norm(who) * np.interp(t, [0, 0.4, 1.5, 1.8, 2.2], [0, 0.2, 1.0, 0.6, 0])
-    # static burst with choppy gating + crush
-    st = rng.normal(size=n)
-    gate = (fft_filter(rng.normal(size=n), lambda f: lp_gain(f, 40, 2)) > -0.002).astype(float)
-    gate = fft_filter(gate, lambda f: lp_gain(f, 600, 1))
-    st = bitcrush(norm(st * gate), 4, 4) * np.interp(t, [1.5, 1.58, 2.05, 2.2], [0, 1, 0.8, 0])
-    # low thump at the end
-    tt = np.clip(t - 2.15, 0, None)
-    f = np.interp(tt, [0, 0.12], [75, 30])
-    thump = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-tt / 0.12) * (t >= 2.15)
-    thump = dist(thump, 2.0)
-    x = tape * 0.55 + who * 0.5 + st * 0.38 + thump * 0.9
-    save_ogg(x, SND / "camcorder" / "noclip.ogg", peak=0.89, fade_in=0.01, fade_out=0.05)
-
-
 def snd_escape() -> None:
     rng = rng_for(1101)
     dur = 2.5
@@ -8430,7 +8398,7 @@ TEXTURES = [
 ]
 SOUNDS = [
     snd_level2_ambience,
-    snd_rec_beep, snd_battery_low, snd_noclip, snd_escape,
+    snd_rec_beep, snd_battery_low, snd_escape,
     snd_flashlight_click, snd_wake_up, snd_alarm,
     snd_footsteps, snd_intercom, snd_distant_knock,
     snd_distant_creak, snd_thunder, snd_radio_static, snd_death_sting,

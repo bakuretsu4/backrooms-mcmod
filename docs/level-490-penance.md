@@ -114,12 +114,15 @@ Two kinds:
 Falling off sends you back to your last checkpoint **in this level**. Not more punishing than
 that: the level is hard enough.
 
-## Place in the path (agreed exit plan, not built yet)
+## Place in the path
 
 One straight path through every level, each exit leading naturally into the next:
 
 Level 0 → Level 1 → Level 2 → Level 4 → Poolrooms → Level 37 → Level 7 → Level 39 → Level 94 →
 **Level 490** → Level 9 → home.
+
+The path, datamosh transitions and thinner arrows are built for the existing levels; Level 94
+leads straight to Level 9 until Level 490 exists.
 
 - Level 94's main exit leads here; the exit at the top of the structure leads to Level 9.
 - Every exit has its own look, but all use the datamosh transition.

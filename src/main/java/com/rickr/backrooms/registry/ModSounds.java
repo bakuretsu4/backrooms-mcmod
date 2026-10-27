@@ -49,7 +49,6 @@ public final class ModSounds {
 
     public static final DeferredHolder<SoundEvent, SoundEvent> REC_BEEP = register("camcorder.rec_beep");
     public static final DeferredHolder<SoundEvent, SoundEvent> BATTERY_LOW = register("camcorder.battery_low");
-    public static final DeferredHolder<SoundEvent, SoundEvent> NOCLIP = register("camcorder.noclip");
     public static final DeferredHolder<SoundEvent, SoundEvent> ESCAPE = register("camcorder.escape");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> FLASHLIGHT_CLICK = register("camcorder.flashlight_click");

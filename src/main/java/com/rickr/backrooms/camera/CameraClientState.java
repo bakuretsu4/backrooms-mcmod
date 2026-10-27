@@ -12,9 +12,8 @@ public final class CameraClientState {
     public static volatile long tapeTicks;
     /** System time (ms) when {@link #tapeTicks} arrived, so the HUD counter keeps running between syncs. */
     public static volatile long tapeSyncMs;
-    /** System time (ms) when the last transition started, or 0. */
-    public static volatile long transitionStartMs;
-    public static volatile int transitionKind;
+    /** System time (ms) when you last escaped back to reality (the tape glitches and stops), or 0. */
+    public static volatile long escapeStartMs;
     /** Current floor event ({@code LevelEventPayload} constant) and when it ends (system ms). */
     public static volatile int eventKind;
     public static volatile long eventEndMs;

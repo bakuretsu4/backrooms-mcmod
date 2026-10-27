@@ -100,7 +100,7 @@ import org.jetbrains.annotations.Nullable;
  * a hall, a safe room or near a drain) is dry and dim, with a 5-deep block of wall across its north
  * side. Through it runs a 4-wide round-arched passage tiled in Level 37's fine white mosaic, ending
  * in a wall of dazzling warm daylight that spills out into the room. Walk into the light (the back
- * half of the passage) and {@code Level37Rules} takes you to Level 37.
+ * half of the passage) and {@code Level37Rules} takes you ahead to Level 39's flooded tunnels.
  *
  * <p><b>Anomalies</b> ({@link PoolroomsAnomalyPlan}): lightless nooks in the corners of some lit
  * rooms (dark corners) and rooms that are one deep, dark flooded shaft with a staircase running
@@ -111,7 +111,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link ExitLocator} copies them too). But all white light is gone: no tubes, no skylights, the
  * daylight archways are walled up, the tile is dim, the pool lamps glow red and red sprouts grow
  * on the walkways. Lingering in a dark corner moves you there (world/anomaly/poolrooms). There are
- * no dark corners in the Reservoir itself: the only way out is a drain, down to Level 9.
+ * no dark corners in the Reservoir itself: the only way out is a drain, down to Level 37.
  */
 public final class PoolroomsLayout extends LevelLayout {
     // ---- Heights -----------------------------------------------------------------------------
@@ -567,7 +567,7 @@ public final class PoolroomsLayout extends LevelLayout {
                         null), out);
     }
 
-    // ---- The sunlit archway (the secret way to Level 37) ----------------------------------------
+    // ---- The sunlit archway (the secret shortcut to Level 39) -----------------------------------
 
     /**
      * True when cell (cx, cz) holds the sunlit archway of its 22 x 22-cell region. The region

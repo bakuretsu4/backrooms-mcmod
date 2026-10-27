@@ -1,7 +1,6 @@
 package com.rickr.backrooms.client;
 
 import com.rickr.backrooms.camera.CameraClientState;
-import com.rickr.backrooms.network.TransitionPayload;
 import com.rickr.backrooms.world.Travel;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -172,29 +171,16 @@ public final class CamcorderHud implements LayeredDraw.Layer {
         g.fill(x1 - 2, y1 - len, x1, y1, c);
     }
 
-    /** Going down a stairwell: how long the next level takes to fade in from the dark. */
-    private static final long STAIRS_FADE_MS = 1400L;
-
-    /** "PLAY" when you noclip into a level, "STOP" when you escape, a quiet fade in after the stairs. */
+    /** "STOP" when you escape back to reality. (Moves between floors datamosh instead: NoclipTransition.) */
     private static void drawTransition(GuiGraphics g, Minecraft mc) {
-        long since = System.currentTimeMillis() - CameraClientState.transitionStartMs;
-        if (CameraClientState.transitionStartMs == 0 || since < 0 || since > TRANSITION_MS) {
+        long since = System.currentTimeMillis() - CameraClientState.escapeStartMs;
+        if (CameraClientState.escapeStartMs == 0 || since < 0 || since > TRANSITION_MS) {
             return;
         }
-        if (CameraClientState.transitionKind == TransitionPayload.STAIRS) {
-            // Down the stairs: the bottom of the shaft was dark already; the new level fades in.
-            float alpha = 1.0f - Math.min(1.0f, since / (float) STAIRS_FADE_MS);
-            if (alpha > 0.0f) {
-                g.fill(0, 0, g.guiWidth(), g.guiHeight(), ((int) (alpha * alpha * 255.0f) << 24));
-            }
-            return;
-        }
-        boolean escape = CameraClientState.transitionKind == TransitionPayload.ESCAPE;
         if (since < 900) {
             g.fill(0, 0, g.guiWidth(), g.guiHeight(), 0xFF000000);
         }
-        String text = escape ? "\u25A0 STOP" : "\u25B6 PLAY";
-        drawScaled(g, mc.font, text, g.guiWidth() / 2, g.guiHeight() / 2 - 8, 2.5f, escape ? AMBER : WHITE, true);
+        drawScaled(g, mc.font, "\u25A0 STOP", g.guiWidth() / 2, g.guiHeight() / 2 - 8, 2.5f, AMBER, true);
     }
 
     private static void drawScaled(GuiGraphics g, Font font, String text, int x, int y, float scale, int color, boolean centered) {
