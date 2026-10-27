@@ -58,10 +58,16 @@ public enum FixtureType {
     /** Ceiling strip, now only in the middle of the Level 0/1 exit stairwells. */
     PIPE_LIGHT("pipe_light", Mount.CEILING_BLOCK, 4, 0.88f, 0.87f, 1.0f, 0.55f, 13.0f, Hum.FLUORESCENT, true),
     /**
-     * Level 2 small caged bulb high on the plain corridor wall: cool white, reaching about half a
-     * corridor stretch either way so you walk from pool of light into the dark.
+     * Level 2 caged bulkhead lamp, hung on a pier in the pipe chase (floor + 3, on the shoulder
+     * beside the lane) every 6 blocks, alternating sides. Warm sodium-ish amber-white (the bulbs
+     * are old and run hot). The lamps are close together and low, so each one only needs a short
+     * reach: a small radius makes a warm patch of floor and wall at the lamp's foot and lets the
+     * far side of the corridor drop off, so looking down the straight line you see a zig-zag of
+     * pools receding into the distance instead of one evenly lit tube. Veil's light falls off
+     * steeply ((1 - distance / radius)^3); at this height the lane under a lamp sits around 0.4,
+     * the lamp's foot around 0.6, the far shoulder around 0.15.
      */
-    BULKHEAD_LAMP("bulkhead_lamp", Mount.WALL, 1, 0.95f, 0.95f, 1.0f, 1.4f, 15.0f, Hum.FLUORESCENT, true),
+    BULKHEAD_LAMP("bulkhead_lamp", Mount.WALL, 1, 1.0f, 0.80f, 0.56f, 1.7f, 8.5f, Hum.FLUORESCENT, true),
     /**
      * Poolrooms atrium skylight: frosted daylight glass in 5x5 panels high above the big pool.
      * Strong and far-reaching (the panels hang 14 blocks above the walkway): the atriums are the
@@ -130,10 +136,12 @@ public enum FixtureType {
     // into the cold night office: the one inviting light in the room. Silent and steady.
     L4_CLEAR_WINDOW("l4_clear_window", Mount.INSET, 2, 1.0f, 0.80f, 0.52f, 1.5f, 9.0f, Hum.NONE, false),
     // Level 2 anomalies: the brownout's battery emergency light, the violet glow that came on after
-    // the Blackout. A dim pool that still reaches the far wall and the floor, so a brownout reads as
-    // violet-lit corridors rather than black; silent and steady; battery-backed (see FixturePower),
-    // so it never takes part in blackouts, flickers or the lamp circuits failing.
-    L2_EMERGENCY_LIGHT("l2_emergency_light", Mount.WALL, 1, 0.62f, 0.30f, 1.0f, 1.3f, 12.0f, Hum.NONE, false),
+    // the Blackout. Hung on the chase a block under each dead lamp, close to the floor, so it is
+    // kept dim: a soft violet pool on the floor and the lane (~0.5 under it), so a brownout reads
+    // as violet-lit corridor rather than black (with the warm lamps gone the violet is the only
+    // colour there); silent and steady; battery-backed (see FixturePower), so it never takes part
+    // in blackouts, flickers or the lamp circuits failing.
+    L2_EMERGENCY_LIGHT("l2_emergency_light", Mount.WALL, 1, 0.60f, 0.28f, 1.0f, 1.0f, 10.0f, Hum.NONE, false),
     // Level 39. The tunnels' "invisible orbs": a lightless-looking block at the vault apex every 10
     // blocks; cool white with a hint of the water's turquoise, silent and steady. The lightmap
     // already lights the tunnels bright and evenly (client/Level39Atmosphere), so the orbs only
@@ -233,10 +241,12 @@ public enum FixtureType {
      */
     private static final float POOLROOMS_TUBE_SCALE = 1.1f;
     /**
-     * Level 2 reuses the tubes in its junction rooms; its pale walls are low and close, so at
-     * full strength the wall right beside a tube would clip to white.
+     * Level 2 hangs tubes in its side rooms, pump bays and exit bays (a cold fluorescent contrast
+     * to the warm corridor lamps), one block under a low ceiling. A little under full strength:
+     * the floor under a tube then sits around 0.45, like the floor in a lamp's pool in the
+     * corridor, without the wall right beside the tube clipping to white.
      */
-    private static final float LEVEL_2_TUBE_SCALE = 0.7f;
+    private static final float LEVEL_2_TUBE_SCALE = 0.95f;
     /**
      * Outside Level 0 the Level 0 panel is used alone (Level 7's flooded room has exactly one),
      * with no grid of neighbours and no bright Level 0 fill around it, so there it keeps the old

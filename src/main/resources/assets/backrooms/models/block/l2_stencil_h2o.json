@@ -1,0 +1,33 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l2_stencils",
+    "paint": "backrooms:block/l2_stencils"
+  },
+  "elements": [
+    {
+      "from": [
+        0.0,
+        0.0,
+        15.95
+      ],
+      "to": [
+        16.0,
+        16.0,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.0,
+            12.0,
+            12.0,
+            16.0
+          ],
+          "texture": "#paint"
+        }
+      }
+    }
+  ]
+}

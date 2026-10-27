@@ -105,10 +105,16 @@ fading back in: no glitch, no cut.
   **storage lockers** opens off the halls: roll-up shutters, a few rolled up with supplies
   inside, something growling behind one or two, and a white door at the end that never opens. Car
   **ramps** lead down to a dimmer lower floor here and there. A stairwell leads down.
-- **Level 2 (the pipes):** long, narrow pale maintenance corridors with racks of rusty pipes and
-  big ducts along one wall, caged lamps far apart and long pitch-dark stretches, junction rooms
-  and small dark utility rooms. Find the emergency EXIT door; opening it takes everyone within
-  6 blocks with you.
+- **Level 2 (Pipe Dreams):** one long, straight, dim maintenance corridor of grey poured concrete
+  that goes on forever, its walls buried in pipe chases (insulated mains, racks of steel, copper
+  and painted service pipes, risers) under a low band of pipes and cable trays. Caged lamps hang
+  every few blocks, alternating sides, so the line reads as pools of light receding into the
+  distance. You can only walk forwards or back: every 24-48 blocks the corridor changes (a valve
+  manifold, a pump bay, a low hot squeeze, a grating over a pipe trench, a bulkhead ring, a leak,
+  a short dark stretch), and every 60-120 blocks a door or doorway on alternating sides leads into
+  a dead-end maintenance room, ventilation room, boiler room, storage closet or safe room. Every
+  320-420 blocks an EXIT bay opens at the side; its heavy bulkhead takes everyone within 6 blocks
+  with you. Parallel corridors 48 blocks apart never meet.
 - **Level 4 (the Abandoned Office):** you arrive here through Level 2's EXIT door. Endless empty
   office floors on a stormy night: huge open-plan floors with square white columns, cubicle
   fields, corridors of wooden doors into small offices, glass conference rooms, break rooms,
@@ -272,7 +278,7 @@ Your heart rate (top-right, always shown in the Backrooms) is your sanity: 70 BP
 Every level has small safe rooms, marked by a green **SAFE** plaque over the doorway. Inside there
 is a warm lamp, a crate, a cot and an old field radio on a little table.
 About six in ten 128x128 areas have one: a panelled office room hidden in the Lobby maze, a
-concrete room with a metal door frame in the Habitable Zone, a carpeted utility room off a Level 2
+concrete room with a metal door frame in the Habitable Zone, a carpeted side room off the Level 2
 corridor, a dry tiled room on a walkway in the Poolrooms, and on Level 9 a house with its porch
 light on and the sign over the front door.
 
@@ -374,11 +380,11 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **The Corrupted Corridor (Level 1.1):** Very rarely, a doorway in a garage wall opens onto a long white-cinderblock corridor with a blue tiled floor. The further you go the worse it gets: the colours go wrong, the same stretch of hallway seems to repeat, the dark swallows your light, and the walls turn black and white and won't hold still. At the very end, a light beckons.
 
 **Level 2**
-- **Series circuits:** The caged lamps are wired in series. Now and then a circuit gives out with a sharp pop, and a whole patch of tunnel goes dark at once, sometimes for nearly a minute, before the lamps stutter back to life.
+- **Series circuits:** The caged lamps are wired in series along the corridor. Now and then a circuit gives out with a sharp pop, and a whole section of the line goes dark at once (a gap opens in the row of lights ahead), sometimes for nearly a minute, before the lamps stutter back to life. Sometimes a fault runs down the line: three sections pop out one after another, toward you or away.
 - **Brownouts:** Some sections never recovered from the Blackout. Almost every bulb is burst, the machines are silent, and only a few violet emergency lights still glow. Burst pipes have left pools of thick black sludge that clings to your boots.
-- **Hot zones:** At the dead ends of some corridors the machinery is loudest. Faulty machines whir and steam hisses from leaking pipes. The heat slows you down, wears you out and makes you hungry fast, and if you stay too long it starts to hurt.
-- **Void doors:** Some doors have pitch-black windows and won't open. The rare one that does leads into an endless, silent, lightless space where the doorway behind you is the only light. Don't lose sight of it.
-- **Looping hallway:** A few office doors open onto a long, plain, fluorescent-lit hallway. However far you walk, you keep passing the same door you came in by.
+- **Hot zones:** Behind a wide opening off the corridor, some boiler rooms run hot: faulty machines whir and steam hisses from the walls on the way in. The heat slows you down, wears you out and makes you hungry fast, and if you stay too long it starts to hurt.
+- **Void doors:** At the back of a small hall off the corridor stands a door with a pitch-black window. It opens onto an endless, silent, lightless space where the doorway behind you is the only light. Don't lose sight of it.
+- **Looping hallway:** A few office doors, each at the back of a small hall off the corridor, open onto a long, plain, fluorescent-lit hallway. However far you walk, you keep passing the same door you came in by.
 
 **Level 4**
 - **Looping stairwells:** Grey stair cores stand in some open-plan floors. However far you climb or descend, the sign on the landing always says 4, and somewhere far away you hear footsteps that never arrive. Once in a while the stairs let you out somewhere else.
@@ -433,7 +439,7 @@ picture and blended over about two seconds when you change level:
 |---|---|
 | Level 0 | Kane Pixels' tapes: bright, flat, even light, yellow-green with the blue cut, troffers clipping to white, no haze; dark wings crushed to black |
 | Level 1 | Cold, damp concrete: blue shadows, little colour, grey-blue air |
-| Level 2 | Rusty-brown shadows under cold bulbs, deep corner shadows, dark oily air |
+| Level 2 | Warm amber pools from the caged lamps receding down the line, rust-brown shadows, pipe chases sunk in darkness, a light warm heat haze |
 | Level 4 | Cold fluorescent blue-grey, quiet |
 | Poolrooms | Teal shadows, soft cool highlights, a gentle wet glow |
 | Level 37 | Dreamlike: low contrast, milky shadows, warm overexposed highlights, the strongest glow |
@@ -491,7 +497,8 @@ saturation, hiss and a big, empty room.
   corridor hums dull and low and opens up as you round the corner), and it rings in a reverb that
   follows the space you are standing in: short and close in a small room, long in a big one, hardly
   at all under open sky. Each level adds its materials: Level 0's carpet and Level 4's offices soak
-  up the highs, Level 1's bare concrete garage rings, Level 2's pipe tunnels are tight and hard. The
+  up the highs, Level 1's bare concrete garage rings, Level 2's long pipe corridor is hard and
+  metallic, with a late echo coming back from far down the line. The
   Poolrooms and Level 37 get no reverb, since in canon nothing reverberates there. Music, the
   camcorder's beeps and the overworld are left alone. Without EFX support it simply switches off.
 - **Distant sounds** (`client/audio/DistantAmbience`): every 20 seconds to a minute something
@@ -499,6 +506,12 @@ saturation, hiss and a big, empty room.
   popping or scratching behind the walls in Level 0, pipes clanging in Level 1 and 2, a phone or
   copier in Level 4, water and drains in the pool levels, wind chimes and a dog that stops barking
   in Level 9, a car horn or rats in Level 94 depending on the time of day.
+- **Level 2's pipes** (`client/anomaly/level2/Level2Emitters`, `tools/anomaly_assets/level2_audio.py`):
+  every 7-18 seconds the pipes act up somewhere up or down the corridor: a water-hammer knock
+  that runs along the pipes toward you or away, a heavy clank, a long creak of hot metal (far more
+  of them while the corridor twists), or water rushing through the overhead bundle and over your
+  head. Pumps in pump bays hum and thump, leaking valves hiss and puff steam, and drips plink
+  into the gutter.
 - **Real recordings** (`tools/level_assets/recorded.py`, all CC0, see CREDITS.md): the fluorescent
   hum of every tube in Levels 0-2 is a real ballast, the flicker clicks are real tubes and starters
   catching and dropping out, a blackout is a big breaker clunking and the floor's hum sagging and

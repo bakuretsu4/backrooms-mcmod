@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/l2_gutter"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l2_gutter",
+      "y": 90
+    }
+  }
+}

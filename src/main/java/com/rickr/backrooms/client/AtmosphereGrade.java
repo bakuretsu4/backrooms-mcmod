@@ -67,9 +67,16 @@ public final class AtmosphereGrade {
     /** Level 1: cold, damp concrete. Blue shadows, grey highlights, little colour, grey-blue air. */
     private static final Mood LEVEL_1 = new Mood(1.0f, 1.08f, 0.74f, 0.90f, 0.95f, 1.06f, 1.0f, 1.0f, 1.03f,
             0.012f, 0.013f, 0.018f, 0.18f, 0.19f, 0.23f, 7.0f, 0.032f, 0.40f, 0.45f, 0.12f, 0.010f);
-    /** Level 2: hot, cramped and dirty. Rusty-brown shadows, cold bulbs, deep contact shadows, dark oily air. */
-    private static final Mood LEVEL_2 = new Mood(1.0f, 1.12f, 0.80f, 1.05f, 0.96f, 0.86f, 0.98f, 1.0f, 1.04f,
-            0.007f, 0.006f, 0.008f, 0.10f, 0.08f, 0.06f, 4.0f, 0.045f, 0.45f, 0.50f, 0.15f, 0.012f);
+    /**
+     * Level 2: hot, cramped and dirty, one long straight corridor under warm caged lamps. A warm
+     * grade (rust-brown shadows, amber highlights, a little more colour than the other concrete
+     * levels so the lamps read as sodium-warm), strong contact shadows so the pipe chases sink
+     * into darkness, and only a light warm heat haze that starts ~10 blocks out and never covers
+     * more than ~30%: the row of pools must stay visible down to the vanishing point. A touch more
+     * glow so the far bulbs bloom softly, and a stronger breath (air shimmering over hot pipes).
+     */
+    private static final Mood LEVEL_2 = new Mood(1.0f, 1.10f, 0.86f, 1.04f, 0.97f, 0.88f, 1.03f, 1.0f, 0.93f,
+            0.008f, 0.006f, 0.005f, 0.14f, 0.105f, 0.07f, 10.0f, 0.02f, 0.30f, 0.58f, 0.19f, 0.014f);
     /** Level 4: an empty office on a rainy night. Cold fluorescent blue-grey, quiet, faint blue air. */
     private static final Mood LEVEL_4 = new Mood(1.0f, 1.05f, 0.80f, 0.90f, 0.95f, 1.08f, 0.99f, 1.0f, 1.04f,
             0.012f, 0.014f, 0.022f, 0.11f, 0.12f, 0.16f, 9.0f, 0.028f, 0.36f, 0.36f, 0.14f, 0.008f);

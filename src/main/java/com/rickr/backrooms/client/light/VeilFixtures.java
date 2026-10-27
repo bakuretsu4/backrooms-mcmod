@@ -53,6 +53,15 @@ final class VeilFixtures {
      * from the lightmap fill, see ClientLighting.)
      */
     private static final float LEVEL0_FADE_FROM = 0.6f;
+    /**
+     * Level 2 is one long straight corridor: you look straight down the row of lamps, so a light
+     * switching on at the edge of the light range (a whole new pool appearing 28 blocks ahead as
+     * you walk) would be obvious. There every light fades in over the outer half of the range
+     * (or of the picked set, when the budget is full), and past it the far pools are carried by
+     * the lightmap fill and the glowing bulbs alone, so the corridor dims smoothly into the
+     * distance instead of popping.
+     */
+    private static final float LEVEL2_FADE_FROM = 0.5f;
 
     private static final class Entry {
         FixtureLight light;
@@ -128,10 +137,23 @@ final class VeilFixtures {
         int conesLeft = floor == BackroomsLevel.LEVEL_9 ? LAMP_CONES : 0;
         // Level 0: how far away the farthest picked light is (for the edge fade). Only when the
         // budget is full: otherwise every light in range is on and nothing pops at the edge.
+        // Level 2: always the light range (or the farthest picked light if the budget is full).
         double fadeEnd = 0.0;
-        if ((floor == null || floor == BackroomsLevel.LEVEL_0) && selected.size() >= ClientSettings.quality().maxLights) {
+        float fadeFrom = LEVEL0_FADE_FROM;
+        boolean budgetFull = selected.size() >= ClientSettings.quality().maxLights;
+        if ((floor == null || floor == BackroomsLevel.LEVEL_0) && budgetFull) {
             for (FixtureLight light : selected) {
                 fadeEnd = Math.max(fadeEnd, Math.sqrt(light.distSq));
+            }
+        } else if (floor == BackroomsLevel.LEVEL_2) {
+            fadeFrom = LEVEL2_FADE_FROM;
+            fadeEnd = ClientSettings.quality().lightRange;
+            if (budgetFull) {
+                double farthest = 0.0;
+                for (FixtureLight light : selected) {
+                    farthest = Math.max(farthest, Math.sqrt(light.distSq));
+                }
+                fadeEnd = Math.min(fadeEnd, farthest);
             }
         }
         for (FixtureLight light : selected) {
@@ -149,7 +171,7 @@ final class VeilFixtures {
             entry.light = light;
             entry.seen = true;
             if (light.type != FixtureType.RED_ALARM_LAMP) {
-                setBrightness(entry, light.type.brightnessOn(floor) * light.level * scale * edgeFade(light, fadeEnd));
+                setBrightness(entry, light.type.brightnessOn(floor) * light.level * scale * edgeFade(light, fadeEnd, fadeFrom));
             }
             // The nearest few streetlamps (selected is nearest first) get their glow cone.
             if (light.type.isStreetlamp() && conesLeft > 0) {
@@ -237,15 +259,16 @@ final class VeilFixtures {
     }
 
     /**
-     * 1 for lights well inside the picked set, easing to 0 for the farthest one (Level 0 only;
-     * {@code fadeEnd} is 0 elsewhere, which means no fade). Rounded to sixteenths so a light that
-     * is fading doesn't push a new brightness to Veil every single tick.
+     * 1 for lights well inside the picked set, easing to 0 for the farthest one (Level 0 and
+     * Level 2; {@code fadeEnd} is 0 elsewhere, which means no fade). The fade starts at
+     * {@code fadeFrom} of the way out. Rounded to sixteenths so a light that is fading doesn't
+     * push a new brightness to Veil every single tick.
      */
-    private static float edgeFade(FixtureLight light, double fadeEnd) {
+    private static float edgeFade(FixtureLight light, double fadeEnd, float fadeFrom) {
         if (fadeEnd <= 0.0) {
             return 1.0f;
         }
-        double from = fadeEnd * LEVEL0_FADE_FROM;
+        double from = fadeEnd * fadeFrom;
         double t = Math.min(1.0, Math.max(0.0, (fadeEnd - Math.sqrt(light.distSq)) / (fadeEnd - from)));
         float smooth = (float) (t * t * (3.0 - 2.0 * t));
         return Math.round(smooth * 16.0f) / 16.0f;

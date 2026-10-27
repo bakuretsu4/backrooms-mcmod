@@ -6,9 +6,9 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
 /**
- * Level 2's rusty pipe rack: a bundle of thin pipes running along the wall high up, resting on
- * metal shelf brackets. BRACKET = true draws the bracket in this block; the level places one every
- * few blocks so the pipes look supported.
+ * Level 2's rusty pipe rack: three rusted steel pipes running along the wall. BRACKET = true draws
+ * the galvanised strut channel and the clamps holding them in this block; the level places one
+ * every few blocks so the pipes look supported.
  */
 public class PipeRackBlock extends WallMountBlock {
     public static final BooleanProperty BRACKET = BooleanProperty.create("bracket");

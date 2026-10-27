@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "color=red,facing=north": {
+      "model": "backrooms:block/l2_valve_wheel_red"
+    },
+    "color=red,facing=east": {
+      "model": "backrooms:block/l2_valve_wheel_red",
+      "y": 90
+    },
+    "color=red,facing=south": {
+      "model": "backrooms:block/l2_valve_wheel_red",
+      "y": 180
+    },
+    "color=red,facing=west": {
+      "model": "backrooms:block/l2_valve_wheel_red",
+      "y": 270
+    },
+    "color=grey,facing=north": {
+      "model": "backrooms:block/l2_valve_wheel_grey"
+    },
+    "color=grey,facing=east": {
+      "model": "backrooms:block/l2_valve_wheel_grey",
+      "y": 90
+    },
+    "color=grey,facing=south": {
+      "model": "backrooms:block/l2_valve_wheel_grey",
+      "y": 180
+    },
+    "color=grey,facing=west": {
+      "model": "backrooms:block/l2_valve_wheel_grey",
+      "y": 270
+    }
+  }
+}

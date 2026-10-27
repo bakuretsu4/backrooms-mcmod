@@ -610,7 +610,7 @@ public class PhantomFriend extends PathfinderMob {
         BackroomsLevel floor = BackroomsLevel.POOLROOMS;
         LevelLayout layout = floor.layout();
         long seed = BackroomsSeeds.layoutSeed(serverLevel, floor);
-        int[] exit = layout.exits().nearest(seed, getBlockX(), getBlockZ());
+        int[] exit = layout.exitPosition(seed, getBlockX(), getBlockZ());
         double myExitDistance = exitDistance(layout, seed, getBlockX(), getBlockZ());
         double awayAngle = Math.atan2(getZ() - exit[1], getX() - exit[0]);
         boolean avoiding = !Double.isNaN(avoidAngle);
@@ -670,7 +670,7 @@ public class PhantomFriend extends PathfinderMob {
 
     /** Straight-line distance from (x, z) to the exit nearest to it. */
     private static double exitDistance(LevelLayout layout, long seed, int x, int z) {
-        int[] exit = layout.exits().nearest(seed, x, z);
+        int[] exit = layout.exitPosition(seed, x, z);
         return Math.sqrt((double) (x - exit[0]) * (x - exit[0]) + (double) (z - exit[1]) * (z - exit[1]));
     }
 

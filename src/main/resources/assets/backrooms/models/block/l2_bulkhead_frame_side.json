@@ -1,0 +1,156 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l2_frame_plate",
+    "plate": "backrooms:block/l2_frame_plate",
+    "hazard": "backrooms:block/l2_hazard",
+    "side": "backrooms:block/l2_frame_side",
+    "top": "backrooms:block/l2_frame_top",
+    "corner": "backrooms:block/l2_frame_corner"
+  },
+  "elements": [
+    {
+      "from": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "to": [
+        16.0,
+        16.0,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#hazard",
+          "cullface": "north"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#plate",
+          "cullface": "south"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#side",
+          "cullface": "east"
+        },
+        "west": {
+          "uv": [
+            16.0,
+            0.0,
+            0.0,
+            16.0
+          ],
+          "texture": "#side",
+          "cullface": "west"
+        },
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#plate",
+          "cullface": "up"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#plate",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        4.0,
+        0.0,
+        -2.0
+      ],
+      "to": [
+        12.0,
+        16.0,
+        0.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.0,
+            0.0,
+            12.0,
+            16.0
+          ],
+          "texture": "#hazard"
+        },
+        "south": {
+          "uv": [
+            4.0,
+            0.0,
+            12.0,
+            16.0
+          ],
+          "texture": "#hazard"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            0.0,
+            2.0,
+            16.0
+          ],
+          "texture": "#hazard"
+        },
+        "west": {
+          "uv": [
+            14.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#hazard"
+        },
+        "up": {
+          "uv": [
+            4.0,
+            14.0,
+            12.0,
+            16.0
+          ],
+          "texture": "#hazard"
+        },
+        "down": {
+          "uv": [
+            4.0,
+            0.0,
+            12.0,
+            2.0
+          ],
+          "texture": "#hazard"
+        }
+      }
+    }
+  ]
+}

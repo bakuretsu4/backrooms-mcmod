@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l2_workbench"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l2_workbench",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l2_workbench",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l2_workbench",
+      "y": 270
+    }
+  }
+}

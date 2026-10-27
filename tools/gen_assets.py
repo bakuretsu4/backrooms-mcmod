@@ -713,33 +713,18 @@ def tex_ceiling_beam() -> None:
 
 # ---------------------------------------------------------------- Level 2 ---
 
-# Level 2 v2: pipes are real 3D model blocks now, so the wall is plain painted concrete
-# and the pipe/duct/bracket textures are uniform surfaces that look right on any UV slice
-# of a thin model element (pipe axis = texture x; everything tiles in both directions).
-
-PIPE_WALL = (184, 179, 204)    # pale lavender-white paint, face mean ~#B4AFC8
+# Level 2 "Pipe Dreams" (linear revamp): grey-beige poured concrete walls, a worn concrete floor,
+# a dark slab ceiling. These surfaces, the pipes and every Level 2 fitting and prop are drawn in
+# anomaly_assets/level2_revamp.py (imported lazily: it imports this file).
 
 
-def _pale_wall(seed=110) -> np.ndarray:
-    """Smooth painted concrete: very subtle mottling, faint vertical drip stains."""
-    rng = rng_for(seed)
-    img = _smooth_concrete(rng, PIPE_WALL, mottle=2.5, fine=0.7)
-    drips = np.clip(fnoise(rng, beta=1.2, aniso=(1, 14), kmin=2), 0, None)
-    img = over(img, np.array([140, 134, 160]), np.clip(drips * 0.12, 0, 0.18))
-    return _pores(img, rng, density=0.004, depth=6)
+def _l2r():
+    import anomaly_assets.level2_revamp as m
+    return m
 
 
 def _pipe_wall() -> np.ndarray:
-    """Pipe-corridor wall with a thin darker skirting band at the bottom of each block.
-
-    The band repeats on every block (walls are stacked), so it is kept thin and soft:
-    it reads as a pour/formwork joint higher up and as a skirting at floor level.
-    """
-    img = _pale_wall()
-    X, Y = grid()
-    band = box((S, S), -1, S - 5, S + 1, S + 1)
-    img = over(img, np.array([150, 145, 170]), band * 0.45)
-    return add_lum(img, -6 * np.exp(-((Y - (S - 5.5)) / 0.9) ** 2))        # small shadow lip
+    return _l2r().wall()
 
 
 def tex_pipe_wall() -> None:
@@ -747,24 +732,19 @@ def tex_pipe_wall() -> None:
 
 
 def _pipe_floor() -> np.ndarray:
-    """Slightly greyer worn concrete with scuffs and a few hairline cracks."""
-    rng = rng_for(112)
-    img = _smooth_concrete(rng, (146, 142, 160), mottle=4.0, fine=1.2)
-    scuff = smoothstep(0.8, 2.0, fnoise(rng, beta=2.0, aniso=(1, 3)))
-    img = over(img, np.array([104, 100, 118]), scuff * 0.35)
-    img = add_lum(img, rng.normal(0, 1.8, (S, S)))
-    crack = smoothstep(0.035, 0.0, np.abs(fnoise(rng, beta=2.6, kmin=2)))   # zero lines = cracks
-    crack *= smoothstep(0.6, 1.4, fnoise(rng, beta=3.0))                    # only in a few places
-    img = add_lum(img, -34 * crack)
-    return _pores(img, rng, density=0.006, depth=8)
+    return _l2r().floor()
 
 
 def tex_pipe_floor() -> None:
     save_png(_pipe_floor(), TEX / "block" / "pipe_floor.png")
 
 
-def _pipe_ceiling() -> np.ndarray:
-    """Plain concrete a touch darker than the walls, faint board seams every half block."""
+def tex_pipe_ceiling() -> None:
+    save_png(_l2r().ceiling(), TEX / "block" / "pipe_ceiling.png")
+
+
+def _stairwell_light_surround() -> np.ndarray:
+    """Pale concrete round the Level 0/1 stairwell light strip (the old Level 2 ceiling)."""
     rng = rng_for(125)
     img = _smooth_concrete(rng, (166, 162, 184), mottle=3.0, fine=0.9)
     X, Y = grid()
@@ -772,12 +752,8 @@ def _pipe_ceiling() -> np.ndarray:
     return _pores(img, rng, density=0.006, depth=8)
 
 
-def tex_pipe_ceiling() -> None:
-    save_png(_pipe_ceiling(), TEX / "block" / "pipe_ceiling.png")
-
-
 def tex_pipe_light() -> None:
-    save_png(_tube(_pipe_ceiling(), False), TEX / "block" / "pipe_light.png")
+    save_png(_tube(_stairwell_light_surround(), False), TEX / "block" / "pipe_light.png")
 
 
 def _round_shade(Y, y0, y1, hl=-0.3, outside=1.0) -> np.ndarray:
@@ -847,105 +823,29 @@ def tex_pipe_bracket() -> None:
     save_png(over(img, np.array([110, 64, 44]), rust * 0.5), TEX / "block" / "pipe_bracket.png")
 
 
+# The older Level 2 blocks keep their texture names; they are drawn with the revamp's materials.
 def tex_pale_duct() -> None:
-    """Big pale painted duct (axis = x): faint longitudinal seam at v=0.5, subtle dirt."""
-    rng = rng_for(124)
-    img = _smooth_concrete(rng, (168, 164, 182), mottle=3.0, fine=0.8)
-    img = add_lum(img, fnoise(rng, beta=1.4, aniso=(8, 1), kmin=2) * 2.0)   # faint lengthwise grain
-    X, Y = grid()
-    seam = np.abs(Y - 64)
-    img = add_lum(img, -14 * smoothstep(1.2, 0.3, seam) + 6 * smoothstep(2.6, 1.6, seam) * (Y < 63))
-    # gentle roundness across the band the duct model uses (rows 40..80), softer than the pipes
-    img = img * (1 + 0.55 * (_round_shade(Y, 40, 80, hl=-0.35, outside=None) - 1))[..., None]
-    dirt = smoothstep(0.5, 1.8, fnoise(rng, beta=2.6, aniso=(3, 1)))
-    img = over(img, np.array([120, 114, 128]), dirt * 0.3)
-    save_png(img, TEX / "block" / "pale_duct.png")
+    _l2r().write_pale_duct()          # the off-white insulated main's jacket
 
 
 def tex_pale_duct_flange() -> None:
-    """Duct flange ring: darker painted metal with one column of bolts.
-
-    The model squeezes the full width onto ~4 units along the duct (4x), so the bolts are
-    drawn 4x wider than tall and come out round in game.
-    """
-    rng = rng_for(128)
-    img = _smooth_concrete(rng, (140, 136, 154), mottle=2.5, fine=0.8)
-    dirt = smoothstep(0.5, 1.8, fnoise(rng, beta=2.4))
-    img = over(img, np.array([100, 96, 110]), dirt * 0.3)
-    X, Y = grid()
-    dx, dy = (X - 64) / 4.0, wrapd(Y - 16, 32)
-    d = np.hypot(dx, dy)
-    img = add_lum(img, -20 * smoothstep(4.6, 3.0, d) * (d > 3.0))                # contact shadow
-    img = over(img, np.array([116, 114, 124]), np.clip(3.0 - d + 0.5, 0, 1))
-    img = add_lum(img, 40 * np.clip(1.4 - np.hypot(dx + 0.8, dy + 0.8) + 0.5, 0, 1))
-    save_png(img, TEX / "block" / "pale_duct_flange.png")
+    _l2r().write_pale_duct_flange()   # its metal bands
 
 
 def tex_pipe_valve() -> None:
-    """Red cast-iron valve wheel (cutout RGBA): rim, 4 spokes, hub; stem metal in a corner."""
-    rng = rng_for(129)
-    X, Y = grid()
-    r = np.hypot(X - 64, Y - 64)
-    th = np.arctan2(Y - 64, X - 64)
-    rim = (r > 46) & (r < 58)
-    spoke = (np.abs(np.sin(2 * (th - np.pi / 4))) * r < 5.5) & (r < 50)   # 4 spokes (x shape)
-    hub = r < 13
-    solid = rim | spoke | hub
-    paint = fill((168, 34, 30), (S, S))
-    # rounded cast look: lighter towards the top-left of each part, chipped paint, grime
-    paint = add_lum(paint, 22 * np.clip((64 - (X + Y) / 2) / 64, -1, 1))
-    rim_round = np.cos((r - 52) / 6 * np.pi / 2)
-    paint = add_lum(paint, np.where(rim, 18 * rim_round - 10, 0))
-    chips = smoothstep(1.3, 2.0, fnoise(rng, beta=1.2, kmin=4))
-    paint = over(paint, np.array([60, 56, 54]), chips * 0.8)
-    paint = add_lum(paint, rng.normal(0, 4, (S, S)))
-    hub_col = over(paint, np.array([70, 70, 74]), (r < 6).astype(float))      # stem nut
-    img = np.zeros((S, S, 4))
-    img[..., :3] = hub_col
-    img[..., 3] = np.where(solid, 255, 0)
-    # solid dark stem metal in the bottom-left 16x16 corner (UV [0,14,2,16]) for the stem box
-    stem = (X < 16) & (Y > S - 16)
-    stem_col = _galvanised(rng, (64, 64, 70))
-    img[stem, :3] = stem_col[stem]
-    img[stem, 3] = 255
-    save_png(img, TEX / "block" / "pipe_valve.png")
+    _l2r().write_pipe_valve()         # red hand-wheel paint
 
 
 def tex_floor_grate() -> None:
-    """Dark steel drain grate (slots over blackness) set in a pipe_floor concrete border."""
-    rng = rng_for(130)
-    img = _smooth_concrete(rng, (146, 142, 160), mottle=4.0, fine=1.2)
-    img = add_lum(img, rng.normal(0, 1.8, (S, S)))
-    X, Y = grid()
-    frame = box((S, S), 12, 12, S - 12, S - 12)
-    img = add_lum(img, -30 * (box((S, S), 10, 10, S - 10, S - 10) - frame))   # dirt gap
-    steel = _galvanised(rng, (62, 64, 70))
-    img = over(img, steel, frame)
-    # slots: 6 px wide openings every 12 px, running across, inside a 6 px steel border
-    slots = np.zeros((S, S))
-    for x0 in range(22, S - 20, 12):
-        slots = np.maximum(slots, box((S, S), x0, 20, x0 + 6, S - 20))
-    depth = 1 - 0.6 * np.clip((Y - 20) / (S - 40), 0, 1)
-    img = over(img, np.array([6, 6, 8]) * depth[..., None] + 4, slots)
-    img = add_lum(img, 20 * np.clip(box((S, S), 12, 12, S - 12, 14) + box((S, S), 12, 12, 14, S - 12), 0, 1))
-    save_png(img, TEX / "block" / "floor_grate.png")
+    _l2r().write_floor_grate()        # cast-iron drain grate in the corridor floor
 
 
 def tex_bulkhead_lamp() -> None:
-    """Frosted warm-white bulb glass (full-bright); brightest in the centre."""
-    rng = rng_for(131)
-    X, Y = grid()
-    r = np.hypot(X - 64, Y - 64) / 64
-    img = lerp(np.array([255, 250, 236]), np.array([236, 226, 204]), np.clip(r, 0, 1)[..., None] ** 1.5)
-    img = add_lum(img, fnoise(rng, beta=2.2) * 1.5 + rng.normal(0, 0.8, (S, S)))   # frosting
-    save_png(img, TEX / "block" / "bulkhead_lamp.png")
+    _l2r().write_bulkhead_lamp()      # warm frosted bulb (full-bright)
 
 
 def tex_bulkhead_cage() -> None:
-    """Fairly uniform dark painted metal for the lamp's thin cage bars and small back plate."""
-    rng = rng_for(132)
-    img = _smooth_concrete(rng, (46, 46, 52), mottle=2.0, fine=0.8)
-    save_png(add_lum(img, rng.normal(0, 1.5, (S, S))), TEX / "block" / "bulkhead_cage.png")
+    _l2r().write_bulkhead_cage()      # the lamp's dark cast cage
 
 
 # -------------------------------------------------------------- Stairwell ---
@@ -7691,12 +7591,11 @@ SURFACE_VARIANTS = {
         mark_damp(img, rng, (20, 14), 0.3, (1.0, 0.95, 1.05)) if i == 1 else
         mark_crack(img, rng, 18) if i == 2 else
         mark_damp(mark_damp(img, rng, (9, 8), 0.3), rng, (24, 20), 0.1)), 4),
-    "pipe_wall": (_pipe_wall, lambda i, rng, img: (
-        mark_drip(img, rng, RUST, 0.3) if i == 1 else
-        mark_damp(img, rng, (22, 18), 0.1, (1.0, 1.0, 0.9))), 3),
-    "pipe_floor": (_pipe_floor, lambda i, rng, img: (
-        mark_stain(img, rng, RUST, (14, 12), 0.25) if i == 1 else
-        mark_damp(img, rng, (24, 18), 0.16)), 3),
+    # Level 2: rust run-off, water streaks, a patched repair (wall; its base row only gets the
+    # run-off) / an oil stain, a spalled crack (floor). Weights in ModBlocks / registry/Level2Blocks.
+    "pipe_wall": (_pipe_wall, lambda i, rng, img: _l2r().wall_marks(i, rng, img), 4),
+    "l2_wall_base": (lambda: _l2r().wall_base(), lambda i, rng, img: _l2r().wall_marks(i, rng, img), 2),
+    "pipe_floor": (_pipe_floor, lambda i, rng, img: _l2r().floor_marks(i, rng, img), 3),
     "pool_tile": (lambda: _pool_tiles(140, POOL_WHITE, POOL_GROUT), lambda i, rng, img: (
         mark_grout_grime(img, rng) if i == 1 else
         mark_crack(img, rng, 22, (16, 26), 1)), 3),

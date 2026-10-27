@@ -1,0 +1,246 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l2_exit_bulkhead_top",
+    "leaf": "backrooms:block/l2_exit_bulkhead_top",
+    "wall": "backrooms:block/pipe_wall",
+    "frame": "backrooms:block/l2_frame_plate",
+    "hazard": "backrooms:block/l2_hazard",
+    "bolt": "backrooms:block/l2_bolt_steel"
+  },
+  "elements": [
+    {
+      "from": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "to": [
+        16.0,
+        16.0,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#leaf"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#wall",
+          "cullface": "south"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            0.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#wall",
+          "cullface": "east"
+        },
+        "west": {
+          "uv": [
+            1.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#wall",
+          "cullface": "west"
+        },
+        "up": {
+          "uv": [
+            0.0,
+            1.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#wall",
+          "cullface": "up"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            15.0
+          ],
+          "texture": "#wall",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        0.0,
+        0.0,
+        -1.5
+      ],
+      "to": [
+        2.2,
+        16.0,
+        1.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.8,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#hazard"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            0.0,
+            2.2,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "east": {
+          "uv": [
+            13.5,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            13.5,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "from": [
+        13.8,
+        0.0,
+        -1.5
+      ],
+      "to": [
+        16.0,
+        16.0,
+        1.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            2.2,
+            16.0
+          ],
+          "texture": "#hazard"
+        },
+        "south": {
+          "uv": [
+            13.8,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "east": {
+          "uv": [
+            13.5,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            13.5,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "from": [
+        2.2,
+        13.4,
+        -1.5
+      ],
+      "to": [
+        13.8,
+        16.0,
+        1.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.2,
+            0.0,
+            13.8,
+            2.6
+          ],
+          "texture": "#hazard"
+        },
+        "south": {
+          "uv": [
+            2.2,
+            0.0,
+            13.8,
+            2.6
+          ],
+          "texture": "#frame"
+        },
+        "east": {
+          "uv": [
+            13.5,
+            0.0,
+            16.0,
+            2.6
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            13.5,
+            0.0,
+            16.0,
+            2.6
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            2.2,
+            13.5,
+            13.8,
+            16.0
+          ],
+          "texture": "#frame"
+        }
+      }
+    }
+  ]
+}

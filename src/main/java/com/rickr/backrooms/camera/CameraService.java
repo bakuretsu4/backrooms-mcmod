@@ -56,7 +56,9 @@ public final class CameraService {
             }
             if (player.tickCount % 10 == 0) {
                 long seed = BackroomsSeeds.layoutSeed(player.serverLevel(), level);
-                int[] exit = level.layout().exits().nearest(seed, player.getBlockX(), player.getBlockZ());
+                // exitPosition, not exits(): some levels (Level 2's corridor bays, Level 39's windows)
+                // put their real exit somewhere other than the plain exit grid.
+                int[] exit = level.layout().exitPosition(seed, player.getBlockX(), player.getBlockZ());
                 double distance = Math.sqrt(player.distanceToSqr(exit[0] + 0.5, player.getY(), exit[1] + 0.5));
                 signalStep = Math.round((float) Math.max(0.0, 1.0 - distance / SIGNAL_RANGE) * 20.0f);
             }

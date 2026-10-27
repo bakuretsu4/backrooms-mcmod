@@ -10,7 +10,7 @@
       "model": "backrooms:block/pipe_wall_v2"
     },
     "variant=3": {
-      "model": "backrooms:block/pipe_wall"
+      "model": "backrooms:block/pipe_wall_v3"
     }
   }
 }

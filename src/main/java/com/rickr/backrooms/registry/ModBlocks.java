@@ -155,26 +155,28 @@ public final class ModBlocks {
     public static final DeferredBlock<StairBlock> CONCRETE_STAIRS = BLOCKS.registerBlock("concrete_stairs",
             props -> new StairBlock(CONCRETE_FLOOR.get().defaultBlockState(), props), unbreakable(MapColor.STONE, SoundType.STONE));
 
-    // Level 2: Pipe Dreams. Plain painted concrete; the pipes are real 3D parts bolted to one wall.
-    public static final DeferredBlock<SurfaceBlock> PIPE_WALL = surface("pipe_wall", MapColor.COLOR_LIGHT_BLUE, SoundType.STONE, 5, 1, 1);
-    public static final DeferredBlock<SurfaceBlock> PIPE_FLOOR = surface("pipe_floor", MapColor.COLOR_LIGHT_GRAY, SoundType.STONE, 5, 1, 1);
+    // Level 2: Pipe Dreams. Grey-beige poured concrete (formwork lines, tie holes, streaks); the pipes
+    // and fittings are real 3D parts (here and in registry/Level2Blocks). Weights: plain first, then
+    // rust run-off, water streaks, a patched repair (wall) / an oil stain, a spalled crack (floor).
+    public static final DeferredBlock<SurfaceBlock> PIPE_WALL = surface("pipe_wall", MapColor.STONE, SoundType.STONE, 6, 2, 2, 1);
+    public static final DeferredBlock<SurfaceBlock> PIPE_FLOOR = surface("pipe_floor", MapColor.COLOR_LIGHT_GRAY, SoundType.STONE, 10, 2, 1);
     public static final DeferredBlock<Block> PIPE_CEILING = structural("pipe_ceiling", MapColor.COLOR_GRAY, SoundType.STONE);
-    /** A dark metal drain grate set into the floor. */
+    /** A cast-iron drain grate set into the floor. */
     public static final DeferredBlock<Block> FLOOR_GRATE = structural("floor_grate", MapColor.COLOR_GRAY, SoundType.METAL);
-    /** Rack of thin rusty pipes high on the wall (BRACKET = with a shelf bracket). */
+    /** Three rusted steel pipes along the wall (BRACKET = with a strut channel and clamps). */
     public static final DeferredBlock<PipeRackBlock> RUSTY_PIPE = BLOCKS.registerBlock("rusty_pipe", PipeRackBlock::new,
             unbreakable(MapColor.COLOR_ORANGE, SoundType.METAL).noOcclusion());
-    /** One big pale duct along the bottom of the wall (FLANGE = with a bolted ring). */
+    /** The big off-white insulated main along the bottom of the wall (FLANGE = metal bands and a tear). */
     public static final DeferredBlock<DuctBlock> PALE_DUCT = BLOCKS.registerBlock("pale_duct", DuctBlock::new,
             unbreakable(MapColor.COLOR_LIGHT_GRAY, SoundType.METAL).noOcclusion());
-    /** A red valve wheel on a short stem from the wall. */
+    /** A gate valve with a red hand wheel on a stub out of the wall. */
     public static final DeferredBlock<WallMountBlock> PIPE_VALVE = BLOCKS.registerBlock("pipe_valve",
             props -> new WallMountBlock(props, 3, 3, 8, 13, 13, 16), unbreakable(MapColor.COLOR_RED, SoundType.METAL).noOcclusion());
     /** Ceiling strip; now only lights the middle of the Level 0/1 exit stairwells. */
     public static final DeferredBlock<Block> PIPE_LIGHT = BLOCKS.registerBlock("pipe_light", Block::new,
             fixture(MapColor.SNOW, SoundType.METAL, 11));
     /**
-     * Small caged bulb on the plain wall of the Level 2 corridors, just under the ceiling. Its bulb
+     * Small caged bulb (warm, amber-white) on the walls of the Level 2 corridors, high up. Its bulb
      * stops glowing while its series circuit is out (see block/Level2LampGlow).
      */
     public static final DeferredBlock<WallLampBlock> BULKHEAD_LAMP = BLOCKS.registerBlock("bulkhead_lamp",

@@ -75,6 +75,14 @@ public final class LightIndex {
         return fixtures.get(pos);
     }
 
+    /**
+     * Every fixture in the loaded chunks (packed position -> block state). Read it, never change
+     * it; client thread only. Level 2 walks it to darken far bulbs of a failed circuit.
+     */
+    public Long2ObjectOpenHashMap<BlockState> all() {
+        return fixtures;
+    }
+
     /** Positions of the fixtures in a chunk, or null when it has none / isn't loaded. */
     @Nullable
     public long[] inChunk(int chunkX, int chunkZ) {

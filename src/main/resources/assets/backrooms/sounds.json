@@ -1227,6 +1227,117 @@
     ],
     "subtitle": "subtitles.backrooms.level2_ooze_drip"
   },
+  "level2.pipe_knock": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/pipe_knock1",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "backrooms:level2/pipe_knock2",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "backrooms:level2/pipe_knock3",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "backrooms:level2/pipe_knock4",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_pipe_knock"
+  },
+  "level2.pipe_clank": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/pipe_clank1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level2/pipe_clank2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level2/pipe_clank3",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_pipe_clank"
+  },
+  "level2.pipe_creak": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/pipe_creak1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "backrooms:level2/pipe_creak2",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "backrooms:level2/pipe_creak3",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_pipe_creak"
+  },
+  "level2.pipe_rush": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/pipe_rush1",
+        "attenuation_distance": 36
+      },
+      {
+        "name": "backrooms:level2/pipe_rush2",
+        "attenuation_distance": 36
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_pipe_rush"
+  },
+  "level2.steam_leak": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/steam_leak",
+        "attenuation_distance": 14
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_steam_leak"
+  },
+  "level2.pump_hum": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/pump_hum",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_pump_hum"
+  },
+  "level2.drip": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/drip1",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level2/drip2",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level2/drip3",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level2/drip4",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level2/drip5",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_drip"
+  },
   "level0.red_rooms_hum": {
     "sounds": [
       {

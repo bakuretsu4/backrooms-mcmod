@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/pipe_floor",
+    "up": "backrooms:block/l2_floor_line",
+    "down": "backrooms:block/pipe_floor",
+    "north": "backrooms:block/pipe_floor",
+    "south": "backrooms:block/pipe_floor",
+    "east": "backrooms:block/pipe_floor",
+    "west": "backrooms:block/pipe_floor"
+  }
+}

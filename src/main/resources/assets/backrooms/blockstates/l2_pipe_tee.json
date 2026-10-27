@@ -1,0 +1,1540 @@
+{
+  "variants": {
+    "axis=x,facing=north,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_x_north"
+    },
+    "axis=x,facing=south,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_steel_small_x_center"
+    },
+    "axis=x,facing=west,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_steel_small_x_center"
+    },
+    "axis=x,facing=up,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_x_up"
+    },
+    "axis=x,facing=down,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_x_down"
+    },
+    "axis=y,facing=north,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_y_north"
+    },
+    "axis=y,facing=south,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_steel_small_y_center"
+    },
+    "axis=y,facing=down,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_steel_small_y_center"
+    },
+    "axis=z,facing=north,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_steel_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_steel_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=steel,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_steel_small_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_x_north"
+    },
+    "axis=x,facing=south,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_steel_medium_x_center"
+    },
+    "axis=x,facing=west,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_steel_medium_x_center"
+    },
+    "axis=x,facing=up,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_x_up"
+    },
+    "axis=x,facing=down,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_x_down"
+    },
+    "axis=y,facing=north,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_y_north"
+    },
+    "axis=y,facing=south,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_steel_medium_y_center"
+    },
+    "axis=y,facing=down,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_steel_medium_y_center"
+    },
+    "axis=z,facing=north,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_steel_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_steel_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=steel,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_steel_medium_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_x_north"
+    },
+    "axis=x,facing=south,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_steel_large_x_center"
+    },
+    "axis=x,facing=west,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_steel_large_x_center"
+    },
+    "axis=x,facing=up,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_x_up"
+    },
+    "axis=x,facing=down,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_x_down"
+    },
+    "axis=y,facing=north,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_y_north"
+    },
+    "axis=y,facing=south,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_steel_large_y_center"
+    },
+    "axis=y,facing=down,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_steel_large_y_center"
+    },
+    "axis=z,facing=north,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_steel_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_steel_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=steel,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_steel_large_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_x_north"
+    },
+    "axis=x,facing=south,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_copper_small_x_center"
+    },
+    "axis=x,facing=west,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_copper_small_x_center"
+    },
+    "axis=x,facing=up,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_x_up"
+    },
+    "axis=x,facing=down,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_x_down"
+    },
+    "axis=y,facing=north,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_y_north"
+    },
+    "axis=y,facing=south,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_copper_small_y_center"
+    },
+    "axis=y,facing=down,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_copper_small_y_center"
+    },
+    "axis=z,facing=north,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_copper_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_copper_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=copper,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_copper_small_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_x_north"
+    },
+    "axis=x,facing=south,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_copper_medium_x_center"
+    },
+    "axis=x,facing=west,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_copper_medium_x_center"
+    },
+    "axis=x,facing=up,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_x_up"
+    },
+    "axis=x,facing=down,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_x_down"
+    },
+    "axis=y,facing=north,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_y_north"
+    },
+    "axis=y,facing=south,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_copper_medium_y_center"
+    },
+    "axis=y,facing=down,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_copper_medium_y_center"
+    },
+    "axis=z,facing=north,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_copper_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_copper_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=copper,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_copper_medium_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_x_north"
+    },
+    "axis=x,facing=south,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_copper_large_x_center"
+    },
+    "axis=x,facing=west,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_copper_large_x_center"
+    },
+    "axis=x,facing=up,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_x_up"
+    },
+    "axis=x,facing=down,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_x_down"
+    },
+    "axis=y,facing=north,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_y_north"
+    },
+    "axis=y,facing=south,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_copper_large_y_center"
+    },
+    "axis=y,facing=down,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_copper_large_y_center"
+    },
+    "axis=z,facing=north,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_copper_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_copper_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=copper,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_copper_large_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_x_north"
+    },
+    "axis=x,facing=south,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_insulated_small_x_center"
+    },
+    "axis=x,facing=west,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_insulated_small_x_center"
+    },
+    "axis=x,facing=up,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_x_up"
+    },
+    "axis=x,facing=down,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_x_down"
+    },
+    "axis=y,facing=north,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_y_north"
+    },
+    "axis=y,facing=south,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_insulated_small_y_center"
+    },
+    "axis=y,facing=down,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_insulated_small_y_center"
+    },
+    "axis=z,facing=north,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_insulated_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_insulated_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=insulated,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_small_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_x_north"
+    },
+    "axis=x,facing=south,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_insulated_medium_x_center"
+    },
+    "axis=x,facing=west,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_insulated_medium_x_center"
+    },
+    "axis=x,facing=up,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_x_up"
+    },
+    "axis=x,facing=down,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_x_down"
+    },
+    "axis=y,facing=north,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_y_north"
+    },
+    "axis=y,facing=south,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_insulated_medium_y_center"
+    },
+    "axis=y,facing=down,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_insulated_medium_y_center"
+    },
+    "axis=z,facing=north,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_insulated_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_insulated_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=insulated,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_medium_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_x_north"
+    },
+    "axis=x,facing=south,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_insulated_large_x_center"
+    },
+    "axis=x,facing=west,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_insulated_large_x_center"
+    },
+    "axis=x,facing=up,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_x_up"
+    },
+    "axis=x,facing=down,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_x_down"
+    },
+    "axis=y,facing=north,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_y_north"
+    },
+    "axis=y,facing=south,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_insulated_large_y_center"
+    },
+    "axis=y,facing=down,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_insulated_large_y_center"
+    },
+    "axis=z,facing=north,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_insulated_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_insulated_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=insulated,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_insulated_large_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_x_north"
+    },
+    "axis=x,facing=south,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_red_small_x_center"
+    },
+    "axis=x,facing=west,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_red_small_x_center"
+    },
+    "axis=x,facing=up,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_x_up"
+    },
+    "axis=x,facing=down,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_x_down"
+    },
+    "axis=y,facing=north,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_y_north"
+    },
+    "axis=y,facing=south,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_red_small_y_center"
+    },
+    "axis=y,facing=down,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_red_small_y_center"
+    },
+    "axis=z,facing=north,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_red_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_red_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_red,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_small_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_x_north"
+    },
+    "axis=x,facing=south,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_red_medium_x_center"
+    },
+    "axis=x,facing=west,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_red_medium_x_center"
+    },
+    "axis=x,facing=up,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_x_up"
+    },
+    "axis=x,facing=down,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_x_down"
+    },
+    "axis=y,facing=north,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_y_north"
+    },
+    "axis=y,facing=south,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_red_medium_y_center"
+    },
+    "axis=y,facing=down,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_red_medium_y_center"
+    },
+    "axis=z,facing=north,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_red_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_red_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_red,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_medium_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_x_north"
+    },
+    "axis=x,facing=south,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_red_large_x_center"
+    },
+    "axis=x,facing=west,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_red_large_x_center"
+    },
+    "axis=x,facing=up,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_x_up"
+    },
+    "axis=x,facing=down,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_x_down"
+    },
+    "axis=y,facing=north,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_y_north"
+    },
+    "axis=y,facing=south,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_red_large_y_center"
+    },
+    "axis=y,facing=down,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_red_large_y_center"
+    },
+    "axis=z,facing=north,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_red_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_red_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_red,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_red_large_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_x_north"
+    },
+    "axis=x,facing=south,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_blue_small_x_center"
+    },
+    "axis=x,facing=west,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_blue_small_x_center"
+    },
+    "axis=x,facing=up,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_x_up"
+    },
+    "axis=x,facing=down,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_x_down"
+    },
+    "axis=y,facing=north,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_y_north"
+    },
+    "axis=y,facing=south,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_blue_small_y_center"
+    },
+    "axis=y,facing=down,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_blue_small_y_center"
+    },
+    "axis=z,facing=north,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_blue_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_blue_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_blue,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_small_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_x_north"
+    },
+    "axis=x,facing=south,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_blue_medium_x_center"
+    },
+    "axis=x,facing=west,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_blue_medium_x_center"
+    },
+    "axis=x,facing=up,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_x_up"
+    },
+    "axis=x,facing=down,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_x_down"
+    },
+    "axis=y,facing=north,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_y_north"
+    },
+    "axis=y,facing=south,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_blue_medium_y_center"
+    },
+    "axis=y,facing=down,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_blue_medium_y_center"
+    },
+    "axis=z,facing=north,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_blue_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_blue_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_blue,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_medium_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_x_north"
+    },
+    "axis=x,facing=south,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_blue_large_x_center"
+    },
+    "axis=x,facing=west,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_blue_large_x_center"
+    },
+    "axis=x,facing=up,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_x_up"
+    },
+    "axis=x,facing=down,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_x_down"
+    },
+    "axis=y,facing=north,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_y_north"
+    },
+    "axis=y,facing=south,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_blue_large_y_center"
+    },
+    "axis=y,facing=down,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_blue_large_y_center"
+    },
+    "axis=z,facing=north,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_blue_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_blue_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_blue,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_blue_large_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_x_north"
+    },
+    "axis=x,facing=south,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_small_x_center"
+    },
+    "axis=x,facing=west,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_small_x_center"
+    },
+    "axis=x,facing=up,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_x_up"
+    },
+    "axis=x,facing=down,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_x_down"
+    },
+    "axis=y,facing=north,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_y_north"
+    },
+    "axis=y,facing=south,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_small_y_center"
+    },
+    "axis=y,facing=down,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_small_y_center"
+    },
+    "axis=z,facing=north,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_yellow,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_small_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_x_north"
+    },
+    "axis=x,facing=south,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_medium_x_center"
+    },
+    "axis=x,facing=west,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_medium_x_center"
+    },
+    "axis=x,facing=up,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_x_up"
+    },
+    "axis=x,facing=down,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_x_down"
+    },
+    "axis=y,facing=north,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_y_north"
+    },
+    "axis=y,facing=south,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_medium_y_center"
+    },
+    "axis=y,facing=down,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_medium_y_center"
+    },
+    "axis=z,facing=north,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_yellow,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_medium_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_x_north"
+    },
+    "axis=x,facing=south,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_large_x_center"
+    },
+    "axis=x,facing=west,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_large_x_center"
+    },
+    "axis=x,facing=up,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_x_up"
+    },
+    "axis=x,facing=down,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_x_down"
+    },
+    "axis=y,facing=north,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_y_north"
+    },
+    "axis=y,facing=south,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_large_y_center"
+    },
+    "axis=y,facing=down,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_large_y_center"
+    },
+    "axis=z,facing=north,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_yellow_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_yellow,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_yellow_large_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_x_north"
+    },
+    "axis=x,facing=south,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_green_small_x_center"
+    },
+    "axis=x,facing=west,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_green_small_x_center"
+    },
+    "axis=x,facing=up,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_x_up"
+    },
+    "axis=x,facing=down,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_x_down"
+    },
+    "axis=y,facing=north,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_y_north"
+    },
+    "axis=y,facing=south,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_green_small_y_center"
+    },
+    "axis=y,facing=down,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_green_small_y_center"
+    },
+    "axis=z,facing=north,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_green_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_painted_green_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_green,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_small_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_x_north"
+    },
+    "axis=x,facing=south,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_green_medium_x_center"
+    },
+    "axis=x,facing=west,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_green_medium_x_center"
+    },
+    "axis=x,facing=up,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_x_up"
+    },
+    "axis=x,facing=down,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_x_down"
+    },
+    "axis=y,facing=north,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_y_north"
+    },
+    "axis=y,facing=south,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_green_medium_y_center"
+    },
+    "axis=y,facing=down,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_green_medium_y_center"
+    },
+    "axis=z,facing=north,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_green_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_painted_green_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_green,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_medium_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_x_north"
+    },
+    "axis=x,facing=south,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_green_large_x_center"
+    },
+    "axis=x,facing=west,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_green_large_x_center"
+    },
+    "axis=x,facing=up,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_x_up"
+    },
+    "axis=x,facing=down,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_x_down"
+    },
+    "axis=y,facing=north,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_y_north"
+    },
+    "axis=y,facing=south,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_green_large_y_center"
+    },
+    "axis=y,facing=down,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_green_large_y_center"
+    },
+    "axis=z,facing=north,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_green_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_painted_green_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=painted_green,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_painted_green_large_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_x_north"
+    },
+    "axis=x,facing=south,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_conduit_small_x_center"
+    },
+    "axis=x,facing=west,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_conduit_small_x_center"
+    },
+    "axis=x,facing=up,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_x_up"
+    },
+    "axis=x,facing=down,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_x_down"
+    },
+    "axis=y,facing=north,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_y_north"
+    },
+    "axis=y,facing=south,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_conduit_small_y_center"
+    },
+    "axis=y,facing=down,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_conduit_small_y_center"
+    },
+    "axis=z,facing=north,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_conduit_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_conduit_small_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=conduit,size=small": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_small_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_x_north"
+    },
+    "axis=x,facing=south,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_conduit_medium_x_center"
+    },
+    "axis=x,facing=west,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_conduit_medium_x_center"
+    },
+    "axis=x,facing=up,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_x_up"
+    },
+    "axis=x,facing=down,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_x_down"
+    },
+    "axis=y,facing=north,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_y_north"
+    },
+    "axis=y,facing=south,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_conduit_medium_y_center"
+    },
+    "axis=y,facing=down,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_conduit_medium_y_center"
+    },
+    "axis=z,facing=north,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_conduit_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_conduit_medium_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=conduit,size=medium": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_medium_x_down",
+      "y": 90
+    },
+    "axis=x,facing=north,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_x_north"
+    },
+    "axis=x,facing=south,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_x_north",
+      "y": 180
+    },
+    "axis=x,facing=east,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_conduit_large_x_center"
+    },
+    "axis=x,facing=west,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_conduit_large_x_center"
+    },
+    "axis=x,facing=up,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_x_up"
+    },
+    "axis=x,facing=down,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_x_down"
+    },
+    "axis=y,facing=north,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_y_north"
+    },
+    "axis=y,facing=south,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_y_north",
+      "y": 180
+    },
+    "axis=y,facing=east,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_y_north",
+      "y": 90
+    },
+    "axis=y,facing=west,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_y_north",
+      "y": 270
+    },
+    "axis=y,facing=up,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_conduit_large_y_center"
+    },
+    "axis=y,facing=down,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_conduit_large_y_center"
+    },
+    "axis=z,facing=north,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_conduit_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=south,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_conduit_large_x_center",
+      "y": 90
+    },
+    "axis=z,facing=east,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_x_north",
+      "y": 90
+    },
+    "axis=z,facing=west,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_x_north",
+      "y": 270
+    },
+    "axis=z,facing=up,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_x_up",
+      "y": 90
+    },
+    "axis=z,facing=down,kind=conduit,size=large": {
+      "model": "backrooms:block/l2_pipe_tee_conduit_large_x_down",
+      "y": 90
+    }
+  }
+}

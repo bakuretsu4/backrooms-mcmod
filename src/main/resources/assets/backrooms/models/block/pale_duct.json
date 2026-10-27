@@ -1,299 +1,380 @@
 {
-  "ambientocclusion": false,
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
   "textures": {
     "particle": "backrooms:block/pale_duct",
-    "duct": "backrooms:block/pale_duct",
-    "flange": "backrooms:block/pale_duct_flange"
+    "pipe": "backrooms:block/pale_duct",
+    "band": "backrooms:block/pale_duct_flange",
+    "torn": "backrooms:block/l2_pipe_torn",
+    "strut": "backrooms:block/l2_strut",
+    "cap": "backrooms:block/l2_pipe_cap_insulated"
   },
   "elements": [
     {
       "from": [
-        0,
-        1.0,
-        7.222
+        0.0,
+        0.5,
+        7.0147
       ],
       "to": [
-        16,
-        12.0,
-        11.778
+        16.0,
+        12.5,
+        11.9853
       ],
       "faces": {
-        "north": {
-          "uv": [
-            0,
-            5,
-            16,
-            16
-          ],
-          "texture": "#duct"
-        },
-        "south": {
-          "uv": [
-            0,
-            5,
-            16,
-            16
-          ],
-          "texture": "#duct"
-        },
         "up": {
           "uv": [
-            0,
-            5,
-            16,
-            16
+            0.0,
+            0.0,
+            16.0,
+            2.0
           ],
-          "texture": "#duct"
+          "texture": "#pipe"
         },
         "down": {
           "uv": [
-            0,
-            5,
-            16,
-            16
+            0.0,
+            16.0,
+            16.0,
+            14.0
           ],
-          "texture": "#duct"
+          "texture": "#pipe"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            6.0,
+            16.0,
+            10.0
+          ],
+          "texture": "#pipe"
+        },
+        "north": {
+          "uv": [
+            0.0,
+            6.0,
+            16.0,
+            10.0
+          ],
+          "texture": "#pipe"
         },
         "east": {
           "uv": [
-            0,
-            0,
-            4.556,
-            11.0
+            4.0147,
+            3.5,
+            8.9853,
+            15.5
           ],
-          "texture": "#duct"
+          "texture": "#cap",
+          "cullface": "east"
         },
         "west": {
           "uv": [
-            0,
-            0,
-            4.556,
-            11.0
+            7.0147,
+            3.5,
+            11.9853,
+            15.5
           ],
-          "texture": "#duct"
+          "texture": "#cap",
+          "cullface": "west"
         }
-      }
+      },
+      "shade": false
     },
     {
       "from": [
-        0,
-        1.0,
-        7.222
+        0.0,
+        4.0147,
+        3.5
       ],
       "to": [
-        16,
-        12.0,
-        11.778
+        16.0,
+        8.9853,
+        15.5
       ],
       "faces": {
-        "north": {
-          "uv": [
-            0,
-            5,
-            16,
-            16
-          ],
-          "texture": "#duct"
-        },
-        "south": {
-          "uv": [
-            0,
-            5,
-            16,
-            16
-          ],
-          "texture": "#duct"
-        },
         "up": {
           "uv": [
-            0,
-            5,
-            16,
-            16
+            0.0,
+            0.0,
+            16.0,
+            2.0
           ],
-          "texture": "#duct"
+          "texture": "#pipe"
         },
         "down": {
           "uv": [
-            0,
-            5,
-            16,
-            16
+            0.0,
+            16.0,
+            16.0,
+            14.0
           ],
-          "texture": "#duct"
+          "texture": "#pipe"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            6.0,
+            16.0,
+            10.0
+          ],
+          "texture": "#pipe"
+        },
+        "north": {
+          "uv": [
+            0.0,
+            6.0,
+            16.0,
+            10.0
+          ],
+          "texture": "#pipe"
         },
         "east": {
           "uv": [
-            0,
-            0,
-            4.556,
-            11.0
+            0.5,
+            7.0147,
+            12.5,
+            11.9853
           ],
-          "texture": "#duct"
+          "texture": "#cap",
+          "cullface": "east"
         },
         "west": {
           "uv": [
-            0,
-            0,
-            4.556,
-            11.0
+            3.5,
+            7.0147,
+            15.5,
+            11.9853
           ],
-          "texture": "#duct"
+          "texture": "#cap",
+          "cullface": "west"
+        }
+      },
+      "shade": false
+    },
+    {
+      "from": [
+        0.0,
+        0.5,
+        7.0147
+      ],
+      "to": [
+        16.0,
+        12.5,
+        11.9853
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0.0,
+            2.0,
+            16.0,
+            6.0
+          ],
+          "texture": "#pipe"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            14.0,
+            16.0,
+            10.0
+          ],
+          "texture": "#pipe"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            10.0,
+            16.0,
+            14.0
+          ],
+          "texture": "#pipe"
+        },
+        "north": {
+          "uv": [
+            0.0,
+            2.0,
+            16.0,
+            6.0
+          ],
+          "texture": "#pipe"
+        },
+        "east": {
+          "uv": [
+            4.0147,
+            3.5,
+            8.9853,
+            15.5
+          ],
+          "texture": "#cap"
+        },
+        "west": {
+          "uv": [
+            7.0147,
+            3.5,
+            11.9853,
+            15.5
+          ],
+          "texture": "#cap"
         }
       },
       "rotation": {
-        "angle": 45,
-        "axis": "x",
         "origin": [
-          8,
+          8.0,
           6.5,
           9.5
-        ]
-      }
+        ],
+        "axis": "x",
+        "angle": 45
+      },
+      "shade": false
     },
     {
       "from": [
-        0,
-        4.222,
-        4.0
+        0.0,
+        0.5,
+        7.0147
       ],
       "to": [
-        16,
-        8.778,
-        15.0
+        16.0,
+        12.5,
+        11.9853
       ],
       "faces": {
-        "north": {
-          "uv": [
-            0,
-            5,
-            16,
-            16
-          ],
-          "texture": "#duct"
-        },
-        "south": {
-          "uv": [
-            0,
-            5,
-            16,
-            16
-          ],
-          "texture": "#duct"
-        },
         "up": {
           "uv": [
-            0,
-            5,
-            16,
-            16
+            0.0,
+            6.0,
+            16.0,
+            2.0
           ],
-          "texture": "#duct"
+          "texture": "#pipe"
         },
         "down": {
           "uv": [
-            0,
-            5,
-            16,
-            16
+            0.0,
+            10.0,
+            16.0,
+            14.0
           ],
-          "texture": "#duct"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            11.0,
-            4.556
-          ],
-          "texture": "#duct"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            11.0,
-            4.556
-          ],
-          "texture": "#duct"
-        }
-      }
-    },
-    {
-      "from": [
-        0,
-        4.222,
-        4.0
-      ],
-      "to": [
-        16,
-        8.778,
-        15.0
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            5,
-            16,
-            16
-          ],
-          "texture": "#duct"
+          "texture": "#pipe"
         },
         "south": {
           "uv": [
-            0,
-            5,
-            16,
-            16
+            0.0,
+            2.0,
+            16.0,
+            6.0
           ],
-          "texture": "#duct"
+          "texture": "#pipe"
         },
-        "up": {
+        "north": {
           "uv": [
-            0,
-            5,
-            16,
-            16
+            0.0,
+            10.0,
+            16.0,
+            14.0
           ],
-          "texture": "#duct"
-        },
-        "down": {
-          "uv": [
-            0,
-            5,
-            16,
-            16
-          ],
-          "texture": "#duct"
+          "texture": "#pipe"
         },
         "east": {
           "uv": [
-            0,
-            0,
-            11.0,
-            4.556
+            4.0147,
+            3.5,
+            8.9853,
+            15.5
           ],
-          "texture": "#duct"
+          "texture": "#cap"
         },
         "west": {
           "uv": [
-            0,
-            0,
-            11.0,
-            4.556
+            7.0147,
+            3.5,
+            11.9853,
+            15.5
           ],
-          "texture": "#duct"
+          "texture": "#cap"
         }
       },
       "rotation": {
-        "angle": 45,
-        "axis": "x",
         "origin": [
-          8,
+          8.0,
           6.5,
           9.5
-        ]
+        ],
+        "axis": "x",
+        "angle": -45
+      },
+      "shade": false
+    },
+    {
+      "from": [
+        6.5,
+        0.0,
+        5.0
+      ],
+      "to": [
+        9.5,
+        1.2,
+        14.6
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            14.8,
+            9.5,
+            16.0
+          ],
+          "texture": "#strut"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            14.8,
+            9.5,
+            16.0
+          ],
+          "texture": "#strut"
+        },
+        "east": {
+          "uv": [
+            1.4,
+            14.8,
+            11.0,
+            16.0
+          ],
+          "texture": "#strut"
+        },
+        "west": {
+          "uv": [
+            5.0,
+            14.8,
+            14.6,
+            16.0
+          ],
+          "texture": "#strut"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            5.0,
+            9.5,
+            14.6
+          ],
+          "texture": "#strut"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            1.4,
+            9.5,
+            11.0
+          ],
+          "texture": "#strut",
+          "cullface": "down"
+        }
       }
     }
   ]

@@ -34,12 +34,16 @@ public final class Backrooms {
         // Deferred registers: blocks, items, entities, sounds, our chunk generator type, player data.
         // Level 0 revamp: the film's partitions, light strips, exit alcove, tape lines and props.
         com.rickr.backrooms.registry.Level0Blocks.bootstrap();
+        // Level 2 revamp: pipework, bulkhead rings, maintenance-room furniture, stencils and the exit bulkhead.
+        com.rickr.backrooms.registry.Level2Blocks.bootstrap();
         // Level 39 Hounds/Facelings (and Clumps, Skin-stealers, Wretches): loads their registrations.
         com.rickr.backrooms.registry.Level39Mobs.bootstrap();
         // Level 39 "Megalophobia": the town, superstructure and tunnel blocks (and their items).
         com.rickr.backrooms.registry.Level39Blocks.bootstrap();
         // Level 39: the town/tunnel ambience, the indoor storm, echo quakes and far-off sounds.
         com.rickr.backrooms.registry.Level39Sounds.bootstrap();
+        // Level 2: the pipe corridor's knocks, clanks, creaks, steam leaks, pump hum and drips.
+        com.rickr.backrooms.registry.Level2Audio.bootstrap();
         // Level 39 houses: wallpapers, floors, popcorn ceilings and bulbs, knock walls, period furniture.
         com.rickr.backrooms.registry.Level39HouseBlocks.bootstrap();
         // Level 39 anomalies: Window Shadows, the Hydrolitis plague and their sounds.

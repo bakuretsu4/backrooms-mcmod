@@ -172,7 +172,7 @@ public final class HallucinationService {
         long seed = BackroomsSeeds.layoutSeed(level, floor);
         RandomSource random = victim.getRandom();
 
-        int[] exit = layout.exits().nearest(seed, victim.getBlockX(), victim.getBlockZ());
+        int[] exit = layout.exitPosition(seed, victim.getBlockX(), victim.getBlockZ());
         double awayAngle = Math.atan2(victim.getZ() - exit[1], victim.getX() - exit[0]);
         Vec3 look = victim.getLookAngle().multiply(1.0, 0.0, 1.0).normalize();
         Vec3 eyes = victim.getEyePosition();

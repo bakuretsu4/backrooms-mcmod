@@ -1,0 +1,172 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l2_drip_stain",
+    "stain": "backrooms:block/l2_drip_stain",
+    "nub": "backrooms:block/l2_plinth",
+    "water": "backrooms:block/l2_water"
+  },
+  "elements": [
+    {
+      "from": [
+        1.0,
+        15.94,
+        1.0
+      ],
+      "to": [
+        15.0,
+        16.0,
+        15.0
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            1.0,
+            1.0,
+            15.0,
+            15.0
+          ],
+          "texture": "#stain"
+        }
+      }
+    },
+    {
+      "from": [
+        7.3,
+        14.6,
+        7.3
+      ],
+      "to": [
+        8.7,
+        16.0,
+        8.7
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7.3,
+            0.0,
+            8.7,
+            1.4
+          ],
+          "texture": "#nub"
+        },
+        "south": {
+          "uv": [
+            7.3,
+            0.0,
+            8.7,
+            1.4
+          ],
+          "texture": "#nub"
+        },
+        "east": {
+          "uv": [
+            7.3,
+            0.0,
+            8.7,
+            1.4
+          ],
+          "texture": "#nub"
+        },
+        "west": {
+          "uv": [
+            7.3,
+            0.0,
+            8.7,
+            1.4
+          ],
+          "texture": "#nub"
+        },
+        "up": {
+          "uv": [
+            7.3,
+            7.3,
+            8.7,
+            8.7
+          ],
+          "texture": "#nub",
+          "cullface": "up"
+        },
+        "down": {
+          "uv": [
+            7.3,
+            7.3,
+            8.7,
+            8.7
+          ],
+          "texture": "#nub"
+        }
+      }
+    },
+    {
+      "from": [
+        7.55,
+        13.4,
+        7.55
+      ],
+      "to": [
+        8.45,
+        14.6,
+        8.45
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            7.55,
+            1.4,
+            8.45,
+            2.6
+          ],
+          "texture": "#water"
+        },
+        "south": {
+          "uv": [
+            7.55,
+            1.4,
+            8.45,
+            2.6
+          ],
+          "texture": "#water"
+        },
+        "east": {
+          "uv": [
+            7.55,
+            1.4,
+            8.45,
+            2.6
+          ],
+          "texture": "#water"
+        },
+        "west": {
+          "uv": [
+            7.55,
+            1.4,
+            8.45,
+            2.6
+          ],
+          "texture": "#water"
+        },
+        "up": {
+          "uv": [
+            7.55,
+            7.55,
+            8.45,
+            8.45
+          ],
+          "texture": "#water"
+        },
+        "down": {
+          "uv": [
+            7.55,
+            7.55,
+            8.45,
+            8.45
+          ],
+          "texture": "#water"
+        }
+      }
+    }
+  ]
+}

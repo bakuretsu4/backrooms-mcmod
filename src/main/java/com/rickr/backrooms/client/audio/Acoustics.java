@@ -89,8 +89,11 @@ public final class Acoustics {
     private static final Material LOBBY = new Material(0.7f, 0.85f, 0.45f, 0.45f, 0.85f);
     // Level 1: bare concrete parking garage: bright, long, a big space.
     private static final Material GARAGE = new Material(0.75f, 1.35f, 0.85f, 0.9f, 1.0f);
-    // Level 2: narrow painted concrete tunnels full of pipes: short, hard, a little metallic.
-    private static final Material PIPES = new Material(0.85f, 0.8f, 0.92f, 1.1f, 0.55f);
+    // Level 2: one long, narrow concrete corridor lined with steel pipes: hard and a little
+    // metallic (less diffusion = a grainier, fluttery echo between the close walls), ringing a bit
+    // longer than its narrow width suggests, and a louder, later echo coming back from far down
+    // the straight line (lateMul).
+    private static final Material PIPES = new Material(0.85f, 1.0f, 0.92f, 1.1f, 0.45f, 0.85f, 1.3f);
     // Level 4: carpeted offices, ceiling tiles: dead and quiet.
     private static final Material OFFICE = new Material(0.45f, 0.7f, 0.4f, 0.4f, 0.9f);
     // Level 9 and Level 94: mostly open air; inside the houses, small furnished rooms.

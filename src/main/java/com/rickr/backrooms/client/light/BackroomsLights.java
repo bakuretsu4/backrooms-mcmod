@@ -4,7 +4,6 @@ import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.network.FlashlightStatesPayload;
 import com.rickr.backrooms.world.BackroomsLevel;
-import com.rickr.backrooms.world.layout.LevelLayout;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayList;
@@ -161,8 +160,10 @@ public final class BackroomsLights {
             // its lamps go dark together for a while (same for every player: game time). Not the
             // copy of the lamp by a void door, down in the void below the floor: it is the only
             // light there and must never go out.
-            if (level2 && light.type == FixtureType.BULKHEAD_LAMP && light.y > LevelLayout.FLOOR_Y) {
-                long circuit = FixturePower.level2Circuit(light.x, light.z);
+            if (level2 && light.type == FixtureType.BULKHEAD_LAMP && FixturePower.level2OnCircuit(BlockPos.getY(light.key))) {
+                // From the block, not the light (which sits a little in front of it), so it
+                // matches Level2LampGlow and the far sweep below exactly.
+                long circuit = FixturePower.level2Circuit(BlockPos.getX(light.key) + 0.5, BlockPos.getZ(light.key) + 0.5);
                 if (FixturePower.level2CircuitPop(circuit, gameTime)) {
                     FixtureSounds.circuitPop(light);
                 }
@@ -185,6 +186,13 @@ public final class BackroomsLights {
 
         lights.sort(BY_DISTANCE);
         updateMercuryShare();
+        if (level2) {
+            updateLevel2Shares();
+            if (++bulbSweepTick >= BULB_SWEEP_EVERY) {
+                bulbSweepTick = 0;
+                sweepDarkBulbs(mc, gameTime);
+            }
+        }
         FixtureSounds.tick(lights);
         if (veil) {
             select(floor);
@@ -223,6 +231,86 @@ public final class BackroomsLights {
         float target = mercury + sodium <= 1e-6 ? mercuryShare : (float) (mercury / (mercury + sodium));
         // Ease toward it so the tint doesn't jump when a lamp flickers.
         mercuryShare += (target - mercuryShare) * 0.2f;
+    }
+
+    /**
+     * 0..1 (Level 2): how much of the light around you comes from the brownout's violet
+     * emergency lights instead of the warm caged lamps. Like {@link #mercuryShare()}, it lets
+     * {@code ClientLighting} give the one-colour lightmap fill the colour of where you stand.
+     */
+    public static float emergencyShare() {
+        return emergencyShare;
+    }
+
+    /**
+     * 0..1 (Level 2): how much of the light around you is lit right now (nearer fixtures count
+     * more). When a series circuit pops, the section you stand in drops toward 0, and
+     * {@code ClientLighting} takes the lightmap fill down with it: the vanilla block light of a
+     * dead lamp never changes, so without this the "dark" section would keep a faint glow. Every
+     * fixture counts, not only the caged lamps: a side room whose caged lamp died with the
+     * corridor's section is still lit by its tube, and must keep its fill.
+     */
+    public static float level2LampShare() {
+        return level2LampShare;
+    }
+
+    private static float emergencyShare;
+    private static float level2LampShare = 1.0f;
+    /** Level 2: every caged lamp in the loaded chunks is checked against its circuit this often (ticks). */
+    private static final int BULB_SWEEP_EVERY = 5;
+    private static int bulbSweepTick;
+
+    private static void updateLevel2Shares() {
+        double emergency = 0.0;
+        double lampsLit = 0.0;
+        double lampsAll = 0.0;
+        for (FixtureLight light : lights) {
+            if (light.distSq > TINT_RANGE * TINT_RANGE) {
+                break; // sorted nearest first
+            }
+            double weight = 1.0 / (1.0 + light.distSq);
+            if (light.type == FixtureType.L2_EMERGENCY_LIGHT) {
+                emergency += weight * light.level;
+            } else {
+                lampsAll += weight;
+                if (light.on) {
+                    // On or off only: blackouts and the alarm already dim the fill themselves.
+                    lampsLit += weight;
+                }
+            }
+        }
+        float emergencyTarget = emergency + lampsLit <= 1e-6 ? emergencyShare : (float) (emergency / (emergency + lampsLit));
+        // No other fixtures near (only emergency lights, or nothing): leave the fill alone.
+        float lampTarget = lampsAll <= 1e-6 ? 1.0f : (float) Math.min(1.0, lampsLit / lampsAll);
+        // Eased, so a flicker or the restrike stutter doesn't make the fill jump.
+        emergencyShare += (emergencyTarget - emergencyShare) * 0.2f;
+        level2LampShare += (lampTarget - level2LampShare) * 0.25f;
+    }
+
+    /**
+     * Level 2 is one long straight corridor, so you see caged bulbs a hundred blocks away, far
+     * beyond the lights handled every tick (those within {@link #BUILD_RANGE}). When a section's
+     * circuit fails out there, its bulbs must go dark too, or the gap in the row of lights would
+     * only appear once you walked up to it. So a few times a second every caged lamp in the loaded
+     * chunks is checked (a couple of hashes each, a few hundred lamps) and its block redrawn when
+     * its circuit changed. The near lamps were already done this tick, so they don't redraw twice.
+     */
+    private static void sweepDarkBulbs(Minecraft mc, long gameTime) {
+        var it = INDEX.all().long2ObjectEntrySet().fastIterator();
+        while (it.hasNext()) {
+            var entry = it.next();
+            long key = entry.getLongKey();
+            int y = BlockPos.getY(key);
+            if (!FixturePower.level2OnCircuit(y) || FixtureType.of(entry.getValue()) != FixtureType.BULKHEAD_LAMP) {
+                continue; // the void's doorway lamp far below the floor never goes out
+            }
+            int x = BlockPos.getX(key);
+            int z = BlockPos.getZ(key);
+            boolean powered = FixturePower.level2CircuitPowered(FixturePower.level2Circuit(x + 0.5, z + 0.5), gameTime);
+            if (powered ? DARK_BULBS.remove(key) : DARK_BULBS.add(key)) {
+                mc.levelRenderer.setBlocksDirty(x, y, z, x, y, z);
+            }
+        }
     }
 
     /** Per-frame: flashlights follow the view smoothly, beacons spin. Runs before Veil draws its lights. */

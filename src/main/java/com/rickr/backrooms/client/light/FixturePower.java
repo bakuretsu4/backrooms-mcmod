@@ -2,6 +2,7 @@ package com.rickr.backrooms.client.light;
 
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.network.LevelEventPayload;
+import com.rickr.backrooms.world.layout.LevelLayout;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
@@ -230,59 +231,110 @@ public final class FixturePower {
 
     // --- Level 2 series circuits -----------------------------------------------------------------
     // Level 2's lamps are wired in series (https://backrooms-wiki.wikidot.com/level-2): when one
-    // part of a circuit fails, every lamp on it goes out at once, roughly a 3x3 to 6x6 grid of
-    // lamps, and nobody can tell which lamps share a circuit. Here a circuit is a patch of floor
-    // around one jittered point per 56x56 square (so circuits are irregular, 9-36 lamps), and
-    // whether it is up is a pure function of the circuit and the level's game time: every player
-    // sees the same circuit die at the same tick, and neighbouring circuits don't care.
+    // part of a circuit fails, every lamp on it goes out at once, and nobody can tell which lamps
+    // share a circuit. Level 2 is one long straight corridor along X in every 48-block band of Z
+    // (world/layout/Level2Layout), so a circuit is a SECTION of that corridor: the stretch between
+    // two breaks, 20 to 76 blocks long (about 3 to 12 lamps). When it fails, that whole stretch of
+    // the line goes dark at once and a gap opens in the row of pools receding into the distance.
+    //
+    // Now and then a fault runs down the line instead: the three sections on one "feeder" go out
+    // one after another, half a second to a second apart, all in the same direction (toward you
+    // or away from you), and come back together. Looking down the corridor you see the pools
+    // drop out section by section.
+    //
+    // Everything is a pure function of the section and the level's game time: every player sees
+    // the same section die at the same tick, and it needs no world seed (the client has none).
 
-    /** One circuit centre per square this big (blocks). */
-    private static final int CIRCUIT_GRID = 56;
-    /** Each circuit's time is cut into rounds this long (ticks, 2.5 minutes) ... */
+    /** Level 2's corridor spacing along Z (Level2Layout's band): one corridor, so one row of circuits, per band. */
+    private static final int CIRCUIT_BAND = 48;
+    /** Sections are this long on average (blocks along X) ... */
+    private static final int CIRCUIT_SECTION = 48;
+    /** ... with each break moved up to this far either way (keep it under half a section). */
+    private static final int CIRCUIT_JITTER = 14;
+    /** Each section's time is cut into rounds this long (ticks, 2.5 minutes) ... */
     private static final long CIRCUIT_ROUND = 3000L;
-    /** ... in each round it fails with this chance (out of 256, so 1 in 4) ... */
-    private static final int CIRCUIT_FAIL_CHANCE = 64;
+    /** ... in each round it fails with this chance (out of 256, about 1 in 5) ... */
+    private static final int CIRCUIT_FAIL_CHANCE = 52;
     /** ... and stays out for 20 to 55 seconds (ticks) ... */
     private static final long CIRCUIT_OUT_MIN = 400L;
     private static final long CIRCUIT_OUT_SPREAD = 700L;
     /** ... the last 1.5 s of which its lamps stutter together as the power comes back. */
     private static final long CIRCUIT_RESTRIKE = 30L;
+    /** Sections on one feeder (neighbours along the corridor). */
+    private static final int FEEDER_SECTIONS = 3;
+    /** Each feeder's time is cut into rounds this long (ticks, 4 minutes) ... */
+    private static final long FEEDER_ROUND = 4800L;
+    /** ... in each round its fault runs down the line with this chance (out of 256, about 1 in 6) ... */
+    private static final int FEEDER_FAIL_CHANCE = 40;
+    /** ... one section after the other, 10 to 24 ticks apart ... */
+    private static final long FEEDER_STEP_MIN = 10L;
+    private static final long FEEDER_STEP_SPREAD = 15L;
+    /** ... and the whole feeder is out for 15 to 40 seconds (ticks). */
+    private static final long FEEDER_OUT_MIN = 300L;
+    private static final long FEEDER_OUT_SPREAD = 500L;
     /** A failure younger than this (ticks) still gets its pop when first seen. */
     private static final long CIRCUIT_POP_WINDOW = 6L;
     /** Failures that already popped (circuit and start mixed), so each pops once. */
     private static final LongOpenHashSet POPPED = new LongOpenHashSet();
+    /** Lamps more than this far below the floor are in the void (its doorway lamp), not on a circuit. */
+    private static final int CIRCUIT_LOWEST_BELOW_FLOOR = 4;
 
-    /** The circuit a Level 2 lamp at (x, z) belongs to: the nearest circuit centre. */
+    /**
+     * Is a Level 2 caged lamp at height {@code y} on the series circuits? Yes for the corridor's
+     * lamps and the trench lamps just under the floor grating; no for the copy of a lamp by a void
+     * door, down in the void: it is the only light there and must never go out.
+     */
+    public static boolean level2OnCircuit(int y) {
+        return y >= LevelLayout.FLOOR_Y - CIRCUIT_LOWEST_BELOW_FLOOR;
+    }
+
+    /**
+     * The circuit a Level 2 lamp at (x, z) belongs to: its corridor band (high 32 bits) and the
+     * number of its section along that corridor (low 32 bits).
+     */
     public static long level2Circuit(double x, double z) {
         int bx = (int) Math.floor(x);
-        int bz = (int) Math.floor(z);
-        int cx = Math.floorDiv(bx, CIRCUIT_GRID);
-        int cz = Math.floorDiv(bz, CIRCUIT_GRID);
-        long best = 0L;
-        long bestDist = Long.MAX_VALUE;
-        for (int ox = -1; ox <= 1; ox++) {
-            for (int oz = -1; oz <= 1; oz++) {
-                long id = mix((((long) (cx + ox)) << 32 ^ ((cz + oz) & 0xFFFFFFFFL)) ^ 0x2F1A7C3B9D5E4F61L);
-                long px = (long) (cx + ox) * CIRCUIT_GRID + 8 + (id & 0xFFFF) % (CIRCUIT_GRID - 16);
-                long pz = (long) (cz + oz) * CIRCUIT_GRID + 8 + ((id >>> 16) & 0xFFFF) % (CIRCUIT_GRID - 16);
-                long dist = (px - bx) * (px - bx) + (pz - bz) * (pz - bz);
-                if (dist < bestDist) {
-                    bestDist = dist;
-                    best = id;
-                }
-            }
+        long band = Math.floorDiv((int) Math.floor(z) + CIRCUIT_BAND / 2, CIRCUIT_BAND);
+        // Section k runs from break k to break k+1. Break k lies within CIRCUIT_JITTER of
+        // k * CIRCUIT_SECTION, so the section is the plain cell or one of its two neighbours.
+        int k = Math.floorDiv(bx, CIRCUIT_SECTION);
+        if (bx < sectionBreak(band, k)) {
+            k--;
+        } else if (bx >= sectionBreak(band, k + 1)) {
+            k++;
         }
-        return best;
+        return band << 32 | (k & 0xFFFFFFFFL);
+    }
+
+    /** The x where section k of a band's corridor starts. */
+    private static long sectionBreak(long band, int k) {
+        long h = mix(band * 0x632BE59BD9B4E019L ^ k * 0x9E3779B97F4A7C15L ^ 0x2F1A7C3B9D5E4F61L);
+        return (long) k * CIRCUIT_SECTION + (h >>> 33) % (2 * CIRCUIT_JITTER + 1) - CIRCUIT_JITTER;
     }
 
     /**
      * The outage of {@code circuit} at {@code gameTime}: -1 when it is up, otherwise the ticks
-     * since it failed (high bits) and how long the outage lasts (low 16 bits).
+     * since it failed (high bits) and how long the outage lasts (low 16 bits). A section can be
+     * out on its own or because its feeder failed; when both overlap, the one that lasts longer
+     * counts (so the lamps stay dark until both are over).
      */
     private static long circuitOutage(long circuit, long gameTime) {
-        long t = gameTime + (circuit >>> 20) % CIRCUIT_ROUND; // each circuit has its own round boundaries
+        long own = sectionOutage(circuit, gameTime);
+        long feeder = feederOutage(circuit, gameTime);
+        if (own < 0 || feeder < 0) {
+            return own < 0 ? feeder : own;
+        }
+        long ownLeft = (own & 0xFFFF) - (own >>> 16);
+        long feederLeft = (feeder & 0xFFFF) - (feeder >>> 16);
+        return feederLeft > ownLeft ? feeder : own;
+    }
+
+    /** A single section failing on its own. */
+    private static long sectionOutage(long circuit, long gameTime) {
+        long id = mix(circuit ^ 0x51ED270B27D2F4A9L);
+        long t = gameTime + (id >>> 20) % CIRCUIT_ROUND; // each section has its own round boundaries
         long round = Math.floorDiv(t, CIRCUIT_ROUND);
-        long h = mix(circuit + round * 0x9E3779B97F4A7C15L);
+        long h = mix(id + round * 0x9E3779B97F4A7C15L);
         if ((h & 0xFF) >= CIRCUIT_FAIL_CHANCE) {
             return -1L;
         }
@@ -290,6 +342,31 @@ public final class FixturePower {
         long start = ((h >>> 24) & 0xFFFF) % (CIRCUIT_ROUND - length);
         long since = t - round * CIRCUIT_ROUND - start;
         return since >= 0 && since < length ? since << 16 | length : -1L;
+    }
+
+    /** The fault running down this section's feeder, as seen by this section (its own delay). */
+    private static long feederOutage(long circuit, long gameTime) {
+        long band = circuit >> 32;
+        int k = (int) circuit;
+        long feeder = mix(band * 0x632BE59BD9B4E019L ^ Math.floorDiv(k, FEEDER_SECTIONS) * 0xD1B54A32D192ED03L ^ 0x7A3C9E1F5B2D4C68L);
+        long t = gameTime + (feeder >>> 20) % FEEDER_ROUND;
+        long round = Math.floorDiv(t, FEEDER_ROUND);
+        long h = mix(feeder + round * 0x9E3779B97F4A7C15L);
+        if ((h & 0xFF) >= FEEDER_FAIL_CHANCE) {
+            return -1L;
+        }
+        long length = FEEDER_OUT_MIN + ((h >>> 8) & 0xFFFF) % FEEDER_OUT_SPREAD;
+        long step = FEEDER_STEP_MIN + ((h >>> 24) & 0xFF) % FEEDER_STEP_SPREAD;
+        // Which way the fault runs: the first section of the feeder goes first, or the last.
+        int index = Math.floorMod(k, FEEDER_SECTIONS);
+        int order = ((h >>> 32) & 1L) == 0L ? index : FEEDER_SECTIONS - 1 - index;
+        long delay = order * step;
+        long latest = (FEEDER_SECTIONS - 1) * (FEEDER_STEP_MIN + FEEDER_STEP_SPREAD);
+        long start = ((h >>> 40) & 0xFFFF) % (FEEDER_ROUND - length - latest) + delay;
+        // Later sections are out for less time, so the whole feeder comes back together.
+        long out = length - delay;
+        long since = t - round * FEEDER_ROUND - start;
+        return since >= 0 && since < out ? since << 16 | out : -1L;
     }
 
     /** True unless this Level 2 circuit is out (the stutter as it comes back counts as out). */
@@ -317,17 +394,22 @@ public final class FixturePower {
 
     /**
      * True once per failure, for the first lamp of the circuit that asks within the first few
-     * ticks: that lamp plays the pop of the circuit going out.
+     * ticks: that lamp plays the pop of the circuit going out. No pop when the section was
+     * already dark (a second fault starting during the first).
      */
     public static boolean level2CircuitPop(long circuit, long gameTime) {
         long outage = circuitOutage(circuit, gameTime);
         if (outage < 0 || (outage >>> 16) >= CIRCUIT_POP_WINDOW) {
             return false;
         }
+        long start = gameTime - (outage >>> 16);
+        if (circuitOutage(circuit, start - 1) >= 0) {
+            return false;
+        }
         if (POPPED.size() > 256) {
             POPPED.clear();
         }
-        return POPPED.add(mix(circuit ^ (gameTime - (outage >>> 16))));
+        return POPPED.add(mix(circuit ^ start));
     }
 
     /** SplitMix64 finaliser: a cheap, well-mixed hash. */

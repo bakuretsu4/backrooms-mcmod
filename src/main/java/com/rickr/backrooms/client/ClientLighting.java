@@ -61,9 +61,28 @@ public final class ClientLighting {
     /** Poolrooms fill: stronger and softer than the other levels (light level 12 ~ 22%, 9 ~ 9%). */
     private static final float POOLROOMS_MAX_FILL = 0.45f;
     private static final float POOLROOMS_FILL_FALLOFF = 3.0f;
-    /** Level 2 fill: pale walls in narrow corridors bounce the lamp light along (level 10 ~ 13%). */
-    private static final float LEVEL2_MAX_FILL = 0.40f;
-    private static final float LEVEL2_FILL_FALLOFF = 3.5f;
+    /**
+     * Level 2 fill. Beyond Veil's light range (~28 blocks) this is all that lights the corridor,
+     * so it carries the far end of the receding row of pools: the patch of wall and floor at
+     * each lamp's foot (light level 7-9) keeps a dim warm glow (level 9 ~ 12%, 7 ~ 7%), while the
+     * gaps between lamps and the pipe chases (level 5 and below, ~3% and less) stay dark. A soft
+     * curve (exponent 2.2) so the pools fade out gradually rather than as hard blobs.
+     */
+    private static final float LEVEL2_MAX_FILL = 0.37f;
+    private static final float LEVEL2_FILL_FALLOFF = 2.2f;
+    /** The bounce of the warm caged lamps off grey-beige concrete: amber, not orange. */
+    private static final float LEVEL2_TINT_R = 1.0f;
+    private static final float LEVEL2_TINT_G = 0.84f;
+    private static final float LEVEL2_TINT_B = 0.62f;
+    /** In a brownout the only light is the violet emergency lights. */
+    private static final float LEVEL2_EMERGENCY_R = 0.62f;
+    private static final float LEVEL2_EMERGENCY_G = 0.36f;
+    private static final float LEVEL2_EMERGENCY_B = 1.0f;
+    /**
+     * When the section of corridor you stand in loses its circuit, the fill drops to this share
+     * (the dead lamps' vanilla light never changes, so this is what makes the section go dark).
+     */
+    private static final float LEVEL2_DEAD_SECTION_FILL = 0.2f;
 
     // Level 0 (Kane's Lobby): bright, even, flat-lit halls; whole dark wings near black.
     /**
@@ -260,7 +279,8 @@ public final class ClientLighting {
         float b = Mth.clamp(blockLight / 15.0f, 0.0f, 1.0f);
         // White tile bounces light around, so the Poolrooms get a stronger, softer fill: rooms with
         // a tube read bright (and so does the pool water, which client/water draws from the lit
-        // room behind it). Level 2's narrow pale corridors bounce light the same way, a little less strongly.
+        // room behind it). Level 2's fill is softer still but weaker: it keeps the far pools of
+        // its long straight corridor glowing (see LEVEL2_MAX_FILL).
         // Places far from any light stay dark (block light 0 = no fill).
         float maxFill = MAX_FILL;
         float falloff = FILL_FALLOFF;
@@ -277,8 +297,12 @@ public final class ClientLighting {
         if (FixturePower.flickering(System.currentTimeMillis())) {
             fill *= 0.5f;
         }
-        // Warm yellow by default, neutral grey concrete in the garage, a neutral cool white in
-        // the pipes (no purple wash: the lavender is in the wall paint already) and a cool
+        if (floor == BackroomsLevel.LEVEL_2) {
+            // The section of corridor you're in went dark (its series circuit popped): so does the fill.
+            fill *= Mth.lerp(BackroomsLights.level2LampShare(), LEVEL2_DEAD_SECTION_FILL, 1.0f);
+        }
+        // Warm yellow by default, neutral grey concrete in the garage, the amber of the caged lamps
+        // in the pipes (violet where the brownout's emergency lights take over) and a cool
         // lavender-blue in the Poolrooms (shaded white tile in the footage reads ~#A9A3A8).
         float tr = 1.0f;
         float tg = 0.92f;
@@ -288,9 +312,10 @@ public final class ClientLighting {
             tg = 0.96f;
             tb = 1.0f;
         } else if (floor == BackroomsLevel.LEVEL_2) {
-            tr = 0.90f;
-            tg = 0.90f;
-            tb = 1.0f;
+            float violet = BackroomsLights.emergencyShare();
+            tr = Mth.lerp(violet, LEVEL2_TINT_R, LEVEL2_EMERGENCY_R);
+            tg = Mth.lerp(violet, LEVEL2_TINT_G, LEVEL2_EMERGENCY_G);
+            tb = Mth.lerp(violet, LEVEL2_TINT_B, LEVEL2_EMERGENCY_B);
         } else if (floor == BackroomsLevel.POOLROOMS) {
             tr = 0.80f;
             tg = 0.86f;

@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "variant=0": {
+      "model": "backrooms:block/l2_wall_base"
+    },
+    "variant=1": {
+      "model": "backrooms:block/l2_wall_base_v1"
+    },
+    "variant=2": {
+      "model": "backrooms:block/l2_wall_base"
+    },
+    "variant=3": {
+      "model": "backrooms:block/l2_wall_base"
+    }
+  }
+}

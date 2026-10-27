@@ -1,0 +1,150 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l2_motor",
+    "plinth": "backrooms:block/l2_plinth",
+    "steel": "backrooms:block/l2_pipe_steel",
+    "casing": "backrooms:block/l2_vise",
+    "flange": "backrooms:block/l2_pipe_flange",
+    "bolt": "backrooms:block/l2_bolt_steel",
+    "wheel": "backrooms:block/pipe_valve",
+    "dial": "backrooms:block/l2_gauge_dial",
+    "guard": "backrooms:block/l2_guard",
+    "motor": "backrooms:block/l2_motor",
+    "conduit": "backrooms:block/l2_pipe_conduit",
+    "tank": "backrooms:block/l2_tank",
+    "copper": "backrooms:block/l2_pipe_copper",
+    "encl": "backrooms:block/l2_enclosure",
+    "starter": "backrooms:block/l2_starter"
+  },
+  "elements": [
+    {
+      "from": [
+        3.0,
+        0.0,
+        3.0
+      ],
+      "to": [
+        14.0,
+        10.0,
+        14.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.0,
+            6.0,
+            13.0,
+            16.0
+          ],
+          "texture": "#starter"
+        },
+        "south": {
+          "uv": [
+            3.0,
+            6.0,
+            14.0,
+            16.0
+          ],
+          "texture": "#encl"
+        },
+        "east": {
+          "uv": [
+            2.0,
+            6.0,
+            13.0,
+            16.0
+          ],
+          "texture": "#encl"
+        },
+        "west": {
+          "uv": [
+            3.0,
+            6.0,
+            14.0,
+            16.0
+          ],
+          "texture": "#encl"
+        },
+        "up": {
+          "uv": [
+            3.0,
+            3.0,
+            14.0,
+            14.0
+          ],
+          "texture": "#encl"
+        }
+      }
+    },
+    {
+      "from": [
+        2.6,
+        10.0,
+        2.6
+      ],
+      "to": [
+        14.4,
+        10.6,
+        14.4
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.6,
+            5.4,
+            13.4,
+            6.0
+          ],
+          "texture": "#encl"
+        },
+        "south": {
+          "uv": [
+            2.6,
+            5.4,
+            14.4,
+            6.0
+          ],
+          "texture": "#encl"
+        },
+        "east": {
+          "uv": [
+            1.6,
+            5.4,
+            13.4,
+            6.0
+          ],
+          "texture": "#encl"
+        },
+        "west": {
+          "uv": [
+            2.6,
+            5.4,
+            14.4,
+            6.0
+          ],
+          "texture": "#encl"
+        },
+        "up": {
+          "uv": [
+            2.6,
+            2.6,
+            14.4,
+            14.4
+          ],
+          "texture": "#encl"
+        },
+        "down": {
+          "uv": [
+            2.6,
+            1.6,
+            14.4,
+            13.4
+          ],
+          "texture": "#encl"
+        }
+      }
+    }
+  ]
+}

@@ -84,8 +84,10 @@ public final class DistantAmbience {
                 new Entry(ModSounds.DISTANT_L1_SHUTTER_RATTLE, 3, 0.8f, When.ANY),
                 new Entry(ModSounds.DISTANT_L1_CEILING_VIBRATE, 2, 0.9f, When.ANY),
                 new Entry(ModSounds.DISTANT_L1_DOOR_SCRAPE, 1, 0.7f, When.ANY))));
-        SCHEDULES.put(BackroomsLevel.LEVEL_2, new Schedule(18, 40, List.of(
-                new Entry(ModSounds.DISTANT_L2_PIPE_KNOCK, 4, 0.9f, When.ANY),
+        // Level 2: the nearby pipe knocks, clanks and creaks now come from client/anomaly/level2/
+        // Level2Emitters, so the far-off knock is picked less often and the timer runs a little slower.
+        SCHEDULES.put(BackroomsLevel.LEVEL_2, new Schedule(22, 45, List.of(
+                new Entry(ModSounds.DISTANT_L2_PIPE_KNOCK, 2, 0.9f, When.ANY),
                 new Entry(ModSounds.DISTANT_L2_PRESSURE_GROAN, 3, 1.0f, When.ANY),
                 new Entry(ModSounds.DISTANT_L2_MACHINE_WHIR, 3, 0.9f, When.ANY),
                 new Entry(ModSounds.DISTANT_L2_TRAM_RUMBLE, 2, 1.0f, When.ANY),
@@ -232,10 +234,18 @@ public final class DistantAmbience {
         return Level39ClientState.inTunnels(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition());
     }
 
-    /** Plays the sound out in the world, 14-40 blocks away in a random direction, about at ear height. */
+    /**
+     * Plays the sound out in the world, 14-40 blocks away in a random direction, about at ear
+     * height. Level 2 is one straight corridor along X: most of its sounds come from far up or
+     * down that line (where they'd really be heard from), the tram still rumbles behind the walls.
+     */
     private static void play(Minecraft mc, Entry entry) {
         Vec3 eye = mc.player.getEyePosition();
         float angle = RANDOM.nextFloat() * Mth.TWO_PI;
+        if (floor == BackroomsLevel.LEVEL_2 && entry.sound() != ModSounds.DISTANT_L2_TRAM_RUMBLE && RANDOM.nextFloat() < 0.75f) {
+            // Ahead or behind along +-X, a few degrees off the line.
+            angle = (RANDOM.nextBoolean() ? 0.0f : Mth.PI) + (RANDOM.nextFloat() - 0.5f) * 0.2f;
+        }
         double distance = Mth.nextDouble(RANDOM, MIN_DISTANCE, MAX_DISTANCE);
         double x = eye.x + Mth.cos(angle) * distance;
         double y = eye.y + Mth.nextDouble(RANDOM, -1.0, 1.5);
