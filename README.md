@@ -648,7 +648,9 @@ spectator mode where the shot starts, then write `shot.json` into that folder:
 
 Keys are `[seconds, x, eye height, z, yaw, pitch]`. The HUD is hidden while recording, and
 `<name>.done` appears when the shot is finished. The sneak-peek trailer
-(`dist/Backrooms-Found-Footage-Sneak-Peek.mp4`) was shot this way and cut to the `liminal` theme.
+(`dist/Backrooms-Found-Footage-Sneak-Peek.mp4`) was shot this way and cut to the `liminal` theme,
+and so was the trailer (`dist/Backrooms-Found-Footage-Trailer.mp4`): 24 shots, one per scene and
+never reused, across every level, letterboxed at 24 fps, with no creatures in it, cut to `deep`.
 
 ## Code map
 

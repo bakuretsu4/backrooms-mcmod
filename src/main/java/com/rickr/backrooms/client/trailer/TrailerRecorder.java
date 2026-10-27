@@ -126,9 +126,12 @@ public final class TrailerRecorder {
         s.width = mc.getMainRenderTarget().width;
         s.height = mc.getMainRenderTarget().height;
         Files.createDirectories(s.out.getParent());
+        // The video encoder needs even width and height, but a window squeezed to fit the screen
+        // can come out odd (e.g. 1920x1061), so trim the last row or column if needed.
         s.ffmpeg = new ProcessBuilder(FFMPEG, "-y", "-loglevel", "error",
                 "-f", "rawvideo", "-pix_fmt", "rgba", "-s", s.width + "x" + s.height, "-r", Integer.toString(s.fps),
-                "-i", "-", "-c:v", "libx264", "-preset", "medium", "-crf", "14", "-pix_fmt", "yuv420p", s.out.toString())
+                "-i", "-", "-vf", "crop=trunc(iw/2)*2:trunc(ih/2)*2:0:0",
+                "-c:v", "libx264", "-preset", "medium", "-crf", "14", "-pix_fmt", "yuv420p", s.out.toString())
                 .redirectErrorStream(true)
                 .redirectOutput(Path.of(DIR, s.name + ".ffmpeg.log").toFile())
                 .start();
