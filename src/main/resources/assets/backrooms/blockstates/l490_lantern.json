@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "backrooms:block/l490_lantern"
+    },
+    "lit=true": {
+      "model": "backrooms:block/l490_lantern_lit"
+    }
+  }
+}

@@ -34,7 +34,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
  * <ul>
  *   <li>The picture is dim and red, darker still down in a stair pit.</li>
  *   <li>Water holds on to you: in it you move at about two thirds of your usual speed (the drain
- *       still works; that is the way out, down to Level 9).</li>
+ *       still works; that is the way out, down to Level 37).</li>
  *   <li>The chants never stop, faint, in your head; now and then something slithers or whimpers a
  *       few blocks away, out of sight.</li>
  * </ul>

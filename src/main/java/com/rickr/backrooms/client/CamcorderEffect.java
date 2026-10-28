@@ -4,7 +4,6 @@ import com.rickr.backrooms.config.ClientSettings;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraClientState;
-import com.rickr.backrooms.network.TransitionPayload;
 import com.rickr.backrooms.client.camera.HandheldCamera;
 import com.rickr.backrooms.client.intro.NoclipTransition;
 import com.rickr.backrooms.client.light.BackroomsLights;
@@ -139,11 +138,8 @@ public final class CamcorderEffect {
         }
         long now = System.currentTimeMillis();
         float seconds = (float) ((System.nanoTime() / 1.0e9) % 3600.0);
-        long sinceTransition = now - CameraClientState.transitionStartMs;
-        float transition = sinceTransition >= 0 && sinceTransition < TRANSITION_MS ? 1.0f - sinceTransition / TRANSITION_MS : 0.0f;
-        if (CameraClientState.transitionKind == TransitionPayload.STAIRS) {
-            transition = 0.0f; // down the stairs: no tape glitch, it's one continuous shot
-        }
+        long sinceEscape = now - CameraClientState.escapeStartMs;
+        float transition = sinceEscape >= 0 && sinceEscape < TRANSITION_MS ? 1.0f - sinceEscape / TRANSITION_MS : 0.0f;
         // Filming the dark in the real world: the tape breaks up more and more as reality thins.
         if (CameraClientState.realRecording) {
             transition = Math.max(transition, CameraClientState.realThin * CameraClientState.realThin);
@@ -161,7 +157,9 @@ public final class CamcorderEffect {
         chain.setUniform("Signal", CameraClientState.exitSignal);
         chain.setUniform("Transition", transition);
         chain.setUniform("Alarm", alarmPulse(now));
-        chain.setUniform("Flash", lightningFlash(now));
+        // Penance has its own lightning (Level490Lightning): the picture flashes as much as the strike is near.
+        chain.setUniform("Flash", BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_490
+                ? Level490Lightning.flash() * 0.6f : lightningFlash(now));
         chain.setUniform("Grain", BASE_GRAIN);
         // Poolrooms hallucination (0 = picture exactly unchanged).
         chain.setUniform("Dream", HallucinationClientEvents.shaderDream());

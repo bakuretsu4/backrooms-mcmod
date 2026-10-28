@@ -122,6 +122,13 @@ public final class AtmosphereGrade {
      */
     private static final Mood LEVEL_39_TUNNEL = new Mood(0.94f, 1.05f, 1.12f, 0.92f, 1.0f, 1.03f, 0.98f, 1.0f, 1.01f,
             0.024f, 0.030f, 0.032f, 0.46f, 0.60f, 0.62f, 18.0f, 0.010f, 0.18f, 0.26f, 0.10f, 0.006f);
+    /**
+     * Level 490, "Penance" (the reference stills): almost no colour, blue-grey shadows, cold pale
+     * highlights for the moonlit stone, a lifted black so the night stays readable, thin blue-grey
+     * haze over the void and a little glow so the lanterns and the moon bloom.
+     */
+    private static final Mood LEVEL_490 = new Mood(1.35f, 1.14f, 0.38f, 0.90f, 0.95f, 1.08f, 0.98f, 1.0f, 1.04f,
+            0.018f, 0.020f, 0.028f, 0.135f, 0.145f, 0.175f, 40.0f, 0.006f, 0.15f, 0.30f, 0.20f, 0.008f);
     /** A stagnant (Hydrolitis) tunnel segment: orbs dead, sick green-black air. */
     private static final Mood LEVEL_39_STAGNANT = new Mood(0.98f, 1.08f, 0.80f, 0.90f, 1.04f, 0.94f, 0.98f, 1.02f, 0.94f,
             0.008f, 0.012f, 0.010f, 0.05f, 0.09f, 0.07f, 4.0f, 0.040f, 0.45f, 0.40f, 0.18f, 0.012f);
@@ -184,6 +191,7 @@ public final class AtmosphereGrade {
             case LEVEL_7 -> !Level7Client.underwater() ? LEVEL_7_AIR : LEVEL_7_WATER.lerp(LEVEL_7_DEEP, Level7Client.deepness());
             // Level 227: misty forest, clearing with height, black in the void, white in a sunbeam.
             case LEVEL_227 -> Level227Lighting.mood();
+            case LEVEL_490 -> LEVEL_490;
         };
     }
 

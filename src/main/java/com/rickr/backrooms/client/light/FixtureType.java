@@ -163,6 +163,9 @@ public enum FixtureType {
     // glow, warm and dim (only the lit ones count, see of()). Neighbouring lit bulbs of the dense
     // ceilings merge into one light, so a bulb-studded room doesn't eat the whole light budget.
     L39_BULB("l39_ceiling_bulb", Mount.HANGING_TUBE, 3, 1.0f, 0.80f, 0.56f, 0.55f, 7.0f, Hum.NONE, false),
+    // Level 490. The old iron lanterns on the railings that still burn (about half; the dark ones,
+    // lit = false, give no light): a small warm flame, the only warmth out on the bridges.
+    L490_LANTERN("l490_lantern", Mount.HANGING_TUBE, 1, 1.0f, 0.70f, 0.40f, 0.9f, 9.0f, Hum.NONE, false),
     // Level 227. Resin seeping from the bark of the undersides: a faint warm amber glow on the wood
     // around it (the block is a full cube, so the light sits in the open air next to it).
     // Neighbouring seeps merge, so a long weeping crack is one light.
@@ -322,8 +325,9 @@ public enum FixtureType {
         if (type != null && modeOf(state) == LampMode.DEAD) {
             return null;
         }
-        // Level 39's house bulbs: the dead ones (lit = false) give no light at all.
-        if (type == L39_BULB && state.hasProperty(BlockStateProperties.LIT) && !state.getValue(BlockStateProperties.LIT)) {
+        // Level 39's house bulbs and Level 490's lanterns: the dead ones (lit = false) give no light at all.
+        if ((type == L39_BULB || type == L490_LANTERN) && state.hasProperty(BlockStateProperties.LIT)
+                && !state.getValue(BlockStateProperties.LIT)) {
             return null;
         }
         // A two-tall vending machine glows once, from its upper half.

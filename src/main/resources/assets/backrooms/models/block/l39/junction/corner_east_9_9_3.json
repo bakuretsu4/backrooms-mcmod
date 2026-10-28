@@ -1,0 +1,13 @@
+{
+  "loader": "neoforge:obj",
+  "model": "backrooms:models/block/l39/junction/corner_east_9_9_3.obj",
+  "flip_v": true,
+  "shade_quads": false,
+  "emissive_ambient": false,
+  "automatic_culling": true,
+  "ambientocclusion": true,
+  "textures": {
+    "marble": "backrooms:block/l39_marble",
+    "particle": "backrooms:block/l39_marble"
+  }
+}

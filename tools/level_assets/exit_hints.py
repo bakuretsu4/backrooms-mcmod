@@ -13,6 +13,7 @@ placement), quiet and low so it reads as part of the level until you notice it s
   level_94    the dark behind the door, breathing
   level_7     bubbles rising from the sunken door, a low hum
   level_39    the sweet electric hum of a lit mill window with something living in it
+  level_490   wind keening past the structure's chains, and once a loop a deep groan of iron
 
 Run only these with:  python tools/gen_assets.py exit_hint
 """
@@ -151,6 +152,22 @@ def snd_exit_hint_level_39() -> None:
     _save(x, "level_39", peak=0.42)
 
 
+def snd_exit_hint_level_490() -> None:
+    # Wind thin and high over the void, whistling round the great chains (two narrow resonances
+    # that drift), and once per loop the slow deep groan of a loaded chain shifting.
+    rng = G.rng_for(7412)
+    wind = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 250, 2200, 2))
+    whistle = (G.periodic_noise(N, rng, lambda f: np.exp(-((f - 1180) / 45) ** 2))
+               + 0.7 * G.periodic_noise(N, rng, lambda f: np.exp(-((f - 1730) / 60) ** 2)))
+    gust = _swell(4.0, 0.55) * _swell(8.0 / 3, 0.3, 2.0)
+    dt = G.wrapd(t - 5.0, T)                                        # the groan, centred at 5 s
+    env = np.exp(-(dt / 0.9) ** 2)
+    phase = 2 * np.pi * np.cumsum(46.0 - 4.0 * np.clip(dt, -1.5, 1.5)) / G.SR
+    groan = np.tanh(2.2 * (np.sin(phase) + 0.45 * np.sin(2 * phase + 0.6) + 0.25 * np.sin(3 * phase))) * env
+    x = G.norm(wind) * gust * 0.55 + G.norm(whistle) * gust * 0.35 + G.norm(groan) * 0.8
+    _save(x, "level_490", peak=0.42)
+
+
 def tex_exit_hint_ir_arrow() -> None:
     """A spray-painted arrow pointing right (+u), white on transparent (tinted when drawn), with
     ragged edges and runs. Drawn dark, in NightShot only: the paint swallows the infrared lamp."""
@@ -192,4 +209,4 @@ def tex_exit_hint_wanderer_note() -> None:
 TEXTURES = [tex_exit_hint_ir_arrow, tex_exit_hint_wanderer_note]
 SOUNDS = [snd_exit_hint_level_0, snd_exit_hint_level_1, snd_exit_hint_level_2, snd_exit_hint_level_4,
           snd_exit_hint_poolrooms, snd_exit_hint_level_37, snd_exit_hint_level_9, snd_exit_hint_level_94,
-          snd_exit_hint_level_7, snd_exit_hint_level_39]
+          snd_exit_hint_level_7, snd_exit_hint_level_39, snd_exit_hint_level_490]

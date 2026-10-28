@@ -1,6 +1,7 @@
 # Level 490 "Penance" (design notes)
 
-Status: **brainstorm only, nothing built yet.**
+Status: **stage 1 built** (platforms, bridges, chains, lanterns, shelters, the storm sky, falling,
+the way in and the leap out). Stages 2-4 not built yet.
 
 ## The idea
 
@@ -114,12 +115,14 @@ Two kinds:
 Falling off sends you back to your last checkpoint **in this level**. Not more punishing than
 that: the level is hard enough.
 
-## Place in the path (agreed exit plan, not built yet)
+## Place in the path
 
 One straight path through every level, each exit leading naturally into the next:
 
 Level 0 → Level 1 → Level 2 → Level 4 → Poolrooms → Level 37 → Level 7 → Level 39 → Level 94 →
 **Level 490** → Level 9 → home.
+
+Built: Level 94's dark doorways lead here and the leap leads to Level 9.
 
 - Level 94's main exit leads here; the exit at the top of the structure leads to Level 9.
 - Every exit has its own look, but all use the datamosh transition.
@@ -134,12 +137,51 @@ Level 0 → Level 1 → Level 2 → Level 4 → Poolrooms → Level 37 → Level
   | Level 2 | 55% | anywhere |
   | Level 4 | 40% | anywhere |
   | Poolrooms | 30% | anywhere |
-  | Level 37 | 20% | ~150 |
+  | Level 37 | 20% | ~60 (its pits are close together) |
   | Level 7 | 15% | ~120 |
   | Level 39 | 10% | ~100 |
   | Level 94 | 7% | ~80 |
   | **Level 490** | 5% | ~60 |
   | Level 9 | 3% | ~50 |
+
+## Build decisions
+
+- **Climb:** about 300 blocks from the bridges to the top of the structure; the level is about
+  512 blocks tall. The chains above it are drawn as part of the sky (like Level 39's far facade).
+- **Distance:** the structure stands about 300 blocks from where you arrive.
+- **Bridges:** main bridges 5 wide, side and broken ones 3 wide.
+- **Look:** the ruins, debris and whirlwinds of Crumbling Farum Azula, kept at night.
+- **Build order**, playable after each stage:
+  1. platforms, bridges and broken spans, railings, lanterns, shelters, shackles; the storm sky
+     with moon, fog banks and lightning; falling sends you to your checkpoint; the way in from
+     Level 94 and the jump out to Level 9;
+  2. the eldritch structure and its climb (inside spiral shaft, outside ledges and ladders);
+  3. the distant chains and the structures they hold (one falls now and then), the chain sounds,
+     the drone;
+  4. the creature.
+
+## Stage 1 as built (redesigned after the first look)
+
+The first version (neat platforms on a grid, hundreds of thin chains) was too clean and the chains
+too small. Redesigned after Elden Ring's Crumbling Farum Azula:
+
+- **Floating rock islands** on a loose grid every 44 blocks (some missing), ragged crumbling rims,
+  rock tapering 15-30 blocks below. Ruins on top: pillar rings (many broken, some with capitals),
+  arcade walls with arches and jagged tops, tower stubs, rubble, dead trees (some red-leaved),
+  shackles. Shelters with a checkpoint radio on some islands and always on the arrival island.
+- **Bridges** between neighbouring islands, climbing in half steps; main 5 wide, side 3, some
+  broken, railing gaps, small chains dangling underneath, lantern posts at the ends.
+- **Colossal chains** built of blocks: links 34 long, 18 wide, bars 6 thick, from y 0 to the top
+  of the world; through one island in forty (ruins built round them like a collar) and four round
+  each site. Beyond render distance the sky draws them (they fade; lightning shows them), and a
+  few far bigger sky-only ones hang miles off.
+- **Floating debris** (drawn, not blocks) and **whirlwind pillars** far off in the storm.
+- **Lightning:** the server picks strikes (mostly far, some inside the clouds, some close, some
+  on a chain); every client draws the same branching, flickering bolt, the clouds glow round it,
+  and the thunder (CC0 recordings) arrives after distance / 343 blocks per second.
+- **Ambience:** howling wind, the chains singing, the whirlwinds' roar, a low rumble, a deep drone.
+- Falling below y 150: within 34 blocks of the site's centre it is the leap (Level 9); anywhere
+  else back to the last radio used here, or the arrival island.
 
 ## Name and number
 

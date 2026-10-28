@@ -45,7 +45,9 @@ import org.joml.Vector3f;
  *       arrows appear on a few walls and floors around you, each pointing toward the exit. (Dark,
  *       not glowing: NightShot turns the pale walls of Level 0 nearly white, where a glow would
  *       vanish.) They are always true (unlike the arrows drawn on
- *       Level 0's walls), but sparse: one every dozen blocks or so of wall.</li>
+ *       Level 0's walls), but sparse: on Level 0 one every dozen blocks or so of wall, and fewer
+ *       on every floor after it along the path; the last floors only show a rare one near the
+ *       exit (see {@link #guidance}).</li>
  * </ul>
  * The torn notes in supply containers are the third hint (server side, {@code WandererNotes}).
  */
@@ -64,7 +66,7 @@ public final class ExitHints {
     private static final int SCAN_RADIUS = 16;
     private static final int SCAN_UP = 3;
     private static final int SCAN_DOWN = 12;
-    /** Share of head-high wall faces, and of standable floor cells, that carry a mark. */
+    /** On Level 0: share of head-high wall faces, and of standable floor cells, that carry a mark. */
     private static final double WALL_SHARE = 0.035;
     private static final double FLOOR_SHARE = 0.008;
     /** Rescanned this often, or sooner once you have moved this far. */
@@ -72,6 +74,35 @@ public final class ExitHints {
     private static final double RESCAN_MOVE = 3.0;
     private static final float WALL_SIZE = 0.8f;
     private static final float FLOOR_SIZE = 0.9f;
+
+    /**
+     * How much the marks help on a floor: {@code share} of Level 0's marks, shown only within
+     * {@code reach} blocks of the exit (0: anywhere).
+     */
+    private record Guidance(double share, int reach) {}
+
+    /**
+     * The marks are what make finding an exit easy, so they thin out along the path: the first
+     * floors teach you that NightShot shows them, the last ones only confirm you're close.
+     */
+    private static Guidance guidance(BackroomsLevel floor) {
+        return switch (floor) {
+            case LEVEL_0 -> new Guidance(1.00, 0);
+            case LEVEL_1 -> new Guidance(0.75, 0);
+            case LEVEL_2 -> new Guidance(0.55, 0);
+            case LEVEL_4 -> new Guidance(0.40, 0);
+            case POOLROOMS -> new Guidance(0.30, 0);
+            // Its pits are only ~170 blocks apart, so a longer reach would show marks everywhere.
+            case LEVEL_37 -> new Guidance(0.20, 60);
+            case LEVEL_7 -> new Guidance(0.15, 120);
+            case LEVEL_39 -> new Guidance(0.10, 100);
+            case LEVEL_94 -> new Guidance(0.07, 80);
+            case LEVEL_490 -> new Guidance(0.05, 60);
+            case LEVEL_9 -> new Guidance(0.03, 50);
+            // No exit at all (the tree noclips you out by itself), so nothing to mark.
+            case LEVEL_227 -> new Guidance(0.0, 0);
+        };
+    }
 
     /** A painted arrow: its centre, the face it's on (pointing out of the block) and the way it points. */
     private record Mark(Vec3 centre, Direction face, Vector3f along) {}
@@ -115,7 +146,7 @@ public final class ExitHints {
         if (CameraClientState.nightShot) {
             Vec3 eye = mc.player.getEyePosition();
             if (++sinceScan >= RESCAN_TICKS || scannedFrom == null || scannedFrom.distanceToSqr(eye) > RESCAN_MOVE * RESCAN_MOVE) {
-                scan(mc.level, mc.player.blockPosition());
+                scan(mc.level, mc.player.blockPosition(), guidance(floor));
                 scannedFrom = eye;
                 sinceScan = 0;
             }
@@ -154,6 +185,7 @@ public final class ExitHints {
             case LEVEL_39 -> ModSounds.EXIT_HINT_LEVEL_39;
             // Never played: Level 227 has no exit, so the server sends no hint there.
             case LEVEL_227 -> ModSounds.EXIT_HINT_LEVEL_94;
+            case LEVEL_490 -> ModSounds.EXIT_HINT_LEVEL_490;
         }).get();
     }
 
@@ -162,8 +194,15 @@ public final class ExitHints {
      * (a hash), so the same walls always have them; only the arrow's direction depends on the exit.
      * Walls: faces at head height beside a spot you could stand. Floors: spots you could stand on.
      */
-    private static void scan(ClientLevel level, BlockPos feet) {
+    private static void scan(ClientLevel level, BlockPos feet, Guidance guidance) {
         MARKS.clear();
+        double dx = exitX - feet.getX();
+        double dz = exitZ - feet.getZ();
+        if (guidance.reach() > 0 && dx * dx + dz * dz > (double) guidance.reach() * guidance.reach()) {
+            return; // too far from the exit for this floor's marks
+        }
+        double floorShare = FLOOR_SHARE * guidance.share();
+        double wallShare = WALL_SHARE * guidance.share();
         BlockPos.MutableBlockPos a = new BlockPos.MutableBlockPos();
         BlockPos.MutableBlockPos b = new BlockPos.MutableBlockPos();
         for (int x = feet.getX() - SCAN_RADIUS; x <= feet.getX() + SCAN_RADIUS; x++) {
@@ -175,7 +214,7 @@ public final class ExitHints {
                             || solid(level, a.set(x, y + 2, z))) {
                         continue;
                     }
-                    if (Hash.unit(y, x, z, 7301) < FLOOR_SHARE) {
+                    if (Hash.unit(y, x, z, 7301) < floorShare) {
                         MARKS.add(floorMark(x, y, z));
                     }
                     // The head-high cell above this floor, and the walls beside it.
@@ -184,7 +223,7 @@ public final class ExitHints {
                         if (!level.getBlockState(b).isFaceSturdy(level, b, d.getOpposite())) {
                             continue;
                         }
-                        if (Hash.unit(b.getY(), b.getX(), b.getZ(), 7302 + d.get3DDataValue()) < WALL_SHARE) {
+                        if (Hash.unit(b.getY(), b.getX(), b.getZ(), 7302 + d.get3DDataValue()) < wallShare) {
                             MARKS.add(wallMark(b.getX(), b.getY(), b.getZ(), d.getOpposite()));
                         }
                     }

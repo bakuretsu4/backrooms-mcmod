@@ -245,8 +245,8 @@ public abstract class LevelLayout {
      *       way down sinks into the dark;</li>
      *   <li>rings 0-1: a solid concrete core the spiral turns around.</li>
      * </ul>
-     * Walking on down takes you below transferBelowY and into the next level, in the dark (no
-     * noclip glitch: see {@code Travel#useExitDown}).
+     * Walking on down takes you below transferBelowY and into the next level (see
+     * {@code Travel#useExit}).
      *
      * @param levelWall     wall block facing the maze (ring 5) and lining the shaft above the floor
      * @param levelWallBase same, for floor + 1 (baseboard)

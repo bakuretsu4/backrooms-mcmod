@@ -1,9 +1,8 @@
 package com.rickr.backrooms.entity;
 
-import com.rickr.backrooms.network.TransitionPayload;
 import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.registry.Level227Grazers;
-import com.rickr.backrooms.registry.ModSounds;
+import com.rickr.backrooms.world.Travel;
 import com.rickr.backrooms.world.anomaly.Teleports;
 import com.rickr.backrooms.world.layout.Level227Tree;
 import java.util.HashMap;
@@ -30,7 +29,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -337,12 +335,18 @@ public class L227Doe extends PathfinderMob {
         // The doe's own sound where it happened (others nearby hear the branch open)...
         level.playSound(null, player.getX(), player.getY(), player.getZ(), Level227Grazers.DOE_SLIP.get(),
                 SoundSource.HOSTILE, 1.0f, 1.0f);
-        player.stopRiding();
-        player.setDeltaMovement(Vec3.ZERO);
-        Teleports.to(player, player.getX(), feet, player.getZ(), player.getYRot(), player.getXRot());
-        // ...and the noclip itself for the one who falls: the tape glitch, then open air.
-        PacketDistributor.sendToPlayer(player, new TransitionPayload(TransitionPayload.NOCLIP));
-        player.playNotifySound(ModSounds.NOCLIP.get(), SoundSource.MASTER, 1.0f, 1.0f);
+        // ...and the noclip itself for the one who falls, filmed like every move between places
+        // (the picture breaks up, then open air under the bark). The spot is worked out again when
+        // the move happens, in case they shifted during the freeze.
+        Travel.moshTo(player, p -> {
+            double under = undersideFeetY(p.serverLevel(), p.getX(), p.getY(), p.getZ());
+            if (Double.isNaN(under)) {
+                return;
+            }
+            p.stopRiding();
+            p.setDeltaMovement(Vec3.ZERO);
+            Teleports.to(p, p.getX(), under, p.getZ(), p.getYRot(), p.getXRot());
+        });
         return true;
     }
 

@@ -31,7 +31,7 @@ import net.minecraft.world.level.ChunkPos;
  * closes in, and a couple of seconds later you are moved {@link PoolroomsLayout#RESERVOIR_OFFSET}
  * blocks east, onto the same spot of the identical red copy: same look, same momentum, nothing on
  * screen jumps. Walk out of the nook before that and nothing happens. There is no dark corner in
- * the Reservoir, so there is no way back; its drains still lead on to Level 9.
+ * the Reservoir, so there is no way back; its drains still lead on to Level 37.
  */
 final class DarkCornerBehavior implements AnomalyBehavior {
     /** Darkness sets in this many ticks before the drift, so the move itself happens in the black. */

@@ -13,7 +13,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Level 7's exit: an old wooden door lying flat in the middle of the round stone platform at the
- * bottom of the sea. Swim down into it and it takes you on (to Level 9; see {@link Level7Rules}).
+ * bottom of the sea. Swim down into it and it takes you on (to Level 39's flooded tunnels; see {@link Level7Rules}).
  * No collision, so you sink right into it.
  */
 public class SeaDoorBlock extends Block {

@@ -5,7 +5,8 @@
 - Fluorescent light hum, flicker clicks, the power going out and coming back, Level 0's room tone,
   Level 1's garage air, the player's breathing and the Bacteria (slowed and reversed breathing): field recordings from [Freesound](https://freesound.org),
   all [CC0](https://creativecommons.org/publicdomain/zero/1.0/), vendored in `tools/vendor/freesound/`
-  (exact sources and the parts used in its `License.txt`) and processed by `tools/level_assets/recorded.py`:
+  (exact sources and the parts used in its `License.txt`) and processed by `tools/level_assets/recorded.py`
+  (Level 490's storm: `tools/level_assets/level490_sounds.py`):
   - [Fluorescent lightbulb hum buzz (Extended)](https://freesound.org/s/638895/) by Developer_Jake
   - [Flickering Fluorescent Light with Background Hum](https://freesound.org/s/777053/) by kentspublicdomain
   - [fluorescent light switch on off electric hum prickly close2 two starts](https://freesound.org/s/452625/) by kyles
@@ -15,6 +16,7 @@
   - [Backrooms Ambience](https://freesound.org/s/626096/) by Resaural
   - [Heavy Breathing](https://freesound.org/s/757113/) by jcdeegs123
   - [Scared Male Heavy Breathing](https://freesound.org/s/554307/) by casiba842
+  - Level 490's thunder, wind and rumble: [Thunderstorm lightning strike](https://freesound.org/s/243614/) by foad, [Lightning.flac](https://freesound.org/s/248121/) by wjoojoo, [Thunder Clap OWB KY](https://freesound.org/s/194364/) by Dave Welsh, [THUNDER long rumbling - no Rain](https://freesound.org/s/367702/) by BlueDelta, [Thunder big](https://freesound.org/s/414050/) by s-light, [thunder growling](https://freesound.org/s/243780/) by bastipictures, [Distant Thunder](https://freesound.org/s/361401/) by richwise, [mystic wind howling](https://freesound.org/s/250036/) by launemax, [Wind blowing in an iron wire](https://freesound.org/s/146993/) by felix.blume, [Wind - Hurricane Typhoon Storm](https://freesound.org/s/735350/) by Vrymaa, [Rumble](https://freesound.org/s/512687/) by WavJunction.com
 
 All other textures and sounds are generated procedurally by `tools/gen_assets.py` and `tools/level_assets/`.
 

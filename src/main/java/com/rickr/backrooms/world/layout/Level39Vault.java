@@ -10,9 +10,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The curved marble ceilings of the Level 39 tunnels, worked out block by block.
@@ -25,8 +27,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * tools/anomaly_assets/level39.py, so piece and model always agree.
  *
  * <p>Each cell is AIR (wholly under the curve), SOLID (wholly over it) or a piece. Where a run's
- * barrel comes into a chamber, the cells both curves cross get a {@link JunctionBlock} piece
- * meshed from the true meeting of the two (see {@link #junctionPiece}).
+ * barrel comes into a chamber, or two runs cross at a corner, the cells both curves cross get a
+ * {@link JunctionBlock} piece meshed from the true meeting of the two (see {@link #junctionPiece},
+ * {@link #cornerPiece}).
  */
 final class Level39Vault {
     /** Height of the barrel vault's centre (the springing line of the arc). */
@@ -46,11 +49,11 @@ final class Level39Vault {
     static final int PIECE = 2;
 
     /**
-     * The cells (by {@link JunctionBlock} PIECE) where a run's barrel meeting a chamber's dome
-     * needs its own piece. Worked out by tools/anomaly_assets/level39.py with the models, so the
-     * pieces placed here always have a model.
+     * The cells where two curves meet (a run's barrel and a chamber's dome, or two barrels at a
+     * corner) and need their own {@link JunctionBlock} piece: cell key -> PIECE. Worked out by
+     * tools/anomaly_assets/level39.py with the models, so the pieces placed here always have one.
      */
-    private static final BitSet JUNCTION_CELLS = loadJunctionCells();
+    private static final Map<Integer, Integer> SPECIAL_CELLS = loadSpecialCells();
 
     private Level39Vault() {}
 
@@ -140,57 +143,80 @@ final class Level39Vault {
      * The junction piece for the cell (dx, dz) from a chamber's centre, for the run that leaves
      * the chamber toward {@code run}, or null if the plain vault and dome pieces are right there.
      */
+    @Nullable
     static BlockState junctionPiece(Direction run, int dx, int dz, int row) {
-        // Turn (dx, dz) back into the frame where the run leaves toward SOUTH (as DomePiece does).
-        int across;
-        int along;
-        switch (run) {
-            case SOUTH -> {
-                across = dx;
-                along = dz;
-            }
-            case WEST -> {
-                across = dz;
-                along = -dx;
-            }
-            case NORTH -> {
-                across = -dx;
-                along = -dz;
-            }
-            default -> {
-                across = -dz;
-                along = dx;
-            }
-        }
-        if (along < 4 || along > 8 || across < -4 || across > 4 || row < 0 || row > 9) {
-            return null;
-        }
-        int piece = ((along - 4) * 9 + across + 4) * 10 + row;
-        if (!JUNCTION_CELLS.get(piece)) {
-            return null;
-        }
+        Integer piece = SPECIAL_CELLS.get(cellKey(JUNCTION, canonicalA(run, dx, dz), canonicalB(run, dx, dz), row));
+        return piece != null ? special(run, piece) : null;
+    }
+
+    /**
+     * The corner piece for the cell (dx, dz) from the node where a run turns, or null if the
+     * plain vault pieces are right there. {@code turn}: the corner turned like the dome, so that
+     * its runs leave toward {@code turn} and {@code turn.getCounterClockWise()} (SOUTH: south and east).
+     */
+    @Nullable
+    static BlockState cornerPiece(Direction turn, int dx, int dz, int row) {
+        Integer piece = SPECIAL_CELLS.get(cellKey(CORNER, canonicalA(turn, dx, dz), canonicalB(turn, dx, dz), row));
+        return piece != null ? special(turn, piece) : null;
+    }
+
+    private static BlockState special(Direction facing, int piece) {
         return Level39Blocks.JUNCTION.get().defaultBlockState()
-                .setValue(JunctionBlock.FACING, run)
+                .setValue(JunctionBlock.FACING, facing)
                 .setValue(JunctionBlock.PIECE, piece);
     }
 
-    private static BitSet loadJunctionCells() {
-        BitSet cells = new BitSet(JunctionBlock.PIECES);
+    /** (dx, dz) turned back into the frame of a SOUTH-facing piece (as {@link #domePiece} does): its x ... */
+    private static int canonicalA(Direction facing, int dx, int dz) {
+        return switch (facing) {
+            case WEST -> dz;
+            case NORTH -> -dx;
+            case EAST -> -dz;
+            default -> dx;
+        };
+    }
+
+    /** ... and its z. */
+    private static int canonicalB(Direction facing, int dx, int dz) {
+        return switch (facing) {
+            case WEST -> -dx;
+            case NORTH -> -dz;
+            case EAST -> dx;
+            default -> dz;
+        };
+    }
+
+    private static final int JUNCTION = 0;
+    private static final int CORNER = 1;
+    /** Corner pieces are numbered after every junction piece (those never change: worlds keep them). */
+    private static final int CORNER_BASE = 5 * 9 * 10;
+
+    private static int cellKey(int kind, int a, int b, int row) {
+        return ((kind * 64 + a + 32) * 64 + b + 32) * 16 + row;
+    }
+
+    private static Map<Integer, Integer> loadSpecialCells() {
+        Map<Integer, Integer> cells = new HashMap<>();
         String path = "/data/backrooms/level39/junction_cells.txt";
         try (InputStream in = Level39Vault.class.getResourceAsStream(path)) {
             if (in == null) {
                 throw new IllegalStateException("missing " + path);
             }
             BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+            int corners = 0;
             for (String line; (line = reader.readLine()) != null; ) {
                 if (line.isBlank() || line.startsWith("#")) {
                     continue;
                 }
                 String[] parts = line.trim().split("\\s+");
-                int across = Integer.parseInt(parts[0]);
-                int along = Integer.parseInt(parts[1]);
-                int row = Integer.parseInt(parts[2]);
-                cells.set(((along - 4) * 9 + across + 4) * 10 + row);
+                int a = Integer.parseInt(parts[1]);
+                int b = Integer.parseInt(parts[2]);
+                int row = Integer.parseInt(parts[3]);
+                if (parts[0].equals("junction")) {
+                    cells.put(cellKey(JUNCTION, a, b, row), ((b - 4) * 9 + a + 4) * 10 + row);
+                } else {
+                    cells.put(cellKey(CORNER, a, b, row), CORNER_BASE + corners++);
+                }
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -282,14 +282,6 @@
     ],
     "subtitle": "subtitles.backrooms.battery_low"
   },
-  "camcorder.noclip": {
-    "sounds": [
-      {
-        "name": "backrooms:camcorder/noclip",
-        "volume": 0.85
-      }
-    ]
-  },
   "camcorder.escape": {
     "sounds": [
       "backrooms:camcorder/escape"
@@ -3702,5 +3694,129 @@
       {"name": "backrooms:l227/flytrap_death1", "volume": 0.8}
     ],
     "subtitle": "subtitles.backrooms.venus_flytrap.death"
+  },
+  "exit_hint.level_490": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_490",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
+  },
+  "level490.thunder_close": {
+    "sounds": [
+      {
+        "name": "backrooms:level490/thunder_close_1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_close_2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_close_3",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_close_4",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_close_5",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level490.thunder_close"
+  },
+  "level490.thunder_roll": {
+    "sounds": [
+      {
+        "name": "backrooms:level490/thunder_roll_1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_roll_2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_roll_3",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_roll_4",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_roll_5",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level490.thunder_roll"
+  },
+  "level490.thunder_far": {
+    "sounds": [
+      {
+        "name": "backrooms:level490/thunder_far_1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_far_2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_far_3",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_far_4",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:level490/thunder_far_5",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level490.thunder_far"
+  },
+  "level490.wind": {
+    "sounds": [
+      {
+        "name": "backrooms:level490/wind",
+        "stream": true
+      }
+    ]
+  },
+  "level490.wire": {
+    "sounds": [
+      {
+        "name": "backrooms:level490/wire",
+        "stream": true
+      }
+    ]
+  },
+  "level490.whirlwind": {
+    "sounds": [
+      {
+        "name": "backrooms:level490/whirlwind",
+        "stream": true
+      }
+    ]
+  },
+  "level490.rumble": {
+    "sounds": [
+      {
+        "name": "backrooms:level490/rumble",
+        "stream": true
+      }
+    ]
+  },
+  "level490.drone": {
+    "sounds": [
+      {
+        "name": "backrooms:level490/drone",
+        "stream": true
+      }
+    ]
   }
 }

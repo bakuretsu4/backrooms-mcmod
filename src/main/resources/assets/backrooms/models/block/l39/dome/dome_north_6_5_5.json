@@ -5,7 +5,7 @@
   "shade_quads": false,
   "emissive_ambient": false,
   "automatic_culling": true,
-  "ambientocclusion": false,
+  "ambientocclusion": true,
   "textures": {
     "marble": "backrooms:block/l39_marble",
     "particle": "backrooms:block/l39_marble"

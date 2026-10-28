@@ -49,7 +49,7 @@ public final class PoolroomsAnomalyPlan {
 
     // ---- Stair pits ------------------------------------------------------------------------------
     /**
-     * The pit's bottom block. The Poolrooms send you on to Level 9 below y30
+     * The pit's bottom block. The Poolrooms send you on to Level 37 below y30
      * ({@code BackroomsLevel.transferBelowY}), so the deepest you can sink is standing on this,
      * feet at y31: a pit is never a secret exit.
      */

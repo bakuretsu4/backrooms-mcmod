@@ -49,7 +49,7 @@ import org.jetbrains.annotations.Nullable;
  *       {@value #GRAB_RANGE} blocks of a ground-floor window it grabs you.</li>
  *   <li><b>Grabbing</b>: you are dragged toward the glass and hurt. Pull free (get more than
  *       {@value #BREAK_FREE} blocks away) or hold on: survive {@value #NOCLIP_TICKS} ticks pressed
- *       against the glass and you noclip through it, out of Level 39 (canon: the way to Level 9).</li>
+ *       against the glass and you noclip through it, out of Level 39 and on to Level 94.</li>
  * </ol>
  * More than {@value #PASSIVE_GROUP} people within {@value #GROUP_RANGE} blocks make it passive
  * (canon): the light sinks, the shadow just watches.

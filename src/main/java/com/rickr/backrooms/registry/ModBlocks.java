@@ -1046,7 +1046,7 @@ public final class ModBlocks {
     /** Carved stone with rings round it: the round platform the exit door lies in. */
     public static final DeferredBlock<Block> L7_PLATFORM = structural("l7_platform", MapColor.STONE, SoundType.STONE);
     /**
-     * The exit: an old wooden door lying in the platform. Swim into it (to Level 9). A faint light
+     * The exit: an old wooden door lying in the platform. Swim into it (to Level 39's tunnels). A faint light
      * seeps round its edges (light 10), the only thing you can make out down there from afar.
      */
     public static final DeferredBlock<SeaDoorBlock> L7_EXIT_DOOR = BLOCKS.registerBlock("l7_exit_door", SeaDoorBlock::new,

@@ -88,8 +88,8 @@ public final class CrimsonField {
         STATES.remove(player.getUUID());
         int x = Math.floorMod(foxhole.anchorX(), 8192) - 4096;
         int z = Math.floorMod(foxhole.anchorZ(), 8192) - 4096;
-        Travel.sendTo(player, BackroomsLevel.LEVEL_2, x, z);
-        player.sendSystemMessage(Component.translatable("message.backrooms.level9.foxhole").withStyle(s -> s.withItalic(true)));
+        Travel.sendTo(player, BackroomsLevel.LEVEL_2, x, z,
+                Component.translatable("message.backrooms.level9.foxhole").withStyle(s -> s.withItalic(true)));
     }
 
     /**
@@ -126,8 +126,8 @@ public final class CrimsonField {
         STATES.remove(player.getUUID());
         int x = player.getRandom().nextInt(3001) - 1500;
         int z = player.getRandom().nextInt(3001) - 1500;
-        Travel.sendTo(player, BackroomsLevel.LEVEL_0, x, z);
-        player.sendSystemMessage(Component.translatable("message.backrooms.level9.gloom").withStyle(s -> s.withItalic(true)));
+        Travel.sendTo(player, BackroomsLevel.LEVEL_0, x, z,
+                Component.translatable("message.backrooms.level9.gloom").withStyle(s -> s.withItalic(true)));
     }
 
     @SubscribeEvent

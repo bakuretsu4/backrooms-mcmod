@@ -39,7 +39,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  *       over the town, Slow Falling and a soft landing; otherwise 10 s of grace while the client
  *       loads the chunks.</li>
  * </ul>
- * The way on (a superstructure window, to Level 9) lives with the Window entities.
+ * The way on (a superstructure window, to Level 94) lives with the Window entities.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
 public final class Level39Rules {

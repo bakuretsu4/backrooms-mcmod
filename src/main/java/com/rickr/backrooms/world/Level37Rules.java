@@ -9,7 +9,6 @@ import com.rickr.backrooms.world.layout.PoolroomsLayout;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
@@ -19,15 +18,15 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
- * Server rules of Level 37 ("Sublimity"), in and out:
+ * Server rules of the Poolrooms' sunlit archway and of leaving Level 37 ("Sublimity"):
  * <ul>
- *   <li><b>In:</b> somewhere in the Poolrooms a sunlit archway glows in a wall. Walk into its
- *       light (the back half of the passage) and you are in Level 37; the screen whitens and
- *       fades back in on the client ({@code client/Level37Atmosphere}), no tape glitch.</li>
+ *   <li><b>The archway:</b> somewhere in the Poolrooms a sunlit archway glows in a wall. Walk into
+ *       its light (the back half of the passage) and you skip ahead to Level 39's flooded
+ *       tunnels. (Level 37 itself is reached down the Poolrooms' drain.)</li>
  *   <li><b>Out:</b> the round pits of deep, dark water. Once you have dived a few blocks down
  *       one, a gentle current draws you down the shaft. Below
  *       {@link Level37Layout#TRANSFER_BELOW_Y} the usual exit check ({@code ServerEvents}) sends
- *       you on to Level 9.</li>
+ *       you on to Level 7.</li>
  * </ul>
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
@@ -62,7 +61,10 @@ public final class Level37Rules {
         }
     }
 
-    /** Stepping into the light at the back of a sunlit archway: on to Level 37. */
+    /**
+     * Stepping into the light at the back of a sunlit archway: a rare shortcut that skips Level 37
+     * and Level 7 and brings you up in Level 39's flooded tunnels (Level39Layout.preferredArrival).
+     */
     private static void checkArchway(ServerPlayer player) {
         if (player.getY() < ARCHWAY_MIN_Y || player.getY() > ARCHWAY_MAX_Y) {
             return;
@@ -72,12 +74,13 @@ public final class Level37Rules {
         if (!layout.isSunlitThreshold(seed, player.getBlockX(), player.getBlockZ())) {
             return;
         }
+        if (Travel.isMoving(player)) {
+            return; // already on the way
+        }
         // A secret way down, but still a way down: the Poolrooms checkpoint no longer applies.
         Checkpoints.clear(player);
-        if (Travel.sendToQuietly(player, BackroomsLevel.LEVEL_37, player.getBlockX(), player.getBlockZ())) {
-            player.playNotifySound(ModSounds.LEVEL37_ARRIVE.get(), SoundSource.MASTER, 0.9f, 1.0f);
-            player.sendSystemMessage(Component.translatable("message.backrooms.arrive.level_37").withStyle(s -> s.withItalic(true)));
-        }
+        Travel.sendTo(player, BackroomsLevel.LEVEL_39, player.getBlockX(), player.getBlockZ(),
+                Travel.arrivalMessage(BackroomsLevel.LEVEL_39));
     }
 
     /** Deep in a pit's shaft: a slow current draws you down toward the way out. */

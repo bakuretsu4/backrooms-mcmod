@@ -7,7 +7,6 @@ import com.rickr.backrooms.entity.SmilerSpawner;
 import com.rickr.backrooms.player.PlayerGameplay;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.LevelEvents;
-import com.rickr.backrooms.world.NoclipIntro;
 import com.rickr.backrooms.world.Travel;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.minecraft.server.level.ServerLevel;
@@ -45,10 +44,10 @@ public final class ServerEvents {
             return;
         }
         CameraService.tick(player);
-        NoclipIntro.tick(player);
+        Travel.tick(player);
         BackroomsLevel level = BackroomsLevel.fromDimension(player.level().dimension());
         if (level != null && player.getY() < level.transferBelowY()) {
-            Travel.useExitDown(player, level);
+            Travel.useExit(player, level);
         }
     }
 
@@ -76,7 +75,7 @@ public final class ServerEvents {
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            NoclipIntro.forget(player);
+            Travel.forget(player);
         }
     }
 

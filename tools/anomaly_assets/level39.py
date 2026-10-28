@@ -1771,8 +1771,9 @@ def _dome_cell(a: int, b: int, row: int) -> int:
 # piece meets the air of another run or chamber you never see into it. The marble is mapped in
 # world space, so it runs on across pieces and into the plain marble walls; because a texture
 # can't be turned with an OBJ model, each FACING gets its own model with its own mapping.
-# Shading is baked into vertex colours (flat lighting, no directional shade, no AO), so wall,
-# vault and dome read as one evenly lit white shell; only the crown gets a hint of shadow.
+# Shading is baked into vertex colours (flat lighting, no AO): the same directional shade
+# Minecraft gives a flat face turned the same way, so the curves match the plain marble walls
+# next to them and darken smoothly toward the crown, which is what shows their shape.
 
 
 def _turn(p, turns, about=0.5):
@@ -1783,7 +1784,10 @@ def _turn(p, turns, about=0.5):
 
 
 def _shade(n) -> float:
-    return 1.0 - 0.06 * max(0.0, -n[1])
+    """Minecraft's directional shade for a face with normal n (tops 1.0, north/south 0.8, east/west
+    0.6, undersides 0.5), blended smoothly for the slopes in between (NeoForge's own formula)."""
+    x, y, z = n
+    return min(1.0, x * x * 0.6 + y * y * (3.0 + y) / 4.0 + z * z * 0.8)
 
 
 class _Poly:
@@ -1861,7 +1865,8 @@ def _write_obj(folder, name: str, faces) -> None:
         "shade_quads": False,
         "emissive_ambient": False,
         "automatic_culling": True,
-        "ambientocclusion": False,
+        # Smooth lighting, like the plain marble walls next to the pieces.
+        "ambientocclusion": True,
         "textures": {"marble": m, "particle": m},
     }, indent=2) + "\n", newline="\n")
 
@@ -1890,7 +1895,7 @@ def _bake(polys, turns, curve_uv, curve_s):
                 shades = [_shade(n) for n in wns]
             else:
                 uvs = [_planar_uv(p, wns[0]) for p in wps]
-                shades = [1.0] * len(wps)
+                shades = [_shade(n) for n in wns]
             faces.append((wps, wns, uvs, shades))
     return faces
 
@@ -2240,7 +2245,7 @@ def _dome_models() -> None:
                             for ps, ns, sv in _split_tiles(wps, wns, s):
                                 faces.append((ps, ns, [(sv_, p[1]) for p, sv_ in zip(ps, sv)], [_shade(n) for n in ns]))
                         else:
-                            faces.append((wps, wns, [_planar_uv(p, wns[0]) for p in wps], [1.0] * len(wps)))
+                            faces.append((wps, wns, [_planar_uv(p, wns[0]) for p in wps], [_shade(n) for n in wns]))
                     name = f"dome_{facing}_{a}_{b}_{row}"
                     _write_obj(folder, name, faces)
                     variants[f"facing={facing},piece={piece}"] = {"model": f"backrooms:block/l39/dome/{name}"}
@@ -2248,16 +2253,21 @@ def _dome_models() -> None:
     _item_block("l39_dome", "l39/dome/dome_south_3_3_8")
 
 
-# ---- Junction pieces: where a run's barrel vault comes into a domed chamber ----------------
-# Seen from the chamber, the barrel (a half cylinder) cuts into the dome (a sphere): the true
-# surface is their union, meeting in a sharp crease. Built block by block from the two separate
-# piece sets, that crease came out as a saw-tooth ring of steps round every arch, with odd bright
-# and dark faces where pieces were cut off. These cells get their own pieces, meshed from the exact
-# union. Canonical: the run leaves the chamber toward +z (SOUTH); `across` = x offset from the
-# chamber's centre, `along` = z offset; FACING turns it like the dome (WEST = run toward -x...).
+# ---- Junction and corner pieces: where two curved ceilings meet ---------------------------
+# Built block by block from the separate vault and dome pieces, the crease where two curves meet
+# came out as a saw-tooth of steps with odd bright and dark faces where pieces were cut off:
+#  - at a junction, where a run's barrel (a half cylinder) comes into a domed chamber (a sphere);
+#  - at a corner, where a run turns 90 degrees and two barrels cross (a groin vault).
+# These cells get their own pieces (block/JunctionBlock), meshed from the exact union of the two.
+# Junction canonical: the run leaves the chamber toward +z (SOUTH); `across` = x offset from the
+# chamber's centre, `along` = z offset. Corner canonical: the runs leave the corner toward +z
+# (SOUTH) and +x (EAST). FACING turns both like the dome (WEST = turned a quarter...).
 JUNCTION_ALONG = range(4, 9)                 # 4..8 blocks from the centre along the run
 JUNCTION_ACROSS = range(-4, 5)               # inside the barrel's half-width (4.5)
 JUNCTION_ROWS = range(10)
+#: Corner pieces come after every junction piece number (those must never change: worlds keep them).
+CORNER_BASE = len(JUNCTION_ALONG) * len(JUNCTION_ACROSS) * len(JUNCTION_ROWS)
+CORNER_RANGE = range(-5, 10)                 # x and z offsets from the corner's node searched
 JUNCTION_SAMPLES = 9                          # per axis, for deciding which cells need a piece
 JUNCTION_MESH = 16                            # marching-cubes cells per block
 
@@ -2276,16 +2286,31 @@ def _sdf_dome(X, Y, Z):
     return np.minimum(DOME_R - np.sqrt(X * X + Z * Z + (Y - DOME_Y0) ** 2), DOME_WALL - r)
 
 
-def junction_cells() -> list:
-    """(across, along, row) of every cell where the union is neither the barrel's nor the dome's
-    shape alone. The same list is written for the Java side (data/backrooms/level39/junction_cells.txt)."""
+def _sdf_corner_z(X, Y, Z):
+    """The run leaving a corner toward +z: it carries on 4 blocks past the node (Level39Tunnels'
+    rim), then ends in a flat wall."""
+    return np.where(Z >= -4.5, _sdf_barrel(X, Y, Z), -9.0)
+
+
+def _sdf_corner_x(X, Y, Z):
+    """The run leaving a corner toward +x (the same, turned)."""
+    return np.where(X >= -4.5, _sdf_barrel(Z, Y, X), -9.0)
+
+
+def _cell_grid(a: int, b: int, row: int):
     k = (np.arange(JUNCTION_SAMPLES) + 0.5) / JUNCTION_SAMPLES
     gx, gy, gz = np.meshgrid(k, k, k, indexing="ij")
+    return a - 0.5 + gx, BASE_Y + row + gy, b - 0.5 + gz
+
+
+def junction_cells() -> list:
+    """(across, along, row) of every cell where the union is neither the barrel's nor the dome's
+    shape alone."""
     cells = []
     for along in JUNCTION_ALONG:
         for across in JUNCTION_ACROSS:
             for row in JUNCTION_ROWS:
-                X, Y, Z = across - 0.5 + gx, BASE_Y + row + gy, along - 0.5 + gz
+                X, Y, Z = _cell_grid(across, along, row)
                 fb, fd = _sdf_barrel(X, Y, Z) > 0, _sdf_dome(X, Y, Z) > 0
                 union = fb | fd
                 if union.all() or not union.any():
@@ -2295,19 +2320,67 @@ def junction_cells() -> list:
     return cells
 
 
+def corner_cells() -> list:
+    """(x, z, row) of every corner cell the plain vault pieces get wrong: worked out the way
+    Level39Tunnels.ceilingCell builds it (air wins, else the higher curve's piece; where both are
+    as high, either), compared with the true union."""
+    cells = []
+    for x in CORNER_RANGE:
+        for z in CORNER_RANGE:
+            for row in JUNCTION_ROWS:
+                X, Y, Z = _cell_grid(x, z, row)
+                union = (_sdf_corner_z(X, Y, Z) > 0) | (_sdf_corner_x(X, Y, Z) > 0)
+                if union.all() or not union.any():
+                    continue
+                runs = []                                   # (kind, ceiling, shape) of each run here
+                if z >= -4 and abs(x) <= 4:
+                    runs.append((_barrel_cell(abs(x), row), _barrel_ceiling(abs(x)), _sdf_barrel(X, Y, Z) > 0))
+                if x >= -4 and abs(z) <= 4:
+                    runs.append((_barrel_cell(abs(z), row), _barrel_ceiling(abs(z)), _sdf_barrel(Z, Y, X) > 0))
+                if any(kind == AIR for kind, _, _ in runs):
+                    built = [np.ones_like(union)]
+                else:
+                    pieces = [(h, shape) for kind, h, shape in runs if kind == PIECE]
+                    top = max((h for h, _ in pieces), default=None)
+                    built = [shape for h, shape in pieces if h == top] or [np.zeros_like(union)]
+                if any(bool((shape != union).any()) for shape in built):
+                    cells.append((x, z, row))
+    return cells
+
+
 def junction_piece_index(across: int, along: int, row: int) -> int:
     return ((along - JUNCTION_ALONG.start) * len(JUNCTION_ACROSS) + (across - JUNCTION_ACROSS.start)) * len(JUNCTION_ROWS) + row
 
 
-def _junction_faces(across: int, along: int, row: int):
-    """The cell's solid (marble outside the union's air) as triangles in block-local coordinates,
-    with normals: smooth on the curves (the surface each triangle lies on), flat on the cell's faces."""
+def _junction_normal(x, y, z, centre):
+    """Normal of the junction's surface at (x, y, z): the barrel's or the dome's, whichever the
+    triangle (centre) lies on."""
+    if _sdf_barrel(*centre) < _sdf_dome(*centre):
+        return (-x, -(y - VAULT_Y0), 0.0) if y >= VAULT_Y0 else (-np.sign(x), 0.0, 0.0)
+    if DOME_R - np.sqrt(x * x + z * z + (y - DOME_Y0) ** 2) < DOME_WALL - np.sqrt(x * x + z * z):
+        return (-x, -(y - DOME_Y0), -z)
+    return (-x, 0.0, -z)
+
+
+def _corner_normal(x, y, z, centre):
+    """Normal of the corner's surface at (x, y, z): the barrel the triangle (centre) lies on."""
+    cx, cy, cz = centre
+    dz = abs(float(_sdf_barrel(cx, cy, cz))) if cz >= -4.5 else np.inf
+    dx = abs(float(_sdf_barrel(cz, cy, cx))) if cx >= -4.5 else np.inf
+    if dz <= dx:
+        return (-x, -(y - VAULT_Y0), 0.0) if y >= VAULT_Y0 else (-np.sign(x), 0.0, 0.0)
+    return (0.0, -(y - VAULT_Y0), -z) if y >= VAULT_Y0 else (0.0, 0.0, -np.sign(z))
+
+
+def _union_faces(a: int, b: int, row: int, sdf, normal_at):
+    """Cell (a, b, row)'s solid (marble outside the air, sdf > 0) as triangles in block-local
+    coordinates, with normals: smooth on the curves (normal_at), flat on the cell's faces."""
     from skimage.measure import marching_cubes
     n, pad = JUNCTION_MESH, 1
     s = (np.arange(-pad, n + pad + 1)) / n
     gx, gy, gz = np.meshgrid(s, s, s, indexing="ij")
-    X, Y, Z = across - 0.5 + gx, BASE_Y + row + gy, along - 0.5 + gz
-    f = np.maximum(_sdf_barrel(X, Y, Z), _sdf_dome(X, Y, Z))        # > 0 in air
+    origin = np.array([a - 0.5, BASE_Y + row, b - 0.5])
+    f = sdf(origin[0] + gx, origin[1] + gy, origin[2] + gz)            # > 0 in air
     outside = (gx < 0) | (gx > 1) | (gy < 0) | (gy > 1) | (gz < 0) | (gz > 1)
     f = np.where(outside, 1.0 / n, f)                                   # air round the cell closes the solid
     verts, tris, _, _ = marching_cubes(-f, level=0.0, spacing=(1.0 / n,) * 3)
@@ -2326,20 +2399,12 @@ def _junction_faces(across: int, along: int, row: int):
         if cap is not None:
             caps.setdefault(cap, []).append(P)
             continue
-        else:
-            W = P + np.array([across - 0.5, BASE_Y + row, along - 0.5])
-            c = W.mean(axis=0)
-            on_barrel = _sdf_barrel(*c) < _sdf_dome(*c)                # the surface the solid follows here
-            ns = []
-            for x, y, z in W:
-                if on_barrel:
-                    g = (-x, -(y - VAULT_Y0), 0.0) if y >= VAULT_Y0 else (-np.sign(x), 0.0, 0.0)
-                elif DOME_R - np.sqrt(x * x + z * z + (y - DOME_Y0) ** 2) < DOME_WALL - np.sqrt(x * x + z * z):
-                    g = (-x, -(y - DOME_Y0), -z)
-                else:
-                    g = (-x, 0.0, -z)
-                g = np.array(g, float)
-                ns.append(tuple(g / (np.linalg.norm(g) + 1e-12)))
+        W = P + origin
+        centre = W.mean(axis=0)
+        ns = []
+        for x, y, z in W:
+            g = np.array(normal_at(x, y, z, centre), float)
+            ns.append(tuple(g / (np.linalg.norm(g) + 1e-12)))
         a_, b_, c_ = (np.array(p) for p in ps)
         if np.dot(np.cross(b_ - a_, c_ - a_), np.mean(ns, axis=0)) < 0:
             ps, ns = ps[::-1], ns[::-1]
@@ -2373,21 +2438,27 @@ def _junction_faces(across: int, along: int, row: int):
 
 
 def _junction_models() -> None:
-    """Junction pieces (block/JunctionBlock: facing, piece) as OBJ meshes, plus the cell list."""
+    """Junction and corner pieces (block/JunctionBlock: facing, piece) as OBJ meshes, plus the
+    cell list for the Java side (data/backrooms/level39/junction_cells.txt)."""
     folder = ASSETS / "models" / "block" / "l39" / "junction"
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "l39_marble.mtl").write_text("newmtl marble\nKd 1.0 1.0 1.0\nmap_Kd #marble\n", newline="\n")
-    cells = junction_cells()
-    keep = {junction_piece_index(*cell) for cell in cells}
+    pieces = []                                  # (piece, model name, faces)
+    junctions = junction_cells()
+    for across, along, row in junctions:
+        faces = _union_faces(across, along, row, lambda X, Y, Z: np.maximum(_sdf_barrel(X, Y, Z), _sdf_dome(X, Y, Z)),
+                             _junction_normal)
+        pieces.append((junction_piece_index(across, along, row), f"junction_{{}}_{across + 4}_{along}_{row}", faces))
+    corners = corner_cells()
+    for i, (x, z, row) in enumerate(corners):
+        faces = _union_faces(x, z, row, lambda X, Y, Z: np.maximum(_sdf_corner_z(X, Y, Z), _sdf_corner_x(X, Y, Z)),
+                             _corner_normal)
+        pieces.append((CORNER_BASE + i, f"corner_{{}}_{x + 5}_{z + 5}_{row}", faces))
     variants = {}
-    total = len(JUNCTION_ALONG) * len(JUNCTION_ACROSS) * len(JUNCTION_ROWS)
-    for piece in range(total):
-        if piece not in keep:
-            for facing, _ in CURVE_ROT:
-                variants[f"facing={facing},piece={piece}"] = {"model": _ref("l39_marble")}
-    for across, along, row in cells:
-        piece = junction_piece_index(across, along, row)
-        canon = _junction_faces(across, along, row)
+    for piece in range(JUNCTION_PIECES):
+        for facing, _ in CURVE_ROT:
+            variants[f"facing={facing},piece={piece}"] = {"model": _ref("l39_marble")}
+    for piece, name, canon in pieces:
         for facing, turns in CURVE_ROT:
             faces = []
             for ps, ns in canon:
@@ -2395,16 +2466,22 @@ def _junction_models() -> None:
                 wns = [_turn(nv, turns, 0.0) for nv in ns]
                 tri_n = np.cross(np.array(wps[1]) - wps[0], np.array(wps[2]) - wps[0])
                 faces.append((wps, wns, [_planar_uv(p, tri_n) for p in wps], [_shade(nv) for nv in wns]))
-            name = f"junction_{facing}_{across + 4}_{along}_{row}"
-            _write_obj(folder, name, faces)
-            variants[f"facing={facing},piece={piece}"] = {"model": f"backrooms:block/l39/junction/{name}"}
+            _write_obj(folder, name.format(facing), faces)
+            variants[f"facing={facing},piece={piece}"] = {"model": f"backrooms:block/l39/junction/{name.format(facing)}"}
     _state("l39_junction", variants, compact=True)
-    _item_block("l39_junction", f"l39/junction/junction_south_{cells[0][0] + 4}_{cells[0][1]}_{cells[0][2]}")
+    _item_block("l39_junction", "l39/junction/" + pieces[0][1].format("south"))
     table = ASSETS.parent.parent / "data" / "backrooms" / "level39" / "junction_cells.txt"
     table.parent.mkdir(parents=True, exist_ok=True)
-    table.write_text("# across along row: cells that use a junction piece (tools/anomaly_assets/level39.py)\n"
-                     + "".join(f"{a} {b} {r}\n" for a, b, r in cells), newline="\n")
-    print(f"  junction pieces: {len(cells)}")
+    table.write_text("# kind a b row: cells that use a junction piece (tools/anomaly_assets/level39.py). Junction:\n"
+                     "# a = across, b = along (piece = its own formula); corner: a = x, b = z (piece = "
+                     f"{CORNER_BASE} + its order here)\n"
+                     + "".join(f"junction {a} {b} {r}\n" for a, b, r in junctions)
+                     + "".join(f"corner {x} {z} {r}\n" for x, z, r in corners), newline="\n")
+    print(f"  junction pieces: {len(junctions)}, corner pieces: {len(corners)}")
+
+
+#: Must match block/JunctionBlock.PIECES.
+JUNCTION_PIECES = 512
 
 
 def _hole_models() -> None:

@@ -332,8 +332,9 @@ public final class Level39Layout extends LevelLayout {
     }
 
     /**
-     * Coming out of the Poolrooms' drain you surface in the flooded tunnels: on the rim of the
-     * run nearest to where you went down. Everyone else arrives in town (the usual search).
+     * Coming through Level 7's door (or the Poolrooms' sunlit archway) you surface in the flooded
+     * tunnels: on the rim of the run nearest to where you left. Everyone else arrives in town
+     * (the usual search).
      */
     @Override
     @Nullable
@@ -342,7 +343,7 @@ public final class Level39Layout extends LevelLayout {
         // spot of the ordinary town instead (same local position, cell column 0).
         boolean copy = Level39AnomalyPlan.isCopy(x);
         int ax = copy ? local(x) : x;
-        if (from == BackroomsLevel.POOLROOMS) {
+        if (from == BackroomsLevel.LEVEL_7 || from == BackroomsLevel.POOLROOMS) {
             return Level39Tunnels.nearestRim(seed, ax, z);
         }
         if (copy) {

@@ -11,16 +11,17 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
 /**
- * One piece of marble where a Level 39 run's barrel vault comes into a domed chamber: its inside
- * is the true meeting of the two curves (a sharp crease), which the separate vault and dome
- * pieces could only make as a saw-tooth of steps. FACING is the direction the run leaves the
- * chamber in; PIECE = ((along - 4) * 9 + (across + 4)) * 10 + row, where along (4..8) is the
- * distance from the chamber's centre along the run, across (-4..4) the offset to the side (x
- * when the run leaves toward SOUTH; turned with FACING like {@link DomeBlock}) and row the
- * height above the walkway (0..9). See {@code Level39Vault.junctionPiece}.
+ * One piece of marble where two of Level 39's curved ceilings meet: a run's barrel vault coming
+ * into a domed chamber, or two runs crossing where one turns a corner. Its inside is the true
+ * meeting of the two curves (a sharp crease), which the separate vault and dome pieces could only
+ * make as a saw-tooth of steps. FACING turns the piece like {@link DomeBlock}. Junction pieces:
+ * FACING is the way the run leaves the chamber; PIECE = ((along - 4) * 9 + (across + 4)) * 10 +
+ * row, where along (4..8) is the distance from the chamber's centre along the run, across (-4..4)
+ * the offset to the side and row the height above the walkway (0..9). Corner pieces: PIECE = 450 +
+ * their place in data/backrooms/level39/junction_cells.txt. See {@code Level39Vault}.
  */
 public class JunctionBlock extends Block {
-    public static final int PIECES = 5 * 9 * 10;
+    public static final int PIECES = 512;
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final IntegerProperty PIECE = IntegerProperty.create("piece", 0, PIECES - 1);
 

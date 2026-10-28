@@ -205,10 +205,12 @@ public final class Level94Layout extends LevelLayout {
     }
 
     /**
-     * A good spot to arrive near (x, z): the nearest crossroads of the country roads, so the
-     * arrival search always finds asphalt close by. Falls back to (x, z) itself.
+     * Everyone arrives at the crossroads of the country roads nearest (x, z) (from Level 39's
+     * windows, Level 9's clay doors, commands), so the arrival search always finds asphalt close
+     * by. Falls back to (x, z) itself.
      */
-    public static int[] arrivalPoint(long seed, int x, int z) {
+    @Override
+    public int[] arrivalHint(long seed, int x, int z) {
         @Nullable int[] node = Level94Roads.nearestNode(seed, x, z);
         return node != null ? node : new int[] {x, z};
     }

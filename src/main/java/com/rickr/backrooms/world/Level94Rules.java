@@ -1,25 +1,20 @@
 package com.rickr.backrooms.world;
 
 import com.rickr.backrooms.Backrooms;
-import com.rickr.backrooms.network.TransitionPayload;
 import com.rickr.backrooms.player.Checkpoints;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.layout.Level94Castle;
-import com.rickr.backrooms.world.layout.Level94Layout;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Server rules of Level 94 ("Motion"), in and out:
@@ -72,8 +67,8 @@ public final class Level94Rules {
                 || player.level().getBlockState(feet.above()).is(ModBlocks.L94_FLOOD_DARK.get())) {
             Checkpoints.clear(player);
             // Level 7 sends arrivals to its nearest entrance room (Level7Layout.arrivalHint).
-            Travel.sendTo(player, BackroomsLevel.LEVEL_7, player.getBlockX(), player.getBlockZ());
-            player.sendSystemMessage(Component.translatable("message.backrooms.arrive.level_7").withStyle(s -> s.withItalic(true)));
+            Travel.sendTo(player, BackroomsLevel.LEVEL_7, player.getBlockX(), player.getBlockZ(),
+                    Travel.arrivalMessage(BackroomsLevel.LEVEL_7));
         }
     }
 
@@ -83,30 +78,25 @@ public final class Level94Rules {
     }
 
     /**
-     * Level 9 to Level 94. The arrival spot comes from the door's own coordinates (the nearest
-     * crossroads in Level 94), so the same door always leads to the same place.
+     * Level 9 to Level 94. You come out at the crossroads nearest the door's coordinates
+     * (Level94Layout.arrivalHint), so the same door always leads to the same place.
      */
     private static void enterThroughClayDoor(ServerPlayer player) {
-        ServerLevel target = player.server.getLevel(BackroomsLevel.LEVEL_94.dimension());
-        if (target == null) {
-            return;
-        }
-        long seed = BackroomsSeeds.layoutSeed(target, BackroomsLevel.LEVEL_94);
-        int[] spot = Level94Layout.arrivalPoint(seed, player.getBlockX(), player.getBlockZ());
         // A secret way in, but still a move between floors: the Level 9 checkpoint no longer applies.
         Checkpoints.clear(player);
-        Travel.sendTo(player, BackroomsLevel.LEVEL_94, spot[0], spot[1]);
-        player.sendSystemMessage(Component.translatable("message.backrooms.arrive.level_94").withStyle(s -> s.withItalic(true)));
+        Travel.sendTo(player, BackroomsLevel.LEVEL_94, player.getBlockX(), player.getBlockZ(),
+                Travel.arrivalMessage(BackroomsLevel.LEVEL_94));
     }
 
     /** Into the light behind the throne: on to Level 1, with the warm swell of light. */
     private static void throneExit(ServerPlayer player) {
         Checkpoints.clear(player);
-        if (Travel.sendToQuietly(player, BackroomsLevel.LEVEL_1, player.getBlockX(), player.getBlockZ())) {
-            PacketDistributor.sendToPlayer(player, new TransitionPayload(TransitionPayload.NOCLIP));
-            player.playNotifySound(ModSounds.LEVEL37_ARRIVE.get(), SoundSource.MASTER, 1.0f, 1.2f);
-            player.sendSystemMessage(Component.translatable("message.backrooms.arrive.level_1").withStyle(s -> s.withItalic(true)));
-        }
+        Travel.moshTo(player, p -> {
+            if (Travel.sendToQuietly(p, BackroomsLevel.LEVEL_1, p.getBlockX(), p.getBlockZ())) {
+                p.playNotifySound(ModSounds.LEVEL37_ARRIVE.get(), SoundSource.MASTER, 1.0f, 1.2f);
+                p.sendSystemMessage(Travel.arrivalMessage(BackroomsLevel.LEVEL_1));
+            }
+        });
     }
 
     @SubscribeEvent

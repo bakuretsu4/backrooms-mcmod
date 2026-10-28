@@ -31,12 +31,11 @@ public final class ModNetwork {
             CameraClientState.tapeSyncMs = System.currentTimeMillis();
         });
 
-        registrar.playToClient(TransitionPayload.TYPE, TransitionPayload.STREAM_CODEC, (payload, context) -> {
-            CameraClientState.transitionKind = payload.kind();
-            CameraClientState.transitionStartMs = System.currentTimeMillis();
+        registrar.playToClient(EscapePayload.TYPE, EscapePayload.STREAM_CODEC, (payload, context) -> {
+            CameraClientState.escapeStartMs = System.currentTimeMillis();
         });
 
-        // Noclipping in (freeze -> held -> mosh). Plain fields; client/intro/NoclipTransition reads them.
+        // Every move between floors (freeze -> held -> mosh). Plain fields; client/intro/NoclipTransition reads them.
         registrar.playToClient(IntroCutscenePayload.TYPE, IntroCutscenePayload.STREAM_CODEC, (payload, context) -> {
             CameraClientState.introPhase = payload.phase();
             CameraClientState.introStartMs = System.currentTimeMillis();
@@ -129,6 +128,12 @@ public final class ModNetwork {
         // and echo quakes (the client plays the echoes, rumble, shaking and dust).
         registrar.playToClient(Level39StatePayload.TYPE, Level39StatePayload.STREAM_CODEC,
                 (payload, context) -> com.rickr.backrooms.client.Level39ClientState.receiveSeed(payload.layoutSeed()));
+        // Level 490: lightning strikes (the bolt, the glow in the clouds, the thunder), and the
+        // layout seed (so the sky can place the far colossal chains).
+        registrar.playToClient(Level490StrikePayload.TYPE, Level490StrikePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.Level490Lightning.receive(payload)));
+        registrar.playToClient(Level490StatePayload.TYPE, Level490StatePayload.STREAM_CODEC,
+                (payload, context) -> com.rickr.backrooms.client.Level490ClientState.receiveSeed(payload.layoutSeed()));
         registrar.playToClient(Level39QuakePayload.TYPE, Level39QuakePayload.STREAM_CODEC,
                 (payload, context) -> com.rickr.backrooms.client.Level39QuakeEffects.receive(payload.x(), payload.y(), payload.z(), payload.strength()));
 

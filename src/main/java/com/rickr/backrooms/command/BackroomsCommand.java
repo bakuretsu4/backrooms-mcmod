@@ -39,7 +39,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Operator tools for hosting sessions with friends:
  * <pre>
- * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7, level_39, level_227 (default: level_0)
+ * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7, level_39, level_490, level_227 (default: level_0)
  * /backrooms escape [targets]          send players back to reality
  * /backrooms battery [targets] [pct]   set camcorder batteries (default: full)
  * /backrooms sanity [targets] <0-100>   set sanity (for testing the low-sanity effects)
@@ -211,7 +211,7 @@ public final class BackroomsCommand {
             if (level == BackroomsLevel.LEVEL_0 && !Travel.inBackrooms(player.level())) {
                 Travel.enterBackrooms(player); // the full noclip intro
             } else {
-                Travel.sendTo(player, level, player.getBlockX(), player.getBlockZ());
+                Travel.sendTo(player, level, player.getBlockX(), player.getBlockZ(), Travel.arrivalMessage(level));
             }
         }
         return players.size();
