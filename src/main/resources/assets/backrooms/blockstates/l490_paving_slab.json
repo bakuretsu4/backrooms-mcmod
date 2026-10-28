@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "backrooms:block/l490_paving_slab"
+    },
+    "type=top": {
+      "model": "backrooms:block/l490_paving_slab_top"
+    },
+    "type=double": {
+      "model": "backrooms:block/l490_paving"
+    }
+  }
+}

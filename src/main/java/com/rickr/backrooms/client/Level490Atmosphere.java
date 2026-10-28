@@ -34,9 +34,9 @@ import org.joml.Vector3f;
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Level490Atmosphere extends DimensionSpecialEffects {
     /** Moonlight with no lantern near. */
-    private static final float MOON_R = 0.150f;
-    private static final float MOON_G = 0.163f;
-    private static final float MOON_B = 0.195f;
+    private static final float MOON_R = 0.215f;
+    private static final float MOON_G = 0.230f;
+    private static final float MOON_B = 0.275f;
     /** A burning lantern: warm. Smaller with Veil, which draws the lantern's real light. */
     private static final float LAMP_R = 1.00f;
     private static final float LAMP_G = 0.74f;
@@ -52,9 +52,9 @@ public final class Level490Atmosphere extends DimensionSpecialEffects {
 
     private static final float FOG_START = 14.0f;
     private static final float FOG_END = 260.0f;
-    static final float FOG_R = 0.075f;
-    static final float FOG_G = 0.083f;
-    static final float FOG_B = 0.105f;
+    static final float FOG_R = 0.135f;
+    static final float FOG_G = 0.145f;
+    static final float FOG_B = 0.175f;
 
     public Level490Atmosphere() {
         // No vanilla clouds (we draw our own), no ground line, our own sky.
@@ -73,9 +73,9 @@ public final class Level490Atmosphere extends DimensionSpecialEffects {
         return mc.level != null && BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_490;
     }
 
-    /** 0..1: the lightning flash right now (the same two pops as the camcorder's). */
+    /** 0..1: how much lightning lights the level right now (see {@link Level490Lightning#flash}). */
     static float flash() {
-        return CamcorderEffect.lightningFlash(System.currentTimeMillis());
+        return Level490Lightning.flash();
     }
 
     @Override

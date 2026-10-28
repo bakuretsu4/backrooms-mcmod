@@ -204,18 +204,24 @@ going down into the dark, until the picture breaks up and you are in the next le
   hills, so get inside a house (they can't follow you in; your sanity holds steady there). Ways
   out: houses whose doorway is pure black lead on to Level 490, flooded houses (knee-deep water,
   steps going down into murk) lead to Level 7, and the light behind the throne leads to Level 1.
-- **Level 490 ("Penance"):** through a dark doorway in Level 94 you come out on a stone platform
-  hung from giant iron chains over a sea of storm cloud, at night. Fenced stone bridges (main ones
-  5 wide, side ones 3) run between more platforms every 48 blocks; some side bridges are broken
-  off in the middle (now and then a gap you could jump), and stretches of railing are gone. Black
-  chains rise from every platform corner and every bridge into the storm; lightning flickers in
-  the clouds, thunder rolls in seconds later, and the moon breaks through now and then. Old iron
-  lanterns on the railings (about half still burn) and little stone shelters with a checkpoint
-  radio are the only warmth. About 300 blocks from where you arrive, along a route of main
-  bridges, stands a great round platform ringed with chains, where the structure will rise (see
-  docs/level-490-penance.md): one stretch of its railing has broken away, and stepping off there
-  is the way on, to Level 9. Fall anywhere else and you sink into the clouds and wake at the last
-  radio you used (or on the arrival platform). No monsters yet.
+- **Level 490 ("Penance"):** through a dark doorway in Level 94 you come out among crumbling ruins
+  on floating islands of rock over a sea of storm cloud, at night (after Elden Ring's Crumbling
+  Farum Azula). Each island tapers to a ragged point of rock below; on top stand rings of pillars
+  (many broken), arcade walls with jagged broken tops, tower stubs, rubble, dead trees (some with a
+  few red leaves) and open shackles. Straight stone bridges with spiked iron railings climb in half
+  steps from island to island; some are broken off in the middle, stretches of railing are gone
+  and small chains dangle underneath. Colossal chains, every link 34 blocks long, hang out of the
+  storm and through some of the islands down into the clouds; four of them stand round the great
+  round island where the structure will rise (see docs/level-490-penance.md). Rocks and masonry
+  float in the air, slowly turning; whirlwinds of cloud stand far off in the storm. Lightning
+  strikes in the distance every few seconds (real branching bolts that flicker, the clouds
+  glowing round them, more far chains showing in the flash) and its thunder comes as late as the
+  strike is far (recorded thunder: cracks close by, long rolls, low far rumbles), over howling
+  wind, the chains singing in it, the whirlwinds' roar and a deep drone. Old lanterns on the
+  bridges and little stone shelters with a checkpoint radio are the only warmth. A route of main
+  bridges leads about 300 blocks from where you arrive to the great island; stepping off it is the
+  way on, to Level 9. Fall anywhere else and you wake at the last radio you used (or where you
+  arrived). No monsters yet.
 - **Level 9 (the Suburbs):** the last level, through the leap in Level 490. An endless suburb at midnight in thick fog that drains the colour
   from everything. Wet roads covered in leaves, old sodium streetlamps (most dead, some
   flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark

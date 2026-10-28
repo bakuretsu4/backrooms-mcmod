@@ -21,3 +21,27 @@ Processed into the mod's sounds by tools/level_assets/recorded.py.
                                         https://freesound.org/s/757113/  (first 16 s)
 554307_scared_breathing.ogg            "Scared Male Heavy Breathing" by casiba842
                                         https://freesound.org/s/554307/  (first 18 s)
+
+Level 490 ("Penance"), processed by tools/level_assets/level490_sounds.py:
+243614_thunderstorm_lightning_strike_a/b.ogg  "Thunderstorm lightning strike" by foad
+                                        https://freesound.org/s/243614/  (7.2 s to 19 s, 17.9 s to 32 s)
+248121_lightning_a/b.ogg              "Lightning.flac" by wjoojoo
+                                        https://freesound.org/s/248121/  (1.7 s to 20 s, 37.9 s to 56 s)
+194364_thunder_clap.ogg               "Thunder Clap OWB KY 441x16.wav" by Dave Welsh
+                                        https://freesound.org/s/194364/  (13.6 s to 32 s)
+367702_thunder_long_rumbling_a/b/c.ogg  "THUNDER long rumbling - no Rain - 4-CHANNEL-44kHz.wav" by BlueDelta
+                                        https://freesound.org/s/367702/  (0.7 s to 55 s, in three parts)
+414050_thunder_big.ogg                "Thunder big" by s-light
+                                        https://freesound.org/s/414050/  (1.4 s to 16 s)
+243780_thunder_growling.ogg           "thunder growling" by bastipictures
+                                        https://freesound.org/s/243780/
+361401_distant_thunder_a..e.ogg       "Distant Thunder" by richwise
+                                        https://freesound.org/s/361401/  (five strikes between 91 s and 398 s)
+250036_mystic_wind_howling.ogg        "mystic wind howling" by launemax
+                                        https://freesound.org/s/250036/  (130 s to 172 s)
+146993_wind_iron_wire.ogg             "Wind blowing in an iron wire on the ground, in the desert of Chile" by felix.blume
+                                        https://freesound.org/s/146993/  (10 s to 52 s)
+735350_wind_hurricane.ogg             "Wind - Hurricane Typhoon Storm" by Vrymaa
+                                        https://freesound.org/s/735350/  (10 s to 52 s)
+512687_rumble.ogg                     "Rumble" by WavJunction.com
+                                        https://freesound.org/s/512687/

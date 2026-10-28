@@ -128,6 +128,102 @@ def tex_l490_lantern_glass() -> None:
     _save(lit, "l490_lantern_glass_lit")
 
 
+def tex_l490_rock() -> None:
+    """Dark weathered rock of the floating islands: layered, cracked, crusted pale where it dried."""
+    rng = G.rng_for(49007)
+    img = G.fill((70, 72, 78), (S, S)).astype(float)
+    strata = G.blur(G.fnoise(rng, beta=1.6, kmin=3, aniso=(1.0, 0.25)), 0.8)
+    h = G.blur(G.fnoise(rng, beta=2.0, kmin=3), 0.7)
+    img = G.add_lum(img, strata * 7 + _relief(h, 9) + rng.normal(0, 3, (S, S)))
+    cracks = G.smoothstep(0.93, 0.995, np.abs(G.fnoise(rng, beta=1.5, kmin=4)) / 3.0)
+    img = G.add_lum(img, -cracks * 30)
+    crust = G.smoothstep(1.2, 2.2, G.fnoise(rng, beta=1.8, kmin=3))
+    img = G.over(img, np.array([118, 118, 116]), crust * 0.35)
+    _save(img, "l490_rock")
+
+
+def tex_l490_rubble() -> None:
+    """Broken masonry and grit: chips of pale stone in dark grit."""
+    rng = G.rng_for(49008)
+    img = G.fill((84, 86, 90), (S, S)).astype(float)
+    img = G.add_lum(img, G.fnoise(rng, beta=1.4, kmin=6) * 6 + rng.normal(0, 4, (S, S)))
+    X, Y = G.grid()
+    chips = np.zeros((S, S))
+    tone = np.zeros((S, S))
+    for _ in range(46):
+        cx, cy = rng.uniform(0, S, 2)
+        rx, ry = rng.uniform(4, 12, 2)
+        dx = (X - cx + S / 2) % S - S / 2
+        dy = (Y - cy + S / 2) % S - S / 2
+        m = G.smoothstep(1.05, 0.85, np.hypot(dx / rx, dy / ry) + 0.25 * G.fnoise(rng, beta=1.0, kmin=8) / 3)
+        tone = np.where(m > chips, rng.normal(0, 10), tone)
+        chips = np.maximum(chips, m)
+    stone = G.add_lum(G.fill((136, 138, 142), (S, S)).astype(float), tone + _relief(chips * 6, 6))
+    img = G.over(img, stone, chips)
+    _save(img, "l490_rubble")
+
+
+def tex_l490_dead_grass() -> None:
+    """Dead grass flattened by the wind (top), and its side: thin soil over rock."""
+    rng = G.rng_for(49009)
+    blades = G.blur(G.fnoise(rng, beta=1.2, kmin=10, aniso=(1.0, 0.15)), 0.4)
+    top = G.fill((112, 100, 78), (S, S)).astype(float)
+    top = G.add_lum(top, blades * 10 + G.fnoise(rng, beta=2.0, kmin=2) * 6, (1.0, 0.95, 0.85))
+    soil = G.smoothstep(1.0, 2.0, G.fnoise(rng, beta=1.6, kmin=4))
+    top = G.over(top, np.array([70, 62, 54]), soil * 0.5)
+    _save(top, "l490_dead_grass")
+    side = G.fill((70, 72, 78), (S, S)).astype(float)
+    side = G.add_lum(side, G.fnoise(rng, beta=1.8, kmin=3) * 6 + rng.normal(0, 3, (S, S)))
+    X, Y = G.grid()
+    fringe = Y < (22 + 8 * G.fnoise(rng, (1, S), beta=1.2, kmin=4)[0])[None, :]
+    side = np.where(fringe[..., None], G.add_lum(G.fill((104, 92, 72), (S, S)).astype(float), blades * 8), side)
+    _save(side, "l490_dead_grass_side")
+
+
+def tex_l490_chain_iron() -> None:
+    """The colossal chains' iron: black, heavily pitted, rust streaked down by the rain."""
+    rng = G.rng_for(49010)
+    img = G.add_lum(G.fill((60, 58, 62), (S, S)).astype(float), G.fnoise(rng, beta=2.2) * 5 + rng.normal(0, 3, (S, S)))
+    pits = G.blur((rng.random((S, S)) < 0.01).astype(float), 1.0)
+    img = G.add_lum(img, -pits * 40)
+    streaks = G.smoothstep(0.6, 2.2, G.blur(G.fnoise(rng, beta=1.3, kmin=5, aniso=(1.0, 0.1)), 0.6))
+    img = G.over(img, np.array([86, 54, 36]), streaks * 0.55)
+    flakes = G.smoothstep(1.6, 2.6, G.fnoise(rng, beta=1.5, kmin=6))
+    img = G.over(img, np.array([104, 70, 48]), flakes * 0.6)
+    _save(img, "l490_chain_iron")
+
+
+def tex_l490_dead_wood() -> None:
+    """Grey, barkless, weather-split wood."""
+    rng = G.rng_for(49011)
+    grain = G.blur(G.fnoise(rng, beta=1.3, kmin=8, aniso=(0.12, 1.0)), 0.5)
+    img = G.add_lum(G.fill((112, 108, 102), (S, S)).astype(float), grain * 12 + rng.normal(0, 3, (S, S)))
+    splits = G.smoothstep(0.9, 0.99, np.abs(G.fnoise(rng, beta=1.2, kmin=6, aniso=(0.1, 1.0))) / 3.0)
+    img = G.add_lum(img, -splits * 45)
+    _save(img, "l490_dead_wood")
+
+
+def tex_l490_red_leaves() -> None:
+    """Sparse dark red leaves (RGBA, most of the block see-through)."""
+    rng = G.rng_for(49012)
+    X, Y = G.grid()
+    alpha = np.zeros((S, S))
+    col = np.zeros((S, S, 3))
+    for _ in range(60):
+        cx, cy = rng.uniform(0, S, 2)
+        ang = rng.uniform(0, np.pi)
+        dx = (X - cx + S / 2) % S - S / 2
+        dy = (Y - cy + S / 2) % S - S / 2
+        u = dx * np.cos(ang) + dy * np.sin(ang)
+        v = -dx * np.sin(ang) + dy * np.cos(ang)
+        m = (u / 7.0) ** 2 + (v / 3.6) ** 2 < 1.0
+        shade = rng.uniform(0.6, 1.05)
+        col[m] = np.array([128, 30, 24]) * shade
+        alpha[m] = 255
+    img = np.concatenate([col, alpha[..., None]], axis=-1)
+    G.save_png(img, _blk("l490_red_leaves"))
+
+
 def tex_l490_moon() -> None:
     """The moon for the sky (RGBA): a pale disk with darker seas, in a soft glow that fades out."""
     rng = G.rng_for(49006)
@@ -182,10 +278,26 @@ IRON_TEX = {"iron": _ref("l490_iron"), "particle": _ref("l490_iron")}
 
 def tex_l490_models() -> None:
     """Block models, blockstates and item models of every Level 490 block."""
-    for name in ("l490_paving", "l490_stone", "l490_slate"):
+    for name in ("l490_paving", "l490_stone", "l490_slate", "l490_rock", "l490_rubble", "l490_chain_iron", "l490_dead_wood"):
         _model(name, {"parent": "minecraft:block/cube_all", "textures": {"all": _ref(name)}})
         _json(f"blockstates/{name}.json", {"variants": {"": {"model": _ref(name)}}})
         _json(f"models/item/{name}.json", {"parent": _ref(name)})
+
+    _model("l490_dead_grass", {"parent": "minecraft:block/cube_bottom_top", "textures": {
+        "top": _ref("l490_dead_grass"), "side": _ref("l490_dead_grass_side"), "bottom": _ref("l490_rock")}})
+    _json("blockstates/l490_dead_grass.json", {"variants": {"": {"model": _ref("l490_dead_grass")}}})
+    _json("models/item/l490_dead_grass.json", {"parent": _ref("l490_dead_grass")})
+    _model("l490_red_leaves", {"parent": "minecraft:block/cube_all", "render_type": "minecraft:cutout",
+                               "textures": {"all": _ref("l490_red_leaves")}})
+    _json("blockstates/l490_red_leaves.json", {"variants": {"": {"model": _ref("l490_red_leaves")}}})
+    _json("models/item/l490_red_leaves.json", {"parent": _ref("l490_red_leaves")})
+    pav = {"bottom": _ref("l490_paving"), "top": _ref("l490_paving"), "side": _ref("l490_paving")}
+    _model("l490_paving_slab", {"parent": "minecraft:block/slab", "textures": pav})
+    _model("l490_paving_slab_top", {"parent": "minecraft:block/slab_top", "textures": pav})
+    _json("blockstates/l490_paving_slab.json", {"variants": {
+        "type=bottom": {"model": _ref("l490_paving_slab")}, "type=top": {"model": _ref("l490_paving_slab_top")},
+        "type=double": {"model": _ref("l490_paving")}}})
+    _json("models/item/l490_paving_slab.json", {"parent": _ref("l490_paving_slab")})
 
     # The railing: a picket post with a spear tip, and toward each neighbour two rails with a
     # picket between them (a fence's multipart; the side model points north).
@@ -260,5 +372,6 @@ def tex_l490_models() -> None:
 
 
 TEXTURES = [tex_l490_paving, tex_l490_stone, tex_l490_slate, tex_l490_iron, tex_l490_lantern_glass,
-            tex_l490_moon, tex_l490_models]
+            tex_l490_rock, tex_l490_rubble, tex_l490_dead_grass, tex_l490_chain_iron, tex_l490_dead_wood,
+            tex_l490_red_leaves, tex_l490_moon, tex_l490_models]
 SOUNDS = []

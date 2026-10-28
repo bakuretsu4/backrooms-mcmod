@@ -157,9 +157,9 @@ public final class CamcorderEffect {
         chain.setUniform("Signal", CameraClientState.exitSignal);
         chain.setUniform("Transition", transition);
         chain.setUniform("Alarm", alarmPulse(now));
-        // Penance's lightning is far off in the clouds: the sky lights up (Level490Sky), the picture only a little.
-        float flashScale = BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_490 ? 0.35f : 1.0f;
-        chain.setUniform("Flash", lightningFlash(now) * flashScale);
+        // Penance has its own lightning (Level490Lightning): the picture flashes as much as the strike is near.
+        chain.setUniform("Flash", BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_490
+                ? Level490Lightning.flash() * 0.6f : lightningFlash(now));
         chain.setUniform("Grain", BASE_GRAIN);
         // Poolrooms hallucination (0 = picture exactly unchanged).
         chain.setUniform("Dream", HallucinationClientEvents.shaderDream());
@@ -208,7 +208,7 @@ public final class CamcorderEffect {
     }
 
     /** Lightning: two quick white pops, then a fade. 0..1. */
-    public static float lightningFlash(long now) {
+    private static float lightningFlash(long now) {
         if (CameraClientState.eventKind != LevelEventPayload.LIGHTNING) {
             return 0.0f;
         }

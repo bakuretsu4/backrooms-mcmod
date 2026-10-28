@@ -150,6 +150,7 @@ Built: Level 94's dark doorways lead here and the leap leads to Level 9.
   512 blocks tall. The chains above it are drawn as part of the sky (like Level 39's far facade).
 - **Distance:** the structure stands about 300 blocks from where you arrive.
 - **Bridges:** main bridges 5 wide, side and broken ones 3 wide.
+- **Look:** the ruins, debris and whirlwinds of Crumbling Farum Azula, kept at night.
 - **Build order**, playable after each stage:
   1. platforms, bridges and broken spans, railings, lanterns, shelters, shackles; the storm sky
      with moon, fog banks and lightning; falling sends you to your checkpoint; the way in from
@@ -159,18 +160,28 @@ Built: Level 94's dark doorways lead here and the leap leads to Level 9.
      the drone;
   4. the creature.
 
-## Stage 1 as built
+## Stage 1 as built (redesigned after the first look)
 
-- Grid of platforms every 48 blocks (a few missing), decks at y 200, level 512 tall; one site per
-  1024-block region, its arrival platform ~300 blocks away, a route of main bridges between them.
-- Side bridges: 3 wide, one in five broken (one in three of those a 2-block gap).
-- Chains from every platform corner and every bridge's middle up to the top of the world.
-- Lanterns on posts along the railings (about half lit); shelters with a radio on some big
-  platforms and always on the arrival platform.
-- Falling below y 150: within 32 blocks of the site's centre it is the leap (Level 9); anywhere
-  else back to the last radio used here, or the arrival platform.
-- Sky: storm overhead (two drifting cloud layers silvered toward the moon), the moon now and then
-  hidden, a moonlit cloud sea below, lightning every 20-50 s with thunder 1-4 s later.
+The first version (neat platforms on a grid, hundreds of thin chains) was too clean and the chains
+too small. Redesigned after Elden Ring's Crumbling Farum Azula:
+
+- **Floating rock islands** on a loose grid every 44 blocks (some missing), ragged crumbling rims,
+  rock tapering 15-30 blocks below. Ruins on top: pillar rings (many broken, some with capitals),
+  arcade walls with arches and jagged tops, tower stubs, rubble, dead trees (some red-leaved),
+  shackles. Shelters with a checkpoint radio on some islands and always on the arrival island.
+- **Bridges** between neighbouring islands, climbing in half steps; main 5 wide, side 3, some
+  broken, railing gaps, small chains dangling underneath, lantern posts at the ends.
+- **Colossal chains** built of blocks: links 34 long, 18 wide, bars 6 thick, from y 0 to the top
+  of the world; through one island in forty (ruins built round them like a collar) and four round
+  each site. Beyond render distance the sky draws them (they fade; lightning shows them), and a
+  few far bigger sky-only ones hang miles off.
+- **Floating debris** (drawn, not blocks) and **whirlwind pillars** far off in the storm.
+- **Lightning:** the server picks strikes (mostly far, some inside the clouds, some close, some
+  on a chain); every client draws the same branching, flickering bolt, the clouds glow round it,
+  and the thunder (CC0 recordings) arrives after distance / 343 blocks per second.
+- **Ambience:** howling wind, the chains singing, the whirlwinds' roar, a low rumble, a deep drone.
+- Falling below y 150: within 34 blocks of the site's centre it is the leap (Level 9); anywhere
+  else back to the last radio used here, or the arrival island.
 
 ## Name and number
 

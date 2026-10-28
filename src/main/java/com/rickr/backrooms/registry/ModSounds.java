@@ -143,6 +143,15 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_7 = register("exit_hint.level_7");
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_39 = register("exit_hint.level_39");
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_490 = register("exit_hint.level_490");
+    // Level 490: the storm's thunder at three distances, and the air (client/Level490Lightning, Level490Ambience).
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_THUNDER_CLOSE = register("level490.thunder_close");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_THUNDER_ROLL = register("level490.thunder_roll");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_THUNDER_FAR = register("level490.thunder_far");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_WIND = register("level490.wind");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_WIRE = register("level490.wire");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_WHIRLWIND = register("level490.whirlwind");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_RUMBLE = register("level490.rumble");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_DRONE = register("level490.drone");
     // Music (original pieces from tools/gen_assets.py, played by client/BackroomsMusic on the music
     // channel): the main theme on the title menu, a mix of the theme and a dark ambient piece in
     // most levels, and a dreamier piece (or the theme) in the Poolrooms and Level 37.

@@ -10,9 +10,9 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * One link of the giant chains that hold Level 490's platforms and bridges up. The chains rise
- * straight into the storm, one link per block; TWIST turns every other link a quarter turn, as in
- * a real chain. You can't climb them (the climb comes with the structure).
+ * One link of the small iron chains that dangle under Level 490's bridges and from its ruins (the
+ * colossal chains are built of {@code l490_chain_iron} blocks instead). One link per block; TWIST
+ * turns every other link a quarter turn, as in a real chain.
  */
 public class GiantChainBlock extends Block {
     public static final BooleanProperty TWIST = BooleanProperty.create("twist");
