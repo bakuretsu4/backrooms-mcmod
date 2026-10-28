@@ -1,0 +1,84 @@
+{
+  "variants": {
+    "axis=x,fallen=false": [
+      {
+        "model": "backrooms:block/l227_palette",
+        "x": 90,
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_palette",
+        "x": 90,
+        "y": 270
+      }
+    ],
+    "axis=y,fallen=false": [
+      {
+        "model": "backrooms:block/l227_palette"
+      },
+      {
+        "model": "backrooms:block/l227_palette",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_palette",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_palette",
+        "y": 270
+      }
+    ],
+    "axis=z,fallen=false": [
+      {
+        "model": "backrooms:block/l227_palette",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/l227_palette",
+        "x": 90,
+        "y": 180
+      }
+    ],
+    "axis=x,fallen=true": [
+      {
+        "model": "backrooms:block/l227_palette",
+        "x": 90,
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_palette",
+        "x": 90,
+        "y": 270
+      }
+    ],
+    "axis=y,fallen=true": [
+      {
+        "model": "backrooms:block/l227_palette"
+      },
+      {
+        "model": "backrooms:block/l227_palette",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_palette",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_palette",
+        "y": 270
+      }
+    ],
+    "axis=z,fallen=true": [
+      {
+        "model": "backrooms:block/l227_palette",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/l227_palette",
+        "x": 90,
+        "y": 180
+      }
+    ]
+  }
+}

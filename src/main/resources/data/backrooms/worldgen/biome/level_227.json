@@ -1,0 +1,26 @@
+{
+  "carvers": {},
+  "downfall": 0.9,
+  "effects": {
+    "fog_color": 10265232,
+    "sky_color": 9871264,
+    "water_color": 4083768,
+    "water_fog_color": 2238754,
+    "grass_color": 4626496,
+    "foliage_color": 3707182
+  },
+  "features": [],
+  "has_precipitation": false,
+  "spawn_costs": {},
+  "spawners": {
+    "ambient": [],
+    "axolotls": [],
+    "creature": [],
+    "misc": [],
+    "monster": [],
+    "underground_water_creature": [],
+    "water_ambient": [],
+    "water_creature": []
+  },
+  "temperature": 0.9
+}

@@ -1,0 +1,38 @@
+{
+  "variants": {
+    "harvested=false": [
+      {
+        "model": "backrooms:block/l227_lestron"
+      },
+      {
+        "model": "backrooms:block/l227_lestron",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_lestron",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_lestron",
+        "y": 270
+      }
+    ],
+    "harvested=true": [
+      {
+        "model": "backrooms:block/l227_lestron_cut"
+      },
+      {
+        "model": "backrooms:block/l227_lestron_cut",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_lestron_cut",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_lestron_cut",
+        "y": 270
+      }
+    ]
+  }
+}

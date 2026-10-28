@@ -1,0 +1,40 @@
+{
+  "variants": {
+    "axis=x,rings=0": {
+      "model": "backrooms:block/l227_growth_rings_x0"
+    },
+    "axis=x,rings=1": {
+      "model": "backrooms:block/l227_growth_rings_x1"
+    },
+    "axis=x,rings=2": {
+      "model": "backrooms:block/l227_growth_rings_x2"
+    },
+    "axis=x,rings=3": {
+      "model": "backrooms:block/l227_growth_rings_x3"
+    },
+    "axis=y,rings=0": {
+      "model": "backrooms:block/l227_growth_rings_y0"
+    },
+    "axis=y,rings=1": {
+      "model": "backrooms:block/l227_growth_rings_y1"
+    },
+    "axis=y,rings=2": {
+      "model": "backrooms:block/l227_growth_rings_y2"
+    },
+    "axis=y,rings=3": {
+      "model": "backrooms:block/l227_growth_rings_y3"
+    },
+    "axis=z,rings=0": {
+      "model": "backrooms:block/l227_growth_rings_z0"
+    },
+    "axis=z,rings=1": {
+      "model": "backrooms:block/l227_growth_rings_z1"
+    },
+    "axis=z,rings=2": {
+      "model": "backrooms:block/l227_growth_rings_z2"
+    },
+    "axis=z,rings=3": {
+      "model": "backrooms:block/l227_growth_rings_z3"
+    }
+  }
+}

@@ -7,6 +7,7 @@ import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.anomaly.Teleports;
 import com.rickr.backrooms.world.layout.Level39AnomalyPlan;
 import com.rickr.backrooms.world.layout.Level39Layout;
+import com.rickr.backrooms.world.layout.Level227Layout;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -66,9 +67,12 @@ public final class Travel {
         }
         long seed = BackroomsSeeds.layoutSeed(level, target);
         // Some floors pick the spot themselves depending on where you come from (Level 39: the
-        // Poolrooms' drain empties into its tunnels, not onto its streets).
+        // Poolrooms' drain empties into its tunnels, not onto its streets). Level 227 instead puts
+        // every arrival on a branch far from everyone else (canon: wanderers are always separated).
         BackroomsLevel from = BackroomsLevel.fromDimension(player.level().dimension());
-        BlockPos preferred = target.layout().preferredArrival(seed, x, z, from);
+        BlockPos preferred = target == BackroomsLevel.LEVEL_227
+                ? Level227Layout.separatedArrival(level, player)
+                : target.layout().preferredArrival(seed, x, z, from);
         BlockPos spot = preferred != null ? preferred : findSafeSpot(level, target, x, z);
         // Feet exactly on the surface: Level 9's sidewalks are half slabs (feet at y + 0.5).
         double feet = preferred != null ? preferred.getY() : target.layout().feetY(seed, spot.getX(), spot.getZ());

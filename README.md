@@ -74,6 +74,11 @@ Secret branches: a rare sunlit archway in the Poolrooms leads to **Level 37**, w
 on to Level 9; a rare moulded-clay front door on a Level 9 house opens onto **Level 94**, and a
 flooded house in Level 94 leads down to **Level 7**, whose sunken door leads on to Level 9; a very
 rare chairlift in Level 9's Crimson Field climbs into the clouds and drops you into **Level 39**.
+And out in the Backrooms' own nature (Level 9's woods behind the backyards, Level 9.1's Crimson
+Field, Level 94's open hills) something can take hold of you and drag you into **Level 227**: after
+a minute out there, a 1 in 180 chance every 5 seconds (about one pull per quarter of an hour). The
+leaves rush toward one point, the ground groans and pulls, and you noclip onto a branch of the
+tree (`world/Level227Entrances`). Level 227 has no exit: the tree shakes you loose by itself.
 
 The stairwells (Levels 0, 1 and 4) are part of their level: the level's own walls inside, then a
 wide spiral of shallow half-steps around a concrete core, lit for the first half turn and then
@@ -202,6 +207,35 @@ fading back in: no glitch, no cut.
   mirrors the concrete above and lets the pale shallows show through, and underneath a dim teal
   murk that turns black and closes in as you go down. Far off, waves slap against rock, the
   ceiling drips and the giant pipes thump.
+- **Level 227 ("Megaflora"):** reached only by being dragged in out of the Backrooms' own nature
+  (see above) or with `/backrooms enter level_227`. A tree the size of a planet hangs upside down
+  over a black void, its roots reaching up out of the sky. You arrive in a misty rainforest that
+  turns out to grow on top of one of its branches: a trunk about 1800 blocks across, a dozen main
+  branches leaving it 560-680 blocks up and running out for thousands of blocks, gently downhill
+  (walk outward and you slowly descend), splitting into sub-branches and limbs that end in tapered
+  tips or broken stumps showing their growth rings. Here and there two branch systems have grown
+  into each other or are joined by a thin bridging limb: the only ways across, so look for them.
+  On top: 4-8 blocks of rooted soil, moss and grass with roots snaking over it and puddles in the
+  dips, under a forest of giant trees 25-70 blocks tall (buttress roots, layered crowns, lianas
+  you can climb, epiphytes, bracket fungi), shrubs, tall grass, giant ferns, fallen logs and snapped
+  stumps. At the edges the soil thins to moss-streaked bark curving away into nothing, where purple
+  Lestron grows; moss curtains, fern fronds and lianas hang off the undersides into the void. Bear
+  caves open as mossy holes in the forest floor; hollow knots gape at the branch edges. Rare
+  clearings of white ash mark the deadly sunbeams of the Sun over the Void. Mind the glowing
+  GammaPali and the bark overhead (a Palette looks just like it). Everyone who comes in lands on a
+  different branch, at least 1500 blocks from anyone else already there. Falling off a branch is
+  death: below y 24 the void takes you. There is no exit: sooner or later the tree's motion
+  noclips you to another level.
+  Climb above the canopy or walk to an edge and the rest of the tree looms out of the grey-green
+  mist (`client/Level227Far`, `Level227Atmosphere`): the fluted trunk like a wall of cliffs, the
+  other branches and their forests fading into silhouettes thousands of blocks away, moss curtains
+  under them, the roots fanning up out of the sky into a bright haze, and far above them the Sun
+  over the Void, a tiny blinding white star in a wide iridescent glare, with a dozen bubbles racing
+  round it on hair-thin beams of light, each mirroring another level. Below, a pale mist floor over
+  black. The Sun and its bubbles wander slowly across the sky: that is the tree drifting in the void.
+  The mist is thick in the forest and thins out at the edges and in the open air. The far view is
+  built once when you arrive (about 0.6 s in the background, ~34 MB of graphics memory) and freed
+  ten seconds after you leave.
 
 Every floor is endless; exits are spread out a few hundred blocks apart.
 
@@ -266,6 +300,8 @@ and crates on Levels 1, 2, 4 and 9 (rare elsewhere).
 | Chalk | 64 marks per stick. Right-click a wall, floor or ceiling to draw the current symbol in white chalk; sneak + right-click (anywhere: air, wall or mark, nothing gets drawn) to switch between arrow, cross and circle (the action bar says which). On a wall the arrow points towards the edge of the block you click nearest to (left, right, up or down); on the floor and ceiling it points the way you face. Drawing on a mark replaces it; one punch wipes it off. Everyone sees the marks and they stay in the world. They look nothing like Level 0's own painted arrows (dark brown and solid), so you can tell yours from the level's lies. |
 | Flare | Right-click: strike it and throw it a short way. It burns bright red-orange for 75 s (even underwater), sputters out, and smokes for a while. Smilers won't stay in its light, the Bacteria see you in it like under a lamp, and Level 9's Neighborhood Watch comes to look at it. Can't be picked up. |
 | Glowstick | Right-click: crack it and toss it at your feet. A soft green glow for 8 minutes (it fades over the last 30 s), good for marking your way together with chalk. Right-click a lying one to pick it up again; it keeps the time it has left. No effect on monsters. |
+| Raw / Cooked Boar Meat | From Level 227's boars (3-6 each). Raw: 3 hunger and often Hunger, sometimes nausea. Cook it in a furnace, smoker or on a campfire: 9 hunger, the biggest meal there is. |
+| Lestron | Purple, sage-like herb at the very edges of Level 227's branches (right-click the plant for 1-2 sprigs; it grows back in about 8 minutes). Used to create ████████. |
 
 ### Sanity
 
@@ -393,6 +429,84 @@ houses). Upside-down furniture doesn't count.
   Roth syndrome, moan at the water's edge; they flee from light and noise but lash out if you
   corner them. **Skin-stealers** stalk anyone who is alone, calling out in a garbled voice (sometimes
   your own last chat line); look straight at one and it slinks away, walk up to it and it charges.
+- **Level 227's big animals** (`entity/L227Bear`, `L227Doe`, `L227Boar`, placed by
+  `entity/Level227GrazerSpawner`; nothing appears in your first minute there):
+  - **Bears** sleep in the bear caves, one to a cave, lying curled up facing the mouth: a long,
+    shaggy, moss-grown body on **six legs** and **fifteen eyes**, all shut. They are not aggressive
+    unless provoked, but noise wakes them: walking close, sprinting or jumping nearby, anyone right
+    next to one. Crouch past and don't linger. The warning is the eyes: it groans and a few of them
+    open and look around; back off and they close again. Wake it fully, or hit it at all, and it
+    heaves itself up with every eye open (a faint eyeshine in the dark), roars and comes for you,
+    a little slower than a sprint, then rears up and brings four paws down: about 8 hearts on
+    Normal, and you are slowed for a moment. Lose it and it lumbers back to its cave and lies
+    down. Kill one and its cave stays empty for 10 minutes.
+  - **Does** graze in the open forest: pale, slender deer with a long black scar from the nose,
+    over the head and down the spine to the tip of the tail. They never attack. When one sees
+    you she lifts her head and stares, and the scar opens a crack. Come within 4 blocks of a doe
+    (any doe, even from behind) and you noclip straight down through the branch you stand on: the
+    tape glitches and you are falling out of its underside into the void. She grazes on.
+  - **Boars**, the largest animals, five blocks long, mostly lounge on their backs in the
+    undergrowth, legs in the air, snoring; now and then one rolls over, gets up, roots about with
+    its tusks and lies down again. They ignore you, but every hit sets off three seconds of
+    thrashing: it squeals, spins and kicks, and its four tusks gore anyone within about 3.5 blocks,
+    again and again (about 4.5 hearts a hit). Hit, step back, hit again, or use a bow. A boar drops
+    3-6 **Raw Boar Meat**; cook it (furnace, smoker or campfire).
+- **Level 227's hunters** (`entity/L227Wolf`, `L227Stag`, `L227Squirrel` with `SquirrelSwarm`,
+  placed by `entity/Level227PredatorSpawner`; nothing hunts you in your first minute there). They
+  attack on sight; crouching in the undergrowth shortens how far they see you.
+  - **Wolves** live only in the **higher sections** of the tree (above y 520), in packs of 3 to 5:
+    big, gaunt, shaggy, with a long snout that splits down the middle and opens **sideways**, two
+    rows of teeth along each half. The first to see you stops and **howls**, and the rest of its
+    pack comes running. They spread out in a ring around you, slowly circling, and dart in **one
+    at a time** to bite (about 2.5 hearts) and spring back out. Break out and run and they chase,
+    a little slower than a sprint but they never tire. **They never go down:** get below the high
+    sections (walking outward along a branch goes downhill) and they stop at the line, pacing and
+    howling, then give up. A hurt wolf flinches out of the ring; a badly hurt one runs, and once
+    half the pack is badly hurt the rest lose their nerve. About one pack every 2-3 minutes while
+    you are up high and none is near.
+  - **Stags** (the male deer) walk the forest anywhere: bigger than a horse, very long pale horns,
+    five thin tails and **red eyes** that glow in the shade. When one sees you it throws its head
+    up, then **bellows** and paws the wood with its horns lowered for about a second and a half;
+    then it charges at twice your sprinting speed and runs you through (about 5 hearts, thrown
+    off the horns and slowed). The charge is nearly a straight line: step aside late and it
+    thunders past, then has to turn and set up again. Stand in front of a tree trunk and sidestep:
+    if it hits the tree its horns stick in the wood for 2.5 seconds. It never runs off a branch
+    edge. One at a time, about one every 3-4 minutes while none is near.
+  - **Squirrels** are very rare and the worst thing on the tree: small, fast, fur glowing a
+    sickly fluorescent green. They come as a **swarm** (at most once per 20 minutes for a player,
+    after at least 4 minutes in the level, about once per 40 minutes on average, and one swarm in
+    the world at a time): first a wave of chattering from every side, then glowing shapes pouring
+    in out of the undergrowth. They **circle** you in a ring that tightens over about 11 seconds,
+    some sitting bolt upright to stare. **That is your chance: break out through the ring and
+    sprint.** They chase a little slower than a sprint and never follow you more than 36 blocks
+    from where the ring was. Stay, and they leap onto you, up to ten at a time, each biting about
+    half a heart a second and weighing you down (slowness). Hit one and it falls off; three hits
+    kill one; another always comes. A swarm is a hundred squirrels, but only 40 are ever there at
+    once.
+- **Level 227's plants that kill** (`registry/Level227Blocks`, `world/Level227Hazards`,
+  `entity/VenusFlytrap`, placed by `entity/Level227FloraSpawner`):
+  - **Giant Venus flytraps** lie open in patches of tall grass: two rounded, ragged lobes spread
+    almost flat on the ground (about 3 by 4.7 blocks, under a block high), dull green-maroon
+    under moss, dead leaves and grass tufts, with short thin teeth along the rim. The tall grass
+    grows right up to it, so you hardly see it. Step into the mouth and it **snaps shut** round
+    you in a quarter of a second (a flash of red inside), a stalk shoots up and lifts you five
+    blocks into the air, and it starts to **digest** you, slowly: under a third of a heart a
+    second at first, a little more each second, about 20 seconds from full health. **Struggle:**
+    press attack or jump. 12 presses break you out at first, rising to 18 by the end (they only
+    fade if you stop pressing); you drop out the side. Shift doesn't get you out. A friend
+    hitting the stalk's base helps (each hit counts as 4 presses). Once it has let go it sinks
+    back down and lies open again ten seconds later.
+  - **GammaPali**, a small plant with glowing yellow-green bulbs on the bark of the branches, often
+    on their undersides. Its glow is a toxic gas: a faint glowing haze drifts round it, and it hisses
+    now and then. Within about 2.5 blocks you are poisoned at once and your air bubbles drain in two
+    seconds; when they are gone the gas chokes you (about three seconds more to death). Step back
+    out of the haze and you breathe again.
+  - **The Palette** looks like the bark it clings to (look very closely: faint overlapping scales),
+    on the undersides of branches and overhangs above where people walk. Pass under one (within
+    about 3 blocks to the side, up to 10 below) and it **creaks**; 0.8 seconds later it drops,
+    aimed at where you are heading. Run when you hear the creak. It crushes harder the further it
+    falls: a 4-block drop takes about 9 hearts, from 5 blocks it kills. Touching pieces drop
+    together, and a fallen Palette lies where it landed, harmless.
 - **Echo quakes (Level 39):** booms from the superstructure echo four times off the walls and can
   build into a quake: the ground shakes, dust and coal ash fall, windows rattle. Slamming doors,
   bells, hard landings and breaking walls add up, and enough noise sets one off.
@@ -410,6 +524,29 @@ houses). Upside-down furniture doesn't count.
   (`world/RealityDrift`), so a restart always leaves the real room.
 - **Battery:** lasts 40 minutes; flashlight and NightShot drain it faster. It recharges in the
   real world.
+- **The sunbeams (Level 227):** the Sun over the Void shines straight down through a few gaps in
+  the canopy: blinding white shafts of air with dust motes drifting up through them and the air
+  shimmering, the ground under them bleached to ash (`client/Level227Sunbeams`; with Veil the
+  forest around a beam is lit by it). Walking toward one, the light dazzles and its hum climbs.
+  Step in under open sky (a leaf, a branch or a block over your head protects you) and you get one
+  second of warning: the hum rises into a choir and everything goes white. Stay, and over the next
+  two seconds you turn to white ash and die; get out in time and you live, badly hurt. Armour,
+  shields and potions don't help (`world/Level227Sun`). Creative players only see it.
+- **The tree moves (Level 227):** every 4 to 10 minutes the whole tree lurches in the void: one
+  vast groan for everyone in the level, leaves raining down, the camera swaying very slightly. And
+  after a random 10 to 30 minutes in the level (counted for each player, from arrival), the tree
+  shakes you loose: six seconds of a groan building from below and the world shuddering harder and
+  harder, then you noclip (the same filmed transition as coming in) to a random level, most often a
+  dangerous one (Level 39, then Level 9, then Levels 0, 1 and 7...; `world/Level227Instability`).
+  That is the only way out.
+- **The sun speaks (Level 227):** a faint choir of whispers in your head, louder near a beam and
+  in the higher sections. Very rarely (every 15 to 35 minutes, near a beam or high up), it says one
+  short line in the action bar.
+- **Fallen bubbles (Level 227):** about once a quarter of an hour, one of the bubbles that circle
+  the sun drifts down by a branch edge, a few blocks out over the void at head height: an
+  iridescent sphere three blocks across, its surface rushing with the colours of another level (a
+  yellow hall, a tiled pool, a night street, green hills...). Jump into it and you noclip to that
+  level; miss, and there is only the void. After three minutes it sinks away (`entity/VoidBubble`).
 - Dying in the Backrooms: *you can't escape.*
 
 ### Anomalous areas
@@ -500,6 +637,7 @@ picture and blended over about two seconds when you change level:
 | Level 9 | Deep blue shadows, sodium-orange highlights, cold dark air |
 | Level 94 | A touch over-saturated and soft by day, pale blue distance; colour drains away at night |
 | Level 7 | Colour almost gone: pale grey bone-dust fog above the water, murky dark teal under it, near-black in the deep |
+| Level 227 | Misty rainforest light (`client/Level227Lighting`): pale grey-green daylight under open sky, greener and dimmer under every layer of leaves, a dark mossy green deep under a branch but never black; only a trace of camcorder haze (the distance mist is the far view's own, so the void stays black); colour draining to black as you fall into the void; and a blinding white-out inside a sunbeam |
 
 Each mood combines a colour grade (split-toned shadows and highlights, lifted blacks), coloured
 haze that thickens with real distance, soft contact shadows in corners and where walls meet floors,
@@ -532,14 +670,16 @@ the main theme plays (see Music below). **FIELD NOTES** is a short in-game guide
 
 ### Music
 
-Three original pieces, composed in code in `tools/gen_assets.py` (`snd_music_*`) and played on the
-game's music channel, so the Music volume slider controls them (`client/BackroomsMusic`):
+Four original pieces, composed in code in `tools/gen_assets.py` (`snd_music_*`; Level 227's in
+`tools/anomaly_assets/level227_audio.py`) and played on the game's music channel, so the Music
+volume slider controls them (`client/BackroomsMusic`):
 
 | Piece | Where | What it is |
 |---|---|---|
 | `liminal` | Title menu (looping); now and then in every level except Level 94 | The main theme: slow, washed-out tape chords in D minor with an uneasy E-flat. Single tones fade in, it swells into a wall of sound, then falls apart into wind, a creak, a far boom and an out-of-tune music box |
 | `deep` | Now and then in Levels 0, 1, 2, 4 and 9 | Drones, wind and far-off noises with long near-silences; a muffled memory of the theme drifts past |
 | `drift` | Now and then in the Poolrooms and Level 37 | Softer and dreamier: warm chords that never settle, water drips, a slow music-box line |
+| `megaflora` | Level 227 only, every 4 to 10 minutes | Wonder turning into dread: wide, warm chords in E Lydian and a celesta figure climbing like light through leaves; then the bass slides a tritone down under the same chords, the sun's choir sings a long E that bends up to F, the tree groans, and it ends on E and F together, fading into wind |
 
 In the levels a piece plays only every 3 to 8 minutes, like Minecraft's own music; in between
 you hear only the level. Level 94 has no music because its siren poles play their own tune, and
@@ -590,15 +730,22 @@ saturation, hiss and a big, empty room.
   and telephones ring in empty houses. Radios only garble here. Loud sounds echo and can build into a quake
   (camera shake, rumble, dust, rattling windows); the superstructure's own climate rains on the
   town now and then.
+- **Level 227 "Megaflora"** (`client/Level227Audio`, `tools/anomaly_assets/level227_audio.py`):
+  wind through an ocean of leaves, insects, birdsong that isn't quite right. Near a branch edge a
+  hollow wind rises out of the void from the exact spot where the ground ends, so you can hear
+  which way the drop is; falling, it is all around you. Sunbeams hum, the sun's choir whispers,
+  bubbles shimmer. Far off, branches groan as the tree moves, limbs crack in the canopy, something
+  big calls and the void howls from below. The forest's echo is soft and diffuse (thousands of
+  trunks scatter it). Loops at -30 LUFS (the void wind and the beam hum -27), the lurch -20.
 
 ## Operator commands
 
 ```
-/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7, level_39
+/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7, level_39, level_227
 /backrooms time94 <day|dusk|night|dawn> jump Level 94's day/night clock (testing)
 /backrooms escape [players]             send players back to reality
 /backrooms battery [players] [percent]  set camcorder battery
-/backrooms locate                       where is the nearest exit?
+/backrooms locate                       where is the nearest exit? (Level 227 has none, and says so)
 /backrooms locate saferoom              where is the nearest safe room?
 /backrooms anomaly here                 which anomalous area am I standing in?
 /backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... and level_0/set/...
@@ -618,6 +765,17 @@ saturation, hiss and a big, empty room.
 /backrooms hole stir                    Level 39: make the nearest hole start its sounds (a Hound follows)
 /backrooms hydrolitis [check|clear|set <0-1000>] [players]   Level 39: Hydrolitis infection
 /backrooms gondola ride                 Level 9: board the nearest chairlift (testing)
+/backrooms l227 lurch                   Level 227: the whole tree lurches now
+/backrooms l227 unstable [seconds]      Level 227: the tree shakes you loose in 10 s (or the given time; the warning is the last 6 s)
+/backrooms l227 drag                    in another level: get dragged into Level 227 now
+/backrooms l227 bubble                  Level 227: a fallen bubble drifts by the nearest branch edge
+/backrooms l227 beam                    Level 227: stand on the forest floor 6 blocks outside the nearest sunbeam, facing it
+/backrooms spawn l227_bear [awake]      Level 227: a bear ~10 blocks ahead, asleep facing you (or waking)
+/backrooms spawn l227_doe               Level 227: a doe ~12 blocks ahead (walk within 4 blocks and you fall)
+/backrooms spawn l227_boar [standing]   Level 227: a boar ~10 blocks ahead, lounging on its back (or up)
+/backrooms spawn l227_wolf [count]      a wolf pack (default 4) ~20 blocks ahead; they only hunt in the high sections of Level 227
+/backrooms spawn l227_stag              a stag ~24 blocks ahead
+/backrooms spawn l227_squirrels [count] a squirrel swarm (default 100) comes for you, anywhere (survival only)
 ```
 
 ## Building
@@ -657,13 +815,13 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | Package | What lives there |
 |---|---|
 | `world` | Level definitions, the infinite chunk generator, exits, travel, floor events, safe rooms (`SafeRooms`) |
-| `world/layout` | One floor plan per level (pure functions of seed + x/z); Level 37's plan is integer codes (`Level37Plan`) turned into blocks by `Level37Layout`; Level 39 is split into the town cell plan (`Level39Cell`, cached 128-block tiles in `Level39Tile`), houses (`Level39Houses*`, one cached voxel plan per house), the mill (`Level39Superstructure`) and the tunnels (`Level39Tunnels`, `Level39Vault`); each level's anomalous areas are planned in `<Level>AnomalyPlan` |
+| `world/layout` | One floor plan per level (pure functions of seed + x/z); Level 37's plan is integer codes (`Level37Plan`) turned into blocks by `Level37Layout`; Level 39 is split into the town cell plan (`Level39Cell`, cached 128-block tiles in `Level39Tile`), houses (`Level39Houses*`, one cached voxel plan per house), the mill (`Level39Superstructure`) and the tunnels (`Level39Tunnels`, `Level39Vault`); Level 227's one canonical tree (`Level227Tree`, also read by the far renderer) is turned into blocks by `Level227Layout`, with the forest, caves and flytrap patches of each 32-block tile cached in `Level227Tile`; each level's anomalous areas are planned in `<Level>AnomalyPlan` |
 | `world/anomaly` | Anomalous areas: site planner (`AnomalyGrid`), behaviour registry (`Anomalies`), server driver and client sync (`AnomalyService`), seamless teleports (`Teleports`), "is anyone looking?" (`Observation`); one sub-package per level |
 | `client/anomaly` | Client side of the anomalous areas: which sites are near (`AnomalyClientState`), per-level picture moods, sounds and overlays; one sub-package per level |
-| `entity` | The Bacteria and its spawner; Level 39's mobs (`Hound`, `Faceling`, `Clump`, `SkinStealer`, `Wretch`) and their spawning (`Level39Spawner`, `TunnelDwellers`) |
+| `entity` | The Bacteria and its spawner; Level 39's mobs (`Hound`, `Faceling`, `Clump`, `SkinStealer`, `Wretch`) and their spawning (`Level39Spawner`, `TunnelDwellers`); Level 227's grazers (`L227Bear`, `L227Doe`, `L227Boar`) and their spawning (`Level227GrazerSpawner`); Level 227's hunters (`L227Wolf`, `L227Stag`, `L227Squirrel` and the swarm brain `SquirrelSwarm`) and their spawning (`Level227PredatorSpawner`); Level 227's giant Venus flytrap (`VenusFlytrap`, planted by `Level227FloraSpawner`) |
 | `camera` | Camcorder battery/flashlight/NightShot server rules, flashlight sync |
 | `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`), hiding in furniture (`HidingService`, which furniture and where the view sits: `HidingSpots`), friends hearing a panicking player's heartbeat (`SharedHeartbeat`) |
-| `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas) |
+| `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas); Level 227's flora (`Level227*Block`: tall plants, hanging strands, the Palette, GammaPali, Lestron; registered in `registry/Level227Blocks`, art in `tools/anomaly_assets/level227_flora.py`) |
 | `network` | Packets between server and clients |
 | `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`) |
 | `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |

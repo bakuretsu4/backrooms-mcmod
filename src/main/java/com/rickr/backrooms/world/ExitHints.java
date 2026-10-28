@@ -34,7 +34,7 @@ public final class ExitHints {
         }
         BackroomsLevel floor = BackroomsLevel.fromDimension(player.level().dimension());
         ExitHintPayload now = ExitHintPayload.NONE;
-        if (floor != null) {
+        if (floor != null && floor.layout().hasExits()) { // Level 227 has no exit to hint at
             int[] exit = nearestExit(player.serverLevel(), floor, player.getBlockX(), player.getBlockZ());
             now = new ExitHintPayload(true, exit[0], exit[1], exit[2]);
         }

@@ -152,6 +152,8 @@ public final class ExitHints {
             case LEVEL_94 -> ModSounds.EXIT_HINT_LEVEL_94;
             case LEVEL_7 -> ModSounds.EXIT_HINT_LEVEL_7;
             case LEVEL_39 -> ModSounds.EXIT_HINT_LEVEL_39;
+            // Never played: Level 227 has no exit, so the server sends no hint there.
+            case LEVEL_227 -> ModSounds.EXIT_HINT_LEVEL_94;
         }).get();
     }
 

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "backrooms:block/l227_bark_end",
+    "side": "backrooms:block/l227_bark_0"
+  }
+}

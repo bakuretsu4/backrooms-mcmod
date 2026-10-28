@@ -58,6 +58,17 @@ public final class Backrooms {
         com.rickr.backrooms.registry.HidingAudio.bootstrap();
         // Separate realities: Level 1's dead lamps for the "lights out" drift, and the snap-back thump.
         com.rickr.backrooms.registry.DriftRegistry.bootstrap();
+        // Level 227 "Megaflora" flora: the giant tree's wood, the forest floor and plants, GammaPali,
+        // the Palette, Lestron, the giant Venus flytrap, and their sounds.
+        com.rickr.backrooms.registry.Level227Blocks.bootstrap();
+        com.rickr.backrooms.registry.Level227Flora.bootstrap();
+        com.rickr.backrooms.registry.Level227FloraSounds.bootstrap();
+        // Level 227 atmosphere: the forest/void/sun sounds, the tree's lurches, its music, the fallen void bubble.
+        com.rickr.backrooms.registry.Level227Atmos.bootstrap();
+        // Level 227 predators: the wolves of the high branches, the stags and the squirrel swarms.
+        com.rickr.backrooms.registry.Level227Predators.bootstrap();
+        // Level 227 grazers: the fifteen-eyed bears, the scarred does, the giant boars and boar meat.
+        com.rickr.backrooms.registry.Level227Grazers.bootstrap();
         ModBlocks.BLOCKS.register(modBus);
         ModItems.ITEMS.register(modBus);
         ModEntities.ENTITIES.register(modBus);

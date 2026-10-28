@@ -162,7 +162,14 @@ public enum FixtureType {
     // The houses' bare bulbs screwed upside down into the popcorn ceilings: about a third still
     // glow, warm and dim (only the lit ones count, see of()). Neighbouring lit bulbs of the dense
     // ceilings merge into one light, so a bulb-studded room doesn't eat the whole light budget.
-    L39_BULB("l39_ceiling_bulb", Mount.HANGING_TUBE, 3, 1.0f, 0.80f, 0.56f, 0.55f, 7.0f, Hum.NONE, false);
+    L39_BULB("l39_ceiling_bulb", Mount.HANGING_TUBE, 3, 1.0f, 0.80f, 0.56f, 0.55f, 7.0f, Hum.NONE, false),
+    // Level 227. Resin seeping from the bark of the undersides: a faint warm amber glow on the wood
+    // around it (the block is a full cube, so the light sits in the open air next to it).
+    // Neighbouring seeps merge, so a long weeping crack is one light.
+    L227_RESIN("l227_resin", Mount.CUBE, 3, 1.0f, 0.67f, 0.24f, 0.4f, 5.0f, Hum.NONE, false),
+    // GammaPali: the little plants glowing on the branches, a sickly yellow-green (their glow is the
+    // toxic gas). The plant faces away from the bark (all six ways); a cluster merges into one light.
+    L227_GAMMAPALI("l227_gammapali", Mount.WALL, 3, 0.75f, 1.0f, 0.47f, 0.7f, 6.0f, Hum.NONE, false);
 
     /** Which looping buzz a fixture makes (positional, the nearest few lit ones play). */
     public enum Hum {

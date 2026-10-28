@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l227_fallen_leaf"
+      },
+      {
+        "model": "backrooms:block/l227_fallen_leaf",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_fallen_leaf",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_fallen_leaf",
+        "y": 270
+      }
+    ]
+  }
+}

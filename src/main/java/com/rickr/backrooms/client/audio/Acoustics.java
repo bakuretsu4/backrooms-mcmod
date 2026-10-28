@@ -108,6 +108,11 @@ public final class Acoustics {
     // Level 39's tunnels: canon says the marble dampens sound. Short, soft and dry-ish, the highs
     // swallowed, little late echo, even though the tunnels are long and hard-walled.
     private static final Material MARBLE_TUNNEL = new Material(0.4f, 0.35f, 0.35f, 0.35f, 1.0f, 0.85f, 0.6f);
+    // Level 227's forest: no walls, but thousands of trunks, leaves and hanging moss scatter sound
+    // into a soft, very diffuse tail; the leaves swallow the highs. Open sky over a gap weakens it
+    // less than in a town (the trunks all round still answer), and the far echo comes back a
+    // little late off the giant branches and the trunk.
+    private static final Material FOREST = new Material(0.55f, 0.95f, 0.45f, 0.5f, 1.0f, 0.55f, 1.3f);
 
     /** Level 39: the tunnels (and the holes/shafts leading down to them) lie below this height. */
     private static final double LEVEL39_TUNNEL_TOP = 60.0;
@@ -125,6 +130,7 @@ public final class Acoustics {
             case LEVEL_9, LEVEL_94 -> OUTDOORS;
             case LEVEL_39 -> ear.y < LEVEL39_TUNNEL_TOP ? MARBLE_TUNNEL : MEGALOPHOBIA;
             case LEVEL_7 -> SEA;
+            case LEVEL_227 -> FOREST;
             case POOLROOMS, LEVEL_37 -> null; // nothing reverberates there (canon), muffling only
         };
     }

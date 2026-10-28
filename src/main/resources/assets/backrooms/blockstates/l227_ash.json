@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l227_ash"
+      },
+      {
+        "model": "backrooms:block/l227_ash",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_ash",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_ash",
+        "y": 270
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+    "vertex": "backrooms:megaflora_composite",
+    "fragment": "backrooms:megaflora_composite",
+    "samplers": [
+        { "name": "SceneDepth" },
+        { "name": "FarColor" },
+        { "name": "FarDepth" }
+    ],
+    "uniforms": [
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "InvProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ScreenSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+        { "name": "FogStart", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "FogEnd", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "FogColor", "type": "float", "count": 4, "values": [ 0.5, 0.55, 0.52, 0.7 ] },
+        { "name": "Eye", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+        { "name": "DepthRange", "type": "float", "count": 1, "values": [ 65536.0 ] },
+        { "name": "Loaded", "type": "float", "count": 2, "values": [ 192.0, 96.0 ] },
+        { "name": "OpenAir", "type": "float", "count": 1, "values": [ 7000.0 ] },
+        { "name": "MistLow", "type": "float", "count": 3, "values": [ 0.016, 0.024, 0.02 ] },
+        { "name": "MistHigh", "type": "float", "count": 3, "values": [ 0.88, 0.91, 0.86 ] },
+        { "name": "Zenith", "type": "float", "count": 3, "values": [ 0.97, 0.98, 0.94 ] },
+        { "name": "VoidColor", "type": "float", "count": 3, "values": [ 0.016, 0.024, 0.02 ] },
+        { "name": "SunPos", "type": "float", "count": 3, "values": [ 0.0, 9000.0, 0.0 ] },
+        { "name": "LayerA", "type": "float", "count": 4, "values": [ 40.0, 55.0, 0.0007, 1.0 ] },
+        { "name": "LayerB", "type": "float", "count": 4, "values": [ 330.0, 40.0, 0.001, 1.05 ] },
+        { "name": "LayerC", "type": "float", "count": 4, "values": [ 610.0, 35.0, 0.001, 1.1 ] },
+        { "name": "LayerD", "type": "float", "count": 4, "values": [ 3200.0, 1400.0, 0.00014, 1.15 ] },
+        { "name": "SunScreen", "type": "float", "count": 4, "values": [ 0.5, 0.5, 0.0, 0.002 ] },
+        { "name": "SunDepth", "type": "float", "count": 1, "values": [ 9000.0 ] }
+    ]
+}

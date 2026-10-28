@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=up": {
+      "model": "backrooms:block/l227_epiphyte"
+    },
+    "facing=down": {
+      "model": "backrooms:block/l227_epiphyte",
+      "x": 180
+    },
+    "facing=north": {
+      "model": "backrooms:block/l227_epiphyte",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "backrooms:block/l227_epiphyte",
+      "x": 90,
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l227_epiphyte",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l227_epiphyte",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

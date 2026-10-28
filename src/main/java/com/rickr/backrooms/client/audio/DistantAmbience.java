@@ -2,6 +2,7 @@ package com.rickr.backrooms.client.audio;
 
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.client.Level39ClientState;
+import com.rickr.backrooms.registry.Level227Atmos;
 import com.rickr.backrooms.registry.Level39Sounds;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.BackroomsLevel;
@@ -150,6 +151,17 @@ public final class DistantAmbience {
                 new Entry(Level39Sounds.DISTANT_TUNNEL_DRIP, 4, 0.7f, When.TUNNEL),
                 new Entry(Level39Sounds.DISTANT_TUNNEL_SPLASH, 2, 0.8f, When.TUNNEL),
                 new Entry(Level39Sounds.DISTANT_GROAN, 2, 0.6f, When.TUNNEL))));
+        // Level 227: the tree moving (far branches groaning, a limb cracking in the canopy), the
+        // forest's life slightly wrong (a bird call that isn't right, something big calling, a leaf
+        // the size of a sail sliding down through the leaves), and the void howling below the edge.
+        // Open forest: like the outdoor levels, volumes above 1.0 only stretch the range.
+        SCHEDULES.put(BackroomsLevel.LEVEL_227, new Schedule(20, 45, List.of(
+                new Entry(Level227Atmos.DISTANT_TREE_GROAN, 4, 1.6f, When.ANY),
+                new Entry(Level227Atmos.DISTANT_BRANCH_CRACK, 2, 1.5f, When.ANY),
+                new Entry(Level227Atmos.DISTANT_WRONG_BIRD, 4, 1.2f, When.ANY),
+                new Entry(Level227Atmos.DISTANT_ANIMAL_CALL, 2, 1.5f, When.ANY),
+                new Entry(Level227Atmos.DISTANT_LEAF_FALL, 3, 1.0f, When.ANY),
+                new Entry(Level227Atmos.DISTANT_VOID_HOWL, 2, 1.3f, When.ANY))));
     }
 
     private static final RandomSource RANDOM = RandomSource.create();
@@ -253,6 +265,13 @@ public final class DistantAmbience {
         // Level 39: the superstructure's sounds come from high up.
         if (isFromSuperstructure(entry)) {
             y = eye.y + Mth.nextDouble(RANDOM, 12.0, 30.0);
+        }
+        // Level 227: the tree's groans and cracks come from the branches above you, the void's
+        // howl from far below the edge.
+        if (entry.sound() == Level227Atmos.DISTANT_TREE_GROAN || entry.sound() == Level227Atmos.DISTANT_BRANCH_CRACK) {
+            y = eye.y + Mth.nextDouble(RANDOM, 10.0, 35.0);
+        } else if (entry.sound() == Level227Atmos.DISTANT_VOID_HOWL) {
+            y = eye.y - Mth.nextDouble(RANDOM, 18.0, 35.0);
         }
         float pitch = 1.0f + (RANDOM.nextFloat() * 2.0f - 1.0f) * PITCH_JITTER;
         // LINEAR attenuation and relative = false: a real position in the world that fades with

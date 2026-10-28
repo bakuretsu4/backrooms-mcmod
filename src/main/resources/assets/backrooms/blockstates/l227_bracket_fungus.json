@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l227_bracket_fungus"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l227_bracket_fungus",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l227_bracket_fungus",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l227_bracket_fungus",
+      "y": 270
+    }
+  }
+}

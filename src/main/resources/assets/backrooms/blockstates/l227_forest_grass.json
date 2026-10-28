@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l227_forest_grass"
+      },
+      {
+        "model": "backrooms:block/l227_forest_grass",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_forest_grass",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_forest_grass",
+        "y": 270
+      }
+    ]
+  }
+}

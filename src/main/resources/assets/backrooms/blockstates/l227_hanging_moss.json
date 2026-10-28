@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "tip=false": [
+      {
+        "model": "backrooms:block/l227_hanging_moss"
+      },
+      {
+        "model": "backrooms:block/l227_hanging_moss",
+        "y": 90
+      }
+    ],
+    "tip=true": [
+      {
+        "model": "backrooms:block/l227_hanging_moss_tip"
+      },
+      {
+        "model": "backrooms:block/l227_hanging_moss_tip",
+        "y": 90
+      }
+    ]
+  }
+}

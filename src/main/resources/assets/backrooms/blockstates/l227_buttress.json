@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/l227_buttress"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l227_buttress",
+      "y": 90
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l227_resin"
+      },
+      {
+        "model": "backrooms:block/l227_resin",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_resin",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_resin",
+        "y": 270
+      }
+    ]
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "variants": {
+    "axis=x": [
+      {
+        "model": "backrooms:block/l227_bark_0",
+        "x": 90,
+        "y": 90,
+        "weight": 4
+      },
+      {
+        "model": "backrooms:block/l227_bark_0",
+        "x": 90,
+        "y": 270,
+        "weight": 4
+      },
+      {
+        "model": "backrooms:block/l227_bark_1",
+        "x": 90,
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_bark_1",
+        "x": 90,
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/l227_bark_2",
+        "x": 90,
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_bark_2",
+        "x": 90,
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/l227_bark_3",
+        "x": 90,
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_bark_3",
+        "x": 90,
+        "y": 270
+      }
+    ],
+    "axis=y": [
+      {
+        "model": "backrooms:block/l227_bark_0",
+        "weight": 4
+      },
+      {
+        "model": "backrooms:block/l227_bark_0",
+        "y": 90,
+        "weight": 4
+      },
+      {
+        "model": "backrooms:block/l227_bark_0",
+        "y": 180,
+        "weight": 4
+      },
+      {
+        "model": "backrooms:block/l227_bark_0",
+        "y": 270,
+        "weight": 4
+      },
+      {
+        "model": "backrooms:block/l227_bark_1"
+      },
+      {
+        "model": "backrooms:block/l227_bark_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_bark_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_bark_1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/l227_bark_2"
+      },
+      {
+        "model": "backrooms:block/l227_bark_2",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_bark_2",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_bark_2",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/l227_bark_3"
+      },
+      {
+        "model": "backrooms:block/l227_bark_3",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_bark_3",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_bark_3",
+        "y": 270
+      }
+    ],
+    "axis=z": [
+      {
+        "model": "backrooms:block/l227_bark_0",
+        "x": 90,
+        "weight": 4
+      },
+      {
+        "model": "backrooms:block/l227_bark_0",
+        "x": 90,
+        "y": 180,
+        "weight": 4
+      },
+      {
+        "model": "backrooms:block/l227_bark_1",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/l227_bark_1",
+        "x": 90,
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_bark_2",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/l227_bark_2",
+        "x": 90,
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_bark_3",
+        "x": 90
+      },
+      {
+        "model": "backrooms:block/l227_bark_3",
+        "x": 90,
+        "y": 180
+      }
+    ]
+  }
+}

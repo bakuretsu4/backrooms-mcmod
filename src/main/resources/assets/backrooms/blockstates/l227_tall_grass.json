@@ -1,0 +1,38 @@
+{
+  "variants": {
+    "half=lower": [
+      {
+        "model": "backrooms:block/l227_tall_grass_lower"
+      },
+      {
+        "model": "backrooms:block/l227_tall_grass_lower",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_tall_grass_lower",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_tall_grass_lower",
+        "y": 270
+      }
+    ],
+    "half=upper": [
+      {
+        "model": "backrooms:block/l227_tall_grass_upper"
+      },
+      {
+        "model": "backrooms:block/l227_tall_grass_upper",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_tall_grass_upper",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_tall_grass_upper",
+        "y": 270
+      }
+    ]
+  }
+}

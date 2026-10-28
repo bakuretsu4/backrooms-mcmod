@@ -182,6 +182,8 @@ public final class AtmosphereGrade {
             case LEVEL_94 -> mc.level == null ? LEVEL_94_DAY : LEVEL_94_NIGHT.lerp(LEVEL_94_DAY, Level94Clock.daylight(mc.level, 0.0f));
             // Level 7: the haze changes with your depth (Level7Client measures it).
             case LEVEL_7 -> !Level7Client.underwater() ? LEVEL_7_AIR : LEVEL_7_WATER.lerp(LEVEL_7_DEEP, Level7Client.deepness());
+            // Level 227: misty forest, clearing with height, black in the void, white in a sunbeam.
+            case LEVEL_227 -> Level227Lighting.mood();
         };
     }
 

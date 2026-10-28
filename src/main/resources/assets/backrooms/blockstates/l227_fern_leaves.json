@@ -1,0 +1,40 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l227_fern_leaves"
+      },
+      {
+        "model": "backrooms:block/l227_fern_leaves",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_fern_leaves",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_fern_leaves",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/l227_fern_leaves",
+        "x": 180
+      },
+      {
+        "model": "backrooms:block/l227_fern_leaves",
+        "x": 180,
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_fern_leaves",
+        "x": 180,
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_fern_leaves",
+        "x": 180,
+        "y": 270
+      }
+    ]
+  }
+}

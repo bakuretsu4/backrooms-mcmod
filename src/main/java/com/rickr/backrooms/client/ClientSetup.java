@@ -64,6 +64,16 @@ public final class ClientSetup {
         // Thrown flares and glowsticks: small code-built sticks with a full-bright tip/tube.
         event.registerEntityRenderer(com.rickr.backrooms.registry.LightSupplies.FLARE_ENTITY.get(), ThrownLightRenderer::new);
         event.registerEntityRenderer(com.rickr.backrooms.registry.LightSupplies.GLOWSTICK_ENTITY.get(), ThrownLightRenderer::new);
+        // Level 227: a fallen void bubble, a code-built iridescent sphere mirroring another level.
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level227Atmos.VOID_BUBBLE.get(), VoidBubbleRenderer::new);
+        // Level 227 predators: wolves, stags and squirrels, code-built models with a full-bright glow layer.
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level227Predators.WOLF.get(), L227WolfRenderer::new);
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level227Predators.STAG.get(), L227StagRenderer::new);
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level227Predators.SQUIRREL.get(), L227SquirrelRenderer::new);
+        // Level 227 grazers: bears (with their eyeshine layer), does and boars, code-built models.
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level227Grazers.BEAR.get(), L227BearRenderer::new);
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level227Grazers.DOE.get(), L227DoeRenderer::new);
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level227Grazers.BOAR.get(), L227BoarRenderer::new);
     }
 
     @SubscribeEvent
@@ -80,6 +90,14 @@ public final class ClientSetup {
         // Level 94 vehicles (Props slice).
         event.registerLayerDefinition(VehicleModel.CAR_LAYER, VehicleModel::createCarLayer);
         event.registerLayerDefinition(VehicleModel.VAN_LAYER, VehicleModel::createVanLayer);
+        // Level 227 predators.
+        event.registerLayerDefinition(L227WolfModel.LAYER, L227WolfModel::createBodyLayer);
+        event.registerLayerDefinition(L227StagModel.LAYER, L227StagModel::createBodyLayer);
+        event.registerLayerDefinition(L227SquirrelModel.LAYER, L227SquirrelModel::createBodyLayer);
+        // Level 227 grazers.
+        event.registerLayerDefinition(L227BearModel.LAYER, L227BearModel::createBodyLayer);
+        event.registerLayerDefinition(L227DoeModel.LAYER, L227DoeModel::createBodyLayer);
+        event.registerLayerDefinition(L227BoarModel.LAYER, L227BoarModel::createBodyLayer);
     }
 
     @SubscribeEvent

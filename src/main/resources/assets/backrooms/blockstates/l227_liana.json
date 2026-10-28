@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "tip=false": [
+      {
+        "model": "backrooms:block/l227_liana"
+      },
+      {
+        "model": "backrooms:block/l227_liana",
+        "y": 90
+      }
+    ],
+    "tip=true": [
+      {
+        "model": "backrooms:block/l227_liana_tip"
+      },
+      {
+        "model": "backrooms:block/l227_liana_tip",
+        "y": 90
+      }
+    ]
+  }
+}

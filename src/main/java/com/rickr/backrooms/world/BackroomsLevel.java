@@ -10,6 +10,7 @@ import com.rickr.backrooms.world.layout.Level4Layout;
 import com.rickr.backrooms.world.layout.Level39Layout;
 import com.rickr.backrooms.world.layout.Level94Layout;
 import com.rickr.backrooms.world.layout.Level7Layout;
+import com.rickr.backrooms.world.layout.Level227Layout;
 import com.rickr.backrooms.world.layout.Level9Layout;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import com.rickr.backrooms.world.layout.PoolroomsLayout;
@@ -74,7 +75,14 @@ public enum BackroomsLevel implements StringRepresentable {
      * you out (transferBelowY sits far under the tunnel floor). The way on is through a window of the
      * superstructure, to Level 9.
      */
-    LEVEL_39("level_39", new Level39Layout(), 20, 0, 1);
+    LEVEL_39("level_39", new Level39Layout(), 20, 0, 1),
+    /**
+     * "Megaflora": a planet-sized tree hanging upside down over a black void, a rainforest on every
+     * branch. No Bacteria (cap 0): it has its own flora and fauna. It has no exit: falling off a
+     * branch is death (Level227Rules, below Level227Tree.VOID_DEATH_Y, so transferBelowY is never
+     * reached), and the only way out is the tree's motion noclipping you to a random level.
+     */
+    LEVEL_227("level_227", new Level227Layout(), Integer.MIN_VALUE, 0, 1);
 
     public static final Codec<BackroomsLevel> CODEC = StringRepresentable.fromEnum(BackroomsLevel::values);
 
@@ -132,6 +140,9 @@ public enum BackroomsLevel implements StringRepresentable {
             // The Poolrooms drain now opens into Level 39's flooded tunnels.
             case POOLROOMS -> LEVEL_39;
             case LEVEL_37, LEVEL_94, LEVEL_7, LEVEL_39 -> LEVEL_9;
+            // Level 227 has no exit of its own (you leave by noclipping to a random level); this is
+            // only a fallback should anything ever call useExit there.
+            case LEVEL_227 -> LEVEL_0;
             case LEVEL_9 -> null;
         };
     }

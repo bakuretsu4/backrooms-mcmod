@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "tip=false": [
+      {
+        "model": "backrooms:block/l227_hanging_fronds"
+      },
+      {
+        "model": "backrooms:block/l227_hanging_fronds",
+        "y": 90
+      }
+    ],
+    "tip=true": [
+      {
+        "model": "backrooms:block/l227_hanging_fronds_tip"
+      },
+      {
+        "model": "backrooms:block/l227_hanging_fronds_tip",
+        "y": 90
+      }
+    ]
+  }
+}

@@ -39,7 +39,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Operator tools for hosting sessions with friends:
  * <pre>
- * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7, level_39 (default: level_0)
+ * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7, level_39, level_227 (default: level_0)
  * /backrooms escape [targets]          send players back to reality
  * /backrooms battery [targets] [pct]   set camcorder batteries (default: full)
  * /backrooms sanity [targets] <0-100>   set sanity (for testing the low-sanity effects)
@@ -284,6 +284,11 @@ public final class BackroomsCommand {
         BackroomsLevel level = BackroomsLevel.fromDimension(player.level().dimension());
         if (level == null) {
             ctx.getSource().sendFailure(Component.literal("You are not in the Backrooms."));
+            return 0;
+        }
+        if (!level.layout().hasExits()) {
+            // Level 227: no door, no stairwell. The tree drifts, and sooner or later you noclip out.
+            ctx.getSource().sendSuccess(() -> Component.literal("This level has no exit. The tree is always moving: sooner or later it noclips you to another level."), false);
             return 0;
         }
         ServerLevel serverLevel = player.serverLevel();

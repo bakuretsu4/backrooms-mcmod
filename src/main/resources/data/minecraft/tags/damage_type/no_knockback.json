@@ -2,6 +2,9 @@
   "replace": false,
   "values": [
     "backrooms:dust",
-    "backrooms:smiler"
+    "backrooms:smiler",
+    "backrooms:sunlight",
+    "backrooms:l227_void",
+    "backrooms:l227_stag"
   ]
 }

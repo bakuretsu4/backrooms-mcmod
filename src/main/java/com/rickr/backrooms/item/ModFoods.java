@@ -24,5 +24,20 @@ public final class ModFoods {
             .fast().alwaysEdible()
             .build();
 
+    /**
+     * Raw Level 227 boar meat: 3 hunger, and raw game from a tree that isn't a tree is a gamble:
+     * often Hunger (30 s), sometimes nausea (10 s). Cook it first.
+     */
+    public static final FoodProperties BOAR_MEAT = new FoodProperties.Builder()
+            .nutrition(3).saturationModifier(0.3f)
+            .effect(() -> new MobEffectInstance(MobEffects.HUNGER, 600), 0.6f)
+            .effect(() -> new MobEffectInstance(MobEffects.CONFUSION, 200), 0.25f)
+            .build();
+
+    /** Cooked boar meat: safe (as the wiki says), and the biggest meal in the mod: 9 hunger. */
+    public static final FoodProperties COOKED_BOAR_MEAT = new FoodProperties.Builder()
+            .nutrition(9).saturationModifier(0.85f)
+            .build();
+
     private ModFoods() {}
 }

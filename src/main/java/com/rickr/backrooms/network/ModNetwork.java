@@ -131,6 +131,11 @@ public final class ModNetwork {
                 (payload, context) -> com.rickr.backrooms.client.Level39ClientState.receiveSeed(payload.layoutSeed()));
         registrar.playToClient(Level39QuakePayload.TYPE, Level39QuakePayload.STREAM_CODEC,
                 (payload, context) -> com.rickr.backrooms.client.Level39QuakeEffects.receive(payload.x(), payload.y(), payload.z(), payload.strength()));
+
+        // Level 227: the tree moving (a lurch, the shudder before it shakes you loose, the drag in
+        // from another level's forest); the client plays the groans, the leaves and the shake.
+        registrar.playToClient(Level227Payload.TYPE, Level227Payload.STREAM_CODEC,
+                (payload, context) -> com.rickr.backrooms.client.Level227Audio.receive(payload));
     }
 
     private ModNetwork() {}

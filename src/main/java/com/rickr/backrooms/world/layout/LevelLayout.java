@@ -186,6 +186,15 @@ public abstract class LevelLayout {
         return exits.nearest(seed, x, z);
     }
 
+    /**
+     * False for a level with no exit to find at all (Level 227: you only ever leave by noclipping
+     * out at random). Then nothing points at {@link #exitPosition}: no exit sound, no camcorder
+     * signal, and /backrooms locate says so.
+     */
+    public boolean hasExits() {
+        return true;
+    }
+
     /** Monsters never spawn at (x, z) (Level 1's corridor blocks). Most levels have no such place. */
     public boolean isQuietArea(long seed, int x, int z) {
         return false;

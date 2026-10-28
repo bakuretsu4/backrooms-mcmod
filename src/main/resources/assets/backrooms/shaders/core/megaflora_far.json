@@ -1,0 +1,26 @@
+{
+    "vertex": "backrooms:megaflora_far",
+    "fragment": "backrooms:megaflora_far",
+    "samplers": [],
+    "uniforms": [
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "FogStart", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "FogEnd", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "FogColor", "type": "float", "count": 4, "values": [ 0.5, 0.55, 0.52, 0.7 ] },
+        { "name": "Eye", "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
+        { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "DepthRange", "type": "float", "count": 1, "values": [ 65536.0 ] },
+        { "name": "Loaded", "type": "float", "count": 2, "values": [ 192.0, 96.0 ] },
+        { "name": "OpenAir", "type": "float", "count": 1, "values": [ 5200.0 ] },
+        { "name": "MistLow", "type": "float", "count": 3, "values": [ 0.2, 0.22, 0.21 ] },
+        { "name": "MistHigh", "type": "float", "count": 3, "values": [ 0.8, 0.84, 0.8 ] },
+        { "name": "SunPos", "type": "float", "count": 3, "values": [ 0.0, 9000.0, 0.0 ] },
+        { "name": "LayerA", "type": "float", "count": 4, "values": [ 40.0, 55.0, 0.003, 0.85 ] },
+        { "name": "LayerB", "type": "float", "count": 4, "values": [ 330.0, 40.0, 0.001, 1.05 ] },
+        { "name": "LayerC", "type": "float", "count": 4, "values": [ 610.0, 35.0, 0.001, 1.1 ] },
+        { "name": "LayerD", "type": "float", "count": 4, "values": [ 3200.0, 1400.0, 0.00014, 1.15 ] },
+        { "name": "Sway", "type": "float", "count": 2, "values": [ 14.0, 500.0 ] },
+        { "name": "LightColor", "type": "float", "count": 3, "values": [ 0.82, 0.88, 0.8 ] }
+    ]
+}

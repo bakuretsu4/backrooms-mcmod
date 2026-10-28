@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l227_heartwood"
+      },
+      {
+        "model": "backrooms:block/l227_heartwood",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_heartwood",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_heartwood",
+        "y": 270
+      }
+    ]
+  }
+}

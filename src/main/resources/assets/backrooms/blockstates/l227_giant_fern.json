@@ -1,0 +1,24 @@
+{
+  "variants": {
+    "half=lower": [
+      {
+        "model": "backrooms:block/l227_giant_fern"
+      },
+      {
+        "model": "backrooms:block/l227_giant_fern",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_giant_fern",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_giant_fern",
+        "y": 270
+      }
+    ],
+    "half=upper": {
+      "model": "backrooms:block/l227_giant_fern_upper"
+    }
+  }
+}

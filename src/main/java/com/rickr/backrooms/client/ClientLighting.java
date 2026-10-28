@@ -45,6 +45,10 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>Level 39 (Megalophobia) is a blue-grey night that turns cool and bright near the glowing
  * facades, with bright even tunnels below; see {@link Level39Atmosphere#applyFill}.
+ *
+ * <p>Level 94 and Level 227 (Megaflora) don't use this class: they are lit by their sky, so their
+ * own dimension effects build the whole lightmap (Level 227's misty green forest light, never
+ * black on the forest floor, white near the sunbeams: {@link Level227Lighting#adjustLightmap}).
  */
 public final class ClientLighting {
     private static final float FLOOR = 0.07f;

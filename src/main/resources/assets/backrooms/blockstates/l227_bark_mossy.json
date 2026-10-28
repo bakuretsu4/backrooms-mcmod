@@ -1,0 +1,39 @@
+{
+  "variants": {
+    "axis=y": [
+      {
+        "model": "backrooms:block/l227_bark_mossy_y"
+      },
+      {
+        "model": "backrooms:block/l227_bark_mossy_y",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_bark_mossy_y",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_bark_mossy_y",
+        "y": 270
+      }
+    ],
+    "axis=x": [
+      {
+        "model": "backrooms:block/l227_bark_mossy_x"
+      },
+      {
+        "model": "backrooms:block/l227_bark_mossy_x",
+        "y": 180
+      }
+    ],
+    "axis=z": [
+      {
+        "model": "backrooms:block/l227_bark_mossy_z"
+      },
+      {
+        "model": "backrooms:block/l227_bark_mossy_z",
+        "y": 180
+      }
+    ]
+  }
+}

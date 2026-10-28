@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l227_root_soil"
+      },
+      {
+        "model": "backrooms:block/l227_root_soil",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l227_root_soil",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l227_root_soil",
+        "y": 270
+      }
+    ]
+  }
+}
