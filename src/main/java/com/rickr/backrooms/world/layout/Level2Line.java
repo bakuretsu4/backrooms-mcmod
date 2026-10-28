@@ -26,9 +26,11 @@ import org.jetbrains.annotations.Nullable;
  * The lane (|dz| &lt;= 1) is never blocked. The shoulders hold the lamps and the gutter.
  *
  * <p><b>Along the corridor</b> it is cut into segments 24 to 48 blocks long, each with its own
- * character (see the SEG_ constants), never the same kind twice in a row. Side rooms open off
- * the chase walls about every 60-120 blocks, alternating sides, and an exit bay comes every
- * 320-420 blocks.
+ * character (see the SEG_ constants), never the same kind twice in a row; about one in ten is an
+ * odd but grounded detour (a dog-leg round a column, a duct crossing, a catwalk over a trench, a
+ * sealed section with a bypass: {@link Level2Detours}). Side rooms open off the chase walls about
+ * every 60-120 blocks, alternating sides (about one in six a bigger maintenance chamber,
+ * {@link Level2Chambers}), and an exit bay comes every 320-420 blocks.
  *
  * <p>Everything is a pure function of (seed, x, z) built from cheap hashes. The few answers that
  * take a bit of work (a segment's type, a room's type) are remembered per thread in small tables,
@@ -62,13 +64,25 @@ final class Level2Line {
     static final int SEG_DARK = 7;
     /** The segment holding an exit bay (always a plain run with the bay on one side). */
     static final int SEG_EXIT = 8;
+    // The unusual-but-grounded layouts (built by Level2Detours). Occasional: about 1 segment in 10.
+    /** The corridor steps sideways around a massive structural column (the wall pushed back on one side). */
+    static final int SEG_DOGLEG = 9;
+    /** The ceiling drops for a big duct crossing the corridor (2 blocks of headroom under it, no crouching). */
+    static final int SEG_DUCT = 10;
+    /** Two levels: a grated catwalk along one side over an open trench with a lower walkway in it. */
+    static final int SEG_CATWALK = 11;
+    /** The corridor is sealed by two locked bulkhead walls; a narrow bypass runs round them through the rock. */
+    static final int SEG_BYPASS = 12;
     /** Names for /backrooms anomaly locate level_2/seg/NAME (indexed by SEG_ code). */
-    static final String[] SEG_NAMES = {"standard", "valves", "pump", "squeeze", "trench", "bulkhead", "leak", "dark", "exit"};
+    static final String[] SEG_NAMES = {"standard", "valves", "pump", "squeeze", "trench", "bulkhead", "leak", "dark", "exit",
+            "dogleg", "duct_crossing", "catwalk", "bypass"};
     /**
-     * How common each segment type is (SEG_STANDARD..SEG_DARK). Dark segments only kill up to
-     * {@link #DARK_RUN} blocks of lamps, so with this weight they cover well under 12% of the route.
+     * How common each segment type is (indexed by SEG_ code; EXIT is placed, never rolled). Dark
+     * segments only kill up to {@link #DARK_RUN} blocks of lamps, so with this weight they cover
+     * well under 12% of the route. The four detours get 3 each: together one segment in ten, so
+     * the corridor stays the long straight corridor and the odd stretch is a surprise.
      */
-    private static final int[] SEG_WEIGHTS = {24, 13, 11, 11, 11, 11, 11, 8};
+    private static final int[] SEG_WEIGHTS = {24, 13, 11, 11, 11, 11, 11, 8, 0, 3, 3, 3, 3};
     /** Segments come in pairs of this length, split somewhere between 24 and 48 blocks. */
     static final int PAIR = 72;
     static final int MIN_SEG = 24;
@@ -103,9 +117,31 @@ final class Level2Line {
     static final int ROOM_SAFE = 4;
     /** The slot holds the hot zone's machinery room (an anomaly site, see Level2AnomalyPlan). */
     static final int ROOM_HOT = 5;
-    /** Names for /backrooms anomaly locate level_2/room/NAME (indexed by ROOM_ code, without HOT). */
-    static final String[] ROOM_NAMES = {"maintenance", "ventilation", "boiler", "closet", "safe"};
-    private static final int[] ROOM_WEIGHTS = {28, 20, 16, 20, 16};
+    // Maintenance chambers (built by Level2Chambers from their drawn plans): bigger, rarer rooms
+    // where the crews worked, each telling a little of their story.
+    static final int ROOM_PUMP_ROOM = 6;
+    static final int ROOM_VALVE_GALLERY = 7;
+    static final int ROOM_ELECTRICAL = 8;
+    /** A flooded sump: a pit one block deep, full of black water, with a grated walkway. */
+    static final int ROOM_SUMP = 9;
+    /** The crew's break room: a table with the shift logbook, a kettle, a jacket left on its hook. */
+    static final int ROOM_BREAK = 10;
+    /** A valve gallery whose valves are all turned the same wrong way (the wrong_valves oddity's slot). */
+    static final int ROOM_GALLERY_ODD = 11;
+    /** Only a steel door in the wall, bare concrete behind it (the warm_door oddity's slot). */
+    static final int ROOM_WARM_DOOR = 12;
+    /**
+     * Names for /backrooms anomaly locate level_2/room/NAME (indexed by ROOM_ code; null = no
+     * key: the hot room and the oddities' rooms are found through their anomaly kinds).
+     */
+    static final String[] ROOM_NAMES = {"maintenance", "ventilation", "boiler", "closet", "safe", null,
+            "pump_room", "valve_gallery", "electrical", "sump", "break_room", null, null};
+    /**
+     * How common each room type is (indexed by ROOM_ code; the site-made ones are never rolled).
+     * Chambers get 30 of 130: with the slots lost to exits, safe rooms and anomalies, about one
+     * room slot in six is a chamber.
+     */
+    private static final int[] ROOM_WEIGHTS = {28, 20, 16, 20, 16, 0, 6, 6, 6, 5, 7};
 
     // ---- What sits in a corridor wall at some x (see feature) -----------------------------------
     static final int F_NONE = 0;
@@ -344,6 +380,15 @@ final class Level2Line {
         return seg(seed, band, n).side;
     }
 
+    /**
+     * The side a detour segment (SEG_DOGLEG, SEG_BYPASS, SEG_CATWALK) bends towards: the wall pushed
+     * back round the column, the wall the bypass runs behind, the side the catwalk runs along (the
+     * trench is on the other side). 0 for every other segment.
+     */
+    static int detourSide(long seed, int band, int n) {
+        return seg(seed, band, n).detour;
+    }
+
     /** Middle x of segment n. */
     static int segMid(long seed, int band, int n) {
         Seg s = seg(seed, band, n);
@@ -367,6 +412,7 @@ final class Level2Line {
         int darkTo;
         int survivor;
         boolean trench;
+        int detour;
     }
 
     private static final int SEG_MEMO = 32;
@@ -436,6 +482,20 @@ final class Level2Line {
         } else if (type == SEG_TRENCH) {
             trench = !Level2AnomalyPlan.voidOver(seed, band, start, end);
         }
+        int detour = 0;
+        if (type == SEG_DOGLEG || type == SEG_BYPASS || type == SEG_CATWALK) {
+            // The preferred side, else the other one, wherever the walls involved are free of doorways,
+            // rooms, bays and door halls (and a catwalk's trench clear of the void).
+            detour = detourFits(seed, band, type, start, end, mid, side) ? side
+                    : detourFits(seed, band, type, start, end, mid, -side) ? -side : 0;
+            if (detour == 0) {
+                // No room for it here: a plain kind of segment instead, as for a pump bay without an alcove.
+                int before = computeType(seed, band, n - 1);
+                int after = computeType(seed, band, n + 1);
+                type = before != SEG_STANDARD && after != SEG_STANDARD ? SEG_STANDARD
+                        : before != SEG_VALVES && after != SEG_VALVES ? SEG_VALVES : SEG_LEAK;
+            }
+        }
         s = slots[i];
         s.seed = seed;
         s.band = band;
@@ -451,14 +511,55 @@ final class Level2Line {
         s.darkTo = darkTo;
         s.survivor = survivor;
         s.trench = trench;
+        s.detour = detour;
         s.filled = true;
         return s;
+    }
+
+    /**
+     * True if a detour of {@code type} fits around {@code mid} bending to {@code side}: every wall it
+     * digs into is free of doorways, rooms (they reach 5 blocks each way of their door), bays and
+     * door halls, with a margin, and a catwalk's trench doesn't lie over a void square.
+     */
+    private static boolean detourFits(long seed, int band, int type, int start, int end, int mid, int side) {
+        int reach;
+        int farReach;
+        if (type == SEG_DOGLEG) {
+            reach = Level2Detours.DOG_HALF + 8;
+            farReach = 2;
+        } else if (type == SEG_BYPASS) {
+            reach = Level2Detours.BYPASS_HALF + 8;
+            farReach = Level2Detours.SEAL_HALF + 1;
+        } else {
+            // The catwalk side stays a normal corridor wall; the trench side may not have a doorway.
+            if (Level2AnomalyPlan.voidOver(seed, band, start, end)) {
+                return false;
+            }
+            reach = 0;
+            farReach = Level2Detours.CAT_HALF + 1;
+        }
+        for (int x = mid - reach; x <= mid + reach && reach > 0; x++) {
+            if (fixedFeature(seed, band, x, side) != F_NONE) {
+                return false;
+            }
+        }
+        for (int x = mid - farReach; x <= mid + farReach; x++) {
+            if (fixedFeature(seed, band, x, -side) != F_NONE) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** The lamp spot closest to x (any side). */
     private static int nearestLampSpot(long seed, int band, int x) {
         int rel = Math.floorMod(x - lampPhase(seed, band), LAMP_SPACING);
         return rel <= LAMP_SPACING / 2 ? x - rel : x + LAMP_SPACING - rel;
+    }
+
+    /** The first concrete pier (lamp spot) of {@code side}'s chase at or after x. */
+    static int pierAtOrAfter(long seed, int band, int x, int side) {
+        return x + Math.floorMod(-chaseRel(seed, band, x, side), 2 * LAMP_SPACING);
     }
 
     /**
@@ -596,14 +697,21 @@ final class Level2Line {
 
     /** Half the width of a room's floor (its walls are one further). */
     static int roomHalfWidth(int type) {
-        return type == ROOM_CLOSET ? 1 : 3;
+        if (Level2Chambers.isChamber(type)) {
+            return Level2Chambers.halfWidth(type);
+        }
+        return type == ROOM_CLOSET ? 1 : type == ROOM_WARM_DOOR ? 0 : 3;
     }
 
-    /** How many rows deep a room's floor goes into the rock, from |dz| = 5. */
+    /** How many rows deep a room's floor goes into the rock, from |dz| = 5 (0: only a door, rock behind it). */
     static int roomDepth(int type) {
+        if (Level2Chambers.isChamber(type)) {
+            return Level2Chambers.depth(type);
+        }
         return switch (type) {
             case ROOM_MAINTENANCE -> 5;
             case ROOM_CLOSET -> 3;
+            case ROOM_WARM_DOOR -> 0;
             default -> 6;
         };
     }
@@ -670,13 +778,22 @@ final class Level2Line {
                 if (site.anchorX() == slot) {
                     return ROOM_HOT;
                 }
-            } else if (!site.kind().equals(Level2Sites.BROWNOUT)
+            } else if (Level2AnomalyPlan.isDoor(site)
                     && Level2AnomalyPlan.doorSide(site) == side
                     && Math.abs(site.anchorX() - slot) <= ROOM_DOOR_GAP) {
                 return ROOM_NONE; // the void/loop door has this bit of wall
             }
         }
-        return pick(Hash.of(seed, band, k, 512), ROOM_WEIGHTS);
+        // An oddity may claim the slot (the valve gallery turned the wrong way, the warm door).
+        int odd = Level2Oddities.roomOverride(seed, band, k);
+        if (odd != ROOM_NONE) {
+            return odd;
+        }
+        int type = pick(Hash.of(seed, band, k, 512), ROOM_WEIGHTS);
+        if (type == ROOM_SUMP && Level2Oddities.voidUnder(seed, band, k)) {
+            return ROOM_MAINTENANCE; // a void's black sky lies where the sump's pit would be
+        }
+        return type;
     }
 
     // ==========================================================================================

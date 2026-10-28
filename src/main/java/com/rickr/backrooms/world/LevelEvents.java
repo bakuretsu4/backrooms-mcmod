@@ -191,10 +191,13 @@ public final class LevelEvents {
                 if (roll < 60) { kind = LevelEventPayload.INDOOR_RAIN; duration = (120 + random.nextInt(181)) * 20; }
                 else { kind = LevelEventPayload.ECHO_QUAKE; duration = ECHO_QUAKE_TICKS; }
             }
+            // Level 2 (the only floor left on this branch). The TWIST (the corridor slowly leans a
+            // few degrees) is rare, 8 in 100 events, so it stays strange; the rest keep their old
+            // proportions: flicker 49, blackout 21, intercom 22.
             default -> {
-                if (roll < 35) { kind = LevelEventPayload.TWIST; duration = TWIST_TICKS; }
-                else if (roll < 70) { kind = LevelEventPayload.FLICKER; duration = (5 + random.nextInt(5)) * 20; }
-                else if (roll < 85) { kind = LevelEventPayload.BLACKOUT; duration = (15 + random.nextInt(15)) * 20; }
+                if (roll < 8) { kind = LevelEventPayload.TWIST; duration = TWIST_TICKS; }
+                else if (roll < 57) { kind = LevelEventPayload.FLICKER; duration = (5 + random.nextInt(5)) * 20; }
+                else if (roll < 78) { kind = LevelEventPayload.BLACKOUT; duration = (15 + random.nextInt(15)) * 20; }
                 else { kind = LevelEventPayload.INTERCOM; duration = INTERCOM_TICKS; }
             }
         }

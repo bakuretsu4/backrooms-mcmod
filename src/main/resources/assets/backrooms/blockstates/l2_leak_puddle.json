@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "backrooms:block/l2_leak_puddle"
+      },
+      {
+        "model": "backrooms:block/l2_leak_puddle",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l2_leak_puddle",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l2_leak_puddle",
+        "y": 270
+      }
+    ]
+  }
+}

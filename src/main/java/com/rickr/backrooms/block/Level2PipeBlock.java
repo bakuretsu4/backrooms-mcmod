@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -27,11 +29,19 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  *   <li>KIND = what the pipe is made of (rusty steel, copper, insulated main, painted service
  *       pipe in four colours, electrical conduit).</li>
  *   <li>SIZE = SMALL: three thin pipes side by side; MEDIUM: two pipes; LARGE: one fat main.</li>
+ *   <li>KIND colour code (what the corridor's paint means, as in a real plant): PAINTED_GREEN
+ *       water, PAINTED_RED steam / fire, PAINTED_YELLOW gas, PAINTED_BLUE the grey RETURN line
+ *       (its paint is slate grey; the name stays so old worlds load), STEEL bare grey.</li>
  *   <li>SLOT = which side of the block the pipes sit against. A rack on the north wall of a
  *       corridor running east-west is AXIS = X, SLOT = NORTH; UP hangs them from the ceiling,
  *       DOWN stands them on the floor, CENTER puts ONE pipe in the middle of the block (that is
  *       the position the elbows and tees join). A SLOT along the pipe's own AXIS (say AXIS = X,
- *       SLOT = EAST) makes no sense and is drawn as CENTER.</li>
+ *       SLOT = EAST) makes no sense and is drawn as CENTER. HUNG is UP's lower cousin: the pipes
+ *       hang on rods a few pixels below the ceiling, leaving the top of the block to the steel
+ *       beams, so the ceiling reads in layers (beam, then pipes) instead of one dark mass.</li>
+ *   <li>BEAM = a steel I-beam crosses this block under the ceiling, square to the pipes. The
+ *       corridor has one every few blocks; it is part of this block because a block position
+ *       can only hold one block.</li>
  * </ul>
  * The numbers below must match the models in tools/anomaly_assets/level2_revamp.py.
  */
@@ -49,9 +59,9 @@ public class Level2PipeBlock extends Block {
 
     /** How many pipes and how thick (diameter in pixels, 16 to a block). */
     public enum Size implements StringRepresentable {
-        SMALL(3, 3.0, 3.25, new double[] {2.5, 8, 13.5}),
-        MEDIUM(2, 5.0, 4.25, new double[] {4, 12}),
-        LARGE(1, 10, 6.5, new double[] {8});
+        SMALL(3, 3.0, 3.25, 10.0, new double[] {2.5, 8, 13.5}),
+        MEDIUM(2, 5.0, 4.25, 10.5, new double[] {4, 12}),
+        LARGE(1, 10, 6.5, 12.2, new double[] {8});
 
         /** Number of pipes in the rack. */
         public final int count;
@@ -59,13 +69,16 @@ public class Level2PipeBlock extends Block {
         public final double diameter;
         /** Distance from the surface the pipes sit against to their centre line. */
         final double offset;
+        /** For SLOT = HUNG: distance from the ceiling (top of the block) down to the centre line. */
+        final double hang;
         /** Centre of each pipe, measured along the surface. */
         final double[] spread;
 
-        Size(int count, double diameter, double offset, double[] spread) {
+        Size(int count, double diameter, double offset, double hang, double[] spread) {
             this.count = count;
             this.diameter = diameter;
             this.offset = offset;
+            this.hang = hang;
             this.spread = spread;
         }
 
@@ -78,7 +91,7 @@ public class Level2PipeBlock extends Block {
     /** The side of the block the pipes sit against, or CENTER for one pipe in the middle. */
     public enum Slot implements StringRepresentable {
         NORTH(Direction.NORTH), SOUTH(Direction.SOUTH), EAST(Direction.EAST), WEST(Direction.WEST),
-        UP(Direction.UP), DOWN(Direction.DOWN), CENTER(null);
+        UP(Direction.UP), DOWN(Direction.DOWN), HUNG(Direction.UP), CENTER(null);
 
         /** The face the pipes hug (null for CENTER). */
         public final Direction side;
@@ -109,15 +122,26 @@ public class Level2PipeBlock extends Block {
     public static final EnumProperty<Kind> KIND = EnumProperty.create("kind", Kind.class);
     public static final EnumProperty<Size> SIZE = EnumProperty.create("size", Size.class);
     public static final EnumProperty<Slot> SLOT = EnumProperty.create("slot", Slot.class);
+    public static final BooleanProperty BEAM = BooleanProperty.create("beam");
 
-    // [axis][slot][size], worked out once so looking a shape up allocates nothing.
-    private static final VoxelShape[][][] SHAPES = new VoxelShape[3][Slot.values().length][Size.values().length];
+    /**
+     * The I-beam's outline in a block whose pipes run along X (the beam runs along Z, through the
+     * middle). Must match _beam_elements in tools/anomaly_assets/level2_revamp.py.
+     */
+    private static final VoxelShape BEAM_ALONG_Z = Block.box(5, 9, 0, 11, 16, 16);
+    private static final VoxelShape BEAM_ALONG_X = Block.box(0, 9, 5, 16, 16, 11);
+
+    // [axis][slot][size][beam], worked out once so looking a shape up allocates nothing.
+    private static final VoxelShape[][][][] SHAPES = new VoxelShape[3][Slot.values().length][Size.values().length][2];
 
     static {
         for (Direction.Axis axis : Direction.Axis.values()) {
             for (Slot slot : Slot.values()) {
                 for (Size size : Size.values()) {
-                    SHAPES[axis.ordinal()][slot.ordinal()][size.ordinal()] = rackShape(axis, slot, size);
+                    VoxelShape rack = rackShape(axis, slot, size);
+                    SHAPES[axis.ordinal()][slot.ordinal()][size.ordinal()][0] = rack;
+                    SHAPES[axis.ordinal()][slot.ordinal()][size.ordinal()][1] =
+                            Shapes.or(rack, axis == Direction.Axis.Z ? BEAM_ALONG_X : BEAM_ALONG_Z);
                 }
             }
         }
@@ -126,7 +150,7 @@ public class Level2PipeBlock extends Block {
     public Level2PipeBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(AXIS, Direction.Axis.X).setValue(KIND, Kind.STEEL)
-                .setValue(SIZE, Size.MEDIUM).setValue(SLOT, Slot.CENTER));
+                .setValue(SIZE, Size.MEDIUM).setValue(SLOT, Slot.CENTER).setValue(BEAM, false));
     }
 
     /** True when SLOT really is a side the pipes can lie against (not along the pipe itself). */
@@ -145,7 +169,8 @@ public class Level2PipeBlock extends Block {
         Direction side = slot.side;
         // The pipes are spread along the cross-section axis that is neither the pipe's nor the side's.
         Direction.Axis spreadAxis = otherAxis(axis, side.getAxis());
-        double across = side.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 16 - size.offset : size.offset;
+        double gap = slot == Slot.HUNG ? size.hang : size.offset;
+        double across = side.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 16 - gap : gap;
         VoxelShape shape = Shapes.empty();
         for (double along : size.spread) {
             double[] c = {8, 8, 8};
@@ -153,7 +178,8 @@ public class Level2PipeBlock extends Block {
             c[spreadAxis.ordinal()] = along;
             shape = Shapes.or(shape, pipeBox(axis, c[0], c[1], c[2], size.diameter));
         }
-        return shape.optimize();
+        // A hung main reaches a little below its block (its model may); the outline stays inside.
+        return Shapes.join(shape, Shapes.block(), BooleanOp.AND).optimize();
     }
 
     /** The third axis, given two different ones. */
@@ -176,12 +202,13 @@ public class Level2PipeBlock extends Block {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(AXIS, KIND, SIZE, SLOT);
+        builder.add(AXIS, KIND, SIZE, SLOT, BEAM);
     }
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPES[state.getValue(AXIS).ordinal()][state.getValue(SLOT).ordinal()][state.getValue(SIZE).ordinal()];
+        return SHAPES[state.getValue(AXIS).ordinal()][state.getValue(SLOT).ordinal()][state.getValue(SIZE).ordinal()]
+                [state.getValue(BEAM) ? 1 : 0];
     }
 
     /** In creative: the pipe runs along the face you click, against that face (or across a floor/ceiling). */

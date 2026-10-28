@@ -3,7 +3,6 @@ package com.rickr.backrooms.world;
 import com.rickr.backrooms.player.Checkpoints;
 import java.util.EnumMap;
 import java.util.Map;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 
@@ -77,11 +76,8 @@ public final class Level227Noclip {
             if (!Travel.sendToQuietly(p, target, p.getBlockX(), p.getBlockZ())) {
                 return; // the level is missing: the client gives the picture back by itself
             }
-            p.sendSystemMessage(Component.translatable(cause.message).withStyle(s -> s.withItalic(true).withColor(0xB8D49A)));
-            // Level 0 has no arrival line of its own (entering from reality uses the noclip line).
-            if (target != BackroomsLevel.LEVEL_0) {
-                p.sendSystemMessage(Travel.arrivalMessage(target));
-            }
+            // One arrival card: why you fell ("The tree lurched...") over the level you landed in.
+            Travel.showArrival(p, target, cause.message);
         });
     }
 

@@ -6,6 +6,8 @@ import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -425,6 +427,9 @@ public final class FixturePower {
         if (light.type == FixtureType.L0_EMERGENCY_LAMP) {
             return emergencyLampLevel(light);
         }
+        if (light.type == FixtureType.L2_EMERGENCY_RED || light.type == FixtureType.L2_EMERGENCY_AMBER) {
+            return level2EmergencyLevel(light);
+        }
         // Level 0: each lamp has its own power (the blackout wave reaches it at its own moment,
         // local outages cover only some lamps).
         float power = level0 ? Level0Power.lightFactor(light, System.currentTimeMillis()) : mainsPower();
@@ -459,6 +464,98 @@ public final class FixturePower {
             light.relayAtMs = now + RELAY_MS + (mix(light.key ^ 0x1D8E4E27C47D124FL) & 0x3FF) % 900L;
         }
         return now >= light.relayAtMs ? 1.0f : 0.0f;
+    }
+
+    /**
+     * A Level 2 emergency lamp. lit=true: always on (its battery). Standby (lit=false): dark while
+     * its corridor section has power; when that section's series circuit fails, or the whole floor
+     * blacks out, its relay clicks over half a second to a second and a half later and it stays
+     * on until the power is back. Same rule as {@link #level2StandbyOn}, plus the relay delay.
+     */
+    private static float level2EmergencyLevel(FixtureLight light) {
+        if (light.alwaysOn) {
+            return 1.0f;
+        }
+        long now = System.currentTimeMillis();
+        ClientLevel level = Minecraft.getInstance().level;
+        long gameTime = level == null ? 0L : level.getGameTime();
+        if (!level2StandbyOn(BlockPos.getX(light.key), BlockPos.getZ(light.key), gameTime)) {
+            light.relayAtMs = 0L;
+            return 0.0f;
+        }
+        if (light.relayAtMs == 0L) {
+            light.relayAtMs = now + RELAY_MS + (mix(light.key ^ 0x1D8E4E27C47D124FL) & 0x3FF) % 900L;
+        }
+        return now >= light.relayAtMs ? 1.0f : 0.0f;
+    }
+
+    /**
+     * Should a Level 2 standby emergency lamp at block (x, z) be on? Yes while the circuit of its
+     * corridor section is out (the same section its neighbouring caged lamps are on) or the floor's
+     * power is mostly gone (a blackout). Pure (no relay delay), so the chunk builder can ask too.
+     */
+    public static boolean level2StandbyOn(int x, int z, long gameTime) {
+        return mainsPower() < 0.5f || !level2CircuitPowered(level2Circuit(x + 0.5, z + 0.5), gameTime);
+    }
+
+    // --- Level 2 bulb ages ------------------------------------------------------------------------
+    // Every caged incandescent bulb on Level 2 was put in at a different time: some are new and a
+    // little whiter, most are amber, old ones are dimmer and browner, and a few are on their way out
+    // (they sag dimly and recover on their own slow rhythm, a filament that can't hold its heat).
+
+    /** Share (out of 1024) of bulbs that are tired / old / failing. The rest are "normal". */
+    private static final int BULB_FRESH = 180;
+    private static final int BULB_OLD = 300;
+    private static final int BULB_FAILING = 45;
+    /** Brightness of each age (on top of the fixture's own). */
+    private static final float BULB_FRESH_LEVEL = 1.06f;
+    private static final float BULB_NORMAL_LEVEL = 1.0f;
+    private static final float BULB_OLD_LEVEL = 0.84f;
+    private static final float BULB_FAILING_LEVEL = 0.62f;
+
+    /** The age class of the Level 2 bulb at this light key: 0 fresh, 1 normal, 2 old, 3 failing. */
+    public static int level2BulbAge(long key) {
+        int u = (int) ((mix(key ^ 0x6A09E667F3BCC909L) >>> 20) & 0x3FF);
+        if (u < BULB_FAILING) {
+            return 3;
+        }
+        if (u < BULB_FAILING + BULB_OLD) {
+            return 2;
+        }
+        if (u < BULB_FAILING + BULB_OLD + BULB_FRESH) {
+            return 0;
+        }
+        return 1;
+    }
+
+    /** A Level 2 bulb's brightness for its age (0.62 failing to 1.06 fresh), with a small +-4% spread. */
+    public static float level2BulbLevel(long key) {
+        float base = switch (level2BulbAge(key)) {
+            case 0 -> BULB_FRESH_LEVEL;
+            case 2 -> BULB_OLD_LEVEL;
+            case 3 -> BULB_FAILING_LEVEL;
+            default -> BULB_NORMAL_LEVEL;
+        };
+        float u = ((mix(key ^ 0x3C6EF372FE94F82BL) >>> 16) & 0xFFFF) / 65535.0f;
+        return base * (0.96f + 0.08f * u);
+    }
+
+    /**
+     * A failing Level 2 bulb's slow sag, a factor on its light: most of the time near full, now and
+     * then it browns down to ~45% over a second and creeps back (each bulb its own 5-11 s rhythm).
+     * 1 for every other bulb.
+     */
+    public static float level2BulbSag(long key, long nowMs) {
+        if (level2BulbAge(key) != 3) {
+            return 1.0f;
+        }
+        long seed = mix(key ^ 0x510E527FADE682D1L);
+        double periodMs = 5000.0 + (seed & 0xFFFF) % 6000L;
+        double phase = ((seed >>> 16) & 0xFFFF) / 65536.0;
+        double wave = 0.5 + 0.5 * Math.sin((nowMs / periodMs + phase) * Math.PI * 2.0);
+        // Raised to a high power: a short dip once per cycle, steady the rest of the time.
+        double dip = Math.pow(wave, 6.0);
+        return (float) (1.0 - 0.55 * dip);
     }
 
     // --- Level 2 series circuits -----------------------------------------------------------------

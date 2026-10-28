@@ -24,6 +24,7 @@ import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.anomaly.level0.Level0LocalEvents;
 import com.rickr.backrooms.world.layout.Level0AnomalyPlan;
 import com.rickr.backrooms.world.layout.Level0Layout;
+import com.rickr.backrooms.world.layout.Level2VisitPoints;
 import com.rickr.backrooms.world.Level94Clock;
 import com.rickr.backrooms.world.Level94Sync;
 import com.rickr.backrooms.registry.ModEntities;
@@ -56,7 +57,7 @@ import net.minecraft.world.phys.Vec3;
  * /backrooms time94 <day|dusk|night|dawn>   Level 94: jump its day/night clock to the start of that phase (for testing)
  * /backrooms anomaly locate <kind>     where the nearest anomalous area of that kind is on this floor (for testing)
  * /backrooms anomaly here              which anomalous area you are standing in
- * /backrooms anomaly visit <kind> <point>   Level 0: jump to a named spot of the nearest site of that kind (for testing)
+ * /backrooms anomaly visit <kind> <point>   Level 0 / Level 2: jump to a named spot of the nearest site of that kind (for testing)
  * </pre>
  */
 public final class BackroomsCommand {
@@ -99,16 +100,14 @@ public final class BackroomsCommand {
                                             return SharedSuggestionProvider.suggest(floor == null ? java.util.List.of() : floor.layout().anomalyKinds(), builder);
                                         })
                                         .executes(ctx -> anomalyLocate(ctx, StringArgumentType.getString(ctx, "kind")))))
-                        // Testing: teleport to a named spot (the atrium's ladder, the Front Office's rug...) of the
-                        // nearest site of a kind. The kind is "level_0/..." (a resource-location-like argument,
-                        // since plain words can't hold the slash).
+                        // Testing: teleport to a named spot (the atrium's ladder, the Front Office's rug, a
+                        // Level 2 chamber's logbook...) of the nearest site of a kind. The kind is "level_0/..."
+                        // or "level_2/..." (a resource-location-like argument, since plain words can't hold the slash).
                         .then(Commands.literal("visit")
                                 .then(Commands.argument("kind", net.minecraft.commands.arguments.ResourceLocationArgument.id())
-                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
-                                                BackroomsLevel.LEVEL_0.layout().anomalyKinds().stream()
-                                                        .filter(k -> !Level0AnomalyPlan.visitPoints(k).isEmpty()), builder))
+                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(visitKinds(ctx), builder))
                                         .then(Commands.argument("point", StringArgumentType.word())
-                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(Level0AnomalyPlan.visitPoints(
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(visitPointNames(
                                                         net.minecraft.commands.arguments.ResourceLocationArgument.getId(ctx, "kind").getPath()), builder))
                                                 .executes(ctx -> anomalyVisit(ctx,
                                                         net.minecraft.commands.arguments.ResourceLocationArgument.getId(ctx, "kind").getPath(),
@@ -257,24 +256,54 @@ public final class BackroomsCommand {
         return 1;
     }
 
-    /** Teleports the player to a named spot of the nearest Level 0 site of a kind (see Level0AnomalyPlan#visitPoint). */
+    /** The kinds {@code /backrooms anomaly visit} can take you to on the floor you're on (Level 0 or Level 2). */
+    private static java.util.List<String> visitKinds(CommandContext<CommandSourceStack> ctx) {
+        if (BackroomsLevel.fromDimension(ctx.getSource().getLevel().dimension()) == BackroomsLevel.LEVEL_2) {
+            return Level2VisitPoints.kinds();
+        }
+        return BackroomsLevel.LEVEL_0.layout().anomalyKinds().stream()
+                .filter(k -> !Level0AnomalyPlan.visitPoints(k).isEmpty()).toList();
+    }
+
+    /** The point names of a kind (Level 2's start with "level_2/"). */
+    private static java.util.List<String> visitPointNames(String kind) {
+        return kind.startsWith("level_2/") ? Level2VisitPoints.names(kind) : Level0AnomalyPlan.visitPoints(kind);
+    }
+
+    /**
+     * Teleports the player to a named spot of the nearest site of a kind: Level 0's anomalies and
+     * hidden rooms (Level0AnomalyPlan#visitPoint), Level 2's chambers, detours and oddities
+     * (Level2VisitPoints).
+     */
     private static int anomalyVisit(CommandContext<CommandSourceStack> ctx, String kind, String point) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         ServerLevel level = player.serverLevel();
-        if (BackroomsLevel.fromDimension(level.dimension()) != BackroomsLevel.LEVEL_0) {
-            ctx.getSource().sendFailure(Component.literal("Run this on Level 0."));
+        BackroomsLevel floor = BackroomsLevel.fromDimension(level.dimension());
+        if (floor != BackroomsLevel.LEVEL_0 && floor != BackroomsLevel.LEVEL_2) {
+            ctx.getSource().sendFailure(Component.literal("Run this on Level 0 or Level 2."));
             return 0;
         }
-        Level0Layout layout = (Level0Layout) BackroomsLevel.LEVEL_0.layout();
-        long seed = BackroomsSeeds.layoutSeed(level, BackroomsLevel.LEVEL_0);
-        AnomalySite site = layout.nearestAnomaly(seed, player.getBlockX(), player.getBlockZ(), kind);
+        long seed = BackroomsSeeds.layoutSeed(level, floor);
+        AnomalySite site = floor.layout().nearestAnomaly(seed, player.getBlockX(), player.getBlockZ(), kind);
         if (site == null) {
             ctx.getSource().sendFailure(Component.literal("No " + kind + " found nearby."));
             return 0;
         }
-        double[] spot = Level0AnomalyPlan.visitPoint(layout, seed, site, point);
+        double[] spot = floor == BackroomsLevel.LEVEL_2
+                ? Level2VisitPoints.point(seed, site, point)
+                : Level0AnomalyPlan.visitPoint((Level0Layout) floor.layout(), seed, site, point);
         if (spot == null) {
-            ctx.getSource().sendFailure(Component.literal("No point '" + point + "' for " + kind + ". Points: " + Level0AnomalyPlan.visitPoints(kind)));
+            ctx.getSource().sendFailure(Component.literal("No point '" + point + "' for " + kind + ". Points: " + visitPointNames(kind)));
+            return 0;
+        }
+        // The plan says this spot is open; if the world has solid concrete there, those chunks were
+        // made by an older build with a different floor plan. Say so instead of putting you in a wall.
+        BlockPos feet = BlockPos.containing(spot[0], spot[1], spot[2]);
+        if (floor == BackroomsLevel.LEVEL_2 && (level.getBlockState(feet).isSuffocating(level, feet)
+                || level.getBlockState(feet.above()).isSuffocating(level, feet.above()))) {
+            ctx.getSource().sendFailure(Component.literal("The " + kind + " / " + point + " spot at " + feet.getX() + ", "
+                    + feet.getY() + ", " + feet.getZ() + " is solid in this world: that part of the floor was generated by an"
+                    + " older build. Try one further away (unexplored chunks) or a fresh world."));
             return 0;
         }
         float pitch = spot.length > 4 ? (float) spot[4] : 0.0f;
@@ -301,7 +330,7 @@ public final class BackroomsCommand {
             if (level == BackroomsLevel.LEVEL_0 && !Travel.inBackrooms(player.level())) {
                 Travel.enterBackrooms(player); // the full noclip intro
             } else {
-                Travel.sendTo(player, level, player.getBlockX(), player.getBlockZ(), Travel.arrivalMessage(level));
+                Travel.sendTo(player, level, player.getBlockX(), player.getBlockZ());
             }
         }
         return players.size();

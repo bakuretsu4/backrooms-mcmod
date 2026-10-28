@@ -1,0 +1,8 @@
+{
+  "parent": "backrooms:block/bulkhead_lamp",
+  "textures": {
+    "particle": "backrooms:block/bulkhead_cage",
+    "cage": "backrooms:block/bulkhead_cage",
+    "bulb": "minecraft:block/white_concrete_powder"
+  }
+}

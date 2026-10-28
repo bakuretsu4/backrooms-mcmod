@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l2_heart_gauge"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l2_heart_gauge",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l2_heart_gauge",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l2_heart_gauge",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l2_chamber_props",
+    "sheet": "backrooms:block/l2_chamber_props"
+  },
+  "elements": [
+    {
+      "from": [
+        6,
+        -1,
+        6
+      ],
+      "to": [
+        10,
+        3.5,
+        10
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            8,
+            12,
+            12
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            8,
+            8,
+            12,
+            12
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            8,
+            8,
+            12,
+            12
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            8,
+            8,
+            12,
+            12
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            12,
+            8,
+            16,
+            10
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            8,
+            8,
+            12,
+            12
+          ],
+          "texture": "#sheet"
+        }
+      }
+    },
+    {
+      "from": [
+        10,
+        0,
+        7.5
+      ],
+      "to": [
+        11.6,
+        2.6,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            8,
+            12,
+            12
+          ],
+          "texture": "#sheet"
+        },
+        "south": {
+          "uv": [
+            8,
+            8,
+            12,
+            12
+          ],
+          "texture": "#sheet"
+        },
+        "east": {
+          "uv": [
+            8,
+            8,
+            12,
+            12
+          ],
+          "texture": "#sheet"
+        },
+        "west": {
+          "uv": [
+            8,
+            8,
+            12,
+            12
+          ],
+          "texture": "#sheet"
+        },
+        "up": {
+          "uv": [
+            8,
+            8,
+            12,
+            12
+          ],
+          "texture": "#sheet"
+        },
+        "down": {
+          "uv": [
+            8,
+            8,
+            12,
+            12
+          ],
+          "texture": "#sheet"
+        }
+      }
+    }
+  ]
+}

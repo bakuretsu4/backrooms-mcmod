@@ -1239,7 +1239,7 @@
       {
         "name": "backrooms:level2/machine_loop",
         "attenuation_distance": 28,
-        "volume": 0.76
+        "volume": 0.4
       }
     ],
     "subtitle": "subtitles.backrooms.level2_machine_loop"
@@ -1367,30 +1367,167 @@
     ],
     "subtitle": "subtitles.backrooms.level2_pump_hum"
   },
-  "level2.drip": {
+  "level2.drip_puddle": {
     "sounds": [
       {
-        "name": "backrooms:level2/drip1",
+        "name": "backrooms:level2/drip_puddle1",
         "attenuation_distance": 12
       },
       {
-        "name": "backrooms:level2/drip2",
+        "name": "backrooms:level2/drip_puddle2",
         "attenuation_distance": 12
       },
       {
-        "name": "backrooms:level2/drip3",
+        "name": "backrooms:level2/drip_puddle3",
         "attenuation_distance": 12
       },
       {
-        "name": "backrooms:level2/drip4",
+        "name": "backrooms:level2/drip_puddle4",
         "attenuation_distance": 12
       },
       {
-        "name": "backrooms:level2/drip5",
+        "name": "backrooms:level2/drip_puddle5",
         "attenuation_distance": 12
       }
     ],
-    "subtitle": "subtitles.backrooms.level2_drip"
+    "subtitle": "subtitles.backrooms.level2_drip_puddle"
+  },
+  "level2.drip_metal": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/drip_metal1",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level2/drip_metal2",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level2/drip_metal3",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level2/drip_metal4",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_drip_metal"
+  },
+  "level2.drip_concrete": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/drip_concrete1",
+        "attenuation_distance": 10
+      },
+      {
+        "name": "backrooms:level2/drip_concrete2",
+        "attenuation_distance": 10
+      },
+      {
+        "name": "backrooms:level2/drip_concrete3",
+        "attenuation_distance": 10
+      },
+      {
+        "name": "backrooms:level2/drip_concrete4",
+        "attenuation_distance": 10
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_drip_concrete"
+  },
+  "level2.plant_hum": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/plant_hum",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_plant_hum"
+  },
+  "level2.panel_buzz": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/panel_buzz",
+        "attenuation_distance": 10
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_panel_buzz"
+  },
+  "level2.pipe_tap": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/pipe_tap1",
+        "attenuation_distance": 56
+      },
+      {
+        "name": "backrooms:level2/pipe_tap2",
+        "attenuation_distance": 56
+      },
+      {
+        "name": "backrooms:level2/pipe_tap3",
+        "attenuation_distance": 56
+      },
+      {
+        "name": "backrooms:level2/pipe_tap4",
+        "attenuation_distance": 56
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_pipe_tap"
+  },
+  "level2.pipe_shudder": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/pipe_shudder1",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "backrooms:level2/pipe_shudder2",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_pipe_shudder"
+  },
+  "level2.pressure_release": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/pressure_release1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "backrooms:level2/pressure_release2",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "backrooms:level2/pressure_release3",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_pressure_release"
+  },
+  "level2.gauge_tick": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/gauge_tick1",
+        "attenuation_distance": 8
+      },
+      {
+        "name": "backrooms:level2/gauge_tick2",
+        "attenuation_distance": 8
+      },
+      {
+        "name": "backrooms:level2/gauge_tick3",
+        "attenuation_distance": 8
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_gauge_tick"
+  },
+  "level2.warm_door": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/warm_door",
+        "attenuation_distance": 8
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_warm_door"
   },
   "level0.red_rooms_hum": {
     "sounds": [

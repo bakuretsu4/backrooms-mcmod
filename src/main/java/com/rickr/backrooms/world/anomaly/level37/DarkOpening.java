@@ -11,9 +11,7 @@ import com.rickr.backrooms.world.layout.Level37AnomalyPlan;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 
@@ -30,6 +28,8 @@ import net.minecraft.sounds.SoundSource;
 final class DarkOpening implements AnomalyBehavior {
     /** Ticks in the darkness before you are through (the client fades to black meanwhile). */
     private static final int PASS_TICKS = 10;
+    /** Extra wait (ms) before the Poolrooms' arrival card comes up, so it isn't lost in the black. */
+    private static final int CARD_DELAY_MS = 600;
 
     /** Ticks each player has spent in the darkness. */
     private final Map<UUID, Integer> inDark = new HashMap<>();
@@ -65,8 +65,8 @@ final class DarkOpening implements AnomalyBehavior {
         if (Travel.sendToQuietly(player, BackroomsLevel.POOLROOMS, player.getBlockX(), player.getBlockZ())) {
             // The client holds the picture black and lets the Poolrooms fade in (Level37AnomalyOverlay).
             player.playNotifySound(ModSounds.L37_DARK_PASS.get(), SoundSource.MASTER, 0.9f, 1.0f);
-            player.sendSystemMessage(Component.translatable("message.backrooms.level37.dark")
-                    .withStyle(ChatFormatting.ITALIC));
+            // The arrival card waits for most of the black to clear (it lifts over ~3 s).
+            Travel.showArrival(player, BackroomsLevel.POOLROOMS, "message.backrooms.level37.dark", CARD_DELAY_MS);
         }
     }
 }

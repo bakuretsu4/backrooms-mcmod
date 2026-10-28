@@ -20,7 +20,22 @@ public final class Level2Sites {
     public static final String HOT_ZONE = "level_2/hot_zone";
     public static final String VOID_DOOR = "level_2/void_door";
     public static final String LOOP_HALL = "level_2/loop_hall";
-    public static final List<String> KINDS = List.of(BROWNOUT, HOT_ZONE, VOID_DOOR, LOOP_HALL);
+    // The quiet architectural anomalies ("oddities", planned in world/layout/Level2Oddities): nothing
+    // attacks you, the building is simply wrong in a way you notice only if you look.
+    /** A valve gallery where every quarter-turn valve has been turned the same wrong way (all shut), yet water rushes. */
+    public static final String WRONG_VALVES = "level_2/wrong_valves";
+    /** A painted pipe goes into one corridor wall and comes out of the opposite wall upside down. */
+    public static final String INVERTED_PIPE = "level_2/inverted_pipe";
+    /** Four corridor sections in a row stencilled with the same section number. */
+    public static final String REPEAT_SECTION = "level_2/repeat_section";
+    /** A steel door that opens onto bare concrete, warm to stand near. */
+    public static final String WARM_DOOR = "level_2/warm_door";
+    /** A pressure gauge on the wall whose needle follows your heartbeat. */
+    public static final String HEART_GAUGE = "level_2/heart_gauge";
+    /** The oddities, in the order the planner rolls them. */
+    public static final List<String> ODDITIES = List.of(WRONG_VALVES, INVERTED_PIPE, REPEAT_SECTION, WARM_DOOR, HEART_GAUGE);
+    public static final List<String> KINDS = List.of(BROWNOUT, HOT_ZONE, VOID_DOOR, LOOP_HALL,
+            WRONG_VALVES, INVERTED_PIPE, REPEAT_SECTION, WARM_DOOR, HEART_GAUGE);
 
     /** The level floor (y40); the walkway is the layer above it. */
     public static final int FLOOR_Y = LevelLayout.FLOOR_Y;

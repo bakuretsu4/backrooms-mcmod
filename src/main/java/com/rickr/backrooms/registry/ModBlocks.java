@@ -46,6 +46,7 @@ import com.rickr.backrooms.block.PoleBlock;
 import com.rickr.backrooms.block.PoolLadderBlock;
 import com.rickr.backrooms.block.PoolLampBlock;
 import com.rickr.backrooms.block.Level0SurfaceBlock;
+import com.rickr.backrooms.block.Level2SurfaceBlock;
 import com.rickr.backrooms.block.RugBlock;
 import com.rickr.backrooms.block.ShallowWaterBlock;
 import com.rickr.backrooms.block.StreetSignBlock;
@@ -173,11 +174,22 @@ public final class ModBlocks {
             props -> new StairBlock(CONCRETE_FLOOR.get().defaultBlockState(), props), unbreakable(MapColor.STONE, SoundType.STONE));
 
     // Level 2: Pipe Dreams. Grey-beige poured concrete (formwork lines, tie holes, streaks); the pipes
-    // and fittings are real 3D parts (here and in registry/Level2Blocks). Weights: plain first, then
-    // rust run-off, water streaks, a patched repair (wall) / an oil stain, a spalled crack (floor).
-    public static final DeferredBlock<SurfaceBlock> PIPE_WALL = surface("pipe_wall", MapColor.STONE, SoundType.STONE, 6, 2, 2, 1);
-    public static final DeferredBlock<SurfaceBlock> PIPE_FLOOR = surface("pipe_floor", MapColor.COLOR_LIGHT_GRAY, SoundType.STONE, 10, 2, 1);
-    public static final DeferredBlock<Block> PIPE_CEILING = structural("pipe_ceiling", MapColor.COLOR_GRAY, SoundType.STONE);
+    // and fittings are real 3D parts (here and in registry/Level2Blocks). The aged versions gather in
+    // damp stretches (block/Level2SurfaceBlock): the first chance list applies in the dry corridor, the
+    // second in damp stretches, the last list limits a version to one row. Textures:
+    // tools/anomaly_assets/level2_materials.py; counts must match gen_assets.py SURFACE_VARIANTS.
+    // Wall: plain, rust from an old bracket, condensation from the ceiling (top row only), spalled concrete.
+    public static final DeferredBlock<SurfaceBlock> PIPE_WALL = level2Surface("pipe_wall", MapColor.STONE, SoundType.STONE,
+            new int[] {22, 2, 1, 1}, new int[] {8, 3, 9, 2},
+            Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.TOP_ROW, Level2SurfaceBlock.ANY_ROW);
+    // Floor: plain, an oil stain, a spalled crack, a wet patch (damp stretches only).
+    public static final DeferredBlock<SurfaceBlock> PIPE_FLOOR = level2Surface("pipe_floor", MapColor.COLOR_LIGHT_GRAY, SoundType.STONE,
+            new int[] {24, 2, 2, 0}, new int[] {8, 2, 1, 9},
+            Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW);
+    // Ceiling slab: plain, a damp bloom with white salts, a rusty hanger anchor.
+    public static final DeferredBlock<SurfaceBlock> PIPE_CEILING = level2Surface("pipe_ceiling", MapColor.COLOR_GRAY, SoundType.STONE,
+            new int[] {22, 1, 2}, new int[] {7, 8, 2},
+            Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW);
     /** A cast-iron drain grate set into the floor. */
     public static final DeferredBlock<Block> FLOOR_GRATE = structural("floor_grate", MapColor.COLOR_GRAY, SoundType.METAL);
     /** Three rusted steel pipes along the wall (BRACKET = with a strut channel and clamps). */
@@ -1103,6 +1115,11 @@ public final class ModBlocks {
     /** A Level 0 surface whose aged versions cluster in worn patches (see block/Level0SurfaceBlock). */
     static DeferredBlock<SurfaceBlock> level0Surface(String name, MapColor color, SoundType sound, int[] calm, int[] worn, int... rows) {
         return BLOCKS.registerBlock(name, props -> new Level0SurfaceBlock(props, calm, worn, rows), unbreakable(color, sound));
+    }
+
+    /** A Level 2 surface whose wet versions gather in damp stretches (see block/Level2SurfaceBlock). */
+    static DeferredBlock<SurfaceBlock> level2Surface(String name, MapColor color, SoundType sound, int[] dry, int[] damp, int... rows) {
+        return BLOCKS.registerBlock(name, props -> new Level2SurfaceBlock(props, dry, damp, rows), unbreakable(color, sound));
     }
 
     private static DeferredBlock<WallDecalBlock> decal(String name) {

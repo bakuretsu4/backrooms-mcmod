@@ -110,6 +110,8 @@ public final class ClientSetup {
     @SubscribeEvent
     public static void registerGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(Backrooms.id("camcorder_hud"), new CamcorderHud());
+        // The camcorder arrival card ("LEVEL 2 / Something hums inside the pipes."), lower left.
+        event.registerAboveAll(com.rickr.backrooms.client.hud.ArrivalCard.LAYER_ID, new com.rickr.backrooms.client.hud.ArrivalCard());
         // The real world wearing thin: a faint stale yellow (client/intro/RealWorldClient).
         event.registerAboveAll(com.rickr.backrooms.client.intro.RealWorldClient.LAYER_ID,
                 new com.rickr.backrooms.client.intro.RealWorldClient());

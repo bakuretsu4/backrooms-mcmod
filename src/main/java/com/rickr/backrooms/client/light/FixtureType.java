@@ -89,9 +89,12 @@ public enum FixtureType {
      * far side of the corridor drop off, so looking down the straight line you see a zig-zag of
      * pools receding into the distance instead of one evenly lit tube. Veil's light falls off
      * steeply ((1 - distance / radius)^3); at this height the lane under a lamp sits around 0.4,
-     * the lamp's foot around 0.6, the far shoulder around 0.15.
+     * the lamp's foot around 0.6, the far shoulder around 0.15. Every bulb has its own age on top
+     * (FixturePower#level2BulbLevel, 0.62-1.06, ~0.94 on average, hence 1.8 rather than the old
+     * 1.7) and colour (VeilFixtures). On Level 2 its shadows come from the wall map, with gloss
+     * highlights on wet and metal surfaces (pinwheel light/level2_point).
      */
-    BULKHEAD_LAMP("bulkhead_lamp", Mount.WALL, 1, 1.0f, 0.80f, 0.56f, 1.7f, 8.5f, Hum.FLUORESCENT, true),
+    BULKHEAD_LAMP("bulkhead_lamp", Mount.WALL, 1, 1.0f, 0.80f, 0.56f, 1.8f, 8.5f, Hum.FLUORESCENT, true),
     /**
      * Poolrooms atrium skylight: frosted daylight glass in 5x5 panels high above the big pool.
      * Strong and far-reaching (the panels hang 14 blocks above the walkway): the atriums are the
@@ -173,6 +176,18 @@ public enum FixtureType {
     // colour there); silent and steady; battery-backed (see FixturePower), so it never takes part
     // in blackouts, flickers or the lamp circuits failing.
     L2_EMERGENCY_LIGHT("l2_emergency_light", Mount.WALL, 1, 0.60f, 0.28f, 1.0f, 1.0f, 10.0f, Hum.NONE, false),
+    // Level 2 industrial lighting. The caged mercury lamp of the machine areas (pump bays, pump and
+    // boiler rooms): the same cage as the amber bulkhead lamp with a cold blue-green-white mercury
+    // bulb, a little stronger and wider (machine bays are bigger), on the same series circuits.
+    L2_MERCURY_LAMP("l2_mercury_lamp", Mount.WALL, 1, 0.72f, 0.93f, 0.95f, 1.9f, 9.5f, Hum.FLUORESCENT, true),
+    // The battery emergency lamps beside bulkheads, chamber doors and exits (lit=false: standby, on
+    // only while its corridor section's circuit is dead or the floor is blacked out; see
+    // FixturePower#levelOf). A small, deep red or amber pool on the floor and wall under it: enough
+    // to find the door by, never enough to light the corridor. Silent.
+    // Both share one block (backrooms:l2_emergency_lamp); its tone=amber states map to the amber
+    // type in of(). The amber type's id names no block (on purpose), so no block maps to it directly.
+    L2_EMERGENCY_RED("l2_emergency_lamp", Mount.WALL, 1, 1.0f, 0.10f, 0.06f, 1.5f, 8.0f, Hum.NONE, false),
+    L2_EMERGENCY_AMBER("l2_emergency_lamp_amber_tone", Mount.WALL, 1, 1.0f, 0.52f, 0.12f, 1.4f, 8.0f, Hum.NONE, false),
     // Level 39. The tunnels' "invisible orbs": a lightless-looking block at the vault apex every 10
     // blocks; cool white with a hint of the water's turquoise, silent and steady. The lightmap
     // already lights the tunnels bright and evenly (client/Level39Atmosphere), so the orbs only
@@ -379,6 +394,11 @@ public enum FixtureType {
         if ((type == L39_BULB || type == L490_LANTERN || type == L0_BEACON) && state.hasProperty(BlockStateProperties.LIT)
                 && !state.getValue(BlockStateProperties.LIT)) {
             return null;
+        }
+        // Level 2's emergency lamp: its amber states are the amber fixture.
+        if (type == L2_EMERGENCY_RED && state.hasProperty(com.rickr.backrooms.block.Level2EmergencyLampBlock.TONE)
+                && state.getValue(com.rickr.backrooms.block.Level2EmergencyLampBlock.TONE) == com.rickr.backrooms.block.Level2EmergencyLampBlock.Tone.AMBER) {
+            return L2_EMERGENCY_AMBER;
         }
         // A two-tall vending machine glows once, from its upper half.
         if (type == VENDING_MACHINE && state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)

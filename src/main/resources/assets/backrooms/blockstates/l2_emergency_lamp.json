@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "facing=north,lit=false,tone=red": {
+      "model": "backrooms:block/l2_emergency_lamp"
+    },
+    "facing=north,lit=false,tone=amber": {
+      "model": "backrooms:block/l2_emergency_lamp"
+    },
+    "facing=north,lit=true,tone=red": {
+      "model": "backrooms:block/l2_emergency_lamp"
+    },
+    "facing=north,lit=true,tone=amber": {
+      "model": "backrooms:block/l2_emergency_lamp"
+    },
+    "facing=east,lit=false,tone=red": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 90
+    },
+    "facing=east,lit=false,tone=amber": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 90
+    },
+    "facing=east,lit=true,tone=red": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 90
+    },
+    "facing=east,lit=true,tone=amber": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 90
+    },
+    "facing=south,lit=false,tone=red": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 180
+    },
+    "facing=south,lit=false,tone=amber": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 180
+    },
+    "facing=south,lit=true,tone=red": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 180
+    },
+    "facing=south,lit=true,tone=amber": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 180
+    },
+    "facing=west,lit=false,tone=red": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 270
+    },
+    "facing=west,lit=false,tone=amber": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 270
+    },
+    "facing=west,lit=true,tone=red": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 270
+    },
+    "facing=west,lit=true,tone=amber": {
+      "model": "backrooms:block/l2_emergency_lamp",
+      "y": 270
+    }
+  }
+}

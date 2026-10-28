@@ -2,9 +2,13 @@ package com.rickr.backrooms.world.layout;
 
 import com.rickr.backrooms.block.AxisShapeBlock;
 import com.rickr.backrooms.block.DuctBlock;
-import com.rickr.backrooms.block.Level2PipeElbowBlock;
 import com.rickr.backrooms.block.Level2BulkheadFrameBlock;
+import com.rickr.backrooms.block.Level2CableTrayBlock;
+import com.rickr.backrooms.block.Level2FeedPipeBlock;
+import com.rickr.backrooms.block.Level2LeverValveBlock;
 import com.rickr.backrooms.block.Level2PipeBlock;
+import com.rickr.backrooms.block.Level2PipeElbowBlock;
+import com.rickr.backrooms.block.Level2PipeEndBlock;
 import com.rickr.backrooms.block.Level2StencilBlock;
 import com.rickr.backrooms.block.Level2TallBlock;
 import com.rickr.backrooms.block.Level2ValveBlock;
@@ -40,6 +44,68 @@ final class Level2Parts {
                 .setValue(Level2PipeBlock.SIZE, size);
     }
 
+    /**
+     * A length (or joint) of pipe hung on rods a little below the ceiling, the way every run in the
+     * corridor's ceiling band hangs, so the steel beams and the pipes read as separate layers.
+     * {@code beam}: a steel I-beam crosses the top of this block, square to the pipes.
+     */
+    static BlockState hung(Direction.Axis axis, Level2PipeBlock.Kind kind, Level2PipeBlock.Size size, boolean flange,
+                           boolean beam) {
+        return (flange ? Level2Blocks.FLANGE : Level2Blocks.PIPE).get().defaultBlockState()
+                .setValue(Level2PipeBlock.AXIS, axis)
+                .setValue(Level2PipeBlock.SLOT, Level2PipeBlock.Slot.HUNG)
+                .setValue(Level2PipeBlock.KIND, kind)
+                .setValue(Level2PipeBlock.SIZE, size)
+                .setValue(Level2PipeBlock.BEAM, beam);
+    }
+
+    /**
+     * The end of a rack on the wall {@code facing} points away from: its pipes arrive from the
+     * side {@code from} and bend into the wall here ({@code bend}), or run on into the solid pier
+     * beyond through a bolted wall collar.
+     */
+    static BlockState pipeEnd(Direction facing, Direction from, boolean bend, Level2PipeBlock.Kind kind,
+                              Level2PipeBlock.Size size) {
+        return Level2Blocks.PIPE_END.get().defaultBlockState()
+                .setValue(WallMountBlock.FACING, facing)
+                .setValue(Level2PipeEndBlock.FORM, Level2PipeEndBlock.form(facing, from, bend))
+                .setValue(Level2PipeEndBlock.KIND, kind)
+                .setValue(Level2PipeEndBlock.SIZE, size);
+    }
+
+    /** The top of a riser (pipes standing up the wall), where it bends into the wall. */
+    static BlockState riserTop(Direction facing, Level2PipeBlock.Kind kind, Level2PipeBlock.Size size) {
+        return Level2Blocks.PIPE_END.get().defaultBlockState()
+                .setValue(WallMountBlock.FACING, facing)
+                .setValue(Level2PipeEndBlock.FORM, Level2PipeEndBlock.Form.RISER)
+                .setValue(Level2PipeEndBlock.KIND, kind)
+                .setValue(Level2PipeEndBlock.SIZE, size);
+    }
+
+    /**
+     * The end of a run hung under the ceiling square to {@code facing}: its pipes arrive from the
+     * side {@code from} and bend up into the slab through a collar.
+     */
+    static BlockState hungEnd(Direction facing, Direction from, Level2PipeBlock.Kind kind, Level2PipeBlock.Size size) {
+        return Level2Blocks.PIPE_END.get().defaultBlockState()
+                .setValue(WallMountBlock.FACING, facing)
+                .setValue(Level2PipeEndBlock.FORM, Level2PipeEndBlock.hungForm(facing, from))
+                .setValue(Level2PipeEndBlock.KIND, kind)
+                .setValue(Level2PipeEndBlock.SIZE, size);
+    }
+
+    /** A bare steel I-beam under the slab, running along {@code axis}. */
+    static BlockState beam(Direction.Axis axis) {
+        return Level2Blocks.BEAM.get().defaultBlockState().setValue(AxisShapeBlock.AXIS, axis);
+    }
+
+    /** A branch dropping from the MEDIUM HUNG header above to a FEED valve below. */
+    static BlockState feedPipe(Direction facing, Level2PipeBlock.Kind kind) {
+        return Level2Blocks.FEED_PIPE.get().defaultBlockState()
+                .setValue(WallMountBlock.FACING, facing)
+                .setValue(Level2FeedPipeBlock.KIND, kind);
+    }
+
     /** One pipe through the middle of the block (where elbows and tees join). */
     static BlockState centrePipe(Direction.Axis axis, Level2PipeBlock.Kind kind, Level2PipeBlock.Size size) {
         return Level2Blocks.PIPE.get().defaultBlockState()
@@ -73,9 +139,23 @@ final class Level2Parts {
     }
 
     static BlockState valve(Direction facing, boolean red) {
+        return valve(facing, red, false);
+    }
+
+    /** A wheel valve; {@code feed}: on a pipe dropping from a header above instead of a wall stub. */
+    static BlockState valve(Direction facing, boolean red, boolean feed) {
         return Level2Blocks.VALVE_WHEEL.get().defaultBlockState()
                 .setValue(WallMountBlock.FACING, facing)
-                .setValue(Level2ValveBlock.COLOR, red ? Level2ValveBlock.WheelColor.RED : Level2ValveBlock.WheelColor.GREY);
+                .setValue(Level2ValveBlock.COLOR, red ? Level2ValveBlock.WheelColor.RED : Level2ValveBlock.WheelColor.GREY)
+                .setValue(Level2ValveBlock.FEED, feed);
+    }
+
+    /** A quarter-turn ball valve: handle along the pipe when {@code open}, across it when shut. */
+    static BlockState leverValve(Direction facing, boolean open, boolean feed) {
+        return Level2Blocks.VALVE_LEVER.get().defaultBlockState()
+                .setValue(WallMountBlock.FACING, facing)
+                .setValue(Level2LeverValveBlock.OPEN, open)
+                .setValue(Level2LeverValveBlock.FEED, feed);
     }
 
     static BlockState gauge(Direction facing) {
@@ -119,7 +199,20 @@ final class Level2Parts {
     }
 
     static BlockState cableTray(Direction.Axis axis) {
-        return Level2Blocks.CABLE_TRAY.get().defaultBlockState().setValue(AxisShapeBlock.AXIS, axis);
+        return cableTray(axis, false, false);
+    }
+
+    /** The cable tray; {@code beam}: an I-beam crosses above it; {@code droop}: loose cables sag below it. */
+    static BlockState cableTray(Direction.Axis axis, boolean beam, boolean droop) {
+        return Level2Blocks.CABLE_TRAY.get().defaultBlockState()
+                .setValue(AxisShapeBlock.AXIS, axis)
+                .setValue(Level2CableTrayBlock.BEAM, beam)
+                .setValue(Level2CableTrayBlock.DROOP, droop);
+    }
+
+    /** The film of dirty water under a leak. */
+    static BlockState puddle() {
+        return Level2Blocks.LEAK_PUDDLE.get().defaultBlockState();
     }
 
     static BlockState gutter(Direction.Axis axis) {

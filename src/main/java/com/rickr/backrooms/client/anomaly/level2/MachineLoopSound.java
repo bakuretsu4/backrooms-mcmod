@@ -12,9 +12,13 @@ import net.minecraft.util.RandomSource;
  * A machine loop placed in the world. By default the faulty machinery of one hot zone: a loud
  * whirring loop placed in the middle of the room, heard from about 28 blocks down the corridor
  * (sounds.json attenuation_distance). "Faulty": now and then the motor sags (pitch and volume
- * dip) and catches again. Level2Emitters also uses it for the corridor's pump hums and steam
- * leaks (steady, no sag). It fades out and stops by itself once whoever started it stops
- * keeping it alive (you walked away).
+ * dip) and catches again. Level2Emitters also uses it for the corridor's pump hums, machinery,
+ * breaker panels and steam leaks (steady, no sag). It fades out and stops by itself once whoever
+ * started it stops keeping it alive (you walked away).
+ *
+ * <p>Machines on the mains can lose their power ({@link #powered}): the loop then winds down
+ * like a motor coasting to a stop (pitch and volume sinking together over about 3 s) and spins
+ * back up over about 2 s when the power returns. That is how a dead section goes quiet.
  */
 final class MachineLoopSound extends AbstractTickableSoundInstance {
     /** Ticks without a keep-alive before it fades out. */
@@ -29,6 +33,12 @@ final class MachineLoopSound extends AbstractTickableSoundInstance {
     private int sag;
     private int sagLength = 1;
     private float sagDepth;
+    /** 0 (stopped) .. 1 (running at speed); eases toward {@link #poweredGoal}. */
+    private float power = 1.0f;
+    private boolean poweredGoal = true;
+    /** False until the first {@link #powered} call: a machine already dead when you arrive starts silent. */
+    private boolean powerKnown;
+    private final float basePitch;
 
     /** The hot zone's faulty machinery. */
     MachineLoopSound(double x, double y, double z, long salt) {
@@ -50,11 +60,21 @@ final class MachineLoopSound extends AbstractTickableSoundInstance {
         this.volume = 0.0f;
         // Steady loops start at a slightly different pitch each, so two pumps never phase together.
         this.pitch = faulty ? 1.0f : 0.96f + (salt & 0xFF) / 255.0f * 0.08f;
+        this.basePitch = this.pitch;
     }
 
     /** Called every tick by whoever started it while you're near. */
     void keepAlive() {
         sinceKept = 0;
+    }
+
+    /** Called every tick (with keepAlive) by loops that run on the mains: is the power on here? */
+    void powered(boolean on) {
+        poweredGoal = on;
+        if (!powerKnown) {
+            powerKnown = true;
+            power = on ? 1.0f : 0.0f;
+        }
     }
 
     @Override
@@ -78,9 +98,13 @@ final class MachineLoopSound extends AbstractTickableSoundInstance {
                 sag--;
                 s = sagDepth * Mth.sin(Mth.PI * (1.0f - sag / (float) sagLength)); // dips, then catches again
             }
-            pitch = 1.0f - s;
         }
-        volume = maxVolume * fade * (1.0f - s * 0.8f);
+        // Coasting down takes 60 ticks, spinning up 40 (a motor catches faster than it stops).
+        power = poweredGoal ? Math.min(1.0f, power + 1.0f / 40.0f) : Math.max(0.0f, power - 1.0f / 60.0f);
+        // The motor slows as it loses power: down to half pitch (Minecraft's lowest) when stopped.
+        pitch = (basePitch - s) * (0.5f + 0.5f * power);
+        // Squared: most of the sound is gone by the time the motor is at half speed.
+        volume = maxVolume * fade * (1.0f - s * 0.8f) * power * power;
         if (goal == 0.0f && fade < 0.01f) {
             stop();
         }

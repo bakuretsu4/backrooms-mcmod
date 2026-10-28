@@ -1,11 +1,59 @@
 {
-  "variants": {
-    "axis=x": {
-      "model": "backrooms:block/l2_cable_tray"
+  "multipart": [
+    {
+      "when": {
+        "axis": "x"
+      },
+      "apply": {
+        "model": "backrooms:block/l2_cable_tray"
+      }
     },
-    "axis=z": {
-      "model": "backrooms:block/l2_cable_tray",
-      "y": 90
+    {
+      "when": {
+        "axis": "z"
+      },
+      "apply": {
+        "model": "backrooms:block/l2_cable_tray",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "droop": "true",
+        "axis": "x"
+      },
+      "apply": {
+        "model": "backrooms:block/l2_cable_tray_droop"
+      }
+    },
+    {
+      "when": {
+        "droop": "true",
+        "axis": "z"
+      },
+      "apply": {
+        "model": "backrooms:block/l2_cable_tray_droop",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "beam": "true",
+        "axis": "x"
+      },
+      "apply": {
+        "model": "backrooms:block/l2_pipe_beam"
+      }
+    },
+    {
+      "when": {
+        "beam": "true",
+        "axis": "z"
+      },
+      "apply": {
+        "model": "backrooms:block/l2_pipe_beam",
+        "y": 90
+      }
     }
-  }
+  ]
 }

@@ -37,11 +37,12 @@ import net.minecraft.world.phys.Vec3;
 public final class Level2AnomalyEffects {
     /**
      * Heat: warm, slightly over-exposed and washed out, with a thick warm haze close in, a soft
-     * glow and a strong "breath" (the exposure wavers like air over hot metal).
+     * glow and a gentle "breath" (the exposure wavers a little, like air over hot metal; kept to
+     * 2%, the old 6% pulsed the whole picture).
      */
     private static final AtmosphereGrade.Mood HEAT = new AtmosphereGrade.Mood(1.06f, 1.04f, 0.86f,
             1.08f, 0.96f, 0.84f, 1.08f, 1.0f, 0.86f,
-            0.014f, 0.009f, 0.004f, 0.32f, 0.22f, 0.13f, 2.0f, 0.07f, 0.5f, 0.45f, 0.30f, 0.06f);
+            0.014f, 0.009f, 0.004f, 0.32f, 0.22f, 0.13f, 2.0f, 0.07f, 0.5f, 0.45f, 0.30f, 0.02f);
     /** The void: no haze at all (nothing to light it), crushed blacks, the doorway's light blooming. */
     private static final AtmosphereGrade.Mood VOID = new AtmosphereGrade.Mood(0.96f, 1.25f, 0.70f,
             1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
@@ -90,6 +91,8 @@ public final class Level2AnomalyEffects {
             return FixturePower.level2CircuitPowered(FixturePower.level2Circuit(pos.getX() + 0.5, pos.getZ() + 0.5),
                     world.getGameTime());
         };
+        // The quiet oddities (heart gauge, warm door, wrong valves, inverted pipe).
+        Level2OddityEffects.register();
     }
 
     private static void hotZone(Minecraft mc, AnomalySite site, boolean inside, float secondsInside) {

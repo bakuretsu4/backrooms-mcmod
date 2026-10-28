@@ -6,7 +6,8 @@
     "wheel": "backrooms:block/l2_wheel_grey",
     "steel": "backrooms:block/l2_pipe_steel",
     "body": "backrooms:block/l2_pipe_flange",
-    "bolt": "backrooms:block/l2_bolt_steel"
+    "bolt": "backrooms:block/l2_bolt_steel",
+    "cap": "backrooms:block/l2_pipe_cap_steel"
   },
   "elements": [
     {

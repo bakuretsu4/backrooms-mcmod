@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "facing=north,prop=logbook": {
+      "model": "backrooms:block/l2_chamber_prop_logbook"
+    },
+    "facing=east,prop=logbook": {
+      "model": "backrooms:block/l2_chamber_prop_logbook",
+      "y": 90
+    },
+    "facing=south,prop=logbook": {
+      "model": "backrooms:block/l2_chamber_prop_logbook",
+      "y": 180
+    },
+    "facing=west,prop=logbook": {
+      "model": "backrooms:block/l2_chamber_prop_logbook",
+      "y": 270
+    },
+    "facing=north,prop=kettle": {
+      "model": "backrooms:block/l2_chamber_prop_kettle"
+    },
+    "facing=east,prop=kettle": {
+      "model": "backrooms:block/l2_chamber_prop_kettle",
+      "y": 90
+    },
+    "facing=south,prop=kettle": {
+      "model": "backrooms:block/l2_chamber_prop_kettle",
+      "y": 180
+    },
+    "facing=west,prop=kettle": {
+      "model": "backrooms:block/l2_chamber_prop_kettle",
+      "y": 270
+    },
+    "facing=north,prop=mug": {
+      "model": "backrooms:block/l2_chamber_prop_mug"
+    },
+    "facing=east,prop=mug": {
+      "model": "backrooms:block/l2_chamber_prop_mug",
+      "y": 90
+    },
+    "facing=south,prop=mug": {
+      "model": "backrooms:block/l2_chamber_prop_mug",
+      "y": 180
+    },
+    "facing=west,prop=mug": {
+      "model": "backrooms:block/l2_chamber_prop_mug",
+      "y": 270
+    },
+    "facing=north,prop=jacket": {
+      "model": "backrooms:block/l2_chamber_prop_jacket"
+    },
+    "facing=east,prop=jacket": {
+      "model": "backrooms:block/l2_chamber_prop_jacket",
+      "y": 90
+    },
+    "facing=south,prop=jacket": {
+      "model": "backrooms:block/l2_chamber_prop_jacket",
+      "y": 180
+    },
+    "facing=west,prop=jacket": {
+      "model": "backrooms:block/l2_chamber_prop_jacket",
+      "y": 270
+    }
+  }
+}

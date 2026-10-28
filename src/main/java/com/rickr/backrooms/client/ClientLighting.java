@@ -69,11 +69,11 @@ public final class ClientLighting {
     private static final float POOLROOMS_MAX_FILL = 0.45f;
     private static final float POOLROOMS_FILL_FALLOFF = 3.0f;
     /**
-     * Level 2 fill. Beyond Veil's light range (~28 blocks) this is all that lights the corridor,
-     * so it carries the far end of the receding row of pools: the patch of wall and floor at
-     * each lamp's foot (light level 7-9) keeps a dim warm glow (level 9 ~ 12%, 7 ~ 7%), while the
-     * gaps between lamps and the pipe chases (level 5 and below, ~3% and less) stay dark. A soft
-     * curve (exponent 2.2) so the pools fade out gradually rather than as hard blobs.
+     * Level 2 fill. Beyond the Veil lamps' range this is all that lights the corridor, so it
+     * carries the far end of the receding row of pools: the patch of wall and floor at each lamp's
+     * foot (light level 7-9) keeps a dim warm glow (level 9 ~ 12%, 7 ~ 7%), while the gaps between
+     * lamps and the pipe chases (level 5 and below, ~3% and less) stay dark. A soft curve
+     * (exponent 2.2) so the pools fade out gradually rather than as hard blobs.
      */
     private static final float LEVEL2_MAX_FILL = 0.37f;
     private static final float LEVEL2_FILL_FALLOFF = 2.2f;
@@ -81,15 +81,38 @@ public final class ClientLighting {
     private static final float LEVEL2_TINT_R = 1.0f;
     private static final float LEVEL2_TINT_G = 0.84f;
     private static final float LEVEL2_TINT_B = 0.62f;
-    /** In a brownout the only light is the violet emergency lights. */
-    private static final float LEVEL2_EMERGENCY_R = 0.62f;
-    private static final float LEVEL2_EMERGENCY_G = 0.36f;
-    private static final float LEVEL2_EMERGENCY_B = 1.0f;
     /**
      * When the section of corridor you stand in loses its circuit, the fill drops to this share
      * (the dead lamps' vanilla light never changes, so this is what makes the section go dark).
      */
     private static final float LEVEL2_DEAD_SECTION_FILL = 0.2f;
+    /**
+     * Level 2's "readable dark" (the 2026-10 industrial overhaul): a faint cold light everywhere
+     * the corridor's lamps could reach at all, even when they are dead, so a dead section still
+     * shows the floor edge, the wall line and the pipes' silhouettes (the camera's eye catching the
+     * last of the light). A cold blue-grey, so darkness reads cold and empty, not rust-brown.
+     * Numbers: concrete walls (~0.55) and floor (~0.47) times this (~0.11 brightness) and the face
+     * shading land a dead section at about 0.03-0.06 on camera (lead's target), the ceiling near
+     * black. Under working lamps it is a small part of the light.
+     */
+    private static final float LEVEL2_AMBIENT_R = 0.100f;
+    private static final float LEVEL2_AMBIENT_G = 0.110f;
+    private static final float LEVEL2_AMBIENT_B = 0.148f;
+    /**
+     * The cold light fades in with the block light up to this level: places no lamp reaches at all
+     * (block light 0: the void, deep chases, the far end of the trench gutter) stay pitch black.
+     */
+    private static final float LEVEL2_AMBIENT_FULL_FROM = 4.0f;
+    /** In a blackout the cold light keeps this share (the emergency lamps light the way). */
+    private static final float LEVEL2_AMBIENT_BLACKOUT = 0.6f;
+    /**
+     * Without Veil the fill is the whole lamp light: under a caged lamp (light 9-10) ~0.30-0.37,
+     * the floor between lamps (7) ~0.17. A dead section keeps a little more of it than with Veil
+     * (no emergency-lamp pools to find the way by).
+     */
+    private static final float LEVEL2_FALLBACK_MAX_FILL = 0.80f;
+    private static final float LEVEL2_FALLBACK_FALLOFF = 1.9f;
+    private static final float LEVEL2_FALLBACK_DEAD_FILL = 0.12f;
 
     // Level 0 (Kane's Lobby): dim, uneven office light; whole dark wings near black.
     /**
@@ -279,11 +302,19 @@ public final class ClientLighting {
                 applyLevel0Fill(colors, blockLight, LEVEL0_FALLBACK_MAX_FILL, LEVEL0_FALLBACK_DARK_BELOW,
                         LEVEL0_FILL_CURVE, LEVEL0_BOUNCE, FixturePower.mainsPower());
             }
+        } else if (floor == BackroomsLevel.LEVEL_2) {
+            // Level 2 without Veil: the amber fill is the lamp light, the cold readable dark under it.
+            if (fullBright) {
+                float v = emissivePower();
+                colors.set(v, v, v);
+            } else {
+                applyLevel2Fill(colors, blockLight, LEVEL2_FALLBACK_MAX_FILL, LEVEL2_FALLBACK_FALLOFF,
+                        LEVEL2_FALLBACK_DEAD_FILL, true);
+            }
         } else {
-            // Garage, pipe corridors and Poolrooms are lit by long strips: gentler falloff than the
+            // Garage and Poolrooms are lit by long strips: gentler falloff than the
             // Lobby's pools. The Poolrooms may be a touch brighter, but unlit rooms stay dark.
             float falloff = floor == BackroomsLevel.LEVEL_1 ? 1.0f
-                    : floor == BackroomsLevel.LEVEL_2 ? 1.35f
                     : floor == BackroomsLevel.POOLROOMS ? 1.25f
                     // Level 9: tall lamps put little block light on the ground, so a gentler curve.
                     : floor == BackroomsLevel.LEVEL_9 ? 1.3f
@@ -313,6 +344,10 @@ public final class ClientLighting {
                     LEVEL0_BOUNCE_LINEAR, Level0Shading.screenPassRunning() ? 1.0f : FixturePower.mainsPower());
             return;
         }
+        if (floor == BackroomsLevel.LEVEL_2) {
+            applyLevel2Fill(colors, blockLight, LEVEL2_MAX_FILL, LEVEL2_FILL_FALLOFF, LEVEL2_DEAD_SECTION_FILL, false);
+            return;
+        }
         if (floor == BackroomsLevel.LEVEL_9) {
             applyLevel9Fill(colors, blockLight);
             return;
@@ -332,17 +367,13 @@ public final class ClientLighting {
         float b = Mth.clamp(blockLight / 15.0f, 0.0f, 1.0f);
         // White tile bounces light around, so the Poolrooms get a stronger, softer fill: rooms with
         // a tube read bright (and so does the pool water, which client/water draws from the lit
-        // room behind it). Level 2's fill is softer still but weaker: it keeps the far pools of
-        // its long straight corridor glowing (see LEVEL2_MAX_FILL).
+        // room behind it).
         // Places far from any light stay dark (block light 0 = no fill).
         float maxFill = MAX_FILL;
         float falloff = FILL_FALLOFF;
         if (floor == BackroomsLevel.POOLROOMS) {
             maxFill = POOLROOMS_MAX_FILL;
             falloff = POOLROOMS_FILL_FALLOFF;
-        } else if (floor == BackroomsLevel.LEVEL_2) {
-            maxFill = LEVEL2_MAX_FILL;
-            falloff = LEVEL2_FILL_FALLOFF;
         }
         float fill = maxFill * (float) Math.pow(b, falloff);
         // The fill dies with the lights (blackout fade) and dims with the alarm; a flicker halves it.
@@ -350,13 +381,8 @@ public final class ClientLighting {
         if (FixturePower.flickering(System.currentTimeMillis())) {
             fill *= 0.5f;
         }
-        if (floor == BackroomsLevel.LEVEL_2) {
-            // The section of corridor you're in went dark (its series circuit popped): so does the fill.
-            fill *= Mth.lerp(BackroomsLights.level2LampShare(), LEVEL2_DEAD_SECTION_FILL, 1.0f);
-        }
-        // Warm yellow by default, neutral grey concrete in the garage, the amber of the caged lamps
-        // in the pipes (violet where the brownout's emergency lights take over) and a cool
-        // lavender-blue in the Poolrooms (shaded white tile in the footage reads ~#A9A3A8).
+        // Warm yellow by default, neutral grey concrete in the garage and a cool lavender-blue in
+        // the Poolrooms (shaded white tile in the footage reads ~#A9A3A8).
         float tr = 1.0f;
         float tg = 0.92f;
         float tb = 0.55f;
@@ -364,11 +390,6 @@ public final class ClientLighting {
             tr = 0.96f;
             tg = 0.96f;
             tb = 1.0f;
-        } else if (floor == BackroomsLevel.LEVEL_2) {
-            float violet = BackroomsLights.emergencyShare();
-            tr = Mth.lerp(violet, LEVEL2_TINT_R, LEVEL2_EMERGENCY_R);
-            tg = Mth.lerp(violet, LEVEL2_TINT_G, LEVEL2_EMERGENCY_G);
-            tb = Mth.lerp(violet, LEVEL2_TINT_B, LEVEL2_EMERGENCY_B);
         } else if (floor == BackroomsLevel.POOLROOMS) {
             tr = 0.80f;
             tg = 0.86f;
@@ -380,6 +401,49 @@ public final class ClientLighting {
         tg = Mth.lerp(alarm, tg, 0.12f);
         tb = Mth.lerp(alarm, tb, 0.10f);
         colors.set(UNLIT_R + fill * tr, UNLIT_G + fill * tg, UNLIT_B + fill * tb);
+    }
+
+    /**
+     * Level 2 (both modes). Two parts:
+     * <ul>
+     *   <li>The amber fill: the caged lamps' bounce, following the vanilla block light (curve
+     *       {@code falloff}, up to {@code maxFill}). It dies with the blackout, dims with the alarm,
+     *       stutters with a flicker, and drops to {@code deadFill} when the corridor section you
+     *       stand in lost its circuit (BackroomsLights#level2LampShare). Where battery lights take
+     *       over (the brownout's violet, the emergency lamps' red or amber) it takes their colour.</li>
+     *   <li>The cold readable dark ({@link #LEVEL2_AMBIENT_R}): a faint blue-grey under everything
+     *       a lamp reaches at all, dead or alive, so a dead section is dark but never a black void.</li>
+     * </ul>
+     * With Veil the lamps' own pools (client/light) sit on top; without Veil this is all the light.
+     */
+    private static void applyLevel2Fill(Vector3f colors, int blockLight, float maxFill, float falloff, float deadFill,
+                                        boolean fallback) {
+        float b = Mth.clamp(blockLight / 15.0f, 0.0f, 1.0f);
+        float power = FixturePower.mainsPower();
+        float fill = maxFill * (float) Math.pow(b, falloff);
+        fill *= power * FixturePower.alarmDim();
+        if (FixturePower.flickering(System.currentTimeMillis())) {
+            // Without Veil the fill is the lamp light, so it stutters with the lamps instead of just halving.
+            fill *= fallback ? (flickerDark() ? LEVEL0_FLICKER_DARK : LEVEL0_FLICKER_LIT) : 0.5f;
+        }
+        // The section of corridor you're in went dark (its series circuit popped): so does the fill.
+        fill *= Mth.lerp(BackroomsLights.level2LampShare(), deadFill, 1.0f);
+        // Amber from the caged lamps, the battery lights' colour where they take over.
+        float battery = BackroomsLights.emergencyShare();
+        float tr = Mth.lerp(battery, LEVEL2_TINT_R, BackroomsLights.emergencyRed());
+        float tg = Mth.lerp(battery, LEVEL2_TINT_G, BackroomsLights.emergencyGreen());
+        float tb = Mth.lerp(battery, LEVEL2_TINT_B, BackroomsLights.emergencyBlue());
+        // During the alarm the fill turns red.
+        float alarm = FixturePower.alarm();
+        tr = Mth.lerp(alarm, tr, 1.0f);
+        tg = Mth.lerp(alarm, tg, 0.12f);
+        tb = Mth.lerp(alarm, tb, 0.10f);
+        // The cold readable dark: wherever any lamp's light reaches, a little less in a blackout.
+        float ambient = Mth.clamp(blockLight / LEVEL2_AMBIENT_FULL_FROM, 0.0f, 1.0f)
+                * Mth.lerp(power, LEVEL2_AMBIENT_BLACKOUT, 1.0f);
+        colors.set(Math.min(1.0f, UNLIT_R + ambient * LEVEL2_AMBIENT_R + fill * tr),
+                Math.min(1.0f, UNLIT_G + ambient * LEVEL2_AMBIENT_G + fill * tg),
+                Math.min(1.0f, UNLIT_B + ambient * LEVEL2_AMBIENT_B + fill * tb));
     }
 
     /**

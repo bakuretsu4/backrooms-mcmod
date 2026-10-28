@@ -29,11 +29,15 @@ final class Level2Finder {
 
     static {
         List<String> kinds = new ArrayList<>();
-        for (int t = Level2Line.SEG_STANDARD; t <= Level2Line.SEG_DARK; t++) {
-            kinds.add(SEG + Level2Line.SEG_NAMES[t]);
+        for (int t = 0; t < Level2Line.SEG_NAMES.length; t++) {
+            if (t != Level2Line.SEG_EXIT) { // exits have their own key below
+                kinds.add(SEG + Level2Line.SEG_NAMES[t]);
+            }
         }
         for (String name : Level2Line.ROOM_NAMES) {
-            kinds.add(ROOM + name);
+            if (name != null) { // the hot room and the oddities' rooms are found as anomalies
+                kinds.add(ROOM + name);
+            }
         }
         kinds.add(EXIT);
         KINDS = List.copyOf(kinds);
@@ -63,7 +67,7 @@ final class Level2Finder {
 
     private static int indexOf(String[] names, String name) {
         for (int i = 0; i < names.length; i++) {
-            if (names[i].equals(name)) {
+            if (name.equals(names[i])) {
                 return i;
             }
         }

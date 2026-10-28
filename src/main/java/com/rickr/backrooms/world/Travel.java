@@ -1,6 +1,7 @@
 package com.rickr.backrooms.world;
 
 import com.rickr.backrooms.camera.CameraService;
+import com.rickr.backrooms.network.ArrivalCardPayload;
 import com.rickr.backrooms.network.IntroCutscenePayload;
 import com.rickr.backrooms.network.EscapePayload;
 import com.rickr.backrooms.player.Checkpoints;
@@ -71,7 +72,7 @@ public final class Travel {
                 p.stopSleepInBed(true, false); // through the bed: you arrive on your feet
             }
             sendToQuietly(p, BackroomsLevel.LEVEL_0, p.getBlockX(), p.getBlockZ());
-            p.sendSystemMessage(Component.translatable("message.backrooms.noclip").withStyle(s -> s.withItalic(true).withColor(0xC8B45A)));
+            showArrival(p, BackroomsLevel.LEVEL_0, "message.backrooms.noclip");
         });
     }
 
@@ -118,20 +119,39 @@ public final class Travel {
     }
 
     /**
-     * Sends the player to {@code target}, searching for floor near (x, z), through the datamosh.
-     * {@code message} (if any) is shown once they have arrived.
+     * Sends the player to {@code target}, searching for floor near (x, z), through the datamosh,
+     * and shows the level's arrival card once they are there.
      */
-    public static void sendTo(ServerPlayer player, BackroomsLevel target, int x, int z, @Nullable Component message) {
+    public static void sendTo(ServerPlayer player, BackroomsLevel target, int x, int z) {
+        sendTo(player, target, x, z, null);
+    }
+
+    /**
+     * As {@link #sendTo(ServerPlayer, BackroomsLevel, int, int)}, with {@code noteKey} (a lang key,
+     * or null) as the arrival card's "how you got here" line, e.g. the Level 9 foxhole's.
+     */
+    public static void sendTo(ServerPlayer player, BackroomsLevel target, int x, int z, @Nullable String noteKey) {
         moshTo(player, p -> {
-            if (sendToQuietly(p, target, x, z) && message != null) {
-                p.sendSystemMessage(message);
+            if (sendToQuietly(p, target, x, z)) {
+                showArrival(p, target, noteKey);
             }
         });
     }
 
-    /** The usual "Level 7. Water as far as..." line for arriving on {@code level}. */
-    public static Component arrivalMessage(BackroomsLevel level) {
-        return Component.translatable("message.backrooms.arrive." + level.getSerializedName()).withStyle(s -> s.withItalic(true));
+    /**
+     * The camcorder arrival card for {@code level} (client/hud/ArrivalCard): its name and one-line
+     * description ({@code level.backrooms.<level>}, {@code message.backrooms.arrive.<level>}), plus
+     * an optional note ({@code noteKey}, a lang key, or null) such as "You clipped through reality."
+     * The card replaces the old chat lines; nothing goes to chat.
+     */
+    public static void showArrival(ServerPlayer player, BackroomsLevel level, @Nullable String noteKey) {
+        showArrival(player, level, noteKey, 0);
+    }
+
+    /** As above, coming up {@code delayMs} later: for arrivals with their own fade (Level 37's openings). */
+    public static void showArrival(ServerPlayer player, BackroomsLevel level, @Nullable String noteKey, int delayMs) {
+        PacketDistributor.sendToPlayer(player,
+                new ArrivalCardPayload(level.getSerializedName(), noteKey == null ? "" : noteKey, delayMs));
     }
 
     /** Teleport only, no transition effect: the caller brings its own. Returns false if the level is missing. */
@@ -185,7 +205,7 @@ public final class Travel {
             Level39Rules.markSkyArrival(p);
             teleport(p, level, new Vec3(ground.getX() + 0.5, LEVEL39_SKY_Y, ground.getZ() + 0.5));
             p.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, LEVEL39_SKY_FALL_TICKS, 0, false, false, true));
-            p.sendSystemMessage(arrivalMessage(target));
+            showArrival(p, target, null);
         });
         return true;
     }
@@ -207,7 +227,7 @@ public final class Travel {
         }
         long seed = BackroomsSeeds.layoutSeed(player.serverLevel(), from);
         int[] exit = from.layout().exits().nearest(seed, player.getBlockX(), player.getBlockZ());
-        sendTo(player, next, exit[0], exit[1], arrivalMessage(next));
+        sendTo(player, next, exit[0], exit[1]);
     }
 
     /** Back to reality at world spawn. "...or did you?" */

@@ -18,7 +18,7 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
  *   <li><b>Handheld shake:</b> smooth noise wobble whose strength ("trauma") follows your speed:
  *       a gentle ~1 degree sway when standing, up to ~9 degrees of roll when running.</li>
  *   <li><b>Roll:</b> the horizon tilts into turns and strafes.</li>
- *   <li><b>Events:</b> Level 2's TWIST event slowly rolls the world ~20 degrees and back; Bacteria
+ *   <li><b>Events:</b> Level 2's TWIST event slowly leans the world ~3.5 degrees and back; Bacteria
  *       nearby makes your hands shake; the wake-up intro lies you on the carpet.</li>
  * </ul>
  *
@@ -60,9 +60,14 @@ public final class HandheldCamera {
     private static final float ROLL_LIMIT_DEG = 7.0f;
 
     // --- TWIST event (Level 2) -----------------------------------------------------------------
-    private static final float TWIST_ROLL_DEG = 20.0f;
-    /** Ramp time at the start and end of the event. */
-    private static final float TWIST_RAMP_MS = 3000.0f;
+    /**
+     * How far the corridor leans at the height of the event. Was 20 degrees (the whole view tipped
+     * over); now a barely-there 3.5 degrees: you notice the pipes aren't level any more before you
+     * notice the camera moved, which is the unsettling part.
+     */
+    private static final float TWIST_ROLL_DEG = 3.5f;
+    /** Ramp time at the start and end of the event: a slow lean in and out, never a jolt. */
+    private static final float TWIST_RAMP_MS = 5000.0f;
     private static final float TWIST_SMOOTHING = 0.9f;
 
     // --- Motion blur and fallback flashlight lag -------------------------------------------------

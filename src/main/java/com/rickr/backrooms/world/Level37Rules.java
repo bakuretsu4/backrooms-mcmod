@@ -79,8 +79,7 @@ public final class Level37Rules {
         }
         // A secret way down, but still a way down: the Poolrooms checkpoint no longer applies.
         Checkpoints.clear(player);
-        Travel.sendTo(player, BackroomsLevel.LEVEL_39, player.getBlockX(), player.getBlockZ(),
-                Travel.arrivalMessage(BackroomsLevel.LEVEL_39));
+        Travel.sendTo(player, BackroomsLevel.LEVEL_39, player.getBlockX(), player.getBlockZ());
     }
 
     /** Deep in a pit's shaft: a slow current draws you down toward the way out. */

@@ -7,10 +7,10 @@
       "model": "backrooms:block/l2_wall_base_v1"
     },
     "variant=2": {
-      "model": "backrooms:block/l2_wall_base"
+      "model": "backrooms:block/l2_wall_base_v2"
     },
     "variant=3": {
-      "model": "backrooms:block/l2_wall_base"
+      "model": "backrooms:block/l2_wall_base_v3"
     }
   }
 }

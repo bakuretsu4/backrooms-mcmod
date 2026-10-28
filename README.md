@@ -146,7 +146,33 @@ going down into the dark, until the picture breaks up and you are in the next le
   a short dark stretch), and every 60-120 blocks a door or doorway on alternating sides leads into
   a dead-end maintenance room, ventilation room, boiler room, storage closet or safe room. Every
   320-420 blocks an EXIT bay opens at the side; its heavy bulkhead takes everyone within 6 blocks
-  with you. Parallel corridors 48 blocks apart never meet.
+  with you. Parallel corridors 48 blocks apart never meet. The concrete is marked by water and
+  age: rust bleeding from old bracket stumps, spalled patches with rusty rebar, chipped kickers;
+  in damp stretches (round leaks, and long patches where the cold pipes sweat) condensation runs
+  down from the ceiling, the floor is wet, the wall bases carry tide lines and the slab blooms
+  with white salts. Service pipes are paint-coded: green water, red steam, grey return, yellow gas.
+  The ceiling reads in layers: grey steel I-beams cross under the slab every 6 blocks, and below
+  them on hanger rods hang the cable tray (loose cable sagging out of it here and there) and the
+  pipe runs, with gaps where you look up past them at the beams. Pipes never just stop: racks
+  bend into the wall or pass into a pier through a bolted collar, risers turn into the wall, runs
+  overhead turn up into the slab, and racks sit on strut with U-bolts. A valve manifold's header
+  drops a branch into each of its valves (wheels or red-handled ball valves). Now and then a joint
+  of an insulated main weeps: a drip hangs under it and a puddle spreads on the floor.
+  The walls are numbered: a stencilled section number (2-A 03 up to 2-D 32, then round again) on
+  the first pier of every stretch, in order as you walk east, and on the bulkhead rings. About one
+  side room in six is a bigger **maintenance chamber** (`world/layout/Level2Chambers`, drawn as
+  little text plans you can edit): a pump room (two pump sets under their header, starter panels,
+  mercury lamps), a valve gallery (quarter-turn valves round three walls, each with a gauge or a
+  label), an electrical room (breaker panels, transformer cabinets, cable trays everywhere), a
+  flooded sump (a pit of black water with the dead sump pump standing in it, one grated walkway,
+  leaks dripping) and the crew's break room (lockers, a kettle on the counter, the logbook on the
+  table, a mattress in the corner, a hi-vis jacket left on its hook). The crews' shift logbooks
+  lie open in them: right-click one to read its page. About one stretch in ten is an odd but
+  grounded **detour** (`world/layout/Level2Detours`): a dog-leg where the corridor steps sideways
+  round a massive concrete column, a duct crossing where the ceiling drops to 2.2 blocks for four
+  blocks, a two-level stretch with a grated catwalk and railing over an open trench (a ladder
+  down to the walkway at its bottom), or a section sealed by two concrete walls with locked steel
+  doors and a narrow, low bypass passage round it behind the wall.
 - **Level 4 (the Abandoned Office):** you arrive here through Level 2's EXIT door. Endless empty
   office floors on a stormy night: huge open-plan floors with square white columns, cubicle
   fields, corridors of wooden doors into small offices, glass conference rooms, break rooms,
@@ -448,7 +474,7 @@ houses). Upside-down furniture doesn't count.
   Weapons go straight through it. When the lights come back on (in Level 94: at dawn), or you reach
   a safe room or a house, they're gone.
 - **Flicker**, **alarm** (red rotating emergency lamps), **intercom** announcements that get
-  creepier, **lightning** in the garage, the **twist** in the pipes (the corridor tilts), distant
+  creepier, **lightning** in the garage, the rare **twist** in the pipes (the corridor slowly leans a few degrees), distant
   knocks and creaks.
 - **Hallucinations (Poolrooms):** stay in the water too long and the picture starts to swim. Then
   you see your friend (or yourself, if you're alone) waving at you. Only you can see them. They
@@ -625,11 +651,13 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **The Corrupted Corridor (Level 1.1):** Very rarely, a doorway in a garage wall opens onto a long white-cinderblock corridor with a blue tiled floor. The further you go the worse it gets: the colours go wrong, the same stretch of hallway seems to repeat, the dark swallows your light, and the walls turn black and white and won't hold still. At the very end, a light beckons.
 
 **Level 2**
-- **Series circuits:** The caged lamps are wired in series along the corridor. Now and then a circuit gives out with a sharp pop, and a whole section of the line goes dark at once (a gap opens in the row of lights ahead), sometimes for nearly a minute, before the lamps stutter back to life. Sometimes a fault runs down the line: three sections pop out one after another, toward you or away.
+- **Series circuits:** The caged lamps are wired in series along the corridor. Now and then a circuit gives out with a sharp pop, and a whole section of the line goes dark at once (a gap opens in the row of lights ahead), sometimes for nearly a minute, before the lamps stutter back to life. Sometimes a fault runs down the line: three sections pop out one after another, toward you or away. A dead section is dark but never blind: the floor edge, the walls and the pipes stay faintly visible in a cold blue-grey.
+- **Industrial lighting:** No two bulbs are alike: new ones burn a little whiter, old ones dimmer and browner, and a few failing ones sag now and then. Machine areas hang cold mercury lamps. Beside bulkheads, chamber doors and exits, red or amber battery emergency lamps wait on standby and click on when their section's circuit dies or the power fails. Wet floors, puddles, sweating pipes and bare metal catch the lamps in small highlights.
 - **Brownouts:** Some sections never recovered from the Blackout. Almost every bulb is burst, the machines are silent, and only a few violet emergency lights still glow. Burst pipes have left pools of thick black sludge that clings to your boots.
 - **Hot zones:** Behind a wide opening off the corridor, some boiler rooms run hot: faulty machines whir and steam hisses from the walls on the way in. The heat slows you down, wears you out and makes you hungry fast, and if you stay too long it starts to hurt.
 - **Void doors:** At the back of a small hall off the corridor stands a door with a pitch-black window. It opens onto an endless, silent, lightless space where the doorway behind you is the only light. Don't lose sight of it.
 - **Looping hallway:** A few office doors, each at the back of a small hall off the corridor, open onto a long, plain, fluorescent-lit hallway. However far you walk, you keep passing the same door you came in by.
+- **Oddities:** Rare, quiet things that are simply wrong, if you notice them (`world/layout/Level2Oddities`). A **valve gallery** where every single valve has been turned the same way, all shut, yet water still rushes through the header overhead. A yellow gas **pipe** that rises from the floor and bends into one wall, and straight across the corridor comes out of the other wall upside down: high up, bending into the ceiling, its label below it; knock on one and the other answers. A run of corridor where **the section number repeats**: three or four sections in a row stencilled with the same number, each with the same dead bulb above it and the same chalk cross some earlier visitor drew underneath to check. A steel **door to nowhere** that opens onto bare concrete; the air in front of it is warm and something breathes softly behind it. And a **pressure gauge** at eye level whose needle reads your own heart rate (BPM / 10 on its dial) and ticks with every beat. The shift logbooks mention most of them.
 
 **Level 4**
 - **Looping stairwells:** Grey stair cores stand in some open-plan floors. However far you climb or descend, the sign on the landing always says 4, and somewhere far away you hear footsteps that never arrive. Once in a while the stairs let you out somewhere else.
@@ -685,7 +713,7 @@ evenly over the whole picture and blended over about two seconds when you change
 |---|---|
 | Level 0 | Kane Pixels' tapes: a soft, faded yellow-beige (never olive). With Veil the troffers are the real light: warm pools under each one, cut block-exact by every wall, post and door jamb (`client/light/Level0LightRenderer`, shadows from a top-down wall map of the 128 x 128 columns around you, `Level0WallGrid`), so jambs facing away go black and posts throw hard wedges; a weak bounce from the lightmap fills in under the pools and dies away into corners and wall feet, which a screen pass darkens from the same wall map (no halos). Lit doorways far down dark runs read as beacons (64 lamps within 42 blocks on HIGH). Without Veil the lightmap alone makes the pools, steeper, with contact shadows for the corners. Tubes differ in age, chosen by the layout (`world/layout/Level0Tubes`, a `glow` block state: full, worn, tired or dying, each with its own light level, so it works with or without Veil); whole stretches of ceiling were re-lamped at different times, so some areas are brighter than others. Each tube also has its own colour temperature (mostly neutral, some yellowed, a few cool). About one tube in twenty is faulty: it stutters in a short burst every 12-45 s, or now and then cuts out for a few seconds and re-strikes with a few flashes, clicking each time; the room under it dims a little with it. A blackout is a dying wave rolling out from a point near you (22 blocks/s, each tube popping), then a partial recovery: emergency lamps and a few tubes on emergency ballasts come on, half the 24-block patches come back after 20-60 s, a quarter when the event ends and a quarter stay dead for 2-4 more minutes (`client/light/Level0Power`). Server code can cut the power locally (`world/FixtureOutages`: a circle or a list of fixtures, cut, stuttering or as a wave; restored on demand). Almost no haze (6% from 20 blocks), dark wings crushed to black. F3 shows the Level 0 lights' GPU time |
 | Level 1 | Cold, damp concrete: blue shadows, little colour, grey-blue air |
-| Level 2 | Warm amber pools from the caged lamps receding down the line, rust-brown shadows, pipe chases sunk in darkness, a light warm heat haze |
+| Level 2 | Warm amber pools from the caged lamps receding down the line, cold blue-grey darkness between and beyond them, pipe chases sunk in shadow, a thin cold haze far off. With Veil the lamps take block-exact shadows from the same wall map as Level 0 (48 lamps within 39 blocks on HIGH) and wet floors, puddles, sweating pipes and bare metal get a small highlight of the nearby lamps (`client/light/Level2Gloss` says which blocks are damp, wet or metal). F3 shows the Level 2 lights' GPU time |
 | Level 4 | Cold fluorescent blue-grey, quiet |
 | Poolrooms | Teal shadows, soft cool highlights, a gentle wet glow |
 | Level 37 | Dreamlike: low contrast, milky shadows, warm overexposed highlights, the strongest glow |
@@ -714,6 +742,12 @@ The camera also reacts like a real one:
 - **No name tags** (`client/hud/BackroomsHudEvents`): while you are in any Backrooms level nobody
   has a name floating over their head, players or anything pretending to be one, so you only
   know who's who by finding them. Chat, the player list and the overworld are unchanged.
+- **Arrival card** (`client/hud/ArrivalCard`): arriving on a level (from reality, through an exit,
+  an anomaly or Level 227's tree) no longer prints lines in chat. Once the picture is back from the
+  transition, a camcorder-style title comes up at the lower left, above the hearts and hotbar: how
+  you got there if it matters ("YOU CLIPPED THROUGH REALITY." in amber), the level's name, and its
+  one-line description. It fades in row by row, holds, and is gone after about six seconds. Each
+  letter has a thin dark edge, so it reads on Level 37's white tiles and in Level 2's dark alike.
 - **Your breathing** (`client/Breathing`): heavy breathing after a sprint that eases off as you get
   your breath back, and quick, shaky breaths when something is near.
 
@@ -799,9 +833,17 @@ saturation, hiss and a big, empty room.
 - **Level 2's pipes** (`client/anomaly/level2/Level2Emitters`, `tools/anomaly_assets/level2_audio.py`):
   every 7-18 seconds the pipes act up somewhere up or down the corridor: a water-hammer knock
   that runs along the pipes toward you or away, a heavy clank, a long creak of hot metal (far more
-  of them while the corridor twists), or water rushing through the overhead bundle and over your
-  head. Pumps in pump bays hum and thump, leaking valves hiss and puff steam, and drips plink
-  into the gutter.
+  of them while the corridor twists), water rushing through the overhead bundle and over your
+  head, a shudder running along a pipe run past you with its brackets buzzing, or far metal
+  tapping: a few knocks of a tool on a pipe, a pause, the same knocks again a little closer
+  along the same pipe. The machinery is heard where it stands: pumps hum and thump, fan housings
+  and machine cabinets drone, breaker panels buzz, and every ~48 blocks a plant room behind the
+  wall swells a deep hum as you walk past it. When a section's circuit fails (or in a stretch
+  whose lamps died for good) its machines coast down and the level's drone dips about 7 dB;
+  they spin back up when the power returns. Leaking valves hiss and puff steam, and about once a
+  minute a relief valve near you lifts with a clunk and a burst of steam. A drop from a leak
+  plinks in a puddle or the gutter, ticks on a grating or a pipe, taps on bare concrete, plops
+  in black ooze.
 - **Real recordings** (`tools/level_assets/recorded.py`, all CC0, see CREDITS.md): the fluorescent
   hum of every tube in Levels 0-2 is a real ballast, the flicker clicks are real tubes and starters
   catching and dropping out, a blackout is a big breaker clunking and the floor's hum sagging and
@@ -823,7 +865,10 @@ saturation, hiss and a big, empty room.
   -18 (at the ceiling, so it carries 80 blocks through the walls), the PA -18 like every PA line, a falling
   ceiling tile -24, a far district going dark -23 before distance, the blackout's wave -25, a
   tube popping -28 or striking again -30, the Atrium's air and the pit draught -30, the hidden
-  rooms' radio -31, clock -34 and stillness -37.
+  rooms' radio -31, clock -34 and stillness -37. Level 2: the plant hum -27, pumps -28, a
+  leaking valve -30, a breaker panel -31, the pipes' knocks, creaks, rushes and far tapping -24
+  to -25, a clank -24, a relief valve venting -23 (its hiss swells in over a fifth of a second),
+  drips -28 (puddle), -29 (metal) and -31 (concrete); the hot zone's machinery sits at -24.
 - **Level 39 "Megalophobia"** (`client/Level39Audio`, `client/Level39QuakeEffects`): the town
   rings like one colossal hall (the superstructure encloses it, so its echo is long and loud even
   in the open), while the marble tunnels below swallow sound. Its own loops follow you between
@@ -849,8 +894,8 @@ saturation, hiss and a big, empty room.
 /backrooms locate                       where is the nearest exit? (Level 227 has none, and says so)
 /backrooms locate saferoom              where is the nearest safe room?
 /backrooms anomaly here                 which anomalous area am I standing in?
-/backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... (e.g. level_0/zone/rooms, the room maze) and level_0/set/... (e.g. frame_tunnel, dead_end_cache, liar_arrows, bright_district, dim_district, abandoned_district)
-/backrooms anomaly visit <kind> <point>  Level 0 (ops, for testing): jump to a named spot of the nearest site of that kind (tab completes both). level_0/atrium ladder|balcony, level_0/front_office rug|hidden_room, level_0/shaft_hall lit_shaft; the hidden rooms and the older anomalies have their own points
+/backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... (e.g. level_0/zone/rooms, the room maze) and level_0/set/... (e.g. frame_tunnel, dead_end_cache, liar_arrows, bright_district, dim_district, abandoned_district). On Level 2 also segments (level_2/seg/..., e.g. dogleg, duct_crossing, catwalk, bypass), rooms and chambers (level_2/room/..., e.g. pump_room, valve_gallery, electrical, sump, break_room), level_2/exit and the oddities (level_2/wrong_valves, inverted_pipe, repeat_section, warm_door, heart_gauge)
+/backrooms anomaly visit <kind> <point>  Level 0 and Level 2 (ops, for testing): jump to a named spot of the nearest site of that kind (tab completes both). level_0/atrium ladder|balcony, level_0/front_office rug|hidden_room, level_0/shaft_hall lit_shaft; the hidden rooms and the older anomalies have their own points. Level 2: level_2/room/<chamber> door|story, level_2/seg/dogleg approach|around, duct_crossing approach|under, catwalk approach|catwalk|lower, bypass approach|seal|passage, level_2/wrong_valves door|inside, warm_door front, heart_gauge front, inverted_pipe between|wall_a|wall_b, repeat_section first|second|last
 /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|rain|quake|end> [seconds]
 /backrooms outage <cut|stutter|wave> <radius> [seconds]   Level 0: cut the power in a circle around you (no seconds = until "/backrooms outage end")
 /backrooms l0event <room|corridor|district>   Level 0: let that local light event happen to you at the next right moment (walk into a room / walk a corridor / look down a long lit view), skipping the wait
@@ -925,7 +970,7 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | `entity` | The Bacteria and its spawner; Level 39's mobs (`Hound`, `Faceling`, `Clump`, `SkinStealer`, `Wretch`) and their spawning (`Level39Spawner`, `TunnelDwellers`); Level 227's grazers (`L227Bear`, `L227Doe`, `L227Boar`) and their spawning (`Level227GrazerSpawner`); Level 227's hunters (`L227Wolf`, `L227Stag`, `L227Squirrel` and the swarm brain `SquirrelSwarm`) and their spawning (`Level227PredatorSpawner`); Level 227's giant Venus flytrap (`VenusFlytrap`, planted by `Level227FloraSpawner`) |
 | `camera` | Camcorder battery/flashlight/NightShot server rules, flashlight sync |
 | `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`), hiding in furniture (`HidingService`, which furniture and where the view sits: `HidingSpots`), friends hearing a panicking player's heartbeat (`SharedHeartbeat`) |
-| `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas); Level 0's versions cluster in worn patches and some keep to one wall row (`Level0SurfaceBlock`, art in `tools/anomaly_assets/level0_surfaces.py`); Level 227's flora (`Level227*Block`: tall plants, hanging strands, the Palette, GammaPali, Lestron; registered in `registry/Level227Blocks`, art in `tools/anomaly_assets/level227_flora.py`) |
+| `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas); Level 0's versions cluster in worn patches and some keep to one wall row (`Level0SurfaceBlock`, art in `tools/anomaly_assets/level0_surfaces.py`); Level 2's wet versions gather in damp stretches (`Level2SurfaceBlock` with `world/layout/Level2Damp`, art in `tools/anomaly_assets/level2_materials.py`); Level 227's flora (`Level227*Block`: tall plants, hanging strands, the Palette, GammaPali, Lestron; registered in `registry/Level227Blocks`, art in `tools/anomaly_assets/level227_flora.py`) |
 | `network` | Packets between server and clients |
 | `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`) |
 | `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, Level 0's faulty tubes (stutter, lazy restart, dying pulse: `FixturePower`; the tube ages and colours themselves are block states, `block/Level0TubeGlow`, picked by `world/layout/Level0Tubes`), Level 0's own light type with wall-map shadows and the power/corner screen pass (`Level0LightRenderer`, `Level0WallGrid`, `Level0PowerMap`, shaders in `pinwheel/shaders/program/light/level0_*`), its blackout wave and local outages (`Level0Power`), flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
@@ -934,7 +979,7 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`); moves your view inside the furniture while you hide (`CameraMixin`) |
 | `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`); lets anomaly teleports update the server's movement check, and keeps players held in the air (Level 39's sky arrival, window grabs, the chairlift) from being kicked for "flying" (`ServerGamePacketListenerAccessor`) |
 | `client/camera` | Handheld camera shake, roll, smoothing |
-| `client/hud` | Minimal HUD, stamina line, and the shared camcorder OSD look (`OsdStyle`: font, colours, margins, fades) used by `CamcorderHud`, `SafeRoomOsd` and `HidingOsd` |
+| `client/hud` | Minimal HUD, stamina line, the arrival card (`ArrivalCard`), and the shared camcorder OSD look (`OsdStyle`: font, colours, margins, fades) used by `CamcorderHud`, `SafeRoomOsd`, `HidingOsd` and `ArrivalCard` |
 | `client/trailer` | Dev-only trailer camera and frame recorder (`TrailerRecorder`, off unless started with `-Dbackrooms.trailerDir`) |
 | `client` | Camcorder post-shader control, per-level picture mood (`AtmosphereGrade`), overlay, Bacteria model/renderer, keys |
 | `assets/backrooms/shaders` | Lens, bloom, motion blur, contact shadows, distance haze, glow and grade post-processing |

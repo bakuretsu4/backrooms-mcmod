@@ -81,6 +81,11 @@ public final class Level0Shading {
         return String.format("Level 0 lights: %d lamps, GPU %.2f ms lamps+shadows, %.2f ms power/corners", lamps, lampsMs, screenMs);
     }
 
+    /** Smoothed GPU time of the last lamp passes (Level 0 or Level 2, whichever is drawing), ms. */
+    static float lampsMs() {
+        return lampsMs;
+    }
+
     // ------------------------------------------------------------------ GPU stopwatch
 
     /**

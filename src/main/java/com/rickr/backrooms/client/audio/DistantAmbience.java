@@ -94,9 +94,10 @@ public final class DistantAmbience {
                 new Entry(ModSounds.DISTANT_L1_SHUTTER_RATTLE, 3, 0.8f, When.ANY),
                 new Entry(ModSounds.DISTANT_L1_CEILING_VIBRATE, 2, 0.9f, When.ANY),
                 new Entry(ModSounds.DISTANT_L1_DOOR_SCRAPE, 1, 0.7f, When.ANY))));
-        // Level 2: the nearby pipe knocks, clanks and creaks now come from client/anomaly/level2/
-        // Level2Emitters, so the far-off knock is picked less often and the timer runs a little slower.
-        SCHEDULES.put(BackroomsLevel.LEVEL_2, new Schedule(22, 45, List.of(
+        // Level 2: the nearby pipe knocks, clanks, creaks, far tapping and shudders now come from
+        // client/anomaly/level2/Level2Emitters, so the far-off knock is picked less often and the
+        // timer runs slower (28-55 s), leaving room for the machine hum and the silences.
+        SCHEDULES.put(BackroomsLevel.LEVEL_2, new Schedule(28, 55, List.of(
                 new Entry(ModSounds.DISTANT_L2_PIPE_KNOCK, 2, 0.9f, When.ANY),
                 new Entry(ModSounds.DISTANT_L2_PRESSURE_GROAN, 3, 1.0f, When.ANY),
                 new Entry(ModSounds.DISTANT_L2_MACHINE_WHIR, 3, 0.9f, When.ANY),

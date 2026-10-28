@@ -1,0 +1,33 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l2_drip_stain",
+    "stain": "backrooms:block/l2_drip_stain"
+  },
+  "elements": [
+    {
+      "from": [
+        0.3,
+        0.02,
+        0.3
+      ],
+      "to": [
+        15.7,
+        0.12,
+        15.7
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0.3,
+            0.3,
+            15.7,
+            15.7
+          ],
+          "texture": "#stain"
+        }
+      }
+    }
+  ]
+}

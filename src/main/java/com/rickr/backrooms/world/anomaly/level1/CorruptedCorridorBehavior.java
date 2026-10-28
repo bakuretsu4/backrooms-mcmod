@@ -122,13 +122,14 @@ public final class CorruptedCorridorBehavior implements AnomalyBehavior {
         int x = (int) Math.floor(player.getX() + Math.cos(angle) * distance);
         int z = (int) Math.floor(player.getZ() + Math.sin(angle) * distance);
         // The arrival search never picks a spot inside an anomaly (Level1Layout.isSafeArrival).
-        Travel.sendTo(player, BackroomsLevel.LEVEL_1, x, z, null);
+        // Still Level 1, so no arrival card: just the datamosh and a different place.
+        Travel.moshTo(player, p -> Travel.sendToQuietly(p, BackroomsLevel.LEVEL_1, x, z));
     }
 
     /** The beckoning light: on to Level 2, like taking the exit stairwell. */
     private static void intoTheLight(ServerPlayer player) {
         Checkpoints.clear(player);
-        Travel.sendTo(player, BackroomsLevel.LEVEL_2, player.getBlockX(), player.getBlockZ(), Travel.arrivalMessage(BackroomsLevel.LEVEL_2));
+        Travel.sendTo(player, BackroomsLevel.LEVEL_2, player.getBlockX(), player.getBlockZ());
     }
 
     /** Fell through the floor of Sector 4: you wake up just inside the entrance, dazed. */

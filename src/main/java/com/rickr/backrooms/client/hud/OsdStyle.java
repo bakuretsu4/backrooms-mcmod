@@ -6,11 +6,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
 /**
  * One shared look for everything the camcorder draws on screen (REC, battery, signal, clock, the
- * heart rate, SAFE ROOM, HIDING, the stamina line, the faded hearts): a thin VHS font, small,
+ * heart rate, SAFE ROOM, HIDING, the stamina line, the faded hearts, the arrival card): a thin VHS font, small,
  * warm off-white and a little see-through, the same margins everywhere, and one fade rule.
  *
  * <p>The idea is real camcorder footage: the readouts are there when something changes or when
@@ -33,6 +34,14 @@ public final class OsdStyle {
     public static final int CALM = 0xB4C4A8;
     /** The REC lamp: a real camcorder's dull red LED. */
     public static final int REC = 0xC8382C;
+    /**
+     * Near-black, a touch warm: the edge round the arrival card's letters (and its faint backing),
+     * like the black outline a camcorder's title generator puts round its text. It keeps the text
+     * readable on Level 37's white tiles without needing a heavy box in Level 2's dark.
+     */
+    public static final int EDGE = 0x0B0A08;
+    /** The edge is this much of the text's own opacity. */
+    private static final float EDGE_ALPHA = 0.7f;
 
     // ---- Opacity --------------------------------------------------------------------------------
     /** A readout just after it changed: clearly readable but still see-through. */
@@ -80,6 +89,36 @@ public final class OsdStyle {
     /** Width in GUI pixels once drawn at {@code scale}. */
     public static int width(Font font, Component text, float scale) {
         return Mth.ceil(font.width(text) * scale);
+    }
+
+    /** Width in GUI pixels of an already wrapped line once drawn at {@code scale}. */
+    public static int width(Font font, FormattedCharSequence text, float scale) {
+        return Mth.ceil(font.width(text) * scale);
+    }
+
+    /**
+     * Draws a wrapped line with its top-left at (x, y) and a one-GUI-pixel {@link #EDGE} round it
+     * (four dark copies nudged left, right, up and down; the text goes on top), so it reads on
+     * bright and dark pictures alike. Same "nearly invisible" rule as {@link #draw}.
+     */
+    public static void drawEdged(GuiGraphics g, Font font, FormattedCharSequence text, float x, float y, float scale, int rgb, float alpha) {
+        if (alpha < 0.02f) {
+            return;
+        }
+        g.pose().pushPose();
+        g.pose().translate(x, y, 0.0f);
+        g.pose().scale(scale, scale, 1.0f);
+        float edgeAlpha = alpha * EDGE_ALPHA;
+        if (edgeAlpha >= 0.02f) {
+            int edge = argb(EDGE, edgeAlpha);
+            float e = 1.0f / scale; // one GUI pixel, whatever size the text is drawn at
+            g.drawString(font, text, -e, 0.0f, edge, false);
+            g.drawString(font, text, e, 0.0f, edge, false);
+            g.drawString(font, text, 0.0f, -e, edge, false);
+            g.drawString(font, text, 0.0f, e, edge, false);
+        }
+        g.drawString(font, text, 0.0f, 0.0f, argb(rgb, alpha), false);
+        g.pose().popPose();
     }
 
     /**

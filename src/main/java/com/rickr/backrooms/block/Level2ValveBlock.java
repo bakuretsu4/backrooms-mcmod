@@ -5,12 +5,15 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 /**
  * A gate valve on a short pipe stub out of the wall, with its hand wheel facing the corridor.
  * It sits in the AIR block in front of the wall; FACING points away from the wall (as for every
- * {@link WallMountBlock}). COLOR = the wheel's paint: red (steam, fire) or plain grey.
+ * {@link WallMountBlock}). COLOR = the wheel's paint: red (steam, fire) or plain grey. FEED = the
+ * valve sits on a pipe dropping from a header above (a {@link Level2FeedPipeBlock}) and carrying
+ * on down to the main below, instead of on a stub out of the wall.
  */
 public class Level2ValveBlock extends WallMountBlock {
 
@@ -24,16 +27,17 @@ public class Level2ValveBlock extends WallMountBlock {
     }
 
     public static final EnumProperty<WheelColor> COLOR = EnumProperty.create("color", WheelColor.class);
+    public static final BooleanProperty FEED = BooleanProperty.create("feed");
 
     public Level2ValveBlock(Properties properties) {
         // The wheel is 12 px across and stands 9 px out of the wall.
         super(properties, 2, 2, 7, 14, 14, 16);
-        registerDefaultState(defaultBlockState().setValue(COLOR, WheelColor.RED));
+        registerDefaultState(defaultBlockState().setValue(COLOR, WheelColor.RED).setValue(FEED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(COLOR);
+        builder.add(COLOR, FEED);
     }
 }

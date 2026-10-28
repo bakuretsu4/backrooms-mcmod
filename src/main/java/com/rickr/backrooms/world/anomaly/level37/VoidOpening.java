@@ -13,9 +13,7 @@ import com.rickr.backrooms.world.layout.LevelLayout;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -39,6 +37,8 @@ import net.minecraft.world.level.EmptyBlockGetter;
  * Step back out before the white is complete and nothing happens.
  */
 final class VoidOpening implements AnomalyBehavior {
+    /** Extra wait (ms) before Level 0's arrival card comes up, so it isn't lost in the white. */
+    private static final int CARD_DELAY_MS = 1800;
     /** Sanity drained per second right at the gap ... */
     private static final float DRAIN_AT_GAP = 3.0f;
     /** ... fading to nothing this far away (blocks). */
@@ -104,8 +104,8 @@ final class VoidOpening implements AnomalyBehavior {
         if (Travel.sendToQuietly(player, BackroomsLevel.LEVEL_0, spot.getX(), spot.getZ())) {
             // The client holds the picture white and lets Level 0 fade in (Level37AnomalyOverlay).
             player.playNotifySound(ModSounds.L37_VOID_VANISH.get(), SoundSource.MASTER, 0.9f, 1.0f);
-            player.sendSystemMessage(Component.translatable("message.backrooms.level37.void")
-                    .withStyle(ChatFormatting.ITALIC));
+            // The arrival card waits for most of the white to clear (it lifts over ~5 s).
+            Travel.showArrival(player, BackroomsLevel.LEVEL_0, "message.backrooms.level37.void", CARD_DELAY_MS);
         }
     }
 

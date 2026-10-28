@@ -67,8 +67,7 @@ public final class Level94Rules {
                 || player.level().getBlockState(feet.above()).is(ModBlocks.L94_FLOOD_DARK.get())) {
             Checkpoints.clear(player);
             // Level 7 sends arrivals to its nearest entrance room (Level7Layout.arrivalHint).
-            Travel.sendTo(player, BackroomsLevel.LEVEL_7, player.getBlockX(), player.getBlockZ(),
-                    Travel.arrivalMessage(BackroomsLevel.LEVEL_7));
+            Travel.sendTo(player, BackroomsLevel.LEVEL_7, player.getBlockX(), player.getBlockZ());
         }
     }
 
@@ -84,8 +83,7 @@ public final class Level94Rules {
     private static void enterThroughClayDoor(ServerPlayer player) {
         // A secret way in, but still a move between floors: the Level 9 checkpoint no longer applies.
         Checkpoints.clear(player);
-        Travel.sendTo(player, BackroomsLevel.LEVEL_94, player.getBlockX(), player.getBlockZ(),
-                Travel.arrivalMessage(BackroomsLevel.LEVEL_94));
+        Travel.sendTo(player, BackroomsLevel.LEVEL_94, player.getBlockX(), player.getBlockZ());
     }
 
     /** Into the light behind the throne: on to Level 1, with the warm swell of light. */
@@ -94,7 +92,7 @@ public final class Level94Rules {
         Travel.moshTo(player, p -> {
             if (Travel.sendToQuietly(p, BackroomsLevel.LEVEL_1, p.getBlockX(), p.getBlockZ())) {
                 p.playNotifySound(ModSounds.LEVEL37_ARRIVE.get(), SoundSource.MASTER, 1.0f, 1.2f);
-                p.sendSystemMessage(Travel.arrivalMessage(BackroomsLevel.LEVEL_1));
+                Travel.showArrival(p, BackroomsLevel.LEVEL_1, null);
             }
         });
     }

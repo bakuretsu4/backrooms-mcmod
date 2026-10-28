@@ -4,7 +4,9 @@ import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.block.Level0TubeGlow;
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.network.FlashlightStatesPayload;
+import com.rickr.backrooms.block.Level2EmergencyLampBlock;
 import com.rickr.backrooms.registry.Level0Blocks;
+import com.rickr.backrooms.registry.Level2LightBlocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.BackroomsLevel;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
@@ -58,7 +60,8 @@ import org.jetbrains.annotations.Nullable;
  * than ~28 blocks are left out (they'd shine through walls). The vanilla lightmap keeps a very dim
  * fill everywhere else ({@code ClientLighting}). Level 0 is different: its lamps are our own light
  * type with shadows from a top-down wall map ({@link Level0WallGrid}, {@link Level0LightRenderer}),
- * cheaper and reaching ~48 blocks, so there twice as many lamps reach 1.5 times as far.
+ * cheaper and reaching ~48 blocks, so there twice as many lamps reach 1.5 times as far. Level 2's
+ * lamps use the same wall map (1.5 times as many lamps, 1.4 times as far) plus gloss highlights.
  *
  * <p>When Veil isn't usable (not installed, or Iris is loaded: Veil's lights don't work under
  * Iris) nothing here touches Veil, {@link #isVeilLightingActive()} is false and the old lightmap +
@@ -81,6 +84,13 @@ public final class BackroomsLights {
      */
     private static final int LEVEL0_BUDGET_SCALE = 2;
     private static final float LEVEL0_RANGE_SCALE = 1.5f;
+    /**
+     * Level 2's lamps take their shadows from the same wall map (client/light/Level0WallGrid), so
+     * they can be many and far too: 1.5 times the quality's light count reaching 1.4 times as far
+     * (HIGH: 48 lamps within 39 blocks, about six pools down the corridor in each direction).
+     */
+    private static final float LEVEL2_BUDGET_SCALE = 1.5f;
+    private static final float LEVEL2_RANGE_SCALE = 1.4f;
     /** Rebuild the cluster list after walking this far (or when fixtures changed). */
     private static final int REBUILD_MOVE = 6;
     /** Lights already on get this much "closer" when ranking, so they don't swap at the edge. */
@@ -256,7 +266,7 @@ public final class BackroomsLights {
             // its lamps go dark together for a while (same for every player: game time). Not the
             // copy of the lamp by a void door, down in the void below the floor: it is the only
             // light there and must never go out.
-            if (level2 && light.type == FixtureType.BULKHEAD_LAMP && FixturePower.level2OnCircuit(BlockPos.getY(light.key))) {
+            if (level2 && level2CircuitLamp(light.type) && FixturePower.level2OnCircuit(BlockPos.getY(light.key))) {
                 // From the block, not the light (which sits a little in front of it), so it
                 // matches Level2LampGlow and the far sweep below exactly.
                 long circuit = FixturePower.level2Circuit(BlockPos.getX(light.key) + 0.5, BlockPos.getZ(light.key) + 0.5);
@@ -281,6 +291,18 @@ public final class BackroomsLights {
             if (fault == FixturePower.TUBE_DYING) {
                 light.level *= FixturePower.dyingTubePulse(light.key, now);
             }
+            if (level2 && level2CircuitLamp(light.type)) {
+                // A failing bulb browns down now and then on its own (see FixturePower#level2BulbSag).
+                light.level *= FixturePower.level2BulbSag(light.key, now);
+            }
+            if (level2 && level2Emergency(light.type) && !light.alwaysOn) {
+                // A standby emergency lamp's lens glows only while it is on (see the tint in
+                // onRegisterBlockColors): redraw it when its relay switches.
+                boolean lit = light.level > 0.0f;
+                if (lit ? LIT_STANDBY.add(light.key) : LIT_STANDBY.remove(light.key)) {
+                    redraw(mc, light.key);
+                }
+            }
             // The tube's glowing face goes dark with it: when a faulty tube toggles off, and on
             // Level 0 when the power is out at it (the blackout wave, a local outage). Not for
             // the FLICKER event, whose strobe the lightmap handles (redrawing the blocks that
@@ -300,7 +322,7 @@ public final class BackroomsLights {
             updateLevel2Shares();
             if (++bulbSweepTick >= BULB_SWEEP_EVERY) {
                 bulbSweepTick = 0;
-                sweepDarkBulbs(mc, gameTime);
+                sweepDarkBulbs(mc, gameTime, eye);
             }
         }
         FixtureSounds.tick(lights);
@@ -310,21 +332,55 @@ public final class BackroomsLights {
             int budget = select(floor);
             VeilFixtures.sync(SELECTED, CameraClientState.battery <= 0.0f ? 0.25f : 1.0f, floor, budget);
         }
-        // Level 0 with Veil: the wall map and power map for our light shaders.
+        // Level 0 and Level 2 with Veil: the wall map (and on Level 0 the power map) for our light shaders.
         Level0Shading.wanted = veil && level0;
+        Level2Shading.wanted = veil && level2;
         if (veil && level0) {
-            Level0WallGrid.tick(level, eye.x, eye.z);
+            Level0WallGrid.tick(level, eye.x, eye.z, false);
             Level0PowerMap.tick(eye.x, eye.z, now);
+        } else if (veil && level2) {
+            Level0WallGrid.tick(level, eye.x, eye.z, true);
         }
     }
 
-    /** F3 screen: the Level 0 lights' GPU time (see Level0Shading). */
+    /** F3 screen: the Level 0 / Level 2 lights' GPU time (see Level0Shading, Level2Shading). */
     @SubscribeEvent
     public static void onDebugText(CustomizeGuiOverlayEvent.DebugText event) {
         String line = Level0Shading.debugLine();
+        if (line == null) {
+            line = Level2Shading.debugLine();
+        }
         if (line != null) {
             event.getLeft().add(line);
         }
+    }
+
+    /** Level 2's caged lamps on the series circuits: the amber bulkhead lamp and the mercury lamp. */
+    private static boolean level2CircuitLamp(FixtureType type) {
+        return type == FixtureType.BULKHEAD_LAMP || type == FixtureType.L2_MERCURY_LAMP;
+    }
+
+    /** Level 2's battery lamps: the brownout's violet light and the red/amber emergency lamps. */
+    private static boolean level2Emergency(FixtureType type) {
+        return type == FixtureType.L2_EMERGENCY_LIGHT || type == FixtureType.L2_EMERGENCY_RED || type == FixtureType.L2_EMERGENCY_AMBER;
+    }
+
+    /**
+     * Level 2: the standby emergency lamps that are switched on right now (their lens glows, see
+     * onRegisterBlockColors). Read by the chunk-building threads, hence a thread-safe set.
+     */
+    private static final Set<Long> LIT_STANDBY = ConcurrentHashMap.newKeySet();
+
+    /**
+     * How far the fixture lights reach on this floor (blocks): the quality's light range, longer on
+     * Level 0 and Level 2 whose lamps take their shadows from the cheap wall map.
+     */
+    public static double lightRange(@Nullable BackroomsLevel floor) {
+        double range = ClientSettings.quality().lightRange;
+        if (floor == BackroomsLevel.LEVEL_0) {
+            return range * LEVEL0_RANGE_SCALE;
+        }
+        return floor == BackroomsLevel.LEVEL_2 ? range * LEVEL2_RANGE_SCALE : range;
     }
 
     /**
@@ -383,12 +439,36 @@ public final class BackroomsLights {
 
     private static float emergencyShare;
     private static float level2LampShare = 1.0f;
+    /** Level 2: the colour of the battery lights around you (violet, red or amber), eased. */
+    private static float emergencyRed = FixtureType.L2_EMERGENCY_LIGHT.red;
+    private static float emergencyGreen = FixtureType.L2_EMERGENCY_LIGHT.green;
+    private static float emergencyBlue = FixtureType.L2_EMERGENCY_LIGHT.blue;
     /** Level 2: every caged lamp in the loaded chunks is checked against its circuit this often (ticks). */
     private static final int BULB_SWEEP_EVERY = 5;
     private static int bulbSweepTick;
 
+    /**
+     * Level 2: the colour (red, green, blue) of the battery lights near you: the brownout's
+     * violet, the emergency lamps' red or amber, mixed by how much each one lights your spot.
+     * {@code ClientLighting} tints the fill toward it by {@link #emergencyShare()}.
+     */
+    public static float emergencyRed() {
+        return emergencyRed;
+    }
+
+    public static float emergencyGreen() {
+        return emergencyGreen;
+    }
+
+    public static float emergencyBlue() {
+        return emergencyBlue;
+    }
+
     private static void updateLevel2Shares() {
         double emergency = 0.0;
+        double er = 0.0;
+        double eg = 0.0;
+        double eb = 0.0;
         double lampsLit = 0.0;
         double lampsAll = 0.0;
         for (FixtureLight light : lights) {
@@ -396,8 +476,13 @@ public final class BackroomsLights {
                 break; // sorted nearest first
             }
             double weight = 1.0 / (1.0 + light.distSq);
-            if (light.type == FixtureType.L2_EMERGENCY_LIGHT) {
+            if (level2Emergency(light.type)) {
+                // Battery lights: they colour the fill but never count as "the corridor is lit".
+                double w = weight * light.level * light.type.brightness;
                 emergency += weight * light.level;
+                er += w * light.type.red;
+                eg += w * light.type.green;
+                eb += w * light.type.blue;
             } else {
                 lampsAll += weight;
                 if (light.on) {
@@ -412,6 +497,14 @@ public final class BackroomsLights {
         // Eased, so a flicker or the restrike stutter doesn't make the fill jump.
         emergencyShare += (emergencyTarget - emergencyShare) * 0.2f;
         level2LampShare += (lampTarget - level2LampShare) * 0.25f;
+        double sum = er + eg + eb;
+        if (sum > 1e-6) {
+            // Normalised to the brightest channel, so only the hue follows the lamps.
+            double top = Math.max(er, Math.max(eg, eb));
+            emergencyRed += ((float) (er / top) - emergencyRed) * 0.2f;
+            emergencyGreen += ((float) (eg / top) - emergencyGreen) * 0.2f;
+            emergencyBlue += ((float) (eb / top) - emergencyBlue) * 0.2f;
+        }
     }
 
     /**
@@ -421,21 +514,34 @@ public final class BackroomsLights {
      * only appear once you walked up to it. So a few times a second every caged lamp in the loaded
      * chunks is checked (a couple of hashes each, a few hundred lamps) and its block redrawn when
      * its circuit changed. The near lamps were already done this tick, so they don't redraw twice.
+     * Far standby emergency lamps light their lenses the same way (the near ones follow their own
+     * relay delay in the tick).
      */
-    private static void sweepDarkBulbs(Minecraft mc, long gameTime) {
+    private static void sweepDarkBulbs(Minecraft mc, long gameTime, Vec3 eye) {
+        double nearSq = sq(BUILD_RANGE - REBUILD_MOVE - 1);
         var it = INDEX.all().long2ObjectEntrySet().fastIterator();
         while (it.hasNext()) {
             var entry = it.next();
             long key = entry.getLongKey();
             int y = BlockPos.getY(key);
-            if (!FixturePower.level2OnCircuit(y) || FixtureType.of(entry.getValue()) != FixtureType.BULKHEAD_LAMP) {
+            FixtureType type = FixtureType.of(entry.getValue());
+            if (type == null || !FixturePower.level2OnCircuit(y)) {
                 continue; // the void's doorway lamp far below the floor never goes out
             }
             int x = BlockPos.getX(key);
             int z = BlockPos.getZ(key);
-            boolean powered = FixturePower.level2CircuitPowered(FixturePower.level2Circuit(x + 0.5, z + 0.5), gameTime);
-            if (powered ? DARK_BULBS.remove(key) : DARK_BULBS.add(key)) {
-                mc.levelRenderer.setBlocksDirty(x, y, z, x, y, z);
+            if (level2CircuitLamp(type)) {
+                boolean powered = FixturePower.level2CircuitPowered(FixturePower.level2Circuit(x + 0.5, z + 0.5), gameTime);
+                if (powered ? DARK_BULBS.remove(key) : DARK_BULBS.add(key)) {
+                    mc.levelRenderer.setBlocksDirty(x, y, z, x, y, z);
+                }
+            } else if ((type == FixtureType.L2_EMERGENCY_RED || type == FixtureType.L2_EMERGENCY_AMBER)
+                    && sq(x + 0.5 - eye.x) + sq(z + 0.5 - eye.z) > nearSq
+                    && !entry.getValue().getValue(Level2EmergencyLampBlock.LIT)) {
+                boolean lit = FixturePower.level2StandbyOn(x, z, gameTime);
+                if (lit ? LIT_STANDBY.add(key) : LIT_STANDBY.remove(key)) {
+                    mc.levelRenderer.setBlocksDirty(x, y, z, x, y, z);
+                }
             }
         }
     }
@@ -492,6 +598,19 @@ public final class BackroomsLights {
     public static void onRegisterBlockColors(RegisterColorHandlersEvent.Block event) {
         event.register((state, world, pos, tintIndex) -> Level0TubeGlow.tint(state, pos),
                 ModBlocks.FLUORESCENT_LIGHT.get(), Level0Blocks.TROFFER_STRIP.get());
+        // Level 2's emergency lamp lens: its red or amber, bright while the lamp is on, a dark
+        // glass while it waits on standby (the lens faces are full-bright, so the tint is all).
+        event.register((state, world, pos, tintIndex) -> level2EmergencyTint(state, pos),
+                Level2LightBlocks.EMERGENCY_LAMP.get());
+    }
+
+    private static int level2EmergencyTint(BlockState state, @Nullable BlockPos pos) {
+        boolean amber = state.getValue(Level2EmergencyLampBlock.TONE) == Level2EmergencyLampBlock.Tone.AMBER;
+        boolean on = state.getValue(Level2EmergencyLampBlock.LIT) || (pos != null && LIT_STANDBY.contains(pos.asLong()));
+        if (amber) {
+            return on ? 0xFFA428 : 0x3A2410;
+        }
+        return on ? 0xFF2A1C : 0x3A1210;
     }
 
     /** New level (or none): forget all fixtures and free every light that belonged to the old one. */
@@ -504,6 +623,7 @@ public final class BackroomsLights {
         lights = new ArrayList<>();
         SELECTED.clear();
         DARK_BULBS.clear();
+        LIT_STANDBY.clear();
         DARK_TUBES.clear();
         FAULTY_TUBES.clear();
         level0TubeShare = 1.0f;
@@ -526,6 +646,7 @@ public final class BackroomsLights {
         }
         veilActive = false;
         Level0Shading.wanted = false;
+        Level2Shading.wanted = false;
     }
 
     private static void freeLights() {
@@ -554,7 +675,8 @@ public final class BackroomsLights {
                 light.level = previous.level;
                 light.relayAtMs = previous.relayAtMs;
             }
-            if (light.type == FixtureType.L0_EMERGENCY_LAMP) {
+            if (light.type == FixtureType.L0_EMERGENCY_LAMP || light.type == FixtureType.L2_EMERGENCY_RED
+                    || light.type == FixtureType.L2_EMERGENCY_AMBER) {
                 // lit=true: always on; lit=false: standby (see FixturePower#levelOf).
                 BlockState state = INDEX.get(light.key);
                 light.alwaysOn = state == null || !state.hasProperty(BlockStateProperties.LIT) || state.getValue(BlockStateProperties.LIT);
@@ -676,7 +798,8 @@ public final class BackroomsLights {
         ClientSettings.Quality quality = ClientSettings.quality();
         boolean level0 = floor == BackroomsLevel.LEVEL_0;
         int budget = floor == BackroomsLevel.LEVEL_9 ? quality.maxLights - VeilFixtures.LAMP_CONES
-                : level0 ? quality.maxLights * LEVEL0_BUDGET_SCALE : quality.maxLights;
+                : level0 ? quality.maxLights * LEVEL0_BUDGET_SCALE
+                : floor == BackroomsLevel.LEVEL_2 ? Math.round(quality.maxLights * LEVEL2_BUDGET_SCALE) : quality.maxLights;
         budget -= ThrownLights.reserved(); // flares and glowsticks share the same budget
         SHOWN.clear();
         for (FixtureLight light : SELECTED) {
@@ -684,7 +807,7 @@ public final class BackroomsLights {
         }
         SELECTED.clear();
         CANDIDATES.clear();
-        double range = level0 ? quality.lightRange * LEVEL0_RANGE_SCALE : quality.lightRange;
+        double range = level0 ? quality.lightRange * LEVEL0_RANGE_SCALE : lightRange(floor);
         double maxSq = range * range;
         boolean blackedOut = FixturePower.mainsPower() <= 0.0f;
         for (FixtureLight light : lights) {

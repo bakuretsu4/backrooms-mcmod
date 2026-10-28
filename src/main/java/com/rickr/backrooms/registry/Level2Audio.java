@@ -23,12 +23,28 @@ public final class Level2Audio {
     public static final DeferredHolder<SoundEvent, SoundEvent> PIPE_CLANK = register("level2.pipe_clank");
     public static final DeferredHolder<SoundEvent, SoundEvent> PIPE_CREAK = register("level2.pipe_creak");
     public static final DeferredHolder<SoundEvent, SoundEvent> PIPE_RUSH = register("level2.pipe_rush");
-    // Loops placed on things in the corridor: the steady hiss of a leaking steam valve, and the
-    // hum and slow thump of a pump in a pump bay.
+    // Loops placed on things in the corridor: the steady hiss of a leaking steam valve, the hum
+    // and slow thump of a pump in a pump bay, the deep bed of heavy machinery (fans, machines and
+    // the plant behind the walls) and the buzz of a live breaker panel.
     public static final DeferredHolder<SoundEvent, SoundEvent> STEAM_LEAK = register("level2.steam_leak");
     public static final DeferredHolder<SoundEvent, SoundEvent> PUMP_HUM = register("level2.pump_hum");
-    // A drop of water from a leaking pipe landing in the gutter.
-    public static final DeferredHolder<SoundEvent, SoundEvent> DRIP = register("level2.drip");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PLANT_HUM = register("level2.plant_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PANEL_BUZZ = register("level2.panel_buzz");
+    // Far metal and vibration: a pipe struck with a tool somewhere down the line (a few at a
+    // time, creeping closer along the pipes), and a shudder running along a pipe run past you.
+    public static final DeferredHolder<SoundEvent, SoundEvent> PIPE_TAP = register("level2.pipe_tap");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PIPE_SHUDDER = register("level2.pipe_shudder");
+    // A relief valve lifting now and then: a clunk and a burst of steam.
+    public static final DeferredHolder<SoundEvent, SoundEvent> PRESSURE_RELEASE = register("level2.pressure_release");
+    // A drop of water from a leak landing: in a puddle or the wet gutter, on steel (a grating, a
+    // pipe), or on bare wet concrete. (In black ooze it is ModSounds.L2_OOZE_DRIP.)
+    public static final DeferredHolder<SoundEvent, SoundEvent> DRIP_PUDDLE = register("level2.drip_puddle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DRIP_METAL = register("level2.drip_metal");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DRIP_CONCRETE = register("level2.drip_concrete");
+    // The chambers' oddities (played by client/anomaly/level2/Level2OddityEffects): the dry tick of
+    // a gauge needle that keeps time with your heart, and the warm breath behind a door to nowhere.
+    public static final DeferredHolder<SoundEvent, SoundEvent> GAUGE_TICK = register("level2.gauge_tick");
+    public static final DeferredHolder<SoundEvent, SoundEvent> WARM_DOOR = register("level2.warm_door");
 
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name) {
         return ModSounds.SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(Backrooms.id(name)));

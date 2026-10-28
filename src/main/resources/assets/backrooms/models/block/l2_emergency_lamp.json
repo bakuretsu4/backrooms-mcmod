@@ -1,0 +1,172 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "minecraft:block/gray_concrete",
+    "box": "minecraft:block/gray_concrete",
+    "rim": "minecraft:block/light_gray_concrete",
+    "lens": "minecraft:block/white_concrete",
+    "guard": "minecraft:block/iron_block"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        3,
+        14
+      ],
+      "to": [
+        13,
+        13,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#box"
+        },
+        "south": {
+          "texture": "#box",
+          "cullface": "south"
+        },
+        "east": {
+          "texture": "#box"
+        },
+        "west": {
+          "texture": "#box"
+        },
+        "up": {
+          "texture": "#box"
+        },
+        "down": {
+          "texture": "#box"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        4,
+        12.5
+      ],
+      "to": [
+        12,
+        12,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rim"
+        },
+        "east": {
+          "texture": "#rim"
+        },
+        "west": {
+          "texture": "#rim"
+        },
+        "up": {
+          "texture": "#rim"
+        },
+        "down": {
+          "texture": "#rim"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        5,
+        11
+      ],
+      "to": [
+        11,
+        11,
+        12.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "east": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "west": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "up": {
+          "texture": "#lens",
+          "tintindex": 0
+        },
+        "down": {
+          "texture": "#lens",
+          "tintindex": 0
+        }
+      },
+      "shade": false,
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
+      }
+    },
+    {
+      "from": [
+        7.5,
+        4.5,
+        10.4
+      ],
+      "to": [
+        8.5,
+        11.5,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#guard"
+        },
+        "east": {
+          "texture": "#guard"
+        },
+        "west": {
+          "texture": "#guard"
+        },
+        "up": {
+          "texture": "#guard"
+        },
+        "down": {
+          "texture": "#guard"
+        }
+      }
+    },
+    {
+      "from": [
+        4.5,
+        7.5,
+        10.4
+      ],
+      "to": [
+        11.5,
+        8.5,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#guard"
+        },
+        "east": {
+          "texture": "#guard"
+        },
+        "west": {
+          "texture": "#guard"
+        },
+        "up": {
+          "texture": "#guard"
+        },
+        "down": {
+          "texture": "#guard"
+        }
+      }
+    }
+  ]
+}

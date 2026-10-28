@@ -13,6 +13,8 @@ public final class Level2Anomalies {
         Anomalies.register(Level2Sites.HOT_ZONE, new HotZoneBehavior());
         Anomalies.register(Level2Sites.VOID_DOOR, new VoidDoorBehavior());
         Anomalies.register(Level2Sites.LOOP_HALL, new LoopHallBehavior());
+        // The oddities are quiet: only the warm door says anything (the rest is blocks and client effects).
+        Anomalies.register(Level2Sites.WARM_DOOR, new WarmDoorBehavior());
     }
 
     private Level2Anomalies() {}

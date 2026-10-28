@@ -55,11 +55,15 @@ final class Level2Rooms {
 
     /** True if the room has a steel door (the others have an open doorway). */
     static boolean hasDoor(int type) {
-        return type == Level2Line.ROOM_MAINTENANCE || type == Level2Line.ROOM_BOILER;
+        return type == Level2Line.ROOM_MAINTENANCE || type == Level2Line.ROOM_BOILER
+                || type == Level2Line.ROOM_WARM_DOOR || Level2Chambers.isChamber(type);
     }
 
     /** True if floor column (i, j) of a room of {@code type} has nothing standing on it. */
     static boolean isFree(int type, int i, int j) {
+        if (Level2Chambers.isChamber(type)) {
+            return Level2Chambers.isFree(type, i, j);
+        }
         return prop(type, i, j) == NOTHING;
     }
 
@@ -100,6 +104,10 @@ final class Level2Rooms {
      * per-room random number and (i, j) the column's place in the room (see the class comment).
      */
     static void fill(Level2Layout layout, int type, int side, long salt, int i, int j, LevelLayout.Column out) {
+        if (Level2Chambers.isChamber(type)) {
+            Level2Chambers.fill(layout, type, side, salt, i, j, out); // the bigger maintenance chambers
+            return;
+        }
         int floor = layout.floorY();
         int ceiling = layout.ceilingY();
         int top = ceiling - 1;

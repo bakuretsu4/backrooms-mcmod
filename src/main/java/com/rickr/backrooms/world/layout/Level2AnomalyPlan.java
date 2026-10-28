@@ -85,7 +85,9 @@ final class Level2AnomalyPlan {
                 return site;
             }
         }
-        return null;
+        // The quiet oddities (Level2Oddities) stay within their own corridor and its rooms.
+        AnomalySite odd = Level2Oddities.site(seed, band, cell);
+        return odd != null && odd.contains(x, z) ? odd : null;
     }
 
     static void near(long seed, int x, int z, int radius, Consumer<AnomalySite> out) {
@@ -93,6 +95,9 @@ final class Level2AnomalyPlan {
         for (int b = Level2Line.band(z - reach); b <= Level2Line.band(z + reach); b++) {
             for (int cell = Math.floorDiv(x - radius, CELL); cell <= Math.floorDiv(x + radius, CELL); cell++) {
                 AnomalySite site = cellSite(seed, b, cell);
+                if (site == null) {
+                    site = Level2Oddities.site(seed, b, cell);
+                }
                 if (site != null && site.near(x, z, radius)) {
                     out.accept(site);
                 }
@@ -113,6 +118,9 @@ final class Level2AnomalyPlan {
         for (int b = band - 10; b <= band + 10; b++) {
             for (int c = cell - 6; c <= cell + 6; c++) {
                 AnomalySite site = cellSite(seed, b, c);
+                if (site == null) {
+                    site = Level2Oddities.site(seed, b, c);
+                }
                 if (site != null && site.kind().equals(kind)) {
                     double d = site.distanceTo(x, z);
                     if (d < bestDist) {

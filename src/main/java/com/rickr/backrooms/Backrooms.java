@@ -42,6 +42,10 @@ public final class Backrooms {
         com.rickr.backrooms.registry.Level0SetPieceBlocks.bootstrap();
         // Level 2 revamp: pipework, bulkhead rings, maintenance-room furniture, stencils and the exit bulkhead.
         com.rickr.backrooms.registry.Level2Blocks.bootstrap();
+        // Level 2 lighting overhaul: battery emergency lamps (red/amber, standby) and mercury caged lamps.
+        com.rickr.backrooms.registry.Level2LightBlocks.bootstrap();
+        // Level 2 chambers and oddities: the crews' logbooks, kettles and jackets, the heart-rate gauge.
+        com.rickr.backrooms.registry.Level2ChamberBlocks.bootstrap();
         // Level 39 Hounds/Facelings (and Clumps, Skin-stealers, Wretches): loads their registrations.
         com.rickr.backrooms.registry.Level39Mobs.bootstrap();
         // Level 39 "Megalophobia": the town, superstructure and tunnel blocks (and their items).

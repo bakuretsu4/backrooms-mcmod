@@ -57,6 +57,13 @@ def save_png(img: np.ndarray, path: Path) -> None:
     Image.fromarray(arr, "RGBA").save(path)
 
 
+def flat16(img: np.ndarray) -> np.ndarray:
+    """Box-filter a (nearly) flat-coloured texture down to 16 x 16. A flat colour looks the same
+    at any size, and 16 px takes 1/64 of the block atlas room of 128 px (the atlas is full)."""
+    k = img.shape[0] // 16
+    return img.reshape(16, k, 16, k, img.shape[2]).mean(axis=(1, 3))
+
+
 # =============================================================================
 # Block textures: 128x128 "realistic" style, albedos tuned so that, lit by the
 # Veil lights in game, surfaces land on the colours measured in the reference
@@ -588,8 +595,9 @@ def tex_ceiling_beam() -> None:
 # ---------------------------------------------------------------- Level 2 ---
 
 # Level 2 "Pipe Dreams" (linear revamp): grey-beige poured concrete walls, a worn concrete floor,
-# a dark slab ceiling. These surfaces, the pipes and every Level 2 fitting and prop are drawn in
-# anomaly_assets/level2_revamp.py (imported lazily: it imports this file).
+# a dark slab ceiling. The concrete and metal materials (and the corridor surfaces with their aged
+# versions) are drawn in anomaly_assets/level2_materials.py; the pipe and prop models and the props'
+# textures in anomaly_assets/level2_revamp.py (both imported lazily: they import this file).
 
 
 def _l2r():
@@ -597,24 +605,9 @@ def _l2r():
     return m
 
 
-def _pipe_wall() -> np.ndarray:
-    return _l2r().wall()
-
-
-def tex_pipe_wall() -> None:
-    save_png(_pipe_wall(), TEX / "block" / "pipe_wall.png")
-
-
-def _pipe_floor() -> np.ndarray:
-    return _l2r().floor()
-
-
-def tex_pipe_floor() -> None:
-    save_png(_pipe_floor(), TEX / "block" / "pipe_floor.png")
-
-
-def tex_pipe_ceiling() -> None:
-    save_png(_l2r().ceiling(), TEX / "block" / "pipe_ceiling.png")
+def _l2m():
+    import anomaly_assets.level2_materials as m
+    return m
 
 
 def _stairwell_light_surround() -> np.ndarray:
@@ -4997,7 +4990,7 @@ def tex_l37_sunlit_void() -> None:
     of haze, so a wall of it tiles without seams (drawn full-bright)."""
     rng = rng_for(3705)
     img = add_lum(fill((255, 248, 228), (S, S)), fnoise(rng, beta=3.5) * 1.2)
-    save_png(np.clip(img, 0, 255), _blk("l37_sunlit_void"))
+    save_png(flat16(np.clip(img, 0, 255)), _blk("l37_sunlit_void"))
 
 
 def tex_l37_chrome() -> None:
@@ -6048,7 +6041,7 @@ def tex_l94_house_walls() -> None:
         img = img * (0.86 + 0.18 * ((Y % 16) / 16))[..., None]
         img = add_lum(img, -26 * smoothstep(1.6, 0.3, Y % 16) - 18 * smoothstep(1.2, 0.3, np.abs(wrapd(sx, 32))) * ((Y % 16) > 3))
         save_png(img, _blk(f"l94_roof_{name}"))
-    save_png(fill((0, 0, 0), (S, S)), _blk("l94_dark_void"))
+    save_png(fill((0, 0, 0), (16, 16)), _blk("l94_dark_void"))   # flat black: 16 px saves atlas room
 
 
 def tex_l94_doors() -> None:
@@ -6323,7 +6316,7 @@ def tex_l94c_stone_light() -> None:
     carpet = over(carpet, np.array([110, 40, 44]), wear * 0.5)
     save_png(carpet, _blk("l94_red_carpet"))
 
-    save_png(add_lum(fill((255, 255, 255), (S, S)), -np.abs(fnoise(rng, beta=3.0)) * 1.5), _blk("l94_throne_light"))
+    save_png(flat16(add_lum(fill((255, 255, 255), (S, S)), -np.abs(fnoise(rng, beta=3.0)) * 1.5)), _blk("l94_throne_light"))
 
     lamp = _galvanised(rng, (176, 178, 182))
     core = box((S, S), 10, 10, S - 10, S - 10, soft=1.0)
@@ -7365,11 +7358,14 @@ SURFACE_VARIANTS = {
         mark_damp(img, rng, (20, 14), 0.3, (1.0, 0.95, 1.05)) if i == 1 else
         mark_crack(img, rng, 18) if i == 2 else
         mark_damp(mark_damp(img, rng, (9, 8), 0.3), rng, (24, 20), 0.1)), 4),
-    # Level 2: rust run-off, water streaks, a patched repair (wall; its base row only gets the
-    # run-off) / an oil stain, a spalled crack (floor). Weights in ModBlocks / registry/Level2Blocks.
-    "pipe_wall": (_pipe_wall, lambda i, rng, img: _l2r().wall_marks(i, rng, img), 4),
-    "l2_wall_base": (lambda: _l2r().wall_base(), lambda i, rng, img: _l2r().wall_marks(i, rng, img), 2),
-    "pipe_floor": (_pipe_floor, lambda i, rng, img: _l2r().floor_marks(i, rng, img), 3),
+    # Level 2 (anomaly_assets/level2_materials.py): wall: rust from a bracket stump, condensation
+    # from the ceiling, spalled concrete; wall base: rust run-off, tide lines, a chipped kicker;
+    # floor: oil, a spalled crack, a wet patch; ceiling: a damp bloom, a rusty anchor. Weights and
+    # damp-stretch clustering in ModBlocks / registry/Level2Blocks (block/Level2SurfaceBlock).
+    "pipe_wall": (lambda: _l2m().wall(), lambda i, rng, img: _l2m().wall_marks(i, rng, img), 4),
+    "l2_wall_base": (lambda: _l2m().wall_base(), lambda i, rng, img: _l2m().wall_base_marks(i, rng, img), 4),
+    "pipe_floor": (lambda: _l2m().floor(), lambda i, rng, img: _l2m().floor_marks(i, rng, img), 4),
+    "pipe_ceiling": (lambda: _l2m().ceiling(), lambda i, rng, img: _l2m().ceiling_marks(i, rng, img), 3),
     "pool_tile": (lambda: _pool_tiles(140, POOL_WHITE, POOL_GROUT), lambda i, rng, img: (
         mark_grout_grime(img, rng) if i == 1 else
         mark_crack(img, rng, 22, (16, 26), 1)), 3),
@@ -8202,7 +8198,7 @@ TEXTURES = [
     tex_lobby_door, tex_red_alarm_lamp,
     tex_concrete_wall, tex_garage_pillar, tex_pillar_numbers, tex_concrete_floor, tex_wet_concrete_floor,
     tex_warehouse_light, tex_ceiling_tube, tex_ceiling_beam,
-    tex_pipe_wall, tex_pipe_floor, tex_pipe_ceiling, tex_pipe_light, tex_rusty_pipe, tex_pipe_bracket,
+    tex_pipe_light, tex_rusty_pipe, tex_pipe_bracket,
     tex_pale_duct, tex_pale_duct_flange, tex_pipe_valve, tex_floor_grate,
     tex_bulkhead_lamp, tex_bulkhead_cage,
     tex_stairwell_wall, tex_chain_link, tex_stair_tread, tex_exit_sign, tex_exit_door,

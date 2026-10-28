@@ -32,30 +32,39 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
 /**
- * Veil renderer for Level 0's lamps: our own light type, so the lamps can use our shaders.
+ * Veil renderer for Level 0's lamps, and (a second instance) Level 2's: our own light types, so
+ * the lamps can use our shaders.
  *
  * <p>Each lamp is drawn like Veil's point lights (a box around its reach, shading the pixels in
- * it; same data layout), but the shader (pinwheel/shaders/program/light/level0_point) takes its
- * shadows from Level 0's wall map ({@link Level0WallGrid}) instead of Veil's 3D voxel grid: a
- * walk of ~10 block columns from above instead of up to 128 voxel steps, reaching well past the
- * voxel grid's 32 blocks, block-exact.
+ * it; same data layout), but the shader (pinwheel/shaders/program/light/level0_point, or
+ * level2_point for Level 2) takes its shadows from the wall map ({@link Level0WallGrid}) instead
+ * of Veil's 3D voxel grid: a walk of ~10 block columns from above instead of up to 128 voxel
+ * steps, reaching well past the voxel grid's 32 blocks, block-exact. Level 2's shader also adds
+ * the gloss highlights on wet and metal surfaces (Level2Gloss, Level2Shading).
  *
- * <p>After the lamps it draws one full-screen pass (level0_screen) that darkens corners and wall
- * feet and removes the vanilla bounce fill where the power is out (see that shader's comment).
- * The pass needs this renderer to run even when no lamp is on screen, so it counts itself as one
- * visible light while Level 0's shading is wanted ({@link Level0Shading#wanted}); an invisible
- * "anchor" lamp (VeilFixtures) keeps the renderer alive.
+ * <p>Level 0 only: after the lamps it draws one full-screen pass (level0_screen) that darkens
+ * corners and wall feet and removes the vanilla bounce fill where the power is out (see that
+ * shader's comment). The pass needs this renderer to run even when no lamp is on screen, so it
+ * counts itself as one visible light while Level 0's shading is wanted ({@link Level0Shading#wanted});
+ * an invisible "anchor" lamp (VeilFixtures) keeps the renderer alive. Level 2 has no screen pass:
+ * its darkness is set by the lightmap (ClientLighting) and the grade (AtmosphereGrade).
  *
  * <p>Only used when Veil is loaded: nothing outside client/light touches this class.
  */
 final class Level0LightRenderer extends InstancedLightRenderer<Level0LightData> {
     static final ResourceLocation RENDER_TYPE = Backrooms.id("light/level0_point");
+    static final ResourceLocation LEVEL2_RENDER_TYPE = Backrooms.id("light/level2_point");
     static final ResourceLocation SCREEN_SHADER = Backrooms.id("light/level0_screen");
-    /** Our light type. Not in Veil's registry (that is only for its editor): Veil keys renderers by this object. */
-    static final LightTypeRegistry.LightType<Level0LightData> TYPE = new LightTypeRegistry.LightType<>(Level0LightRenderer::new, null);
+    /** Our light types. Not in Veil's registry (that is only for its editor): Veil keys renderers by these objects. */
+    static final LightTypeRegistry.LightType<Level0LightData> TYPE = new LightTypeRegistry.LightType<>(() -> new Level0LightRenderer(false), null);
+    static final LightTypeRegistry.LightType<Level0LightData> LEVEL2_TYPE = new LightTypeRegistry.LightType<>(() -> new Level0LightRenderer(true), null);
 
-    Level0LightRenderer() {
+    /** True for the instance that draws Level 2's lamps. */
+    private final boolean level2;
+
+    Level0LightRenderer(boolean level2) {
         super(Float.BYTES * 9);
+        this.level2 = level2;
     }
 
     @Override
@@ -74,7 +83,7 @@ final class Level0LightRenderer extends InstancedLightRenderer<Level0LightData> 
 
     @Override
     protected @Nullable RenderType getRenderType(List<? extends LightRenderHandle<Level0LightData>> lights) {
-        return VeilRenderType.get(RENDER_TYPE);
+        return VeilRenderType.get(level2 ? LEVEL2_RENDER_TYPE : RENDER_TYPE);
     }
 
     @Override
@@ -84,7 +93,7 @@ final class Level0LightRenderer extends InstancedLightRenderer<Level0LightData> 
 
     @Override
     public int getVisibleLights() {
-        return super.getVisibleLights() + (Level0Shading.wanted ? 1 : 0);
+        return super.getVisibleLights() + (!level2 && Level0Shading.wanted ? 1 : 0);
     }
 
     @Override
@@ -99,17 +108,22 @@ final class Level0LightRenderer extends InstancedLightRenderer<Level0LightData> 
         if (lightFbo != null) {
             lightFbo.bind(true);
         }
-        RenderType renderType = VeilRenderType.get(RENDER_TYPE);
+        RenderType renderType = VeilRenderType.get(level2 ? LEVEL2_RENDER_TYPE : RENDER_TYPE);
         if (renderType != null) {
             ResourceLocation shaderId = VeilRenderType.getShards(renderType).veilShaderId();
             ShaderProgram lamps = shaderId == null ? null : renderer.getShaderManager().getShader(shaderId);
             if (lamps != null) {
                 setWallGrid(lamps);
+                if (level2) {
+                    setGloss(lamps);
+                }
             }
         }
         super.renderLights(lightRenderer);
         Level0Shading.timerSplit();
-        if (Level0Shading.wanted && lightFbo != null) {
+        if (level2) {
+            Level2Shading.markDrawn(super.getVisibleLights());
+        } else if (Level0Shading.wanted && lightFbo != null) {
             copyLightBuffer(lightFbo);
             drawScreenPass(renderer);
             Level0Shading.markDrawn(super.getVisibleLights());
@@ -119,7 +133,16 @@ final class Level0LightRenderer extends InstancedLightRenderer<Level0LightData> 
 
     private static void setWallGrid(ShaderProgram program) {
         program.setTexture("WallGrid", GL11.GL_TEXTURE_2D, Level0WallGrid.texture());
-        program.getUniformSafe("WallGridInfo").setVector(Level0WallGrid.originX(), Level0WallGrid.BASE_Y, Level0WallGrid.originZ());
+        program.getUniformSafe("WallGridInfo").setVector(Level0WallGrid.originX(), Level0WallGrid.baseY(), Level0WallGrid.originZ());
+    }
+
+    /** Level 2: the gloss map and the highlight strengths (Level2Shading). */
+    private static void setGloss(ShaderProgram program) {
+        program.setTexture("GlossGrid", GL11.GL_TEXTURE_2D, Level0WallGrid.glossTexture());
+        program.getUniformSafe("GlossDampWet").setVector(Level2Shading.DAMP_STRENGTH, Level2Shading.DAMP_SHARPNESS,
+                Level2Shading.WET_STRENGTH, Level2Shading.WET_SHARPNESS);
+        program.getUniformSafe("GlossMetal").setVector(Level2Shading.METAL_STRENGTH, Level2Shading.METAL_SHARPNESS,
+                Level2Shading.GLOSS_FALLOFF, Level2Shading.WET_HEAD_ON);
     }
 
     /** Our copy of the light buffer, which the screen pass reads while it rewrites the original. */
@@ -183,9 +206,17 @@ final class Level0LightRenderer extends InstancedLightRenderer<Level0LightData> 
 }
 
 /** A Level 0 lamp: a Veil point light drawn by {@link Level0LightRenderer} (our shaders, our shadows). */
-final class Level0LightData extends PointLightData {
+class Level0LightData extends PointLightData {
     @Override
     public LightTypeRegistry.LightType<?> getType() {
         return Level0LightRenderer.TYPE;
+    }
+}
+
+/** A Level 2 lamp: the same data, drawn by Level 2's instance of {@link Level0LightRenderer} (shadows and gloss). */
+final class Level2LightData extends Level0LightData {
+    @Override
+    public LightTypeRegistry.LightType<?> getType() {
+        return Level0LightRenderer.LEVEL2_TYPE;
     }
 }

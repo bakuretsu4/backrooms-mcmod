@@ -1,33 +1,63 @@
 {
   "variants": {
-    "color=red,facing=north": {
+    "color=red,facing=north,feed=false": {
       "model": "backrooms:block/l2_valve_wheel_red"
     },
-    "color=red,facing=east": {
+    "color=red,facing=east,feed=false": {
       "model": "backrooms:block/l2_valve_wheel_red",
       "y": 90
     },
-    "color=red,facing=south": {
+    "color=red,facing=south,feed=false": {
       "model": "backrooms:block/l2_valve_wheel_red",
       "y": 180
     },
-    "color=red,facing=west": {
+    "color=red,facing=west,feed=false": {
       "model": "backrooms:block/l2_valve_wheel_red",
       "y": 270
     },
-    "color=grey,facing=north": {
+    "color=red,facing=north,feed=true": {
+      "model": "backrooms:block/l2_valve_wheel_red_feed"
+    },
+    "color=red,facing=east,feed=true": {
+      "model": "backrooms:block/l2_valve_wheel_red_feed",
+      "y": 90
+    },
+    "color=red,facing=south,feed=true": {
+      "model": "backrooms:block/l2_valve_wheel_red_feed",
+      "y": 180
+    },
+    "color=red,facing=west,feed=true": {
+      "model": "backrooms:block/l2_valve_wheel_red_feed",
+      "y": 270
+    },
+    "color=grey,facing=north,feed=false": {
       "model": "backrooms:block/l2_valve_wheel_grey"
     },
-    "color=grey,facing=east": {
+    "color=grey,facing=east,feed=false": {
       "model": "backrooms:block/l2_valve_wheel_grey",
       "y": 90
     },
-    "color=grey,facing=south": {
+    "color=grey,facing=south,feed=false": {
       "model": "backrooms:block/l2_valve_wheel_grey",
       "y": 180
     },
-    "color=grey,facing=west": {
+    "color=grey,facing=west,feed=false": {
       "model": "backrooms:block/l2_valve_wheel_grey",
+      "y": 270
+    },
+    "color=grey,facing=north,feed=true": {
+      "model": "backrooms:block/l2_valve_wheel_grey_feed"
+    },
+    "color=grey,facing=east,feed=true": {
+      "model": "backrooms:block/l2_valve_wheel_grey_feed",
+      "y": 90
+    },
+    "color=grey,facing=south,feed=true": {
+      "model": "backrooms:block/l2_valve_wheel_grey_feed",
+      "y": 180
+    },
+    "color=grey,facing=west,feed=true": {
+      "model": "backrooms:block/l2_valve_wheel_grey_feed",
       "y": 270
     }
   }

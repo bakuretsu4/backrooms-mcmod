@@ -4,18 +4,24 @@ import com.rickr.backrooms.block.AxisShapeBlock;
 import com.rickr.backrooms.block.FurnitureBlock;
 import com.rickr.backrooms.block.HouseDoorBlock;
 import com.rickr.backrooms.block.Level2BulkheadFrameBlock;
+import com.rickr.backrooms.block.Level2CableTrayBlock;
 import com.rickr.backrooms.block.Level2DripBlock;
 import com.rickr.backrooms.block.Level2ExitBulkheadBlock;
+import com.rickr.backrooms.block.Level2FeedPipeBlock;
 import com.rickr.backrooms.block.Level2GratingBlock;
+import com.rickr.backrooms.block.Level2LeverValveBlock;
 import com.rickr.backrooms.block.Level2PipeBlock;
 import com.rickr.backrooms.block.Level2PipeElbowBlock;
+import com.rickr.backrooms.block.Level2PipeEndBlock;
 import com.rickr.backrooms.block.Level2PipeTeeBlock;
 import com.rickr.backrooms.block.Level2PumpBlock;
 import com.rickr.backrooms.block.Level2ShelfBlock;
 import com.rickr.backrooms.block.Level2StencilBlock;
 import com.rickr.backrooms.block.Level2TallBlock;
 import com.rickr.backrooms.block.Level2ValveBlock;
+import com.rickr.backrooms.block.Level2SurfaceBlock;
 import com.rickr.backrooms.block.SurfaceBlock;
+import com.rickr.backrooms.block.ThinLayerBlock;
 import com.rickr.backrooms.block.WallMountBlock;
 import java.util.function.Function;
 import net.minecraft.world.item.DoubleHighBlockItem;
@@ -45,7 +51,7 @@ import net.neoforged.neoforge.registries.DeferredBlock;
  *       (see {@link WallMountBlock}). Free-standing furniture: FACING = the side you look at.</li>
  *   <li>Pipes (PIPE, FLANGE, PIPE_ELBOW, PIPE_TEE) share KIND and SIZE (see {@link Level2PipeBlock}).
  *       Elbows and tees always carry ONE pipe through the middle of the block, so they join PIPE
- *       blocks with SLOT = CENTER.</li>
+ *       blocks with SLOT = CENTER. PIPE_END finishes a wall rack (same KIND and SIZE as the rack).</li>
  * </ul>
  */
 public final class Level2Blocks {
@@ -69,11 +75,20 @@ public final class Level2Blocks {
     /** A round pressure gauge on a pigtail pipe out of the wall. */
     public static final DeferredBlock<WallMountBlock> GAUGE = block("l2_gauge",
             props -> new WallMountBlock(props, 4, 2, 10, 12, 13, 16), metal(MapColor.METAL).noOcclusion());
+    /** Where a wall rack stops: its pipes bend into the wall, or pass into a pier through a bolted collar. */
+    public static final DeferredBlock<Level2PipeEndBlock> PIPE_END = block("l2_pipe_end", Level2PipeEndBlock::new,
+            metal(MapColor.COLOR_ORANGE).noOcclusion());
+    /** A branch dropping from a ceiling header down the wall into a valve (the manifold's tee). */
+    public static final DeferredBlock<Level2FeedPipeBlock> FEED_PIPE = block("l2_feed_pipe", Level2FeedPipeBlock::new,
+            metal(MapColor.COLOR_ORANGE).noOcclusion());
+    /** A quarter-turn ball valve with a lever handle: OPEN (handle along the pipe) or shut, FEED from above. */
+    public static final DeferredBlock<Level2LeverValveBlock> VALVE_LEVER = block("l2_valve_lever", Level2LeverValveBlock::new,
+            metal(MapColor.COLOR_RED).noOcclusion());
 
     // ================================================================== Electrics
-    /** A ladder cable tray hung under the ceiling on rods, full of cables; runs along AXIS. */
-    public static final DeferredBlock<AxisShapeBlock> CABLE_TRAY = block("l2_cable_tray",
-            props -> new AxisShapeBlock(props, Block.box(0, 9, 1, 16, 16, 15)), metal(MapColor.METAL).noOcclusion());
+    /** A ladder cable tray hung on rods under the ceiling, full of cables; AXIS, BEAM above it, DROOP of loose cable. */
+    public static final DeferredBlock<Level2CableTrayBlock> CABLE_TRAY = block("l2_cable_tray",
+            Level2CableTrayBlock::new, metal(MapColor.METAL).noOcclusion());
     /** A grey steel junction box with a conduit running down out of it to the floor. */
     public static final DeferredBlock<WallMountBlock> JUNCTION_BOX = block("l2_junction_box",
             props -> new WallMountBlock(props, 3, 0, 11, 13, 13, 16), metal(MapColor.METAL).noOcclusion());
@@ -110,6 +125,12 @@ public final class Level2Blocks {
     /** Stencilled paint on a wall: VARIANT = section number, warning, arrow or pipe label. Walk-through. */
     public static final DeferredBlock<Level2StencilBlock> STENCIL = block("l2_stencil", Level2StencilBlock::new,
             metal(MapColor.COLOR_YELLOW).noOcclusion().noCollission());
+    /**
+     * A steel I-beam under the ceiling slab, running along AXIS, where nothing hangs below it (pipes
+     * and trays under a beam carry it as their BEAM state instead). Same model as that BEAM.
+     */
+    public static final DeferredBlock<AxisShapeBlock> BEAM = block("l2_beam",
+            props -> new AxisShapeBlock(props, Block.box(0, 9, 5, 16, 16, 11)), metal(MapColor.METAL).noOcclusion());
 
     // ================================================================== Floor and ceiling
     /** Walkable steel bar grating you can see through; bars along AXIS. */
@@ -126,21 +147,28 @@ public final class Level2Blocks {
     /** A leak under the ceiling: wet rust stain and a hanging drop; drips now and then. Walk-through. */
     public static final DeferredBlock<Level2DripBlock> DRIP = block("l2_drip", Level2DripBlock::new,
             unbreakable(MapColor.COLOR_BROWN, SoundType.STONE).noOcclusion().noCollission());
+    /** The puddle under a leak: a film of dirty water on the floor (walk-through). */
+    public static final DeferredBlock<ThinLayerBlock> LEAK_PUDDLE = block("l2_leak_puddle", ThinLayerBlock::new,
+            unbreakable(MapColor.WATER, SoundType.MUD).noOcclusion().noCollission());
 
     // ================================================================== Walls
     /**
      * The lowest row of corridor wall (just above the floor): the same poured concrete as
-     * ModBlocks.PIPE_WALL with a darker scuffed band at the bottom. Two versions: plain and with
-     * rust run-off (counts must match gen_assets SURFACE_VARIANTS).
+     * ModBlocks.PIPE_WALL with a darker scuffed band at the bottom. Versions: plain, rust run-off
+     * down to the floor, tide lines where water once stood (mostly in damp stretches, see
+     * block/Level2SurfaceBlock), a chipped kicker. Counts must match gen_assets SURFACE_VARIANTS.
      */
     public static final DeferredBlock<SurfaceBlock> WALL_BASE = block("l2_wall_base",
-            props -> new SurfaceBlock(props, 6, 2), unbreakable(MapColor.STONE, SoundType.STONE));
+            props -> new Level2SurfaceBlock(props, new int[] {18, 2, 1, 2}, new int[] {6, 3, 10, 1},
+                    Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW),
+            unbreakable(MapColor.STONE, SoundType.STONE));
 
     static {
         // Block items so builders can use every Level 2 block in creative (the tall ones need the tall item).
         for (DeferredBlock<?> block : new DeferredBlock<?>[] {
-                PIPE, FLANGE, PIPE_ELBOW, PIPE_TEE, VALVE_WHEEL, GAUGE, CABLE_TRAY, JUNCTION_BOX, WORKBENCH, PUMP,
-                FAN_HOUSING, BULKHEAD_FRAME, EXIT_BULKHEAD, STENCIL, GRATING, GUTTER, FLOOR_LINE, DRIP, WALL_BASE}) {
+                PIPE, FLANGE, PIPE_ELBOW, PIPE_TEE, PIPE_END, FEED_PIPE, VALVE_WHEEL, VALVE_LEVER, GAUGE, CABLE_TRAY,
+                JUNCTION_BOX, WORKBENCH, PUMP, FAN_HOUSING, BULKHEAD_FRAME, EXIT_BULKHEAD, STENCIL, BEAM, GRATING, GUTTER,
+                FLOOR_LINE, DRIP, LEAK_PUDDLE, WALL_BASE}) {
             ModItems.ITEMS.registerSimpleBlockItem(block);
         }
         ModItems.ITEMS.registerItem("l2_breaker_panel", props -> new DoubleHighBlockItem(BREAKER_PANEL.get(), props), new Item.Properties());

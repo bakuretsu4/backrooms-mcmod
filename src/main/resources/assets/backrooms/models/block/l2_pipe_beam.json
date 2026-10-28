@@ -1,0 +1,364 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "backrooms:block/l2_beam",
+    "beam": "backrooms:block/l2_beam",
+    "bolt": "backrooms:block/l2_bolt_steel"
+  },
+  "elements": [
+    {
+      "from": [
+        5.0,
+        14.8,
+        0.0
+      ],
+      "to": [
+        11.0,
+        16.0,
+        16.0
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            6.0
+          ],
+          "texture": "#beam",
+          "rotation": 90,
+          "cullface": "up"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            3.7,
+            16.0,
+            9.7
+          ],
+          "texture": "#beam",
+          "rotation": 90
+        },
+        "east": {
+          "uv": [
+            0.0,
+            7.4,
+            16.0,
+            8.6
+          ],
+          "texture": "#beam"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            11.1,
+            16.0,
+            12.3
+          ],
+          "texture": "#beam"
+        },
+        "south": {
+          "uv": [
+            5.0,
+            0.0,
+            11.0,
+            1.2
+          ],
+          "texture": "#beam",
+          "cullface": "south"
+        },
+        "north": {
+          "uv": [
+            5.0,
+            0.0,
+            11.0,
+            1.2
+          ],
+          "texture": "#beam",
+          "cullface": "north"
+        }
+      }
+    },
+    {
+      "from": [
+        7.5,
+        10.2,
+        0.0
+      ],
+      "to": [
+        8.5,
+        14.8,
+        16.0
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0.0,
+            5.0,
+            16.0,
+            6.0
+          ],
+          "texture": "#beam",
+          "rotation": 90
+        },
+        "down": {
+          "uv": [
+            0.0,
+            8.7,
+            16.0,
+            9.7
+          ],
+          "texture": "#beam",
+          "rotation": 90
+        },
+        "east": {
+          "uv": [
+            0.0,
+            1.0,
+            16.0,
+            5.6
+          ],
+          "texture": "#beam"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            4.7,
+            16.0,
+            9.3
+          ],
+          "texture": "#beam"
+        },
+        "south": {
+          "uv": [
+            7.5,
+            1.2,
+            8.5,
+            5.8
+          ],
+          "texture": "#beam",
+          "cullface": "south"
+        },
+        "north": {
+          "uv": [
+            7.5,
+            1.2,
+            8.5,
+            5.8
+          ],
+          "texture": "#beam",
+          "cullface": "north"
+        }
+      }
+    },
+    {
+      "from": [
+        5.0,
+        9.0,
+        0.0
+      ],
+      "to": [
+        11.0,
+        10.2,
+        16.0
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            6.0
+          ],
+          "texture": "#beam",
+          "rotation": 90
+        },
+        "down": {
+          "uv": [
+            0.0,
+            3.7,
+            16.0,
+            9.7
+          ],
+          "texture": "#beam",
+          "rotation": 90
+        },
+        "east": {
+          "uv": [
+            0.0,
+            2.6,
+            16.0,
+            3.8
+          ],
+          "texture": "#beam"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            6.3,
+            16.0,
+            7.5
+          ],
+          "texture": "#beam"
+        },
+        "south": {
+          "uv": [
+            5.0,
+            5.8,
+            11.0,
+            7.0
+          ],
+          "texture": "#beam",
+          "cullface": "south"
+        },
+        "north": {
+          "uv": [
+            5.0,
+            5.8,
+            11.0,
+            7.0
+          ],
+          "texture": "#beam",
+          "cullface": "north"
+        }
+      }
+    },
+    {
+      "from": [
+        5.6,
+        8.5,
+        7.2
+      ],
+      "to": [
+        6.4,
+        9.0,
+        8.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            9.6,
+            7.0,
+            10.4,
+            7.5
+          ],
+          "texture": "#bolt"
+        },
+        "south": {
+          "uv": [
+            5.6,
+            7.0,
+            6.4,
+            7.5
+          ],
+          "texture": "#bolt"
+        },
+        "east": {
+          "uv": [
+            8.0,
+            7.0,
+            8.8,
+            7.5
+          ],
+          "texture": "#bolt"
+        },
+        "west": {
+          "uv": [
+            7.2,
+            7.0,
+            8.0,
+            7.5
+          ],
+          "texture": "#bolt"
+        },
+        "up": {
+          "uv": [
+            5.6,
+            7.2,
+            6.4,
+            8.0
+          ],
+          "texture": "#bolt"
+        },
+        "down": {
+          "uv": [
+            5.6,
+            8.0,
+            6.4,
+            8.8
+          ],
+          "texture": "#bolt"
+        }
+      }
+    },
+    {
+      "from": [
+        9.6,
+        8.5,
+        7.2
+      ],
+      "to": [
+        10.4,
+        9.0,
+        8.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            5.6,
+            7.0,
+            6.4,
+            7.5
+          ],
+          "texture": "#bolt"
+        },
+        "south": {
+          "uv": [
+            9.6,
+            7.0,
+            10.4,
+            7.5
+          ],
+          "texture": "#bolt"
+        },
+        "east": {
+          "uv": [
+            8.0,
+            7.0,
+            8.8,
+            7.5
+          ],
+          "texture": "#bolt"
+        },
+        "west": {
+          "uv": [
+            7.2,
+            7.0,
+            8.0,
+            7.5
+          ],
+          "texture": "#bolt"
+        },
+        "up": {
+          "uv": [
+            9.6,
+            7.2,
+            10.4,
+            8.0
+          ],
+          "texture": "#bolt"
+        },
+        "down": {
+          "uv": [
+            9.6,
+            8.0,
+            10.4,
+            8.8
+          ],
+          "texture": "#bolt"
+        }
+      }
+    }
+  ]
+}

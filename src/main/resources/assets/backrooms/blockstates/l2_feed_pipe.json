@@ -1,0 +1,124 @@
+{
+  "variants": {
+    "facing=north,kind=steel": {
+      "model": "backrooms:block/l2_feed_pipe_steel"
+    },
+    "facing=east,kind=steel": {
+      "model": "backrooms:block/l2_feed_pipe_steel",
+      "y": 90
+    },
+    "facing=south,kind=steel": {
+      "model": "backrooms:block/l2_feed_pipe_steel",
+      "y": 180
+    },
+    "facing=west,kind=steel": {
+      "model": "backrooms:block/l2_feed_pipe_steel",
+      "y": 270
+    },
+    "facing=north,kind=copper": {
+      "model": "backrooms:block/l2_feed_pipe_copper"
+    },
+    "facing=east,kind=copper": {
+      "model": "backrooms:block/l2_feed_pipe_copper",
+      "y": 90
+    },
+    "facing=south,kind=copper": {
+      "model": "backrooms:block/l2_feed_pipe_copper",
+      "y": 180
+    },
+    "facing=west,kind=copper": {
+      "model": "backrooms:block/l2_feed_pipe_copper",
+      "y": 270
+    },
+    "facing=north,kind=insulated": {
+      "model": "backrooms:block/l2_feed_pipe_insulated"
+    },
+    "facing=east,kind=insulated": {
+      "model": "backrooms:block/l2_feed_pipe_insulated",
+      "y": 90
+    },
+    "facing=south,kind=insulated": {
+      "model": "backrooms:block/l2_feed_pipe_insulated",
+      "y": 180
+    },
+    "facing=west,kind=insulated": {
+      "model": "backrooms:block/l2_feed_pipe_insulated",
+      "y": 270
+    },
+    "facing=north,kind=painted_red": {
+      "model": "backrooms:block/l2_feed_pipe_painted_red"
+    },
+    "facing=east,kind=painted_red": {
+      "model": "backrooms:block/l2_feed_pipe_painted_red",
+      "y": 90
+    },
+    "facing=south,kind=painted_red": {
+      "model": "backrooms:block/l2_feed_pipe_painted_red",
+      "y": 180
+    },
+    "facing=west,kind=painted_red": {
+      "model": "backrooms:block/l2_feed_pipe_painted_red",
+      "y": 270
+    },
+    "facing=north,kind=painted_blue": {
+      "model": "backrooms:block/l2_feed_pipe_painted_blue"
+    },
+    "facing=east,kind=painted_blue": {
+      "model": "backrooms:block/l2_feed_pipe_painted_blue",
+      "y": 90
+    },
+    "facing=south,kind=painted_blue": {
+      "model": "backrooms:block/l2_feed_pipe_painted_blue",
+      "y": 180
+    },
+    "facing=west,kind=painted_blue": {
+      "model": "backrooms:block/l2_feed_pipe_painted_blue",
+      "y": 270
+    },
+    "facing=north,kind=painted_yellow": {
+      "model": "backrooms:block/l2_feed_pipe_painted_yellow"
+    },
+    "facing=east,kind=painted_yellow": {
+      "model": "backrooms:block/l2_feed_pipe_painted_yellow",
+      "y": 90
+    },
+    "facing=south,kind=painted_yellow": {
+      "model": "backrooms:block/l2_feed_pipe_painted_yellow",
+      "y": 180
+    },
+    "facing=west,kind=painted_yellow": {
+      "model": "backrooms:block/l2_feed_pipe_painted_yellow",
+      "y": 270
+    },
+    "facing=north,kind=painted_green": {
+      "model": "backrooms:block/l2_feed_pipe_painted_green"
+    },
+    "facing=east,kind=painted_green": {
+      "model": "backrooms:block/l2_feed_pipe_painted_green",
+      "y": 90
+    },
+    "facing=south,kind=painted_green": {
+      "model": "backrooms:block/l2_feed_pipe_painted_green",
+      "y": 180
+    },
+    "facing=west,kind=painted_green": {
+      "model": "backrooms:block/l2_feed_pipe_painted_green",
+      "y": 270
+    },
+    "facing=north,kind=conduit": {
+      "model": "backrooms:block/l2_feed_pipe_conduit"
+    },
+    "facing=east,kind=conduit": {
+      "model": "backrooms:block/l2_feed_pipe_conduit",
+      "y": 90
+    },
+    "facing=south,kind=conduit": {
+      "model": "backrooms:block/l2_feed_pipe_conduit",
+      "y": 180
+    },
+    "facing=west,kind=conduit": {
+      "model": "backrooms:block/l2_feed_pipe_conduit",
+      "y": 270
+    }
+  }
+}

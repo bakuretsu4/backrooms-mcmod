@@ -1,17 +1,15 @@
-"""Level 2 "Pipe Dreams", the linear revamp: textures, block models and blockstates.
+"""Level 2 "Pipe Dreams", the linear revamp: prop textures, block models and blockstates.
 
-The corridor is grey-beige poured concrete cast against plywood formwork (panel lines, tie holes,
-water streaks, rust run-off under the pipe brackets), with a worn concrete floor and a dark slab
-ceiling. Along it run several kinds of pipe, each a hand-made multi-element model (rusted steel
+Along the corridor run several kinds of pipe, each a hand-made multi-element model (rusted steel
 with bolted flanges, copper with green patina at the joints, off-white insulated mains with metal
 bands and torn patches, painted service pipes with colour bands and stencilled labels, conduit),
-plus the fittings, props and room furniture of registry/Level2Blocks.
+plus the fittings, props and room furniture of registry/Level2Blocks. The materials themselves
+(concrete, pipe metals, paint, grating) are drawn in anomaly_assets/level2_materials.py.
 
-Run with `python tools/gen_assets.py level2_revamp` (textures, models, blockstates), then
-`python tools/gen_assets.py pipe_wall pipe_floor pipe_ceiling pale_duct pipe_valve floor_grate
-bulkhead tex_surface_variants variant_models` for the corridor surfaces and the older Level 2
-blocks that gen_assets still owns by name (they call into this file). Every texture has its own
-fixed seed (2300-2499), so re-running gives identical files.
+Run with `python tools/gen_assets.py level2_revamp level2_materials` (textures, models,
+blockstates), then `python tools/gen_assets.py pale_duct pipe_valve floor_grate bulkhead` for the
+older Level 2 blocks that gen_assets still owns by name (they call into this file). Every
+texture has its own fixed seed (2300-2499), so re-running gives identical files.
 
 Pipe models: the pipe runs along texture u (one block = the full 128 px), so every texture here
 that wraps a pipe tiles along u; each face of a pipe takes its own slice of v, so the faces of
@@ -26,6 +24,8 @@ import numpy as np
 
 import gen_assets as G
 from anomaly_assets import level39_props as P
+from anomaly_assets.level2_materials import (RUST, SHINE, SMALL, _along, _across, _fill, _painted_metal, _rivets,
+                                             _round, _save, _spray, _stencil_text, _wear, band, cladding, floor)
 
 S = G.S
 
@@ -38,576 +38,9 @@ def _ref(name: str) -> str:
     return f"backrooms:block/{name}"
 
 
-def _fill(color) -> np.ndarray:
-    return G.fill(color, (S, S))
-
-
-def _local(cx, cy, sx, sy) -> np.ndarray:
-    X, Y = G.grid()
-    return np.exp(-(((X - cx) / sx) ** 2 + ((Y - cy) / sy) ** 2) / 2)
-
-
-def _stencil_text(text, cx, cy, px, maxw=118.0, gap=0.9, font_px=None) -> np.ndarray:
-    """Spray-stencil lettering: a condensed bold face (Anton) with the thin uncut "bridges" a
-    stencil leaves (vertical gaps through the bowls of the letters), centred at (cx, cy)."""
-    from PIL import ImageFont
-    f_path = str(G.Path(__file__).resolve().parents[1] / "fonts" / "Anton-Regular.ttf")
-    probe = G.ImageDraw.Draw(G.Image.new("L", (1, 1)))
-    while px > 6 and probe.textlength(text, font=ImageFont.truetype(f_path, px)) > maxw:
-        px -= 1
-    m = G.pil_mask(lambda d, k: d.text((cx * k, cy * k), text, fill=255,
-                                       font=ImageFont.truetype(f_path, px * k), anchor="mm"))
-    # Bridges: a thin vertical cut through the middle of each letter (approximated by cutting
-    # thin columns where the glyph is widest, at the letter spacing).
-    X, Y = G.grid()
-    cols = m.sum(axis=0)
-    cut = np.zeros(S)
-    inside = cols > 0.5
-    start = None
-    for x in range(S + 1):
-        on = x < S and inside[x]
-        if on and start is None:
-            start = x
-        elif not on and start is not None:
-            if x - start > px * 0.34:
-                mid = (start + x) / 2
-                cut += np.exp(-((np.arange(S) + 0.5 - mid) / gap) ** 2)
-            start = None
-    bridge = np.clip(cut, 0, 1)[None, :] * G.smoothstep(px * 0.18, px * 0.05, np.abs(Y - cy))
-    return np.clip(m * (1 - bridge), 0, 1)
-
-
-def _spray(rng, mask, overspray=1.0) -> np.ndarray:
-    """Stencil paint coverage: slightly patchy, with a soft halo of overspray round the edges."""
-    patchy = np.clip(0.88 + 0.12 * G.fnoise(rng, beta=1.0), 0, 1)
-    halo = G.blur(mask, 1.6) * 0.22 * overspray
-    return np.clip(np.maximum(mask * patchy, halo), 0, 1)
-
-
-def _wear(rng, amount=0.25, scale=1.6) -> np.ndarray:
-    """0..1 mask of worn-off paint (1 = paint still there)."""
-    return 1 - G.smoothstep(2.0 - amount * 2, 2.6 - amount * 2, G.blur(G.fnoise(rng, beta=scale), 0.6))
-
-
-# =============================================================================
-# Corridor surfaces (gen_assets' tex_pipe_wall / tex_pipe_floor / tex_pipe_ceiling and the
-# SURFACE_VARIANTS entries call these)
-# =============================================================================
-
-WALL = (150, 145, 136)        # grey-beige concrete (canon grey with a little warmth); ~#968F87
-FLOOR = (124, 120, 112)       # the floor is a shade darker and browner (dust, oil, boots)
-CEILING_SLAB = (84, 81, 76)   # dark soffit, mostly hidden behind the pipe bundles
-RUST = (124, 70, 38)
-TIE_HOLES = ((26, 44), (90, 44))
-
-
-def wall() -> np.ndarray:
-    """Poured concrete cast against plywood formwork, one panel per block.
-
-    - a faint fin at the panel joints (left and top edges, so the joints line up block to block)
-    - the plywood's grain and a repair patch printed faintly into the surface
-    - two tie holes per block, grout-plugged and recessed, one bleeding a little rust
-    - bugholes, soft mottling, and water streaks that run on down through the blocks below
-    """
-    rng = G.rng_for(2300)
-    X, Y = G.grid()
-    img = G._smooth_concrete(rng, WALL, mottle=3.6, fine=1.2)
-    img = G.add_lum(img, 1.6 * G.fnoise(rng, beta=1.2, aniso=(12, 1), kmin=3))       # plywood grain
-    patch = G.smoothstep(0.92, 1.0, 1 - np.maximum(np.abs(X - 70) / 9, np.abs(Y - 92) / 4))  # a ply repair patch
-    img = G.add_lum(img, 2.2 * patch)
-    tone = G.blur(G.fnoise(rng, beta=2.0, kmin=1, kmax=3), 6.0)
-    img = G.add_lum(img, 3.0 * tone, (1.0, 0.98, 0.94))                               # panel-to-panel tone
-    # Panel joints: grout squeezed out as a hairline fin with a shadow line beside it.
-    for d, w in ((np.abs(G.wrapd(X - 0.5, S)), 1.2), (np.abs(G.wrapd(Y - 0.5, S)), 0.8)):
-        img = G.add_lum(img, w * (7 * np.exp(-(d / 0.6) ** 2) - 8 * np.exp(-((d - 1.6) / 0.7) ** 2)))
-    # A faint pour (lift) line a third of the way down.
-    lift = 70 + 1.2 * G.fnoise(rng, (1, S), beta=2.5)[0]
-    img = G.add_lum(img, -4 * np.exp(-((Y - lift) / 0.8) ** 2) + 2 * np.exp(-((Y - lift + 1.6) / 0.8) ** 2))
-    # Water streaks: darker vertical runs (seamless along y, so they carry on into the next block).
-    streak = np.clip(G.fnoise(rng, beta=1.3, aniso=(1, 16), kmin=2), 0, None)
-    img = G.over(img, np.array([104, 98, 90]), np.clip(streak * 0.11, 0, 0.22))
-    img = G._pores(img, rng, density=0.007, depth=10)
-    # Tie holes: a cone recessed into the wall where the tie was snapped off, part filled with a
-    # grey grout plug: dark rim, the upper inside in shadow, the plug a shade darker than the wall.
-    for i, (tx, ty) in enumerate(TIE_HOLES):
-        r = np.hypot(X - tx, Y - ty)
-        img = G.add_lum(img, -22 * G.smoothstep(4.4, 3.4, r) * G.smoothstep(2.2, 3.2, r))
-        img = G.over(img, np.array([124, 120, 112]), G.smoothstep(3.2, 2.4, r) * 0.9)
-        img = G.add_lum(img, -14 * G.smoothstep(3.6, 1.0, np.hypot(X - tx, Y - ty + 1.6)) * (Y < ty))
-        img = G.add_lum(img, 8 * G.smoothstep(1.0, 0.0, np.abs(r - 3.9)) * (Y > ty + 1))
-        if i == 1:   # a little rust bleeding from the steel tie, down the wall
-            wob = 0.8 * G.fnoise(rng, (S, 1), beta=2)[:, 0][Y.astype(int)]
-            run = np.exp(-((X - tx - wob) / (1.2 + 0.05 * np.clip(Y - ty, 0, 40))) ** 2)
-            t = np.clip((Y - ty - 3) / 30, 0, 1)
-            a = run * (Y > ty + 3) * (1 - t) ** 1.8 * (0.7 + 0.3 * G.fnoise(rng, beta=1.0))
-            img = G.over(img, np.array([112, 74, 48]), np.clip(a, 0, 1) * 0.4)
-    return img
-
-
-def wall_base() -> np.ndarray:
-    """The lowest row of wall: the same concrete, the kicker joint ~10 cm up, and in the lower
-    half a darker band of splashed grime fading upwards, a few boot and cart scuffs."""
-    rng = G.rng_for(2301)
-    img = wall()
-    X, Y = G.grid()
-    edge = 70 + 3 * G.blur(G.fnoise(rng, (1, S), beta=2.6), 2.0)[0]
-    band = G.smoothstep(-6, 22, Y - edge)
-    grime = G._smooth_concrete(rng, (100, 94, 86), mottle=4.0, fine=1.2)
-    splash = G.smoothstep(0.0, 1.4, G.blur(G.fnoise(rng, beta=1.8, aniso=(1, 2), kmin=2), 1.0))
-    img = G.lerp(img, grime, (band * (0.45 + 0.2 * splash))[..., None])
-    drops = (rng.random((S, S)) < 0.004) * G.smoothstep(80, 120, Y)
-    img = G.add_lum(img, -30 * G.blur(drops.astype(float), 0.7))                    # mud splash dots
-    img = G.add_lum(img, -12 * G.smoothstep(S - 18, S, Y))                           # dust at the floor
-    kicker = S - 13 + 0.6 * G.blur(G.fnoise(rng, (1, S), beta=2.5), 1.0)[0]
-    img = G.add_lum(img, -9 * np.exp(-((Y - kicker) / 0.8) ** 2) + 4 * np.exp(-((Y - kicker + 1.8) / 0.9) ** 2))
-    scuffs = np.zeros((S, S))
-    for _ in range(4):
-        cx, cy = rng.uniform(0, S), rng.uniform(96, S - 18)
-        ln, tilt = rng.uniform(6, 16), rng.uniform(-0.08, 0.08)
-        dx = G.wrapd(X - cx, S)
-        scuffs = np.maximum(scuffs, np.exp(-((dx / ln) ** 4) - ((Y - cy - tilt * dx) / rng.uniform(0.6, 1.1)) ** 2)
-                            * (0.6 + 0.4 * G.fnoise(rng, beta=0.8)))
-    return G.over(img, np.array([46, 44, 42]), np.clip(scuffs * 0.45, 0, 0.5))
-
-
-def _rust_runoff(img, rng) -> np.ndarray:
-    """Rust run-off from a pipe bracket above: an orange-brown stain starting at the top edge
-    (it carries on from the block above), split into a few runs that fade on the way down."""
-    X, Y = G.grid()
-    cx = rng.uniform(30, 98)
-    length = rng.uniform(70, 118)
-    m = np.zeros((S, S))
-    for k in range(int(rng.integers(3, 6))):
-        x0 = cx + rng.normal(0, 5)
-        wob = 1.5 * G.fnoise(rng, (S, 1), beta=2.2)[:, 0][np.clip(Y.astype(int), 0, S - 1)]
-        w = rng.uniform(1.0, 2.6)
-        ln = length * rng.uniform(0.5, 1.0)
-        t = np.clip(Y / ln, 0, 1)
-        m = np.maximum(m, np.exp(-((X - x0 - wob) / (w * (1 + 0.8 * t))) ** 2) * (1 - t) ** 1.2)
-    head = np.exp(-(((X - cx) / 10) ** 2 + (Y / 9) ** 2))
-    a = np.clip(0.55 * m + 0.35 * head, 0, 0.7) * (0.8 + 0.2 * G.fnoise(rng, beta=1.0))
-    return G.over(img, np.array(RUST), a)
-
-
-def _water_streaks(img, rng) -> np.ndarray:
-    """Damp streaks down from a leak above, with a pale crust of efflorescence at their edges."""
-    X, Y = G.grid()
-    cx = rng.uniform(34, 94)
-    w = rng.uniform(14, 22)
-    lateral = np.exp(-((X - cx + 3 * G.fnoise(rng, (S, 1), beta=2)[:, 0][Y.astype(int)]) / w) ** 2)
-    streaks = np.clip(0.6 + 0.6 * G.fnoise(rng, beta=1.2, aniso=(1, 10), kmin=2), 0, 1)
-    fade = np.clip(1.1 - Y / 150, 0, 1)
-    wet = lateral * streaks * fade
-    img = img * (1 - 0.22 * wet[..., None])
-    crust = np.clip(G.smoothstep(0.25, 0.4, lateral) - G.smoothstep(0.4, 0.6, lateral), 0, 1)
-    crust *= G.smoothstep(0.4, 1.4, G.fnoise(rng, beta=1.4, kmin=3)) * fade
-    return G.over(img, np.array([196, 194, 184]), crust * 0.45)
-
-
-def _repair(img, rng) -> np.ndarray:
-    """A patched repair: a squarish render patch, smoother and greyer, a hairline crack beside it."""
-    img = G.mark_patch(img, rng, (138, 136, 130), size=(22, 16), a=0.75)
-    return G.mark_crack(img, rng, 22, (20, 40), 1)
-
-
-def wall_marks(i, rng, img):
-    if i == 1:
-        return _rust_runoff(img, rng)
-    if i == 2:
-        return _water_streaks(img, rng)
-    return _repair(img, rng)
-
-
-def floor() -> np.ndarray:
-    """Worn power-floated concrete: faint trowel swirls, dust and grit, exposed aggregate where
-    it is worn, black scuffs, a hairline crack or two."""
-    rng = G.rng_for(2310)
-    X, Y = G.grid()
-    img = G._smooth_concrete(rng, FLOOR, mottle=4.2, fine=1.3)
-    ang = np.arctan2(Y - 40, X - 50)
-    swirl = np.sin(ang * 3 + np.hypot(X - 50, Y - 40) / 9 + 2 * G.fnoise(rng, beta=2.6))
-    img = G.add_lum(img, 1.6 * swirl * G.smoothstep(0.2, 1.2, G.fnoise(rng, beta=2.4)))   # trowel arcs
-    grit = (rng.random((S, S)) < 0.03) * rng.normal(0, 1, (S, S))
-    img = G.add_lum(img, 14 * G.blur(grit, 0.45), (1.0, 0.97, 0.92))                     # exposed aggregate
-    dust = G.smoothstep(0.3, 1.6, G.fnoise(rng, beta=2.2))
-    img = G.over(img, np.array([146, 140, 128]), dust * 0.18)
-    scuff = np.zeros((S, S))
-    for _ in range(3):
-        cx, cy = rng.uniform(0, S, 2)
-        a = rng.uniform(0, np.pi)
-        u = G.wrapd(X - cx, S) * np.cos(a) + G.wrapd(Y - cy, S) * np.sin(a)
-        v = -G.wrapd(X - cx, S) * np.sin(a) + G.wrapd(Y - cy, S) * np.cos(a)
-        bend = v - 0.01 * u ** 2
-        scuff = np.maximum(scuff, np.exp(-(u / rng.uniform(8, 16)) ** 4 - (bend / 1.0) ** 2) * (0.6 + 0.4 * G.fnoise(rng, beta=0.8)))
-    img = G.over(img, np.array([52, 50, 48]), np.clip(scuff * 0.3, 0, 0.4))
-    wear = G.blur(G.fnoise(rng, beta=2.6, kmin=1, kmax=4), 4.0)
-    img = G.add_lum(img, 4 * wear)                                                       # worn paler patches
-    crack = G.smoothstep(0.03, 0.0, np.abs(G.fnoise(rng, beta=2.6, kmin=2)))
-    crack *= G.smoothstep(0.7, 1.5, G.fnoise(rng, beta=3.0))
-    img = G.add_lum(img, -30 * crack)
-    return G._pores(img, rng, density=0.004, depth=8)
-
-
-def _oil(img, rng) -> np.ndarray:
-    """A dark oil stain: soaked-in brown-black middle, a darker tide line, a faint sheen."""
-    X, Y = G.grid()
-    cx, cy = G._spot(rng, 26, 20)
-    m = _local(cx, cy, rng.uniform(14, 22), rng.uniform(11, 16)) * (1 + 0.35 * G.fnoise(rng, beta=2.6))
-    m += 0.6 * _local(cx + rng.uniform(-24, 24), cy + rng.uniform(-14, 14), 5, 4)
-    inner = G.smoothstep(0.3, 0.7, m)
-    rim = np.clip(G.smoothstep(0.22, 0.3, m) - G.smoothstep(0.3, 0.42, m), 0, 1)
-    img = G.over(img, np.array([46, 40, 34]), (0.55 * inner + 0.35 * rim) * G._edge_fade())
-    sheen = G.smoothstep(0.8, 1.8, G.fnoise(rng, beta=1.8)) * inner
-    return G.add_lum(img, 10 * sheen, (0.9, 0.95, 1.1))
-
-
-def _spall(img, rng) -> np.ndarray:
-    """A crack with a chipped-out spall along it (rough, darker, the aggregate showing)."""
-    img = G.mark_crack(img, rng, 34, (40, 70), 2)
-    X, Y = G.grid()
-    cx, cy = G._spot(rng, 12, 10)
-    edge = np.hypot((X - cx) / 9, (Y - cy) / 6) + 0.25 * G.fnoise(rng, beta=1.4)
-    m = G.smoothstep(1.0, 0.85, edge)
-    rough = G.add_lum(img * 0.82, 16 * G.blur(rng.normal(0, 1, (S, S)), 0.6))
-    img = G.lerp(img, rough, m[..., None])
-    return G.add_lum(img, -12 * np.clip(G.smoothstep(1.1, 0.95, edge) - m, 0, 1))
-
-
-def floor_marks(i, rng, img):
-    return _oil(img, rng) if i == 1 else _spall(img, rng)
-
-
-def ceiling() -> np.ndarray:
-    """The dark underside of the slab: board-formed (the marks of 10 cm planks along x),
-    soot and dust, a few pale lime drips."""
-    rng = G.rng_for(2320)
-    X, Y = G.grid()
-    img = G._smooth_concrete(rng, CEILING_SLAB, mottle=3.0, fine=1.0)
-    board = np.floor(Y / 16)
-    img = G.add_lum(img, (np.sin(board * 12.9898) * 43758.5453 % 1 - 0.5) * 4)          # plank to plank tone
-    img = G.add_lum(img, 2.0 * G.fnoise(rng, beta=1.0, aniso=(14, 1), kmin=4))           # wood grain print
-    img = G.add_lum(img, -6 * np.exp(-((G.wrapd(Y, 16)) / 0.7) ** 2))                    # plank joints
-    soot = G.smoothstep(0.0, 1.5, G.fnoise(rng, beta=2.4))
-    img = G.over(img, np.array([44, 42, 40]), soot * 0.35)
-    lime = G.smoothstep(1.3, 2.3, G.blur(G.fnoise(rng, beta=2.4, aniso=(1, 3)), 1.2))
-    img = G.over(img, np.array([132, 128, 120]), lime * 0.35)
-    return G._pores(img, rng, density=0.004, depth=6)
-
-
-def floor_line() -> np.ndarray:
-    """The corridor floor with a worn yellow lane line along its north edge (top of the texture)."""
-    rng = G.rng_for(2311)
-    img = floor()
-    X, Y = G.grid()
-    top = 4 + 0.35 * G.fnoise(rng, (1, S), beta=2.6)[0]
-    line = G.smoothstep(top - 0.6, top + 0.6, Y) * G.smoothstep(18.6, 17.4, Y)
-    paint = G.add_lum(_fill((176, 140, 44)), 4 * G.fnoise(rng, beta=1.6), (1.0, 0.95, 0.7))
-    worn = _wear(rng, 0.42, 1.3) * (0.82 + 0.18 * G.fnoise(rng, beta=1.0))
-    img = G.lerp(img, paint * (img / np.array(FLOOR)).mean(axis=2, keepdims=True) ** 0.6, (line * np.clip(worn, 0, 1))[..., None])
-    grime = G.smoothstep(0.4, 1.6, G.fnoise(rng, beta=2.0, aniso=(4, 1)))
-    return G.over(img, np.array([86, 80, 70]), line * grime * 0.35)
-
-
-# =============================================================================
-# Pipe materials. u = along the pipe (tiles), v = around it.
-# =============================================================================
-
-def _along(rng, beta=1.4, k=10) -> np.ndarray:
-    """Noise stretched along the pipe (u): streaks and grain that run lengthwise."""
-    return G.fnoise(rng, beta=beta, aniso=(1, k), kmin=2)
-
-
-def _across(rng, beta=1.4, k=10) -> np.ndarray:
-    """Noise stretched round the pipe (v): drips running down the sides."""
-    return G.fnoise(rng, beta=beta, aniso=(k, 1), kmin=2)
-
-
-def _round(img, spec=1.0) -> np.ndarray:
-    """Bake a lit cylinder's shading across v (see _frame_box round_): v = 0 is the top of the
-    pipe, 8 its side, 16 its underside. A little darker on top (so the top flat doesn't stand
-    out as a box edge), a bright specular line about a third of the way down, then falling off
-    to a dark underside. spec = how shiny (0 for paint-dull jacket)."""
-    X, Y = G.grid(img.shape[:2])
-    phi = Y / img.shape[0] * 180.0
-    diffuse = np.clip(np.cos(np.radians(phi - 42)), 0, None) ** 0.9
-    hl = np.exp(-((phi - 36) / 8) ** 2)
-    b = 0.34 + 0.56 * diffuse + 0.22 * spec * hl
-    out = img.copy()
-    out[..., :3] = img[..., :3] * b[..., None] + 34 * spec * hl[..., None]
-    return out
-
-
-def steel(rng) -> np.ndarray:
-    """Old dark steel pipe: grey-black mill scale and worn paint, with rust as patches and as
-    streaks running down round the pipe, pitting, a few bright scrapes along it."""
-    img = G.add_lum(_fill((82, 80, 78)), 6 * G.fnoise(rng, beta=2.4) + 2 * G.fnoise(rng, beta=1.2, kmin=6))
-    scale = G.smoothstep(-0.3, 1.0, G.blur(G.fnoise(rng, beta=2.2, kmin=2), 0.8))
-    img = G.over(img, np.array([52, 50, 50]), scale * 0.55)                               # dark mill scale
-    patch = G.smoothstep(0.7, 1.4, G.blur(G.fnoise(rng, beta=2.0, kmin=2), 1.0))
-    rust = G.add_lum(_fill((122, 66, 36)), 10 * G.fnoise(rng, beta=1.4), (1.0, 0.8, 0.6))
-    img = G.lerp(img, rust, (patch * 0.85)[..., None])                                    # rust patches
-    streak = np.clip(_across(rng, 1.3, 16), 0, None) * G.smoothstep(0.2, 1.0, G.fnoise(rng, beta=2.4))
-    img = G.over(img, np.array([110, 58, 32]), np.clip(streak * 0.45, 0, 0.6))            # run-off streaks
-    pits = G.blur((rng.random((S, S)) < 0.015) * rng.uniform(0.5, 1, (S, S)), 0.5)
-    img = G.add_lum(img, -pits * 40)
-    scrape = G.smoothstep(1.8, 2.6, _along(rng, 1.4, 10))
-    img = G.over(img, np.array([140, 138, 134]), scrape * 0.5)
-    return G.add_lum(img, rng.normal(0, 1.6, (S, S)))
-
-
-def copper(rng) -> np.ndarray:
-    """Aged copper: bright orange-brown, brushed lengthwise, soft darker tarnish clouds and a
-    few bright scuffs (the green patina is only at the joints)."""
-    img = _fill((192, 112, 64))
-    img = G.add_lum(img, 6 * G.fnoise(rng, beta=2.6), (1.0, 0.75, 0.55))
-    img = G.add_lum(img, 5.0 * _along(rng, 1.0, 16), (1.0, 0.8, 0.6))
-    tarnish = G.smoothstep(-0.4, 1.2, G.blur(G.fnoise(rng, beta=2.4, kmin=2), 1.0))
-    img = G.over(img, np.array([126, 70, 42]), tarnish * 0.4)
-    bright = G.smoothstep(1.4, 2.4, _along(rng, 1.6, 6))
-    img = G.over(img, np.array([220, 146, 96]), bright * 0.5)
-    return G.add_lum(img, rng.normal(0, 1.2, (S, S)))
-
-
-def patina(rng) -> np.ndarray:
-    """Heavy verdigris at a soldered joint: crusty green-blue over dark copper, a silver solder
-    bead line, white-green bloom."""
-    img = copper(rng)
-    crust = G.smoothstep(-0.5, 0.6, G.blur(G.fnoise(rng, beta=2.4, kmin=2), 1.2))
-    green = G.add_lum(_fill((82, 134, 106)), 9 * G.blur(G.fnoise(rng, beta=1.4), 0.8), (0.8, 1.0, 0.95))
-    img = G.lerp(img, green, (crust * 0.88)[..., None])
-    img = G.add_lum(img, -14 * np.clip(G.smoothstep(0.0, 0.25, crust) - G.smoothstep(0.25, 0.6, crust), 0, 1))
-    bloom = G.smoothstep(1.0, 2.0, G.blur(G.fnoise(rng, beta=1.6, kmin=4), 1.0)) * crust
-    img = G.over(img, np.array([168, 194, 174]), bloom * 0.55)
-    return G.add_lum(img, rng.normal(0, 1.6, (S, S)))
-
-
-def cladding(rng) -> np.ndarray:
-    """Off-white insulation jacket (painted canvas over lagging): fine weave, a lap seam along
-    the pipe, dirt and brown water tide marks, soft dents."""
-    X, Y = G.grid()
-    img = _fill((192, 186, 170))
-    weave = np.sin(X * 2.4) * np.sin(Y * 2.4)
-    img = G.add_lum(img, 2.0 * weave + 2.2 * G.fnoise(rng, beta=2.6))
-    img = G.add_lum(img, 5 * G.blur(G.fnoise(rng, beta=3.0), 3.0))                          # soft dents
-    seam = np.abs(Y - 96.5)
-    img = G.add_lum(img, -16 * np.exp(-(seam / 0.8) ** 2) + 7 * np.exp(-((Y - 94.5) / 1.2) ** 2))
-    lap = np.abs(G.wrapd(X - 1.0, S))    # the circumferential lap where two jacket sections overlap
-    img = G.add_lum(img, -20 * np.exp(-(lap / 0.9) ** 2) + 8 * np.exp(-((G.wrapd(X - 3.2, S)) / 1.2) ** 2))
-    dirt = G.smoothstep(0.0, 1.6, G.fnoise(rng, beta=2.2))
-    img = G.over(img, np.array([142, 132, 112]), dirt * 0.32)
-    tide = G.fnoise(rng, beta=2.8)
-    ring = np.clip(G.smoothstep(0.6, 0.75, tide) - G.smoothstep(0.75, 1.1, tide), 0, 1)
-    img = G.over(img, np.array([150, 118, 70]), ring * 0.4 + G.smoothstep(0.75, 1.4, tide) * 0.12)
-    return G.add_lum(img, rng.normal(0, 1.4, (S, S)))
-
-
-def band(rng) -> np.ndarray:
-    """Aluminium strap band: dull grey metal, a crimp seal, a little dirt."""
-    X, Y = G.grid()
-    img = G._galvanised(rng, (164, 166, 166))
-    img = G.add_lum(img, 18 * np.exp(-((G.wrapd(Y - 20, 64)) / 3) ** 2) - 8 * np.exp(-((G.wrapd(Y - 26, 64)) / 2) ** 2))
-    return img
-
-
-def torn(rng) -> np.ndarray:
-    """A torn patch of the jacket: ragged canvas edge, the yellow fibreglass lagging beneath,
-    a flap of foil."""
-    X, Y = G.grid()
-    img = cladding(rng)
-    hole = G.smoothstep(0.95, 0.8, np.hypot((X - 60) / 34, (Y - 64) / 26) + 0.18 * G.blur(G.fnoise(rng, beta=1.4, kmin=3), 0.8))
-    fibre = G.add_lum(_fill((206, 172, 92)), 9 * G.blur(G.fnoise(rng, beta=1.0, aniso=(1, 5), kmin=3), 0.7), (1.0, 0.9, 0.6))
-    fibre = G.add_lum(fibre, -30 * G.smoothstep(0.2, 1.6, G.blur(G.fnoise(rng, beta=2.4), 1.5)), (1.0, 0.95, 0.9))
-    fibre = G.add_lum(fibre, -40 * G.smoothstep(0.8, 0.95, np.hypot((X - 60) / 34, (Y - 64) / 26)))   # shadow under the lip
-    img = G.lerp(img, fibre, hole[..., None])
-    edge = np.clip(G.smoothstep(0.0, 0.25, hole) - G.smoothstep(0.25, 0.6, hole), 0, 1)
-    img = G.add_lum(img, 22 * edge - 18 * G.blur(edge, 1.5) * (1 - hole))
-    foil = G.smoothstep(0.92, 0.8, np.hypot((X - 92) / 10, (Y - 46) / 14) + 0.3 * G.fnoise(rng, beta=1.0))
-    return G.over(img, np.array([186, 186, 190]) + 20 * G.fnoise(rng, beta=0.5)[..., None], foil * 0.9)
-
-
-PAINT = {
-    "red": (138, 40, 34),
-    "blue": (44, 72, 114),
-    "yellow": (176, 142, 42),
-    "green": (50, 98, 62),
-}
-LABEL = {   # (word, letter colour) on the pipe's colour, ASME style
-    "red": ("STEAM", (236, 232, 222)),
-    "blue": ("RETURN", (236, 232, 222)),
-    "yellow": ("AIR", (24, 22, 20)),
-    "green": ("H2O", (236, 232, 222)),
-}
-
-
-def painted(rng, colour) -> np.ndarray:
-    """Enamel-painted service pipe: a soft gloss sheen along the length, chips showing dark
-    steel and rust, a lengthwise run of grime on the underside, paint sags."""
-    img = G.add_lum(_fill(PAINT[colour]), 4 * G.fnoise(rng, beta=2.4))
-    img = G.add_lum(img, 2.0 * _along(rng, 1.6, 12))
-    chips = 1 - _wear(rng, 0.3, 1.2)
-    img = G.over(img, np.array([58, 46, 40]), chips * 0.9)
-    img = G.over(img, np.array([120, 66, 36]), G.blur(chips, 1.2) * (1 - chips) * 0.4)
-    grime = G.smoothstep(-0.2, 1.4, G.fnoise(rng, beta=2.4))
-    img = G.over(img, np.array([60, 54, 48]), grime * 0.22)
-    sags = np.clip(_across(rng, 1.4, 12), 0, None)
-    img = G.add_lum(img, 6 * G.smoothstep(1.2, 2.0, sags))
-    return G.add_lum(img, rng.normal(0, 1.4, (S, S)))
-
-
-def painted_label(rng, colour) -> np.ndarray:
-    """The label band of a painted pipe (u along the pipe): the pipe colour with white edge
-    bands, the stencilled word and a flow arrow pointing to +u, grubby and chipped."""
-    X, Y = G.grid()
-    img = painted(rng, colour)
-    word, ink = LABEL[colour]
-    ink = np.array(ink, float)
-    bands = G.smoothstep(1.0, 0.0, np.abs(X - 10) - 4) + G.smoothstep(1.0, 0.0, np.abs(X - 118) - 4)
-    img = G.over(img, np.array([226, 222, 210]), np.clip(bands, 0, 1) * 0.95)
-    txt = _stencil_text(word, 56, 64, 52, maxw=74)
-    img = G.over(img, ink, _spray(rng, txt) * 0.95)
-    arrow = G.supersample((S, S), lambda x, y: ((np.abs(y - 64) < 5) & (x > 88) & (x < 100))
-                          | ((x >= 100) & (x < 110) & (np.abs(y - 64) < (110 - x) * 1.1)))
-    img = G.over(img, ink, _spray(rng, arrow) * 0.95)
-    img = G.over(img, np.array([60, 54, 48]), G.smoothstep(0.0, 1.6, G.fnoise(rng, beta=2.4)) * 0.18)
-    return img
-
-
-def conduit(rng) -> np.ndarray:
-    """Galvanised EMT conduit: bright zinc with spangle, a lengthwise sheen, grime and white rust."""
-    img = G._galvanised(rng, (150, 152, 152))
-    img = G.add_lum(img, 5 * _along(rng, 1.0, 16))
-    white = G.smoothstep(1.4, 2.2, G.fnoise(rng, beta=1.4, kmin=4))
-    img = G.over(img, np.array([196, 196, 190]), white * 0.4)
-    return G.over(img, np.array([70, 66, 60]), G.smoothstep(0.4, 1.8, G.fnoise(rng, beta=2.2)) * 0.25)
-
-
-def strut(rng) -> np.ndarray:
-    """Galvanised slotted strut channel (unistrut) for the pipe racks: slots every 16 px along u,
-    rust bleeding from the slot edges."""
-    X, Y = G.grid()
-    img = G._galvanised(rng, (128, 130, 130))
-    slot = G.box((S, S), 0, 0, 1, 1) * 0 + (G.smoothstep(4.5, 3.5, np.abs(G.wrapd(X - 8, 16)))
-                                             * G.smoothstep(2.2, 1.4, np.abs(G.wrapd(Y - 8, 16))))
-    img = G.over(img, np.array([24, 22, 20]), slot)
-    img = G.over(img, np.array(RUST), G.blur(slot, 1.6) * (1 - slot) * 0.6)
-    return G.over(img, np.array(RUST), G.smoothstep(1.2, 2.2, G.fnoise(rng, beta=1.6)) * 0.4)
-
-
-def bolt_steel(rng) -> np.ndarray:
-    """Dark oily steel for bolts, nuts, gauge cases, hubs."""
-    img = G._galvanised(rng, (58, 58, 60))
-    return G.over(img, np.array(RUST), G.smoothstep(0.8, 1.8, G.fnoise(rng, beta=1.8)) * 0.45)
-
-
-def clamp(rng) -> np.ndarray:
-    """Plain galvanised pipe clamp band: light zinc, a little rust where it bites the pipe."""
-    img = G._galvanised(rng, (138, 140, 140))
-    img = G.add_lum(img, 6 * _along(rng, 1.0, 10))
-    return G.over(img, np.array(RUST), G.smoothstep(1.0, 2.0, G.fnoise(rng, beta=1.8)) * 0.4)
-
-
-def flange(rng) -> np.ndarray:
-    """A cast steel flange: black paint worn to dark metal on the rim, heavy rust in the gap,
-    oily grime."""
-    img = G.add_lum(_fill((50, 46, 44)), 4 * G.fnoise(rng, beta=2.0))
-    rust = G.smoothstep(0.4, 1.6, G.blur(G.fnoise(rng, beta=1.8, kmin=2), 0.7))
-    img = G.over(img, np.array([118, 64, 36]), rust * 0.7)
-    worn = G.smoothstep(1.2, 2.0, _along(rng, 1.2, 6))
-    img = G.over(img, np.array([92, 90, 88]), worn * 0.5)
-    return G.add_lum(img, rng.normal(0, 2.0, (S, S)))
-
-
-MATERIALS = {
-    "steel": steel, "copper": copper, "insulated": cladding, "conduit": conduit,
-    **{f"painted_{c}": (lambda rng, c=c: painted(rng, c)) for c in PAINT},
-}
-
-
-# Texture budget: every PNG in textures/block is stitched into the one block atlas, which must
-# stay at 4096 x 4096. Only big, close-up faces (the corridor surfaces, the doors, the grating,
-# the stencil sheet) keep 128 px; pipes, fittings and props are drawn at 128 and saved at 64.
-SMALL = 64
-
-
-def _save(img, name, size=SMALL) -> None:
-    """Save a texture, box-filtered down to size x size (a cutout keeps a strictly 0/255 alpha)."""
-    k = img.shape[0] // size
-    if k > 1:
-        h, w = img.shape[0] // k, img.shape[1] // k
-        img = img.reshape(h, k, w, k, img.shape[2]).mean(axis=(1, 3))
-        if img.shape[2] == 4:
-            img[..., 3] = np.where(img[..., 3] >= 128, 255, 0)
-    G.save_png(img, _blk(name))
-
-
-def tex_level2_revamp_surfaces() -> None:
-    _save(floor_line(), "l2_floor_line", S)
-    _save(wall_base(), "l2_wall_base", S)
-
-
-# How shiny each pipe surface is (the baked highlight of _round).
-SHINE = {"steel": 0.9, "copper": 1.3, "insulated": 0.25, "conduit": 1.0,
-         **{f"painted_{c}": 0.6 for c in ("red", "blue", "yellow", "green")}}
-
-
-def _cap_colour(kind):
-    """The flat colour of a pipe's capped end: a little darker than the pipe."""
-    base = {"steel": (60, 56, 52), "copper": (128, 76, 46), "insulated": (150, 148, 142), "conduit": (104, 106, 106)}
-    if kind in base:
-        return base[kind]
-    return tuple(int(c * 0.7) for c in PAINT[kind.split("_")[1]])
-
-
-def tex_level2_revamp_pipes() -> None:
-    for i, (kind, fn) in enumerate(MATERIALS.items()):
-        _save(_round(fn(G.rng_for(2330 + i)), SHINE[kind]), f"l2_pipe_{kind}")
-        _save(_fill(_cap_colour(kind))[:16, :16], f"l2_pipe_cap_{kind}", 16)
-    _save(_round(patina(G.rng_for(2340)), 0.6), "l2_pipe_copper_patina")
-    _save(_round(band(G.rng_for(2341)), 0.9), "l2_pipe_band")
-    _save(_round(torn(G.rng_for(2342)), 0.25), "l2_pipe_torn")
-    for i, c in enumerate(PAINT):
-        _save(_round(painted_label(G.rng_for(2343 + i), c), 0.5), f"l2_pipe_label_{c}")
-    _save(strut(G.rng_for(2350)), "l2_strut")
-    _save(bolt_steel(G.rng_for(2351)), "l2_bolt_steel")
-    _save(clamp(G.rng_for(2352)), "l2_clamp")
-    _save(_round(flange(G.rng_for(2353)), 0.7), "l2_pipe_flange")
-
-
 # =============================================================================
 # Fittings, props and furniture textures
 # =============================================================================
-
-def _painted_metal(rng, colour, wear=0.22, grime=0.25, scratches=4) -> np.ndarray:
-    """Old enamel on steel: soft mottling, worn edges and chips to dark metal, a rust halo
-    round the chips, grime collecting low down, a few scratches."""
-    X, Y = G.grid()
-    img = G.add_lum(_fill(colour), 3.5 * G.fnoise(rng, beta=2.4) + 1.2 * G.fnoise(rng, beta=1.0, kmin=8))
-    chips = 1 - _wear(rng, wear, 1.3)
-    img = G.over(img, np.array([54, 50, 48]), chips * 0.9)
-    img = G.over(img, np.array([118, 66, 38]), np.clip(G.blur(chips, 1.0) - chips, 0, 1) * 0.6)
-    dirt = G.smoothstep(-0.2, 1.6, G.fnoise(rng, beta=2.2)) * (0.6 + 0.4 * Y / S)
-    img = G.over(img, np.array([58, 52, 46]), dirt * grime)
-    for _ in range(scratches):
-        x0, y0 = rng.uniform(10, S - 10, 2)
-        a, ln = rng.uniform(0, np.pi), rng.uniform(6, 18)
-        dist = np.abs((X - x0) * np.sin(a) - (Y - y0) * np.cos(a))
-        along = np.abs((X - x0) * np.cos(a) + (Y - y0) * np.sin(a))
-        img = G.add_lum(img, 16 * np.exp(-(dist / 0.45) ** 2) * (along < ln / 2))
-    return img
-
-
-def _rivets(img, pts, r=2.2, col=None) -> np.ndarray:
-    """Round domed rivet / bolt heads: lit from the top left, a shadow to the bottom right."""
-    X, Y = G.grid()
-    for x, y in pts:
-        d = np.hypot(X - x, Y - y)
-        img = G.add_lum(img, -26 * G.smoothstep(r + 1.6, r, np.hypot(X - x - 1.0, Y - y - 1.0)) * (d > r * 0.8))
-        cover = G.smoothstep(r + 0.5, r - 0.5, d)
-        if col is not None:
-            img = G.over(img, np.array(col), cover)
-        img = G.add_lum(img, cover * (16 * np.clip(-(X - x + Y - y) / (2 * r), -1, 1)))
-    return img
-
 
 def hazard(rng) -> np.ndarray:
     """Yellow and black diagonal hazard stripes (45 degrees, 16 px each) on steel: scuffed,
@@ -1035,55 +468,6 @@ def stencil(rng, name) -> np.ndarray:
     return out
 
 
-def grating(rng) -> np.ndarray:
-    """Steel bar grating seen from above (cutout): bearing bars along u every 8 px, cross rods
-    every 32 px, worn bright on top, rust in the joints."""
-    X, Y = G.grid()
-    bars = np.abs(G.wrapd(Y - 4, 8)) < 1.3
-    rods = np.abs(G.wrapd(X - 16, 32)) < 1.0
-    frame = (X < 3) | (X > S - 3)
-    solid = bars | rods | frame
-    img = G.add_lum(_fill((84, 82, 78)), 10 * G.fnoise(rng, beta=1.4))
-    img = G.add_lum(img, 22 * np.exp(-((G.wrapd(Y - 4, 8)) / 0.6) ** 2) * bars)
-    img = G.over(img, np.array([120, 66, 36]), G.smoothstep(0.6, 1.8, G.fnoise(rng, beta=1.8)) * 0.5 + 0.3 * (bars & rods))
-    out = np.zeros((S, S, 4))
-    out[..., :3] = img
-    out[..., 3] = np.where(solid, 255, 0)
-    return out
-
-
-def gutter_channel(rng) -> np.ndarray:
-    """The bottom of the drainage channel: wet black-brown sludge, a thin trickle of water with
-    highlights running along u, rust stains."""
-    X, Y = G.grid()
-    img = G.add_lum(_fill((44, 40, 34)), 8 * G.fnoise(rng, beta=2.2))
-    img = G.over(img, np.array([96, 62, 36]), G.smoothstep(0.4, 1.6, G.fnoise(rng, beta=2.0)) * 0.5)
-    wet = np.exp(-((Y - 64 - 6 * G.fnoise(rng, (1, S), beta=2.2)[0]) / 14) ** 2)
-    img = G.add_lum(img, 26 * wet * G.smoothstep(0.6, 1.6, _along(rng, 1.6, 8)), (0.9, 0.95, 1.0))
-    return img
-
-
-def drip_stain(rng) -> np.ndarray:
-    """A wet ceiling stain round a leak (cutout decal): dark wet middle, rusty tide rings."""
-    X, Y = G.grid()
-    m = _local(64, 64, 34, 30) * (1 + 0.35 * G.fnoise(rng, beta=2.4))
-    img = G.lerp(_fill((70, 52, 36)), _fill((30, 26, 22)), G.smoothstep(0.4, 0.9, m)[..., None])
-    ring = np.clip(G.smoothstep(0.25, 0.3, m) - G.smoothstep(0.3, 0.4, m), 0, 1)
-    img = G.over(img, np.array([118, 70, 36]), ring * 0.8)
-    img = G.add_lum(img, 30 * G.smoothstep(0.9, 1.0, m) * G.smoothstep(1.0, 2.0, G.fnoise(rng, beta=1.0)), (0.9, 0.95, 1.0))
-    out = np.zeros((S, S, 4))
-    out[..., :3] = img
-    out[..., 3] = np.where(m > 0.27, 255, 0)
-    return out
-
-
-def water(rng) -> np.ndarray:
-    """A water drop: dark clear with a bright highlight."""
-    X, Y = G.grid()
-    img = G.add_lum(_fill((96, 106, 112)), 60 * G.smoothstep(30, 0, np.hypot(X - 46, Y - 40)), (1.0, 1.0, 1.05))
-    return img
-
-
 def bulb(rng) -> np.ndarray:
     """Warm frosted bulb glass (drawn full-bright in game): amber-white, hottest in the middle
     where the filament glows through, a little soot at the top."""
@@ -1159,10 +543,6 @@ def tex_level2_revamp_props() -> None:
     _save(door[:S], "l2_exit_bulkhead_top", S)
     _save(door[S:], "l2_exit_bulkhead_bottom", S)
     _save(stencil_sheet(), "l2_stencils", 4 * SMALL)
-    _save(grating(G.rng_for(2429)), "l2_grating", S)
-    _save(gutter_channel(G.rng_for(2430)), "l2_gutter")
-    _save(drip_stain(G.rng_for(2431)), "l2_drip_stain")
-    _save(water(G.rng_for(2432)), "l2_water")
 
 
 STENCIL_NAMES = (*STENCILS, "danger_hot", "no_smoking", "arrow_left", "arrow_right", "steam", "return", "h2o", "exit")
@@ -1377,25 +757,70 @@ KINDS = ("steel", "copper", "insulated", "painted_red", "painted_blue", "painted
 SIZES = {"small": (3.0, 3.25, (2.5, 8, 13.5)), "medium": (5.0, 4.25, (4.0, 12.0)), "large": (10, 6.5, (8,))}
 # The insulation jacket is a little fatter than the bare pipe it wraps (still inside the shape).
 FATTER = {"insulated": 0.6}
+# Slot "hung" (block Level2PipeBlock.Slot.HUNG): how far below the ceiling each size's centre line
+# hangs (Level2PipeBlock.Size.hang), so the steel beams (BEAM_BOTTOM up) pass over the pipes.
+# The beam is deep (7 px) and the pipes hang well clear of the slab, so from the lane you see the
+# beams crossing over the pipes and a dark gap with the hanger rods above them. A hung large main
+# reaches 1.5 px below its block (it hangs tight under the beams).
+HANG = {"small": 10.0, "medium": 10.5, "large": 12.2}
+BEAM_BOTTOM = 9.0
 
 
 def _centres(size, slot):
     """(p, q) centre of each pipe for a slot of the canonical models: "wall" = against the -q side
-    (north for pipes along x or y), "up" = against +p, "down" = against -p, "center" = one pipe."""
+    (north for pipes along x or y), "up" = against +p, "hung" = on rods below +p, "down" = against
+    -p, "center" = one pipe."""
     d, off, spread = SIZES[size]
     if slot == "wall":
         return [(sp, off) for sp in spread]
     if slot == "up":
         return [(16 - off, sp) for sp in spread]
+    if slot == "hung":
+        return [(16 - HANG[size], sp) for sp in spread]
     if slot == "down":
         return [(off, sp) for sp in spread]
     return [(8, 8)]
 
 
+def _ubolt(axis, tc, pc, qc, r, toward, base, tex="#clamp"):
+    """A U-bolt round one pipe, its legs bolted to a strut at `base` (a p or q level): the bend of
+    the U goes over the far side of the pipe. toward = which way the U reaches from its strut:
+    "+q" (out of a wall), "+p" (up from a strut under the pipe), "-p" (down from above)."""
+    w, k = 0.45, 0.5   # leg thickness, half the width of the bolt along the pipe
+    els = []
+    if toward == "+q":
+        for s in (-1, 1):
+            p0 = pc + s * (r + 0.1)
+            els.append(_frame_box(axis, tc - k, tc + k, min(p0, p0 + s * w), max(p0, p0 + s * w), base, qc + r * 0.55, tex, vslot=4))
+            els.append(_frame_box(axis, tc - 0.75, tc + 0.75, min(p0, p0 + s * 1.1) - 0.1, max(p0, p0 + s * 1.1) + 0.1,
+                                  base, base + 0.7, "#bolt", vslot=6))                     # the nut on the strut
+        els.append(_frame_box(axis, tc - k, tc + k, pc - r * 0.72, pc + r * 0.72, qc + r, qc + r + w, tex, vslot=5))
+        for s in (-1, 1):   # the shoulders of the U, turned 45 degrees
+            els.append(_frame_box(axis, tc - k, tc + k, pc + s * r * 0.84 - w / 2, pc + s * r * 0.84 + w / 2,
+                                  qc + r * 0.45, qc + r * 0.95, tex, 45 * s, (pc + s * r * 0.84, qc + r * 0.7)))
+    else:
+        sgn = 1 if toward == "+p" else -1
+        for s in (-1, 1):
+            q0 = qc + s * (r + 0.1)
+            lo, hi = sorted((base, pc + sgn * r * 0.55))
+            els.append(_frame_box(axis, tc - k, tc + k, lo, hi, min(q0, q0 + s * w), max(q0, q0 + s * w), tex, vslot=4))
+            nlo, nhi = sorted((base, base + sgn * 0.7))
+            els.append(_frame_box(axis, tc - 0.75, tc + 0.75, nlo, nhi, min(q0, q0 + s * 1.1) - 0.1,
+                                  max(q0, q0 + s * 1.1) + 0.1, "#bolt", vslot=6))
+        cap = (pc + r, pc + r + w) if sgn > 0 else (pc - r - w, pc - r)
+        els.append(_frame_box(axis, tc - k, tc + k, cap[0], cap[1], qc - r * 0.72, qc + r * 0.72, tex, vslot=5))
+        for s in (-1, 1):
+            els.append(_frame_box(axis, tc - k, tc + k, pc + sgn * r * 0.45, pc + sgn * r * 0.95,
+                                  qc + s * r * 0.84 - w / 2, qc + s * r * 0.84 + w / 2, tex, -45 * s * sgn,
+                                  (pc + sgn * r * 0.7, qc + s * r * 0.84)))
+    return els
+
+
 def _supports(axis, size, slot, tc=14.8):
     """The rack hardware for a slot, centred at tc along the pipe (near the end of the joint
-    block, clear of the flanges and the label): a strut channel on the wall with a clamp round
-    each pipe, a trapeze on two threaded rods from the ceiling, or a sleeper on the floor."""
+    block, clear of the flanges and the label): a strut channel on the wall with a U-bolt round
+    each pipe; a trapeze on two threaded rods from the ceiling with U-bolts (a single clevis
+    hanger on one rod for a hung main); or a floor sleeper with a saddle under each pipe."""
     d, off, spread = SIZES[size]
     r = d / 2
     els = []
@@ -1403,24 +828,43 @@ def _supports(axis, size, slot, tc=14.8):
     if slot == "wall":
         els.append(_frame_box(axis, tc - 1, tc + 1, 0, 16, 0, 1.5, "#strut", vslot=2))
         for pc, qc in cs:
-            els.append(_frame_box(axis, tc - 0.4, tc + 0.4, pc - r - 0.3, pc + r + 0.3, 1.5, qc + r + 0.3, "#clamp", vslot=4))
-    elif slot == "up":
+            els += _ubolt(axis, tc, pc, qc, r, "+q", 1.5)
+    elif slot == "hung" and size == "large":
+        pc, qc = cs[0]
+        rr = r + 0.4   # round the insulation jacket
+        els.append(_frame_box(axis, tc - 0.35, tc + 0.35, pc + rr + 0.9, 16, qc - 0.35, qc + 0.35, "#bolt", ends=False, vslot=3))
+        els.append(_frame_box(axis, tc - 0.6, tc + 0.6, pc + rr + 0.3, pc + rr + 1.1, qc - 1.0, qc + 1.0, "#bolt", vslot=6))
+        els.append(_frame_box(axis, tc - 0.6, tc + 0.6, pc - rr - 0.5, pc - rr, qc - rr * 0.72, qc + rr * 0.72,
+                              "#clamp", vslot=5))
+        for s in (-1, 1):
+            q0 = qc + s * (rr + 0.05)
+            els.append(_frame_box(axis, tc - 0.6, tc + 0.6, pc - rr * 0.55, pc + rr * 0.35, min(q0, q0 + s * 0.5),
+                                  max(q0, q0 + s * 0.5), "#clamp", vslot=4))
+            els.append(_frame_box(axis, tc - 0.6, tc + 0.6, pc - rr * 0.95, pc - rr * 0.45, qc + s * rr * 0.84 - 0.25,
+                                  qc + s * rr * 0.84 + 0.25, "#clamp", 45 * s, (pc - rr * 0.7, qc + s * rr * 0.84)))
+            # the clevis' two cheeks meeting the rod over the pipe
+            els.append(_frame_box(axis, tc - 0.6, tc + 0.6, pc + rr * 0.35, pc + rr + 0.5, qc + s * 0.9 - 0.25,
+                                  qc + s * 0.9 + 0.25, "#clamp", vslot=4))
+    elif slot in ("up", "hung"):
         low = min(p for p, _ in cs) - r
         els.append(_frame_box(axis, tc - 1, tc + 1, low - 1.6, low, 0.3, 15.7, "#strut", vslot=1))
         for q in (0.4, 15.0):
             els.append(_frame_box(axis, tc - 0.3, tc + 0.3, low - 1.9, 16, q, q + 0.6, "#bolt", ends=False, vslot=3))
+            els.append(_frame_box(axis, tc - 0.6, tc + 0.6, low - 2.4, low - 1.6, q - 0.3, q + 0.9, "#bolt", vslot=6))
         for pc, qc in cs:
-            els.append(_frame_box(axis, tc - 0.4, tc + 0.4, low, pc + r + 0.3, qc - r - 0.3, qc + r + 0.3, "#clamp", vslot=5))
+            els += _ubolt(axis, tc, pc, qc, r, "+p", low)
     elif slot == "down":
         top = min(p for p, _ in cs) - r
         els.append(_frame_box(axis, tc - 1, tc + 1, 0, top, 0.6, 15.4, "#strut", vslot=1))
         for pc, qc in cs:
-            els.append(_frame_box(axis, tc - 0.4, tc + 0.4, top, pc + r + 0.3, qc - r - 0.3, qc + r + 0.3, "#clamp", vslot=5))
+            # a saddle the pipe lies in, held down by a U-bolt
+            els.append(_frame_box(axis, tc - 0.7, tc + 0.7, top, pc - r * 0.4, qc - r - 0.4, qc + r + 0.4, "#clamp", vslot=5))
+            els += _ubolt(axis, tc, pc, qc, r, "+p", pc - r * 0.4)
     return els
 
 
 # The outer flat of a pipe that faces the corridor (labels and tears go there).
-FRONT = {"wall": "+q", "center": "+q", "up": "-p", "down": "+p"}
+FRONT = {"wall": "+q", "center": "+q", "up": "-p", "hung": "-p", "down": "+p"}
 
 
 def _bars(d):
@@ -1514,8 +958,8 @@ def _label_uv(elements):
 
 
 # Geometry of each canonical model: (axis, slot). The blockstates turn them into every state.
-PIPE_GEOMS = {"x_wall": ("x", "wall"), "x_up": ("x", "up"), "x_down": ("x", "down"), "x_center": ("x", "center"),
-              "y_wall": ("y", "wall"), "y_center": ("y", "center")}
+PIPE_GEOMS = {"x_wall": ("x", "wall"), "x_up": ("x", "up"), "x_hung": ("x", "hung"), "x_down": ("x", "down"),
+              "x_center": ("x", "center"), "y_wall": ("y", "wall"), "y_center": ("y", "center")}
 
 
 def _pipe_state_model(axis, slot):
@@ -1526,7 +970,7 @@ def _pipe_state_model(axis, slot):
             return "y_wall", side_y[slot]
         return "y_center", 0
     turn = 0 if axis == "x" else 90
-    if slot in ("up", "down"):
+    if slot in ("up", "hung", "down"):
         return f"x_{slot}", turn
     # pipes along x hug north/south, along z hug east/west; anything else is drawn as CENTER
     if axis == "x" and slot in ("north", "south"):
@@ -1536,8 +980,41 @@ def _pipe_state_model(axis, slot):
     return "x_center", turn
 
 
+def _beam_elements():
+    """A rolled steel I-beam along z through the middle of the block, right under the slab (it
+    must match BEAM_ALONG_Z in block/Level2PipeBlock): top flange, web, bottom flange, and a few
+    bolt heads where the flanges were bolted up."""
+    els = [_frame_box("z", 0, 16, 14.8, 16, 5, 11, "#beam", vslot=0),
+           _frame_box("z", 0, 16, BEAM_BOTTOM + 1.2, 14.8, 7.5, 8.5, "#beam", vslot=1),
+           _frame_box("z", 0, 16, BEAM_BOTTOM, BEAM_BOTTOM + 1.2, 5, 11, "#beam", vslot=2)]
+    for x in (5.6, 9.6):
+        els.append(_plain_box((x, BEAM_BOTTOM - 0.5, 7.2), (x + 0.8, BEAM_BOTTOM, 8.0), "#bolt"))
+    return els
+
+
+def _beam_model() -> None:
+    _bm("l2_pipe_beam", P._model({"particle": _ref("l2_beam"), "beam": _ref("l2_beam"), "bolt": _ref("l2_bolt_steel")},
+                                 _beam_elements()))
+    # The bare beam block (l2_beam, AxisShapeBlock): the model runs along z.
+    _bs("l2_beam", {"variants": {"axis=z": {"model": _ref("l2_pipe_beam")},
+                                 "axis=x": {"model": _ref("l2_pipe_beam"), "y": 90}}})
+    _im("l2_beam", parent=_ref("l2_pipe_beam"))
+
+
+def _beam_parts(beam_turn):
+    """Multipart entries adding the beam when BEAM = true. beam_turn: {"x|y": 0, "z": 90} says
+    how to turn the model (built along z) for each AXIS value, so it always crosses the block."""
+    parts = []
+    for axes, y in beam_turn.items():
+        apply = {"model": _ref("l2_pipe_beam")}
+        if y:
+            apply["y"] = y
+        parts.append({"when": {"beam": "true", "axis": axes}, "apply": apply})
+    return parts
+
+
 def _pipe_models() -> None:
-    slots = ("north", "south", "east", "west", "up", "down", "center")
+    slots = ("north", "south", "east", "west", "up", "down", "hung", "center")
     for block, joint in (("l2_pipe", False), ("l2_flange", True)):
         for kind in KINDS:
             for size in SIZES:
@@ -1546,17 +1023,19 @@ def _pipe_models() -> None:
                     if joint:
                         _label_uv(els)
                     _bm(f"{block}_{kind}_{size}_{geom}", P._model(_pipe_textures(kind), els))
-        variants = {}
+        # Multipart, so a BEAM can be added on top of whichever pipe model the state picks.
+        parts = []
         for axis in ("x", "y", "z"):
             for kind in KINDS:
                 for size in SIZES:
                     for slot in slots:
                         geom, y = _pipe_state_model(axis, slot)
-                        v = {"model": _ref(f"{block}_{kind}_{size}_{geom}")}
+                        apply = {"model": _ref(f"{block}_{kind}_{size}_{geom}")}
                         if y:
-                            v["y"] = y
-                        variants[f"axis={axis},kind={kind},size={size},slot={slot}"] = v
-        _bs(block, {"variants": variants})
+                            apply["y"] = y
+                        parts.append({"when": {"axis": axis, "kind": kind, "size": size, "slot": slot}, "apply": apply})
+        parts += _beam_parts({"x|y": 0, "z": 90})
+        _bs(block, {"multipart": parts})
         _im(block, parent=_ref(f"{block}_steel_medium_x_wall"))
 
 
@@ -1694,34 +1173,123 @@ def _ring(axis, pc, qc, t0, t1, radius, thick, tex):
     return els
 
 
-def _valve_elements(stub=True):
-    """Gate valve on a stub out of the wall with its hand wheel facing the corridor."""
+def _valve_elements(stub=True, feed=False):
+    """Gate valve on a stub out of the wall with its hand wheel facing the corridor; feed: on a
+    pipe dropping from above (l2_feed_pipe, 4 px out from the wall) and on down to the main, the
+    whole valve moved back 0.8 px to sit on it, its flanged ends up and down."""
     els = []
-    if stub:
+    dz = 0.8 if feed else 0.0
+    if feed:
+        els += _octagon("y", 0, 16, 8, 12, 3.0, "#steel", cap="#cap")
+    elif stub:
         els += _octagon("z", 13.2, 16, 8, 8, 4.2, "#steel")
         els += _octagon("z", 12.6, 13.2, 8, 8, 6.6, "#body", bars=2)
-    els.append(_plain_box((5.2, 5.4, 9.8), (10.8, 10.6, 12.6), "#body"))
-    els.append(_plain_box((4.7, 6.4, 10.4), (11.3, 9.6, 12.0), "#body"))       # the body's flanged ends
-    els.append(_plain_box((6.3, 6.3, 8.6), (9.7, 9.7, 9.8), "#body"))          # bonnet
-    els.append(_plain_box((7.6, 7.6, 6.9), (8.4, 8.4, 8.6), "#bolt"))          # stem
-    els += _ring("z", 8, 8, 7.0, 8.0, 5.3, 1.1, "#wheel")
+    els.append(_plain_box((5.2, 5.4, 9.8 + dz), (10.8, 10.6, 12.6 + dz), "#body"))
+    if feed:
+        els.append(_plain_box((6.4, 4.7, 10.4 + dz), (9.6, 11.3, 12.0 + dz), "#body"))   # flanged ends, up and down
+    else:
+        els.append(_plain_box((4.7, 6.4, 10.4), (11.3, 9.6, 12.0), "#body"))       # the body's flanged ends
+    els.append(_plain_box((6.3, 6.3, 8.6 + dz), (9.7, 9.7, 9.8 + dz), "#body"))          # bonnet
+    els.append(_plain_box((7.6, 7.6, 6.9 + dz), (8.4, 8.4, 8.6 + dz), "#bolt"))          # stem
+    els += _ring("z", 8, 8, 7.0 + dz, 8.0 + dz, 5.3, 1.1, "#wheel")
     for ang in (45, -45):
-        els.append(_box((3.0, 7.5, 7.2), (13.0, 8.5, 7.8), _faces("#wheel"), rot=((8, 8, 7.5), "z", ang)))
-    els.append(_plain_box((6.9, 6.9, 6.7), (9.1, 9.1, 8.2), "#wheel"))         # hub
+        els.append(_box((3.0, 7.5, 7.2 + dz), (13.0, 8.5, 7.8 + dz), _faces("#wheel"), rot=((8, 8, 7.5 + dz), "z", ang)))
+    els.append(_plain_box((6.9, 6.9, 6.7 + dz), (9.1, 9.1, 8.2 + dz), "#wheel"))         # hub
     return els
 
 
 def _valve_models() -> None:
-    tex = {"steel": _ref("l2_pipe_steel"), "body": _ref("l2_pipe_flange"), "bolt": _ref("l2_bolt_steel")}
+    tex = {"steel": _ref("l2_pipe_steel"), "body": _ref("l2_pipe_flange"), "bolt": _ref("l2_bolt_steel"),
+           "cap": _ref("l2_pipe_cap_steel")}
+    variants = {}
     for colour, wheel in (("red", "pipe_valve"), ("grey", "l2_wheel_grey")):
-        _bm(f"l2_valve_wheel_{colour}", P._model({"particle": _ref(wheel), "wheel": _ref(wheel), **tex}, _valve_elements()))
-    _bs("l2_valve_wheel", {"variants": {f"color={c},facing={f}": ({"model": _ref(f"l2_valve_wheel_{c}"), "y": y} if y else
-                                                                  {"model": _ref(f"l2_valve_wheel_{c}")})
-                                        for c in ("red", "grey") for f, y in FACING_Y.items()}})
+        for feed in (False, True):
+            name = f"l2_valve_wheel_{colour}" + ("_feed" if feed else "")
+            _bm(name, P._model({"particle": _ref(wheel), "wheel": _ref(wheel), **tex}, _valve_elements(feed=feed)))
+            for f, y in FACING_Y.items():
+                v = {"model": _ref(name)}
+                if y:
+                    v["y"] = y
+                variants[f"color={colour},facing={f},feed={str(feed).lower()}"] = v
+    _bs("l2_valve_wheel", {"variants": variants})
     _im("l2_valve_wheel", parent=_ref("l2_valve_wheel_red"))
     # The older PIPE_VALVE (red wheel on the wall) gets the same valve.
     _bm("pipe_valve", P._model({"particle": _ref("pipe_valve"), "wheel": _ref("pipe_valve"), **tex}, _valve_elements()))
     P._facing_state("pipe_valve")
+
+
+def _lever_elements(open_, feed):
+    """Quarter-turn ball valve (block Level2LeverValveBlock): a squat brass body between two hex
+    unions and a flat red lever. Open = the lever lies along the flow. Without feed the flow runs
+    straight out of the wall (z) and the lever sits on top; with feed it runs down the wall from a
+    branch above (x 8, z 12) and the lever is on the front."""
+    els = []
+    if feed:
+        els += _octagon("y", 0, 4.8, 8, 12, 3.0, "#steel", cap="#cap")
+        els += _octagon("y", 11.2, 16, 8, 12, 3.0, "#steel", cap="#cap")
+        els += _octagon("y", 4.8, 5.6, 8, 12, 5.0, "#bolt", bars=2)
+        els += _octagon("y", 10.4, 11.2, 8, 12, 5.0, "#bolt", bars=2)
+        els.append(_plain_box((5.4, 5.6, 9.4), (10.6, 10.4, 14.6), "#body"))
+        els.append(_plain_box((7.4, 7.4, 8.2), (8.6, 8.6, 9.4), "#bolt"))                     # stem
+        if open_:
+            els.append(_plain_box((7.3, 1.2, 7.4), (8.7, 8.8, 8.2), "#handle"))                # pointing down
+            els.append(_plain_box((7.1, 0.4, 7.2), (8.9, 3.2, 8.4), "#handle"))                # grip
+        else:
+            els.append(_plain_box((7.2, 7.3, 7.4), (15.0, 8.7, 8.2), "#handle"))               # across the pipe
+            els.append(_plain_box((12.4, 7.1, 7.2), (15.4, 8.9, 8.4), "#handle"))
+    else:
+        els += _octagon("z", 13.4, 16, 8, 8, 3.4, "#steel", cap="#cap")
+        els += _octagon("z", 5.8, 7.6, 8, 8, 3.4, "#steel", cap="#cap")                       # outlet stub
+        els += _octagon("z", 12.4, 13.4, 8, 8, 5.0, "#bolt", bars=2)
+        els += _octagon("z", 7.6, 8.6, 8, 8, 5.0, "#bolt", bars=2)
+        els.append(_plain_box((5.4, 5.4, 8.6), (10.6, 10.6, 12.4), "#body"))
+        els.append(_plain_box((7.4, 10.6, 9.9), (8.6, 11.8, 11.1), "#bolt"))                  # stem
+        if open_:
+            els.append(_plain_box((7.3, 11.8, 4.0), (8.7, 12.5, 11.2), "#handle"))            # along the pipe
+            els.append(_plain_box((7.1, 11.6, 3.2), (8.9, 12.7, 6.0), "#handle"))
+        else:
+            els.append(_plain_box((7.0, 11.8, 9.8), (14.4, 12.5, 11.2), "#handle"))           # across it
+            els.append(_plain_box((12.0, 11.6, 9.6), (15.2, 12.7, 11.4), "#handle"))
+    return els
+
+
+def _lever_models() -> None:
+    tex = {"particle": _ref("pipe_valve"), "handle": _ref("pipe_valve"), "body": _ref("l2_pipe_copper"),
+           "bolt": _ref("l2_bolt_steel"), "steel": _ref("l2_pipe_steel"), "cap": _ref("l2_pipe_cap_steel")}
+    variants = {}
+    for open_ in (True, False):
+        for feed in (False, True):
+            name = f"l2_valve_lever_{'open' if open_ else 'shut'}" + ("_feed" if feed else "")
+            _bm(name, P._model(tex, _lever_elements(open_, feed)))
+            for f, y in FACING_Y.items():
+                v = {"model": _ref(name)}
+                if y:
+                    v["y"] = y
+                variants[f"facing={f},feed={str(feed).lower()},open={str(open_).lower()}"] = v
+    _bs("l2_valve_lever", {"variants": variants})
+    _im("l2_valve_lever", parent=_ref("l2_valve_lever_open"))
+
+
+def _feed_models() -> None:
+    """The branch from a manifold header down to a FEED valve (block Level2FeedPipeBlock): a 3 px
+    pipe 4 px out from the wall, reaching up into the ceiling band to the centre of the header's
+    wall-side pipe (MEDIUM, HUNG: 7.5 px up in the block above), with a welded saddle under the
+    header and a union nut part way down."""
+    variants = {}
+    for kind in KINDS:
+        els = _octagon("y", 0, 16 + 16 - HANG["medium"], 8, 12, 3.0, "#pipe", cap="#cap")
+        els += _octagon("y", 9.0, 10.6, 8, 12, 4.2, "#bolt", bars=2)
+        hb = 16 + 16 - HANG["medium"] - SIZES["medium"][0] / 2   # the header's underside, in this block's units
+        els += _octagon("y", hb - 1.6, hb, 8, 12, 4.4, "#collar", bars=2)
+        tex = {**_pipe_textures(kind), "collar": _ref("l2_pipe_flange")}
+        _bm(f"l2_feed_pipe_{kind}", P._model(tex, els))
+        for f, y in FACING_Y.items():
+            v = {"model": _ref(f"l2_feed_pipe_{kind}")}
+            if y:
+                v["y"] = y
+            variants[f"facing={f},kind={kind}"] = v
+    _bs("l2_feed_pipe", {"variants": variants})
+    _im("l2_feed_pipe", parent=_ref("l2_feed_pipe_painted_red"))
 
 
 def _gauge_models() -> None:
@@ -1744,27 +1312,65 @@ CABLE_RUN = ((3.0, 2.2, 0), (5.2, 1.8, 2), (7.2, 2.0, 1), (9.3, 2.2, 3), (11.4, 
              (4.2, 1.7, 6, 2.0), (8.3, 1.9, 7, 2.0), (11.8, 1.6, 0, 1.7))
 
 
+def _cable_uv(els, row):
+    """Cable faces show one row (one cable colour) of the cable texture."""
+    for e in els:
+        for fd in e["faces"].values():
+            if fd["texture"] == "#cable" and "rotation" not in fd and fd.get("cullface") not in ("east", "west"):
+                u0, _, u1, _ = fd["uv"]
+                fd["uv"] = [u0, 2 * row + 0.3, u1, 2 * row + 1.7]
+    return els
+
+
+# The tray hangs this much lower than it used to, under the beams (BEAM_BOTTOM) instead of in their place.
+TRAY_DROP = 6.0
+
+
 def _cable_tray_models() -> None:
     """Ladder tray on a trapeze hung from two threaded rods, carrying a layer and a half of
-    cables (the colours come from rows of the cable texture)."""
-    els = [_plain_box((0, 9, 1), (16, 12, 1.8), "#strut"), _plain_box((0, 9, 14.2), (16, 12, 15), "#strut")]
+    cables (the colours come from rows of the cable texture) tied into bundles with black ties.
+    It hangs below the beam line (block Level2CableTrayBlock); the DROOP part is a loop of two
+    cables that have slipped out and sag under it."""
+    b = 9 - TRAY_DROP
+    els = [_plain_box((0, b, 1), (16, b + 3, 1.8), "#strut"), _plain_box((0, b, 14.2), (16, b + 3, 15), "#strut")]
     for x in (2, 6, 10, 14):
-        els.append(_plain_box((x - 0.5, 9, 1.8), (x + 0.5, 9.7, 14.2), "#strut"))
-    els.append(_plain_box((7, 8.2, 0.3), (9, 9, 15.7), "#strut"))
+        els.append(_plain_box((x - 0.5, b, 1.8), (x + 0.5, b + 0.7, 14.2), "#strut"))
+    els.append(_plain_box((7, b - 0.8, 0.3), (9, b, 15.7), "#strut"))
     for z in (0.5, 14.9):
-        els.append(_box((7.7, 8.0, z), (8.3, 16, z + 0.6), _faces("#bolt", up=None)))
+        els.append(_box((7.7, b - 1.0, z), (8.3, 16, z + 0.6), _faces("#bolt", up=None)))
+        els.append(_plain_box((7.4, b - 1.4, z - 0.3), (8.6, b - 0.8, z + 0.9), "#bolt"))       # nut under the trapeze
     for spec in CABLE_RUN:
         z, d, row = spec[:3]
-        y = 9.7 + d / 2 + (spec[3] if len(spec) > 3 else 0)
-        for e in _octagon("x", 0, 16, y, z, d, "#cable", bars=2):
-            for fd in e["faces"].values():
-                if fd["texture"] == "#cable" and "rotation" not in fd and fd.get("cullface") not in ("east", "west"):
-                    u0, _, u1, _ = fd["uv"]
-                    fd["uv"] = [u0, 2 * row + 0.3, u1, 2 * row + 1.7]
-            els.append(e)
-    tex = {"particle": _ref("l2_strut"), "strut": _ref("l2_strut"), "bolt": _ref("l2_bolt_steel"), "cable": _ref("l2_cables")}
+        y = b + 0.7 + d / 2 + (spec[3] if len(spec) > 3 else 0)
+        els += _cable_uv(_octagon("x", 0, 16, y, z, d, "#cable", bars=2), row)
+    for x in (4.0, 12.0):
+        # a black tie round the bundle
+        els.append(_plain_box((x - 0.3, b + 0.7, 2.0), (x + 0.3, b + 5.2, 14.0), "#tie"))
+    tex = {"particle": _ref("l2_strut"), "strut": _ref("l2_strut"), "bolt": _ref("l2_bolt_steel"),
+           "cable": _ref("l2_cables"), "tie": _ref("l2_bolt_steel")}
     _bm("l2_cable_tray", P._model(tex, els))
-    P._axis_state("l2_cable_tray")
+    # The droop: two cables leaving the tray's south side, sagging in a loop and climbing back.
+    droop = []
+    under = b - 0.8
+    for z, d, row, ang, sag in ((12.4, 1.6, 0, 45, 2.6), (11.0, 1.3, 5, 22.5, 1.7)):
+        run = sag / math.tan(math.radians(ang))        # how far along x each sloping piece goes
+        lo = under - sag                                # centre line at the bottom of the loop
+        length = math.hypot(run, sag)
+        for x0, sgn in ((2.0, -1), (14.0, 1)):
+            cx = x0 - sgn * run / 2
+            cy = under - sag / 2
+            droop += _cable_uv([_box((cx - length / 2 - 0.3, cy - d / 2, z - d / 2), (cx + length / 2 + 0.3, cy + d / 2, z + d / 2),
+                                     _faces("#cable"), rot=((cx, cy, z), "z", sgn * ang), shade=True)], row)
+            droop += _cable_uv([_plain_box((x0 - d / 2, under - 0.2, z - d / 2), (x0 + d / 2, b + 1.0, z + d / 2), "#cable")], row)
+        x1, x2 = 2.0 + run, 14.0 - run
+        if x2 > x1:
+            droop += _cable_uv([_plain_box((x1 - 0.2, lo - d / 2, z - d / 2), (x2 + 0.2, lo + d / 2, z + d / 2), "#cable")], row)
+    _bm("l2_cable_tray_droop", P._model(tex, droop))
+    parts = [{"when": {"axis": "x"}, "apply": {"model": _ref("l2_cable_tray")}},
+             {"when": {"axis": "z"}, "apply": {"model": _ref("l2_cable_tray"), "y": 90}},
+             {"when": {"droop": "true", "axis": "x"}, "apply": {"model": _ref("l2_cable_tray_droop")}},
+             {"when": {"droop": "true", "axis": "z"}, "apply": {"model": _ref("l2_cable_tray_droop"), "y": 90}}]
+    _bs("l2_cable_tray", {"multipart": parts + _beam_parts({"x": 0, "z": 90})})
     _im("l2_cable_tray")
 
 
@@ -2259,15 +1865,143 @@ def _old_block_models() -> None:
         _bm(name, P._model(duct, els))
 
 
+def _mirror_x(elements):
+    """The same parts the other way round (x -> 16 - x): east and west faces swap."""
+    out = []
+    for e in json_copy(elements):
+        f, t = e["from"], e["to"]
+        e["from"], e["to"] = [16 - t[0], f[1], f[2]], [16 - f[0], t[1], t[2]]
+        if "rotation" in e:
+            o = e["rotation"]["origin"]
+            e["rotation"]["origin"] = [16 - o[0], o[1], o[2]]
+            if e["rotation"]["axis"] in ("y", "z"):
+                e["rotation"]["angle"] = -e["rotation"]["angle"]
+        faces = e["faces"]
+        faces["east"], faces["west"] = faces.pop("west", None), faces.pop("east", None)
+        e["faces"] = {k: v for k, v in faces.items() if v is not None}
+        for k, fd in e["faces"].items():
+            if fd.get("cullface") in ("east", "west"):
+                fd["cullface"] = k
+        out.append(e)
+    return out
+
+
+def _bead(kind, d):
+    """The joint ring where a pipe bends: a weld bead on steel and paint, a band on insulation,
+    a soldered sleeve on copper, a coupling on conduit. (texture, width, bars, cap)"""
+    tex, cap = {"insulated": ("#band", "#cap"), "copper": ("#joint", "#cap"), "conduit": ("#joint", "#cap")}.get(kind, ("#bolt", None))
+    return tex, (0.5 if tex == "#bolt" else 1.0), (_bars(d + 0.5) if cap else 2), cap
+
+
+def _wall_collar(axis, t_wall, pc, qc, d, inward):
+    """Where a pipe goes into concrete: a square steel collar plate on the face (bolted at its
+    corners) and a flange ring standing off it. t_wall = the face (0 or 16 along axis);
+    inward = +1 if the face is at 16."""
+    s = d / 2 + 1.3
+    t0, t1 = (t_wall - 0.8, t_wall) if inward > 0 else (t_wall, t_wall + 0.8)
+    els = [_frame_box(axis, t0, t1, pc - s, pc + s, qc - s, qc + s, "#collar", vslot=1)]
+    r0, r1 = (t_wall - 1.8, t_wall - 0.8) if inward > 0 else (t_wall + 0.8, t_wall + 1.8)
+    els += _octagon(axis, r0, r1, pc, qc, d + 1.6, "#collar", bars=_bars(d + 1.6), cap="#cap")
+    b0, b1 = (t_wall - 1.1, t_wall - 0.8) if inward > 0 else (t_wall + 0.8, t_wall + 1.1)
+    for dp in (-1, 1):
+        for dq in (-1, 1):
+            bp, bq = pc + dp * (s - 0.7), qc + dq * (s - 0.7)
+            els.append(_frame_box(axis, b0, b1, bp - 0.35, bp + 0.35, bq - 0.35, bq + 0.35, "#bolt", vslot=2))
+    return els
+
+
+def _pipe_end_elements(kind, size, form):
+    """The end of a wall rack (block Level2PipeEndBlock), built facing north: wall on the south
+    side (z = 16), pipes along x stacked up the wall as in the l2_pipe rack it finishes.
+    bend: arriving from the west (x = 0) each pipe turns 90 degrees into the wall through a collar.
+    collar: it runs straight on into the solid block on the east (x = 16) through a collar.
+    riser: pipes standing up the wall from below bend into it.
+    hung: a run hung under the ceiling (pipes along x, across z) arriving from the west turns up
+    into the slab through a collar. The _cw forms are mirrored."""
+    d = SIZES[size][0] + FATTER.get(kind, 0)
+    _, off, spread = SIZES[size]
+    r = d / 2
+    h = r / math.sqrt(2)
+    bars = _bars(d)
+    zc = 16 - off
+    base = form.replace("_cw", "").replace("_ccw", "")
+    bead, bw, bb, bcap = _bead(kind, d)
+    corner = {f: ("#pipe", [0, 6, 16, 10]) for f in FACES}
+    els = []
+    for i, sp in enumerate(spread):
+        if base == "riser":
+            # (along y: x = p, z = q) the pipe at x = sp climbs to yb, then turns into the wall
+            yb = 8.0 if len(spread) == 1 else 6.5 + 2.5 * i
+            els += _octagon("y", 0, yb, sp, zc, d, "#pipe", vslot=3 * i, bars=bars, cap="#cap")
+            els += _octagon("z", zc, 16, yb, sp, d, "#pipe", vslot=3 * i + 1, bars=bars, cap="#cap")
+            els.append(_box((sp - r, yb - h, zc - h), (sp + r, yb + h, zc + h), corner, rot=((sp, yb, zc), "x", 45), shade=False))
+            els += _octagon("y", yb - r - bw - 0.2, yb - r - 0.2, sp, zc, d + 0.5, bead, bars=bb, cap=bcap)
+            els += _wall_collar("z", 16, yb, sp, d, 1)
+        elif base == "bend":
+            # (along x: y = p, z = q) the pipe at height sp runs from the west to xb, then into the wall
+            xb = 8.0 if len(spread) == 1 else 6.8 + 1.4 * i
+            els += _octagon("x", 0, xb, sp, zc, d, "#pipe", vslot=3 * i, bars=bars, cap="#cap")
+            els += _octagon("z", zc, 16, sp, xb, d, "#pipe", vslot=3 * i + 1, bars=bars, cap="#cap")
+            els.append(_box((xb - h, sp - r, zc - h), (xb + h, sp + r, zc + h), corner, rot=((xb, sp, zc), "y", 45), shade=False))
+            els += _octagon("x", xb - r - bw - 0.2, xb - r - 0.2, sp, zc, d + 0.5, bead, bars=bb, cap=bcap)
+            els += _wall_collar("z", 16, sp, xb, d, 1)
+        elif base == "hung":
+            # (along x: y = p, z = q) the pipe at z = sp, hanging at height yc, runs from the west to xb, then up
+            yc = 16 - HANG[size]
+            xb = 8.0 if len(spread) == 1 else 7.0 + 2.0 * i
+            els += _octagon("x", 0, xb, yc, sp, d, "#pipe", vslot=3 * i, bars=bars, cap="#cap")
+            els += _octagon("y", yc, 16, xb, sp, d, "#pipe", vslot=3 * i + 1, bars=bars, cap="#cap")
+            els.append(_box((xb - h, yc - h, sp - r), (xb + h, yc + h, sp + r), corner, rot=((xb, yc, sp), "z", 45), shade=False))
+            els += _octagon("x", xb - r - bw - 0.2, xb - r - 0.2, yc, sp, d + 0.5, bead, bars=bb, cap=bcap)
+            els += _wall_collar("y", 16, xb, sp, d, 1)
+        else:
+            els += _octagon("x", 0, 16, sp, zc, d, "#pipe", vslot=3 * i, bars=bars, cap="#cap")
+            els += _wall_collar("x", 16, sp, zc, d, 1)
+    return _mirror_x(els) if form.endswith("_cw") else els
+
+
+def _pipe_end_models() -> None:
+    forms = ("bend_ccw", "bend_cw", "collar_ccw", "collar_cw", "riser", "hung_ccw", "hung_cw")
+    variants = {}
+    for kind in KINDS:
+        tex = {**_pipe_textures(kind), "collar": _ref("l2_pipe_flange")}
+        for size in SIZES:
+            for form in forms:
+                name = f"l2_pipe_end_{kind}_{size}_{form}"
+                _bm(name, P._model(tex, _pipe_end_elements(kind, size, form)))
+                for f, y in FACING_Y.items():
+                    v = {"model": _ref(name)}
+                    if y:
+                        v["y"] = y
+                    variants[f"facing={f},form={form},kind={kind},size={size}"] = v
+    _bs("l2_pipe_end", {"variants": variants})
+    _im("l2_pipe_end", parent=_ref("l2_pipe_end_steel_medium_bend_ccw"))
+
+
+def _puddle_model() -> None:
+    """The film of dirty water under a leak (block l2_leak_puddle): the wet stain decal lying on
+    the floor, a hair above it, turned a random quarter each block so a spread doesn't repeat."""
+    els = [_box((0.3, 0.02, 0.3), (15.7, 0.12, 15.7), {"up": ("#stain", [0.3, 0.3, 15.7, 15.7])})]
+    _bm("l2_leak_puddle", P._model({"particle": _ref("l2_drip_stain"), "stain": _ref("l2_drip_stain")}, els))
+    _bs("l2_leak_puddle", {"variants": {"": [{"model": _ref("l2_leak_puddle"), **({"y": y} if y else {})}
+                                             for y in (0, 90, 180, 270)]}})
+    _im("l2_leak_puddle", layer=_ref("l2_drip_stain"))
+
+
 def tex_level2_revamp_models() -> None:
     """Block models, blockstates and item models for registry/Level2Blocks (LF JSON), and the
     remade models of the older Level 2 blocks (their blockstates are unchanged)."""
     _surface_models()
     _pipe_models()
+    _beam_model()
+    _pipe_end_models()
     _fitting_models()
     _valve_models()
+    _lever_models()
+    _feed_models()
     _gauge_models()
     _cable_tray_models()
+    _puddle_model()
     _junction_box_models()
     _breaker_models()
     _shelf_models()
@@ -2281,4 +2015,4 @@ def tex_level2_revamp_models() -> None:
     _old_block_models()
 
 
-TEXTURES = [tex_level2_revamp_surfaces, tex_level2_revamp_pipes, tex_level2_revamp_props, tex_level2_revamp_models]
+TEXTURES = [tex_level2_revamp_props, tex_level2_revamp_models]

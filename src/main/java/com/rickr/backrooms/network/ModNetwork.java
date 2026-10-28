@@ -41,6 +41,10 @@ public final class ModNetwork {
             CameraClientState.introStartMs = System.currentTimeMillis();
         });
 
+        // Arriving on a level: the camcorder arrival card (client/hud/ArrivalCard) and its quiet chat copy.
+        registrar.playToClient(ArrivalCardPayload.TYPE, ArrivalCardPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.hud.ArrivalCard.receive(payload)));
+
         registrar.playToClient(LevelEventPayload.TYPE, LevelEventPayload.STREAM_CODEC, (payload, context) -> {
             CameraClientState.eventKind = payload.kind();
             long nowMs = System.currentTimeMillis();

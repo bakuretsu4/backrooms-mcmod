@@ -27,6 +27,13 @@ def _snd(name: str):
     return G.SND / "level2" / f"{name}.ogg"
 
 
+def _small(img, size=64) -> np.ndarray:
+    """Box-filter a 128 px texture down to size x size. The block atlas is full, and these are
+    small props (a lamp's housing and lens, a bulb) where 64 px is already plenty."""
+    k = img.shape[0] // size
+    return img.reshape(size, k, size, k, img.shape[2]).mean(axis=(1, 3))
+
+
 # ---------------------------------------------------------------- brownout ---
 
 def tex_level2_emergency_housing() -> None:
@@ -37,7 +44,7 @@ def tex_level2_emergency_housing() -> None:
     grime = G.smoothstep(0.4, 1.8, G.fnoise(rng, beta=2.4))
     img = G.over(img, np.array([138, 128, 104]), grime * 0.35)
     img = G.add_lum(img, -18 * G.smoothstep(1.2, 0.3, np.abs(Y - 40)))   # moulding seam
-    G.save_png(img, _blk("l2_emergency_housing"))
+    G.save_png(_small(img), _blk("l2_emergency_housing"))
 
 
 def tex_level2_emergency_lens() -> None:
@@ -48,7 +55,7 @@ def tex_level2_emergency_lens() -> None:
     img = G.lerp(np.array([226, 196, 255]), np.array([150, 82, 230]), np.clip(edge, 0, 1)[..., None] ** 1.2)
     ribs = 0.5 + 0.5 * np.cos(X / S * 2 * np.pi * 16)
     img = G.add_lum(img, -14 * ribs + G.fnoise(rng, beta=2.0) * 2.0)
-    G.save_png(img, _blk("l2_emergency_lens"))
+    G.save_png(_small(img), _blk("l2_emergency_lens"))
 
 
 def tex_level2_dead_bulb() -> None:
@@ -63,7 +70,7 @@ def tex_level2_dead_bulb() -> None:
     img = G.over(img, np.array([10, 10, 10]), hole)
     cracks = G.smoothstep(0.04, 0.0, np.abs(G.fnoise(rng, beta=2.4, kmin=3)))
     img = G.add_lum(img, 40 * cracks * (1 - hole))
-    G.save_png(img, _blk("l2_dead_bulb"))
+    G.save_png(_small(img), _blk("l2_dead_bulb"))
 
 
 def tex_level2_black_ooze() -> None:
@@ -200,10 +207,11 @@ def tex_level2_void_door() -> None:
 
 
 def tex_level2_void_black() -> None:
-    """Near-perfect black with the faintest grain, so it never reads as a lit surface."""
+    """Near-perfect black with the faintest grain, so it never reads as a lit surface. Saved at
+    16 px: a flat colour looks the same at any size and the block atlas is full."""
     rng = G.rng_for(2209)
-    img = G.fill((7, 7, 8), (S, S))
-    img = G.add_lum(img, rng.normal(0, 0.6, (S, S)))
+    img = G.fill((7, 7, 8), (16, 16))
+    img = G.add_lum(img, rng.normal(0, 0.6, (16, 16)))
     G.save_png(img, _blk("l2_void_black"))
 
 

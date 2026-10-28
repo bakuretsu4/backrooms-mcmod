@@ -71,7 +71,8 @@ final class VeilFixtures {
      * you walk) would be obvious. There every light fades in over the outer half of the range
      * (or of the picked set, when the budget is full), and past it the far pools are carried by
      * the lightmap fill and the glowing bulbs alone, so the corridor dims smoothly into the
-     * distance instead of popping.
+     * distance instead of popping. (With its wall-map shadows the range is longer there, see
+     * BackroomsLights#LEVEL2_RANGE_SCALE.)
      */
     private static final float LEVEL2_FADE_FROM = 0.5f;
 
@@ -159,7 +160,7 @@ final class VeilFixtures {
             }
         } else if (floor == BackroomsLevel.LEVEL_2) {
             fadeFrom = LEVEL2_FADE_FROM;
-            fadeEnd = ClientSettings.quality().lightRange;
+            fadeEnd = BackroomsLights.lightRange(floor);
             if (budgetFull) {
                 double farthest = 0.0;
                 for (FixtureLight light : selected) {
@@ -183,8 +184,8 @@ final class VeilFixtures {
             entry.light = light;
             entry.seen = true;
             if (!isBeacon(light.type)) {
-                setBrightness(entry, light.type.brightnessOn(floor) * tubeBrightness(light, floor) * light.level * scale
-                        * edgeFade(light, fadeEnd, fadeFrom));
+                setBrightness(entry, light.type.brightnessOn(floor) * tubeBrightness(light, floor) * level2Age(light, floor)
+                        * light.level * scale * edgeFade(light, fadeEnd, fadeFrom));
             }
             // The nearest few streetlamps (selected is nearest first) get their glow cone.
             if (light.type.isStreetlamp() && conesLeft > 0) {
@@ -326,6 +327,23 @@ final class VeilFixtures {
         return level0Tube(light, floor) ? light.tubeGlow : 1.0f;
     }
 
+    /** Level 2's caged bulbs: each its own brightness for its age (FixturePower#level2BulbLevel); 1 for everything else. */
+    private static float level2Age(FixtureLight light, @Nullable BackroomsLevel floor) {
+        return floor == BackroomsLevel.LEVEL_2 && level2Bulb(light.type) ? FixturePower.level2BulbLevel(light.key) : 1.0f;
+    }
+
+    /** The caged incandescent-style lamps of Level 2 (amber bulkhead and mercury). */
+    private static boolean level2Bulb(FixtureType type) {
+        return type == FixtureType.BULKHEAD_LAMP || type == FixtureType.L2_MERCURY_LAMP;
+    }
+
+    // Level 2 bulb colours by age (multipliers on the fixture colour): a new bulb burns a touch
+    // whiter, old ones browner, a failing one deep orange. Index = FixturePower#level2BulbAge.
+    private static final float[] BULB_GREEN = {1.07f, 1.0f, 0.91f, 0.83f};
+    private static final float[] BULB_BLUE = {1.16f, 1.0f, 0.80f, 0.66f};
+    // Level 2's fluorescent strips (side rooms, chambers): some tubes cooler, some a little green.
+    private static final float[][] TUBE_TONES = {{1.0f, 1.0f, 1.0f}, {0.94f, 0.98f, 1.05f}, {0.97f, 1.02f, 0.93f}, {1.0f, 0.97f, 0.92f}};
+
     private static PointLightData newPoint(FixtureLight light, @Nullable BackroomsLevel floor) {
         FixtureType type = light.type;
         float r = type.red;
@@ -339,8 +357,20 @@ final class VeilFixtures {
             g *= Level0TubeGlow.toneGreen(tone);
             b *= Level0TubeGlow.toneBlue(tone);
         }
-        // Level 0's lamps are our own light type: our shaders, shadows from the wall map.
-        PointLightData point = floor == null || floor == BackroomsLevel.LEVEL_0 ? new Level0LightData() : new PointLightData();
+        boolean level2 = floor == BackroomsLevel.LEVEL_2;
+        if (level2 && type == FixtureType.BULKHEAD_LAMP) {
+            int age = FixturePower.level2BulbAge(light.key);
+            g *= BULB_GREEN[age];
+            b *= BULB_BLUE[age];
+        } else if (level2 && type == FixtureType.CEILING_TUBE) {
+            float[] tone = TUBE_TONES[(int) ((FixturePower.mix(light.key ^ 0x2B992DDFA23249D6L) >>> 30) & 3L)];
+            r *= tone[0];
+            g *= tone[1];
+            b *= tone[2];
+        }
+        // Level 0's and Level 2's lamps are our own light types: our shaders, shadows from the wall map.
+        PointLightData point = floor == null || floor == BackroomsLevel.LEVEL_0 ? new Level0LightData()
+                : level2 ? new Level2LightData() : new PointLightData();
         return point
                 .setPosition(light.x, light.y, light.z)
                 .setRadius(type.radiusOn(floor))

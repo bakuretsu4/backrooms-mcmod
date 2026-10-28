@@ -17,25 +17,29 @@ import net.minecraft.world.effect.MobEffects;
  *
  * <p>The dead lamps, emergency lights and black ooze are blocks (see Level2AnomalyPlan); the ooze
  * slows you by itself. This behaviour adds the stench: standing in or right next to the ooze, every
- * couple of seconds there is a chance your stomach turns (brief nausea). The silent machinery is
- * client side (the level's machine drone fades out while you're here).
+ * couple of seconds there is a chance your stomach turns. That is a short heaviness in the legs
+ * (Slowness) and a little hunger, NOT vanilla Nausea: Nausea warps the whole screen like a nether
+ * portal, and Level 2 keeps screen distortion for real danger only. The silent machinery is client
+ * side (the level's machine drone fades out while you're here).
  */
 final class BrownoutBehavior implements AnomalyBehavior {
     /** How often (ticks) the stench gets a chance at you ... */
     private static final int STENCH_EVERY = 40;
     /** ... the chance ... */
     private static final float STENCH_CHANCE = 0.35f;
-    /** ... and how long the nausea lasts (ticks). */
-    private static final int NAUSEA_TICKS = 140;
+    /** ... and how long the queasy heaviness lasts (ticks). */
+    private static final int QUEASY_TICKS = 100;
 
     @Override
     public void tick(ServerPlayer player, AnomalySite site, long seed, int ticksInside) {
         if (ticksInside % STENCH_EVERY != STENCH_EVERY / 2 || player.isCreative()
-                || player.hasEffect(MobEffects.CONFUSION) || !nextToOoze(player.serverLevel(), player.blockPosition())) {
+                || player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN) || !nextToOoze(player.serverLevel(), player.blockPosition())) {
             return;
         }
         if (player.getRandom().nextFloat() < STENCH_CHANCE) {
-            player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, NAUSEA_TICKS, 0, false, false, true));
+            // Ambient (faint particles), icon shown: you can tell why your legs are heavy.
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, QUEASY_TICKS, 0, true, false, true));
+            player.addEffect(new MobEffectInstance(MobEffects.HUNGER, QUEASY_TICKS, 0, true, false, true));
         }
     }
 
