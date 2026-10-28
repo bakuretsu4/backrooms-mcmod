@@ -19,8 +19,8 @@ Lithium, FerriteCore, ModernFix, Entity Culling, ImmediatelyFast and Dynamic FPS
 | Get in | Reality has seams in the dark (see **Getting in** below): keep walking into a wall somewhere dark and enclosed, stay alone in the dark too long, film the dark with a **Camcorder** (craft: iron ingots around a glass pane and redstone; right-click to record), or lie down in a bed. Suffocating inside a block still works too. |
 | Flashlight | `R`. Everyone sees your beam. Uses the camcorder battery. |
 | NightShot (infrared) | `N` (drains the battery 3x faster) |
-| Camcorder REC overlay | `H` (off by default) |
-| Sprint | Limited by energy: a thin faint line above your hearts shows it while you run (turns red when you're out of breath). Rest to refill it. |
+| Camcorder REC overlay | `H` (off by default). Switching it on shows REC, battery, clock and exit signal clearly for a few seconds; then they sink to a faint ghost until one of them changes. A low battery (15% or less) pulses soft red at the top right even with the overlay off. |
+| Sprint | Limited by energy: a short, thin faint line above your hearts shows it while you run (turns soft red when you're out of breath). Rest to refill it. |
 | Jump | Not possible in the Backrooms (except in water, to swim and climb out) |
 | Loot | Right-click Wooden Crates, Backpacks and Supply Lockers (see Supplies below) |
 | New battery | Right-click a Camcorder Battery |
@@ -93,13 +93,23 @@ wide spiral of shallow half-steps around a concrete core, lit for the first half
 going down into the dark, until the picture breaks up and you are in the next level.
 
 - **Level 0 (the Lobby):** Kane Pixels' yellow maze under a low ceiling (three blocks, just over
-  your head) and a grid of troffers: cramped little rooms behind thick wall blocks joined by 2-wide
-  doorways, narrow winding corridors with small side rooms, now and then a hall of square pillars
-  (never wide open), the film's half-fitted rooms (rows of half-walls and cubicles, window slots, a
-  step down into a sunken passage, mannequins, a heap of old furniture) and whole wings where every
-  light is dead. Here and there furniture has noclipped into the walls, floor and ceiling. Arrows
+  your head) and a grid of troffers (the odd one missing, doubled or off the grid): rooms of odd
+  sizes behind thick wall blocks joined by doorways that are rarely centred, walls that stop short
+  of each other or of the ceiling, 1-wide slits, off-centre pillars and lone pieces of wall
+  standing in the middle of a room. Corridors dogleg, run straight for 60 blocks, split into two
+  lanes behind a thin wall and join again, or end in a plug with a slit to squeeze through. Most
+  views are short, but now and then a row of rooms lines up into a 40-90 block vista of doorways
+  ending at a blank wall, its far lights dead. Now and then a hall of square pillars, the film's
+  half-fitted rooms (rows of half-walls and cubicles, window slots, a step down into a sunken
+  passage, mannequins, a heap of old furniture) and whole wings where every light is dead. Here
+  and there furniture has noclipped into the walls, floor and ceiling. Arrows
   drawn on the walls point to the exit stairwell, but some of them lie. Look for the EXIT sign over
   a wooden door between green and white hazard stripes.
+  The building has aged unevenly: faded beige-yellow paper with a small, faint print, a worn,
+  slightly damp tan carpet and fissured off-white ceiling tiles. Mostly it looks merely old, but
+  here and there a whole stretch shows its years at once: water rings on the tiles, a leak stain
+  running down from the ceiling, damp creeping up the wall from the carpet, grimy hand marks, a
+  sagging or broken tile.
 - **Level 1 (the "Habitable Zone"):** an endless underground parking structure crossed with a
   warehouse, big and high: bevelled 3x3 concrete pillars every 12 blocks under a 7-block ceiling.
   Each pillar has its number painted two blocks tall on a band in its sector's colour, and some
@@ -332,8 +342,10 @@ and crates on Levels 1, 2, 4 and 9 (rare elsewhere).
 
 ### Sanity
 
-Your heart rate (top-right, always shown in the Backrooms) is your sanity: 70 BPM when calm, up to
+Your heart rate (top-right in the Backrooms) is your sanity: 70 BPM when calm, up to
 160 BPM when you're losing it. It starts at 100, is saved when you log out, and you respawn at 70.
+The readout only shows when it matters: for a few seconds after it changes, and faintly all the
+time while it's 100 BPM or more (amber below 50 sanity, pulsing red below 30).
 
 - **Drains** slowly all the time in the Backrooms, faster in the dark (with your flashlight off),
   when nobody is within 24 blocks, when you see a Bacteria (much faster if it's chasing you), a
@@ -361,7 +373,8 @@ light on and the sign over the front door.
 
 - **Safe:** no monster spawns in a safe room or within 12 blocks of one, the Bacteria never walks
   in (reaching one mid-chase counts as escaping), and Watchers and Observers leave you alone while
-  you're inside. The camcorder shows **SAFE ROOM** at the top left while you're in one.
+  you're inside. The camcorder shows a small **SAFE ROOM** tag at the top left for a few seconds
+  when you walk in (and faintly with the `H` overlay on).
 - **The lamp is battery-backed:** like the exit signs it stays on in blackouts and never flickers
   (with the Veil lights; without Veil a blackout darkens everything).
 - **Checkpoints:** right-click the radio to save your checkpoint (static, a chime and
@@ -649,13 +662,14 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 ### The camcorder picture
 
 Everything you see in the Backrooms is filmed: a gentle wide lens, worn VHS tape (faint line
-jitter and colour fringes), soft bloom on the lights and a little motion blur when you turn. On top
-of that each level has its own mood (`client/AtmosphereGrade`), applied evenly over the whole
-picture and blended over about two seconds when you change level:
+jitter and grain; colour fringes only while the tape misbehaves: something dangerous close by, low
+sanity, glitches, a Smiler, a level change), soft bloom on the lights and a little motion blur
+when you turn. On top of that each level has its own mood (`client/AtmosphereGrade`), applied
+evenly over the whole picture and blended over about two seconds when you change level:
 
 | Level | Mood |
 |---|---|
-| Level 0 | Kane Pixels' tapes, dimmer and moodier: uneven light that pools under each troffer and falls off into darker corners and wall feet (walls cast real shadows), each tube a little different in brightness and tint, about one in sixteen faulty (stuttering with a click every 5-25 s, or a dim, slowly pulsing dying tube), yellow-green with the blue cut, no haze; dark wings crushed to black |
+| Level 0 | Kane Pixels' tapes: a soft, faded yellow-beige (never olive). Clear pools of light under each troffer, dimmer stretches between them, and a soft bounce glow that fades gradually into darker corners and wall feet (walls cast real shadows). Tubes differ in age, chosen by the layout (`world/layout/Level0Tubes`, a `glow` block state: full, worn, tired or dying, each with its own light level, so it works with or without Veil); whole stretches of ceiling were re-lamped at different times, so some areas are brighter than others. Each tube also has its own colour temperature (mostly neutral, some yellowed, a few cool). About one tube in twenty is faulty: it stutters in a short burst every 12-45 s, or now and then cuts out for a few seconds and re-strikes with a few flashes, clicking each time; the room under it dims a little with it. A faint warm haze from about 14 blocks out gives long halls depth; dark wings crushed to black |
 | Level 1 | Cold, damp concrete: blue shadows, little colour, grey-blue air |
 | Level 2 | Warm amber pools from the caged lamps receding down the line, rust-brown shadows, pipe chases sunk in darkness, a light warm heat haze |
 | Level 4 | Cold fluorescent blue-grey, quiet |
@@ -677,7 +691,8 @@ The camera also reacts like a real one:
   look, slowly. Step from the dark into a lit hall and the picture is blown out for a moment
   before it settles; step into the dark and it stays too dark for a couple of seconds.
 - **Dust in the light** (`client/particle/DustMotes`): fine specks drift in the air near the lamps
-  and in your flashlight beam (only where there is light to see them by).
+  and in your flashlight beam (only where there is light to see them by). In Level 0 they are
+  rare, small and faint: the odd speck in your beam or right under a tube.
 - **Nothing but the footage:** no hand or held item, no crosshair or block outline, no XP bar, no
   tutorial hints or advancement pop-ups. Hearts, hunger and air appear only for a few seconds when
   they change (and stay faintly in view while your health is low); the hotbar slides away when
@@ -720,16 +735,30 @@ saturation, hiss and a big, empty room.
   placed in the world is muffled by the solid blocks between you and it (a lamp in the next
   corridor hums dull and low and opens up as you round the corner), and it rings in a reverb that
   follows the space you are standing in: short and close in a small room, long in a big one, hardly
-  at all under open sky. Each level adds its materials: Level 0's carpet and Level 4's offices soak
-  up the highs, Level 1's bare concrete garage rings, Level 2's long pipe corridor is hard and
-  metallic, with a late echo coming back from far down the line. The
+  at all under open sky. Each level adds its materials: Level 0's carpet and ceiling tiles make it
+  sound dead and dry up close, like a real office, with only a soft, dark, slightly late tail
+  hinting at how far the halls go; Level 4's offices soak up the highs, Level 1's bare concrete
+  garage rings, Level 2's long pipe corridor is hard and metallic, with a late echo coming back
+  from far down the line. The
   Poolrooms and Level 37 get no reverb, since in canon nothing reverberates there. Music, the
   camcorder's beeps and the overworld are left alone. Without EFX support it simply switches off.
-- **Distant sounds** (`client/audio/DistantAmbience`): every 20 seconds to a minute something
-  happens somewhere out of sight, picked from five per level, each with three takes: a ballast
-  popping or scratching behind the walls in Level 0, pipes clanging in Level 1 and 2, a phone or
-  copier in Level 4, water and drains in the pool levels, wind chimes and a dog that stops barking
-  in Level 9, a car horn or rats in Level 94 depending on the time of day.
+- **Distant sounds** (`client/audio/DistantAmbience`): every 20 seconds to a minute and a half
+  something happens somewhere out of sight, picked from five or more per level, each with three
+  takes: in Level 0 mostly the building itself (see below), pipes clanging in Level 1 and 2, a
+  phone or copier in Level 4, water and drains in the pool levels, wind chimes and a dog that
+  stops barking in Level 9, a car horn or rats in Level 94 depending on the time of day.
+- **Level 0's quiet** (`client/light/FixtureSounds`, `tools/anomaly_assets/level0_audio.py`): the
+  room tone is a 93-second loop built from a real recording of a fluorescent-lit room: the 60 Hz
+  mains hum and its harmonics slowly swelling and drifting against each other, the room's air,
+  very faint distant air conditioning and a thin ballast whine, so it never audibly repeats. Each
+  tube buzzes on its own, with one of four ballast sounds, its own pitch and loudness (worn tubes a
+  little louder); you hear the one you stand under, the next ones less, and stretches with no lit
+  tube go nearly silent. Faulty tubes buzz rough and unsteady; one dropping out ticks (its
+  starter), striking again it clicks and catches, and a dying tube's starter ticks now and then.
+  About once a minute, faint and far away, the building makes a sound: it settles with a creak,
+  ducting ticks above the ceiling as it cools, a relay clacks in a far panel, a door clicks
+  somewhere. Now and then a tube pops in the distance or water drips onto the carpet; rarely,
+  something scratches behind a wall or a voice calls, far off.
 - **Level 2's pipes** (`client/anomaly/level2/Level2Emitters`, `tools/anomaly_assets/level2_audio.py`):
   every 7-18 seconds the pipes act up somewhere up or down the corridor: a water-hammer knock
   that runs along the pipes toward you or away, a heavy clank, a long creak of hot metal (far more
@@ -740,8 +769,8 @@ saturation, hiss and a big, empty room.
   hum of every tube in Levels 0-2 is a real ballast, the flicker clicks are real tubes and starters
   catching and dropping out, a blackout is a big breaker clunking and the floor's hum sagging and
   dying in the concrete, and when the power comes back the starters tick before the hum swells
-  in. Level 0's room tone and Level 1's garage air (a ventilation fan rattling far off in an empty
-  car park) are field recordings too, and so is your breathing. The Bacteria's sounds are the same
+  in. Level 1's garage air (a ventilation fan rattling far off in an empty car park) and Level 0's
+  room tone are field recordings too, and so is your breathing. The Bacteria's sounds are the same
   breathing recordings slowed down, some played backwards, with soft wet clicks
   (`tools/level_assets/bacteria.py`).
 - **Mix:** quiet on purpose. Every level's background loop is heard at the same loudness (about
@@ -749,7 +778,10 @@ saturation, hiss and a big, empty room.
   nothing else (creatures, alarms, the camcorder's beeps) goes above about -18, so a scare stands
   out without blasting. Backpacks open and close silently. Many lamps humming
   together are turned down so their drone never buries everything else, and the music sits a
-  little above the level instead of over it.
+  little above the level instead of over it. Level 0 is a touch quieter still, so its silences
+  feel like silence: room tone about -33, each tube's buzz -27 (-28 for a faulty one) and faster
+  to fade with distance, starter ticks -35, and its far building sounds -29 to -32 before
+  distance and walls take their share.
 - **Level 39 "Megalophobia"** (`client/Level39Audio`, `client/Level39QuakeEffects`): the town
   rings like one colossal hall (the superstructure encloses it, so its echo is long and loud even
   in the open), while the marble tunnels below swallow sound. Its own loops follow you between
@@ -842,22 +874,22 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | Package | What lives there |
 |---|---|
 | `world` | Level definitions, the infinite chunk generator, exits, travel, floor events, safe rooms (`SafeRooms`) |
-| `world/layout` | One floor plan per level (pure functions of seed + x/z); Level 37's plan is integer codes (`Level37Plan`) turned into blocks by `Level37Layout`; Level 39 is split into the town cell plan (`Level39Cell`, cached 128-block tiles in `Level39Tile`), houses (`Level39Houses*`, one cached voxel plan per house), the mill (`Level39Superstructure`) and the tunnels (`Level39Tunnels`, `Level39Vault`); Level 227's one canonical tree (`Level227Tree`, also read by the far renderer) is turned into blocks by `Level227Layout`, with the forest, caves and flytrap patches of each 32-block tile cached in `Level227Tile`; each level's anomalous areas are planned in `<Level>AnomalyPlan` |
+| `world/layout` | One floor plan per level (pure functions of seed + x/z); Level 0's maze is a skeleton of wall bands and gaps (`Bands`) shaped by its zones (`Level0Zones`) in `Level0Layout` (rooms, awkward walls, vistas, corridors, and where each troffer goes and whether it is dead), with the builders' rooms on their own grid (`Level0Builders`) and each lit tube's age picked by `Level0Tubes`; Level 37's plan is integer codes (`Level37Plan`) turned into blocks by `Level37Layout`; Level 39 is split into the town cell plan (`Level39Cell`, cached 128-block tiles in `Level39Tile`), houses (`Level39Houses*`, one cached voxel plan per house), the mill (`Level39Superstructure`) and the tunnels (`Level39Tunnels`, `Level39Vault`); Level 227's one canonical tree (`Level227Tree`, also read by the far renderer) is turned into blocks by `Level227Layout`, with the forest, caves and flytrap patches of each 32-block tile cached in `Level227Tile`; each level's anomalous areas are planned in `<Level>AnomalyPlan` |
 | `world/anomaly` | Anomalous areas: site planner (`AnomalyGrid`), behaviour registry (`Anomalies`), server driver and client sync (`AnomalyService`), seamless teleports (`Teleports`), "is anyone looking?" (`Observation`); one sub-package per level |
 | `client/anomaly` | Client side of the anomalous areas: which sites are near (`AnomalyClientState`), per-level picture moods, sounds and overlays; one sub-package per level |
 | `entity` | The Bacteria and its spawner; Level 39's mobs (`Hound`, `Faceling`, `Clump`, `SkinStealer`, `Wretch`) and their spawning (`Level39Spawner`, `TunnelDwellers`); Level 227's grazers (`L227Bear`, `L227Doe`, `L227Boar`) and their spawning (`Level227GrazerSpawner`); Level 227's hunters (`L227Wolf`, `L227Stag`, `L227Squirrel` and the swarm brain `SquirrelSwarm`) and their spawning (`Level227PredatorSpawner`); Level 227's giant Venus flytrap (`VenusFlytrap`, planted by `Level227FloraSpawner`) |
 | `camera` | Camcorder battery/flashlight/NightShot server rules, flashlight sync |
 | `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`), hiding in furniture (`HidingService`, which furniture and where the view sits: `HidingSpots`), friends hearing a panicking player's heartbeat (`SharedHeartbeat`) |
-| `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas); Level 227's flora (`Level227*Block`: tall plants, hanging strands, the Palette, GammaPali, Lestron; registered in `registry/Level227Blocks`, art in `tools/anomaly_assets/level227_flora.py`) |
+| `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas); Level 0's versions cluster in worn patches and some keep to one wall row (`Level0SurfaceBlock`, art in `tools/anomaly_assets/level0_surfaces.py`); Level 227's flora (`Level227*Block`: tall plants, hanging strands, the Palette, GammaPali, Lestron; registered in `registry/Level227Blocks`, art in `tools/anomaly_assets/level227_flora.py`) |
 | `network` | Packets between server and clients |
 | `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`) |
-| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
+| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, Level 0's faulty tubes (stutter, lazy restart, dying pulse: `FixturePower`; the tube ages and colours themselves are block states, `block/Level0TubeGlow`, picked by `world/layout/Level0Tubes`), flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
 | `client/water` | Pool water (also Level 7's sea): surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), underwater fog and its darkening with depth (`UnderwaterView`) |
 | `client/audio` | Wall muffling and room reverb through OpenAL EFX (`Acoustics`, `AcousticsEfx`); distant one-off sounds per level (`DistantAmbience`) |
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`); moves your view inside the furniture while you hide (`CameraMixin`) |
 | `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`); lets anomaly teleports update the server's movement check, and keeps players held in the air (Level 39's sky arrival, window grabs, the chairlift) from being kicked for "flying" (`ServerGamePacketListenerAccessor`) |
 | `client/camera` | Handheld camera shake, roll, smoothing |
-| `client/hud` | Minimal HUD, stamina line |
+| `client/hud` | Minimal HUD, stamina line, and the shared camcorder OSD look (`OsdStyle`: font, colours, margins, fades) used by `CamcorderHud`, `SafeRoomOsd` and `HidingOsd` |
 | `client/trailer` | Dev-only trailer camera and frame recorder (`TrailerRecorder`, off unless started with `-Dbackrooms.trailerDir`) |
 | `client` | Camcorder post-shader control, per-level picture mood (`AtmosphereGrade`), overlay, Bacteria model/renderer, keys |
 | `assets/backrooms/shaders` | Lens, bloom, motion blur, contact shadows, distance haze, glow and grade post-processing |

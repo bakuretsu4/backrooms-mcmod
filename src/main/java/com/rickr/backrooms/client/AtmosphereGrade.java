@@ -54,17 +54,26 @@ public final class AtmosphereGrade {
     private static final Mood NEUTRAL = new Mood(1.0f, 1.0f, 1.0f, 1, 1, 1, 1, 1, 1,
             2 / 255f, 0, 5 / 255f, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     /**
-     * Level 0, Kane Pixels' tapes: muted olive-mustard. Red and green stay level while blue is cut
-     * (~28% in the shadows, ~12% in the highlights: the textures already carry the yellow, and the
-     * troffers must stay near white), slightly less colour than the textures, and blacks crushed
-     * so the dark wings are solid black. The light itself is dim and uneven (ClientLighting), so
-     * the grade adds a touch of extra contrast and fairly strong contact shadows, which
-     * deepen the corners and the foot of every wall without darkening the middle of a room.
-     * No distance haze at all (max 0): depth comes from the repetition and the dark wings. The
-     * haze colour is still set so anomaly moods that add haze blend from a sensible colour.
+     * Level 0, Kane Pixels' tapes: a soft, slightly faded yellow-beige, never olive. Red stays
+     * level, green is trimmed a hair below it (2% in the shadows, 1% in the highlights: the old
+     * grade lifted green over red, which is what read as olive) and blue is cut gently (14% in the
+     * shadows, 5% in the highlights: the textures already carry the yellow). A little less colour
+     * than the textures (0.92) for the worn-tape look. With the Level 0 textures and the lightmap
+     * tint in ClientLighting (1, 0.975, 0.92) this lands a lit hall at about G/R 0.87-0.89 and
+     * B/R 0.54-0.57 (wallpaper ~0.87/0.52, carpet ~0.80/0.43, ceiling ~0.92/0.73).
+     *
+     * <p>Exposure 1.23 because the tubes now differ in age (most are a little dimmer than the old
+     * all-equal ones) and the fill is shaped into clear pools (ClientLighting). It is 7% under the
+     * first try (1.32), which measured a little bright and even in game; the aim is a lit hall
+     * averaging about 0.24-0.32 with the pools under the tubes standing out from the stretches
+     * between them.
+     * A touch of extra contrast and fairly strong contact shadows deepen the corners and the foot
+     * of every wall without darkening the middle of a room. A faint warm-beige haze from ~14 blocks
+     * out (never more than 16%) gives long halls depth: far rooms sink a little into the dim air.
+     * The blacks stay crushed so dark wings are solid black.
      */
-    private static final Mood LEVEL_0 = new Mood(1.08f, 1.07f, 0.95f, 0.97f, 1.0f, 0.72f, 0.99f, 1.0f, 0.88f,
-            0.004f, 0.004f, 0.002f, 0.40f, 0.37f, 0.18f, 30.0f, 0.010f, 0.0f, 0.42f, 0.14f, 0.010f);
+    private static final Mood LEVEL_0 = new Mood(1.23f, 1.07f, 0.92f, 1.0f, 0.98f, 0.86f, 1.0f, 0.99f, 0.95f,
+            0.005f, 0.0045f, 0.003f, 0.25f, 0.22f, 0.155f, 14.0f, 0.022f, 0.16f, 0.50f, 0.14f, 0.010f);
     /** Level 1: cold, damp concrete. Blue shadows, grey highlights, little colour, grey-blue air. */
     private static final Mood LEVEL_1 = new Mood(1.0f, 1.08f, 0.74f, 0.90f, 0.95f, 1.06f, 1.0f, 1.0f, 1.03f,
             0.012f, 0.013f, 0.018f, 0.18f, 0.19f, 0.23f, 7.0f, 0.032f, 0.40f, 0.45f, 0.12f, 0.010f);

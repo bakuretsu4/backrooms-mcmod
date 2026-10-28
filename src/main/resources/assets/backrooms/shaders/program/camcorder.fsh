@@ -9,8 +9,9 @@
 //     happen in the centre of the screen.)
 //  2. VHS tape transport: a barely-there line jitter; wobble, tracking bar and tears in glitch moments
 //     (danger, transitions, low battery); white dropout specks and the head-switching strip only in heavy ones.
-//  3. Rotational motion blur along the camera's turn this frame, with mild radial chromatic
-//     aberration (red and green pushed apart toward the screen sides).
+//  3. Rotational motion blur along the camera's turn this frame. Chromatic aberration (red and
+//     green pushed apart) only while the tape misbehaves (danger, low sanity, glitches,
+//     transitions) or a Smiler is close: a clean picture has no colour fringes.
 //  4. Fallback flashlight (only when Veil's real lights are not running): a dim, flat disc with a
 //     hard-ish edge, lit by how far each pixel is.
 //  5. Bloom: only near-white pixels (light tubes) glow; walls don't. Then the level's soft glow:
@@ -93,11 +94,14 @@ out vec4 fragColor;
 
 // Barrel strength: enough for a camcorder lens feel, gentle enough that the picture stays even.
 const float LENS_K = 0.04;
-// Chromatic aberration: a faint fringe everywhere, a little more toward the sides (never zero in
-// the middle, so the whole picture shares the same slightly-soft camcorder feel).
+// Chromatic aberration from a misbehaving tape: zero on a clean picture (the owner found the
+// always-on fringe on every edge too much), it only appears with the tape damage that danger,
+// low sanity, glitches and transitions add (see caOffset in main). This is its size per unit of
+// that extra damage: a monster nearby (+0.3) gives a faint fringe (about 2/3 of the old resting one).
 const float CA_STRENGTH = 0.0016;
-// Worn tape, always on but faint: a hint of sideways line jitter, a touch more colour fringing and
-// faint grain. (Stronger made the picture look busy and smeared.)
+const float CA_PER_DAMAGE = 2.5;
+// Worn tape, always on but faint: a hint of sideways line jitter and faint grain. (Stronger made
+// the picture look busy and smeared.)
 const float TAPE_BASE = 0.12;
 // How much of each of the three bloom sizes is added back.
 const float BLOOM_STRENGTH = 0.45;
@@ -161,8 +165,9 @@ void main() {
     // A monster nearby only roughs the tape up a little (max ~0.3): enough to warn you, not enough
     // to hide what you're looking at. Level transitions keep the full-strength glitch.
     float glitch = clamp(Danger * 0.3 + Transition * 1.2 + lowBattery * 0.35 - Signal * 0.15 + SanityGlitch * 0.6, 0.0, 1.5);
-    // The worn-tape look (faint line jitter, colour fringes, grain) never goes away; glitch moments
-    // add to it. The head-switching strip, tracking bar, tears, specks and scanlines are glitch-only.
+    // The worn-tape look (faint line jitter, grain) never goes away; glitch moments add to it,
+    // and only they bring colour fringes. The head-switching strip, tracking bar, tears, specks
+    // and scanlines are glitch-only.
     // Low sanity wears the tape a little more (adds to tape only, never to the glitch extras).
     float sanity = clamp(Sanity, 0.0, 1.0);
     float tape = clamp(TAPE_BASE + glitch + sanity * 0.2, 0.0, 1.5);
@@ -228,9 +233,11 @@ void main() {
     vec2 fromCentre = uv - 0.5;
     float centreDist = length(fromCentre);
     vec2 radial = centreDist > 1.0e-5 ? fromCentre / centreDist : vec2(0.0);
-    // VHS chroma is recorded slightly out of step with the picture, so the colour sits a hair to the
-    // side of the edges EVERYWHERE (a constant horizontal shift), plus a touch of radial lens fringe.
-    vec2 caOffset = (vec2(CA_STRENGTH * 0.4, 0.0) + radial * CA_STRENGTH * centreDist * 1.4) * (1.0 + tape);
+    // VHS chroma recorded out of step with the picture: the colour sits a hair to the side of the
+    // edges (a horizontal shift) plus a touch of radial lens fringe. Only the tape damage on top of
+    // the resting wear counts, so a clean picture has no fringes at all.
+    float tapeDamage = max(tape - TAPE_BASE, 0.0);
+    vec2 caOffset = (vec2(CA_STRENGTH * 0.4, 0.0) + radial * CA_STRENGTH * centreDist * 1.4) * (tapeDamage * CA_PER_DAMAGE);
     if (Chroma > 0.0) {
         // Smiler close by: the colours tear apart, worst at the edges, wobbling a little.
         caOffset += radial * Chroma * (0.003 + 0.012 * centreDist) * (0.85 + 0.15 * sin(t * 17.0));

@@ -76,17 +76,27 @@ public final class Acoustics {
      * size, how much of the highs the walls swallow (gainHf, decayHfRatio) and how "grainy" the
      * echo is (diffusion; hard narrow pipes are less smooth). {@code skyDamp} is how much open sky
      * above you weakens the echo (open air doesn't ring); {@code lateMul} scales the late echo's
-     * loudness and how long it takes to come back (a colossal hall answers late and loud).
+     * loudness and how long it takes to come back (a colossal hall answers late and loud);
+     * {@code earlyMul} scales the first slap off the nearest walls (soft surfaces swallow it).
      */
     private record Material(float wet, float decayMul, float gainHf, float decayHfRatio, float diffusion,
-                            float skyDamp, float lateMul) {
+                            float skyDamp, float lateMul, float earlyMul) {
         Material(float wet, float decayMul, float gainHf, float decayHfRatio, float diffusion) {
             this(wet, decayMul, gainHf, decayHfRatio, diffusion, 0.85f, 1.0f);
         }
+
+        Material(float wet, float decayMul, float gainHf, float decayHfRatio, float diffusion,
+                 float skyDamp, float lateMul) {
+            this(wet, decayMul, gainHf, decayHfRatio, diffusion, skyDamp, lateMul, 1.0f);
+        }
     }
 
-    // Level 0: carpet and wallpaper drink the highs; mid-size rooms. The hum carries, the echo is soft.
-    private static final Material LOBBY = new Material(0.7f, 0.85f, 0.45f, 0.45f, 0.85f);
+    // Level 0: a carpeted office under acoustic ceiling tiles. Carpet, tiles and papered plaster
+    // swallow the highs and most of the first slap off the walls, so close up it sounds dead and
+    // dry, like a real office. But the halls go on and on: what does come back is a soft, dark
+    // tail that arrives a little late (lateMul), so you can't quite tell how big the space is.
+    // A small room rings for about 0.3 s, the open fields for under 2 s.
+    private static final Material LOBBY = new Material(0.5f, 0.55f, 0.35f, 0.35f, 1.0f, 0.85f, 1.25f, 0.55f);
     // Level 1: bare concrete parking garage: bright, long, a big space.
     private static final Material GARAGE = new Material(0.75f, 1.35f, 0.85f, 0.9f, 1.0f);
     // Level 2: one long, narrow concrete corridor lined with steel pipes: hard and a little
@@ -361,7 +371,8 @@ public final class Acoustics {
                 Mth.clamp(m.gainHf(), 0.0f, 1.0f),
                 Mth.lerp(size, 0.6f, 1.0f),
                 m.diffusion(),
-                Mth.lerp(size, 1.2f, 0.5f) * (1.0f - earlyOpen),   // small rooms: a strong early slap off the walls
+                // Small rooms: a strong early slap off the walls (less where soft surfaces absorb it).
+                Mth.lerp(size, 1.2f, 0.5f) * (1.0f - earlyOpen) * m.earlyMul(),
                 // OpenAL limits: reflections delay <= 0.3 s, late delay <= 0.1 s, late gain <= 10.
                 Mth.clamp(Mth.lerp(size, 0.004f, 0.035f) * m.lateMul(), 0.0f, 0.3f),
                 Mth.clamp(Mth.lerp(size, 1.2f, 1.8f) * m.lateMul(), 0.0f, 10.0f),

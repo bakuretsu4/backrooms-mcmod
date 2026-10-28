@@ -224,6 +224,12 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> L0_RED_ROOMS_HUM = register("level0.red_rooms_hum");
     public static final DeferredHolder<SoundEvent, SoundEvent> L0_MANILA_PIANO = register("level0.manila_piano");
     public static final DeferredHolder<SoundEvent, SoundEvent> L0_BLACKOUT_BUZZ = register("level0.blackout_buzz");
+    // Level 0's tubes (client/light/FixtureSounds, tools/anomaly_assets/level0_audio.py): each tube
+    // buzzes with one of four slightly different ballasts (picked by its position), a faulty tube
+    // with a rougher, unsteady one, and a failing tube's glow starter ticks.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_TUBE_HUM = register("level0.tube_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_TUBE_HUM_FAULTY = register("level0.tube_hum_faulty");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_TUBE_TICK = register("level0.tube_tick");
     // Distant ambience (client/audio/DistantAmbience): one-off sounds far away, a few per level, so a
     // long stay never sounds like the same loop. One is picked every half minute or so and placed
     // 14-40 blocks off in a random direction. Files: sounds/ambient/distant/<level>/<name>1..3.ogg.
@@ -232,6 +238,12 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_LAYOUT_SHIFT = register("distant.level0.layout_shift");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_CARPET_DRIP = register("distant.level0.carpet_drip");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_FAR_CALL = register("distant.level0.far_call");
+    // Level 0's quiet building sounds (tools/anomaly_assets/level0_audio.py): it settling, a door
+    // somewhere, a relay in a far electrical panel, ducting ticking as it cools.
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_SETTLE_CREAK = register("distant.level0.settle_creak");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_DOOR_CLICK = register("distant.level0.door_click");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_RELAY = register("distant.level0.relay");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_VENT_TICK = register("distant.level0.vent_tick");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L1_PIPE_CLANG = register("distant.level1.pipe_clang");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L1_PIPE_RUMBLE = register("distant.level1.pipe_rumble");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L1_SHUTTER_RATTLE = register("distant.level1.shutter_rattle");

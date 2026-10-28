@@ -1,16 +1,132 @@
 {
   "variants": {
-    "variant=0": {
-      "model": "backrooms:block/ceiling_tile"
-    },
-    "variant=1": {
-      "model": "backrooms:block/ceiling_tile_v1"
-    },
-    "variant=2": {
-      "model": "backrooms:block/ceiling_tile_v2"
-    },
-    "variant=3": {
-      "model": "backrooms:block/ceiling_tile_v3"
-    }
+    "variant=0": [
+      {
+        "model": "backrooms:block/ceiling_tile"
+      },
+      {
+        "model": "backrooms:block/ceiling_tile",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/ceiling_tile",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/ceiling_tile",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_mirror"
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_mirror",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_mirror",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_mirror",
+        "y": 270
+      }
+    ],
+    "variant=1": [
+      {
+        "model": "backrooms:block/ceiling_tile_v1"
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v1_mirror"
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v1_mirror",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v1_mirror",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v1_mirror",
+        "y": 270
+      }
+    ],
+    "variant=2": [
+      {
+        "model": "backrooms:block/ceiling_tile_v2"
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v2",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v2",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v2",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v2_mirror"
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v2_mirror",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v2_mirror",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v2_mirror",
+        "y": 270
+      }
+    ],
+    "variant=3": [
+      {
+        "model": "backrooms:block/ceiling_tile_v3"
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v3",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v3",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v3",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v3_mirror"
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v3_mirror",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v3_mirror",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/ceiling_tile_v3_mirror",
+        "y": 270
+      }
+    ]
   }
 }

@@ -1,16 +1,132 @@
 {
   "variants": {
-    "variant=0": {
-      "model": "backrooms:block/lobby_carpet"
-    },
-    "variant=1": {
-      "model": "backrooms:block/lobby_carpet_v1"
-    },
-    "variant=2": {
-      "model": "backrooms:block/lobby_carpet_v2"
-    },
-    "variant=3": {
-      "model": "backrooms:block/lobby_carpet_v3"
-    }
+    "variant=0": [
+      {
+        "model": "backrooms:block/lobby_carpet"
+      },
+      {
+        "model": "backrooms:block/lobby_carpet",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/lobby_carpet",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/lobby_carpet",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_mirror"
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_mirror",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_mirror",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_mirror",
+        "y": 270
+      }
+    ],
+    "variant=1": [
+      {
+        "model": "backrooms:block/lobby_carpet_v1"
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v1",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v1_mirror"
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v1_mirror",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v1_mirror",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v1_mirror",
+        "y": 270
+      }
+    ],
+    "variant=2": [
+      {
+        "model": "backrooms:block/lobby_carpet_v2"
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v2",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v2",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v2",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v2_mirror"
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v2_mirror",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v2_mirror",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v2_mirror",
+        "y": 270
+      }
+    ],
+    "variant=3": [
+      {
+        "model": "backrooms:block/lobby_carpet_v3"
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v3",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v3",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v3",
+        "y": 270
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v3_mirror"
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v3_mirror",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v3_mirror",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/lobby_carpet_v3_mirror",
+        "y": 270
+      }
+    ]
   }
 }

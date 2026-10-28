@@ -211,15 +211,14 @@ def _pores(img, rng, density=0.012, depth=22.0) -> np.ndarray:
 
 
 # ---------------------------------------------------------------- Level 0 ---
-# Kane Pixels' Lobby, as in his "Found Footage" frames. Colours are albedos for the
-# Level 0 lights, which are near-white with a faint cool tint, plus the camcorder grade that cuts
-# blue and adds saturation; so the textures sit a touch LESS saturated than the colours on screen
-# (wallpaper ~#B7A746, carpet ~#A08534, ceiling ~#D8D0B0 once lit and graded). Wallpaper, carpet
-# and ceiling stay within ~15% of each other: the place reads as one flat yellow.
+# Kane Pixels' Lobby. The wallpaper, baseboard, carpet and ceiling tiles (and their aged
+# versions) are drawn in anomaly_assets/level0_surfaces.py; the functions below are the entry
+# points the other generators use. The colours are the mean albedos agreed with the Level 0
+# lighting (client/ClientLighting, AtmosphereGrade): a faded, warm yellow-beige, not olive.
 
-WALLPAPER = (189, 175, 99)    # the pale field; with the darker print on top the paper averages ~(184,170,96), near #B7A746 lit
-CARPET = (142, 120, 64)       # browner and ~0.75x the wall's brightness (floor tops get full face light); ~#A3893A on screen
-CEILING = (214, 207, 182)
+WALLPAPER = (186, 168, 111)   # mean of the plain wallpaper
+CARPET = (146, 121, 74)       # mean of the plain carpet: tan/mustard, ~0.75x the wall's brightness
+CEILING = (212, 204, 184)     # mean of the plain ceiling tile, T-bar included
 TBAR = (190, 184, 164)        # the painted steel T-bar grid of the dropped ceiling
 
 
@@ -232,84 +231,17 @@ def _paper(rng, base, shape=(S, S)) -> np.ndarray:
     return add_lum(fill(base, shape), lum - lum.mean(), (1.0, 0.97, 0.85))
 
 
-def _thread_noise(rng, amp, sigma=0.7) -> np.ndarray:
-    """One random offset per pixel column (lightly smoothed, wraps round): the dyed threads of an
-    ikat each stop at a slightly different height, which gives its edges their ragged look."""
-    k = np.fft.fftfreq(S)
-    a = np.real(np.fft.ifft(np.fft.fft(rng.normal(0, 1, S)) * np.exp(-2 * (np.pi * sigma * k) ** 2)))
-    return amp * a / a.std()
+def _l0s():
+    """The Level 0 surfaces live in anomaly_assets/level0_surfaces.py (imported lazily: it imports this file)."""
+    import anomaly_assets.level0_surfaces as m
+    return m
 
 
-def _flame(U, V):
-    """The soft "tulip/flame" shape of the stripe columns (U -1..1 across, V 0..1 top to point):
-    widest just below its notched top, narrowing to a point."""
-    half = np.where(V < 0.3, 0.7 + V, np.clip(1.0 - (V - 0.3) / 0.7, 0, 1))
-    notch = (V < 0.3 - 0.8 * np.abs(U)) & (np.abs(U) < 0.3)
-    return (V > 0) & (V < 1) & (np.abs(U) < half) & ~notch
-
-
-def _wallpaper_design(seed=101) -> np.ndarray:
-    """Where the print is (0..1) on the real Backrooms paper (the one the A24 film printed).
-
-    Across the paper repeat stripe bands and plain panels, two of each per block (64 px each):
-    - a band: a thin line and a pair of thin lines, a column of light "flame/tulip" shapes left
-      in a dark stripe (three per block height), then a pair of lines and a thin line again;
-    - a panel: feathered ikat chevrons, an outer ^ with an inner ^ below it, their edges ragged
-      thread by thread, with spiky tips above and long threads running down below.
-    The chevrons of the second panel sit half a repeat lower (staggered, as on the real paper).
-    Why two repeats per block and not one: a block texture has to tile with itself, so the
-    half-repeat stagger needs both panels inside the block.
-    """
-    rng = rng_for(seed)
-    X, Y = grid()
-    P = 64.0
-    xb = X % P
-    m = np.zeros((S, S))
-
-    def vline(x0, w):
-        return np.clip(np.minimum(xb - x0 + 0.5, x0 + w - xb + 0.5), 0, 1)
-
-    for x0 in (0.5, 3.5, 5.5, 23.0, 25.0, 28.0):                        # the thin lines
-        m = np.maximum(m, vline(x0, 1.0))
-    c0, c1 = 9.0, 19.5                                                   # the flame column
-    cx, tp = (c0 + c1) / 2, S / 3
-    flames = supersample((S, S), lambda x, y: _flame(((x % P) - cx) / 4.0, ((y % tp) - 5) / (tp * 0.62)))
-    m = np.maximum(m, vline(c0, c1 - c0) * (1 - 0.95 * flames))
-    p0, p1 = 30.0, 63.0                                                  # the chevron panel
-    pc, hw = (p0 + p1) / 2, (p1 - p0) / 2
-    ys = (Y + np.floor(X / P) * 64) % S                                  # the second panel half a repeat lower
-    ax = np.abs(xb - pc)
-    chev = np.zeros((S, S))
-    for apex, thick in ((10.0, 15.0), (39.0, 14.0)):                     # outer ^, inner ^ below it
-        top = _thread_noise(rng, 1.3) - np.clip(_thread_noise(rng, 1.0), 0.6, None) * 4 + 2.4
-        bottom = thick + _thread_noise(rng, 1.6) + np.clip(_thread_noise(rng, 1.0), 0.7, None) * 5 - 3.5
-        t = ys - (apex + 1.4 * ax)
-        chev = np.maximum(chev, ((t > top[None, :]) & (t < bottom[None, :]) & (ax < hw)).astype(float))
-    flecks = fnoise(rng, beta=0.8, aniso=(1, 6), kmin=10) > 1.5          # where the dye didn't take
-    chev = chev * (1 - 0.55 * flecks) * ((xb > p0) & (xb < p1))
-    return np.clip(np.maximum(m, chev), 0, 1)
-
-
-def _wallpaper(stains=True, base=WALLPAPER, seed=101) -> np.ndarray:
-    """The Lobby wallpaper: the real Backrooms design (see _wallpaper_design), printed tone on
-    tone in a yellow about 10% darker and a little more saturated than the pale field. Up close
-    it reads as a printed pattern, from across a hall as soft vertical stripes.
-
-    stains=True adds two faint old water marks (used by drawings and anomaly blocks that are
-    based on the paper); the wall blocks use the clean paper and get their marks from the random
-    variants instead (see Surface variants), so the same mark doesn't repeat on every block.
-    """
-    rng = rng_for(seed + 1)
-    img = _paper(rng, base)
-    ink = img * np.array([0.90, 0.895, 0.84])                           # the print: ~10% darker, a bit more saturated
-    img = lerp(img, ink, _wallpaper_design(seed)[..., None])
-    if stains:
-        stain_col = np.array([150, 126, 62])
-        for cx, cy, sx, sy, a in ((34, 30, 18, 22, 0.08), (94, 88, 14, 16, 0.06)):
-            m = blob((S, S), cx, cy, sx, sy) * (1 + 0.35 * fnoise(rng, beta=2.0))
-            rim = smoothstep(0.28, 0.36, m) - smoothstep(0.36, 0.48, m)
-            img = over(img, stain_col, a * smoothstep(0.35, 0.6, m) + 1.4 * a * np.clip(rim, 0, 1))
-    return img
+def _wallpaper(stains=True, seed=101) -> np.ndarray:
+    """The Lobby wallpaper. stains=True adds two faint old water marks (for drawings and anomaly
+    blocks based on the paper); the wall blocks use the clean paper and get their marks from the
+    random versions instead (see Surface variants), so the same mark doesn't repeat on every block."""
+    return _l0s().wallpaper(stains, seed)
 
 
 def tex_yellow_wallpaper() -> None:
@@ -317,49 +249,18 @@ def tex_yellow_wallpaper() -> None:
 
 
 def _baseboard(img, board_col=None) -> np.ndarray:
-    """Kane's slim baseboard: a painted strip in the wall colour on the bottom 16 px (2 px of 16),
-    a clearly lighter rounded top edge catching the ceiling light, a dark hairline shadow on the
-    paper above it and a slightly shaded face, so it still reads from across a hall.
-
-    board_col: the paint colour (default: the average colour of the wall it sits on).
-    """
-    rng = rng_for(121)
-    X, Y = grid()
-    top = S - 16
-    col = np.asarray(board_col if board_col is not None else img.reshape(-1, 3).mean(axis=0), float)
-    board = _smooth_concrete(rng, col, mottle=1.5, fine=0.5)
-    board = add_lum(board, -10 * smoothstep(top + 4, S, Y))                          # face turns away from the light
-    img = add_lum(img, -24 * np.exp(-((Y - (top - 0.6)) / 1.0) ** 2) * (Y < top))    # dark hairline shadow on the paper
-    img = over(img, board, box((S, S), -1, top, S + 1, S + 1))
-    # the rounded top edge: a bright 3 px band rolling off into the face
-    img = add_lum(img, 36 * np.exp(-((Y - (top + 1.5)) / 1.4) ** 2) * (Y > top), (1.0, 1.0, 1.05))
-    img = add_lum(img, -10 * np.exp(-((Y - (top + 4.2)) / 0.9) ** 2))                 # under the round-over
-    img = add_lum(img, -12 * box((S, S), -1, S - 1.5, S + 1, S + 1))                   # where it meets the carpet
-    return img
+    """Kane's slim painted baseboard on the bottom 16 px of a wall texture (board_col: the paint
+    colour, default the Lobby's)."""
+    return _l0s().baseboard(img) if board_col is None else _l0s().baseboard(img, board_col)
 
 
 def tex_yellow_wallpaper_baseboard() -> None:
     save_png(_baseboard(_wallpaper(stains=False)), TEX / "block" / "yellow_wallpaper_baseboard.png")
 
 
-def _carpet(seed=102, base=CARPET) -> np.ndarray:
-    """Kane's carpet: dry, short, tight loop pile. No pattern, just rows of small rounded loops
-    (about 5 x 4 px) with dark crevices between them, each loop a slightly different shade, and a
-    very soft unevenness. Plain enough that a whole hall reads as one even floor."""
-    rng = rng_for(seed)
-    X, Y = grid()
-    img = fill(base, (S, S))
-    px, py = S / 24, S / 32                       # loop pitch (whole loops per block, so it tiles)
-    row = np.floor(Y / py)
-    xs = X + (row % 2) * px / 2 + fnoise(rng, beta=2.2, kmin=3) * 0.9   # every other row offset half a loop
-    ys = Y + fnoise(rng, beta=2.2, kmin=3) * 0.6
-    u, v = wrapd(xs, px) / (px / 2), wrapd(ys, py) / (py / 2)
-    loop = np.cos(np.clip(np.hypot(u * 0.95, v), 0, 1) * np.pi / 2)    # 1 on top of a loop, 0 in the crevice
-    tone = rng.normal(0, 1, (64, 64))[np.floor(ys / py).astype(int) % 64, np.floor(xs / px).astype(int) % 64]
-    lum = (-9.0 * (1 - loop) ** 2 + 3.0 * np.clip(-v, -1, 1) * loop + 2.0 * tone * loop
-           + 1.5 * fnoise(rng, beta=3.0, kmin=1, kmax=4) + 1.0 * fnoise(rng, beta=1.5, kmin=6, kmax=20)
-           + 1.0 * rng.normal(0, 1, (S, S)))
-    return add_lum(img, lum - lum.mean(), (1.0, 0.95, 0.8))
+def _carpet(seed=102) -> np.ndarray:
+    """The Lobby carpet: a short mottled tan/mustard cut pile (see level0_surfaces.carpet)."""
+    return _l0s().carpet(seed)
 
 
 def tex_lobby_carpet() -> None:
@@ -385,37 +286,10 @@ def _tbar_grid(img, width=2.2) -> np.ndarray:
 
 
 def _ceiling_tile(stain=True, seed=103) -> np.ndarray:
-    """ONE acoustic tile per block (Kane's ~1.2 m tiles), set in a thin warm T-bar grid at the
-    block edge. Warm off-white mineral fibre, fine short dark fissures and pin-holes, a soft
-    shadow where the tile sits down in the grid.
-
-    stain=True adds a faint water ring (the ceiling blocks get theirs from the random variants).
-    """
-    rng = rng_for(seed)
-    X, Y = grid()
-    img = fill(CEILING, (S, S))
-
-    def fissures(d, k):
-        for _ in range(200):
-            x, y, a = rng.uniform(0, S), rng.uniform(0, S), rng.uniform(0, np.pi)
-            step = rng.uniform(0.8, 2.4)
-            pts = [(x, y)]
-            for _ in range(2):
-                a += rng.normal(0, 0.6)
-                x, y = x + np.cos(a) * step, y + np.sin(a) * step
-                pts.append((x, y))
-            d.line([(p * k, q * k) for p, q in pts], fill=int(rng.uniform(110, 255)), width=int(k * rng.uniform(0.8, 1.5)))
-
-    fiss = pil_mask(fissures)
-    pits = blur((rng.random((S, S)) < 0.02) * rng.uniform(0.3, 1, (S, S)), 0.45)
-    lum = (-30 * fiss - 30 * pits + 2.0 * fnoise(rng, beta=3.0, kmin=1, kmax=4)
-           + 1.5 * blur(fnoise(rng, beta=0.5, kmin=20), 0.5) + 1.2 * rng.normal(0, 1, (S, S)))
-    img = add_lum(img, lum, (1.0, 0.98, 0.92))
-    if stain:
-        img = mark_stain(img, rng, CEILING_STAIN, (16, 14), 0.25)
-    d = np.minimum(np.minimum(X, S - X), np.minimum(Y, S - Y))
-    img = add_lum(img, -10 * np.exp(-(d - 3.0) / 2.5) * (d > 3.0))    # the tile sits a little up in the grid
-    return _tbar_grid(img)
+    """ONE acoustic tile per block in a thin T-bar grid at the block edge (see
+    level0_surfaces.ceiling_tile). stain=True adds a faint water ring (the ceiling blocks get
+    theirs from the random versions)."""
+    return _l0s().ceiling_tile(stain, seed)
 
 
 def tex_ceiling_tile() -> None:
@@ -7441,8 +7315,6 @@ def mark_patch(img, rng, color, size=(24, 18), a=0.55) -> np.ndarray:
     return add_lum(img, -10 * np.clip(smoothstep(1.06, 0.98, edge) - m, 0, 1))  # the dark seam round it
 
 
-WALL_STAIN = (150, 118, 58)
-CEILING_STAIN = (168, 146, 100)
 RUST = (122, 82, 58)
 
 
@@ -7464,74 +7336,6 @@ def mark_paper_scuff(img, rng, y_range=(0.45, 0.85)) -> np.ndarray:
     return add_lum(img, -10 * np.roll(edge, 1, axis=0))              # and casts a hairline shadow under it
 
 
-def mark_paper_seam(img, rng) -> np.ndarray:
-    """A faint horizontal joint between two lengths of wallpaper (about every 0.9 m on some
-    walls): a hairline light lip over a hairline shadow, the strip above a shade different."""
-    X, Y = grid()
-    y0 = float(rng.uniform(28, 100))
-    img = add_lum(img, 1.6 * (Y < y0) - 0.8 * (Y >= y0))
-    img = add_lum(img, 7 * np.exp(-((Y - y0 + 0.6) / 0.6) ** 2) - 8 * np.exp(-((Y - y0 - 0.7) / 0.6) ** 2))
-    return add_lum(img, 2.5 * fnoise(rng, beta=1.5, aniso=(8, 1), kmin=4) * np.exp(-((Y - y0) / 1.5) ** 2))
-
-
-def _wallpaper_marks(i, rng, img):
-    """The paper ages faintly: a subtle water stain, a scuffed patch, a faint horizontal seam.
-    The marks never move the print, so neighbouring blocks still line up."""
-    if i == 1:
-        return mark_stain(img, rng, WALL_STAIN, (18, 22), 0.1)
-    if i == 2:
-        return mark_paper_scuff(img, rng)
-    return mark_paper_seam(img, rng)
-
-
-def mark_carpet_seam(img, rng) -> np.ndarray:
-    """A straight broadloom seam across the block (runs along x): the loops either side lean
-    away, leaving a thin dark groove with a slightly lighter ridge on each side."""
-    X, Y = grid()
-    y0 = float(rng.uniform(36, 92))
-    wob = 0.4 * fnoise(rng, beta=2.0, aniso=(6, 1), kmin=2)
-    t = Y - y0 - wob
-    return add_lum(img, -16 * np.exp(-(t / 0.7) ** 2) + 5 * np.exp(-((np.abs(t) - 2.0) / 0.9) ** 2))
-
-
-def mark_carpet_worn(img, rng) -> np.ndarray:
-    """A traffic-worn lane: the pile crushed flat, so the loops show less and it looks a little
-    paler and greyer (a soft band across the block, along x)."""
-    X, Y = grid()
-    y0, w = float(rng.uniform(44, 84)), float(rng.uniform(16, 26))
-    m = np.exp(-((Y - y0 + 4 * fnoise(rng, beta=2.0, aniso=(4, 1), kmin=1)) / w) ** 2)
-    m = m * (0.7 + 0.3 * smoothstep(-1, 1, fnoise(rng, beta=2.0)))
-    flat = blur(img, 1.0) + 5.0 * np.array([1.0, 1.0, 1.08])
-    return lerp(img, flat, (0.7 * m)[..., None])
-
-
-def _carpet_marks(i, rng, img):
-    if i == 1:
-        return mark_carpet_seam(img, rng)
-    if i == 2:
-        return mark_carpet_worn(img, rng)
-    return mark_damp(mark_stain(img, rng, (104, 82, 36), (9, 8), 0.32), rng, (16, 12), 0.08)   # a rare old spill
-
-
-def mark_tile_sag(img, rng) -> np.ndarray:
-    """A ceiling tile that has sagged a little in its grid: the middle drops into shadow, a soft
-    lighter crease near the edge where it bends."""
-    X, Y = grid()
-    cx, cy = rng.uniform(52, 76), rng.uniform(52, 76)
-    r = np.hypot((X - cx) / 60, (Y - cy) / 54)
-    img = add_lum(img, -14 * np.clip(1 - r, 0, 1) ** 1.5)
-    d = np.minimum(np.minimum(X, S - X), np.minimum(Y, S - Y))
-    return add_lum(img, 4 * np.exp(-((d - 12) / 4) ** 2) * smoothstep(3, 6, d))
-
-
-def _ceiling_marks(i, rng, img):
-    if i == 1:
-        return mark_stain(img, rng, CEILING_STAIN, (16, 13), 0.3)             # water-stained ring
-    if i == 2:
-        return mark_tile_sag(img, rng)
-    return mark_damp(img, rng, (34, 30), 0.06, (1.0, 0.96, 0.8))             # faintly yellowed
-
-
 def _l0w():
     """The film's chevron paper lives in anomaly_assets/level0_revamp.py (imported lazily: it imports this file)."""
     import anomaly_assets.level0_revamp as m
@@ -7548,10 +7352,12 @@ def _l39w():
 # n must match the number of weights the block gets in ModBlocks (block/SurfaceBlock), which also
 # decides how often each version is used.
 SURFACE_VARIANTS = {
-    "yellow_wallpaper": (lambda: _wallpaper(stains=False), _wallpaper_marks, 4),
-    "lobby_carpet": (_carpet, _carpet_marks, 4),
-    "ceiling_tile": (lambda: _ceiling_tile(stain=False), _ceiling_marks, 4),
+    "yellow_wallpaper": (lambda: _wallpaper(stains=False), lambda i, rng, img: _l0s().wallpaper_marks(i, rng, img), 4),
+    "yellow_wallpaper_baseboard": (lambda: _baseboard(_wallpaper(stains=False)), lambda i, rng, img: _l0s().baseboard_marks(i, rng, img), 4),
+    "lobby_carpet": (_carpet, lambda i, rng, img: _l0s().carpet_marks(i, rng, img), 4),
+    "ceiling_tile": (lambda: _ceiling_tile(stain=False), lambda i, rng, img: _l0s().ceiling_marks(i, rng, img), 4),
     "l0_wallpaper_chevron": (lambda: _l0w().chevron_base(), lambda i, rng, img: _l0w().chevron_marks(i, rng, img), 3),
+    "l0_wallpaper_chevron_baseboard": (lambda: _baseboard(_l0w().chevron_base()), lambda i, rng, img: _l0s().baseboard_marks(i, rng, img), 3),
     "concrete_wall": (_concrete_wall, lambda i, rng, img: (
         mark_drip(mark_damp(img, rng, (20, 26), 0.12), rng, (84, 80, 88), 0.25) if i == 1 else
         mark_crack(img, rng, 26)), 3),
@@ -7599,38 +7405,68 @@ def surface_variant_images(name: str) -> list:
     return [marks(i, rng_for(_variant_seed(name, i)), base.copy()) for i in range(1, count)]
 
 
+def save_surface_variants(name: str) -> None:
+    for i, img in enumerate(surface_variant_images(name), start=1):
+        save_png(img, _blk(f"{name}_v{i}"))
+
+
 def tex_surface_variants() -> None:
     for name in SURFACE_VARIANTS:
-        for i, img in enumerate(surface_variant_images(name), start=1):
-            save_png(img, _blk(f"{name}_v{i}"))
-    # The wallpapers with their baseboard follow the wallpaper's variants (same marks above the board).
-    for paper in ("yellow_wallpaper", "l0_wallpaper_chevron"):
-        for i, img in enumerate(surface_variant_images(paper), start=1):
-            save_png(_baseboard(img), _blk(f"{paper}_baseboard_v{i}"))
+        save_surface_variants(name)
 
 
-def variant_models() -> None:
-    """Block models for the versions (copies of the plain model) and blockstates by VARIANT.
+# Surfaces whose blockstate also turns every version at random (4 turns, each also mirrored,
+# picked by Minecraft from the block's position), so even the plain texture doesn't repeat in a
+# visible grid on a floor or ceiling. Turned neighbours meet along edges that weren't drawn to
+# match, so this only suits textures with no strong large-scale detail at their edges: the even
+# carpet pile and the tile in its T-bar grid, never a printed pattern like the wallpaper.
+# The turn depends on the position, so it would change in a copied room of an anomalous area;
+# that is fine because there everything is the plain texture, and a turned plain carpet or tile
+# looks the same (see block/SurfaceBlock).
+SURFACE_TURNS = {"lobby_carpet", "ceiling_tile"}
+
+
+def _turned(model: str) -> list:
+    """The weighted blockstate list of one version: its model in 4 turns, plain and mirrored."""
+    return [{"model": f"backrooms:block/{model}{m}", **({"y": y} if y else {})}
+            for m in ("", "_mirror") for y in (0, 90, 180, 270)]
+
+
+def write_variant_states(name: str, count: int) -> None:
+    """Block models for the versions of one surface (copies of the plain model, plus mirrored
+    copies if it turns, see SURFACE_TURNS) and its blockstate by VARIANT.
 
     SurfaceBlock's VARIANT runs 0..3 for every surface; numbers past a block's last version show
     the plain model (the world generator never picks them).
     """
     import json
-    counts = {n: c for n, (_, _, c) in SURFACE_VARIANTS.items()}
-    counts["yellow_wallpaper_baseboard"] = SURFACE_VARIANTS["yellow_wallpaper"][2]
-    counts["l0_wallpaper_chevron_baseboard"] = SURFACE_VARIANTS["l0_wallpaper_chevron"][2]
-    for name, count in counts.items():
-        plain = json.loads((ROOT / "models" / "block" / f"{name}.json").read_text())
-        variants = {}
-        for i in range(4):
-            model = name if i == 0 or i >= count else f"{name}_v{i}"
-            variants[f"variant={i}"] = {"model": f"backrooms:block/{model}"}
-            if 0 < i < count:
-                version = dict(plain)
-                version["textures"] = {k: (f"backrooms:block/{model}" if v == f"backrooms:block/{name}" else v)
-                                       for k, v in plain["textures"].items()}
-                (ROOT / "models" / "block" / f"{model}.json").write_text(json.dumps(version, indent=2) + "\n", newline="\n")
-        (ROOT / "blockstates" / f"{name}.json").write_text(json.dumps({"variants": variants}, indent=2) + "\n", newline="\n")
+    turns = name in SURFACE_TURNS
+    plain = json.loads((ROOT / "models" / "block" / f"{name}.json").read_text())
+    variants = {}
+    for i in range(4):
+        model = name if i == 0 or i >= count else f"{name}_v{i}"
+        variants[f"variant={i}"] = _turned(model) if turns else {"model": f"backrooms:block/{model}"}
+        if i >= count or (i == 0 and not turns):
+            continue
+        textures = {k: (f"backrooms:block/{model}" if v == f"backrooms:block/{name}" else v) for k, v in plain["textures"].items()}
+        if i > 0:
+            version = dict(plain)
+            version["textures"] = textures
+            (ROOT / "models" / "block" / f"{model}.json").write_text(json.dumps(version, indent=2) + "\n", newline="\n")
+        if turns:
+            # The same cube with every face's texture mirrored left to right (cube_all models only).
+            assert plain["parent"] == "minecraft:block/cube_all", name
+            faces = {f: {"uv": [16, 0, 0, 16], "texture": "#all", "cullface": f}
+                     for f in ("down", "up", "north", "south", "west", "east")}
+            mirrored = {"parent": "minecraft:block/block", "textures": {"particle": "#all", **textures},
+                        "elements": [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": faces}]}
+            (ROOT / "models" / "block" / f"{model}_mirror.json").write_text(json.dumps(mirrored, indent=2) + "\n", newline="\n")
+    (ROOT / "blockstates" / f"{name}.json").write_text(json.dumps({"variants": variants}, indent=2) + "\n", newline="\n")
+
+
+def variant_models() -> None:
+    for name, (_, _, count) in SURFACE_VARIANTS.items():
+        write_variant_states(name, count)
 
 
 # ------------------------------------------------------- Distant ambience ---

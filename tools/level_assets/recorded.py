@@ -1,9 +1,10 @@
 """The lights and the rooms of Levels 0-2, and your own breathing, from real recordings.
 
 The fluorescent hum, the flicker clicks, the power going out and coming back, Level 1's garage
-air, Level 0's room tone and the breathing are built from CC0 field recordings (tools/vendor/freesound, see its
+air and the breathing are built from CC0 field recordings (tools/vendor/freesound, see its
 License.txt and CREDITS.md), cleaned up and looped, with a little synthesis layered in where it
 helps (the deep rumble under the garage, drips far off, the hum winding down when a breaker trips).
+Level 0's room tone is built from its recording in tools/anomaly_assets/level0_audio.py.
 
 Loudness (LUFS, how loud it sounds) is set per sound, quiet on purpose: the level loops are
 heard at about -30 (their sounds.json volume does the last step), one lamp's hum close up at -27
@@ -221,18 +222,6 @@ def snd_recorded_level1_ambience() -> None:
     _save(loud(x, -24.0), G.SND / "ambient" / "level1_ambience.ogg", loop=True)
 
 
-def snd_recorded_level0_hum() -> None:
-    """18 s of a fluorescent-lit room's tone (a recording made for exactly this), with a soft
-    synthesized room bed under it so the loop never sounds thin."""
-    rng = G.rng_for(401)
-    room_rec = _clean(_rec("626096_backrooms_ambience"), lo=30, hi=12000)
-    room_rec = _loop(room_rec, 18.0, 1.5)
-    n = len(room_rec)
-    bed = G.periodic_noise(n, rng, lambda f: G.hp_gain(f, 20, 2) * G.lp_gain(f, 450, 3) / np.maximum(f, 20))
-    x = G.norm(room_rec) + 0.25 * G.norm(bed)
-    _save(loud(x, -24.0), G.SND / "ambient" / "level0_hum.ogg", loop=True)
-
-
 def _quiet_near(x: np.ndarray, at: float, search: float) -> int:
     """The quietest moment within `search` seconds of `at` (a gap between two breaths)."""
     win = int(0.03 * SR)
@@ -266,4 +255,4 @@ def snd_recorded_breath_scared() -> None:
 
 TEXTURES: list = []
 SOUNDS = [snd_recorded_light_hum, snd_recorded_light_blink, snd_recorded_power_down, snd_recorded_power_up,
-          snd_recorded_level1_ambience, snd_recorded_level0_hum, snd_recorded_breath_heavy, snd_recorded_breath_scared]
+          snd_recorded_level1_ambience, snd_recorded_breath_heavy, snd_recorded_breath_scared]

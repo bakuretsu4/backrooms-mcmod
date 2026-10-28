@@ -7,8 +7,10 @@ import com.rickr.backrooms.block.Level0EmbeddedBlock;
 import com.rickr.backrooms.block.Level0GraffitiBlock;
 import com.rickr.backrooms.block.Level0MannequinBlock;
 import com.rickr.backrooms.block.Level0TubeGlow;
+import com.rickr.backrooms.block.Level0TubeStripBlock;
 import com.rickr.backrooms.block.Level0TapeBlock;
 import com.rickr.backrooms.block.SurfaceBlock;
+import com.rickr.backrooms.block.Level0SurfaceBlock;
 import com.rickr.backrooms.block.WallDecalBlock;
 import com.rickr.backrooms.block.WallMountBlock;
 import java.util.function.Function;
@@ -55,11 +57,14 @@ public final class Level0Blocks {
     // ================================================================== Walls
     /**
      * The film's "Classic" paper: tone-on-tone vertical chevron columns (used only in some zones).
-     * Three versions: plain, faintly discoloured, scuffed. Counts must match gen_assets SURFACE_VARIANTS.
+     * Three versions: plain, faintly discoloured, scuffed; aged ones cluster in worn patches (see
+     * block/Level0SurfaceBlock). Counts must match gen_assets SURFACE_VARIANTS.
      */
-    public static final DeferredBlock<SurfaceBlock> CHEVRON_WALLPAPER = surface("l0_wallpaper_chevron", MapColor.COLOR_YELLOW, SoundType.WOOD, 6, 2, 1);
-    /** The same paper with the slim matching baseboard: the wall block just above the floor. */
-    public static final DeferredBlock<SurfaceBlock> CHEVRON_WALLPAPER_BASEBOARD = surface("l0_wallpaper_chevron_baseboard", MapColor.COLOR_YELLOW, SoundType.WOOD, 6, 2, 1);
+    public static final DeferredBlock<SurfaceBlock> CHEVRON_WALLPAPER = ModBlocks.level0Surface("l0_wallpaper_chevron", MapColor.COLOR_YELLOW, SoundType.WOOD,
+            new int[] {14, 1, 2}, new int[] {7, 4, 2}, Level0SurfaceBlock.ANY_ROW, Level0SurfaceBlock.ANY_ROW, Level0SurfaceBlock.ANY_ROW);
+    /** The same paper with the slim matching baseboard: plain, rising damp, kick marks. */
+    public static final DeferredBlock<SurfaceBlock> CHEVRON_WALLPAPER_BASEBOARD = ModBlocks.level0Surface("l0_wallpaper_chevron_baseboard", MapColor.COLOR_YELLOW, SoundType.WOOD,
+            new int[] {14, 1, 2}, new int[] {7, 5, 2}, Level0SurfaceBlock.ANY_ROW, Level0SurfaceBlock.ANY_ROW, Level0SurfaceBlock.ANY_ROW);
     /**
      * The top block of a chest-high partition (the film's half-walls): lobby wallpaper up to 8 px,
      * then a dark wooden cap rail from 8 to 10 px, nothing above. Put it on top of a wall block.
@@ -86,12 +91,13 @@ public final class Level0Blocks {
     // ================================================================== Ceiling
     /**
      * One block of the film's long narrow corridor light: a strip of lens running along AXIS down
-     * the middle of a ceiling block, so a row of them reads as one continuous strip. Light 12.
-     * Glows full-bright, except while a faulty strip is dark (see block/Level0TubeGlow).
+     * the middle of a ceiling block, so a row of them reads as one continuous strip. Its GLOW (age)
+     * sets its light level, 12 for a full tube down to 6 for a dying one. Glows full-bright, except
+     * while a faulty strip is dark or dying (see block/Level0TubeGlow).
      */
-    public static final DeferredBlock<AxisShapeBlock> TROFFER_STRIP = block("l0_troffer_strip",
-            props -> new AxisShapeBlock(props, Shapes.block()),
-            fixture(MapColor.SNOW, SoundType.GLASS, 12).emissiveRendering(Level0TubeGlow::emissive));
+    public static final DeferredBlock<Level0TubeStripBlock> TROFFER_STRIP = block("l0_troffer_strip",
+            props -> new Level0TubeStripBlock(props, Shapes.block()),
+            fixture(MapColor.SNOW, SoundType.GLASS, 12).lightLevel(Level0TubeGlow::lightOf).emissiveRendering(Level0TubeGlow::emissive));
     /** The same strip, dead: grey lens, the tube faintly visible. */
     public static final DeferredBlock<AxisShapeBlock> TROFFER_STRIP_OFF = block("l0_troffer_strip_off",
             props -> new AxisShapeBlock(props, Shapes.block()), unbreakable(MapColor.COLOR_LIGHT_GRAY, SoundType.GLASS));
@@ -162,10 +168,6 @@ public final class Level0Blocks {
 
     private static DeferredBlock<Block> structural(String name, MapColor color, SoundType sound) {
         return ModBlocks.BLOCKS.registerBlock(name, (Function<BlockBehaviour.Properties, Block>) Block::new, unbreakable(color, sound));
-    }
-
-    private static DeferredBlock<SurfaceBlock> surface(String name, MapColor color, SoundType sound, int... weights) {
-        return ModBlocks.BLOCKS.registerBlock(name, props -> new SurfaceBlock(props, weights), unbreakable(color, sound));
     }
 
     /** A glowing block: vanilla light, and its faces always render full-bright. */

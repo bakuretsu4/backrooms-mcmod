@@ -23,9 +23,10 @@ import net.minecraft.world.phys.Vec3;
  * their own irregular rhythm all the time ({@link #brokenLampOn}).
  *
  * <p>On Level 0 a few tubes are faulty all the time, chosen by position ({@link #level0Fault}):
- * most stutter now and then ({@link #faultyTubeOn}), a few hang on as dim, slowly pulsing dying
- * tubes ({@link #dyingTubeLevel}). Every tube also gets its own small brightness and colour
- * difference ({@link #tubeBrightness}, {@link #tubeTint}), like real tubes of different ages.
+ * most stutter in a short burst now and then ({@link #faultyTubeOn}), some have a lazy starter
+ * that cuts out and re-strikes ({@link #restartTubeOn}). The layout makes a few tubes dying (dim,
+ * slowly pulsing, {@link #dyingTubePulse}) and gives every tube an age (block/Level0TubeGlow);
+ * each also gets a small brightness jitter ({@link #tubeBrightness}).
  *
  * <p>And Level 2's caged lamps hang on series circuits that fail now and then, every lamp of a
  * circuit at once ({@link #level2CircuitOn}).
@@ -218,50 +219,76 @@ public final class FixturePower {
 
     // --- Level 0 tubes -------------------------------------------------------------------------
     // Real office ceilings are never perfectly even: every tube has aged differently, and a few
-    // are failing. Everything here is a pure function of the fixture's position (its key) and the
-    // clock, so it needs no block change, no world seed and no network message, and every player
-    // sees the same tubes misbehave at the same moment.
+    // are failing. A tube's age (how bright it is) is part of its block (block/Level0TubeGlow), so
+    // it also works without Veil. Which tubes are faulty, and when they misbehave, is a pure
+    // function of the fixture's position (its key) and the clock, so it needs no block change, no
+    // world seed and no network message, and every player sees the same tubes misbehave at the
+    // same moment.
 
     /** {@link #level0Fault}: a healthy tube. */
     public static final int TUBE_OK = 0;
-    /** {@link #level0Fault}: a faulty tube that stutters off now and then. */
+    /** {@link #level0Fault}: a faulty tube that stutters off in a short burst now and then. */
     public static final int TUBE_STUTTER = 1;
-    /** {@link #level0Fault}: a dying tube that only glows dimly, pulsing slowly. */
+    /** A dying tube (its block's GLOW is dying): only glows dimly, pulsing slowly. Never toggles. */
     public static final int TUBE_DYING = 2;
-    /** Out of 1024: how many lit Level 0 tubes are faulty (about 6%) ... */
-    private static final int FAULTY_TUBES = 62;
-    /** ... and how many of those (out of 1024 of the faulty ones) are dying instead of stuttering (about 1 in 5). */
-    private static final int DYING_SHARE = 205;
-    /** A stuttering tube has one "episode" this long: 5 to 25 seconds, its own length per tube ... */
-    private static final long STUTTER_EPISODE_MIN_MS = 5000L;
-    private static final long STUTTER_EPISODE_SPREAD_MS = 20000L;
-    /** ... with one burst of stuttering in it, 0.3 to 2 seconds long. */
-    private static final long STUTTER_BURST_MIN_MS = 300L;
-    private static final long STUTTER_BURST_SPREAD_MS = 1700L;
-    /** A dying tube glows at this share of a healthy one, plus up to {@link #DYING_PULSE} more. */
-    private static final float DYING_BASE = 0.22f;
-    private static final float DYING_PULSE = 0.16f;
-    /** Each tube's brightness lies within this much of normal (0.15 = plus or minus 15%). */
-    private static final float TUBE_BRIGHTNESS_SPREAD = 0.15f;
+    /**
+     * {@link #level0Fault}: a tube with a lazy starter. Now and then it drops out, stays dark for
+     * a few seconds, then tries to strike again with a few quick flashes before it holds.
+     */
+    public static final int TUBE_RESTART = 3;
+    /**
+     * Out of 1024: how many lit Level 0 tubes are faulty (about 4.5%; with the ~3% dying tubes
+     * that the layout picks this keeps misbehaving tubes rare: one or two in a typical view) ...
+     */
+    private static final int FAULTY_TUBES = 46;
+    /** ... and how many of those (out of 1024 of the faulty ones) have a lazy starter instead of stuttering (about 1 in 3). */
+    private static final int RESTART_SHARE = 340;
+    /**
+     * A stuttering tube has one "episode" this long: 12 to 45 seconds, its own length per tube,
+     * so it is steady most of the time and you are never sure when it goes next ...
+     */
+    private static final long STUTTER_EPISODE_MIN_MS = 12000L;
+    private static final long STUTTER_EPISODE_SPREAD_MS = 33000L;
+    /** ... with one burst of stuttering in it, 0.2 to 1.4 seconds long. */
+    private static final long STUTTER_BURST_MIN_MS = 200L;
+    private static final long STUTTER_BURST_SPREAD_MS = 1200L;
+    /** A lazy-starter tube runs through one cycle this long: 40 to 90 seconds ... */
+    private static final long RESTART_CYCLE_MIN_MS = 40000L;
+    private static final long RESTART_CYCLE_SPREAD_MS = 50000L;
+    /** ... in which it is out once, for 1.5 to 5 seconds ... */
+    private static final long RESTART_OUT_MIN_MS = 1500L;
+    private static final long RESTART_OUT_SPREAD_MS = 3500L;
+    /** ... then tries 2 to 5 times to strike, one try every this long, each a brief flash. */
+    private static final long RESTART_STRIKE_MS = 260L;
+    private static final long RESTART_FLASH_MIN_MS = 60L;
+    /** A dying tube's Veil light swings between these shares of its (already dim) glow, slowly. */
+    private static final float DYING_PULSE_LOW = 0.75f;
+    private static final float DYING_PULSE_HIGH = 1.35f;
+    /**
+     * On top of its age (Level0TubeGlow.Glow), each tube's Veil light lies within this much of
+     * normal (0.05 = plus or minus 5%): no two tubes of the same age look exactly alike.
+     */
+    private static final float TUBE_BRIGHTNESS_SPREAD = 0.05f;
 
     /**
-     * Is this Level 0 tube healthy ({@link #TUBE_OK}), stuttering ({@link #TUBE_STUTTER}) or
-     * dying ({@link #TUBE_DYING})? Decided by its position only. BackroomsLights decides which
-     * fixtures may be faulty at all (never exit or safe-room lamps).
+     * Is this Level 0 tube healthy ({@link #TUBE_OK}), stuttering ({@link #TUBE_STUTTER}) or one
+     * with a lazy starter ({@link #TUBE_RESTART})? Decided by its position only. Dying tubes are
+     * decided by the layout (their block), not here. BackroomsLights decides which fixtures may
+     * be faulty at all (never exit or safe-room lamps).
      */
     public static int level0Fault(long key) {
         long h = mix(key ^ 0x3C6EF372FE94F82BL);
         if ((h & 0x3FF) >= FAULTY_TUBES) {
             return TUBE_OK;
         }
-        return ((h >>> 10) & 0x3FF) < DYING_SHARE ? TUBE_DYING : TUBE_STUTTER;
+        return ((h >>> 10) & 0x3FF) < RESTART_SHARE ? TUBE_RESTART : TUBE_STUTTER;
     }
 
     /**
      * A stuttering Level 0 tube: on, except for one short burst in every episode. Each tube has
-     * its own episode length (5-25 s) and offset, so no two tubes stutter in step. In a burst
-     * (0.3-2 s, different each time) the tube clicks on and off every 60-140 ms, on a little less
-     * than half of the time, like a starter that can't strike the tube.
+     * its own episode length (12-45 s) and offset, so no two tubes stutter in step. In a burst
+     * (0.2-1.4 s, different each time) the tube clicks on and off every 60-140 ms, on a little
+     * less than half of the time, like a starter that can't strike the tube.
      */
     public static boolean faultyTubeOn(long key, long nowMs) {
         long seed = mix(key ^ 0x7F4A7C159E3779B9L);
@@ -280,44 +307,53 @@ public final class FixturePower {
     }
 
     /**
-     * A dying Level 0 tube's brightness (share of a healthy tube): a dim glow that swells and
+     * A Level 0 tube with a lazy starter: on, except once per cycle (40-90 s, its own length per
+     * tube) it cuts out, stays dark for 1.5-5 s, and then the starter tries again: 2-5 brief
+     * flashes about a quarter of a second apart, after which the tube holds. Like
+     * {@link #faultyTubeOn}, a pure function of position and clock.
+     */
+    public static boolean restartTubeOn(long key, long nowMs) {
+        long seed = mix(key ^ 0x2B992DDFA23249D6L);
+        long cycleMs = RESTART_CYCLE_MIN_MS + (seed & 0xFFFF) % RESTART_CYCLE_SPREAD_MS;
+        long t = nowMs + ((seed >>> 16) & 0xFFFFFF) % cycleMs;
+        long cycle = t / cycleMs;
+        long within = t % cycleMs;
+        long h = mix(seed + cycle * 0x9E3779B97F4A7C15L);
+        long outMs = RESTART_OUT_MIN_MS + (h & 0xFFFF) % RESTART_OUT_SPREAD_MS;
+        long strikes = 2 + ((h >>> 16) & 0xFF) % 4;
+        long length = outMs + strikes * RESTART_STRIKE_MS;
+        long start = ((h >>> 24) & 0xFFFF) % (cycleMs - length);
+        long since = within - start;
+        if (since < 0 || since >= length) {
+            return true;
+        }
+        if (since < outMs) {
+            return false; // out
+        }
+        // Striking: a flash at the start of each try, 60-123 ms long (its own length per cycle).
+        long flashMs = RESTART_FLASH_MIN_MS + ((h >>> 40) & 0x3F);
+        return (since - outMs) % RESTART_STRIKE_MS < flashMs;
+    }
+
+    /**
+     * A dying Level 0 tube's slow pulse, a factor on its (already dim) Veil light: it swells and
      * fades slowly (each tube its own 3-7 s rhythm), so it reads as an old tube on its way out
      * rather than a broken one.
      */
-    public static float dyingTubeLevel(long key, long nowMs) {
+    public static float dyingTubePulse(long key, long nowMs) {
         long seed = mix(key ^ 0x1B873593CC9E2D51L);
         double periodMs = 3000.0 + (seed & 0xFFFF) % 4000L;
         double phase = ((seed >>> 16) & 0xFFFF) / 65536.0;
         double wave = 0.5 + 0.5 * Math.sin((nowMs / periodMs + phase) * Math.PI * 2.0);
         // Squared, so it lingers at the dim end and only briefly swells.
-        return DYING_BASE + DYING_PULSE * (float) (wave * wave);
+        return DYING_PULSE_LOW + (DYING_PULSE_HIGH - DYING_PULSE_LOW) * (float) (wave * wave);
     }
 
-    /** This Level 0 tube's own brightness factor, 0.85-1.15 (tubes age differently). */
+    /** This Level 0 tube's own small brightness factor, 0.95-1.05, on top of its age. */
     public static float tubeBrightness(long key) {
         long h = mix(key ^ 0x2545F4914F6CDD1DL);
         float u = (h & 0xFFFF) / 65535.0f;
         return 1.0f + TUBE_BRIGHTNESS_SPREAD * (2.0f * u - 1.0f);
-    }
-
-    /**
-     * This Level 0 tube's colour, multiplied onto the fixture's own colour: most are as made, some
-     * a little warm (old tubes yellow), some cooler, a few faintly green (a tube near the end of its
-     * life). Small shifts, so the hall still reads as one colour of light. Returns {r, g, b}.
-     */
-    public static float[] tubeTint(long key) {
-        long h = mix(key ^ 0x6C8E9CF570932BD5L);
-        int roll = (int) (h & 0xFF);
-        if (roll < 112) {
-            return new float[] {1.0f, 1.0f, 1.0f}; // as made
-        }
-        if (roll < 176) {
-            return new float[] {1.0f, 0.97f, 0.88f}; // warm, yellowed
-        }
-        if (roll < 228) {
-            return new float[] {0.94f, 0.98f, 1.0f}; // cool
-        }
-        return new float[] {0.93f, 1.0f, 0.88f}; // faintly green
     }
 
     /** The 0..1 power of one fixture right now (before the camcorder battery). */

@@ -19,10 +19,11 @@ import net.minecraft.sounds.SoundSource;
  */
 final class ManilaRoomEffect implements AnomalyClientEffect {
     /**
-     * Warm and calm, next to Level 0's look: the same brightness, a touch of honey (more red,
-     * less of the green cast), a little more colour, softer blacks, no haze, a softer glow.
+     * Warm and calm, next to Level 0's look: the same brightness (AtmosphereGrade's LEVEL_0
+     * exposure), a touch of honey (more red, more blue cut), a little more colour, softer blacks,
+     * no haze, a softer glow.
      */
-    private static final AtmosphereGrade.Mood WARM = new AtmosphereGrade.Mood(1.08f, 1.0f, 1.0f,
+    private static final AtmosphereGrade.Mood WARM = new AtmosphereGrade.Mood(1.23f, 1.0f, 1.0f,
             1.02f, 0.98f, 0.74f, 1.05f, 1.0f, 0.88f,
             0.010f, 0.008f, 0.004f, 0.40f, 0.34f, 0.20f, 30.0f, 0.010f, 0.0f, 0.26f, 0.20f, 0.006f);
     /** The piano starts this far (blocks) from the middle of the room and is full volume inside. */

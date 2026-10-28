@@ -34,7 +34,9 @@ import org.jetbrains.annotations.Nullable;
 public final class RealWorldClient implements LayeredDraw.Layer {
     public static final ResourceLocation LAYER_ID = Backrooms.id("real_world_thin");
     private static final int PUSH_EVERY = 10;
-    private static final float HUM_VOLUME = 0.7f;
+    // Level 0's room tone plays quietly in Level 0 (sounds.json volume 0.36); this keeps the cue
+    // as loud as it always was here (0.97 x 0.36 = the old 0.7 x 0.5).
+    private static final float HUM_VOLUME = 0.97f;
     private static final float TINT_ALPHA = 0.16f;
     private static final int TINT_RGB = 0xD8C46A;
 

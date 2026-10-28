@@ -25,6 +25,13 @@ final class Bands {
     private final int bandMax;
     private final int gapMin;
     private final int gapMax;
+    /** The odd sizes (see the long constructor): a narrow gap, and how wide a wide one may get. */
+    private final int narrowGap;
+    private final double narrowChance;
+    private final int wideMax;
+    private final double wideChance;
+    /** Narrowest gap of any kind, so a band never eats the room the smallest gap needs. */
+    private final int smallestGap;
     private final int salt;
 
     /**
@@ -36,11 +43,27 @@ final class Bands {
      * @param salt    makes different axes/levels independent
      */
     Bands(int macro, int bandMin, int bandMax, int gapMin, int gapMax, int salt) {
+        this(macro, bandMin, bandMax, gapMin, gapMax, gapMin, 0.0, gapMax, 0.0, salt);
+    }
+
+    /**
+     * Like the short constructor, plus odd sizes: with chance {@code narrowChance} a gap is only
+     * {@code narrowGap} wide (a tight room or a passage), and with chance {@code wideChance} it is
+     * wider than usual, up to {@code wideMax}. Mixing a few of those into the usual sizes is what
+     * keeps a grid of rooms from looking like a grid.
+     */
+    Bands(int macro, int bandMin, int bandMax, int gapMin, int gapMax,
+          int narrowGap, double narrowChance, int wideMax, double wideChance, int salt) {
         this.macro = macro;
         this.bandMin = bandMin;
         this.bandMax = bandMax;
         this.gapMin = gapMin;
         this.gapMax = gapMax;
+        this.narrowGap = narrowGap;
+        this.narrowChance = narrowChance;
+        this.wideMax = wideMax;
+        this.wideChance = wideChance;
+        this.smallestGap = Math.min(gapMin, narrowGap);
         this.salt = salt;
     }
 
@@ -53,11 +76,11 @@ final class Bands {
         for (int k = 0; k < MAX_STEPS; k++) {
             long hk = Hash.mix(h + (k + 1) * 0x9E3779B97F4A7C15L);
             // Never let a band eat the room needed for the gap after it.
-            int band = Math.min(bandMin + Hash.range(hk, bandMax - bandMin + 1), macro - gapMin - pos);
+            int band = Math.min(bandMin + Hash.range(hk, bandMax - bandMin + 1), macro - smallestGap - pos);
             int bandEnd = pos + band;
-            int gap = gapMin + Hash.range(Hash.mix(hk ^ 0x2545F4914F6CDD1DL), gapMax - gapMin + 1);
+            int gap = gapWidth(Hash.mix(hk ^ 0x2545F4914F6CDD1DL));
             // If another band + gap would not fit after this gap, this gap runs to the end of the block.
-            boolean last = bandEnd + gap + bandMin + gapMin > macro || k == MAX_STEPS - 1;
+            boolean last = bandEnd + gap + bandMin + smallestGap > macro || k == MAX_STEPS - 1;
             int gapEnd = last ? macro : bandEnd + gap;
             if (local < bandEnd) {
                 return pack(true, k, pos, band, m);
@@ -68,6 +91,20 @@ final class Bands {
             pos = gapEnd;
         }
         throw new IllegalStateException("unreachable: macro block not covered");
+    }
+
+    /** The width of a gap from its hash: usually gapMin-gapMax, now and then narrow or wide. */
+    private int gapWidth(long h) {
+        if (narrowChance > 0 || wideChance > 0) {
+            double r = Hash.unit(Hash.mix(h ^ 0x3C6EF372FE94F82BL));
+            if (r < narrowChance) {
+                return narrowGap;
+            }
+            if (r < narrowChance + wideChance) {
+                return gapMax + 1 + Hash.range(h, wideMax - gapMax);
+            }
+        }
+        return gapMin + Hash.range(h, gapMax - gapMin + 1);
     }
 
     // Packing: bit 63 = band flag, bits 56-59 = step k, bits 48-55 = local start,
@@ -85,6 +122,16 @@ final class Bands {
         int m = (int) span;
         int k = (int) (span >>> 56) & 0xF;
         return m * MAX_STEPS + k;
+    }
+
+    /** The macro block a band or gap with this {@link #index} lies in. */
+    static int macroOf(int index) {
+        return Math.floorDiv(index, MAX_STEPS);
+    }
+
+    /** Which band or gap of its macro block (0 = the first) a band or gap with this {@link #index} is. */
+    static int stepOf(int index) {
+        return Math.floorMod(index, MAX_STEPS);
     }
 
     /** First world coordinate of the band or gap. */

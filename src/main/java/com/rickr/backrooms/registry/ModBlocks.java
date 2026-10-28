@@ -45,6 +45,7 @@ import com.rickr.backrooms.block.PipeRackBlock;
 import com.rickr.backrooms.block.PoleBlock;
 import com.rickr.backrooms.block.PoolLadderBlock;
 import com.rickr.backrooms.block.PoolLampBlock;
+import com.rickr.backrooms.block.Level0SurfaceBlock;
 import com.rickr.backrooms.block.RugBlock;
 import com.rickr.backrooms.block.ShallowWaterBlock;
 import com.rickr.backrooms.block.StreetSignBlock;
@@ -84,6 +85,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import static com.rickr.backrooms.block.Level0SurfaceBlock.ANY_ROW;
+import static com.rickr.backrooms.block.Level0SurfaceBlock.HAND_ROW;
+import static com.rickr.backrooms.block.Level0SurfaceBlock.TOP_ROW;
+
 /**
  * All Backrooms blocks. Structural blocks are unbreakable in survival (strength -1, like bedrock)
  * so nobody can tunnel straight through the maze: the only way out is to find an exit.
@@ -99,22 +104,33 @@ public final class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Backrooms.MOD_ID);
 
     // Level 0: the Lobby
-    // The big surfaces come in a few texture versions (plain first; the numbers are relative
-    // chances, see block/SurfaceBlock). The counts must match tools/gen_assets.py SURFACE_VARIANTS.
-    public static final DeferredBlock<SurfaceBlock> YELLOW_WALLPAPER = surface("yellow_wallpaper", MapColor.COLOR_YELLOW, SoundType.WOOD, 6, 2, 1, 1);
-    /** The bottom wall block, with Kane's slim baseboard in the wall colour. */
-    public static final DeferredBlock<SurfaceBlock> YELLOW_WALLPAPER_BASEBOARD = surface("yellow_wallpaper_baseboard", MapColor.COLOR_YELLOW, SoundType.WOOD, 6, 2, 1, 1);
-    // Carpet versions: plain, a broadloom seam, a traffic-worn lane, a rare old spill.
-    public static final DeferredBlock<SurfaceBlock> LOBBY_CARPET = surface("lobby_carpet", MapColor.TERRACOTTA_YELLOW, SoundType.WOOL, 10, 1, 3, 1);
+    // The big surfaces come in a few texture versions (plain first). Their aged versions cluster in
+    // worn patches: the first chance list applies outside them, the second inside, and the last
+    // list limits a version to one wall row (see block/Level0SurfaceBlock). Textures:
+    // tools/anomaly_assets/level0_surfaces.py; the counts must match gen_assets.py SURFACE_VARIANTS.
+    // Wallpaper versions: plain, a leak stain from the ceiling (top row only), hand grime (hand
+    // height only), a faded strip with a lifting seam.
+    public static final DeferredBlock<SurfaceBlock> YELLOW_WALLPAPER = level0Surface("yellow_wallpaper", MapColor.COLOR_YELLOW, SoundType.WOOD,
+            new int[] {16, 1, 2, 2}, new int[] {8, 5, 2, 2}, ANY_ROW, TOP_ROW, HAND_ROW, ANY_ROW);
+    /** The bottom wall block, with Kane's slim baseboard. Versions: plain, rising damp, kick marks, a curling seam. */
+    public static final DeferredBlock<SurfaceBlock> YELLOW_WALLPAPER_BASEBOARD = level0Surface("yellow_wallpaper_baseboard", MapColor.COLOR_YELLOW, SoundType.WOOD,
+            new int[] {22, 1, 3, 2}, new int[] {9, 6, 2, 2}, ANY_ROW, ANY_ROW, ANY_ROW, ANY_ROW);
+    // Carpet versions: plain, a flattened traffic patch, a damp patch, old spills.
+    public static final DeferredBlock<SurfaceBlock> LOBBY_CARPET = level0Surface("lobby_carpet", MapColor.TERRACOTTA_YELLOW, SoundType.WOOL,
+            new int[] {20, 3, 1, 1}, new int[] {7, 4, 4, 1}, ANY_ROW, ANY_ROW, ANY_ROW, ANY_ROW);
     public static final DeferredBlock<FloorArrowBlock> LOBBY_CARPET_ARROW = BLOCKS.registerBlock("lobby_carpet_arrow", FloorArrowBlock::new,
             unbreakable(MapColor.TERRACOTTA_YELLOW, SoundType.WOOL));
     public static final DeferredBlock<RugBlock> RUG = BLOCKS.registerBlock("rug", RugBlock::new,
             unbreakable(MapColor.COLOR_RED, SoundType.WOOL));
-    // Ceiling versions: plain, a water ring, a sagging tile, a faintly yellowed tile.
-    public static final DeferredBlock<SurfaceBlock> CEILING_TILE = surface("ceiling_tile", MapColor.SAND, SoundType.WOOD, 8, 1, 1, 2);
-    // Glows full-bright, except while a faulty Level 0 tube is dark (see block/Level0TubeGlow).
-    public static final DeferredBlock<Block> FLUORESCENT_LIGHT = BLOCKS.registerBlock("fluorescent_light", Block::new,
-            fixture(MapColor.SNOW, SoundType.GLASS, 12).emissiveRendering(com.rickr.backrooms.block.Level0TubeGlow::emissive));
+    // Ceiling versions: plain, dried water rings, a sagging yellowed tile, a broken corner.
+    public static final DeferredBlock<SurfaceBlock> CEILING_TILE = level0Surface("ceiling_tile", MapColor.SAND, SoundType.WOOD,
+            new int[] {24, 2, 2, 1}, new int[] {10, 5, 3, 1}, ANY_ROW, ANY_ROW, ANY_ROW, ANY_ROW);
+    // Glows full-bright, except while a faulty Level 0 tube is dark; its GLOW (age) sets its light
+    // level, 12 for a full tube down to 6 for a dying one (see block/Level0TubeGlow).
+    public static final DeferredBlock<com.rickr.backrooms.block.Level0TubeBlock> FLUORESCENT_LIGHT = BLOCKS.registerBlock(
+            "fluorescent_light", com.rickr.backrooms.block.Level0TubeBlock::new,
+            fixture(MapColor.SNOW, SoundType.GLASS, 12).lightLevel(com.rickr.backrooms.block.Level0TubeGlow::lightOf)
+                    .emissiveRendering(com.rickr.backrooms.block.Level0TubeGlow::emissive));
     public static final DeferredBlock<Block> FLUORESCENT_LIGHT_OFF = structural("fluorescent_light_off", MapColor.COLOR_LIGHT_GRAY, SoundType.GLASS);
     public static final DeferredBlock<WallDecalBlock> WALL_ARROW_LEFT = decal("wall_arrow_left");
     public static final DeferredBlock<WallDecalBlock> WALL_ARROW_RIGHT = decal("wall_arrow_right");
@@ -1082,6 +1098,11 @@ public final class ModBlocks {
 
     private static DeferredBlock<SurfaceBlock> surface(String name, MapColor color, SoundType sound, int... weights) {
         return BLOCKS.registerBlock(name, props -> new SurfaceBlock(props, weights), unbreakable(color, sound));
+    }
+
+    /** A Level 0 surface whose aged versions cluster in worn patches (see block/Level0SurfaceBlock). */
+    static DeferredBlock<SurfaceBlock> level0Surface(String name, MapColor color, SoundType sound, int[] calm, int[] worn, int... rows) {
+        return BLOCKS.registerBlock(name, props -> new Level0SurfaceBlock(props, calm, worn, rows), unbreakable(color, sound));
     }
 
     private static DeferredBlock<WallDecalBlock> decal(String name) {

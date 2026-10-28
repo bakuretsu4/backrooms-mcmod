@@ -152,7 +152,7 @@
       {
         "name": "backrooms:ambient/level0_hum",
         "stream": true,
-        "volume": 0.5
+        "volume": 0.36
       }
     ]
   },
@@ -1421,6 +1421,65 @@
     ],
     "subtitle": "subtitles.backrooms.level0_blackout_buzz"
   },
+  "level0.tube_hum": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/tube_hum1",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "backrooms:level0/tube_hum2",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "backrooms:level0/tube_hum3",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "backrooms:level0/tube_hum4",
+        "attenuation_distance": 14
+      }
+    ],
+    "subtitle": "subtitles.backrooms.light_hum"
+  },
+  "level0.tube_hum_faulty": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/tube_hum_faulty1",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "backrooms:level0/tube_hum_faulty2",
+        "attenuation_distance": 14
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_tube_hum_faulty"
+  },
+  "level0.tube_tick": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/tube_tick1",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level0/tube_tick2",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level0/tube_tick3",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level0/tube_tick4",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level0/tube_tick5",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_tube_tick"
+  },
   "distant.level0.ballast_pop": {
     "sounds": [
       {
@@ -1505,6 +1564,74 @@
       }
     ],
     "subtitle": "subtitles.backrooms.distant.level0.far_call"
+  },
+  "distant.level0.settle_creak": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level0/settle_creak1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level0/settle_creak2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level0/settle_creak3",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level0.settle_creak"
+  },
+  "distant.level0.door_click": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level0/door_click1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level0/door_click2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level0/door_click3",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level0.door_click"
+  },
+  "distant.level0.relay": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level0/relay1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level0/relay2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level0/relay3",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level0.relay"
+  },
+  "distant.level0.vent_tick": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/distant/level0/vent_tick1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level0/vent_tick2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "backrooms:ambient/distant/level0/vent_tick3",
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.distant.level0.vent_tick"
   },
   "distant.level1.pipe_clang": {
     "sounds": [

@@ -15,10 +15,10 @@ import net.minecraft.client.player.LocalPlayer;
  * you're not looking.)
  */
 final class PeripheralShiftEffect implements AnomalyClientEffect {
-    /** Level 0's grade, plus the haze and a slightly restless auto-iris. */
-    private static final AtmosphereGrade.Mood ENDLESS = new AtmosphereGrade.Mood(1.08f, 1.02f, 0.92f,
-            0.97f, 1.0f, 0.72f, 0.99f, 1.0f, 0.88f,
-            0.006f, 0.006f, 0.003f, 0.40f, 0.37f, 0.18f, 6.0f, 0.050f, 0.55f, 0.30f, 0.18f, 0.018f);
+    /** Level 0's grade (AtmosphereGrade's LEVEL_0), plus a thicker warm-beige haze and a slightly restless auto-iris. */
+    private static final AtmosphereGrade.Mood ENDLESS = new AtmosphereGrade.Mood(1.23f, 1.02f, 0.90f,
+            1.0f, 0.98f, 0.86f, 1.0f, 0.99f, 0.95f,
+            0.006f, 0.0055f, 0.0035f, 0.36f, 0.32f, 0.225f, 6.0f, 0.050f, 0.55f, 0.30f, 0.18f, 0.018f);
 
     @Override
     public void tick(Minecraft mc, AnomalySite site, boolean inside, float secondsInside) {

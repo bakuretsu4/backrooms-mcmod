@@ -34,6 +34,11 @@ public final class FixtureLight {
      */
     @Nullable
     public long[] blocks;
+    /**
+     * Level 0 tubes: how strong this tube's Veil light is for its age (block/Level0TubeGlow, times
+     * a small per-tube jitter), set when the lights are rebuilt. 1 for every other light.
+     */
+    public float tubeGlow = 1.0f;
 
     // Runtime state, updated every client tick by BackroomsLights.
     /** 0..1 power from events (blackout fade, flicker, alarm dimming). */

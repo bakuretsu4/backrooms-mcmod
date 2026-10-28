@@ -92,43 +92,68 @@ public final class ClientLighting {
 
     // Level 0 (Kane's Lobby): dim, uneven office light; whole dark wings near black.
     /**
-     * "No light at all" in Level 0: practically black, a hint warm, so dark wings and doorways
-     * read as solid black holes (the grade crushes the rest). Not the blue-black of other levels.
+     * "No light at all" in Level 0: practically black, a hint warm (red over green over blue, so
+     * it never reads olive), so dark wings and doorways read as solid black holes. Not the
+     * blue-black of other levels.
      */
     private static final float LEVEL0_UNLIT_R = 0.004f;
-    private static final float LEVEL0_UNLIT_G = 0.004f;
-    private static final float LEVEL0_UNLIT_B = 0.002f;
+    private static final float LEVEL0_UNLIT_G = 0.0036f;
+    private static final float LEVEL0_UNLIT_B = 0.0026f;
     /**
      * The fill at full strength ({@link #LEVEL0_FULL_FROM} and up). Below that it follows the block
-     * light down a curve, so the light is uneven like a real office: with the 3-high ceiling the
-     * floor right under a panel sits at block light 9 (fill ~0.72), between panels at 7 (~0.39),
-     * and a corner or a wall foot away from the panels at 5 (~0.16). Veil's pools add a little on
-     * top, mostly under the panels.
+     * light down a curve, so the light is uneven like a real office. With the 3-high ceiling the
+     * floor right under a full-strength tube (light 12) sits at block light 9 (fill ~0.71), one
+     * block off at 8 (~0.47), between panels at 7 (~0.30), and a corner or a wall foot away from
+     * the panels at 5 (~0.11). Older tubes (light 11 and 10, see block/Level0TubeGlow) drop their
+     * whole patch a step or two, so the pools differ from tube to tube. Veil's pools add a little
+     * on top, mostly under the panels.
      */
-    private static final float LEVEL0_MAX_FILL = 0.92f;
-    /** Without Veil there are no pools on top, so the fill alone is a little stronger. */
-    private static final float LEVEL0_FALLBACK_MAX_FILL = 1.0f;
+    private static final float LEVEL0_MAX_FILL = 0.91f;
+    /** Without Veil there are no pools on top, so the fill alone is a little stronger (under a tube ~0.75). */
+    private static final float LEVEL0_FALLBACK_MAX_FILL = 0.97f;
     /**
      * Light level from which the fill stops growing. Above it are only the upper walls and the
      * ceiling right beside a panel: a troffer shines down, so those must not get brighter than
      * the floor under it (they would glow, the opposite of a real room).
      */
     private static final float LEVEL0_FULL_FROM = 10.0f;
-    /** Light level at and below which it is black: the last blocks of reach, the mouth of a dark wing. */
-    private static final float LEVEL0_DARK_BELOW = 2.0f;
     /**
-     * How steeply the fill falls between those two (1 = straight line). 1.8 makes the floor under
-     * a panel about 1.8 times as bright as the floor between panels (Veil's pools on top keep it
-     * near that) and gives dark corners, while room centres and corridor floors stay well readable.
+     * Light level at and below which it is black. Level 1, so the last few blocks of a tube's
+     * reach (levels 2-4, the far side of a doorway, the mouth of a dark wing) keep a faint glow
+     * that fades out gradually instead of stopping at a hard black edge.
      */
-    private static final float LEVEL0_FILL_CURVE = 1.8f;
-    /** The bounce off yellow wallpaper and carpet: warm, but the yellow mostly comes from the textures. */
+    private static final float LEVEL0_DARK_BELOW = 1.0f;
+    /**
+     * How steeply the direct light falls between those two (1 = straight line). 3.5 is steep: the
+     * pool right under a tube stands out clearly, about 2.4 times as bright as the floor between
+     * tubes, so the eye sees each panel's patch of light instead of an even carpet.
+     */
+    private static final float LEVEL0_FILL_CURVE = 3.5f;
+    /**
+     * Bounce light: in a real room light also comes off the walls and ceiling, a weak glow that
+     * fades out evenly (a straight line) instead of falling steeply like the direct light. This
+     * share of the full fill is added that way. It is what keeps wall feet and corners (light 5,
+     * ~0.11) and the last blocks of a tube's reach from going black while the steep curve above
+     * shapes the pools.
+     */
+    private static final float LEVEL0_BOUNCE = 0.13f;
+    /**
+     * The bounce off yellow wallpaper and carpet: warm, but the yellow mostly comes from the
+     * textures. Green a touch under red and blue cut less than before, so the textures' yellow
+     * ends up a soft yellow-beige instead of olive (see AtmosphereGrade's LEVEL_0 for the numbers).
+     */
     private static final float LEVEL0_TINT_R = 1.0f;
-    private static final float LEVEL0_TINT_G = 0.97f;
-    private static final float LEVEL0_TINT_B = 0.86f;
+    private static final float LEVEL0_TINT_G = 0.975f;
+    private static final float LEVEL0_TINT_B = 0.92f;
     /** During a FLICKER event the whole fill stutters between these (the panels light the halls). */
     private static final float LEVEL0_FLICKER_DARK = 0.35f;
     private static final float LEVEL0_FLICKER_LIT = 0.9f;
+    /**
+     * How much the fill drops when ALL the tube light around you is out (a faulty tube right over
+     * you in a dark moment takes away about 40% of it, so the room dims by about a fifth; see
+     * BackroomsLights#level0TubeShare). Never a full-screen strobe.
+     */
+    private static final float LEVEL0_TUBE_DIP = 0.5f;
 
     // Level 9 (the Suburbs at midnight).
     /**
@@ -351,8 +376,11 @@ public final class ClientLighting {
      */
     private static void applyLevel0Fill(Vector3f colors, int blockLight, float maxFill) {
         float t = Mth.clamp((blockLight - LEVEL0_DARK_BELOW) / (LEVEL0_FULL_FROM - LEVEL0_DARK_BELOW), 0.0f, 1.0f);
-        float fill = maxFill * (float) Math.pow(t, LEVEL0_FILL_CURVE);
+        // Steep direct light (the pools) plus a weak, evenly fading bounce (keeps corners readable).
+        float fill = maxFill * ((float) Math.pow(t, LEVEL0_FILL_CURVE) + LEVEL0_BOUNCE * t);
         fill *= FixturePower.mainsPower() * FixturePower.alarmDim();
+        // A faulty tube near you cutting out takes part of the light around you with it.
+        fill *= 1.0f - LEVEL0_TUBE_DIP * (1.0f - BackroomsLights.level0TubeShare());
         if (FixturePower.flickering(System.currentTimeMillis())) {
             // The fill is most of the light here, so it stutters with the tubes instead of just halving.
             fill *= flickerDark() ? LEVEL0_FLICKER_DARK : LEVEL0_FLICKER_LIT;

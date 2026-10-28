@@ -33,7 +33,7 @@ import java.util.Map;
  * {@code snd_dist_amb_*} in tools/gen_assets.py): a fluorescent tube popping somewhere on Level 0,
  * a tram rumbling behind the walls of Level 2, a dog barking on Level 9, and so on.
  *
- * <p>One shared timer does all levels: every 18-55 seconds (each level has its own range) it picks
+ * <p>One shared timer does all levels: every 20-90 seconds (each level has its own range) it picks
  * one sound from the current level's list, never the same one twice in a row, and plays it at a
  * random spot 14-40 blocks away at about ear height. It is a normal sound out in the world (not
  * stuck to your head), so it comes from a direction, fades with distance and gets the same room
@@ -73,12 +73,21 @@ public final class DistantAmbience {
     // the range (1.4 x 48 = 67 blocks), so they still carry when placed 40 blocks away across open
     // streets and hills, where nothing would muffle them.
     static {
-        SCHEDULES.put(BackroomsLevel.LEVEL_0, new Schedule(22, 50, List.of(
-                new Entry(ModSounds.DISTANT_L0_BALLAST_POP, 4, 0.9f, When.ANY),
-                new Entry(ModSounds.DISTANT_L0_LAYOUT_SHIFT, 3, 1.0f, When.ANY),
-                new Entry(ModSounds.DISTANT_L0_CARPET_DRIP, 3, 0.7f, When.ANY),
-                new Entry(ModSounds.DISTANT_L0_WALL_SCRATCH, 2, 0.8f, When.ANY),
-                new Entry(ModSounds.DISTANT_L0_FAR_CALL, 1, 0.7f, When.ANY))));
+        // Level 0: an empty office building at night. Long stretches of nothing but the hum, then,
+        // rarely and faintly, the building itself: it settling, a vent ticking as it cools, a relay
+        // in a far panel, a door somewhere. The older, stranger sounds (a tube popping, the halls
+        // shifting, drips, scratching, a voice) are still there but rarer and quieter, so when one
+        // comes it is easy to doubt you heard it. 35-90 s apart (about one a minute on average).
+        SCHEDULES.put(BackroomsLevel.LEVEL_0, new Schedule(35, 90, List.of(
+                new Entry(ModSounds.DISTANT_L0_SETTLE_CREAK, 4, 0.9f, When.ANY),
+                new Entry(ModSounds.DISTANT_L0_VENT_TICK, 4, 0.8f, When.ANY),
+                new Entry(ModSounds.DISTANT_L0_RELAY, 3, 0.8f, When.ANY),
+                new Entry(ModSounds.DISTANT_L0_DOOR_CLICK, 3, 0.8f, When.ANY),
+                new Entry(ModSounds.DISTANT_L0_BALLAST_POP, 2, 0.6f, When.ANY),
+                new Entry(ModSounds.DISTANT_L0_CARPET_DRIP, 2, 0.5f, When.ANY),
+                new Entry(ModSounds.DISTANT_L0_LAYOUT_SHIFT, 1, 0.7f, When.ANY),
+                new Entry(ModSounds.DISTANT_L0_WALL_SCRATCH, 1, 0.5f, When.ANY),
+                new Entry(ModSounds.DISTANT_L0_FAR_CALL, 1, 0.45f, When.ANY))));
         SCHEDULES.put(BackroomsLevel.LEVEL_1, new Schedule(20, 45, List.of(
                 new Entry(ModSounds.DISTANT_L1_PIPE_CLANG, 4, 0.9f, When.ANY),
                 new Entry(ModSounds.DISTANT_L1_PIPE_RUMBLE, 4, 1.0f, When.ANY),
@@ -265,6 +274,11 @@ public final class DistantAmbience {
         // Level 39: the superstructure's sounds come from high up.
         if (isFromSuperstructure(entry)) {
             y = eye.y + Mth.nextDouble(RANDOM, 12.0, 30.0);
+        }
+        // Level 0: the ducts run above the ceiling tiles, so a vent tick comes from up there (and
+        // the tiles in between muffle it a little).
+        if (entry.sound() == ModSounds.DISTANT_L0_VENT_TICK) {
+            y = eye.y + Mth.nextDouble(RANDOM, 1.5, 2.5);
         }
         // Level 227: the tree's groans and cracks come from the branches above you, the void's
         // howl from far below the edge.

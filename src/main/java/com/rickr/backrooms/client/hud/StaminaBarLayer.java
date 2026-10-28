@@ -11,25 +11,26 @@ import net.minecraft.util.Mth;
 
 /**
  * Your sprint stamina as one thin, faint line in the slot where the XP bar would be (the XP bar
- * itself is hidden in the Backrooms), between the hotbar and your hearts. It is as faint as the
- * hearts, shrinks toward the middle as you run, turns a dull red while you're out of breath, and
- * fades away once you're rested again, so most of the time there is nothing on screen.
+ * itself is hidden in the Backrooms), between the hotbar and your hearts. Drawn in the shared
+ * camcorder look ({@link OsdStyle}): warm off-white, fainter than the hearts, shorter than the
+ * hotbar. It shrinks toward the middle as you run, turns a soft red while you're out of breath,
+ * and fades away once you're rested again, so most of the time there is nothing on screen.
  * Can be turned off on the SETTINGS screen.
  */
 public final class StaminaBarLayer implements LayeredDraw.Layer {
-    /** Same width as the hotbar and the vanilla XP bar. */
-    private static final int WIDTH = 182;
+    /** Two thirds of the hotbar's width, centred: enough to read, small enough to ignore. */
+    private static final int WIDTH = 120;
     /** Vanilla draws the XP bar 29 GUI pixels above the bottom; this sits in the middle of that slot. */
     private static final int FROM_BOTTOM = 27;
-    /** As faint as the hearts and hunger (BackroomsHudEvents.FADED_ALPHA). */
-    private static final float ALPHA = 0.35f;
+    /** Fainter than the hearts and hunger (BackroomsHudEvents.STATUS_ALPHA). */
+    private static final float ALPHA = 0.28f;
     /** The empty part, so you can see how much is missing. */
-    private static final float TRACK_ALPHA = 0.08f;
+    private static final float TRACK_ALPHA = 0.06f;
+    /** Out of breath matters more, so the red line is a little stronger. */
+    private static final float EXHAUSTED_ALPHA = 0.4f;
     /** Fade out over 1 s once full; fade in over 0.25 s when you start using stamina. */
     private static final float FADE_OUT_S = 1.0f;
     private static final float FADE_IN_S = 0.25f;
-    private static final int RGB_NORMAL = 0xF2F2E8;
-    private static final int RGB_EXHAUSTED = 0xE05A4A;
 
     private float visible;
     private long lastFrameNs;
@@ -53,19 +54,17 @@ public final class StaminaBarLayer implements LayeredDraw.Layer {
             return;
         }
 
-        int rgb = EnergyClientState.exhausted ? RGB_EXHAUSTED : RGB_NORMAL;
+        boolean exhausted = EnergyClientState.exhausted;
+        int rgb = exhausted ? OsdStyle.ALERT : OsdStyle.TEXT;
+        float alpha = exhausted ? EXHAUSTED_ALPHA : ALPHA;
         int x0 = g.guiWidth() / 2 - WIDTH / 2;
         int x1 = x0 + WIDTH;
         int y = g.guiHeight() - FROM_BOTTOM;
         int half = Math.round(WIDTH / 2.0f * energy);
         int mid = g.guiWidth() / 2;
-        g.fill(x0, y, x1, y + 1, argb(TRACK_ALPHA * visible, rgb));
+        OsdStyle.box(g, x0, y, x1, y + 1, rgb, TRACK_ALPHA * visible);
         if (half > 0) {
-            g.fill(mid - half, y, mid + half, y + 1, argb(ALPHA * visible, rgb));
+            OsdStyle.box(g, mid - half, y, mid + half, y + 1, rgb, alpha * visible);
         }
-    }
-
-    private static int argb(float alpha, int rgb) {
-        return (Mth.clamp((int) (alpha * 255.0f), 0, 255) << 24) | rgb;
     }
 }

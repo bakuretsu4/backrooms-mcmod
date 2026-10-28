@@ -1,6 +1,7 @@
 package com.rickr.backrooms.client.light;
 
 import com.rickr.backrooms.registry.ModSounds;
+import com.rickr.backrooms.world.BackroomsLevel;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -16,6 +17,18 @@ import net.minecraft.util.RandomSource;
  * so the hum moves around you as you walk), and a flickering tube clicks when it toggles. Level 9
  * streetlamps use their own sounds: a quieter, shorter-range sodium hum and an electrical tick
  * when a stuttering lamp strikes again.
+ *
+ * <p>Level 0's tubes are treated with extra care, since their buzz is most of what you hear
+ * there:
+ * <ul>
+ *   <li>every tube has its own buzz, pitch and loudness (see {@link FixtureHumSound}); faulty
+ *       ones (stuttering, restarting or dying, see BackroomsLights#tubeFault) buzz rougher;</li>
+ *   <li>a tube's buzz fades away faster with distance than the plain straight-line fade, so you
+ *       hear the tube you stand under clearly, the next ones less, and a stretch with no lit tube
+ *       goes almost quiet: pockets of silence between the lit areas;</li>
+ *   <li>a tube dropping out ticks (its starter), striking again clicks and catches, and a dying
+ *       tube's starter ticks now and then as it keeps trying.</li>
+ * </ul>
  */
 final class FixtureSounds {
     /** How many fixtures hum at once (the nearest lit ones). */
@@ -37,6 +50,19 @@ final class FixtureSounds {
     private static final int DARK_TICKS_BEFORE_STOP = 10;
     /** Max blink clicks per tick, so a big flicker doesn't machine-gun. */
     private static final int BLINKS_PER_TICK = 2;
+    /** Level 0 tubes: a tube's buzz carries this far (matches "attenuation_distance": 14) ... */
+    private static final double L0_HUM_RANGE = 14.0;
+    /** ... and only this many of the nearest are heard at once. */
+    private static final int L0_HUM_COUNT = 6;
+    /**
+     * Level 0: how much buzz (the sum of each hum's volume squared, i.e. its power) may play before
+     * all of them are turned down together. 2.0 is about two tubes right above you.
+     */
+    private static final float L0_FULL_LOAD = 2.0f;
+    /** A dying Level 0 tube this close (blocks) ... */
+    private static final double DYING_TICK_RANGE = 10.0;
+    /** ... has its starter tick on average once in this many client ticks (about every 7 s). */
+    private static final int DYING_TICK_ODDS = 140;
 
     private static final Long2ObjectOpenHashMap<FixtureHumSound> HUMS = new Long2ObjectOpenHashMap<>();
     /** Lamp key -> tick its hum may be retried (after the sound engine dropped it). */
@@ -47,35 +73,65 @@ final class FixtureSounds {
     private static final LongOpenHashSet WANTED = new LongOpenHashSet();
     private static final RandomSource RANDOM = RandomSource.create();
     private static long tickCount;
+    /** Whether we are on Level 0 (set every tick; read by blink, which runs just before tick). */
+    private static boolean level0;
 
     /**
      * @param byDistance all lights, already sorted nearest first (with {@link FixtureLight#distSq} set)
      */
     static void tick(List<FixtureLight> byDistance) {
         tickCount++;
-        SoundManager sounds = Minecraft.getInstance().getSoundManager();
+        Minecraft mc = Minecraft.getInstance();
+        SoundManager sounds = mc.getSoundManager();
+        level0 = mc.level != null && BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_0;
         WANTED.clear();
         double maxSq = HUM_RANGE * HUM_RANGE;
+        int count = level0 ? L0_HUM_COUNT : HUM_COUNT;
         for (FixtureLight light : byDistance) {
-            if (light.distSq > maxSq || WANTED.size() >= HUM_COUNT) {
+            if (light.distSq > maxSq || WANTED.size() >= count) {
                 break;
             }
             if (light.type.hum == FixtureType.Hum.NONE) {
                 continue;
             }
-            double range = humRange(light.type);
+            boolean tube = level0 && isLevel0Tube(light.type);
+            double range = tube ? L0_HUM_RANGE : humRange(light.type);
             if (light.distSq > range * range) {
                 continue; // a short-range hum further away than its reach
             }
-            if (light.level > LIT) {
+            int fault = tube ? BackroomsLights.tubeFault(light.key) : FixturePower.TUBE_OK;
+            // A dying tube only glows dimly, but its ballast is working as hard as ever: it buzzes
+            // with the mains power, not with its weak glow.
+            float power = fault == FixturePower.TUBE_DYING ? FixturePower.levelOf(light) : light.level;
+            if (power > LIT) {
                 DARK_SINCE.remove(light.key);
             } else if (!DARK_SINCE.containsKey(light.key)) {
                 DARK_SINCE.put(light.key, tickCount);
             }
-            boolean darkTooLong = light.level <= LIT
+            boolean darkTooLong = power <= LIT
                     && tickCount - DARK_SINCE.get(light.key) > DARK_TICKS_BEFORE_STOP;
             if (darkTooLong) {
                 continue;
+            }
+            float want = Math.min(1.0f, power);
+            if (light.type.hum == FixtureType.Hum.SODIUM) {
+                // Level 9: the streetlamps' buzz cuts out while the Mangled's fog is thick.
+                want *= com.rickr.backrooms.client.Level9Atmosphere.lampHumScale(System.currentTimeMillis());
+            }
+            if (light.type.hum == FixtureType.Hum.FLUORESCENT) {
+                // Level 0: the tube hum fades away as you come near the Manila Room.
+                want *= com.rickr.backrooms.client.anomaly.level0.Level0AnomalyEffects.fixtureHumScale();
+            }
+            if (tube) {
+                // On top of Minecraft's straight-line fade, fade once more with distance: together
+                // the buzz falls off with the square of the distance (about half at 4 blocks, a
+                // tenth at 10), so the space between lit areas goes nearly quiet.
+                want *= 1.0f - (float) (Math.sqrt(light.distSq) / L0_HUM_RANGE);
+                if (fault == FixturePower.TUBE_DYING && power > LIT && light.distSq < DYING_TICK_RANGE * DYING_TICK_RANGE
+                        && RANDOM.nextInt(DYING_TICK_ODDS) == 0) {
+                    // Its starter keeps trying to strike it properly.
+                    starterTick(light, 0.5f);
+                }
             }
             WANTED.add(light.key);
             FixtureHumSound hum = HUMS.get(light.key);
@@ -94,24 +150,31 @@ final class FixtureSounds {
                 if (RETRY_AT.get(light.key) > tickCount) {
                     continue;
                 }
-                hum = new FixtureHumSound(light, light.level);
+                hum = new FixtureHumSound(light, want, tube, fault != FixturePower.TUBE_OK);
                 HUMS.put(light.key, hum);
                 sounds.play(hum);
             }
-            hum.target = Math.min(1.0f, light.level);
-            if (light.type.hum == FixtureType.Hum.SODIUM) {
-                // Level 9: the streetlamps' buzz cuts out while the Mangled's fog is thick.
-                hum.target *= com.rickr.backrooms.client.Level9Atmosphere.lampHumScale(System.currentTimeMillis());
-            }
-            if (light.type.hum == FixtureType.Hum.FLUORESCENT) {
-                // Level 0: the tube hum fades away as you come near the Manila Room.
-                hum.target *= com.rickr.backrooms.client.anomaly.level0.Level0AnomalyEffects.fixtureHumScale();
-            }
+            hum.target = want;
         }
         // Many lamps close together (a lit office, a bright Level 0 hall) would stack up to a loud
         // drone that buries everything else. Like a mixing desk, turn each one down as more play,
-        // so the hum's overall loudness stays about the same however dense the lights are.
-        float density = WANTED.size() > HUMS_AT_FULL ? (float) Math.sqrt((double) HUMS_AT_FULL / WANTED.size()) : 1.0f;
+        // so the hum's overall loudness stays about the same however dense the lights are. On
+        // Level 0 this goes by how much buzz there really is (the far tubes are already quiet):
+        // their summed power is held at about that of two tubes right above you.
+        float density;
+        if (level0) {
+            float load = 0.0f;
+            var keys = WANTED.iterator();
+            while (keys.hasNext()) {
+                FixtureHumSound hum = HUMS.get(keys.nextLong());
+                if (hum != null) {
+                    load += hum.target * hum.target;
+                }
+            }
+            density = load > L0_FULL_LOAD ? (float) Math.sqrt(L0_FULL_LOAD / load) : 1.0f;
+        } else {
+            density = WANTED.size() > HUMS_AT_FULL ? (float) Math.sqrt((double) HUMS_AT_FULL / WANTED.size()) : 1.0f;
+        }
         if (density < 1.0f) {
             var keys = WANTED.iterator();
             while (keys.hasNext()) {
@@ -149,12 +212,25 @@ final class FixtureSounds {
         return type.hum == FixtureType.Hum.SODIUM ? SODIUM_HUM_RANGE : HUM_RANGE;
     }
 
+    /** A Level 0 ceiling tube (a single troffer or a corridor strip), whose buzz and clicks are its own. */
+    private static boolean isLevel0Tube(FixtureType type) {
+        return type == FixtureType.FLUORESCENT_LIGHT || type == FixtureType.L0_TROFFER_STRIP;
+    }
+
+    /** A tube's glow starter ticking: a tiny dry click at the fixture. */
+    private static void starterTick(FixtureLight light, float volume) {
+        float pitch = 0.9f + RANDOM.nextFloat() * 0.25f;
+        Minecraft.getInstance().getSoundManager().play(new SimpleSoundInstance(ModSounds.L0_TUBE_TICK.get(), SoundSource.BLOCKS,
+                volume, pitch, RANDOM, light.soundX, light.soundY, light.soundZ));
+    }
+
     private static int blinksThisTick;
     private static long blinkTick = -1;
 
     /**
      * Called when a flickering lamp switches; clicks if it's close enough to hear. Tubes click on
-     * every toggle; a streetlamp ticks only when it strikes back on, and not too often.
+     * every toggle; a streetlamp ticks only when it strikes back on, and not too often. A Level 0
+     * tube dropping out only ticks (its starter), and clicks and catches when it strikes again.
      *
      * @param nowOn whether the lamp just turned on (true) or off (false)
      */
@@ -183,6 +259,18 @@ final class FixtureSounds {
             return; // silent fixtures (exit signs, porch lights...) don't click
         }
         blinksThisTick++;
+        if (level0 && isLevel0Tube(light.type)) {
+            if (!nowOn) {
+                starterTick(light, 0.7f);
+                return;
+            }
+            // The real click-and-buzz of a tube catching, a touch softer than on other levels:
+            // Level 0 is quiet, and a stuttering tube strikes many times in a row.
+            float pitch = 0.9f + RANDOM.nextFloat() * 0.2f;
+            sounds.play(new SimpleSoundInstance(ModSounds.LIGHT_BLINK.get(), SoundSource.BLOCKS,
+                    0.42f, pitch, RANDOM, light.soundX, light.soundY, light.soundZ));
+            return;
+        }
         float pitch = 0.9f + RANDOM.nextFloat() * 0.2f;
         sounds.play(new SimpleSoundInstance(ModSounds.LIGHT_BLINK.get(), SoundSource.BLOCKS,
                 0.55f, pitch, RANDOM, light.soundX, light.soundY, light.soundZ));

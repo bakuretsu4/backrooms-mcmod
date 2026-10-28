@@ -20,6 +20,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -93,12 +94,11 @@ public final class BackroomsLights {
     private static final Set<Long> DARK_TUBES = ConcurrentHashMap.newKeySet();
     /** Level 0: which of the lights around you are faulty tubes (key -> FixturePower.TUBE_*); healthy ones are left out. */
     private static final Long2IntOpenHashMap FAULTY_TUBES = new Long2IntOpenHashMap();
-    /**
-     * Level 0: the blocks of the dying tubes around you, so their lens gets the weak warm tint
-     * instead of the off grey. Replaced as a whole on each rebuild (never changed in place),
-     * because the chunk-building threads read it.
-     */
-    private static volatile LongOpenHashSet dyingTubes = new LongOpenHashSet();
+    /** Level 0: tubes within this many blocks of the camera count for {@link #level0TubeShare()}. */
+    private static final double TUBE_SHARE_RANGE = 7.0;
+    /** How fast {@link #level0TubeShare()} follows a tube going dark or coming back (per tick). */
+    private static final float TUBE_SHARE_EASE = 0.35f;
+    private static float level0TubeShare = 1.0f;
     /**
      * A Level 0 tube this close (blocks, sideways) to an exit sign, a safe-room or office lamp or a
      * Red Rooms lamp is never faulty: those places must stay steady and trustworthy.
@@ -108,7 +108,31 @@ public final class BackroomsLights {
     static {
         // Faulty Level 0 tubes switch their glow off while they're dark.
         Level0TubeGlow.dark = pos -> !DARK_TUBES.isEmpty() && DARK_TUBES.contains(pos.asLong());
-        Level0TubeGlow.dying = pos -> dyingTubes.contains(pos.asLong());
+        // (Dying tubes need no hook: their age is in the block state, see Level0TubeGlow.)
+    }
+
+    /**
+     * 0..1 (Level 0): how much of the tube light right around you is lit, 1 unless a faulty
+     * tube near you is in a dark moment (nearer and stronger tubes count more). The vanilla
+     * light of a stuttering tube never changes, so {@code ClientLighting} dims the lightmap fill
+     * by this: standing under a tube that cuts out, the room around you dims with it (in both
+     * Veil and no-Veil modes), eased so it shimmers instead of strobing.
+     */
+    public static float level0TubeShare() {
+        return level0TubeShare;
+    }
+
+    /**
+     * Level 0: the fault of the light with this key, one of FixturePower.TUBE_* (TUBE_OK for
+     * healthy tubes and every non-Level 0 light). Read by FixtureSounds for the per-tube buzz.
+     */
+    static int tubeFault(long key) {
+        return FAULTY_TUBES.get(key);
+    }
+
+    /** The Level 0 ceiling tubes: the troffer panel and the corridor strip. */
+    private static boolean level0Tube(FixtureType type) {
+        return type == FixtureType.FLUORESCENT_LIGHT || type == FixtureType.L0_TROFFER_STRIP;
     }
 
     @Nullable
@@ -174,7 +198,12 @@ public final class BackroomsLights {
         boolean lampWave = FixturePower.lampWave(now);
         Vec3 eye = mc.gameRenderer.getMainCamera().getPosition();
         boolean level2 = floor == BackroomsLevel.LEVEL_2;
+        boolean level0 = floor == BackroomsLevel.LEVEL_0;
         long gameTime = level.getGameTime();
+        // Level 0: how much of the tube light right around you is out because a faulty tube is
+        // dark (see level0TubeShare()). Weighted like light: nearer and stronger tubes count more.
+        double tubesAll = 0.0;
+        double tubesLit = 0.0;
         for (FixtureLight light : lights) {
             light.distSq = sq(light.x - eye.x) + sq(light.y - eye.y) + sq(light.z - eye.z);
             boolean on = true;
@@ -189,15 +218,25 @@ public final class BackroomsLights {
                 // A broken Level 9 lamp stutters on top of whatever the event does.
                 on = on && FixturePower.brokenLampOn(light.key, now);
             }
-            // A faulty Level 0 tube: a stuttering one goes dark in short bursts on its own rhythm
-            // (on top of any event), a dying one never glows properly. Only Level 0 lights are in
-            // FAULTY_TUBES, so everywhere else this is TUBE_OK.
+            // A faulty Level 0 tube: a stuttering one goes dark in short bursts on its own rhythm,
+            // one with a lazy starter cuts out and re-strikes now and then (both on top of any
+            // event), a dying one only glows dimly. Only Level 0 lights are in FAULTY_TUBES, so
+            // everywhere else this is TUBE_OK.
             int fault = FAULTY_TUBES.get(light.key);
-            boolean tubeDark = fault == FixturePower.TUBE_DYING;
-            if (fault == FixturePower.TUBE_STUTTER) {
-                boolean tubeOn = FixturePower.faultyTubeOn(light.key, now);
+            boolean toggles = fault == FixturePower.TUBE_STUTTER || fault == FixturePower.TUBE_RESTART;
+            boolean tubeDark = false;
+            if (toggles) {
+                boolean tubeOn = fault == FixturePower.TUBE_STUTTER
+                        ? FixturePower.faultyTubeOn(light.key, now) : FixturePower.restartTubeOn(light.key, now);
                 on = on && tubeOn;
                 tubeDark = !tubeOn;
+            }
+            if (level0 && light.distSq < TUBE_SHARE_RANGE * TUBE_SHARE_RANGE && level0Tube(light.type)) {
+                double weight = light.tubeGlow / (1.0 + light.distSq);
+                tubesAll += weight;
+                if (!tubeDark) {
+                    tubesLit += weight;
+                }
             }
             boolean restriking = false;
             // Level 2's caged lamps hang on series circuits: when one fails (with a pop), all of
@@ -221,18 +260,21 @@ public final class BackroomsLights {
                     mc.levelRenderer.setBlocksDirty(bulb.getX(), bulb.getY(), bulb.getZ(), bulb.getX(), bulb.getY(), bulb.getZ());
                 }
             }
-            if (on != light.on && (flickering || lampWave || light.broken || restriking || fault == FixturePower.TUBE_STUTTER)) {
+            if (on != light.on && (flickering || lampWave || light.broken || restriking || toggles)) {
                 FixtureSounds.blink(light, on);
             }
             light.on = on;
             light.level = FixturePower.levelOf(light);
             if (fault == FixturePower.TUBE_DYING) {
-                light.level *= FixturePower.dyingTubeLevel(light.key, now);
+                light.level *= FixturePower.dyingTubePulse(light.key, now);
             }
-            if (fault != FixturePower.TUBE_OK) {
+            if (toggles) {
                 setTubeDark(mc, light, tubeDark);
             }
         }
+        // Eased, so a stutter makes the fill shimmer rather than strobe.
+        float tubeTarget = tubesAll <= 1.0e-6 ? 1.0f : (float) (tubesLit / tubesAll);
+        level0TubeShare += (tubeTarget - level0TubeShare) * TUBE_SHARE_EASE;
 
         lights.sort(BY_DISTANCE);
         updateMercuryShare();
@@ -414,7 +456,7 @@ public final class BackroomsLights {
     /** Mod bus: the grey tint of a faulty Level 0 tube while it is dark (see block/Level0TubeGlow). */
     @SubscribeEvent
     public static void onRegisterBlockColors(RegisterColorHandlersEvent.Block event) {
-        event.register((state, world, pos, tintIndex) -> Level0TubeGlow.tint(pos),
+        event.register((state, world, pos, tintIndex) -> Level0TubeGlow.tint(state, pos),
                 ModBlocks.FLUORESCENT_LIGHT.get(), Level0Blocks.TROFFER_STRIP.get());
     }
 
@@ -430,7 +472,7 @@ public final class BackroomsLights {
         DARK_BULBS.clear();
         DARK_TUBES.clear();
         FAULTY_TUBES.clear();
-        dyingTubes = new LongOpenHashSet();
+        level0TubeShare = 1.0f;
         builtRevision = -1;
         Minecraft mc = Minecraft.getInstance();
         if (level != null && mc.player != null && mc.player.level() == level) {
@@ -486,9 +528,11 @@ public final class BackroomsLights {
     }
 
     /**
-     * Level 0: decides which of the freshly built lights are faulty tubes (by position, see
-     * {@link FixturePower#level0Fault}), and lets go of the dark glow of tubes that are no longer
-     * among them (they moved out of range), so nothing stays grey by mistake.
+     * Level 0: reads each tube's age from its blocks (its Veil strength, see block/Level0TubeGlow),
+     * decides which of the freshly built lights are faulty tubes (by position, see
+     * {@link FixturePower#level0Fault}; dying ones by their block), and lets go of the dark glow
+     * of tubes that are no longer among them (they moved out of range), so nothing stays grey by
+     * mistake.
      *
      * <p>Only the plain single ceiling troffers and the corridor strips can be faulty. Not the
      * two-panel lights (the exit lobby's panels and the pillar hall's double rows), and nothing
@@ -496,23 +540,29 @@ public final class BackroomsLights {
      */
     private static void findFaultyTubes(List<FixtureLight> built) {
         FAULTY_TUBES.clear();
-        LongOpenHashSet dying = new LongOpenHashSet();
         for (FixtureLight light : built) {
-            boolean troffer = light.type == FixtureType.FLUORESCENT_LIGHT && light.blocks != null && light.blocks.length == 1;
+            if (!level0Tube(light.type) || light.blocks == null) {
+                continue;
+            }
+            // The tube's age: the average over its blocks (a strip's three blocks share one age).
+            float veil = 0.0f;
+            boolean dying = false;
+            for (long pos : light.blocks) {
+                BlockState state = INDEX.get(pos);
+                Level0TubeGlow.Glow glow = state == null ? Level0TubeGlow.Glow.FULL : Level0TubeGlow.glowOf(state);
+                veil += glow.veil;
+                dying |= glow == Level0TubeGlow.Glow.DYING;
+            }
+            light.tubeGlow = veil / light.blocks.length * FixturePower.tubeBrightness(light.key);
+            boolean troffer = light.type == FixtureType.FLUORESCENT_LIGHT && light.blocks.length == 1;
             if (!troffer && light.type != FixtureType.L0_TROFFER_STRIP) {
                 continue;
             }
-            int fault = FixturePower.level0Fault(light.key);
+            int fault = dying ? FixturePower.TUBE_DYING : FixturePower.level0Fault(light.key);
             if (fault != FixturePower.TUBE_OK && !nearSteadyLamp(light, built)) {
                 FAULTY_TUBES.put(light.key, fault);
-                if (fault == FixturePower.TUBE_DYING && light.blocks != null) {
-                    for (long pos : light.blocks) {
-                        dying.add(pos);
-                    }
-                }
             }
         }
-        dyingTubes = dying;
         if (DARK_TUBES.isEmpty()) {
             return;
         }

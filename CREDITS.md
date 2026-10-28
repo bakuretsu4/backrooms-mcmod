@@ -6,7 +6,8 @@
   Level 1's garage air, the player's breathing and the Bacteria (slowed and reversed breathing): field recordings from [Freesound](https://freesound.org),
   all [CC0](https://creativecommons.org/publicdomain/zero/1.0/), vendored in `tools/vendor/freesound/`
   (exact sources and the parts used in its `License.txt`) and processed by `tools/level_assets/recorded.py`
-  (Level 490's storm: `tools/level_assets/level490_sounds.py`):
+  (Level 490's storm: `tools/level_assets/level490_sounds.py`; Level 0's room tone and per-tube buzz:
+  `tools/anomaly_assets/level0_audio.py`):
   - [Fluorescent lightbulb hum buzz (Extended)](https://freesound.org/s/638895/) by Developer_Jake
   - [Flickering Fluorescent Light with Background Hum](https://freesound.org/s/777053/) by kentspublicdomain
   - [fluorescent light switch on off electric hum prickly close2 two starts](https://freesound.org/s/452625/) by kyles

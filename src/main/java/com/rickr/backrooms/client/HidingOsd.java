@@ -1,33 +1,57 @@
 package com.rickr.backrooms.client;
 
-import com.rickr.backrooms.player.SafeRoomClientState;
+import com.rickr.backrooms.client.hud.OsdStyle;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 /**
  * The hiding part of the camcorder's on-screen display (drawn by {@link CamcorderHud}): a small
- * "HIDING" tag in the top-left corner while you hide in furniture, in the same place and style as
- * "SAFE ROOM" (just under it if you hide inside a safe room). Shows even with the OSD hidden.
+ * muted-amber "HIDING" tag in the top-left corner while you hide in furniture, in the same place
+ * and {@link OsdStyle} as "SAFE ROOM" (just under it while that shows). It comes up clearly when you
+ * get in or start/stop holding your breath, then rests faint, but never disappears while you hide:
+ * it's how you know you're stuck in the furniture. Shows even with the OSD hidden.
  */
 public final class HidingOsd {
-    private static final int AMBER = 0xE8C26A;
+    /** Resting opacity while you stay hidden: fainter than a fresh tag, still readable. */
+    private static final float HIDING_REST = 0.4f;
 
-    /** Same arguments as {@link SafeRoomOsd#render}. */
-    public static void render(GuiGraphics g, Font font, int x, int y, boolean osdShown) {
+    private static final Component LABEL = OsdStyle.text("HIDING");
+
+    private static final OsdStyle.Fade FADE = new OsdStyle.Fade();
+    private static boolean wasHiding;
+    private static boolean wasHolding;
+
+    /** The camera just came up: show the tag clearly for a moment (only drawn while hiding). */
+    static void raise(long now) {
+        FADE.wake(now);
+    }
+
+    /**
+     * @param x left margin (with the OSD's jitter already added)
+     * @param y where the tag goes (from {@link SafeRoomOsd#render})
+     */
+    public static void render(GuiGraphics g, Font font, int x, int y, long now) {
         if (!HidingClient.hiding()) {
+            wasHiding = false;
             return;
         }
-        int top = osdShown ? y + 42 : y; // below "NIGHTSHOT" when the full OSD is on
-        if (SafeRoomClientState.inSafeRoom) {
-            top += 12; // under "SAFE ROOM"
+        boolean holding = HidingClient.holdingBreath();
+        if (!wasHiding || holding != wasHolding) {
+            FADE.wake(now);
         }
+        wasHiding = true;
+        wasHolding = holding;
+        float alpha = FADE.update(now, OsdStyle.FULL, HIDING_REST);
         // The status lamp goes hollow while you hold your breath.
-        if (HidingClient.holdingBreath()) {
-            g.renderOutline(x, top + 1, 6, 6, 0xFF000000 | AMBER);
+        if (holding) {
+            if (alpha >= 0.02f) {
+                g.renderOutline(x, y + 3, 4, 4, OsdStyle.argb(OsdStyle.WARN, alpha));
+            }
         } else {
-            g.fill(x, top + 1, x + 6, top + 7, 0xFF000000 | AMBER);
+            OsdStyle.box(g, x, y + 3, x + 4, y + 7, OsdStyle.WARN, alpha);
         }
-        g.drawString(font, "HIDING", x + 10, top, 0xFF000000 | AMBER, true);
+        OsdStyle.draw(g, font, LABEL, x + 8, y, OsdStyle.SMALL, OsdStyle.WARN, alpha);
     }
 
     private HidingOsd() {}

@@ -8,6 +8,7 @@ import java.util.Set;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -39,19 +40,25 @@ public final class BackroomsHudEvents {
     private static final Set<ResourceLocation> STATUS = Set.of(
             VanillaGuiLayers.PLAYER_HEALTH, VanillaGuiLayers.FOOD_LEVEL, VanillaGuiLayers.ARMOR_LEVEL,
             VanillaGuiLayers.AIR_LEVEL, VanillaGuiLayers.VEHICLE_HEALTH);
-    /** Status icons after a change: this opacity for {@link #STATUS_HOLD_MS}, then fading out over {@link #STATUS_FADE_MS}. */
-    private static final float STATUS_ALPHA = 0.7f;
-    private static final long STATUS_HOLD_MS = 3500L;
-    private static final float STATUS_FADE_MS = 1200.0f;
-    /** At this health or below the hearts stay faintly in view. */
+    /**
+     * Status icons after a change: this opacity for {@link OsdStyle#HOLD_MS}, then fading out with
+     * the same timing as the camcorder readouts ({@link OsdStyle.Fade}).
+     */
+    private static final float STATUS_ALPHA = 0.6f;
+    private static final OsdStyle.Fade STATUS_FADE = new OsdStyle.Fade();
+    /**
+     * At this health or below the hearts stay in view, slowly breathing between these two
+     * opacities, so a low-health warning is never missed but never flashes.
+     */
     private static final float LOW_HEALTH = 6.0f;
-    private static final float LOW_HEALTH_ALPHA = 0.4f;
+    private static final float LOW_HEALTH_MIN = 0.35f;
+    private static final float LOW_HEALTH_MAX = 0.65f;
+    private static final long LOW_HEALTH_PULSE_MS = 1400L;
 
     private static float lastHealth = -1.0f;
     private static int lastFood = -1;
     private static int lastAir = -1;
     private static int lastArmor = -1;
-    private static long lastStatusChangeMs;
 
     /** Hotbar: hides after this long without a slot change... */
     private static final long HOTBAR_HOLD_MS = 3000L;
@@ -87,7 +94,7 @@ public final class BackroomsHudEvents {
         int air = mc.player.getAirSupply();
         int armor = mc.player.getArmorValue();
         if (health != lastHealth || food != lastFood || air != lastAir || armor != lastArmor) {
-            lastStatusChangeMs = System.currentTimeMillis();
+            STATUS_FADE.wake(System.currentTimeMillis());
             lastHealth = health;
             lastFood = food;
             lastAir = air;
@@ -100,13 +107,14 @@ public final class BackroomsHudEvents {
         }
     }
 
-    /** Status icons' opacity now: shown for a while after a change, faint while health is low, else 0. */
+    /** Status icons' opacity now: shown for a while after a change, breathing while health is low, else 0. */
     private static float statusAlpha(Minecraft mc) {
-        long since = System.currentTimeMillis() - lastStatusChangeMs;
-        float fresh = since <= STATUS_HOLD_MS ? STATUS_ALPHA
-                : Math.max(0.0f, STATUS_ALPHA * (1.0f - (since - STATUS_HOLD_MS) / STATUS_FADE_MS));
-        float low = mc.player != null && mc.player.getHealth() <= LOW_HEALTH ? LOW_HEALTH_ALPHA : 0.0f;
-        return Math.max(fresh, low);
+        long now = System.currentTimeMillis();
+        float alpha = STATUS_FADE.update(now, STATUS_ALPHA, 0.0f);
+        if (mc.player != null && mc.player.getHealth() <= LOW_HEALTH) {
+            alpha = Math.max(alpha, Mth.lerp(OsdStyle.pulse(now, LOW_HEALTH_PULSE_MS), LOW_HEALTH_MIN, LOW_HEALTH_MAX));
+        }
+        return alpha;
     }
 
     /** No black outline round the block you look at: there's no crosshair to aim with either. */

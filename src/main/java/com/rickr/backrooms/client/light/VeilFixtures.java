@@ -1,5 +1,6 @@
 package com.rickr.backrooms.client.light;
 
+import com.rickr.backrooms.block.Level0TubeGlow;
 import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.world.BackroomsLevel;
 import foundry.veil.api.client.render.VeilRenderSystem;
@@ -10,6 +11,7 @@ import foundry.veil.api.client.render.light.renderer.LightRenderHandle;
 import foundry.veil.api.client.render.light.renderer.LightRenderer;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.util.List;
+import net.minecraft.core.BlockPos;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -281,9 +283,9 @@ final class VeilFixtures {
         return level0 && (light.type == FixtureType.FLUORESCENT_LIGHT || light.type == FixtureType.L0_TROFFER_STRIP);
     }
 
-    /** A Level 0 tube's own brightness factor (0.85-1.15, see FixturePower#tubeBrightness); 1 for everything else. */
+    /** A Level 0 tube's own brightness for its age (FixtureLight#tubeGlow); 1 for everything else. */
     private static float tubeBrightness(FixtureLight light, @Nullable BackroomsLevel floor) {
-        return level0Tube(light, floor) ? FixturePower.tubeBrightness(light.key) : 1.0f;
+        return level0Tube(light, floor) ? light.tubeGlow : 1.0f;
     }
 
     private static PointLightData newPoint(FixtureLight light, @Nullable BackroomsLevel floor) {
@@ -292,11 +294,12 @@ final class VeilFixtures {
         float g = type.green;
         float b = type.blue;
         if (level0Tube(light, floor)) {
-            // Tubes age differently: some a touch warm, cool or greenish (fixed per tube).
-            float[] tint = FixturePower.tubeTint(light.key);
-            r *= tint[0];
-            g *= tint[1];
-            b *= tint[2];
+            // Tubes age differently: some yellowed, some cooler. The
+            // same colour as the tube's lens (block/Level0TubeGlow), so lens and light agree.
+            int tone = Level0TubeGlow.tone(BlockPos.getX(light.key), BlockPos.getZ(light.key));
+            r *= Level0TubeGlow.toneRed(tone);
+            g *= Level0TubeGlow.toneGreen(tone);
+            b *= Level0TubeGlow.toneBlue(tone);
         }
         return new PointLightData()
                 .setPosition(light.x, light.y, light.z)

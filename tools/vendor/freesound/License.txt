@@ -1,7 +1,8 @@
 Field recordings from Freesound (https://freesound.org), all released under Creative Commons 0
 (public domain dedication, https://creativecommons.org/publicdomain/zero/1.0/). Downloaded as the
 site's high-quality previews, converted to 44.1 kHz mono Ogg Vorbis and trimmed to the part used.
-Processed into the mod's sounds by tools/level_assets/recorded.py.
+Processed into the mod's sounds by tools/level_assets/recorded.py (Level 0's room tone and its
+per-tube buzz by tools/anomaly_assets/level0_audio.py).
 
 638895_fluorescent_hum.ogg            "Fluorescent lightbulb hum buzz (Extended)" by Developer_Jake
                                         https://freesound.org/s/638895/  (5 s to 21 s)

@@ -4,7 +4,7 @@ import com.rickr.backrooms.world.Hash;
 import net.minecraft.core.Direction;
 
 /**
- * The film's "builders' rooms" in Level 0: rooms (about 7-12 blocks across) that someone fitted
+ * The film's "builders' rooms" in Level 0: rooms (mostly 7-11 blocks across, a few long ones) that someone fitted
  * out without a plan, but each with only a few deliberate features. They are built on their own
  * coarse grid, separate from the ordinary maze skeleton of {@link Level0Layout}: {@link #X_BIG}
  * and {@link #Z_BIG} cut the world into rooms with 2-3 thick walls.
@@ -41,11 +41,12 @@ import net.minecraft.core.Direction;
  */
 final class Level0Builders {
     /**
-     * The rooms' grid: walls 2-3 thick, rooms 8-11 wide plus a last one per 24 blocks of 7-12 (the
-     * block's leftover), so every room is 7-12 across: small enough never to feel like a hall.
+     * The rooms' grid: walls 2-3 thick, rooms mostly 7-11 wide, now and then a long one (up to
+     * about 17, the leftover at the end of a 28-block run) so some rooms come out long and narrow,
+     * like 7 by 15. Small enough never to feel like a hall, but no longer all one size.
      */
-    static final Bands X_BIG = new Bands(24, 2, 3, 8, 11, 103);
-    static final Bands Z_BIG = new Bands(24, 2, 3, 8, 11, 104);
+    static final Bands X_BIG = new Bands(28, 2, 3, 7, 11, 103);
+    static final Bands Z_BIG = new Bands(28, 2, 3, 7, 11, 104);
 
     // Room layouts.
     static final int L_OPEN = 0;
