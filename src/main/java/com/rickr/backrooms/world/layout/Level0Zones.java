@@ -36,17 +36,30 @@ public final class Level0Zones {
     public static final int BUILDERS = 3;
     /** Dark wings: the same maze, every light dead from the doorway in. */
     public static final int DARK = 4;
-    public static final int KINDS = 5;
+    /**
+     * The room maze: rooms of very different sizes behind thick wall masses, joined by 2-deep
+     * doorways that mostly line up into "tunnels of nested door frames" (see Level0RoomMaze).
+     */
+    public static final int ROOMS = 5;
+    public static final int KINDS = 6;
 
     /** Names for /backrooms anomaly locate (see Level0Finder). */
-    public static final String[] NAMES = {"pillar_hall", "wall_field", "corridors", "builders_rooms", "dark_wing"};
+    public static final String[] NAMES = {"pillar_hall", "wall_field", "corridors", "builders_rooms", "dark_wing", "rooms"};
 
     /**
-     * Share of the zone points of each kind (they add up to 1). Open pillar halls used to be 40% of
-     * the level; they are now a minority, so most of the Lobby is tight walled maze and corridors
-     * and the big open spaces feel rare (and more unsettling when you find one).
+     * Share of the zone points of each kind, indexed by kind (they add up to 1). Open pillar halls
+     * used to be 40% of the level; they are now a minority, so most of the Lobby is tight walled
+     * maze, corridors and the room maze, and the big open spaces feel rare (and more unsettling
+     * when you find one).
      */
-    static final double[] KIND_WEIGHTS = {0.22, 0.38, 0.22, 0.08, 0.10};
+    static final double[] KIND_WEIGHTS = {0.22, 0.16, 0.22, 0.08, 0.10, 0.22};
+    /**
+     * The order in which the kinds take their slice of a zone point's random roll. The room maze
+     * comes right after the wall fields: it took the second half of what used to be the wall
+     * fields' slice, so in an existing world only (some) former wall fields change kind, and the
+     * halls, corridors, builders' rooms and dark wings stay where they were.
+     */
+    private static final int[] ROLL_ORDER = {HALL, FIELD, ROOMS, CORRIDOR, BUILDERS, DARK};
 
     /** Size of the squares that each hold one zone point. */
     static final int CELL = 80;
@@ -152,13 +165,13 @@ public final class Level0Zones {
 
     private static int kindOf(long pointHash) {
         double r = Hash.unit(Hash.mix(pointHash ^ 0x5A5AL));
-        for (int k = 0; k < KINDS - 1; k++) {
-            r -= KIND_WEIGHTS[k];
+        for (int i = 0; i < ROLL_ORDER.length - 1; i++) {
+            r -= KIND_WEIGHTS[ROLL_ORDER[i]];
             if (r < 0) {
-                return k;
+                return ROLL_ORDER[i];
             }
         }
-        return KINDS - 1;
+        return ROLL_ORDER[ROLL_ORDER.length - 1];
     }
 
     /** Smooth value noise in [0, 1): random values on a grid, blended with a smoothstep. */

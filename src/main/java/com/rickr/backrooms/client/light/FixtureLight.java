@@ -39,6 +39,14 @@ public final class FixtureLight {
      * a small per-tube jitter), set when the lights are rebuilt. 1 for every other light.
      */
     public float tubeGlow = 1.0f;
+    /**
+     * Level 0 emergency lamps: true for a lamp whose block says lit=true (always on, on its
+     * battery); false for a standby lamp, which only switches itself on when the power at its
+     * spot fails (see FixturePower#levelOf). Read from the block when the lights are rebuilt.
+     */
+    public boolean alwaysOn = true;
+    /** A standby emergency lamp: when its relay clicks over (0 = power is fine, not counting down). */
+    public long relayAtMs;
 
     // Runtime state, updated every client tick by BackroomsLights.
     /** 0..1 power from events (blackout fade, flicker, alarm dimming). */

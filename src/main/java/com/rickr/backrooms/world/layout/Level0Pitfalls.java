@@ -29,15 +29,20 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
  * door instead. The doorways open onto the walkway that runs along the wall, and the middle
  * walkway lines up with them, so you can cross the room on it if you're careful.
  *
- * <p>The shafts are carpeted all the way down and have a floor at {@link #SHAFT_BOTTOM}, above the
- * height where falling would take you on to Level 1. Falling in is handled by the server
- * ({@code PitfallsBehavior}): the shaft seems to go on and on, then you land, hurt, far away.
+ * <p>The shafts are carpeted for the first two blocks down and then turn lightless black (so from
+ * the edge each one reads as a square of nothing, "light reaches only a few feet down"), and have
+ * a floor at {@link #SHAFT_BOTTOM}, above the height where falling would take you on to Level 1.
+ * Falling in is handled by the server ({@code PitfallsBehavior}): the shaft seems to go on and on,
+ * then you land, hurt, far away. Before you even see the room you hear cold air breathing up out
+ * of the shafts (client, {@code PitfallsEffect}).
  */
 public final class Level0Pitfalls {
     public static final int BOX = 19;
     public static final int MOAT = 2;
-    /** Y of the carpet at the bottom of the shafts (Level 0 sends you to Level 1 below y30). */
+    /** Y of the black bottom of the shafts (Level 0 sends you to Level 1 below y30). */
     public static final int SHAFT_BOTTOM = 31;
+    /** How far down (blocks below the floor) the carpet lining goes before the black starts. */
+    private static final int LINED = 2;
     /** Walkways every this many blocks (so the shafts are one less across). */
     private static final int PITCH = 4;
 
@@ -90,6 +95,26 @@ public final class Level0Pitfalls {
     /** True above one of the shafts (nothing to stand on). */
     public static boolean isShaft(AnomalySite site, int x, int z) {
         return role(site, x, z) == SHAFT;
+    }
+
+    /**
+     * A test point for /backrooms anomaly visit: {x, feetY, z, lookX, lookZ}, or null. "edge"
+     * stands on the walkway just inside an open doorway (never the wooden door's wall), right at
+     * the shafts, looking along the middle walkway across the room: shafts on both sides.
+     */
+    @org.jetbrains.annotations.Nullable
+    static double[] visit(AnomalySite site, String name, int floorY) {
+        if (!name.equals("edge")) {
+            return null;
+        }
+        Direction wall = doorSide(site) == Direction.NORTH ? Direction.SOUTH : Direction.NORTH;
+        int middle = BOX / 2;
+        int i = middle;
+        int j = wall == Direction.NORTH ? 1 : BOX - 2;
+        double x = site.minX() + MOAT + i + 0.5;
+        double z = site.minZ() + MOAT + j + 0.5;
+        double look = wall == Direction.NORTH ? 4.0 : -4.0;
+        return new double[] {x, floorY + 1.0, z, x, z + look};
     }
 
     static boolean isSolid(AnomalySite site, int x, int z) {
@@ -147,15 +172,16 @@ public final class Level0Pitfalls {
                     out.set(ceiling, ModBlocks.FLUORESCENT_LIGHT.get().defaultBlockState());
                 }
             }
-            case SHAFT -> out.set(SHAFT_BOTTOM, carpet);
+            case SHAFT -> out.set(SHAFT_BOTTOM, ModBlocks.L2_VOID_BLACK.get().defaultBlockState());
             default -> out.set(floor, carpet);
         }
     }
 
-    /** Solid carpet from the floor down to the bottom of the shafts. */
+    /** The sides of the shafts: carpet just under the floor, lightless black further down. */
     private static void fillBelow(int floor, BlockState carpet, LevelLayout.Column out) {
+        BlockState black = ModBlocks.L2_VOID_BLACK.get().defaultBlockState();
         for (int y = SHAFT_BOTTOM; y < floor; y++) {
-            out.set(y, carpet);
+            out.set(y, y >= floor - LINED ? carpet : black);
         }
     }
 }

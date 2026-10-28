@@ -18,10 +18,13 @@ import net.minecraft.world.level.block.state.properties.Half;
  *
  * <p>A big lit 35x35 hall with three doorways in each wall. Pillars stand on "slots": the regular
  * lattice (every 4 blocks) and the in-between points. Each {@link #ARRANGEMENTS arrangement} says
- * which slots hold a pillar: number 0 is the neat lattice the hall is generated with, the others are
- * lopsided. The server ({@code Level0Anomalies}) now and then picks another arrangement and moves
- * each pillar only while nobody can see it. Two slots are never next to each other (not even
- * diagonally), so whatever the arrangement every spot of the hall stays reachable.
+ * which slots hold a pillar: number 0 is the neat lattice the hall is generated with, number 1 the
+ * same lattice moved half a step (every pillar on an in-between point), number 2 a lopsided mix.
+ * The server ({@code PeripheralShiftBehavior}) now and then picks another arrangement and moves
+ * each pillar only while nobody can see it, so the part of the hall behind you ends up on a
+ * different grid from the part you were watching: that seam is what you catch. Two slots are never
+ * next to each other (not even diagonally), so whatever the arrangement every spot of the hall
+ * stays reachable.
  *
  * <p>Across the middle stands a pale wall with archways: the wiki's "Arch Variation", the most
  * stable of the rooms, which doesn't shift. It is the one landmark you can steer by. The carpet
@@ -115,6 +118,9 @@ public final class Level0PillarHall {
         if (n == 0) {
             return lattice; // the neat lattice the hall starts with
         }
+        if (n == 1) {
+            return !lattice; // the same lattice, half a step over
+        }
         double r = Hash.unit(site.salt(), p, q, 40 + n);
         return lattice ? r < 0.55 : r < 0.4;
     }
@@ -153,6 +159,24 @@ public final class Level0PillarHall {
         int q = q(site, z);
         int r = role(site, p, q);
         return r == WALL || r == ARCH_PIER || (r == SLOT && pillarIn(site, 0, p, q));
+    }
+
+    /**
+     * A test point for /backrooms anomaly visit: {x, feetY, z, lookX, lookZ}, or null. "centre"
+     * stands three blocks off the middle arch (plain floor, never a pillar slot) looking at it,
+     * with the lattice on both sides.
+     */
+    @org.jetbrains.annotations.Nullable
+    static double[] visit(AnomalySite site, String name, int floorY) {
+        if (!name.equals("centre")) {
+            return null;
+        }
+        boolean eastWest = site.facing() == 0;
+        int p = eastWest ? MIDDLE : MIDDLE + 3;
+        int q = eastWest ? MIDDLE + 3 : MIDDLE;
+        double x = site.minX() + MOAT + 1 + p + 0.5;
+        double z = site.minZ() + MOAT + 1 + q + 0.5;
+        return new double[] {x, floorY + 1.0, z, eastWest ? x : x - 3.0, eastWest ? z - 3.0 : z};
     }
 
     static boolean isWalkable(AnomalySite site, int x, int z) {

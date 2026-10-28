@@ -1,0 +1,44 @@
+{
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "minecraft:block/gray_concrete",
+    "cord": "minecraft:block/black_concrete",
+    "shade": "minecraft:block/gray_concrete",
+    "inside": "minecraft:block/white_concrete",
+    "bulb": "minecraft:block/white_concrete"
+  },
+  "elements": [
+    {
+      "from": [7.5, 12, 7.5], "to": [8.5, 16, 8.5],
+      "faces": {
+        "north": {"texture": "#cord"}, "east": {"texture": "#cord"}, "south": {"texture": "#cord"},
+        "west": {"texture": "#cord"}, "up": {"texture": "#cord"}
+      }
+    },
+    {
+      "from": [6.5, 10, 6.5], "to": [9.5, 12, 9.5],
+      "faces": {
+        "north": {"texture": "#shade"}, "east": {"texture": "#shade"}, "south": {"texture": "#shade"},
+        "west": {"texture": "#shade"}, "up": {"texture": "#shade"}
+      }
+    },
+    {
+      "from": [4, 6, 4], "to": [12, 10, 12],
+      "faces": {
+        "north": {"texture": "#shade"}, "east": {"texture": "#shade"}, "south": {"texture": "#shade"},
+        "west": {"texture": "#shade"}, "up": {"texture": "#shade"},
+        "down": {"texture": "#inside", "neoforge_data": {"block_light": 15, "sky_light": 15}}
+      }
+    },
+    {
+      "from": [6.5, 4.5, 6.5], "to": [9.5, 6, 9.5],
+      "shade": false,
+      "neoforge_data": {"block_light": 15, "sky_light": 15},
+      "faces": {
+        "north": {"texture": "#bulb"}, "east": {"texture": "#bulb"}, "south": {"texture": "#bulb"},
+        "west": {"texture": "#bulb"}, "down": {"texture": "#bulb"}
+      }
+    }
+  ]
+}

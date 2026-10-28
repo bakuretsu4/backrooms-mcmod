@@ -102,9 +102,17 @@ going down into the dark, until the picture breaks up and you are in the next le
   ending at a blank wall, its far lights dead. Now and then a hall of square pillars, the film's
   half-fitted rooms (rows of half-walls and cubicles, window slots, a step down into a sunken
   passage, mannequins, a heap of old furniture) and whole wings where every light is dead. Here
-  and there furniture has noclipped into the walls, floor and ceiling. Arrows
-  drawn on the walls point to the exit stairwell, but some of them lie. Look for the EXIT sign over
-  a wooden door between green and white hazard stripes.
+  and there furniture has noclipped into the walls, floor and ceiling. About a fifth of the Lobby
+  is the room maze: rooms of every size from 6 to 22 blocks behind thick wall masses, joined by
+  2-deep doorways 2 to 6 wide that mostly line up, so you look through a tunnel of door frames
+  into lit rooms far off; posts where four rooms meet, the odd big pillar, 1-wide slits, tunnel
+  rooms, and dead ends where someone left crates, a case, a backpack or a heap of furniture. The
+  light comes in districts: brightly lit office stretches, ordinary ones with pools of light and
+  dark gaps, dim ones where half the tubes are dead, and abandoned ones where you need your
+  flashlight. You always wake up under a working light. Arrows drawn on the walls and painted on
+  the carpet point to the exit stairwell, but some of them lie, and in a few neighbourhoods,
+  where the arrows crowd together, every one of them points the wrong way. Look for the EXIT sign
+  over a wooden door between green and white hazard stripes.
   The building has aged unevenly: faded beige-yellow paper with a small, faint print, a worn,
   slightly damp tan carpet and fissured off-white ceiling tiles. Mostly it looks merely old, but
   here and there a whole stretch shows its years at once: water rings on the tiles, a leak stain
@@ -598,11 +606,17 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 `AnomalyService` runs their behaviour on the server and tells clients which ones are near).
 
 **Level 0**
-- **Red Rooms:** Sometimes the wallpaper starts peeling, there's crimson underneath, and the carpet grabs at your shoes. Turn the corner and you're in darkroom-red rooms that hum like a klaxon, and the way you came in is gone. Count the loops; Level 0 has its own way of letting people go.
-- **Blackout Zones:** Patches of the maze where every light is dead, the walls are rough and the carpet is flooded. The buzz you hear seems to lead the way out, but it never stays in one place.
-- **The Manila Room:** A very rare brown wall with a wooden door. Behind it is a quiet beige room with a table, two chairs, supplies and notes from volunteers, and a piano playing from nowhere. Read the notes: the way to Level 1 is close.
-- **Shifting pillar halls:** Big bright halls full of pillars that are never quite where they were when you look back. Only the pale arches in the middle stay put.
-- **Pit rooms:** A big room whose floor is a grid of carpeted square shafts with narrow walkways between them, and a wooden door on the far side. Don't fall in. You will land, hurt, somewhere very far away.
+- **Red Rooms:** Sometimes the wallpaper starts peeling, there's crimson underneath, and the carpet grabs at your shoes. Turn the corner and you're in darkroom-red rooms that hum like a klaxon, and the way you came in is gone. The rooms keep count: every time you come round, the hum drags low for a moment and more of the walls have tally marks on them. Count the loops; Level 0 has its own way of letting people go.
+- **Blackout Zones:** Patches of the maze where every light is dead, the walls are rough and the carpet is flooded. Step in and the lights behind you die in a wave rolling away from you; a minute later (or once you're out) they come back from the edge inward. The buzz you hear seems to lead the way out, but it never stays in one place, though the longer you're in, the more honestly it points.
+- **The Manila Room:** A very rare brown wall with a wooden door. Behind it is a quiet beige room with a table, two chairs, supplies and notes from volunteers, and a piano playing from nowhere. It calms you faster than anywhere else, the lights never go out in it, and if you come back later someone will have put something in the cupboards you emptied. Sign the guestbook. Read the notes: the way to Level 1 is close.
+- **Shifting pillar halls:** Big bright halls full of pillars that are never quite where they were when you look back. You'll hear them settle behind you, and sometimes half the hall is on a different grid from the half you were watching. Mark a pillar with chalk and look away. Only the pale arches in the middle stay put.
+- **Pit rooms:** You hear cold air breathing up through the walls before you see it: a big room whose floor is a grid of square shafts with narrow carpeted walkways between them, and a wooden door on the far side. The light dies two blocks down. Don't fall in. You will land, hurt, somewhere very far away, under a hole in the ceiling.
+- **Hidden rooms:** Some of the big blocks of wall are hollow. Look for a one-block crack with a kink in it, a doorway piled with boxes that has a gap at one end, a missing ceiling tile with a ladder going up into the plenum, or (only by flashlight, on the dark side of a block) a low gap in a corner. Each room has someone's notes, supplies they left for the next person, and something about it that isn't right. The one above the ceiling has a radio that saves your checkpoint.
+- **The lights, locally:** Now and then, never more than once every few minutes, the lights do something to you alone: a room's tubes stutter out as you walk in and come back when you leave, the tubes behind you in a corridor die one by one, or a lit district far down a long view goes dark while you watch.
+- **The Atrium:** A big hall whose low ceiling suddenly stops: above the middle, a black shaft rises out of sight, with warm pendant lamps hanging in it on long chains, and a balcony runs all the way round the void up there. You can get up. One alcove has no light, only a dead emergency lamp, and a steel ladder going up into the dark. Up on the balcony someone left supplies and scuffed arrows on the carpet, and they point the true way to the nearest exit. Something stands at the railing looking down. Don't be surprised if the hall below goes dark while you're up there.
+- **The Shaft Hall:** A wide, low, almost dark hall whose ceiling is full of holes. Each one is a tile-lined shaft going straight up, and a few have a light burning far up at the top. You hear things up there now and then, and once in a while a ceiling tile comes loose and falls the whole way down. Mind the broken tiles on the carpet.
+- **The Front Office:** You'll hear it before you see it: an alarm and a red light turning in a huge dark room, around a block of yellow wallpaper with a door and a window drawn on it, and a row of empty chairs facing the drawing. The PA sometimes asks you to come to the front office. If you go while you're expected (or simply arrive at the right moment), the alarm stops and there is light under the drawn door. Walk into it. Behind it is a small warm reception office that can't possibly fit in that block: supplies, Almond Water, a radio that saves your checkpoint, and another drawn door under an EXIT sign that really is the way out.
+- **Findability:** One of these three set pieces is built in (nearly) every 256x256 square of the map, so together with the pit rooms and pillar halls there is always a big anomalous building close by (measured over four seeds: median 39 blocks away, 99% of places within 116 blocks, the worst spot 183).
 
 **Level 1**
 - **Crate halls:** In some of the open garage halls, aisles of steel pallet racking stand in a brighter, better-lit hall. Wooden crates turn up there: you hear something settle behind you, and there is a crate that wasn't there before. When the lights fail, the crates are gone; when the power comes back, new ones are waiting. Not everything inside is worth taking.
@@ -669,7 +683,7 @@ evenly over the whole picture and blended over about two seconds when you change
 
 | Level | Mood |
 |---|---|
-| Level 0 | Kane Pixels' tapes: a soft, faded yellow-beige (never olive). Clear pools of light under each troffer, dimmer stretches between them, and a soft bounce glow that fades gradually into darker corners and wall feet (walls cast real shadows). Tubes differ in age, chosen by the layout (`world/layout/Level0Tubes`, a `glow` block state: full, worn, tired or dying, each with its own light level, so it works with or without Veil); whole stretches of ceiling were re-lamped at different times, so some areas are brighter than others. Each tube also has its own colour temperature (mostly neutral, some yellowed, a few cool). About one tube in twenty is faulty: it stutters in a short burst every 12-45 s, or now and then cuts out for a few seconds and re-strikes with a few flashes, clicking each time; the room under it dims a little with it. A faint warm haze from about 14 blocks out gives long halls depth; dark wings crushed to black |
+| Level 0 | Kane Pixels' tapes: a soft, faded yellow-beige (never olive). With Veil the troffers are the real light: warm pools under each one, cut block-exact by every wall, post and door jamb (`client/light/Level0LightRenderer`, shadows from a top-down wall map of the 128 x 128 columns around you, `Level0WallGrid`), so jambs facing away go black and posts throw hard wedges; a weak bounce from the lightmap fills in under the pools and dies away into corners and wall feet, which a screen pass darkens from the same wall map (no halos). Lit doorways far down dark runs read as beacons (64 lamps within 42 blocks on HIGH). Without Veil the lightmap alone makes the pools, steeper, with contact shadows for the corners. Tubes differ in age, chosen by the layout (`world/layout/Level0Tubes`, a `glow` block state: full, worn, tired or dying, each with its own light level, so it works with or without Veil); whole stretches of ceiling were re-lamped at different times, so some areas are brighter than others. Each tube also has its own colour temperature (mostly neutral, some yellowed, a few cool). About one tube in twenty is faulty: it stutters in a short burst every 12-45 s, or now and then cuts out for a few seconds and re-strikes with a few flashes, clicking each time; the room under it dims a little with it. A blackout is a dying wave rolling out from a point near you (22 blocks/s, each tube popping), then a partial recovery: emergency lamps and a few tubes on emergency ballasts come on, half the 24-block patches come back after 20-60 s, a quarter when the event ends and a quarter stay dead for 2-4 more minutes (`client/light/Level0Power`). Server code can cut the power locally (`world/FixtureOutages`: a circle or a list of fixtures, cut, stuttering or as a wave; restored on demand). Almost no haze (6% from 20 blocks), dark wings crushed to black. F3 shows the Level 0 lights' GPU time |
 | Level 1 | Cold, damp concrete: blue shadows, little colour, grey-blue air |
 | Level 2 | Warm amber pools from the caged lamps receding down the line, rust-brown shadows, pipe chases sunk in darkness, a light warm heat haze |
 | Level 4 | Cold fluorescent blue-grey, quiet |
@@ -737,9 +751,10 @@ saturation, hiss and a big, empty room.
   follows the space you are standing in: short and close in a small room, long in a big one, hardly
   at all under open sky. Each level adds its materials: Level 0's carpet and ceiling tiles make it
   sound dead and dry up close, like a real office, with only a soft, dark, slightly late tail
-  hinting at how far the halls go; Level 4's offices soak up the highs, Level 1's bare concrete
-  garage rings, Level 2's long pipe corridor is hard and metallic, with a late echo coming back
-  from far down the line. The
+  hinting at how far the halls go (but in its tall Atrium and shafts the echo turns harder and
+  longer and comes back from far above); Level 4's offices soak up the highs, Level 1's bare
+  concrete garage rings, Level 2's long pipe corridor is hard and metallic, with a late echo
+  coming back from far down the line. The
   Poolrooms and Level 37 get no reverb, since in canon nothing reverberates there. Music, the
   camcorder's beeps and the overworld are left alone. Without EFX support it simply switches off.
 - **Distant sounds** (`client/audio/DistantAmbience`): every 20 seconds to a minute and a half
@@ -759,6 +774,28 @@ saturation, hiss and a big, empty room.
   ducting ticks above the ceiling as it cools, a relay clacks in a far panel, a door clicks
   somewhere. Now and then a tube pops in the distance or water drips onto the carpet; rarely,
   something scratches behind a wall or a voice calls, far off.
+- **Level 0's dark is silent** (`client/audio/Level0Soundscape`): the room tone belongs to a lit
+  building. Where there is no lit tube near you (a dark district, the dark wing, a room whose
+  lights just died) it sinks about 18 dB, and in a blackout, with the mains off, about 30 dB, so
+  the buzz of the tubes that still burn is all there is and the dark is quiet. It fades smoothly
+  in decibels, down in about a second and back up over two.
+- **Level 0's events** (`client/light/FixtureSounds`, `client/audio/Level0Soundscape`): every
+  tube near you that goes out in a blackout's dying wave or a local outage pops and its buzz sags
+  away, one after another as the dark rolls past, and each that comes back ticks and catches; an
+  emergency lamp's relay clunks as it switches on. The blackout itself is a far breaker and the
+  whole floor's hum sagging while ballasts pop further and further away; the power's return is far
+  contactors and the mains swelling back into the walls (the tubes then come back on their own,
+  some never). A district going dark far away is heard as a muffled contactor and a cascade of
+  ballasts, from its direction.
+- **Level 0's set pieces**: the Front Office's failing fire horn (three blasts and a pause, one
+  blast chattering, the last one sagging) carries about 80 blocks through the halls, with the red
+  beacon's motor whirring close by; the Atrium has cold air moving high up in its void, and the
+  Shaft Hall's shafts send down a scrape, a knock, a creak or trickling grit every half minute or
+  so; a loose ceiling tile cracks up a shaft and lands on the carpet. Hidden rooms have their own
+  tones: an old radio playing a waltz through static (and a recorded message), a wall clock that
+  skips a beat, the stillness of a sealed room, a chair creaking as if someone just stood up, and
+  behind the Front Office's drawn door a clock and a PA microphone left on. Under the Atrium and
+  the shafts the reverb turns harder and longer, coming back from far above.
 - **Level 2's pipes** (`client/anomaly/level2/Level2Emitters`, `tools/anomaly_assets/level2_audio.py`):
   every 7-18 seconds the pipes act up somewhere up or down the corridor: a water-hammer knock
   that runs along the pipes toward you or away, a heavy clank, a long creak of hot metal (far more
@@ -779,9 +816,14 @@ saturation, hiss and a big, empty room.
   out without blasting. Backpacks open and close silently. Many lamps humming
   together are turned down so their drone never buries everything else, and the music sits a
   little above the level instead of over it. Level 0 is a touch quieter still, so its silences
-  feel like silence: room tone about -33, each tube's buzz -27 (-28 for a faulty one) and faster
-  to fade with distance, starter ticks -35, and its far building sounds -29 to -32 before
-  distance and walls take their share.
+  feel like silence: room tone about -33 (and 18 dB under that in the dark, 30 in a blackout),
+  each tube's buzz -27 (-28 for a faulty one) and faster to fade with distance, starter ticks -35,
+  and its far building sounds -29 to -32 before distance and walls take their share. Its events
+  and set pieces (`tools/anomaly_assets/level0_spaces_audio.py`): the Front Office horn's blasts
+  -18 (at the ceiling, so it carries 80 blocks through the walls), the PA -18 like every PA line, a falling
+  ceiling tile -24, a far district going dark -23 before distance, the blackout's wave -25, a
+  tube popping -28 or striking again -30, the Atrium's air and the pit draught -30, the hidden
+  rooms' radio -31, clock -34 and stillness -37.
 - **Level 39 "Megalophobia"** (`client/Level39Audio`, `client/Level39QuakeEffects`): the town
   rings like one colossal hall (the superstructure encloses it, so its echo is long and loud even
   in the open), while the marble tunnels below swallow sound. Its own loops follow you between
@@ -807,8 +849,11 @@ saturation, hiss and a big, empty room.
 /backrooms locate                       where is the nearest exit? (Level 227 has none, and says so)
 /backrooms locate saferoom              where is the nearest safe room?
 /backrooms anomaly here                 which anomalous area am I standing in?
-/backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... and level_0/set/...
+/backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... (e.g. level_0/zone/rooms, the room maze) and level_0/set/... (e.g. frame_tunnel, dead_end_cache, liar_arrows, bright_district, dim_district, abandoned_district)
+/backrooms anomaly visit <kind> <point>  Level 0 (ops, for testing): jump to a named spot of the nearest site of that kind (tab completes both). level_0/atrium ladder|balcony, level_0/front_office rug|hidden_room, level_0/shaft_hall lit_shaft; the hidden rooms and the older anomalies have their own points
 /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|rain|quake|end> [seconds]
+/backrooms outage <cut|stutter|wave> <radius> [seconds]   Level 0: cut the power in a circle around you (no seconds = until "/backrooms outage end")
+/backrooms l0event <room|corridor|district>   Level 0: let that local light event happen to you at the next right moment (walk into a room / walk a corridor / look down a long lit view), skipping the wait
 /backrooms drift <player> [sealed|door|lights|end]   separate realities now: that player sees a sealed doorway, a door or dead lights (with the nearest friend, or alone); end = snap back
 /backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
 /backrooms sanity [players] <0-100>     set sanity (test the low-sanity effects)
@@ -874,7 +919,7 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | Package | What lives there |
 |---|---|
 | `world` | Level definitions, the infinite chunk generator, exits, travel, floor events, safe rooms (`SafeRooms`) |
-| `world/layout` | One floor plan per level (pure functions of seed + x/z); Level 0's maze is a skeleton of wall bands and gaps (`Bands`) shaped by its zones (`Level0Zones`) in `Level0Layout` (rooms, awkward walls, vistas, corridors, and where each troffer goes and whether it is dead), with the builders' rooms on their own grid (`Level0Builders`) and each lit tube's age picked by `Level0Tubes`; Level 37's plan is integer codes (`Level37Plan`) turned into blocks by `Level37Layout`; Level 39 is split into the town cell plan (`Level39Cell`, cached 128-block tiles in `Level39Tile`), houses (`Level39Houses*`, one cached voxel plan per house), the mill (`Level39Superstructure`) and the tunnels (`Level39Tunnels`, `Level39Vault`); Level 227's one canonical tree (`Level227Tree`, also read by the far renderer) is turned into blocks by `Level227Layout`, with the forest, caves and flytrap patches of each 32-block tile cached in `Level227Tile`; each level's anomalous areas are planned in `<Level>AnomalyPlan` |
+| `world/layout` | One floor plan per level (pure functions of seed + x/z); Level 0's maze is a skeleton of wall bands and gaps (`Bands`) shaped by its zones (`Level0Zones`) in `Level0Layout` (rooms, awkward walls, vistas, corridors, and where each troffer goes and whether it is dead), with the builders' rooms (`Level0Builders`) and the room maze (`Level0RoomMaze`) on their own grids, the light and liar districts in `Level0Lights` and each lit tube's age picked by `Level0Tubes`; Level 37's plan is integer codes (`Level37Plan`) turned into blocks by `Level37Layout`; Level 39 is split into the town cell plan (`Level39Cell`, cached 128-block tiles in `Level39Tile`), houses (`Level39Houses*`, one cached voxel plan per house), the mill (`Level39Superstructure`) and the tunnels (`Level39Tunnels`, `Level39Vault`); Level 227's one canonical tree (`Level227Tree`, also read by the far renderer) is turned into blocks by `Level227Layout`, with the forest, caves and flytrap patches of each 32-block tile cached in `Level227Tile`; each level's anomalous areas are planned in `<Level>AnomalyPlan` |
 | `world/anomaly` | Anomalous areas: site planner (`AnomalyGrid`), behaviour registry (`Anomalies`), server driver and client sync (`AnomalyService`), seamless teleports (`Teleports`), "is anyone looking?" (`Observation`); one sub-package per level |
 | `client/anomaly` | Client side of the anomalous areas: which sites are near (`AnomalyClientState`), per-level picture moods, sounds and overlays; one sub-package per level |
 | `entity` | The Bacteria and its spawner; Level 39's mobs (`Hound`, `Faceling`, `Clump`, `SkinStealer`, `Wretch`) and their spawning (`Level39Spawner`, `TunnelDwellers`); Level 227's grazers (`L227Bear`, `L227Doe`, `L227Boar`) and their spawning (`Level227GrazerSpawner`); Level 227's hunters (`L227Wolf`, `L227Stag`, `L227Squirrel` and the swarm brain `SquirrelSwarm`) and their spawning (`Level227PredatorSpawner`); Level 227's giant Venus flytrap (`VenusFlytrap`, planted by `Level227FloraSpawner`) |
@@ -883,7 +928,7 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas); Level 0's versions cluster in worn patches and some keep to one wall row (`Level0SurfaceBlock`, art in `tools/anomaly_assets/level0_surfaces.py`); Level 227's flora (`Level227*Block`: tall plants, hanging strands, the Palette, GammaPali, Lestron; registered in `registry/Level227Blocks`, art in `tools/anomaly_assets/level227_flora.py`) |
 | `network` | Packets between server and clients |
 | `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`) |
-| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, Level 0's faulty tubes (stutter, lazy restart, dying pulse: `FixturePower`; the tube ages and colours themselves are block states, `block/Level0TubeGlow`, picked by `world/layout/Level0Tubes`), flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
+| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, Level 0's faulty tubes (stutter, lazy restart, dying pulse: `FixturePower`; the tube ages and colours themselves are block states, `block/Level0TubeGlow`, picked by `world/layout/Level0Tubes`), Level 0's own light type with wall-map shadows and the power/corner screen pass (`Level0LightRenderer`, `Level0WallGrid`, `Level0PowerMap`, shaders in `pinwheel/shaders/program/light/level0_*`), its blackout wave and local outages (`Level0Power`), flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
 | `client/water` | Pool water (also Level 7's sea): surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), underwater fog and its darkening with depth (`UnderwaterView`) |
 | `client/audio` | Wall muffling and room reverb through OpenAL EFX (`Acoustics`, `AcousticsEfx`); distant one-off sounds per level (`DistantAmbience`) |
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`); moves your view inside the furniture while you hide (`CameraMixin`) |

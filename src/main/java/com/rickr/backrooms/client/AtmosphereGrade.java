@@ -1,5 +1,6 @@
 package com.rickr.backrooms.client;
 
+import com.rickr.backrooms.client.light.BackroomsLights;
 import com.rickr.backrooms.client.light.FixturePower;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.Level94Clock;
@@ -62,18 +63,27 @@ public final class AtmosphereGrade {
      * tint in ClientLighting (1, 0.975, 0.92) this lands a lit hall at about G/R 0.87-0.89 and
      * B/R 0.54-0.57 (wallpaper ~0.87/0.52, carpet ~0.80/0.43, ceiling ~0.92/0.73).
      *
-     * <p>Exposure 1.23 because the tubes now differ in age (most are a little dimmer than the old
-     * all-equal ones) and the fill is shaped into clear pools (ClientLighting). It is 7% under the
-     * first try (1.32), which measured a little bright and even in game; the aim is a lit hall
-     * averaging about 0.24-0.32 with the pools under the tubes standing out from the stretches
-     * between them.
-     * A touch of extra contrast and fairly strong contact shadows deepen the corners and the foot
-     * of every wall without darkening the middle of a room. A faint warm-beige haze from ~14 blocks
-     * out (never more than 16%) gives long halls depth: far rooms sink a little into the dim air.
-     * The blacks stay crushed so dark wings are solid black.
+     * <p>Darkness (the 2026-10 lighting rebuild): the Veil lamps now make the light, in pools cut
+     * by the walls with dark stretches between them (targets for a whole frame: mean luminance
+     * 0.18-0.26, 10-25% near-black pixels, luminance spread 0.14-0.20). Exposure 1.18 keeps the
+     * pools warm and readable without lifting the dark. The haze is nearly gone (the reference's
+     * Level 0 has none): a faint 6% from 20 blocks out, so a lit doorway far down a black run
+     * stays crisp and reads as a beacon, and dark rooms stay black instead of milky. Contact
+     * shadows are mild (0.30): the corners and wall feet are darkened exactly from the wall map
+     * now (client/light/Level0LightRenderer), and strong screen-space shadows would add halos.
+     * The blacks stay crushed so dark wings are solid black, and black is the reference footage's
+     * violet-black (~2, 0, 3), not a warm brown; the light pass also turns the darkest tones
+     * mauve (client/light/Level0Shading DARK_TINT).
      */
-    private static final Mood LEVEL_0 = new Mood(1.23f, 1.07f, 0.92f, 1.0f, 0.98f, 0.86f, 1.0f, 0.99f, 0.95f,
-            0.005f, 0.0045f, 0.003f, 0.25f, 0.22f, 0.155f, 14.0f, 0.022f, 0.16f, 0.50f, 0.14f, 0.010f);
+    private static final Mood LEVEL_0 = new Mood(1.18f, 1.08f, 0.92f, 1.0f, 0.98f, 0.86f, 1.0f, 0.99f, 0.95f,
+            0.006f, 0.0025f, 0.008f, 0.25f, 0.22f, 0.155f, 20.0f, 0.015f, 0.06f, 0.30f, 0.14f, 0.010f);
+    /**
+     * Level 0 without Veil (not installed, or Iris): the lightmap fill alone makes the pools, so
+     * the camcorder's contact shadows do the corner and wall-foot darkening (0.55), with the same
+     * faint haze and a touch more exposure for the slightly dimmer fill.
+     */
+    private static final Mood LEVEL_0_FALLBACK = new Mood(1.22f, 1.08f, 0.92f, 1.0f, 0.98f, 0.86f, 1.0f, 0.99f, 0.95f,
+            0.006f, 0.0025f, 0.008f, 0.25f, 0.22f, 0.155f, 20.0f, 0.015f, 0.06f, 0.55f, 0.14f, 0.010f);
     /** Level 1: cold, damp concrete. Blue shadows, grey highlights, little colour, grey-blue air. */
     private static final Mood LEVEL_1 = new Mood(1.0f, 1.08f, 0.74f, 0.90f, 0.95f, 1.06f, 1.0f, 1.0f, 1.03f,
             0.012f, 0.013f, 0.018f, 0.18f, 0.19f, 0.23f, 7.0f, 0.032f, 0.40f, 0.45f, 0.12f, 0.010f);
@@ -184,7 +194,7 @@ public final class AtmosphereGrade {
     /** The base mood of a level (for anomalies that want "the level's look, but..."). */
     public static Mood levelMood(BackroomsLevel floor, Minecraft mc) {
         return switch (floor) {
-            case LEVEL_0 -> LEVEL_0;
+            case LEVEL_0 -> BackroomsLights.isVeilLightingActive() ? LEVEL_0 : LEVEL_0_FALLBACK;
             case LEVEL_1 -> LEVEL_1;
             case LEVEL_2 -> LEVEL_2;
             case LEVEL_4 -> LEVEL_4;
@@ -217,6 +227,35 @@ public final class AtmosphereGrade {
         return anomalyMood == null ? mood : mood.lerp(anomalyMood, anomalyWeight);
     }
 
+    // The grade last sent to the camcorder. Level 0's light pass (client/light/Level0LightRenderer)
+    // runs before the camcorder each frame and shapes its highlights and shadows for where they
+    // will end up after this grade.
+    private static float lastExposure = 1.0f;
+    private static float lastContrast = 1.0f;
+    private static float lastShadowR = 1.0f;
+    private static float lastShadowG = 1.0f;
+    private static float lastShadowB = 1.0f;
+
+    public static float lastExposure() {
+        return lastExposure;
+    }
+
+    public static float lastContrast() {
+        return lastContrast;
+    }
+
+    public static float lastShadowR() {
+        return lastShadowR;
+    }
+
+    public static float lastShadowG() {
+        return lastShadowG;
+    }
+
+    public static float lastShadowB() {
+        return lastShadowB;
+    }
+
     /** Pushes this frame's mood into the camcorder shader. Call once per frame. */
     public static void apply(Minecraft mc, PostChain chain) {
         Mood want = target(mc);
@@ -236,7 +275,13 @@ public final class AtmosphereGrade {
         float fogLight = 0.25f + 0.75f * power;
 
         // Eyes adjusting: the camcorder's auto-exposure catching up after the light changes.
-        chain.setUniform("Exposure", m.exposure() * EyeAdaptation.factor(mc));
+        float exposure = m.exposure() * EyeAdaptation.factor(mc);
+        lastExposure = exposure;
+        lastContrast = m.contrast();
+        lastShadowR = m.shR();
+        lastShadowG = m.shG();
+        lastShadowB = m.shB();
+        chain.setUniform("Exposure", exposure);
         chain.setUniform("Contrast", m.contrast());
         chain.setUniform("Saturation", m.saturation());
         chain.setUniform("ShadowR", m.shR());

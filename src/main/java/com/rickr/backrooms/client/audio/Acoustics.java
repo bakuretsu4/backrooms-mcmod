@@ -45,7 +45,8 @@ import org.jetbrains.annotations.Nullable;
  *   <li><b>Room reverb.</b> A few times a second we "feel out" the space around you with rays
  *       (how far are the walls? is there a ceiling?). Small rooms ring short and close, big ones
  *       long and wide, open air hardly at all. Each level adds its materials: Level 0's carpet
- *       and Level 4's offices soak up the highs, Level 1's bare concrete garage rings, Level 2's
+ *       and Level 4's offices soak up the highs (but under Level 0's tall Atrium and shafts the echo
+ *       grows harder and longer, coming back from far above), Level 1's bare concrete garage rings, Level 2's
  *       painted pipe tunnels are tight and hard. Level 39's town rings like a colossal hall
  *       (the superstructure encloses it, so open air above does not weaken the echo there),
  *       while its marble tunnels below swallow sound: short and dry.</li>
@@ -89,6 +90,12 @@ public final class Acoustics {
                  float skyDamp, float lateMul) {
             this(wet, decayMul, gainHf, decayHfRatio, diffusion, skyDamp, lateMul, 1.0f);
         }
+
+        Material lerp(Material to, float t) {
+            return new Material(Mth.lerp(t, wet, to.wet), Mth.lerp(t, decayMul, to.decayMul), Mth.lerp(t, gainHf, to.gainHf),
+                    Mth.lerp(t, decayHfRatio, to.decayHfRatio), Mth.lerp(t, diffusion, to.diffusion),
+                    Mth.lerp(t, skyDamp, to.skyDamp), Mth.lerp(t, lateMul, to.lateMul), Mth.lerp(t, earlyMul, to.earlyMul));
+        }
     }
 
     // Level 0: a carpeted office under acoustic ceiling tiles. Carpet, tiles and papered plaster
@@ -97,6 +104,14 @@ public final class Acoustics {
     // tail that arrives a little late (lateMul), so you can't quite tell how big the space is.
     // A small room rings for about 0.3 s, the open fields for under 2 s.
     private static final Material LOBBY = new Material(0.5f, 0.55f, 0.35f, 0.35f, 1.0f, 0.85f, 1.25f, 0.55f);
+    // Level 0's tall spaces (the Atrium's void, the shafts): above the carpet and the tiles there is
+    // nothing soft, only bare shaft walls going up into the dark. The echo is wetter, rings longer
+    // and keeps more of its highs, and its late part comes back from far above, late and loud,
+    // so a footstep seems to climb away up the shaft. Blended in by how far the upward rays reach
+    // (from TALL_FROM blocks on average, fully TALL_SPAN blocks further).
+    private static final Material LOBBY_TALL = new Material(0.8f, 1.35f, 0.55f, 0.55f, 0.9f, 0.85f, 2.0f, 0.75f);
+    private static final float TALL_FROM = 3.0f;
+    private static final float TALL_SPAN = 8.0f;
     // Level 1: bare concrete parking garage: bright, long, a big space.
     private static final Material GARAGE = new Material(0.75f, 1.35f, 0.85f, 0.9f, 1.0f);
     // Level 2: one long, narrow concrete corridor lined with steel pipes: hard and a little
@@ -340,6 +355,7 @@ public final class Acoustics {
      */
     private static Room measure(ClientLevel world, Vec3 ear, Material m) {
         double sum = 0.0;
+        double upSum = 0.0;
         int up = 0;
         int sky = 0;
         for (Vec3 dir : RAYS) {
@@ -347,13 +363,20 @@ public final class Acoustics {
             BlockHitResult hit = world.clip(new ClipContext(ear, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE,
                     CollisionContext.empty()));
             boolean miss = hit.getType() == HitResult.Type.MISS;
-            sum += miss ? RAY_LENGTH : hit.getLocation().distanceTo(ear);
+            double distance = miss ? RAY_LENGTH : hit.getLocation().distanceTo(ear);
+            sum += distance;
             if (dir.y > 0.1) {
                 up++;
+                upSum += distance;
                 if (miss) {
                     sky++;
                 }
             }
+        }
+        if (m == LOBBY) {
+            // Level 0: under its usual 3-high ceiling the upward rays hit the tiles about 2 blocks
+            // off; in the Atrium or a tall shaft they go 10 or more. Blend toward the tall preset.
+            m = LOBBY.lerp(LOBBY_TALL, Mth.clamp((float) (upSum / up - TALL_FROM) / TALL_SPAN, 0.0f, 1.0f));
         }
         float mean = (float) (sum / RAYS.length);
         float skyShare = (float) sky / up;

@@ -135,7 +135,8 @@ public final class LevelEvents {
         if (state.kind == LevelEventPayload.INTERCOM && now == state.echoTick) {
             // Echo: same line, quieter, from further away, as if bouncing down the halls.
             for (ServerPlayer player : level.players()) {
-                playDistant(player, ModSounds.INTERCOM, 34, 2.0f, state.intercomPitch, level.getRandom());
+                playDistant(player, com.rickr.backrooms.world.anomaly.level0.FrontOfficeBehavior.echoLine(player), 34, 2.0f,
+                        state.intercomPitch, level.getRandom());
             }
         }
         if (state.kind == LevelEventPayload.STORM && now == state.thunderTick) {
@@ -222,7 +223,9 @@ public final class LevelEvents {
                 state.flickerAfter = stage == 2;
                 state.echoTick = now + INTERCOM_ECHO_DELAY;
                 for (ServerPlayer player : level.players()) {
-                    playDistant(player, ModSounds.INTERCOM, 18, 3.0f, state.intercomPitch, random);
+                    // On Level 0 the PA often asks a player near a Front Office to come to it (see FrontOfficeBehavior).
+                    playDistant(player, com.rickr.backrooms.world.anomaly.level0.FrontOfficeBehavior.intercomLine(player, random),
+                            18, 3.0f, state.intercomPitch, random);
                 }
             }
             case LevelEventPayload.LIGHTNING -> {

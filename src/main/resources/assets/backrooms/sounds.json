@@ -1480,6 +1480,280 @@
     ],
     "subtitle": "subtitles.backrooms.level0_tube_tick"
   },
+  "level0.wave_pop": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/wave_pop1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "backrooms:level0/wave_pop2",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "backrooms:level0/wave_pop3",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "backrooms:level0/wave_pop4",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_wave_pop"
+  },
+  "level0.tube_strike": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/tube_strike1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "backrooms:level0/tube_strike2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "backrooms:level0/tube_strike3",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_tube_strike"
+  },
+  "level0.emergency_relay": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/emergency_relay1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "backrooms:level0/emergency_relay2",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_emergency_relay"
+  },
+  "level0.blackout_wave": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/blackout_wave"
+      }
+    ],
+    "subtitle": "subtitles.backrooms.power_down"
+  },
+  "level0.power_restore": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/power_restore"
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_power_restore"
+  },
+  "level0.district_down": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/district_down1",
+        "attenuation_distance": 64
+      },
+      {
+        "name": "backrooms:level0/district_down2",
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_district_down"
+  },
+  "level0.office_alarm": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/office_alarm",
+        "attenuation_distance": 80
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_office_alarm"
+  },
+  "level0.beacon_motor": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/beacon_motor",
+        "attenuation_distance": 10
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_beacon_motor"
+  },
+  "level0.drawn_door": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/drawn_door",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_drawn_door"
+  },
+  "level0.intercom_front_office": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/intercom_front_office1",
+        "stream": true
+      },
+      {
+        "name": "backrooms:level0/intercom_front_office2",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.backrooms.intercom"
+  },
+  "level0.atrium_air": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/atrium_air",
+        "stream": true,
+        "attenuation_distance": 48
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_atrium_air"
+  },
+  "level0.shaft_above": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/shaft_above1",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "backrooms:level0/shaft_above2",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "backrooms:level0/shaft_above3",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "backrooms:level0/shaft_above4",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "backrooms:level0/shaft_above5",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_shaft_above"
+  },
+  "level0.tile_crack": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/tile_crack1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "backrooms:level0/tile_crack2",
+        "attenuation_distance": 32
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_tile_crack"
+  },
+  "level0.tile_fall": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/tile_fall1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "backrooms:level0/tile_fall2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "backrooms:level0/tile_fall3",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_tile_fall"
+  },
+  "level0.radio": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/radio",
+        "stream": true,
+        "attenuation_distance": 14
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_radio"
+  },
+  "level0.clock_tick": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/clock_tick",
+        "attenuation_distance": 8
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_clock_tick"
+  },
+  "level0.sealed_room": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/sealed_room",
+        "attenuation_distance": 10
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_sealed_room"
+  },
+  "level0.hidden_office": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/hidden_office",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_hidden_office"
+  },
+  "level0.still_creak": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/still_creak1",
+        "attenuation_distance": 10
+      },
+      {
+        "name": "backrooms:level0/still_creak2",
+        "attenuation_distance": 10
+      },
+      {
+        "name": "backrooms:level0/still_creak3",
+        "attenuation_distance": 10
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_still_creak"
+  },
+  "level0.pillar_settle": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/pillar_settle1",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "backrooms:level0/pillar_settle2",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "backrooms:level0/pillar_settle3",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_pillar_settle"
+  },
+  "level0.pit_draught": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/pit_draught",
+        "attenuation_distance": 20
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_pit_draught"
+  },
+  "level0.red_loop": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/red_loop",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0_red_loop"
+  },
   "distant.level0.ballast_pop": {
     "sounds": [
       {

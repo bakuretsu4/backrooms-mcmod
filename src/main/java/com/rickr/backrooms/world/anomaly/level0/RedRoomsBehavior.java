@@ -11,6 +11,7 @@ import com.rickr.backrooms.world.anomaly.Observation;
 import com.rickr.backrooms.world.anomaly.Teleports;
 import com.rickr.backrooms.world.layout.Level0RedRooms;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -36,6 +37,9 @@ import net.minecraft.world.phys.Vec3;
  *       through, it is bricked up with crimson wallpaper. When everybody has left (or died) it
  *       opens again, out of sight if possible.</li>
  *   <li><b>Paranoia.</b> Sanity drains slowly while you're in the crimson part.</li>
+ *   <li><b>It keeps count.</b> Each time round, the hum drags low and wrong for a moment (only the
+ *       one who looped hears it), and out of sight a few more crimson walls in the rooms get tally
+ *       marks, three per loop: the place is counting you. They go away again once it's empty.</li>
  *   <li><b>The way out.</b> Canon says there is none, so we borrow Level 0's own exit, the
  *       flickering wall (https://backrooms-wiki.wikidot.com/level-0): once someone has gone round
  *       the loop three times, or has been inside for four minutes (nobody is trapped for good), a
@@ -49,6 +53,8 @@ public final class RedRoomsBehavior implements AnomalyBehavior {
     /** After everybody left, the doorway reopens even if someone is watching once this many ticks have passed. */
     private static final long REOPEN_ANYWAY_TICKS = 20 * 20;
     private static final double WATCH_DISTANCE = 48.0;
+    /** New tally marks per loop round. */
+    private static final int TALLIES_PER_LOOP = 3;
 
     /** How long a player has been in the crimson part and how often they've gone round. */
     private static final class Visitor {
@@ -59,6 +65,8 @@ public final class RedRoomsBehavior implements AnomalyBehavior {
     private final Map<UUID, Visitor> visitors = new HashMap<>();
     /** Game time each site was last left empty while still sealed or flickering. */
     private final Map<AnomalySite, Long> emptySince = new HashMap<>();
+    /** Where each site can show tally marks (built once per site, see Level0RedRooms#tallySpots). */
+    private final Map<AnomalySite, List<Level0RedRooms.Tally>> tallies = new HashMap<>();
 
     @Override
     public void tick(ServerPlayer player, AnomalySite site, long seed, int ticksInside) {
@@ -67,6 +75,8 @@ public final class RedRoomsBehavior implements AnomalyBehavior {
             Teleports.shift(player, shift[0], 0.0, shift[1]);
             if (shift[2] > 0) {
                 visitors.computeIfAbsent(player.getUUID(), id -> new Visitor()).loops++;
+                // Only you hear it: the klaxon's tail dragging low, the moment the crawlway brings you round.
+                player.playNotifySound(ModSounds.L0_RED_LOOP.get(), SoundSource.AMBIENT, 0.7f, 1.0f);
             }
             return;
         }
@@ -95,6 +105,7 @@ public final class RedRoomsBehavior implements AnomalyBehavior {
         boolean someoneInside = false;
         boolean someoneInDoorway = false;
         boolean letGo = false;
+        int mostLoops = 0;
         for (ServerPlayer player : level.players()) {
             if (player.isSpectator() || !site.equals(AnomalyService.currentSite(player))) {
                 continue;
@@ -106,8 +117,10 @@ public final class RedRoomsBehavior implements AnomalyBehavior {
                 someoneInside = true;
                 Visitor visitor = visitors.get(player.getUUID());
                 letGo |= visitor != null && (visitor.loops >= LOOPS_BEFORE_EXIT || visitor.ticks >= TICKS_BEFORE_EXIT);
+                mostLoops = Math.max(mostLoops, visitor == null ? 0 : visitor.loops);
             }
         }
+        countLoops(level, site, floor, someoneInside ? mostLoops : 0);
         BlockState wall = ModBlocks.RED_WALLPAPER.get().defaultBlockState();
         boolean sealed = level.getBlockState(seal[0]).is(ModBlocks.RED_WALLPAPER.get());
         boolean flickering = level.getBlockState(flicker[0]).is(ModBlocks.FLICKERING_WALL.get());
@@ -133,6 +146,30 @@ public final class RedRoomsBehavior implements AnomalyBehavior {
         }
         if (flickering && (anyway || !seen(level, flicker))) {
             setAll(level, flicker, wall);
+        }
+    }
+
+    /**
+     * Shows {@code loops} x TALLIES_PER_LOOP tally marks on the rooms' walls (the rest plain),
+     * changing a wall only while nobody looks at it. Stateless: it just compares the blocks with
+     * what they should be, so it also tidies up after a restart.
+     */
+    private void countLoops(ServerLevel level, AnomalySite site, int floor, int loops) {
+        if (tallies.size() > 16 && !tallies.containsKey(site)) {
+            tallies.clear();
+        }
+        List<Level0RedRooms.Tally> spots = tallies.computeIfAbsent(site, s -> Level0RedRooms.tallySpots(s, floor));
+        int want = Math.min(spots.size(), loops * TALLIES_PER_LOOP);
+        for (int k = 0; k < spots.size(); k++) {
+            Level0RedRooms.Tally spot = spots.get(k);
+            if (!level.isLoaded(spot.pos())) {
+                continue;
+            }
+            boolean marked = level.getBlockState(spot.pos()).is(ModBlocks.RED_WALL_TALLY.get());
+            if (marked == k < want || Observation.seenByAnyone(level, Vec3.atCenterOf(spot.pos()), WATCH_DISTANCE)) {
+                continue;
+            }
+            level.setBlock(spot.pos(), k < want ? spot.marked() : spot.original(), Block.UPDATE_ALL);
         }
     }
 

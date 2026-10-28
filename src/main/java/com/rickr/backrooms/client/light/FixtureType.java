@@ -22,33 +22,50 @@ import org.jetbrains.annotations.Nullable;
 public enum FixtureType {
     // id, mount, maxRun, red, green, blue, brightness, radius, hum, flickers
     /**
-     * Level 0 ceiling troffer. Halls have one every 3 blocks, so each panel only needs to light
-     * the patch of floor and wall under it: most of the brightness comes from the lightmap fill
-     * (see ClientLighting), which follows the vanilla block light, so it is brightest under a
-     * panel and darker in corners and behind walls; these add soft pools and shadows on top. A
-     * warm white like a real ~3500 K office tube (1.0, 0.96, 0.88): the old faintly blue-green
-     * white pushed the whole hall toward olive. Each tube on Level 0 also gets its own strength for
-     * its age and its own colour temperature (FixtureLight#tubeGlow, block/Level0TubeGlow). The
-     * ceiling is low (the floor is 2.5 blocks under the light),
-     * so a short radius is enough: it keeps the pool under the panel, doesn't reach through a
-     * doorway into the next room, keeps dozens of overlapping panels from clipping the walls to
-     * white, and is cheaper for Veil to draw. (Outside Level 0 it is used alone; see
+     * Level 0 ceiling troffer. With Veil this is the real light of the Lobby: a pool under each
+     * panel that falls off as (1 - d/12)^3 and is cut block-exact by every wall, post and door
+     * jamb (the wall map, client/light/Level0WallGrid), while the vanilla lightmap only adds a
+     * weak bounce underneath (ClientLighting). Numbers (lamp 2.5 blocks above the carpet, carpet
+     * colour ~0.48, grade exposure 1.18): right under a lone panel the carpet gets 1.9 x 0.50 =
+     * 0.94 of the panel colour and reads ~0.53 on camera (~0.63 with the bounce), 5 blocks off
+     * to the side ~0.09, and it is dark from ~9 blocks; a wall facing it 3 blocks away reads
+     * ~0.6. So lit rooms read as warm pools with dark stretches, corners and doorways between
+     * them. A warm white like a real ~3500 K office tube (1.0, 0.96, 0.88). Each tube on Level 0
+     * also gets its own strength for its age and its own colour temperature (FixtureLight#tubeGlow,
+     * block/Level0TubeGlow: 1.06 full to 0.80 tired). (Outside Level 0 it is used alone; see
      * {@link #LONE_PANEL_BRIGHTNESS}.)
      */
-    FLUORESCENT_LIGHT("fluorescent_light", Mount.CEILING_BLOCK, 3, 1.0f, 0.96f, 0.88f, 0.36f, 5.5f, Hum.FLUORESCENT, true),
+    FLUORESCENT_LIGHT("fluorescent_light", Mount.CEILING_BLOCK, 3, 1.0f, 0.96f, 0.88f, 1.9f, 12.0f, Hum.FLUORESCENT, true),
     /**
      * Level 0 film corridor light strip: a row of these reads as one continuous strip down the
-     * middle of a narrow corridor. Runs of 3 blocks make one light, the same spacing as the hall
-     * troffers; a little brighter, because a narrow corridor has no neighbouring rows of panels,
-     * and a little shorter, so a corridor's light stays in the corridor.
+     * middle of a narrow corridor. Runs of 3 blocks make one light. A little brighter than a
+     * panel (a narrow corridor has no neighbouring rows of panels) and a little shorter, so a
+     * corridor's light stays in the corridor.
      */
-    L0_TROFFER_STRIP("l0_troffer_strip", Mount.CEILING_BLOCK, 3, 1.0f, 0.96f, 0.88f, 0.40f, 5.0f, Hum.FLUORESCENT, true),
+    L0_TROFFER_STRIP("l0_troffer_strip", Mount.CEILING_BLOCK, 3, 1.0f, 0.96f, 0.88f, 2.0f, 11.0f, Hum.FLUORESCENT, true),
     /**
      * Level 0 EXIT sign over a door alcove: Kane's green running-man sign. Only a faint green
      * glow on the wall around it (it is a sign, not a lamp), silent and battery-backed like the
      * other exit signs, so it still shows in a blackout.
      */
     L0_EXIT_SIGN("l0_exit_sign", Mount.WALL, 2, 0.30f, 1.0f, 0.45f, 0.30f, 3.5f, Hum.NONE, false),
+    /**
+     * Level 0 rotating red beacon (the Front Office): the dome glows dimly red, and two red cones
+     * sweep round it once a second (two sweeps a second past any spot), see VeilFixtures. On its
+     * own battery; the block's lit=false switches it off.
+     */
+    L0_BEACON("l0_beacon", Mount.WALL, 1, 1.0f, 0.06f, 0.03f, 0.8f, 6.0f, Hum.NONE, false),
+    /**
+     * Level 0 twin-head emergency lamp: a cold white pool about 7 blocks across under it. lit=true
+     * keeps it on (its battery); lit=false is standby, it switches itself on when the power at its
+     * spot fails (see FixturePower#levelOf). Silent (L0Audio plays its relay clunk).
+     */
+    L0_EMERGENCY_LAMP("l0_emergency_lamp", Mount.WALL, 1, 0.90f, 0.95f, 1.0f, 1.9f, 9.0f, Hum.NONE, false),
+    /**
+     * Level 0 pendant lamp on a chain (the Atrium): a warm incandescent shade hanging in the dark
+     * void, its light just under the shade. On the mains, so it dies in outages and blackouts.
+     */
+    L0_PENDANT("l0_pendant_light", Mount.LAMP_HEAD, 1, 1.0f, 0.84f, 0.62f, 2.4f, 12.0f, Hum.NONE, false),
     /** Level 1 tube strip hanging just under the concrete ceiling: neutral white (reference #EEECFA), long reach. */
     CEILING_TUBE("ceiling_tube", Mount.HANGING_TUBE, 5, 0.96f, 0.96f, 1.0f, 0.8f, 18.0f, Hum.FLUORESCENT, true),
     /**
@@ -137,8 +154,15 @@ public enum FixtureType {
     // hum is a sound of the rooms, see client/anomaly/level0). The flickering wall (the way to
     // Level 1): a weak yellow glow that buzzes and stutters like a dying tube, all the time (its
     // block has mode=flicker).
-    RED_ROOM_LIGHT("red_room_light", Mount.CEILING_BLOCK, 1, 1.0f, 0.16f, 0.10f, 1.3f, 9.0f, Hum.NONE, false),
-    FLICKERING_WALL("flickering_wall", Mount.CUBE, 3, 1.0f, 0.93f, 0.62f, 0.5f, 6.0f, Hum.FLUORESCENT, true),
+    // (Both retuned for Level 0's Veil-first lighting: the lightmap there is only a weak bounce,
+    // so these lamps must light their rooms themselves.)
+    RED_ROOM_LIGHT("red_room_light", Mount.CEILING_BLOCK, 1, 1.0f, 0.16f, 0.10f, 2.4f, 11.0f, Hum.NONE, false),
+    FLICKERING_WALL("flickering_wall", Mount.CUBE, 3, 1.0f, 0.93f, 0.62f, 0.9f, 7.0f, Hum.FLUORESCENT, true),
+    // Level 0 set pieces: the glowing outline of the Front Office's drawn door when it turns real
+    // (a warm light from the room behind it), and the safe rooms' checkpoint radio dial (a faint
+    // green glow on the shelf). Both battery-backed, steady and silent.
+    L0_DOOR_GLOW("l0_door_glow", Mount.WALL, 1, 1.0f, 0.88f, 0.70f, 1.3f, 7.0f, Hum.NONE, false),
+    CHECKPOINT_RADIO("checkpoint_radio", Mount.WALL, 1, 0.55f, 1.0f, 0.60f, 0.35f, 4.0f, Hum.NONE, false),
     // Level 4 anomalies: the Window (Entity 2). Warm late-afternoon sunlight spilling from its glass
     // into the cold night office: the one inviting light in the room. Silent and steady.
     L4_CLEAR_WINDOW("l4_clear_window", Mount.INSET, 2, 1.0f, 0.80f, 0.52f, 1.5f, 9.0f, Hum.NONE, false),
@@ -271,6 +295,18 @@ public enum FixtureType {
      */
     private static final float LONE_PANEL_BRIGHTNESS = 1.1f;
     private static final float LONE_PANEL_RADIUS = 13.0f;
+    /**
+     * Level 0's exit stairwell (world/layout/LevelLayout#stairwell): its two wall tubes hang in
+     * the shaft just below the landing, the only cool-white light on the floor. Strong and far
+     * reaching there, so the landing, the doorway and a wedge of the corridor outside glow cold
+     * white and the stairwell reads from down a dark corridor as a beacon that "looks different"
+     * from the warm panels.
+     */
+    private static final float LEVEL0_STAIRWELL_BRIGHTNESS = 2.6f;
+    private static final float LEVEL0_STAIRWELL_RADIUS = 16.0f;
+    /** The green EXIT sign over the stairwell door: enough to tint the doorway around it green. */
+    private static final float LEVEL0_STAIR_SIGN_BRIGHTNESS = 1.0f;
+    private static final float LEVEL0_STAIR_SIGN_RADIUS = 6.0f;
 
     /** Level 0 (null counts as Level 0, like in ClientLighting). */
     private static boolean level0(@Nullable BackroomsLevel floor) {
@@ -288,6 +324,12 @@ public enum FixtureType {
         if (this == FLUORESCENT_LIGHT && !level0(floor)) {
             return LONE_PANEL_BRIGHTNESS;
         }
+        if (level0(floor) && this == WAREHOUSE_LIGHT) {
+            return LEVEL0_STAIRWELL_BRIGHTNESS;
+        }
+        if (level0(floor) && this == EXIT_SIGN) {
+            return LEVEL0_STAIR_SIGN_BRIGHTNESS;
+        }
         return brightness;
     }
 
@@ -295,6 +337,12 @@ public enum FixtureType {
     public float radiusOn(@Nullable BackroomsLevel floor) {
         if (this == FLUORESCENT_LIGHT && !level0(floor)) {
             return LONE_PANEL_RADIUS;
+        }
+        if (level0(floor) && this == WAREHOUSE_LIGHT) {
+            return LEVEL0_STAIRWELL_RADIUS;
+        }
+        if (level0(floor) && this == EXIT_SIGN) {
+            return LEVEL0_STAIR_SIGN_RADIUS;
         }
         return radius;
     }
@@ -326,8 +374,9 @@ public enum FixtureType {
         if (type != null && modeOf(state) == LampMode.DEAD) {
             return null;
         }
-        // Level 39's house bulbs and Level 490's lanterns: the dead ones (lit = false) give no light at all.
-        if ((type == L39_BULB || type == L490_LANTERN) && state.hasProperty(BlockStateProperties.LIT)
+        // Level 39's house bulbs, Level 490's lanterns and a switched-off Level 0 beacon: the dark
+        // ones (lit = false) give no light at all.
+        if ((type == L39_BULB || type == L490_LANTERN || type == L0_BEACON) && state.hasProperty(BlockStateProperties.LIT)
                 && !state.getValue(BlockStateProperties.LIT)) {
             return null;
         }

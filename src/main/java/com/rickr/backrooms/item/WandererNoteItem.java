@@ -43,13 +43,21 @@ public class WandererNoteItem extends Item {
 
     /** A note written at {@code pos} of this level, about its nearest exit. */
     public static ItemStack create(ServerLevel level, BackroomsLevel floor, BlockPos pos, RandomSource random) {
+        return create(level, floor, pos, random, false);
+    }
+
+    /**
+     * The same, but {@code honest} notes always point the right way (Level 0's sealed hidden room
+     * leaves one: its writer swears they checked).
+     */
+    public static ItemStack create(ServerLevel level, BackroomsLevel floor, BlockPos pos, RandomSource random, boolean honest) {
         int[] exit = ExitHints.nearestExit(level, floor, pos.getX(), pos.getZ());
         double dx = exit[0] - pos.getX();
         double dz = exit[2] - pos.getZ();
         // Minecraft's north is -z: angle 0 = north, 90 = east.
         double degrees = Math.toDegrees(Math.atan2(dx, -dz));
         int dir = Math.floorMod((int) Math.round(degrees / 45.0), 8);
-        if (random.nextFloat() < WRONG) {
+        if (!honest && random.nextFloat() < WRONG) {
             dir = Math.floorMod(dir + Mth.nextInt(random, 3, 5), 8); // roughly the opposite way
         }
         double distance = Math.sqrt(dx * dx + dz * dz);

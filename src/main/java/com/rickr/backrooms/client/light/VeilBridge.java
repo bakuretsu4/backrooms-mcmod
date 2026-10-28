@@ -14,7 +14,8 @@ import net.minecraft.resources.ResourceLocation;
  * pixel). Turning them on or off recompiles every world shader, which hitches for a moment. Veil
  * would do that each time the first light appears or the last one leaves the screen, so while
  * we're in the Backrooms we keep them switched on under our own name: Veil then never sees a
- * change and never recompiles mid-game.
+ * change and never recompiles mid-game. Only these two: Veil 4.5.2's light_color buffer on its
+ * own breaks the recompile of the world shaders ("undefined variable veilTexCoord2").
  */
 final class VeilBridge {
     private static final ResourceLocation BUFFERS_OWNER = Backrooms.id("lights");

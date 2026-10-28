@@ -3,6 +3,7 @@ package com.rickr.backrooms.client;
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.client.light.BackroomsLights;
 import com.rickr.backrooms.client.light.FixturePower;
+import com.rickr.backrooms.client.light.Level0Shading;
 import com.rickr.backrooms.network.LevelEventPayload;
 import com.rickr.backrooms.world.BackroomsLevel;
 import net.minecraft.util.Mth;
@@ -26,12 +27,12 @@ import org.jetbrains.annotations.Nullable;
  * Either way the camcorder applies on top: NightShot lifts the darkness, a dead battery leaves you
  * nearly blind.
  *
- * <p>Level 0 is the exception to the "dim fill" rule: its halls have a troffer every 3 blocks, so
- * in both modes most of their light comes from a fill that follows the vanilla block light (see
- * {@link #applyLevel0Fill}): brightest under a panel, dimmer between panels, darker again in
- * corners, at the foot of walls and behind pillars (block light flows around walls, so it is the
- * one signal that knows about them), fading to near-black in the dark wings. Veil's lights add
- * soft pools and shadows on top there.
+ * <p>Level 0 (see {@link #applyLevel0Fill}): with Veil its lamps are the real light (pools cut
+ * block-exact by the walls, client/light/Level0LightRenderer) and the lightmap only adds a weak
+ * bounce under them; a screen pass darkens that bounce in corners and at wall feet and removes it
+ * where the power is out. Without Veil the fill follows the vanilla block light and is the whole
+ * light: brightest under a panel, darker between panels, in corners and behind pillars (block
+ * light flows around walls), black in the dark wings.
  *
  * <p>The Poolrooms follow the same rules (dim rooms, bright pools of light) with a cool tint; their
  * glowing blocks are capped a little below white because the big atrium skylights would otherwise
@@ -100,16 +101,23 @@ public final class ClientLighting {
     private static final float LEVEL0_UNLIT_G = 0.0036f;
     private static final float LEVEL0_UNLIT_B = 0.0026f;
     /**
-     * The fill at full strength ({@link #LEVEL0_FULL_FROM} and up). Below that it follows the block
-     * light down a curve, so the light is uneven like a real office. With the 3-high ceiling the
-     * floor right under a full-strength tube (light 12) sits at block light 9 (fill ~0.71), one
-     * block off at 8 (~0.47), between panels at 7 (~0.30), and a corner or a wall foot away from
-     * the panels at 5 (~0.11). Older tubes (light 11 and 10, see block/Level0TubeGlow) drop their
-     * whole patch a step or two, so the pools differ from tube to tube. Veil's pools add a little
-     * on top, mostly under the panels.
+     * With Veil the lamps themselves light Level 0 (client/light: pools cut block-exact by every
+     * wall), and the lightmap only adds a weak, soft BOUNCE under them: the light coming off walls
+     * and ceiling. At full strength ({@link #LEVEL0_FULL_FROM} and up) it is this much; with the
+     * 3-high ceiling the floor under a full tube (block light 9-10) gets ~0.18, the floor between
+     * pools (7) ~0.10, a corner away from the lamps (5) ~0.05, which the screen pass then darkens
+     * further right at the wall (Level0LightRenderer). Dark wings get nothing: they stay black.
      */
-    private static final float LEVEL0_MAX_FILL = 0.91f;
-    /** Without Veil there are no pools on top, so the fill alone is a little stronger (under a tube ~0.75). */
+    private static final float LEVEL0_MAX_FILL = 0.20f;
+    /** The bounce falls off gently with the block light (it is diffuse light, not a pool). */
+    private static final float LEVEL0_BOUNCE_CURVE = 2.0f;
+    /** Of the bounce, this share fades out in a straight line (keeps the last blocks of reach faintly lit). */
+    private static final float LEVEL0_BOUNCE_LINEAR = 0.10f;
+    /**
+     * Without Veil the fill is the whole light, so it makes the pools itself: under a tube ~0.68,
+     * between tubes ~0.24, corners and wall feet away from the panels (light 5) ~0.06, and black
+     * from light 2 down (the far side of doorways, dark wings).
+     */
     private static final float LEVEL0_FALLBACK_MAX_FILL = 0.97f;
     /**
      * Light level from which the fill stops growing. Above it are only the upper walls and the
@@ -118,25 +126,24 @@ public final class ClientLighting {
      */
     private static final float LEVEL0_FULL_FROM = 10.0f;
     /**
-     * Light level at and below which it is black. Level 1, so the last few blocks of a tube's
-     * reach (levels 2-4, the far side of a doorway, the mouth of a dark wing) keep a faint glow
-     * that fades out gradually instead of stopping at a hard black edge.
+     * Light level at and below which it is black. With Veil level 1, so the bounce fades out
+     * gradually at the end of a tube's reach; without Veil level 2, so corners, the far side of
+     * doorways and the mouths of dark wings really go dark.
      */
     private static final float LEVEL0_DARK_BELOW = 1.0f;
+    private static final float LEVEL0_FALLBACK_DARK_BELOW = 2.0f;
     /**
-     * How steeply the direct light falls between those two (1 = straight line). 3.5 is steep: the
-     * pool right under a tube stands out clearly, about 2.4 times as bright as the floor between
-     * tubes, so the eye sees each panel's patch of light instead of an even carpet.
+     * Without Veil: how steeply the direct light falls between those two (1 = straight line).
+     * 3.5 is steep: the pool right under a tube stands out clearly, about 2.8 times as bright as
+     * the floor between tubes, so the eye sees each panel's patch of light instead of an even carpet.
      */
     private static final float LEVEL0_FILL_CURVE = 3.5f;
     /**
-     * Bounce light: in a real room light also comes off the walls and ceiling, a weak glow that
-     * fades out evenly (a straight line) instead of falling steeply like the direct light. This
-     * share of the full fill is added that way. It is what keeps wall feet and corners (light 5,
-     * ~0.11) and the last blocks of a tube's reach from going black while the steep curve above
-     * shapes the pools.
+     * Without Veil: bounce light, a weak glow that fades out evenly (a straight line) instead of
+     * falling steeply like the direct light. Kept low so corners and wall feet (light 5) sit near
+     * black instead of a flat grey.
      */
-    private static final float LEVEL0_BOUNCE = 0.13f;
+    private static final float LEVEL0_BOUNCE = 0.09f;
     /**
      * The bounce off yellow wallpaper and carpet: warm, but the yellow mostly comes from the
      * textures. Green a touch under red and blue cut less than before, so the textures' yellow
@@ -229,9 +236,15 @@ public final class ClientLighting {
         return floor == null || floor == BackroomsLevel.LEVEL_0;
     }
 
-    /** How bright full-bright fixture faces are: all dark together in a blackout, half in a flicker. */
+    /**
+     * How bright full-bright fixture faces are: all dark together in a blackout, half in a
+     * flicker. On Level 0 with Veil the power is out place by place, so there the glowing panels
+     * are switched dark one by one (BackroomsLights) and far away by the screen pass
+     * (Level0LightRenderer), not all at once here.
+     */
     private static float emissivePower() {
-        return Math.max(0.05f, FixturePower.mainsPower() * (FixturePower.flickering(System.currentTimeMillis()) ? 0.5f : 1.0f));
+        float power = Level0Shading.screenPassRunning() ? 1.0f : FixturePower.mainsPower();
+        return Math.max(0.05f, power * (FixturePower.flickering(System.currentTimeMillis()) ? 0.5f : 1.0f));
     }
 
     /**
@@ -263,7 +276,8 @@ public final class ClientLighting {
                 float v = emissivePower();
                 colors.set(v, v, v);
             } else {
-                applyLevel0Fill(colors, blockLight, LEVEL0_FALLBACK_MAX_FILL);
+                applyLevel0Fill(colors, blockLight, LEVEL0_FALLBACK_MAX_FILL, LEVEL0_FALLBACK_DARK_BELOW,
+                        LEVEL0_FILL_CURVE, LEVEL0_BOUNCE, FixturePower.mainsPower());
             }
         } else {
             // Garage, pipe corridors and Poolrooms are lit by long strips: gentler falloff than the
@@ -293,7 +307,10 @@ public final class ClientLighting {
     /** Veil mode: just a dim, steep fill; Veil does the real lighting. */
     private static void applyVeilFill(Vector3f colors, int blockLight, @Nullable BackroomsLevel floor) {
         if (isLevel0(floor)) {
-            applyLevel0Fill(colors, blockLight, LEVEL0_MAX_FILL); // uneven office light, black wings
+            // A soft bounce under the lamps. Where the power is out the screen pass removes it
+            // place by place; only if that pass isn't running does the power at you dim it all.
+            applyLevel0Fill(colors, blockLight, LEVEL0_MAX_FILL, LEVEL0_DARK_BELOW, LEVEL0_BOUNCE_CURVE,
+                    LEVEL0_BOUNCE_LINEAR, Level0Shading.screenPassRunning() ? 1.0f : FixturePower.mainsPower());
             return;
         }
         if (floor == BackroomsLevel.LEVEL_9) {
@@ -366,19 +383,20 @@ public final class ClientLighting {
     }
 
     /**
-     * Level 0 (both modes): dim, uneven office light. The fill follows the vanilla block light:
-     * from {@value #LEVEL0_FULL_FROM} up (beside a panel) it is full, below that it falls along a
-     * curve, and at {@value #LEVEL0_DARK_BELOW} and below it is black. Block light flows around
-     * walls and drops by one per block, so this makes pools under the panels, dimmer floor between
-     * them, and darker corners, wall feet and the far side of pillars: shadows that respect walls,
-     * which Veil's lights alone don't. Panels flicker, die in a blackout and dim with the alarm
-     * together, so the fill follows them.
+     * Level 0 (both modes). The fill follows the vanilla block light: from {@value #LEVEL0_FULL_FROM}
+     * up (beside a panel) it is full, below that it falls along a curve ({@code curve}) plus a
+     * straight-line share ({@code linear}), and at {@code darkBelow} and below it is black. Block
+     * light flows around walls and drops by one per block, so it is brightest under the panels and
+     * darker in corners and behind pillars. With Veil it is only the soft bounce under the lamps;
+     * without Veil it is the whole light. Panels flicker and dim with the alarm together, so the
+     * fill follows them, and it takes {@code power} (where the power is out, see FixturePower).
      */
-    private static void applyLevel0Fill(Vector3f colors, int blockLight, float maxFill) {
-        float t = Mth.clamp((blockLight - LEVEL0_DARK_BELOW) / (LEVEL0_FULL_FROM - LEVEL0_DARK_BELOW), 0.0f, 1.0f);
-        // Steep direct light (the pools) plus a weak, evenly fading bounce (keeps corners readable).
-        float fill = maxFill * ((float) Math.pow(t, LEVEL0_FILL_CURVE) + LEVEL0_BOUNCE * t);
-        fill *= FixturePower.mainsPower() * FixturePower.alarmDim();
+    private static void applyLevel0Fill(Vector3f colors, int blockLight, float maxFill, float darkBelow, float curve,
+                                        float linear, float power) {
+        float t = Mth.clamp((blockLight - darkBelow) / (LEVEL0_FULL_FROM - darkBelow), 0.0f, 1.0f);
+        // The curved part (the pools) plus a weak, evenly fading part (the last of the reach).
+        float fill = maxFill * ((float) Math.pow(t, curve) + linear * t);
+        fill *= power * FixturePower.alarmDim();
         // A faulty tube near you cutting out takes part of the light around you with it.
         fill *= 1.0f - LEVEL0_TUBE_DIP * (1.0f - BackroomsLights.level0TubeShare());
         if (FixturePower.flickering(System.currentTimeMillis())) {
@@ -434,12 +452,23 @@ public final class ClientLighting {
         }
     }
 
+    /** How far NightShot lifts every lightmap colour toward white. */
+    private static final float NIGHTSHOT_LIFT = 0.4f;
+
+    /**
+     * The NightShot lift in the lightmap right now (0 when it is off or the battery is dead).
+     * Level 0's screen pass leaves this part of the light alone (client/light/Level0LightRenderer).
+     */
+    public static float lightmapLift() {
+        return CameraClientState.battery > 0.0f && CameraClientState.nightShot ? NIGHTSHOT_LIFT : 0.0f;
+    }
+
     /** NightShot lifts everything toward white; a dead battery darkens it all. Level 94's own lightmap uses it too. */
     static void applyCamcorder(Vector3f colors) {
         if (CameraClientState.battery <= 0.0f) {
             colors.mul(0.25f);
         } else if (CameraClientState.nightShot) {
-            float lift = 0.4f;
+            float lift = NIGHTSHOT_LIFT;
             colors.set(colors.x + (1.0f - colors.x) * lift,
                     colors.y + (1.0f - colors.y) * lift,
                     colors.z + (1.0f - colors.z) * lift);

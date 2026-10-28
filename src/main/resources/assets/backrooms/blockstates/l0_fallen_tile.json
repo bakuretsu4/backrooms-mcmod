@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "": [
+      { "model": "backrooms:block/l0_fallen_tile" },
+      { "model": "backrooms:block/l0_fallen_tile", "y": 90 },
+      { "model": "backrooms:block/l0_fallen_tile", "y": 180 },
+      { "model": "backrooms:block/l0_fallen_tile", "y": 270 }
+    ]
+  }
+}

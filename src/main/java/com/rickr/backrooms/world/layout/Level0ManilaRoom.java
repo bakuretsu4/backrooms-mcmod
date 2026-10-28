@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  * outer ring of brown wall with the four wooden doors, an inner ring of manila wallpaper, and the
  * 8x8 room inside (a, b = i - 2, j - 2):
  * <pre>
- *        b=0   K . N . . . . C      K locker, C supply cabinet, X crate, N notes on the wall
+ *        b=0   K . N . . . G C      K locker, C supply cabinet, X crate, N notes on the wall, G the guestbook
  *        b=1   . . . . . . . .
  *        b=2   . . . . . . . N
  *        b=3   . . h t t . . .      t the octagonal table (four quarters), h chairs
@@ -91,6 +91,29 @@ public final class Level0ManilaRoom {
     /** World point {x, z} of the middle of the room (where the piano seems to come from). */
     public static double[] centre(AnomalySite site) {
         return new double[] {site.minX() + MOAT + BOX / 2.0, site.minZ() + MOAT + BOX / 2.0};
+    }
+
+    /** The room's four supply containers (the corners): world positions, for the volunteers' restocking. */
+    public static net.minecraft.core.BlockPos[] containers(AnomalySite site, int floorY) {
+        int x0 = site.minX() + MOAT + 2;
+        int z0 = site.minZ() + MOAT + 2;
+        return new net.minecraft.core.BlockPos[] {
+                new net.minecraft.core.BlockPos(x0, floorY + 1, z0), new net.minecraft.core.BlockPos(x0 + 7, floorY + 1, z0),
+                new net.minecraft.core.BlockPos(x0, floorY + 1, z0 + 7), new net.minecraft.core.BlockPos(x0 + 7, floorY + 1, z0 + 7)};
+    }
+
+    /**
+     * A test point for /backrooms anomaly visit: {x, feetY, z, lookX, lookZ}, or null.
+     * "guestbook" stands two steps in front of the guestbook (room cell a=6, b=2) facing it.
+     */
+    @Nullable
+    static double[] visit(AnomalySite site, String name, int floorY) {
+        if (!name.equals("guestbook")) {
+            return null;
+        }
+        double x = site.minX() + MOAT + 2 + 6 + 0.5;
+        double z0 = site.minZ() + MOAT + 2;
+        return new double[] {x, floorY + 1.0, z0 + 2.5, x, z0 - 1.0};
     }
 
     static boolean isSolid(AnomalySite site, int x, int z) {
@@ -168,6 +191,10 @@ public final class Level0ManilaRoom {
         } else if (a == 5 && b == 7) {
             index = 5;
             facing = Direction.NORTH;
+        } else if (a == 6 && b == 0) {
+            // The guestbook, by the cabinet: its last name is always the reader's (VolunteerNoteBlock).
+            index = VolunteerNoteBlock.GUESTBOOK;
+            facing = Direction.SOUTH;
         } else {
             return null;
         }

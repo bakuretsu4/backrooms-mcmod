@@ -1,0 +1,42 @@
+{
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "minecraft:block/gray_concrete",
+    "metal": "minecraft:block/gray_concrete",
+    "dark": "minecraft:block/black_concrete",
+    "dome": "minecraft:block/red_concrete"
+  },
+  "elements": [
+    {
+      "from": [5, 1, 15], "to": [11, 11, 16],
+      "faces": {
+        "north": {"texture": "#metal"}, "east": {"texture": "#metal"}, "south": {"texture": "#metal"},
+        "west": {"texture": "#metal"}, "up": {"texture": "#metal"}, "down": {"texture": "#metal"}
+      }
+    },
+    {
+      "from": [4, 1, 8], "to": [12, 3, 15],
+      "faces": {
+        "north": {"texture": "#dark"}, "east": {"texture": "#dark"}, "south": {"texture": "#dark"},
+        "west": {"texture": "#dark"}, "up": {"texture": "#dark"}, "down": {"texture": "#metal"}
+      }
+    },
+    {
+      "from": [5, 3, 9], "to": [11, 10, 14],
+      "shade": false,
+      "neoforge_data": {"block_light": 15, "sky_light": 15},
+      "faces": {
+        "north": {"texture": "#dome"}, "east": {"texture": "#dome"}, "south": {"texture": "#dome"},
+        "west": {"texture": "#dome"}, "up": {"texture": "#dome"}
+      }
+    },
+    {
+      "from": [6, 10, 10], "to": [10, 11, 13],
+      "faces": {
+        "north": {"texture": "#dark"}, "east": {"texture": "#dark"}, "south": {"texture": "#dark"},
+        "west": {"texture": "#dark"}, "up": {"texture": "#dark"}
+      }
+    }
+  ]
+}

@@ -2,6 +2,7 @@ package com.rickr.backrooms.client.light;
 
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.BackroomsLevel;
+import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -27,7 +28,11 @@ import net.minecraft.util.RandomSource;
  *       hear the tube you stand under clearly, the next ones less, and a stretch with no lit tube
  *       goes almost quiet: pockets of silence between the lit areas;</li>
  *   <li>a tube dropping out ticks (its starter), striking again clicks and catches, and a dying
- *       tube's starter ticks now and then as it keeps trying.</li>
+ *       tube's starter ticks now and then as it keeps trying;</li>
+ *   <li>a tube going out in a blackout's dying wave or a local outage pops and its buzz sags away,
+ *       and strikes again when it comes back; an emergency lamp's relay clunks as it switches on
+ *       (see level0Changes). And how lit it is around you sets the room tone (Level0Soundscape):
+ *       the dark is quiet.</li>
  * </ul>
  */
 final class FixtureSounds {
@@ -63,6 +68,31 @@ final class FixtureSounds {
     private static final double DYING_TICK_RANGE = 10.0;
     /** ... has its starter tick on average once in this many client ticks (about every 7 s). */
     private static final int DYING_TICK_ODDS = 140;
+    /** Level 0: lit tubes this close (blocks) count for how lit it is around you (the room tone, see Level0Soundscape) ... */
+    private static final double L0_LIGHT_RANGE = 16.0;
+    /** ... and a tube going out or striking again this close is heard (sounds.json: attenuation_distance 32). */
+    private static final double L0_CHANGE_RANGE = 32.0;
+    /**
+     * A Level 0 light counts as lit above this power and as dark below the next; in between it
+     * keeps what it was, so a slow fade or the alarm dimming the lights never chatters.
+     */
+    private static final float L0_LIT = 0.2f;
+    private static final float L0_DARK = 0.06f;
+    /** At most this many lights pop or strike per tick (the nearest first), so a wave never machine-guns. */
+    private static final int L0_CHANGES_PER_TICK = 2;
+    private static final byte L0_UNSEEN = 0;
+    private static final byte L0_ON = 1;
+    private static final byte L0_OFF = 2;
+    /** A light that went dark counts as out once it has stayed dark this many ticks. */
+    private static final int L0_SETTLE_TICKS = 4;
+    /**
+     * Level 0 light key -> L0_ON / L0_OFF as last heard (confirmed), as last measured (raw), the
+     * tick it was last looked at, and the tick its raw state last went dark.
+     */
+    private static final Long2ByteOpenHashMap L0_STATE = new Long2ByteOpenHashMap();
+    private static final Long2ByteOpenHashMap L0_RAW = new Long2ByteOpenHashMap();
+    private static final Long2LongOpenHashMap L0_SEEN = new Long2LongOpenHashMap();
+    private static final Long2LongOpenHashMap L0_OFF_SINCE = new Long2LongOpenHashMap();
 
     private static final Long2ObjectOpenHashMap<FixtureHumSound> HUMS = new Long2ObjectOpenHashMap<>();
     /** Lamp key -> tick its hum may be retried (after the sound engine dropped it). */
@@ -85,6 +115,9 @@ final class FixtureSounds {
         SoundManager sounds = mc.getSoundManager();
         level0 = mc.level != null && BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_0;
         WANTED.clear();
+        if (level0) {
+            level0Changes(byDistance);
+        }
         double maxSq = HUM_RANGE * HUM_RANGE;
         int count = level0 ? L0_HUM_COUNT : HUM_COUNT;
         for (FixtureLight light : byDistance) {
@@ -207,6 +240,103 @@ final class FixtureSounds {
         }
     }
 
+    /**
+     * Level 0: tells Level0Soundscape how lit it is around you (the sum over the lit tubes within
+     * {@value #L0_LIGHT_RANGE} blocks of their power times (1 - distance/range) squared), and plays
+     * the sound of each light near you that changes:
+     * <ul>
+     *   <li>a tube going out (a blackout's dying wave reaching it, a local outage, a room dying as
+     *       you walk in): its ballast pops and its buzz sags away. The wave rolls outward, so the
+     *       pops roll away from where it began, one tube after another;</li>
+     *   <li>a tube coming back: its starter ticks and it catches;</li>
+     *   <li>an emergency lamp switching on when the power fails there: its relay clunks.</li>
+     * </ul>
+     * Faulty tubes' own dropouts and the FLICKER event are left to {@link #blink} (their clicks).
+     * A light just come into range (or back after a while away) is only looked at, never heard:
+     * no pop for a tube that died while you were elsewhere.
+     */
+    private static void level0Changes(List<FixtureLight> byDistance) {
+        boolean flicker = FixturePower.flickering(System.currentTimeMillis());
+        double lightSq = L0_LIGHT_RANGE * L0_LIGHT_RANGE;
+        double changeSq = L0_CHANGE_RANGE * L0_CHANGE_RANGE;
+        double lit = 0.0;
+        int changes = 0;
+        for (FixtureLight light : byDistance) {
+            if (light.distSq > changeSq) {
+                break;
+            }
+            boolean tube = isLevel0Tube(light.type) || isPendant(light.type);
+            boolean emergency = isEmergencyLamp(light.type);
+            if (!tube && !emergency) {
+                continue;
+            }
+            float level = light.level;
+            if (tube && light.distSq < lightSq) {
+                double w = 1.0 - Math.sqrt(light.distSq) / L0_LIGHT_RANGE;
+                lit += level * w * w;
+            }
+            byte confirmed = L0_STATE.get(light.key);
+            byte lastRaw = L0_RAW.get(light.key);
+            boolean seenLastTick = L0_SEEN.get(light.key) >= tickCount - 1;
+            L0_SEEN.put(light.key, tickCount);
+            byte raw = level > L0_LIT ? L0_ON : level < L0_DARK ? L0_OFF : lastRaw;
+            if (raw == L0_UNSEEN) {
+                raw = level >= (L0_LIT + L0_DARK) * 0.5f ? L0_ON : L0_OFF;
+            }
+            if (raw != lastRaw) {
+                L0_RAW.put(light.key, raw);
+                if (raw == L0_OFF) {
+                    L0_OFF_SINCE.put(light.key, tickCount);
+                }
+            }
+            if (confirmed == L0_UNSEEN || !seenLastTick) {
+                L0_STATE.put(light.key, raw); // just come into range: look, don't listen
+                continue;
+            }
+            // Coming on counts at once (the strike's starter ticks cover a stutter back to life);
+            // going out only once it has stayed dark a moment, so a tube stuttering as it dies (or
+            // as it comes back) pops once, when it really goes.
+            byte now = raw == L0_ON ? L0_ON
+                    : tickCount - L0_OFF_SINCE.get(light.key) >= L0_SETTLE_TICKS ? L0_OFF : confirmed;
+            if (now == confirmed) {
+                continue;
+            }
+            L0_STATE.put(light.key, now);
+            if (flicker || changes >= L0_CHANGES_PER_TICK) {
+                continue;
+            }
+            if (tube && BackroomsLights.tubeFault(light.key) != FixturePower.TUBE_OK) {
+                continue; // a faulty tube's own stutter clicks through blink()
+            }
+            changes++;
+            float pitch = 0.9f + RANDOM.nextFloat() * 0.2f;
+            var sound = emergency ? (now == L0_ON ? ModSounds.L0_EMERGENCY_RELAY.get() : null)
+                    : now == L0_OFF ? ModSounds.L0_WAVE_POP.get() : ModSounds.L0_TUBE_STRIKE.get();
+            if (sound != null) {
+                float volume = now == L0_OFF ? 0.8f + RANDOM.nextFloat() * 0.2f : 0.8f;
+                Minecraft.getInstance().getSoundManager().play(new SimpleSoundInstance(sound, SoundSource.BLOCKS,
+                        volume, pitch, RANDOM, light.soundX, light.soundY, light.soundZ));
+            }
+        }
+        com.rickr.backrooms.client.audio.Level0Soundscape.reportTubeLight((float) lit);
+        if (L0_STATE.size() > 2048) {
+            L0_STATE.clear();
+            L0_RAW.clear();
+            L0_SEEN.clear();
+            L0_OFF_SINCE.clear();
+        }
+    }
+
+    /** Level 0's hanging pendant light (the Atrium): mains-powered like a tube, so it pops and strikes like one. */
+    private static boolean isPendant(FixtureType type) {
+        return type == FixtureType.L0_PENDANT;
+    }
+
+    /** Level 0's battery emergency lamp: its relay clunks when it switches on. */
+    private static boolean isEmergencyLamp(FixtureType type) {
+        return type == FixtureType.L0_EMERGENCY_LAMP;
+    }
+
     /** How far a fixture's hum carries (blocks). */
     static double humRange(FixtureType type) {
         return type.hum == FixtureType.Hum.SODIUM ? SODIUM_HUM_RANGE : HUM_RANGE;
@@ -296,6 +426,10 @@ final class FixtureSounds {
         RETRY_AT.clear();
         DARK_SINCE.clear();
         LAST_CLICK.clear();
+        L0_STATE.clear();
+        L0_RAW.clear();
+        L0_SEEN.clear();
+        L0_OFF_SINCE.clear();
     }
 
     private FixtureSounds() {}

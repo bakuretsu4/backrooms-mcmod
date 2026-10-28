@@ -15,11 +15,15 @@ import com.rickr.backrooms.entity.SmilerSpawner;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
 import com.rickr.backrooms.world.LevelEvents;
+import com.rickr.backrooms.world.FixtureOutages;
 import com.rickr.backrooms.world.Travel;
 import com.rickr.backrooms.world.RealityDrift;
 import org.jetbrains.annotations.Nullable;
 import com.rickr.backrooms.world.anomaly.AnomalyService;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
+import com.rickr.backrooms.world.anomaly.level0.Level0LocalEvents;
+import com.rickr.backrooms.world.layout.Level0AnomalyPlan;
+import com.rickr.backrooms.world.layout.Level0Layout;
 import com.rickr.backrooms.world.Level94Clock;
 import com.rickr.backrooms.world.Level94Sync;
 import com.rickr.backrooms.registry.ModEntities;
@@ -52,6 +56,7 @@ import net.minecraft.world.phys.Vec3;
  * /backrooms time94 <day|dusk|night|dawn>   Level 94: jump its day/night clock to the start of that phase (for testing)
  * /backrooms anomaly locate <kind>     where the nearest anomalous area of that kind is on this floor (for testing)
  * /backrooms anomaly here              which anomalous area you are standing in
+ * /backrooms anomaly visit <kind> <point>   Level 0: jump to a named spot of the nearest site of that kind (for testing)
  * </pre>
  */
 public final class BackroomsCommand {
@@ -93,7 +98,21 @@ public final class BackroomsCommand {
                                             BackroomsLevel floor = BackroomsLevel.fromDimension(ctx.getSource().getLevel().dimension());
                                             return SharedSuggestionProvider.suggest(floor == null ? java.util.List.of() : floor.layout().anomalyKinds(), builder);
                                         })
-                                        .executes(ctx -> anomalyLocate(ctx, StringArgumentType.getString(ctx, "kind"))))))
+                                        .executes(ctx -> anomalyLocate(ctx, StringArgumentType.getString(ctx, "kind")))))
+                        // Testing: teleport to a named spot (the atrium's ladder, the Front Office's rug...) of the
+                        // nearest site of a kind. The kind is "level_0/..." (a resource-location-like argument,
+                        // since plain words can't hold the slash).
+                        .then(Commands.literal("visit")
+                                .then(Commands.argument("kind", net.minecraft.commands.arguments.ResourceLocationArgument.id())
+                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                BackroomsLevel.LEVEL_0.layout().anomalyKinds().stream()
+                                                        .filter(k -> !Level0AnomalyPlan.visitPoints(k).isEmpty()), builder))
+                                        .then(Commands.argument("point", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(Level0AnomalyPlan.visitPoints(
+                                                        net.minecraft.commands.arguments.ResourceLocationArgument.getId(ctx, "kind").getPath()), builder))
+                                                .executes(ctx -> anomalyVisit(ctx,
+                                                        net.minecraft.commands.arguments.ResourceLocationArgument.getId(ctx, "kind").getPath(),
+                                                        StringArgumentType.getString(ctx, "point")))))))
                 .then(Commands.literal("event")
                         .then(eventNode("blackout", LevelEventPayload.BLACKOUT, 30))
                         .then(eventNode("flicker", LevelEventPayload.FLICKER, 8))
@@ -109,6 +128,18 @@ public final class BackroomsCommand {
                         .then(eventNode("rain", LevelEventPayload.INDOOR_RAIN, 180))
                         .then(eventNode("quake", LevelEventPayload.ECHO_QUAKE, 12))
                         .then(Commands.literal("end").executes(ctx -> event(ctx, LevelEventPayload.NONE, 0))))
+                // Level 0 local power outages around you (world/FixtureOutages), for testing.
+                .then(Commands.literal("outage")
+                        .then(outageNode("cut", FixtureOutages.Pattern.CUT))
+                        .then(outageNode("stutter", FixtureOutages.Pattern.DIE_STUTTER))
+                        .then(outageNode("wave", FixtureOutages.Pattern.WAVE))
+                        .then(Commands.literal("end").executes(BackroomsCommand::outageEnd)))
+                // Level 0 local light events (world/anomaly/level0/Level0LocalEvents): let one happen
+                // to you at the next right moment, skipping the 4-8 minute wait. For testing.
+                .then(Commands.literal("l0event")
+                        .then(Commands.literal("room").executes(ctx -> l0Event(ctx, Level0LocalEvents.Kind.ROOM)))
+                        .then(Commands.literal("corridor").executes(ctx -> l0Event(ctx, Level0LocalEvents.Kind.CORRIDOR)))
+                        .then(Commands.literal("district").executes(ctx -> l0Event(ctx, Level0LocalEvents.Kind.DISTRICT))))
                 // Separate realities: force one for a player (with the nearest other player, or alone), or end it.
                 .then(Commands.literal("drift")
                         .then(Commands.argument("player", EntityArgument.player())
@@ -141,6 +172,37 @@ public final class BackroomsCommand {
                 .executes(ctx -> event(ctx, kind, defaultSeconds))
                 .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 600))
                         .executes(ctx -> event(ctx, kind, IntegerArgumentType.getInteger(ctx, "seconds"))));
+    }
+
+    /** The last outage started by the command, for {@code /backrooms outage end}. */
+    private static int lastOutage;
+
+    private static LiteralArgumentBuilder<CommandSourceStack> outageNode(String name, FixtureOutages.Pattern pattern) {
+        return Commands.literal(name)
+                .then(Commands.argument("radius", IntegerArgumentType.integer(1, 200))
+                        .executes(ctx -> outage(ctx, pattern, IntegerArgumentType.getInteger(ctx, "radius"), 0))
+                        .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 600))
+                                .executes(ctx -> outage(ctx, pattern, IntegerArgumentType.getInteger(ctx, "radius"),
+                                        IntegerArgumentType.getInteger(ctx, "seconds")))));
+    }
+
+    /** Cuts the power in a circle around you (no seconds = until {@code /backrooms outage end}). */
+    private static int outage(CommandContext<CommandSourceStack> ctx, FixtureOutages.Pattern pattern, int radius, int seconds) {
+        lastOutage = FixtureOutages.start(ctx.getSource().getLevel(), BlockPos.containing(ctx.getSource().getPosition()),
+                radius, seconds * 1000, pattern);
+        ctx.getSource().sendSuccess(() -> Component.literal("Outage " + lastOutage + " started"), false);
+        return 1;
+    }
+
+    private static int outageEnd(CommandContext<CommandSourceStack> ctx) {
+        FixtureOutages.end(ctx.getSource().getLevel(), lastOutage);
+        return 1;
+    }
+
+    private static int l0Event(CommandContext<CommandSourceStack> ctx, Level0LocalEvents.Kind kind) throws CommandSyntaxException {
+        String hint = Level0LocalEvents.force(ctx.getSource().getPlayerOrException(), kind);
+        ctx.getSource().sendSuccess(() -> Component.literal(hint), false);
+        return 1;
     }
 
     private static int event(CommandContext<CommandSourceStack> ctx, int kind, int seconds) {
@@ -192,6 +254,34 @@ public final class BackroomsCommand {
         int dist = (int) site.distanceTo(player.getX(), player.getZ());
         ctx.getSource().sendSuccess(() -> Component.literal(site.kind() + " at " + site.anchorX() + ", " + site.anchorZ()
                 + " (covers " + site.minX() + "," + site.minZ() + " to " + site.maxX() + "," + site.maxZ() + "), " + dist + " blocks away"), false);
+        return 1;
+    }
+
+    /** Teleports the player to a named spot of the nearest Level 0 site of a kind (see Level0AnomalyPlan#visitPoint). */
+    private static int anomalyVisit(CommandContext<CommandSourceStack> ctx, String kind, String point) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        ServerLevel level = player.serverLevel();
+        if (BackroomsLevel.fromDimension(level.dimension()) != BackroomsLevel.LEVEL_0) {
+            ctx.getSource().sendFailure(Component.literal("Run this on Level 0."));
+            return 0;
+        }
+        Level0Layout layout = (Level0Layout) BackroomsLevel.LEVEL_0.layout();
+        long seed = BackroomsSeeds.layoutSeed(level, BackroomsLevel.LEVEL_0);
+        AnomalySite site = layout.nearestAnomaly(seed, player.getBlockX(), player.getBlockZ(), kind);
+        if (site == null) {
+            ctx.getSource().sendFailure(Component.literal("No " + kind + " found nearby."));
+            return 0;
+        }
+        double[] spot = Level0AnomalyPlan.visitPoint(layout, seed, site, point);
+        if (spot == null) {
+            ctx.getSource().sendFailure(Component.literal("No point '" + point + "' for " + kind + ". Points: " + Level0AnomalyPlan.visitPoints(kind)));
+            return 0;
+        }
+        float pitch = spot.length > 4 ? (float) spot[4] : 0.0f;
+        player.teleportTo(level, spot[0], spot[1], spot[2], (float) spot[3], pitch);
+        player.resetFallDistance();
+        ctx.getSource().sendSuccess(() -> Component.literal("Visiting " + kind + " / " + point + " at "
+                + (int) Math.floor(spot[0]) + ", " + (int) Math.floor(spot[1]) + ", " + (int) Math.floor(spot[2])), false);
         return 1;
     }
 

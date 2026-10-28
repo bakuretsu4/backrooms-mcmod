@@ -1,0 +1,46 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/ceiling_tile",
+    "tile": "backrooms:block/ceiling_tile"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [10, 1, 9],
+      "faces": {
+        "up": { "uv": [0, 0, 10, 9], "texture": "#tile" },
+        "down": { "uv": [0, 0, 10, 9], "texture": "#tile", "cullface": "down" },
+        "north": { "uv": [0, 15, 10, 16], "texture": "#tile" },
+        "south": { "uv": [0, 15, 10, 16], "texture": "#tile" },
+        "west": { "uv": [0, 15, 9, 16], "texture": "#tile" },
+        "east": { "uv": [0, 15, 9, 16], "texture": "#tile" }
+      }
+    },
+    {
+      "from": [8, 0, 8.5],
+      "to": [15, 1, 15],
+      "rotation": { "origin": [11.5, 0.5, 11.75], "axis": "y", "angle": 22.5 },
+      "faces": {
+        "up": { "uv": [9, 8, 16, 14.5], "texture": "#tile" },
+        "north": { "uv": [9, 15, 16, 16], "texture": "#tile" },
+        "south": { "uv": [9, 15, 16, 16], "texture": "#tile" },
+        "west": { "uv": [8, 15, 14.5, 16], "texture": "#tile" },
+        "east": { "uv": [8, 15, 14.5, 16], "texture": "#tile" }
+      }
+    },
+    {
+      "from": [1.5, 0, 11],
+      "to": [5.5, 0.75, 14.5],
+      "rotation": { "origin": [3.5, 0.4, 12.75], "axis": "y", "angle": -45 },
+      "faces": {
+        "up": { "uv": [2, 11, 6, 14.5], "texture": "#tile" },
+        "north": { "uv": [2, 15, 6, 15.75], "texture": "#tile" },
+        "south": { "uv": [2, 15, 6, 15.75], "texture": "#tile" },
+        "west": { "uv": [11, 15, 14.5, 15.75], "texture": "#tile" },
+        "east": { "uv": [11, 15, 14.5, 15.75], "texture": "#tile" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "backrooms:block/l0_door_glow" },
+    "facing=east": { "model": "backrooms:block/l0_door_glow", "y": 90 },
+    "facing=south": { "model": "backrooms:block/l0_door_glow", "y": 180 },
+    "facing=west": { "model": "backrooms:block/l0_door_glow", "y": 270 }
+  }
+}

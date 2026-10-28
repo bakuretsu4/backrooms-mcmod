@@ -2,6 +2,7 @@ package com.rickr.backrooms.client.light;
 
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.network.LevelEventPayload;
+import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.client.Minecraft;
@@ -11,7 +12,9 @@ import net.minecraft.world.phys.Vec3;
  * How floor events change the lights.
  *
  * <ul>
- *   <li>BLACKOUT: every light fades to nothing over ~2 s, and back up over ~2 s when it ends.</li>
+ *   <li>BLACKOUT: every light fades to nothing over ~2 s, and back up over ~2 s when it ends. On
+ *       Level 0 it is a dying wave with a partial recovery instead, and there are local outages
+ *       too (see {@link Level0Power}).</li>
  *   <li>FLICKER: each fixture (each whole strip) toggles on and off on its own random rhythm.
  *       The pattern is a pure function of position + clock, so every player sees the same.</li>
  *   <li>ALARM: normal lights dim to 30% while the red beacons spin.</li>
@@ -82,6 +85,53 @@ public final class FixturePower {
         if (event == LevelEventPayload.LAMP_WAVE && CameraClientState.eventStartMs != waveStartMs) {
             startWave(CameraClientState.eventStartMs);
         }
+        // Level 0: the power is out PLACE BY PLACE (the blackout's dying wave, local outages), so
+        // "the mains" there means the power where you stand.
+        Minecraft mc = Minecraft.getInstance();
+        level0 = mc.level != null && BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_0;
+        if (level0) {
+            Vec3 eye = mc.gameRenderer.getMainCamera().getPosition();
+            Level0Power.tick(now, eye.x, eye.z);
+            level0PowerHere = Level0Power.powerAt(eye.x, eye.z, now);
+        } else {
+            level0PowerHere = 1.0f;
+        }
+    }
+
+    /** True while you are on Level 0 (its lamps follow {@link Level0Power}). */
+    private static boolean level0;
+    /** Level 0: the power where you stand (smooth). */
+    private static float level0PowerHere = 1.0f;
+
+    /**
+     * Told about every Level 0 local outage as it starts (id, middle x/z, radius in blocks, start
+     * time). For sounds (the far contactor clunk); only one listener, owned by the audio code.
+     */
+    public interface OutageListener {
+        void onOutage(int id, double x, double z, float radius, long startMs);
+    }
+
+    /** See {@link OutageListener}. Set by client/audio; null = nobody listens. */
+    public static volatile OutageListener outageListener;
+
+    /** Level 0: when the current (or last) blackout's dying wave started, or Long.MIN_VALUE for none. */
+    public static long level0WaveStartMs() {
+        return Level0Power.waveStartMs();
+    }
+
+    /** Level 0: where the blackout's dying wave started (x). Only meaningful when {@link #level0WaveStartMs()} is set. */
+    public static double level0WaveX() {
+        return Level0Power.waveX();
+    }
+
+    /** Level 0: where the blackout's dying wave started (z). */
+    public static double level0WaveZ() {
+        return Level0Power.waveZ();
+    }
+
+    /** Level 0: the smooth power (0..1) at any spot right now: outages, the blackout wave and its recovery. */
+    public static float level0PowerAt(double x, double z) {
+        return Level0Power.powerAt(x, z, System.currentTimeMillis());
     }
 
     /**
@@ -104,11 +154,16 @@ public final class FixturePower {
         alarm = 0.0f;
         lastTickMs = 0;
         waveStartMs = Long.MIN_VALUE;
+        Level0Power.reset();
+        level0PowerHere = 1.0f;
     }
 
-    /** 1 = power on, 0 = full blackout. */
+    /**
+     * 1 = power on, 0 = full blackout. On Level 0 this is the power where you stand (the
+     * blackout rolls in as a wave and comes back patch by patch, see {@link Level0Power}).
+     */
     public static float mainsPower() {
-        return 1.0f - smooth(blackout);
+        return level0 ? level0PowerHere : 1.0f - smooth(blackout);
     }
 
     /** 0..1 how strongly the alarm is running (red beacons, dimmed lights). */
@@ -359,12 +414,20 @@ public final class FixturePower {
     /** The 0..1 power of one fixture right now (before the camcorder battery). */
     public static float levelOf(FixtureLight light) {
         if (light.type == FixtureType.EXIT_SIGN || light.type == FixtureType.L0_EXIT_SIGN || light.type == FixtureType.SAFE_LAMP
-                || light.type == FixtureType.L2_EMERGENCY_LIGHT) {
+                || light.type == FixtureType.L2_EMERGENCY_LIGHT || light.type == FixtureType.L0_BEACON
+                || light.type == FixtureType.L0_DOOR_GLOW || light.type == FixtureType.CHECKPOINT_RADIO
+                // The Red Rooms are "somewhere else": the floor's blackouts and outages never reach them.
+                || light.type == FixtureType.RED_ROOM_LIGHT) {
             // Battery-backed: stays lit even in a blackout (and through alarms, flickers and lamp
             // waves). Exit signs are a little clue in the dark; safe-room lamps a place to hide.
             return 1.0f;
         }
-        float power = mainsPower();
+        if (light.type == FixtureType.L0_EMERGENCY_LAMP) {
+            return emergencyLampLevel(light);
+        }
+        // Level 0: each lamp has its own power (the blackout wave reaches it at its own moment,
+        // local outages cover only some lamps).
+        float power = level0 ? Level0Power.lightFactor(light, System.currentTimeMillis()) : mainsPower();
         if (light.type == FixtureType.RED_ALARM_LAMP) {
             return power;
         }
@@ -372,6 +435,30 @@ public final class FixturePower {
             return 0.0f;
         }
         return power * alarmDim();
+    }
+
+    /** A standby emergency lamp's relay clicks over this long (plus up to 0.9 s) after its power fails. */
+    private static final long RELAY_MS = 500L;
+
+    /**
+     * A Level 0 emergency lamp. Set to lit=true it is always on (its battery); in standby
+     * (lit=false) it is dark while the power at its spot is on, and switches itself on half a
+     * second to a second and a half after the power there fails (a blackout passing, a local
+     * outage), off again once the power is back.
+     */
+    private static float emergencyLampLevel(FixtureLight light) {
+        if (light.alwaysOn) {
+            return 1.0f;
+        }
+        long now = System.currentTimeMillis();
+        if (Level0Power.powerAt(light.x, light.z, now) >= 0.5f) {
+            light.relayAtMs = 0L;
+            return 0.0f;
+        }
+        if (light.relayAtMs == 0L) {
+            light.relayAtMs = now + RELAY_MS + (mix(light.key ^ 0x1D8E4E27C47D124FL) & 0x3FF) % 900L;
+        }
+        return now >= light.relayAtMs ? 1.0f : 0.0f;
     }
 
     // --- Level 2 series circuits -----------------------------------------------------------------

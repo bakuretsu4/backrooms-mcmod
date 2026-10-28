@@ -266,6 +266,77 @@ public final class Level0RedRooms {
     }
 
     /**
+     * A test point for /backrooms anomaly visit: {x, feetY, z, lookX, lookZ}, or null. "entrance"
+     * stands in the sticky moat facing the opening; "loop_hole" stands in the empty room facing
+     * the hole into the crawlway (walk through it and along to go round once).
+     */
+    @org.jetbrains.annotations.Nullable
+    static double[] visit(AnomalySite site, String name, int floorY) {
+        double[] from;
+        double[] to;
+        switch (name) {
+            case "entrance" -> {
+                from = toWorldPoint(site, ENTRANCE_U + 1.0, -1.5);
+                to = toWorldPoint(site, ENTRANCE_U + 1.0, 2.0);
+            }
+            case "loop_hole" -> {
+                from = toWorldPoint(site, 4.5, 20.5);
+                to = toWorldPoint(site, 7.5, 20.5);
+            }
+            default -> {
+                return null;
+            }
+        }
+        return new double[] {from[0], floorY + 1.0, from[1], to[0], to[1]};
+    }
+
+    /** One place the Red Rooms can add a tally mark: the wall block, the marked block and what it was. */
+    public record Tally(BlockPos pos, BlockState marked, BlockState original) {}
+
+    /**
+     * The crimson wall blocks, facing into the three rooms, where the place keeps count of your
+     * loops: each time round, more of them get tally marks (see RedRoomsBehavior). In a fixed
+     * shuffled order per site, at eye height. Never next to a crawlway or a hole (both crawlway
+     * copies must look exactly alike) and never in a doorway. Allocates: the server builds it once
+     * per site.
+     */
+    public static java.util.List<Tally> tallySpots(AnomalySite site, int floorY) {
+        java.util.List<long[]> found = new java.util.ArrayList<>();
+        for (int v = 0; v < DEPTH; v++) {
+            for (int u = 0; u < WIDTH; u++) {
+                if (charAt(u, v) != 'R') {
+                    continue;
+                }
+                Direction into = null;
+                boolean nearCrawl = false;
+                for (Direction d : Direction.Plane.HORIZONTAL) {
+                    char n = charAt(u + d.getStepX(), v + d.getStepZ());
+                    nearCrawl |= n == 'c' || n == 'h';
+                    if (into == null && (n == '.' || n == 'L' || n == 'm')) {
+                        into = d;
+                    }
+                }
+                if (into != null && !nearCrawl) {
+                    found.add(new long[] {Hash.mix(site.salt() ^ (u * 131L + v * 7919L)), u, v, into.get2DDataValue()});
+                }
+            }
+        }
+        found.sort((a, b) -> Long.compare(a[0], b[0]));
+        java.util.List<Tally> out = new java.util.ArrayList<>();
+        BlockState red = ModBlocks.RED_WALLPAPER.get().defaultBlockState();
+        BlockState mould = ModBlocks.RED_WALLPAPER_MOULD.get().defaultBlockState();
+        for (long[] f : found) {
+            int u = (int) f[1];
+            int v = (int) f[2];
+            int[] w = toWorld(site, u, v);
+            BlockState marked = ModBlocks.RED_WALL_TALLY.get().defaultBlockState()
+                    .setValue(WallDecalBlock.FACING, toWorld(site, Direction.from2DDataValue((int) f[3])));
+            out.add(new Tally(new BlockPos(w[0], floorY + 2, w[1]), marked, mouldy(site, u, v) ? mould : red));
+        }
+        return out;
+    }
+
+    /**
      * The loop. If a player at (x, z) has walked past the middle of a crawlway, returns the world
      * step {dx, dz, forward} that puts them at the same spot in the other copy (forward = 1 when going
      * from the empty room towards the start room, the way the loop runs); otherwise null.

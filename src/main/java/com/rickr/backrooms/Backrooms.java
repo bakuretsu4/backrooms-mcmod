@@ -34,6 +34,12 @@ public final class Backrooms {
         // Deferred registers: blocks, items, entities, sounds, our chunk generator type, player data.
         // Level 0 revamp: the film's partitions, light strips, exit alcove, tape lines and props.
         com.rickr.backrooms.registry.Level0Blocks.bootstrap();
+        // Level 0 set-piece lights: the rotating red beacon, the emergency lamp, the pendant.
+        com.rickr.backrooms.registry.Level0LightBlocks.bootstrap();
+        // Level 0 hidden rooms: the crawlspace's plenum deck and ducts, and the notes left in them.
+        com.rickr.backrooms.registry.Level0HiddenBlocks.bootstrap();
+        // Level 0 set pieces: the shaft hall's fallen ceiling tile, the light under the Front Office's drawn door.
+        com.rickr.backrooms.registry.Level0SetPieceBlocks.bootstrap();
         // Level 2 revamp: pipework, bulkhead rings, maintenance-room furniture, stencils and the exit bulkhead.
         com.rickr.backrooms.registry.Level2Blocks.bootstrap();
         // Level 39 Hounds/Facelings (and Clumps, Skin-stealers, Wretches): loads their registrations.

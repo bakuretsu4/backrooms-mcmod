@@ -1,0 +1,12 @@
+{
+  "vertex": "backrooms:light/level0_point",
+  "fragment": "backrooms:light/level0_point",
+  "textures": {
+    "AlbedoSampler": "veil:dynamic_buffer/albedo",
+    "NormalSampler": "veil:dynamic_buffer/normal",
+    "DepthSampler": {
+      "type": "framebuffer",
+      "name": "minecraft:main:depth"
+    }
+  }
+}

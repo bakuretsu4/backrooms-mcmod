@@ -30,7 +30,8 @@ final class Level0Finder {
             kinds.add(ZONE + name);
         }
         for (String name : new String[] {"furniture_heap", "throne", "mannequins", "hazmat_case", "ceiling_hole", "ceiling_cable",
-                "tape", "switch_boxes", "ladder", "exit_alcove", "graffiti", "window", "niche", "ramp", "noclipped"}) {
+                "tape", "switch_boxes", "ladder", "exit_alcove", "graffiti", "window", "niche", "ramp", "noclipped",
+                "frame_tunnel", "dead_end_cache", "liar_arrows", "bright_district", "dim_district", "abandoned_district"}) {
             kinds.add(SET + name);
         }
         KINDS = List.copyOf(kinds);
@@ -57,6 +58,11 @@ final class Level0Finder {
         if (kind.equals(ZONE + Level0Zones.NAMES[Level0Zones.BUILDERS])) {
             return nearestRoom(layout, seed, x, z, kind, bigX, bigZ, Level0Builders::isRoom);
         }
+        Bands roomX = Level0RoomMaze.X_CELLS;
+        Bands roomZ = Level0RoomMaze.Z_CELLS;
+        if (kind.equals(ZONE + Level0Zones.NAMES[Level0Zones.ROOMS])) {
+            return nearestRoom(layout, seed, x, z, kind, roomX, roomZ, Level0RoomMaze::isCell);
+        }
         for (int k = 0; k < Level0Zones.KINDS; k++) {
             if (kind.equals(ZONE + Level0Zones.NAMES[k])) {
                 int wanted = k;
@@ -82,6 +88,17 @@ final class Level0Finder {
             case "window" -> nearestWall(layout, seed, x, z, kind, bigX, bigZ, buildersWall(Level0Builders.F_WINDOWS));
             case "niche" -> nearestWall(layout, seed, x, z, kind, bigX, bigZ, buildersWall(Level0Builders.F_NICHES));
             case "noclipped" -> nearestNoclipped(layout, seed, x, z, kind);
+            // The room maze, on its own grid: a room whose two opposite doorways line up (stand in
+            // it and look through the frames), and a dead end holding crates or a case.
+            case "frame_tunnel" -> nearestRoom(layout, seed, x, z, kind, roomX, roomZ,
+                    (s, gx, gz) -> Level0RoomMaze.isCell(s, gx, gz) && Level0RoomMaze.throughView(s, gx, gz));
+            case "dead_end_cache" -> nearestRoom(layout, seed, x, z, kind, roomX, roomZ,
+                    (s, gx, gz) -> Level0RoomMaze.isCell(s, gx, gz) && Level0RoomMaze.dressedDeadEnd(s, gx, gz));
+            // Light districts and liar districts: the nearest maze floor inside one (searched every 8 blocks).
+            case "liar_arrows" -> nearestSpot(layout, seed, x, z, kind, (s, px, pz) -> Level0Lights.liar(s, px, pz));
+            case "bright_district" -> nearestSpot(layout, seed, x, z, kind, district(Level0Lights.BRIGHT));
+            case "dim_district" -> nearestSpot(layout, seed, x, z, kind, district(Level0Lights.DIM));
+            case "abandoned_district" -> nearestSpot(layout, seed, x, z, kind, district(Level0Lights.ABANDONED));
             default -> null;
         };
     }
@@ -95,6 +112,45 @@ final class Level0Finder {
 
     private static RoomTest wallPiece(int wanted) {
         return (seed, sx, sz) -> (Level0Layout.roomWallPiece(seed, sx, sz) & 3) == wanted;
+    }
+
+    /** Asks whether column (x, z) is the kind of place being looked for. */
+    private interface SpotTest {
+        boolean matches(long seed, int x, int z);
+    }
+
+    private static SpotTest district(int wanted) {
+        return (seed, x, z) -> Level0Lights.district(seed, x, z) == wanted;
+    }
+
+    /** The nearest walkable plain-maze column passing the test, on an 8-block lattice, as a one-block site. */
+    @Nullable
+    private static AnomalySite nearestSpot(Level0Layout layout, long seed, int x, int z, String name, SpotTest test) {
+        int bx = Math.floorDiv(x, 8) * 8;
+        int bz = Math.floorDiv(z, 8) * 8;
+        for (int r = 0; r <= RADIUS / 8; r++) {
+            AnomalySite best = null;
+            long bestDistance = Long.MAX_VALUE;
+            for (int i = -r; i <= r; i++) {
+                for (int j = -r; j <= r; j++) {
+                    if (Math.max(Math.abs(i), Math.abs(j)) != r) {
+                        continue;
+                    }
+                    int px = bx + i * 8;
+                    int pz = bz + j * 8;
+                    long distance = (long) (px - x) * (px - x) + (long) (pz - z) * (pz - z);
+                    if (distance < bestDistance && test.matches(seed, px, pz) && layout.inMaze(seed, px, pz)
+                            && layout.isWalkable(seed, px, pz)) {
+                        bestDistance = distance;
+                        best = new AnomalySite(name, px, pz, px, pz, px, pz, 0, 0);
+                    }
+                }
+            }
+            if (best != null) {
+                return best;
+            }
+        }
+        return null;
     }
 
     /** A solid ordinary wall segment with feature F_* {@code wanted}. */

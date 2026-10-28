@@ -5,6 +5,7 @@ import static com.rickr.backrooms.world.layout.Level0Zones.CORRIDOR;
 import static com.rickr.backrooms.world.layout.Level0Zones.DARK;
 import static com.rickr.backrooms.world.layout.Level0Zones.FIELD;
 import static com.rickr.backrooms.world.layout.Level0Zones.HALL;
+import static com.rickr.backrooms.world.layout.Level0Zones.ROOMS;
 
 import com.rickr.backrooms.block.AxisShapeBlock;
 import com.rickr.backrooms.block.FloorArrowBlock;
@@ -19,6 +20,7 @@ import com.rickr.backrooms.block.WallLampBlock;
 import com.rickr.backrooms.block.WallMountBlock;
 import com.rickr.backrooms.registry.Level0Blocks;
 import com.rickr.backrooms.registry.ModBlocks;
+import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.ExitLocator;
 import com.rickr.backrooms.world.Hash;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
@@ -26,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
@@ -65,7 +68,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li>{@link Level0Zones#HALL} pillar halls (~22%): about a third of the wall segments are
  *       missing and many more are only stubs, the junctions stay as square pillars on a loose,
  *       uneven grid, and most bays have a pillar of their own.</li>
- *   <li>{@link Level0Zones#FIELD} wall-block fields (~38%): the classic thick-walled maze of small
+ *   <li>{@link Level0Zones#FIELD} wall-block fields (~16%): the classic thick-walled maze of small
  *       rooms joined by frameless 2-3 wide openings. The openings of a few parallel walls line up
  *       (they depend on the row, not the wall), so you get short vistas through them.</li>
  *   <li>{@link Level0Zones#CORRIDOR} corridor runs (~22%): long narrow corridors carved out of
@@ -79,16 +82,25 @@ import org.jetbrains.annotations.Nullable;
  *   <li>{@link Level0Zones#DARK} dark wings (~10%): an enclosed maze where every troffer is dead.
  *       Rooms just outside a wing switch off their panels near it, so the dark starts at the
  *       doorway.</li>
+ *   <li>{@link Level0Zones#ROOMS} the room maze (~22%): rooms 6-22 across on their own irregular
+ *       grid behind thick wall masses, joined by 2-deep doorways that mostly line up into tunnels
+ *       of door frames, with posts, pillars, slits and dressed dead ends. See
+ *       {@link Level0RoomMaze}; like the builders' rooms it claims its columns first.</li>
  * </ul>
  * Near a border between a hall and a field, units randomly take the neighbouring kind more and
  * more often, so one fades into the other over a dozen blocks. In halls and fields a few rows of
  * rooms line up into a long vista, 40-90 blocks of doorways ending in a blank wall (see
  * {@link #vista}); most views stay short, so the long ones stand out.
  *
- * <p><b>Lights.</b> One square troffer per 3x3 cell over open floor, the rows sometimes shifted by
- * one, the odd panel missing, doubled or off the grid; about 8% dead, more near the ends of long
+ * <p><b>Lights.</b> A grid of square troffers, one per 3x3 cell over open floor, the rows
+ * sometimes shifted by one, the odd panel missing, doubled or off the grid; corridors get a
+ * troffer every 3 or 6 blocks or a strip, and the room maze lights whole rooms. How many of them
+ * there are and how many are dead depends on the light district ({@link Level0Lights}): bright
+ * office stretches, ordinary ones with pools and dark gaps, dim ones and abandoned ones, with
+ * whole banks switched off so the dark comes in patches. More are dead near the ends of long
  * vistas and straight corridors. The layout only decides where a fixture is and whether it is
- * dead ({@link #fixture}); {@link Level0Tubes} picks how old each lit tube is.
+ * dead ({@link #fixture}); {@link Level0Tubes} picks how old each lit tube is. Arrivals wake up
+ * under a working panel ({@link #preferredArrival}).
  *
  * <p><b>Set pieces</b> (rare, by hash, see {@link #roomPiece}, {@link #roomWallPiece} and
  * {@link #solidFeature}): furniture heaps and the throne in pillar halls, exit-sign alcoves, switch
@@ -136,11 +148,6 @@ public final class Level0Layout extends LevelLayout {
     private static final int SAFE_EXIT_DISTANCE = 24;
     /** Two zone kinds mix over this many blocks on each side of their border. */
     private static final int BLEND = 12;
-    /**
-     * Share of single dead troffers in lit areas (darkness otherwise comes by zone). About one
-     * panel in twelve is dead, so even a lit room often has a gap in its light and a dim corner.
-     */
-    private static final double DEAD_LIGHT = 0.08;
 
     // What a maze column is: the low 4 bits of a packed column (see mazeColumn).
     static final int OPEN = 0;
@@ -316,6 +323,12 @@ public final class Level0Layout extends LevelLayout {
         this.anomalies = new Level0AnomalyPlan(this);
     }
 
+    /** The set pieces (atrium, shaft hall, hidden office) build up to here and hang lights near it. */
+    @Override
+    public int highestCeilingY() {
+        return Level0AnomalyPlan.HIGHEST_Y;
+    }
+
     // ==========================================================================================
     // Zones
     // ==========================================================================================
@@ -324,17 +337,19 @@ public final class Level0Layout extends LevelLayout {
      * The zone sample of the unit whose first corner is (repX, repZ), with border mixing: close to
      * the border between a hall and a field, a unit sometimes takes the other side's kind (more
      * often the closer it is). Corridors and dark wings keep a crisp edge. The ordinary skeleton
-     * never builds a builders' zone (its big rooms come from {@link Level0Builders}, which claims
-     * its columns first): wherever no builders' room does, the neighbouring zone's kind fills in.
+     * never builds a builders' zone or a room-maze zone (their rooms come from
+     * {@link Level0Builders} and {@link Level0RoomMaze}, which claim their columns first): wherever
+     * no such room does, the neighbouring zone's kind fills in (a wall field if that one is a
+     * big-grid zone too).
      */
     private static long unit(long seed, int repX, int repZ) {
         long sample = Level0Zones.sample(seed, repX, repZ);
         int kind = Level0Zones.kind(sample);
         int other = Level0Zones.secondKind(sample);
-        if (kind == BUILDERS) {
-            kind = other == BUILDERS ? HALL : other;
+        if (bigGrid(kind)) {
+            kind = bigGrid(other) ? (kind == BUILDERS ? HALL : FIELD) : other;
             other = kind;
-        } else if (other == BUILDERS) {
+        } else if (bigGrid(other)) {
             other = kind;
         }
         int edge = Level0Zones.edge(sample);
@@ -347,6 +362,11 @@ public final class Level0Layout extends LevelLayout {
 
     private static boolean blends(int kind) {
         return kind == HALL || kind == FIELD;
+    }
+
+    /** The zone kinds built on their own big grid instead of the ordinary skeleton. */
+    private static boolean bigGrid(int kind) {
+        return kind == BUILDERS || kind == ROOMS;
     }
 
     /** Zone kind of the unit made of spans sx and sz. */
@@ -373,6 +393,10 @@ public final class Level0Layout extends LevelLayout {
         int builders = Level0Builders.column(seed, x, z);
         if (builders >= 0) {
             return builders | BUILDERS << 4;
+        }
+        int rooms = Level0RoomMaze.column(seed, x, z);
+        if (rooms >= 0) {
+            return rooms | ROOMS << 4;
         }
         long u = unit(seed, X_WALLS.start(sx), Z_WALLS.start(sz));
         int kind = Level0Zones.kind(u);
@@ -921,11 +945,14 @@ public final class Level0Layout extends LevelLayout {
     }
 
     /**
-     * Corridor lights run down the middle: Kane's a square troffer every 3 blocks (pools of light
-     * with dimmer stretches between them under the low ceiling; now and then one missing or two
-     * side by side), the film's one continuous strip. The narrow lane of a split corridor only
-     * gets a panel every 6 blocks, so it is dimmer than the main one. Some stretches are dead and
-     * dark (see {@link #CORRIDOR_DIM}). Packed as in {@link #fixture}.
+     * Corridor lights run down the middle: Kane's a square troffer every 3 blocks in a bright
+     * district and every 6 elsewhere (pools of light with dark stretches between them under the low
+     * ceiling; now and then one missing or two side by side), the film's one continuous strip, lit
+     * all along in a bright district and in alternate 3-block pieces elsewhere (the dead pieces
+     * stay up as dark strip, so it still reads as one strip). The narrow lane of a split corridor
+     * only gets a panel every 6 blocks. Some stretches are dead and dark (see {@link #CORRIDOR_DIM}),
+     * and the light district decides how many tubes and banks are out ({@link Level0Lights}).
+     * Packed as in {@link #fixture}.
      */
     private static int corridorFixture(long seed, int x, int z, int column) {
         int flags = column >>> 12;
@@ -937,11 +964,19 @@ public final class Level0Layout extends LevelLayout {
         boolean alongX = (flags & C_ALONG_X) != 0;
         boolean runsX = (main || side) == alongX; // a cross corridor runs the other way
         boolean dim = (flags & C_DIM) != 0;
+        int district = Level0Lights.district(seed, x, z);
+        boolean bright = district == Level0Lights.BRIGHT;
         if ((flags & C_FILM) != 0 && !side) {
-            return FIX_FIXTURE | FIX_STRIP | (runsX ? FIX_ALONG_X : 0) | (dim ? FIX_DEAD : 0);
+            // Pieces of 3 blocks (one Veil light each): every other one is out outside bright districts.
+            int a = runsX ? x : z;
+            int piece = Math.floorDiv(a, 3);
+            int px = runsX ? piece * 3 : x;
+            int pz = runsX ? z : piece * 3;
+            boolean dead = dim || !bright && (piece & 1) == 0 || Level0Lights.dead(seed, px, pz, district);
+            return FIX_FIXTURE | FIX_STRIP | (runsX ? FIX_ALONG_X : 0) | (dead ? FIX_DEAD : 0);
         }
         int a = runsX ? x : z;
-        int period = side ? 6 : 3;
+        int period = side || !bright ? 6 : 3;
         int slot = Math.floorDiv(a, period);
         int offset = a - slot * period;
         if (offset > 1) {
@@ -952,7 +987,7 @@ public final class Level0Layout extends LevelLayout {
         if (!here) {
             return 0;
         }
-        boolean dead = dim || Hash.unit(seed, x, z, 532) < DEAD_LIGHT;
+        boolean dead = dim || Level0Lights.dead(seed, x, z, district);
         return FIX_FIXTURE | (dead ? FIX_DEAD : 0);
     }
 
@@ -971,6 +1006,9 @@ public final class Level0Layout extends LevelLayout {
             return 0;
         }
         int kind = column >>> 4 & 7;
+        if (kind == ROOMS) {
+            return Level0RoomMaze.fixture(seed, x, z);
+        }
         return kind == CORRIDOR ? corridorFixture(seed, x, z, column) : roomFixture(seed, kind, x, z, sx, sz);
     }
 
@@ -985,16 +1023,22 @@ public final class Level0Layout extends LevelLayout {
     }
 
     /**
-     * The troffer grid over rooms (see {@link #onLightGrid}). Dead in dark wings, and in lit areas
-     * within 3 blocks of one, so a wing goes black right at its doorway; dead more often near the
-     * ends of a long vista, so the far end of the view fades into dimness; otherwise
-     * {@link #DEAD_LIGHT} (8%) dead.
+     * The troffer grid over rooms (see {@link #onLightGrid}), thinned and switched by light
+     * district ({@link Level0Lights}): every cell keeps its panel in a bright district, one cell in
+     * four (sometimes a pair) elsewhere, and whole banks and single tubes are dead more and more
+     * often from normal to abandoned districts. Dead in dark wings, and in lit areas within 3
+     * blocks of one, so a wing goes black right at its doorway; dead more often near the ends of a
+     * long vista, so the far end of the view fades into dimness.
      */
     private static int roomFixture(long seed, int kind, int x, int z, long sx, long sz) {
         if (!onLightGrid(seed, x, z)) {
             return 0;
         }
-        boolean dead = kind == DARK || Hash.unit(seed, x, z, 532) < DEAD_LIGHT || nearDarkWing(seed, x, z)
+        int district = Level0Lights.district(seed, x, z);
+        if (!Level0Lights.keepsCell(seed, Math.floorDiv(x, 3), Math.floorDiv(z, 3), district)) {
+            return 0;
+        }
+        boolean dead = kind == DARK || Level0Lights.dead(seed, x, z, district) || nearDarkWing(seed, x, z)
                 || (kind == HALL || kind == FIELD) && vistaFade(seed, x, z, sx, sz);
         return FIX_FIXTURE | (dead ? FIX_DEAD : 0);
     }
@@ -1045,14 +1089,18 @@ public final class Level0Layout extends LevelLayout {
                 || unitKindAt(seed, x, z + 3) == DARK || unitKindAt(seed, x, z - 3) == DARK;
     }
 
-    /** True if column (x, z) belongs to a builders' room or its walls (see {@link Level0Builders}). */
+    /**
+     * True if column (x, z) belongs to a big-grid room or its walls: a builders' room
+     * ({@link Level0Builders}) or a room of the room maze ({@link Level0RoomMaze}).
+     */
     private static boolean inBuilders(long seed, int x, int z) {
-        return Level0Builders.column(seed, x, z) >= 0;
+        return Level0Builders.column(seed, x, z) >= 0 || Level0RoomMaze.column(seed, x, z) >= 0;
     }
 
     /**
-     * True if a builders' room claims part of this ordinary room. Builders' walls are straight and
-     * their rooms far bigger than this one, so whatever reaches in covers one of its corners.
+     * True if a big-grid room (builders' room or room maze) claims part of this ordinary room. Their
+     * walls are straight and their rooms bigger than this one, so whatever reaches in covers one of
+     * its corners.
      */
     private static boolean touchesBuilders(long seed, long sx, long sz) {
         int x0 = X_WALLS.start(sx);
@@ -1459,6 +1507,73 @@ public final class Level0Layout extends LevelLayout {
         return isWalkable(seed, x, z) && anomalies.structureAt(seed, x, z) == null && rampAt(seed, x, z) == 0;
     }
 
+    /** How far (blocks, each way) an arrival looks around its spot for a lit, readable place. */
+    private static final int ARRIVAL_SEARCH = 64;
+
+    /**
+     * Where someone arriving in Level 0 lands: under the nearest working panel (searched in growing
+     * squares, up to {@link #ARRIVAL_SEARCH}) in a bright or normal light district, outside dark
+     * wings and blackouts, on a safe spot with room to stand and open floor around it. You wake up
+     * somewhere you can see, and the dark is something you walk into, not where you start. Null
+     * (so the usual search runs) if there is no such spot, e.g. deep inside an abandoned district.
+     *
+     * <p>It looks for lit panels first (a cheap test per column) and only checks the floor under
+     * the few it finds, so even a failed search stays quick.
+     */
+    @Override
+    @Nullable
+    public BlockPos preferredArrival(long seed, int x, int z, @Nullable BackroomsLevel from) {
+        for (int r = 0; r <= ARRIVAL_SEARCH; r++) {
+            for (int ox = -r; ox <= r; ox++) {
+                int step = Math.abs(ox) == r ? 1 : 2 * r; // only the ring's edge
+                for (int oz = -r; oz <= r; oz += Math.max(1, step)) {
+                    int px = x + ox;
+                    int pz = z + oz;
+                    if (!litPanel(seed, px, pz) || Level0Lights.district(seed, px, pz) >= Level0Lights.DIM) {
+                        continue;
+                    }
+                    // The floor right under the panel, or one block off it.
+                    for (int i = 0; i < 9; i++) {
+                        int ax = px + (i % 3 + 1) % 3 - 1; // 0, 1, -1: the middle first
+                        int az = pz + (i / 3 + 1) % 3 - 1;
+                        if (readableArrival(seed, ax, az)) {
+                            return new BlockPos(ax, standY(seed, ax, az), az);
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /** True if (x, z), under or beside a lit panel, suits an arrival (see {@link #preferredArrival}). */
+    boolean readableArrival(long seed, int x, int z) {
+        if (!isSafeArrival(seed, x, z) || isUnlitZone(seed, x, z) || anomalies.blackoutAt(seed, x, z) != null) {
+            return false;
+        }
+        if (!isSafeArrival(seed, x + 1, z) || !isSafeArrival(seed, x - 1, z)
+                || !isSafeArrival(seed, x, z + 1) || !isSafeArrival(seed, x, z - 1)) {
+            return false;
+        }
+        int open = 0;
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                if (isWalkable(seed, x + dx, z + dz)) {
+                    open++;
+                }
+            }
+        }
+        return open >= 16;
+    }
+
+    /** True if a working (lit) ceiling fixture of the maze hangs over (x, z). */
+    private boolean litPanel(long seed, int x, int z) {
+        long sx = X_WALLS.span(seed, x);
+        long sz = Z_WALLS.span(seed, z);
+        int fixture = fixture(seed, x, z, mazeColumn(seed, x, z, sx, sz), sx, sz);
+        return (fixture & FIX_FIXTURE) != 0 && (fixture & FIX_DEAD) == 0 && inMaze(seed, x, z);
+    }
+
     /** One block lower in the sunken passage of a builders' room (and half a block on its step). */
     @Override
     public int standY(long seed, int x, int z) {
@@ -1553,13 +1668,13 @@ public final class Level0Layout extends LevelLayout {
 
     /**
      * Does the spot suit an anomaly that likes {@code zone}: 0 the tight maze (wall fields), 1
-     * ordinary rooms (fields and builders' rooms), 2 big halls, 3 the dark wings.
+     * ordinary rooms (fields, builders' rooms and the room maze), 2 big halls, 3 the dark wings.
      */
     boolean zonePrefers(long seed, int x, int z, int zone) {
         int kind = Level0Zones.kindAt(seed, x, z);
         return switch (zone) {
             case 0 -> kind == FIELD;
-            case 1 -> kind == FIELD || kind == BUILDERS;
+            case 1 -> kind == FIELD || kind == BUILDERS || kind == ROOMS;
             case 2 -> kind == HALL;
             default -> kind == DARK;
         };
@@ -1570,31 +1685,17 @@ public final class Level0Layout extends LevelLayout {
         return unitKindAt(seed, x, z) == DARK;
     }
 
-    private void fillStructure(AnomalySite site, int x, int z, Column out) {
-        switch (site.kind()) {
-            case Level0AnomalyPlan.RED_ROOMS -> Level0RedRooms.fill(site, x, z, floorY(), ceilingY(), out);
-            case Level0AnomalyPlan.MANILA_ROOM -> Level0ManilaRoom.fill(site, x, z, floorY(), ceilingY(), out);
-            case Level0AnomalyPlan.PITFALLS -> Level0Pitfalls.fill(site, x, z, floorY(), ceilingY(), out);
-            default -> Level0PillarHall.fill(site, x, z, floorY(), ceilingY(), out);
-        }
+    /** Which plan class builds which kind is Level0AnomalyPlan's business, so new kinds never touch this file. */
+    private void fillStructure(long seed, AnomalySite site, int x, int z, Column out) {
+        anomalies.fill(seed, site, x, z, floorY(), ceilingY(), out);
     }
 
     private static boolean structureSolid(AnomalySite site, int x, int z) {
-        return switch (site.kind()) {
-            case Level0AnomalyPlan.RED_ROOMS -> Level0RedRooms.isSolid(site, x, z);
-            case Level0AnomalyPlan.MANILA_ROOM -> Level0ManilaRoom.isSolid(site, x, z);
-            case Level0AnomalyPlan.PITFALLS -> Level0Pitfalls.isSolid(site, x, z);
-            default -> Level0PillarHall.isSolid(site, x, z);
-        };
+        return Level0AnomalyPlan.isSolid(site, x, z);
     }
 
     private static boolean structureWalkable(AnomalySite site, int x, int z) {
-        return switch (site.kind()) {
-            case Level0AnomalyPlan.RED_ROOMS -> Level0RedRooms.isWalkable(site, x, z);
-            case Level0AnomalyPlan.MANILA_ROOM -> Level0ManilaRoom.isWalkable(site, x, z);
-            case Level0AnomalyPlan.PITFALLS -> Level0Pitfalls.isWalkable(site, x, z);
-            default -> Level0PillarHall.isWalkable(site, x, z);
-        };
+        return Level0AnomalyPlan.isWalkable(site, x, z);
     }
 
     /**
@@ -1718,6 +1819,10 @@ public final class Level0Layout extends LevelLayout {
         if (kind == BUILDERS) {
             return (column >>> 12 & Level0Builders.MANNEQUIN) == 0;
         }
+        if (kind == ROOMS) {
+            // Crates, a case, a backpack, litter or a heap may stand in a room-maze dead end.
+            return (column >>> Level0RoomMaze.PROP_SHIFT & 7) == Level0RoomMaze.PROP_NONE;
+        }
         if (kind == CORRIDOR) {
             return true;
         }
@@ -1792,7 +1897,7 @@ public final class Level0Layout extends LevelLayout {
         }
         AnomalySite structure = anomalies.structureAt(seed, x, z);
         if (structure != null) {
-            fillStructure(structure, x, z, out);
+            fillStructure(seed, structure, x, z, out);
             return;
         }
 
@@ -1883,6 +1988,10 @@ public final class Level0Layout extends LevelLayout {
         }
         if (kind == BUILDERS) {
             fillBuilders(seed, x, z, column, sx, sz, blackout, sticky ? stickyCarpet : carpet, out);
+            return;
+        }
+        if (kind == ROOMS) {
+            fillRoomMaze(seed, x, z, column, blackout, sticky ? stickyCarpet : carpet, out);
             return;
         }
         if (kind == CORRIDOR) {
@@ -1991,6 +2100,49 @@ public final class Level0Layout extends LevelLayout {
             return;
         }
         int fixture = fixture(seed, x, z, column, sx, sz);
+        if (fixture != 0) {
+            out.set(ceiling, tube(seed, x, z, fixture));
+        }
+    }
+
+    /**
+     * An open column of the room maze (see {@link Level0RoomMaze}): carpet (with now and then a
+     * painted arrow in the middle of a room), whatever stands in a dead end, and the room's lights.
+     */
+    private void fillRoomMaze(long seed, int x, int z, int column, boolean blackout, BlockState carpet, Column out) {
+        int floor = floorY();
+        int ceiling = ceilingY();
+        Direction arrow = (column & Level0RoomMaze.ROOM_MIDDLE) != 0 && Hash.unit(seed, x, z, 244) < 0.06
+                ? carpetArrow(seed, x, z, Hash.unit(seed, x, z, 245) < 0.2, Hash.of(seed, x, z, 246)) : null;
+        out.set(floor, arrow != null
+                ? ModBlocks.LOBBY_CARPET_ARROW.get().defaultBlockState().setValue(FloorArrowBlock.FACING, arrow) : carpet);
+        int prop = column >>> Level0RoomMaze.PROP_SHIFT & 7;
+        Direction facing = Direction.from2DDataValue(column >>> 8 & 3);
+        switch (prop) {
+            case Level0RoomMaze.PROP_CRATE, Level0RoomMaze.PROP_CRATES -> {
+                for (int i = 0; i < (prop == Level0RoomMaze.PROP_CRATES ? 2 : 1); i++) {
+                    out.set(floor + 1 + i, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
+                }
+            }
+            case Level0RoomMaze.PROP_HAZMAT -> out.set(floor + 1, Level0Blocks.HAZMAT_CASE.get().defaultBlockState().setValue(WallMountBlock.FACING, facing));
+            case Level0RoomMaze.PROP_BACKPACK -> out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState()
+                    .setValue(BlockStateProperties.HORIZONTAL_FACING, facing));
+            case Level0RoomMaze.PROP_LITTER -> out.set(floor + 1, Level0Props.litter(seed, x, z));
+            case Level0RoomMaze.PROP_HEAP, Level0RoomMaze.PROP_HEAP2 -> {
+                for (int i = 0; i < (prop == Level0RoomMaze.PROP_HEAP2 ? 2 : 1); i++) {
+                    out.set(floor + 1 + i, Level0Props.heapPiece(seed, x, floor + 1 + i, z));
+                }
+            }
+            default -> {
+            }
+        }
+        if (blackout) {
+            if (prop == Level0RoomMaze.PROP_NONE) {
+                out.set(floor + 1, ModBlocks.CARPET_FLUID.get().defaultBlockState());
+            }
+            return;
+        }
+        int fixture = Level0RoomMaze.fixture(seed, x, z);
         if (fixture != 0) {
             out.set(ceiling, tube(seed, x, z, fixture));
         }
@@ -2432,6 +2584,9 @@ public final class Level0Layout extends LevelLayout {
         if (kind == BUILDERS) {
             return ceiling || (column >>> 12 & Level0Builders.MANNEQUIN) != 0;
         }
+        if (kind == ROOMS) {
+            return ceiling || (column >>> Level0RoomMaze.PROP_SHIFT & 7) != Level0RoomMaze.PROP_NONE;
+        }
         if (kind == CORRIDOR || Bands.isBand(sx) || Bands.isBand(sz)) {
             return false;
         }
@@ -2502,7 +2657,7 @@ public final class Level0Layout extends LevelLayout {
         return EMBED_CELL;
     }
 
-    /** Carpet, or (rarely) a scuffed arrow painted on the carpet. */
+    /** Carpet, or (rarely) a scuffed arrow painted on the carpet (twice as often in a liar district). */
     private BlockState floorBlock(long seed, int x, int z, long sx, long sz, BlockState carpet) {
         int lenX = Bands.length(sx);
         int lenZ = Bands.length(sz);
@@ -2510,21 +2665,39 @@ public final class Level0Layout extends LevelLayout {
         int iz = Bands.index(sz);
         int x0 = X_WALLS.start(sx);
         int z0 = Z_WALLS.start(sz);
-        if (x == x0 + lenX / 2 && z == z0 + lenZ / 2 && Hash.unit(seed, ix, iz, 241) < 0.04) {
-            int[] exit = exits().nearest(seed, x, z);
-            int ex = exit[0] - x;
-            int ez = exit[1] - z;
-            if (Math.abs(ex) <= ARROW_RANGE && Math.abs(ez) <= ARROW_RANGE) {
-                Direction direction = Math.abs(ex) > Math.abs(ez)
-                        ? (ex > 0 ? Direction.EAST : Direction.WEST)
-                        : (ez > 0 ? Direction.SOUTH : Direction.NORTH);
-                if (Hash.unit(seed, ix, iz, 242) < 0.2) {
-                    direction = Direction.from2DDataValue(Hash.range(Hash.of(seed, ix, iz, 243), 4));
+        if (x == x0 + lenX / 2 && z == z0 + lenZ / 2) {
+            double r = Hash.unit(seed, ix, iz, 241);
+            if (r < 0.04 || r < 0.08 && Level0Lights.liar(seed, x, z)) {
+                Direction direction = carpetArrow(seed, x, z, Hash.unit(seed, ix, iz, 242) < 0.2, Hash.of(seed, ix, iz, 243));
+                if (direction != null) {
+                    return ModBlocks.LOBBY_CARPET_ARROW.get().defaultBlockState().setValue(FloorArrowBlock.FACING, direction);
                 }
-                return ModBlocks.LOBBY_CARPET_ARROW.get().defaultBlockState().setValue(FloorArrowBlock.FACING, direction);
             }
         }
         return carpet;
+    }
+
+    /**
+     * The way a carpet arrow at (x, z) points, or null if the nearest exit is out of arrow range:
+     * towards the exit, but in a liar district ({@link Level0Lights#liar}) always straight away
+     * from it, and elsewhere a random way when {@code scuffed} (a fifth of them: someone painted
+     * it wrong, or it is just old).
+     */
+    @Nullable
+    private Direction carpetArrow(long seed, int x, int z, boolean scuffed, long randomWay) {
+        int[] exit = exits().nearest(seed, x, z);
+        int ex = exit[0] - x;
+        int ez = exit[1] - z;
+        if (Math.abs(ex) > ARROW_RANGE || Math.abs(ez) > ARROW_RANGE) {
+            return null;
+        }
+        Direction direction = Math.abs(ex) > Math.abs(ez)
+                ? (ex > 0 ? Direction.EAST : Direction.WEST)
+                : (ez > 0 ? Direction.SOUTH : Direction.NORTH);
+        if (Level0Lights.liar(seed, x, z)) {
+            return direction.getOpposite();
+        }
+        return scuffed ? Direction.from2DDataValue(Hash.range(randomWay, 4)) : direction;
     }
 
     /**
@@ -2611,7 +2784,13 @@ public final class Level0Layout extends LevelLayout {
             out.set(floor + 2, ModBlocks.WALL_WINDOW_DRAWING.get().defaultBlockState().setValue(WallDecalBlock.FACING, window));
             return;
         }
-        if (Hash.unit(seed, x, z, 270) >= 0.03) {
+        // Arrows and handprints on 3% of wall faces; in a liar district on 6%, and all of them arrows.
+        double r = Hash.unit(seed, x, z, 270);
+        if (r >= 0.06) {
+            return;
+        }
+        boolean liar = Level0Lights.liar(seed, x, z);
+        if (r >= 0.03 && !liar) {
             return;
         }
         Direction face = openFace(seed, x, z, 271);
@@ -2621,12 +2800,14 @@ public final class Level0Layout extends LevelLayout {
         int[] exit = exits().nearest(seed, x, z);
         int ex = exit[0] - x;
         int ez = exit[1] - z;
-        if (Math.abs(ex) <= ARROW_RANGE && Math.abs(ez) <= ARROW_RANGE && Hash.unit(seed, x, z, 272) < 0.7) {
+        if (Math.abs(ex) <= ARROW_RANGE && Math.abs(ez) <= ARROW_RANGE && (liar || Hash.unit(seed, x, z, 272) < 0.7)) {
             // Someone facing this wall has FACING behind them; their right hand points FACING's counter-clockwise.
             Direction right = face.getCounterClockWise();
             boolean pointsRight = ex * right.getStepX() + ez * right.getStepZ() >= 0;
-            if (Hash.unit(seed, x, z, 273) < 0.25) {
-                pointsRight = !pointsRight; // a lie
+            // In a liar district every arrow lies, the same way (away from the exit): a rule you can
+            // learn. Elsewhere a quarter lie at random.
+            if (liar || Hash.unit(seed, x, z, 273) < 0.25) {
+                pointsRight = !pointsRight;
             }
             BlockState arrow = (pointsRight ? ModBlocks.WALL_ARROW_RIGHT : ModBlocks.WALL_ARROW_LEFT).get().defaultBlockState();
             out.set(floor + 2, arrow.setValue(WallDecalBlock.FACING, face));

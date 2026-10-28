@@ -48,6 +48,16 @@ public final class ModNetwork {
             CameraClientState.eventEndMs = nowMs + payload.remainingTicks() * 50L;
         });
 
+        // Level 0 local power outages (world/FixtureOutages): the client makes the lamps die and re-strike.
+        registrar.playToClient(LocalOutagePayload.TYPE, LocalOutagePayload.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (payload.restore()) {
+                com.rickr.backrooms.client.light.Level0Power.end(payload.id());
+            } else {
+                com.rickr.backrooms.client.light.Level0Power.start(payload.id(), payload.pattern(), payload.x(), payload.z(),
+                        payload.radius(), payload.elapsedMs(), payload.durationMs(), payload.blocks(), payload.delaysMs());
+            }
+        }));
+
         // Sprint energy for the HUD stamina line and the client-side sprint release (S3).
         registrar.playToClient(EnergyPayload.TYPE, EnergyPayload.STREAM_CODEC, (payload, context) -> {
             EnergyClientState.energy = payload.energy() / (float) EnergyData.MAX;

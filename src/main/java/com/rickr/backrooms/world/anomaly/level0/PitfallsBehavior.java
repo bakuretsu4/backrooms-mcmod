@@ -1,5 +1,7 @@
 package com.rickr.backrooms.world.anomaly.level0;
 
+import com.rickr.backrooms.registry.Level0Blocks;
+import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.Hash;
@@ -18,6 +20,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -29,7 +32,10 @@ import net.minecraft.world.phys.Vec3;
  * blocks deep (any deeper and Level 0 would send you on to Level 1), so twice on the way down the
  * server quietly lifts you back up six blocks ({@link Teleports#shift} keeps your speed): in the
  * dark it simply feels like a very long fall, about twenty blocks. Then you land, hurt (never
- * killed) and half-blind, in a dark spot of Level 0 150-400 blocks away.
+ * killed) and half-blind, in a dark spot of Level 0 150-400 blocks away, having come down through
+ * its ceiling: the tile above you is missing, a black hole you could never climb back into. The
+ * hole stays, so you can find the spot again (and wonder how a pit leads to a ceiling).
+ * Players flying in creative are left alone.
  */
 public final class PitfallsBehavior implements AnomalyBehavior {
     /** Below this feet height the shaft "goes on": lift the player or land them. */
@@ -46,7 +52,8 @@ public final class PitfallsBehavior implements AnomalyBehavior {
     @Override
     public void tick(ServerPlayer player, AnomalySite site, long seed, int ticksInside) {
         int floor = BackroomsLevel.LEVEL_0.layout().floorY();
-        if (player.getY() >= floor || !Level0Pitfalls.isShaft(site, player.getBlockX(), player.getBlockZ())) {
+        if (player.getY() >= floor || player.getAbilities().flying
+                || !Level0Pitfalls.isShaft(site, player.getBlockX(), player.getBlockZ())) {
             return;
         }
         if (player.getY() < floor - 1.0 && !player.hasEffect(MobEffects.BLINDNESS)) {
@@ -86,6 +93,11 @@ public final class PitfallsBehavior implements AnomalyBehavior {
         player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 50, 0, false, false));
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 1, false, false));
         player.playNotifySound(ModSounds.INTRO_IMPACT.get(), SoundSource.PLAYERS, 0.8f, 0.9f);
+        // You came down through the ceiling: the tile right above you is gone.
+        BlockPos above = new BlockPos(spot.getX(), layout.ceilingY(), spot.getZ());
+        if (level.getBlockState(above).is(ModBlocks.CEILING_TILE.get())) {
+            level.setBlock(above, Level0Blocks.CEILING_HOLE.get().defaultBlockState(), Block.UPDATE_ALL);
+        }
     }
 
     /**

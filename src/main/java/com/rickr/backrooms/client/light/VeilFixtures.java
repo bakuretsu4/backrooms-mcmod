@@ -30,6 +30,16 @@ final class VeilFixtures {
     private static final float BEACON_SOFT_EDGE = 0.3f;
     private static final float BEACON_DISTANCE = 15.0f;
     private static final float BEACON_BRIGHTNESS = 1.1f;
+    /**
+     * Level 0's rotating beacon (the Front Office) turns once a second: with its two cones back
+     * to back, a red sweep passes any spot twice a second. Narrower, longer and brighter cones
+     * than the alarm lamps, because it is the only light in a big dark room.
+     */
+    private static final double L0_BEACON_RAD_PER_MS = Math.PI * 2.0 / 1000.0;
+    private static final float L0_BEACON_HALF_ANGLE = 0.35f;
+    private static final float L0_BEACON_SOFT_EDGE = 0.22f;
+    private static final float L0_BEACON_DISTANCE = 16.0f;
+    private static final float L0_BEACON_BRIGHTNESS = 2.6f;
 
     /**
      * How many of the nearest streetlamps get a glow cone. These count against
@@ -124,9 +134,9 @@ final class VeilFixtures {
     /**
      * Makes the Veil lights match {@code selected}: adds the new ones, frees the ones no longer
      * picked, and updates brightness. {@code floor} lets a fixture shine differently per level
-     * (see {@link FixtureType#brightnessOn}).
+     * (see {@link FixtureType#brightnessOn}); {@code budget} is how many lights could be picked.
      */
-    static void sync(List<FixtureLight> selected, float batteryScale, @Nullable BackroomsLevel floor) {
+    static void sync(List<FixtureLight> selected, float batteryScale, @Nullable BackroomsLevel floor, int budget) {
         VeilRenderer renderer = VeilRenderSystem.renderer();
         if (renderer == null) {
             return;
@@ -142,7 +152,7 @@ final class VeilFixtures {
         // Level 2: always the light range (or the farthest picked light if the budget is full).
         double fadeEnd = 0.0;
         float fadeFrom = LEVEL0_FADE_FROM;
-        boolean budgetFull = selected.size() >= ClientSettings.quality().maxLights;
+        boolean budgetFull = selected.size() >= budget;
         if ((floor == null || floor == BackroomsLevel.LEVEL_0) && budgetFull) {
             for (FixtureLight light : selected) {
                 fadeEnd = Math.max(fadeEnd, Math.sqrt(light.distSq));
@@ -172,7 +182,7 @@ final class VeilFixtures {
             }
             entry.light = light;
             entry.seen = true;
-            if (light.type != FixtureType.RED_ALARM_LAMP) {
+            if (!isBeacon(light.type)) {
                 setBrightness(entry, light.type.brightnessOn(floor) * tubeBrightness(light, floor) * light.level * scale
                         * edgeFade(light, fadeEnd, fadeFrom));
             }
@@ -199,6 +209,30 @@ final class VeilFixtures {
                 it.remove();
             }
         }
+        // Level 0: keep our light renderer alive for its full-screen pass even with no lamp on
+        // screen (a blackout, a dark wing): one invisible lamp far below the world.
+        boolean level0 = floor == null || floor == BackroomsLevel.LEVEL_0;
+        if (level0 && (anchor == null || !anchor.isValid())) {
+            anchor = lights.addLight(new Level0LightData().setPosition(0.0, -10_000.0, 0.0).setRadius(0.01f).setBrightness(0.0f));
+        } else if (!level0) {
+            freeAnchor();
+        }
+    }
+
+    /** See the end of {@link #sync}. */
+    @Nullable
+    private static LightRenderHandle<? extends PointLightData> anchor;
+
+    private static void freeAnchor() {
+        if (anchor != null) {
+            anchor.free();
+            anchor = null;
+        }
+    }
+
+    /** Lamps whose light spins (their point glow is set every frame in {@link #frame}). */
+    private static boolean isBeacon(FixtureType type) {
+        return type == FixtureType.RED_ALARM_LAMP || type == FixtureType.L0_BEACON;
     }
 
     /** Per-frame work: spin the alarm beacons smoothly (per tick would look steppy). */
@@ -207,16 +241,19 @@ final class VeilFixtures {
         LightRenderer lights = null;
         for (Entry entry : ACTIVE.values()) {
             FixtureLight light = entry.light;
-            if (light.type != FixtureType.RED_ALARM_LAMP) {
+            if (!isBeacon(light.type)) {
                 continue;
             }
-            // Steady dim glow normally; during the alarm the glow pulses with the sweep.
+            // Level 0's beacon always turns (it only exists while switched on); the alarm lamps
+            // keep a steady dim glow and only turn during the alarm.
+            boolean level0Beacon = light.type == FixtureType.L0_BEACON;
+            float spin = level0Beacon ? 1.0f : alarm;
             double phase = ((FixturePower.mix(light.key) >>> 11) & 0xFFFF) / 65535.0 * Math.PI * 2.0;
-            double angle = (nowMs % 3_600_000L) * BEACON_RAD_PER_MS + phase;
+            double angle = (nowMs % 3_600_000L) * (level0Beacon ? L0_BEACON_RAD_PER_MS : BEACON_RAD_PER_MS) + phase;
             float pulse = 0.5f + 0.5f * (float) Math.sin(angle * 2.0);
-            setBrightness(entry, (light.type.brightness + 0.45f * alarm * pulse) * light.level * scale);
+            setBrightness(entry, (light.type.brightness + 0.45f * spin * pulse) * light.level * scale);
 
-            float coneBrightness = BEACON_BRIGHTNESS * alarm * light.level * scale;
+            float coneBrightness = (level0Beacon ? L0_BEACON_BRIGHTNESS : BEACON_BRIGHTNESS) * spin * light.level * scale;
             if (coneBrightness <= 0.001f) {
                 entry.freeCones();
                 continue;
@@ -252,6 +289,7 @@ final class VeilFixtures {
             entry.free();
         }
         ACTIVE.clear();
+        freeAnchor();
     }
 
     private static void setBrightness(Entry entry, float brightness) {
@@ -301,7 +339,9 @@ final class VeilFixtures {
             g *= Level0TubeGlow.toneGreen(tone);
             b *= Level0TubeGlow.toneBlue(tone);
         }
-        return new PointLightData()
+        // Level 0's lamps are our own light type: our shaders, shadows from the wall map.
+        PointLightData point = floor == null || floor == BackroomsLevel.LEVEL_0 ? new Level0LightData() : new PointLightData();
+        return point
                 .setPosition(light.x, light.y, light.z)
                 .setRadius(type.radiusOn(floor))
                 .setColor(r, g, b)
@@ -311,14 +351,15 @@ final class VeilFixtures {
     }
 
     private static SpotLightData newCone(FixtureLight light) {
+        boolean level0Beacon = light.type == FixtureType.L0_BEACON;
         SpotLightData cone = new SpotLightData()
-                .setSize(BEACON_HALF_ANGLE)
-                .setAngle(BEACON_SOFT_EDGE)
-                .setDistance(BEACON_DISTANCE)
+                .setSize(level0Beacon ? L0_BEACON_HALF_ANGLE : BEACON_HALF_ANGLE)
+                .setAngle(level0Beacon ? L0_BEACON_SOFT_EDGE : BEACON_SOFT_EDGE)
+                .setDistance(level0Beacon ? L0_BEACON_DISTANCE : BEACON_DISTANCE)
                 .setColor(1.0f, 0.04f, 0.02f)
                 .setBrightness(0.0f)
                 .setOcclusionEnabled(true)
-                .setInscatteringStrength(0.2f); // faint red beams in the dust
+                .setInscatteringStrength(level0Beacon ? 0.3f : 0.2f); // faint red beams in the dust
         cone.getPositionMutable().set(light.x, light.y, light.z);
         return cone;
     }

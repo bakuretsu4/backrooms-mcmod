@@ -21,6 +21,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -30,6 +31,7 @@ import com.rickr.backrooms.config.ClientSettings;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
@@ -54,7 +56,9 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>Veil's 3D shadow grid only covers 32 blocks around the camera, which is why lights further
  * than ~28 blocks are left out (they'd shine through walls). The vanilla lightmap keeps a very dim
- * fill everywhere else ({@code ClientLighting}).
+ * fill everywhere else ({@code ClientLighting}). Level 0 is different: its lamps are our own light
+ * type with shadows from a top-down wall map ({@link Level0WallGrid}, {@link Level0LightRenderer}),
+ * cheaper and reaching ~48 blocks, so there twice as many lamps reach 1.5 times as far.
  *
  * <p>When Veil isn't usable (not installed, or Iris is loaded: Veil's lights don't work under
  * Iris) nothing here touches Veil, {@link #isVeilLightingActive()} is false and the old lightmap +
@@ -64,10 +68,19 @@ import org.jetbrains.annotations.Nullable;
 public final class BackroomsLights {
     /**
      * Lights are clustered this far around the player: a bit beyond the longest light range (HIGH
-     * quality, {@link ClientSettings.Quality#lightRange}). The per-frame budget and range come from
-     * the QUALITY setting: every shadowed Veil light costs graphics-card time each frame.
+     * quality, {@link ClientSettings.Quality#lightRange}, times Level 0's longer reach, see
+     * {@link #LEVEL0_RANGE_SCALE}). The per-frame budget and range come from the QUALITY setting:
+     * every shadowed Veil light costs graphics-card time each frame.
      */
-    private static final int BUILD_RANGE = ClientSettings.Quality.HIGH.lightRange + 10;
+    private static final int BUILD_RANGE = (int) Math.ceil(ClientSettings.Quality.HIGH.lightRange * 1.5) + 10;
+    /**
+     * Level 0's lamps take their shadows from the wall map (client/light/Level0WallGrid), which
+     * is much cheaper than Veil's voxel shadows and reaches ~48 blocks: there the budget is twice
+     * the quality's light count and reaches 1.5 times as far (HIGH: 64 lamps within 42 blocks),
+     * so lit rooms far down a dark run still glow as beacons.
+     */
+    private static final int LEVEL0_BUDGET_SCALE = 2;
+    private static final float LEVEL0_RANGE_SCALE = 1.5f;
     /** Rebuild the cluster list after walking this far (or when fixtures changed). */
     private static final int REBUILD_MOVE = 6;
     /** Lights already on get this much "closer" when ranking, so they don't swap at the edge. */
@@ -268,8 +281,13 @@ public final class BackroomsLights {
             if (fault == FixturePower.TUBE_DYING) {
                 light.level *= FixturePower.dyingTubePulse(light.key, now);
             }
-            if (toggles) {
-                setTubeDark(mc, light, tubeDark);
+            // The tube's glowing face goes dark with it: when a faulty tube toggles off, and on
+            // Level 0 when the power is out at it (the blackout wave, a local outage). Not for
+            // the FLICKER event, whose strobe the lightmap handles (redrawing the blocks that
+            // fast would only stutter the chunk updates).
+            boolean powerDark = level0 && level0Tube(light.type) && !flickering && light.level <= 0.02f;
+            if (toggles || (level0 && level0Tube(light.type))) {
+                setTubeDark(mc, light, (toggles && tubeDark) || powerDark);
             }
         }
         // Eased, so a stutter makes the fill shimmer rather than strobe.
@@ -289,8 +307,23 @@ public final class BackroomsLights {
         if (veil) {
             // Thrown flares/glowsticks first: the fixtures get the slots they leave free.
             ThrownLights.tick(level, mc.gameRenderer.getMainCamera().getPosition());
-            select(floor);
-            VeilFixtures.sync(SELECTED, CameraClientState.battery <= 0.0f ? 0.25f : 1.0f, floor);
+            int budget = select(floor);
+            VeilFixtures.sync(SELECTED, CameraClientState.battery <= 0.0f ? 0.25f : 1.0f, floor, budget);
+        }
+        // Level 0 with Veil: the wall map and power map for our light shaders.
+        Level0Shading.wanted = veil && level0;
+        if (veil && level0) {
+            Level0WallGrid.tick(level, eye.x, eye.z);
+            Level0PowerMap.tick(eye.x, eye.z, now);
+        }
+    }
+
+    /** F3 screen: the Level 0 lights' GPU time (see Level0Shading). */
+    @SubscribeEvent
+    public static void onDebugText(CustomizeGuiOverlayEvent.DebugText event) {
+        String line = Level0Shading.debugLine();
+        if (line != null) {
+            event.getLeft().add(line);
         }
     }
 
@@ -421,6 +454,7 @@ public final class BackroomsLights {
         Flashlights.frame(event.getCamera(), partialTick, mc.level, mc.player);
         VeilFixtures.frame(System.currentTimeMillis());
         ThrownLights.frame(partialTick, System.currentTimeMillis());
+        Level0Shading.armed = true; // time this frame's world light pass (not the hand's)
     }
 
     @SubscribeEvent
@@ -473,6 +507,7 @@ public final class BackroomsLights {
         DARK_TUBES.clear();
         FAULTY_TUBES.clear();
         level0TubeShare = 1.0f;
+        Level0WallGrid.reset();
         builtRevision = -1;
         Minecraft mc = Minecraft.getInstance();
         if (level != null && mc.player != null && mc.player.level() == level) {
@@ -490,6 +525,7 @@ public final class BackroomsLights {
             }
         }
         veilActive = false;
+        Level0Shading.wanted = false;
     }
 
     private static void freeLights() {
@@ -516,6 +552,12 @@ public final class BackroomsLights {
             if (previous != null) {
                 light.on = previous.on;
                 light.level = previous.level;
+                light.relayAtMs = previous.relayAtMs;
+            }
+            if (light.type == FixtureType.L0_EMERGENCY_LAMP) {
+                // lit=true: always on; lit=false: standby (see FixturePower#levelOf).
+                BlockState state = INDEX.get(light.key);
+                light.alwaysOn = state == null || !state.hasProperty(BlockStateProperties.LIT) || state.getValue(BlockStateProperties.LIT);
             }
         }
         if (BackroomsLevel.fromDimension(level.dimension()) == BackroomsLevel.LEVEL_0) {
@@ -566,9 +608,11 @@ public final class BackroomsLights {
         if (DARK_TUBES.isEmpty()) {
             return;
         }
+        // Tubes still around you keep their dark glow (faulty ones toggling, dead ones in an
+        // outage): the tick right after this sets each one right again.
         LongOpenHashSet keep = new LongOpenHashSet();
         for (FixtureLight light : built) {
-            if (FAULTY_TUBES.containsKey(light.key) && light.blocks != null) {
+            if (level0Tube(light.type) && light.blocks != null) {
                 for (long pos : light.blocks) {
                     keep.add(pos);
                 }
@@ -625,11 +669,14 @@ public final class BackroomsLights {
     /**
      * Picks the nearest lights within the quality's light range (lights already shown get a small
      * bonus). In Level 9 a few slots of the budget are kept free for the streetlamps' glow cones
-     * ({@link VeilFixtures#LAMP_CONES}), so the total never exceeds the quality's maxLights.
+     * ({@link VeilFixtures#LAMP_CONES}), so the total never exceeds the quality's maxLights. Level 0
+     * gets more lamps reaching further ({@link #LEVEL0_BUDGET_SCALE}). Returns the budget.
      */
-    private static void select(BackroomsLevel floor) {
+    private static int select(BackroomsLevel floor) {
         ClientSettings.Quality quality = ClientSettings.quality();
-        int budget = floor == BackroomsLevel.LEVEL_9 ? quality.maxLights - VeilFixtures.LAMP_CONES : quality.maxLights;
+        boolean level0 = floor == BackroomsLevel.LEVEL_0;
+        int budget = floor == BackroomsLevel.LEVEL_9 ? quality.maxLights - VeilFixtures.LAMP_CONES
+                : level0 ? quality.maxLights * LEVEL0_BUDGET_SCALE : quality.maxLights;
         budget -= ThrownLights.reserved(); // flares and glowsticks share the same budget
         SHOWN.clear();
         for (FixtureLight light : SELECTED) {
@@ -637,7 +684,8 @@ public final class BackroomsLights {
         }
         SELECTED.clear();
         CANDIDATES.clear();
-        double maxSq = (double) quality.lightRange * quality.lightRange;
+        double range = level0 ? quality.lightRange * LEVEL0_RANGE_SCALE : quality.lightRange;
+        double maxSq = range * range;
         boolean blackedOut = FixturePower.mainsPower() <= 0.0f;
         for (FixtureLight light : lights) {
             if (light.distSq > maxSq) {
@@ -654,6 +702,7 @@ public final class BackroomsLights {
             SELECTED.add(CANDIDATES.get(i));
         }
         CANDIDATES.clear();
+        return budget;
     }
 
     private static double sq(double v) {

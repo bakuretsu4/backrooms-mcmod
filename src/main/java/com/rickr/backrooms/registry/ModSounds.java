@@ -230,6 +230,43 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> L0_TUBE_HUM = register("level0.tube_hum");
     public static final DeferredHolder<SoundEvent, SoundEvent> L0_TUBE_HUM_FAULTY = register("level0.tube_hum_faulty");
     public static final DeferredHolder<SoundEvent, SoundEvent> L0_TUBE_TICK = register("level0.tube_tick");
+    // Level 0's events and set pieces (client/audio/Level0Soundscape, client/light/FixtureSounds,
+    // tools/anomaly_assets/level0_spaces_audio.py). Tubes going out in a blackout wave or a local
+    // outage pop one by one and strike again when they come back; an emergency lamp's relay clunks
+    // on; the blackout and the power's return have their own Level 0 versions; a far district
+    // going dark is heard from far off.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_WAVE_POP = register("level0.wave_pop");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_TUBE_STRIKE = register("level0.tube_strike");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_EMERGENCY_RELAY = register("level0.emergency_relay");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_BLACKOUT_WAVE = register("level0.blackout_wave");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_POWER_RESTORE = register("level0.power_restore");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_DISTRICT_DOWN = register("level0.district_down");
+    // The Front Office: its failing fire horn (heard 80 blocks off), the red beacon's motor, the drawn
+    // door that turns out real, and the PA asking for someone to come to the front office.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_OFFICE_ALARM = register("level0.office_alarm");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_BEACON_MOTOR = register("level0.beacon_motor");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_DRAWN_DOOR = register("level0.drawn_door");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_INTERCOM_FRONT_OFFICE = register("level0.intercom_front_office");
+    // The Atrium's cold air high up, sounds coming down the Shaft Hall's shafts, a ceiling tile
+    // working loose up a shaft and landing on the carpet.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_ATRIUM_AIR = register("level0.atrium_air");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_SHAFT_ABOVE = register("level0.shaft_above");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_TILE_CRACK = register("level0.tile_crack");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_TILE_FALL = register("level0.tile_fall");
+    // Hidden rooms: a radio playing to nobody, a clock that skips a beat, the stillness of a sealed
+    // room, the office behind the Front Office's drawn door, and a chair creaking in a room of chairs
+    // facing the wall, as if someone just stood up.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_RADIO = register("level0.radio");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_CLOCK_TICK = register("level0.clock_tick");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_SEALED_ROOM = register("level0.sealed_room");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_HIDDEN_OFFICE = register("level0.hidden_office");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_STILL_CREAK = register("level0.still_creak");
+    // Level 0's improved anomalies: a pillar of the Peripheral Shift hall settling out of sight, cold
+    // air breathing up out of the Pitfalls' shafts before you see them, and the Red Rooms' hum
+    // dragging low and wrong each time you come round the loop.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_PILLAR_SETTLE = register("level0.pillar_settle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_PIT_DRAUGHT = register("level0.pit_draught");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_RED_LOOP = register("level0.red_loop");
     // Distant ambience (client/audio/DistantAmbience): one-off sounds far away, a few per level, so a
     // long stay never sounds like the same loop. One is picked every half minute or so and placed
     // 14-40 blocks off in a random direction. Files: sounds/ambient/distant/<level>/<name>1..3.ogg.
