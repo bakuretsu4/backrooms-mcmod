@@ -10,6 +10,8 @@ import com.rickr.backrooms.world.Hash;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -39,29 +41,26 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
  *   y 505-508    the iron collar on a colossal chain: step off = the leap out
  *   y 476-507    a broken bridge from the top to that chain, a ladder welded up it
  *   y 476        the crumbled top, a radio (checkpoint)
- *   y 425-475    ledge 3 (1 wide, a gap), then a 50-block ladder up the outside to the top
- *   y 375-425    stair D, inside, windows
- *   y 357        ledge 2 (2 wide, half way round), ladder to stair D
- *   y 317-347    LOOP 2: the stair repeats until you go back down (world/Level490Loops)
- *   y 307-313    the half-way room with a radio (checkpoint), big windows
- *   y 267-297    LOOP 1
- *   y 267-357    stair B-C, enclosed, lantern-lit, one long spiral through the room
- *   y 251        ledge 1 (3 wide), ladder to stair B-C
- *   y 201-251    stair A, inside, windows; it starts in the hall at the foot
- *   y 200        the great island; the entrance faces the bridge you came in by
+ *   y 357-476    flight 2: the broken stair round the outside, out of a doorway to the top
+ *   y 317-347    the LOOP: the stair repeats until you go back down (world/Level490Loops)
+ *   y 307-357    the inside stair, from the half-way room up
+ *   y 307-313    the half-way room with a radio (checkpoint)
+ *   y 201-307    flight 1: the broken stair round the outside, from the island to the room
+ *   y 200        the great island: the hall (a shrine) and, beside its door, the first step
  * </pre>
  *
  * <p>Everything is laid out in the spire's own frame: u points from its centre (the middle of
  * block (cx, cz)) toward the bridge you arrive by, v a quarter turn on, angles in degrees from +u
- * toward +v. Doors, ladders and the ledges' ends sit on the u and v axes so ladders face straight
- * out. The stairs are spirals 4 wide around a 3 x 3 newel, rising {@value #RISE} blocks a turn in
- * half steps (you walk up them, no jumping): one turn is the same as the next, which is what lets a
- * stretch of them repeat without you seeing the join.
+ * toward +v. The climb (after the play-test: "a spiralling stair on the outside, messy, chaotic")
+ * is two flights of a broken stair winding round the outside ({@link Flight}), hugging the body
+ * wherever it bulges, cutting through the turrets and ribs it meets; between them, inside, the
+ * half-way room and a spiral stair 4 wide round a 3 x 3 newel rising {@value #RISE} blocks a turn
+ * (one turn the same as the next, which is what lets a stretch of it repeat unseen).
  *
  * <p>Built per column like the rest of the level: the vertebrae and the shafts are worked out
- * directly; ribs, chunks, iron and the outside route (ledges, piers, ladders, doors, windows,
- * lanterns) are worked out once per site into per-column lists. The route goes last, so nothing
- * ever blocks it.
+ * directly; ribs, chunks, iron and the way up (the outside stair, doorways, windows, lanterns,
+ * the final climb) are worked out once per site into per-column lists. The way up goes last, so
+ * nothing ever blocks it.
  */
 public final class Level490Spire {
     // ---- the vertical plan ("feet" heights: the y you stand at) ----
@@ -83,11 +82,10 @@ public final class Level490Spire {
     static final int ROOM_TOP = 313;
     /** Farthest any part of the spire (collars round the chains) reaches from its centre. */
     public static final int REACH = 62;
-    /** Farthest the vertebrae and the ledges reach. */
+    /** Farthest the vertebrae reach. */
     private static final double BODY_REACH = 20.0;
-    /** Where the vertebrae meet; ledges run at three of the joints. */
+    /** Where the vertebrae meet. */
     private static final int[] JOINTS = {200, 228, 251, 279, 307, 332, 357, 384, 404, 425, 450, PLATFORM_Y};
-    private static final int[] LEDGE_JOINTS = {251, 357, 425};
     /** Ribs curl out of the spire at these heights, four each, near the diagonals. */
     private static final int[] RIB_LEVELS = {236, 290, 340, 392};
     /** The iron band round the upper body, and the collars on the colossal chains. */
@@ -113,26 +111,39 @@ public final class Level490Spire {
         }
     }
 
-    private static final Stair A = new Stair(201, 251, 30, true);
-    private static final Stair BC = new Stair(267, 357, 210, false);
-    private static final Stair D = new Stair(375, 425, 120, true);
-    private static final Stair[] STAIRS = {A, BC, D};
+    /** The inside stair, from the half-way room up. */
+    private static final Stair BC = new Stair(307, 357, 210, false);
+    private static final Stair[] STAIRS = {BC};
 
     /**
-     * An outside ledge at feet height {@code feet}, from the door at angle {@code from} round
-     * {@code sweep} degrees to a ladder, which climbs to {@code ladderTop} (the block under the
-     * next door's sill, or the top platform).
+     * A flight of the outside stair: from feet height {@code y0} at angle {@code deg0} round the
+     * outside (angles growing) up to {@code y1}, rising {@code rise} blocks a turn.
      */
-    private record Ledge(int feet, int from, int sweep, int width, int ladderTop) {
-        int ladder() {
-            return (from + sweep) % 360;
+    private record Flight(int y0, int y1, double deg0, double rise) {
+        double sweep() {
+            return (y1 - y0) / rise * 360.0;
+        }
+
+        double degEnd() {
+            return mod360(deg0 + sweep());
+        }
+
+        double y(double s) {
+            return y0 + s / 360.0 * rise;
         }
     }
 
-    private static final Ledge[] LEDGES = {
-            new Ledge(251, 90, 90, 3, 266),
-            new Ledge(357, 270, 180, 2, 374),
-            new Ledge(425, 180, 90, 1, PLATFORM_Y)};
+    /**
+     * Flight 1 from the island to the half-way room, flight 2 from the inside stair's top to the top.
+     * 34 blocks a turn: hugging a body 11 or more blocks across, that is under half a block of rise
+     * per block walked, so every step is a half step (none to jump).
+     */
+    private static final Flight F1 = new Flight(201, ROOM_FLOOR, 15, 34);
+    private static final Flight F2 = new Flight(357, TOP, 300, 34);
+    private static final Flight[] FLIGHTS = {F1, F2};
+    /** The outside stair is drawn every this many degrees round its sweep. */
+    private static final double STEP_DEG = 0.25;
+    private static final double STAIR_WIDTH = 3.0;
 
     /**
      * A looping stretch of stair B-C: three identical turns from {@code bottom}. Climbing past
@@ -141,13 +152,13 @@ public final class Level490Spire {
      */
     public record Loop(int bottom, int trigger, double release) {}
 
-    public static final Loop[] LOOPS = {new Loop(267, 289, 268.6), new Loop(317, 339, 315.0)};
+    public static final Loop[] LOOPS = {new Loop(317, 339, 315.0)};
 
     // ---- the blocks, by index (so a column's list is plain ints) ----
     private static final int AIR = 0;
     private static final int SPIRE = 1;
     private static final int JOINT = 2;
-    private static final int STONE = 3;
+    private static final int POST = 3;
     private static final int PAVING = 4;
     private static final int IRON = 5;
     private static final int SLAB = 6;
@@ -371,15 +382,6 @@ public final class Level490Spire {
         return 0;
     }
 
-    private static boolean ledgeJoint(int j) {
-        for (int l : LEDGE_JOINTS) {
-            if (l == j) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     /** The wall cell (radius rMin..rMax) nearest in angle to {@code deg}. */
     private static int[] wallCell(double deg, double rMin, double rMax) {
         int[] best = null;
@@ -428,7 +430,7 @@ public final class Level490Spire {
             p[AIR] = Blocks.AIR.defaultBlockState();
             p[SPIRE] = Level490Blocks.SPIRE.get().defaultBlockState();
             p[JOINT] = Level490Blocks.SPIRE_JOINT.get().defaultBlockState();
-            p[STONE] = Level490Blocks.STONE.get().defaultBlockState();
+            p[POST] = Level490Blocks.POST.get().defaultBlockState();
             p[PAVING] = Level490Blocks.PAVING.get().defaultBlockState();
             p[IRON] = Level490Blocks.CHAIN_IRON.get().defaultBlockState();
             p[SLAB] = Level490Blocks.PAVING_SLAB.get().defaultBlockState();
@@ -581,11 +583,11 @@ public final class Level490Spire {
         };
     }
 
-    /** True if (u, v, y) is in the darker disc where two vertebrae meet (not at the ledges). */
+    /** True if (u, v, y) is in the darker disc where two vertebrae meet. */
     private boolean inDisc(double u, double v, int y) {
         for (int k = 1; k < JOINTS.length - 1; k++) {
             int j = JOINTS[k];
-            if ((y == j || y == j - 1) && !ledgeJoint(j)) {
+            if (y == j || y == j - 1) {
                 double du = u - offU[k - 1] - tiltU[k - 1] * 0.5;
                 double dv = v - offV[k - 1] - tiltV[k - 1] * 0.5;
                 double a = Math.atan2(dv, du);
@@ -678,7 +680,7 @@ public final class Level490Spire {
                 out.set(y, pal[GOTHIC]);
             } else if (y == BASE) {
                 out.set(y, pal[PAVING]);
-            } else if (y <= HALL_TOP || r < SHAFT_R) {
+            } else if (y <= HALL_TOP) {
                 out.set(y, pal[AIR]);
             } else {
                 out.set(y, pal[GOTHIC]);
@@ -726,9 +728,7 @@ public final class Level490Spire {
             if (frac(deg - s.a0) < 0.6) {
                 out.set(s.top - 1, pal[PAVING]);
             }
-            if (s != A) {
-                out.set(s.bottom - 1, pal[PAVING]);
-            }
+            out.set(s.bottom - 1, pal[PAVING]);
         }
     }
 
@@ -750,7 +750,7 @@ public final class Level490Spire {
             out.set(PLATFORM_Y - 2, pal[GOTHIC]);
         }
         double d = deg(u, v);
-        boolean open = Math.abs(Math.IEEEremainder(d - 270, 360)) < 16 || Math.abs(Math.IEEEremainder(d - bridgeDeg, 360)) < 16
+        boolean open = Math.abs(Math.IEEEremainder(d - F2.degEnd(), 360)) < 18 || Math.abs(Math.IEEEremainder(d - bridgeDeg, 360)) < 16
                 || Math.abs(Math.IEEEremainder(d, 360)) < 12;
         double edge = Hash.unit(Hash.mix(h));
         if (!open && r > rim - 1.2 && edge < 0.6) {
@@ -852,15 +852,15 @@ public final class Level490Spire {
 
     /**
      * Where the climb comes out of the spire or runs round it: {angle, half width (degrees), lowest
-     * y, highest y}. Nothing is built onto the outside there (doors, ledges, piers, ladders, the
-     * rose window).
+     * y, highest y}. Nothing is built onto the outside there (the doorways, where the stair comes
+     * onto the top, the rose window).
      */
     private static final double[][] KEEP_CLEAR = {
-            {0, 14, 196, 214},                  // the entrance
-            {90, 14, 246, 260}, {135, 50, 246, 258}, {180, 14, 246, 272},   // ledge 1 and its ladder
-            {270, 14, 352, 366}, {0, 95, 352, 364}, {90, 14, 352, 380},     // ledge 2 and its ladder
-            {180, 14, 420, 432}, {225, 50, 420, 432}, {270, 14, 420, PLATFORM_Y + 6},  // ledge 3, the long ladder
-            {0, 42, 318, 342},                  // the rose window
+            {0, 14, 196, 214},                                  // the entrance to the hall
+            {F1.degEnd(), 14, ROOM_FLOOR - 4, ROOM_FLOOR + 6},   // the doorway into the half-way room
+            {F2.deg0(), 14, F2.y0() - 4, F2.y0() + 6},          // the doorway out above the inside stair
+            {F2.degEnd(), 16, TOP - 8, PLATFORM_Y + 6},          // where the stair comes up onto the top
+            {0, 42, 318, 342},                                  // the rose window
     };
 
     private static boolean clear(double deg, double halfWidth, double y0, double y1) {
@@ -1002,12 +1002,9 @@ public final class Level490Spire {
                         w0 * p0[2] + w1 * p1[2] + w2 * p2[2], 1.2, CARVED);
             }
         }
-        // Pinnacles round the joints between the vertebrae (not where the ledges run).
+        // Pinnacles round the joints between the vertebrae.
         for (int k = 1; k < JOINTS.length - 1; k++) {
             int j = JOINTS[k];
-            if (ledgeJoint(j)) {
-                continue;
-            }
             for (int n = 0; n < 8; n++) {
                 double deg = 22.5 + 45 * n;
                 if (!clear(deg, 3, j, j + 6)) {
@@ -1211,7 +1208,7 @@ public final class Level490Spire {
     }
 
     // ==========================================================================================
-    // The way up: doors, windows, lanterns, ledges, piers, ladders (worked out once per site)
+    // The way up: the outside stair, doorways, windows, lanterns (worked out once per site)
     // ==========================================================================================
 
     private void op(int u, int v, int y0, int y1, int block) {
@@ -1232,6 +1229,8 @@ public final class Level490Spire {
     }
 
     private void buildRoute() {
+        rin = new double[FLIGHTS.length][];
+        wide = new double[FLIGHTS.length][];
         // The entrance, toward the bridge you came in by: 3 wide, a round-topped arch.
         for (int k = 8; k <= 22; k++) {
             for (int p = -1; p <= 1; p++) {
@@ -1279,11 +1278,310 @@ public final class Level490Spire {
         for (double wa : new double[] {45, 225}) {
             ray(wa, ROOM_R - 0.5, extent(wa, ROOM_FLOOR + 1, ROOM_FLOOR + 4) + 1.5, 1.3, ROOM_FLOOR + 1, ROOM_FLOOR + 4);
         }
-        for (int i = 0; i < LEDGES.length; i++) {
-            ledge(LEDGES[i], i);
+        for (int i = 0; i < FLIGHTS.length; i++) {
+            flight(FLIGHTS[i], i);
         }
+        // Through the wall into the half-way room at the top of flight 1, and out of the inside stair's
+        // landing onto flight 2.
+        doorway(F1.degEnd(), ROOM_R - 0.5, rin[0][rin[0].length - 1] + 1.0, ROOM_FLOOR);
+        doorway(F2.deg0(), SHAFT_R - 0.5, rin[1][0] + 1.0, F2.y0());
         dress();
         finalClimb();
+    }
+
+    /** A rough doorway 3 wide and 3 high at angle deg from radius r0 to r1, its floor under feet height y. */
+    private void doorway(double deg, double r0, double r1, int y) {
+        ray(deg, r0, r1, 1.1, y, y + 2);
+        double c = Math.cos(Math.toRadians(deg));
+        double sn = Math.sin(Math.toRadians(deg));
+        int reach = (int) Math.ceil(r1) + 1;
+        for (int u = -reach; u <= reach; u++) {
+            for (int v = -reach; v <= reach; v++) {
+                double along = u * c + v * sn;
+                double across = -u * sn + v * c;
+                if (along >= r0 && along <= r1 && Math.abs(across) <= 1.1) {
+                    op(u, v, y - 1, y - 1, PAVING);
+                }
+            }
+        }
+    }
+
+    /** Inner radius of each flight's stair (outside the body there) every STEP_DEG of its sweep. */
+    private double[][] rin;
+    /** Width of each flight's stair every STEP_DEG of its sweep (narrower where it has crumbled). */
+    private double[][] wide;
+
+    /** How far round flight f a position is, and the height difference: {s, dy}, or null if not near it. */
+    private double[] onFlight(int f, double u, double v, double y) {
+        Flight fl = FLIGHTS[f];
+        double th = mod360(deg(u, v) - fl.deg0());
+        double best = Double.MAX_VALUE;
+        double bestS = -1;
+        for (double s = th > 330 ? th - 360 : th; s <= fl.sweep() + 1e-6; s += 360) {
+            double dy = Math.abs(y - fl.y(s));
+            if (dy < best) {
+                best = dy;
+                bestS = s;
+            }
+        }
+        return bestS < 0 ? null : new double[] {bestS, best};
+    }
+
+    /**
+     * Where to head to keep climbing from world position (x, y, z) on the outside stair: a point
+     * on the middle of its tread {@code ahead} blocks further up, {x, y, z} in world coordinates,
+     * or null when not on a flight. For the scripted tests and for anything that climbs it.
+     */
+    public double[] stairGuide(double x, double y, double z, double ahead) {
+        if (!built) {
+            build();
+        }
+        double dx = x - cx - 0.5;
+        double dz = z - cz - 0.5;
+        double u = switch (q) {
+            case 0 -> dx;
+            case 1 -> dz;
+            case 2 -> -dx;
+            default -> -dz;
+        };
+        double v = switch (q) {
+            case 0 -> dz;
+            case 1 -> -dx;
+            case 2 -> -dz;
+            default -> dx;
+        };
+        for (int f = 0; f < FLIGHTS.length; f++) {
+            double[] at = onFlight(f, u, v, y);
+            if (at == null || at[1] > 5) {
+                continue;
+            }
+            Flight fl = FLIGHTS[f];
+            int k = (int) Math.max(0, Math.min(rin[f].length - 1, at[0] / STEP_DEG));
+            double r = rin[f][k] + wide[f][k] * 0.45;
+            double s = Math.max(0, Math.min(fl.sweep(), at[0] + Math.toDegrees(ahead / r)));
+            return flightPoint(f, s, 0.45);
+        }
+        return null;
+    }
+
+    /**
+     * A point on flight f (0 or 1), {@code s} degrees round from its start, {@code across} of
+     * the way from its inner edge to its outer (0..1): {x, y (its feet height), z} in the world.
+     */
+    public double[] flightPoint(int f, double s, double across) {
+        if (!built) {
+            build();
+        }
+        Flight fl = FLIGHTS[f];
+        int k = (int) Math.max(0, Math.min(rin[f].length - 1, s / STEP_DEG));
+        double rr = rin[f][k] + wide[f][k] * across;
+        double a = Math.toRadians(fl.deg0() + s);
+        double tu = rr * Math.cos(a);
+        double tv = rr * Math.sin(a);
+        return new double[] {cx + 0.5 + worldDx(tu, tv), fl.y(s), cz + 0.5 + worldDz(tu, tv)};
+    }
+
+    /** How far round flight f runs, in degrees. */
+    public static double flightSweep(int f) {
+        return FLIGHTS[f].sweep();
+    }
+
+    /**
+     * Where world (x, y, z) is on the outside stair: flight 1 from 0 to 1, flight 2 from 1 to 2 (how
+     * far round it), or -1 if not standing on it (inside, or anywhere else). For the creature
+     * (world/Level490Hunt): the outside of the climb is where it can reach you.
+     */
+    public double outsideProgress(double x, double y, double z) {
+        if (!built) {
+            build();
+        }
+        double[] uv = frame(x, z);
+        double r = Math.hypot(uv[0], uv[1]);
+        for (int f = 0; f < FLIGHTS.length; f++) {
+            double[] at = onFlight(f, uv[0], uv[1], y);
+            if (at == null || at[1] > 3.5) {
+                continue;
+            }
+            int k = (int) Math.max(0, Math.min(rin[f].length - 1, at[0] / STEP_DEG));
+            if (r >= rin[f][k] - 1.0 && r <= rin[f][k] + wide[f][k] + 1.5) {
+                return f + Math.max(0, Math.min(1, at[0] / FLIGHTS[f].sweep()));
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * The point on the spire's outside, in the direction of world (x, z) from its axis, at height y:
+     * {x, z} in the world. Where the creature takes hold of it.
+     */
+    public double[] surface(double x, double y, double z) {
+        double[] uv = frame(x, z);
+        double deg = Math.toDegrees(Math.atan2(uv[1], uv[0]));
+        int yi = (int) Math.floor(y);
+        double r = y >= PLATFORM_Y - 1 ? 12.9 : extent(mod360(deg), yi, yi + 1) + 0.3;
+        double a = Math.toRadians(deg);
+        double tu = r * Math.cos(a);
+        double tv = r * Math.sin(a);
+        return new double[] {cx + 0.5 + worldDx(tu, tv), cz + 0.5 + worldDz(tu, tv)};
+    }
+
+    /** World (x, z) to this spire's frame {u, v}. */
+    private double[] frame(double x, double z) {
+        double dx = x - cx - 0.5;
+        double dz = z - cz - 0.5;
+        double u = switch (q) {
+            case 0 -> dx;
+            case 1 -> dz;
+            case 2 -> -dx;
+            default -> -dz;
+        };
+        double v = switch (q) {
+            case 0 -> dz;
+            case 1 -> -dx;
+            case 2 -> -dz;
+            default -> dx;
+        };
+        return new double[] {u, v};
+    }
+
+    /**
+     * One flight of the outside stair (after the play-test: "messy and slightly chaotic, not so
+     * proper and clean"). Swept round the body a quarter degree at a time: its inner edge just
+     * outside the body at that height (so it bulges out where the body does), 3 wide, steps in half
+     * blocks (walked, not jumped), thick stone under it propped on carved brackets. And broken:
+     * gaps you have to jump, stretches crumbled to a block or two wide, a stretch of rotten planks
+     * on posts, a stretch fallen away and crossed on a single plank, rubble on the steps, the stumps
+     * of a railing, candles left by someone. Where it meets a turret or a rib it cuts through.
+     */
+    private void flight(Flight fl, int f) {
+        int n = (int) Math.ceil(fl.sweep() / STEP_DEG) + 1;
+        double[] radius = new double[n];
+        for (int k = 0; k < n; k++) {
+            double s = k * STEP_DEG;
+            int y = (int) Math.floor(fl.y(s));
+            radius[k] = extent(mod360(fl.deg0() + s), y - 1, y + 3) + 0.6;
+        }
+        // Smooth it a little so the tread doesn't jump in and out block by block.
+        double[] smooth = new double[n];
+        int w = 24;
+        for (int k = 0; k < n; k++) {
+            double m = 0;
+            for (int j = Math.max(0, k - w); j <= Math.min(n - 1, k + w); j++) {
+                m = Math.max(m, radius[j]);
+            }
+            smooth[k] = m;
+        }
+        rin[f] = smooth;
+        wide[f] = new double[n];
+        double len = fl.sweep();
+        long h = Hash.of(seed, cx + f * 7, cz, 4980);
+        // Where it is broken (fractions of the flight), different for each spire.
+        double[] gaps = f == 0 ? new double[] {0.21, 0.5, 0.79} : new double[] {0.14, 0.38, 0.62, 0.86};
+        double[][] narrow = f == 0 ? new double[][] {{0.3, 0.36}} : new double[][] {{0.52, 0.58}, {0.9, 0.94}};
+        double[] rotten = f == 0 ? new double[] {0.6, 0.67} : new double[] {0.7, 0.78};
+        double[] fallen = f == 0 ? new double[] {0.43, 0.47} : new double[] {0.25, 0.29};
+        // First, which sample each block column takes its height from: the one nearest its centre,
+        // so neighbouring columns differ by half a block (a column crossed by several samples would
+        // otherwise jump by a block or more).
+        // Keyed by column; one entry per turn of the stair over it (told apart by height).
+        Long2ObjectOpenHashMap<List<double[]>> cells = new Long2ObjectOpenHashMap<>();
+        for (int k = 0; k < n; k++) {
+            double s = k * STEP_DEG;
+            double frac = s / len;
+            double a = Math.toRadians(fl.deg0() + s);
+            double width = STAIR_WIDTH;
+            for (double[] nr : narrow) {
+                if (frac >= nr[0] && frac <= nr[1]) {
+                    width = 1.5 + 0.5 * Hash.unit(Hash.of(h, k / 40, 1, 4981));
+                }
+            }
+            wide[f][k] = width;
+            for (double d = 0; d < width; d += 0.25) {
+                double pu = (smooth[k] + d) * Math.cos(a);
+                double pv = (smooth[k] + d) * Math.sin(a);
+                int u = (int) Math.round(pu);
+                int v = (int) Math.round(pv);
+                double d2 = (pu - u) * (pu - u) + (pv - v) * (pv - v);
+                double y = fl.y(s);
+                List<double[]> turns = cells.computeIfAbsent(key(u, v), x -> new ArrayList<>());
+                double[] c = null;
+                for (double[] t : turns) {
+                    if (Math.abs(t[6] - y) < 12) {
+                        c = t;
+                    }
+                }
+                if (c == null) {
+                    turns.add(new double[] {u, v, d2, k, d, width, y});
+                } else if (d2 < c[2]) {
+                    c[2] = d2;
+                    c[3] = k;
+                    c[4] = d;
+                    c[5] = width;
+                    c[6] = y;
+                }
+            }
+        }
+        for (double[] c : cells.values().stream().flatMap(List::stream).toList()) {
+            int u = (int) c[0];
+            int v = (int) c[1];
+            int k = (int) c[3];
+            double d = c[4];
+            double width = c[5];
+            double s = k * STEP_DEG;
+            double frac = s / len;
+            // Its height from where its centre is round the flight (not the sample's), so the
+            // rounding to half steps is the same for neighbours.
+            double sc = s + Math.IEEEremainder(deg(u, v) - (fl.deg0() + s), 360);
+            double qy = Math.round(fl.y(sc) * 2) / 2.0;
+            int base = (int) Math.floor(qy);
+            boolean half = qy != base;
+            double r0 = smooth[k];
+            boolean wood = frac >= rotten[0] && frac <= rotten[1];
+            boolean plankOnly = frac >= fallen[0] && frac <= fallen[1];
+            // A gap a block and a half long along the middle of the tread: one ordinary jump.
+            double gapHalf = Math.toDegrees(0.75 / (r0 + 1.5)) / len;
+            boolean gap = false;
+            for (double g : gaps) {
+                gap |= Math.abs(frac - g) < gapHalf;
+            }
+            boolean outer = d >= width - 0.75;
+            long hc = Hash.of(seed, worldX(u, v), worldZ(u, v), 4982 + f);
+            // Headroom: 3 clear above the step, whatever it cuts through.
+            op(u, v, base + (half ? 1 : 0), base + 3, AIR);
+            if (gap || (plankOnly && Math.abs(d - width / 2 + 0.25) > 0.6)) {
+                continue; // broken off here
+            }
+            if (outer && width >= 2.5 && Hash.unit(hc) < 0.22) {
+                continue; // the crumbled edge
+            }
+            int tread = wood || plankOnly ? WOOD : PAVING;
+            if (half) {
+                op(u, v, base, base, wood || plankOnly ? WOOD : SLAB);
+                if (!plankOnly) {
+                    op(u, v, base - 1, base - 1, wood ? AIR : GOTHIC);
+                }
+            } else {
+                op(u, v, base - 1, base - 1, tread);
+                if (!plankOnly && !wood) {
+                    op(u, v, base - 2, base - 2, GOTHIC);
+                }
+            }
+            if (wood && outer && (k % 32) < 4) {
+                op(u, v, base - 8, base - 2, WOOD); // the posts the rotten planks stand on
+            }
+            if (!wood && !plankOnly && outer && (k % 40) < 4) {
+                op(u, v, base - 5, base - 2, CARVED); // a carved bracket under the edge
+            }
+            double roll = Hash.unit(Hash.mix(hc));
+            int stand = half ? base + 1 : base;
+            if (!half && d < 1 && roll < 0.025) {
+                op(u, v, stand, stand, RUBBLE);
+            } else if (!half && d < 1.5 && roll > 0.985) {
+                op(u, v, stand, stand, CANDLE);
+            } else if (!half && outer && !wood && !plankOnly && roll > 0.93) {
+                op(u, v, stand, stand, POST); // only on a full step: on a slab it would float
+            }
+        }
     }
 
     /** World direction index (into DIRS) of the axis nearest to frame angle deg. */
@@ -1302,7 +1600,7 @@ public final class Level490Spire {
     /**
      * Inside (after the play-test: "chaotic inside"): statues in niches round the hall and the
      * half-way room, a fallen bell and rubble in the hall, candles on the stairs, a statue niche a
-     * turn in the lit stairs, and great breaches in their walls open to the storm.
+     * turn in the lit stairs.
      */
     private void dress() {
         // The hall: statues round the wall, candles at their feet, rubble, the bell that fell.
@@ -1357,8 +1655,6 @@ public final class Level490Spire {
                 }
             }
         }
-        breach(A, 2, A.a0 + 150);
-        breach(D, 3, D.a0 + 330);
         // The half-way room: statues between the windows, candles, fallen masonry.
         for (double a : new double[] {135, 315}) {
             statue(wallCell(a, 9.0, 10.4), ROOM_FLOOR);
@@ -1390,13 +1686,6 @@ public final class Level490Spire {
             }
         }
         return best;
-    }
-
-    /** A great breach in the stair's wall at turn n, angle deg: open to the storm, 3 wide, 5 tall. */
-    private void breach(Stair s, int n, double deg) {
-        int y = (int) Math.round(s.surface(n, deg)) + 1;
-        double a = mod360(deg);
-        ray(a, SHAFT_R - 0.3, extent(a, y, y + 4) + 2.5, 1.6, y, y + 4);
     }
 
     /**
@@ -1479,92 +1768,6 @@ public final class Level490Spire {
                 if (along >= r0 && along <= r1 && Math.abs(across) <= half) {
                     op(u, v, y0, y1, AIR);
                 }
-            }
-        }
-    }
-
-    /**
-     * Ledge {@code i}: the door out of the stair below, the ledge round the outside, a landing, the
-     * pier and ladder up, and the door into the next stair (or the top platform).
-     */
-    private void ledge(Ledge l, int i) {
-        int f = l.feet;
-        double[] ext = new double[360];
-        for (int d = 0; d < 360; d++) {
-            ext[d] = extent(d, f, f + 3);
-        }
-        int axis = l.ladder();
-        int top = l.ladderTop;
-        int rL = (int) Math.ceil(Math.max(extent(axis, f - 1, Math.min(top + 2, PLATFORM_Y - 1)), ext[axis])) + 1;
-        // The ledge: a band of joint stone outside the body (headroom above it), the outer edge crumbled.
-        double gapAt = l.sweep * 0.5;
-        for (int u = -24; u <= 24; u++) {
-            for (int v = -24; v <= 24; v++) {
-                double r = Math.hypot(u, v);
-                double d = deg(u, v);
-                double e = ext[(int) Math.round(d) % 360];
-                double along = mod360(d - l.from);
-                boolean in = along <= l.sweep + 4 || along >= 356;
-                if (!in || r <= e || r > e + l.width + 0.5) {
-                    continue;
-                }
-                if (l.width == 1 && Math.abs(along - gapAt) <= 0.5 * Math.toDegrees(1.0 / (e + 1))) {
-                    continue; // the gap you have to step over
-                }
-                boolean outer = r > e + l.width - 0.5;
-                if (l.width >= 2 && outer && Hash.unit(seed, worldX(u, v), worldZ(u, v), 4969 + i) < 0.15) {
-                    continue;
-                }
-                op(u, v, f - 1, f - 1, JOINT);
-                if (!outer) {
-                    op(u, v, f - 2, f - 2, JOINT);
-                }
-                op(u, v, f, f + 2, AIR);
-            }
-        }
-        // The landing at the foot of the ladder, round the pier (and under the ladder's first rung).
-        for (int k = (int) Math.floor(ext[axis]); k <= rL + 1; k++) {
-            for (int p = -2; p <= 2; p++) {
-                if (Math.abs(p) <= 1 && k <= rL - 1) {
-                    continue; // the pier
-                }
-                int[] c = onAxis(axis, k, p);
-                op(c[0], c[1], f - 1, f - 1, JOINT);
-                if (k != rL || p != 0) {
-                    op(c[0], c[1], f, f + 2, AIR);
-                }
-            }
-        }
-        // The pier the ladder is bolted to, out from the core.
-        for (int k = 7; k <= rL - 1; k++) {
-            for (int p = -1; p <= 1; p++) {
-                int[] c = onAxis(axis, k, p);
-                op(c[0], c[1], f - 2, top, JOINT);
-            }
-        }
-        // The door out of the stair below onto the ledge.
-        for (int k = 5; k <= (int) Math.ceil(ext[l.from]) + 1; k++) {
-            int[] c = onAxis(l.from, k, 0);
-            op(c[0], c[1], f - 1, f - 1, PAVING);
-            op(c[0], c[1], f, f + 2, AIR);
-        }
-        // The ladder, room to climb in front of it and to step off at its top.
-        int[] lc = onAxis(axis, rL, 0);
-        int[] front = onAxis(axis, rL + 1, 0);
-        op(front[0], front[1], f, top + 2, AIR);
-        op(lc[0], lc[1], f, top, LADDER + worldDir(axis));
-        op(lc[0], lc[1], top + 1, top + 2, AIR);
-        if (top < PLATFORM_Y) {
-            // Into the next stair through a narrow door at the ladder's top.
-            for (int k = 5; k <= rL - 1; k++) {
-                int[] c = onAxis(axis, k, 0);
-                op(c[0], c[1], top, top, PAVING);
-                op(c[0], c[1], top + 1, top + 3, AIR);
-            }
-        } else {
-            for (int p = -1; p <= 1; p++) {
-                int[] c = onAxis(axis, rL - 1, p);
-                op(c[0], c[1], TOP, TOP + 1, AIR);
             }
         }
     }
@@ -1678,6 +1881,6 @@ public final class Level490Spire {
     /** True if world column (x, z) is inside the spire's hall, shafts or room (indoors). */
     public boolean inside(double x, double y, double z) {
         double r = Math.hypot(x - cx - 0.5, z - cz - 0.5);
-        return r < HALL_WALL_R && y > BASE && y < D.top + 4;
+        return r < HALL_WALL_R && y > BASE && y < BC.top + 4;
     }
 }

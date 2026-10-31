@@ -1,11 +1,59 @@
 {
   "variants": {
-    "type=bottom": {
-      "model": "backrooms:block/l490_paving_slab"
-    },
-    "type=top": {
-      "model": "backrooms:block/l490_paving_slab_top"
-    },
+    "type=bottom": [
+      {
+        "model": "backrooms:block/l490_paving_slab",
+        "weight": 7
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_cracked_0"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_cracked_1"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_cracked_2"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_cracked_3"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_cracked_4"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_cracked_5"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_cracked_6"
+      }
+    ],
+    "type=top": [
+      {
+        "model": "backrooms:block/l490_paving_slab_top",
+        "weight": 7
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_top_cracked_0"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_top_cracked_1"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_top_cracked_2"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_top_cracked_3"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_top_cracked_4"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_top_cracked_5"
+      },
+      {
+        "model": "backrooms:block/l490_paving_slab_top_cracked_6"
+      }
+    ],
     "type=double": {
       "model": "backrooms:block/l490_paving"
     }

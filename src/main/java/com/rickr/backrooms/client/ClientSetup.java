@@ -50,6 +50,9 @@ public final class ClientSetup {
         // Level 9: both are drawn from code-built geometry (no layer definitions, no textures).
         event.registerEntityRenderer(ModEntities.WATCHER.get(), WatcherRenderer::new);
         event.registerEntityRenderer(ModEntities.OBSERVER.get(), ObserverRenderer::new);
+        // Level 490: the Penitents and the pilgrim, code-built figures.
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level490Mobs.PENITENT.get(), PenitentRenderer::new);
+        event.registerEntityRenderer(com.rickr.backrooms.registry.Level490Mobs.PILGRIM.get(), PilgrimRenderer::new);
         // Blackouts on Levels 0-2: a glowing face drawn as a billboard.
         event.registerEntityRenderer(ModEntities.SMILER.get(), SmilerRenderer::new);
         // Level 39: Hounds (tunnels) and Facelings (town), code-built models.

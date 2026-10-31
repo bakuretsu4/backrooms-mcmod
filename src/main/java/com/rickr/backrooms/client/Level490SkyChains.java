@@ -22,8 +22,8 @@ import org.joml.Vector3f;
  * thick as the link's bar: face on it reads as a ring, edge on as a bar.
  *
  * <p>The chains within render distance are blocks, but blocks stop at the top of the world (y 511);
- * from there on up into the storm they are drawn here too, so from the top of the spire they don't
- * just end over your head.
+ * from there to the storm's floor {@link Level490ChainTops} draws them solid, and from there on up
+ * into the storm they are drawn here.
  */
 final class Level490SkyChains {
     // The built chains' links (world/layout/Level490Layout).
@@ -44,8 +44,8 @@ final class Level490SkyChains {
     private static final float TOP = 640.0f;
     /** And down to the cloud sea's top, which they vanish into the same way. */
     private static final float SEA = 130.0f;
-    /** The built chains' blocks stop at the top of the world; a link's half length below that the sky takes over. */
-    private static final float BUILT_TOP = com.rickr.backrooms.world.layout.Level490Layout.WORLD_HEIGHT - 17.0f;
+    /** Near chains are solid up to the storm's floor (Level490ChainTops); a link's half length below that the sky takes over. */
+    private static final float BUILT_TOP = Level490ChainTops.SOLID_TOP - 17.0f;
 
     private Level490SkyChains() {}
 
@@ -156,6 +156,50 @@ final class Level490SkyChains {
                 ribbon(quads, view, p0, p1, BAR * 2 * size, scale, r, g, b, a);
                 count[0]++;
             }
+        }
+    }
+
+    /**
+     * A chain draped along a curve (points relative to the camera, unscaled), links {@code size}
+     * times a built chain's, each turned a quarter from the last; an open shackle (a link half
+     * again as big) at the end if {@code shackle}. For the creature's chains (Level490Creature).
+     */
+    static void drape(BufferBuilder quads, Matrix4f view, float[][] pts, float size, float scale, float r, float g, float b, float a,
+                      boolean shackle) {
+        float pitch = PITCH * size;
+        float carried = 0;
+        int k = 0;
+        Vector3f up = new Vector3f(0, 1, 0);
+        for (int i = 0; i + 1 < pts.length; i++) {
+            Vector3f p0 = new Vector3f(pts[i][0], pts[i][1], pts[i][2]);
+            Vector3f p1 = new Vector3f(pts[i + 1][0], pts[i + 1][1], pts[i + 1][2]);
+            Vector3f t = new Vector3f(p1).sub(p0);
+            float len = t.length();
+            if (len < 1e-3f) {
+                continue;
+            }
+            t.div(len);
+            Vector3f n1 = new Vector3f(t).cross(Math.abs(t.y) > 0.95f ? new Vector3f(1, 0, 0) : up).normalize();
+            Vector3f n2 = new Vector3f(t).cross(n1).normalize();
+            for (float s = carried; s < len; s += pitch, k++) {
+                boolean last = shackle && i + 2 == pts.length && s + pitch >= len;
+                link(quads, view, new Vector3f(t).mul(s).add(p0), t, (k & 1) == 0 ? n1 : n2, size * (last ? 1.5f : 1.0f), scale, r, g, b, a,
+                        last);
+                carried = s + pitch - len;
+            }
+        }
+    }
+
+    /** One link at c, its long axis along t, its plane holding t and n; open at the top if a shackle. */
+    private static void link(BufferBuilder quads, Matrix4f view, Vector3f c, Vector3f t, Vector3f n, float size, float scale,
+                             float r, float g, float b, float a, boolean open) {
+        for (int p = 0; p + 1 < LOOP.length; p++) {
+            if (open && LOOP[p][1] > LINK_STRAIGHT * 0.5f && LOOP[p + 1][1] > LINK_STRAIGHT * 0.5f) {
+                continue; // the shackle's gap
+            }
+            Vector3f p0 = new Vector3f(c).add(new Vector3f(n).mul(LOOP[p][0] * size)).add(new Vector3f(t).mul(LOOP[p][1] * size));
+            Vector3f p1 = new Vector3f(c).add(new Vector3f(n).mul(LOOP[p + 1][0] * size)).add(new Vector3f(t).mul(LOOP[p + 1][1] * size));
+            ribbon(quads, view, p0, p1, BAR * 2 * size, scale, r, g, b, a);
         }
     }
 

@@ -2,7 +2,7 @@
 
 Status: **stages 1-3 built** (the islands, bridges, chains and storm; the spire and its climb, the
 looping stairs, the leap from the top; the hung ruins far off, the chains' jolts and groans).
-Stage 4 (the creature) not built yet.
+Stage 4 (the creature) built after the second play-test.
 
 ## The idea
 
@@ -76,6 +76,8 @@ Two kinds:
   - outside: exposed ledges and ladders, broken railings.
 
 ## The creature
+
+(As built after the second play-test: see "After the second play-test" below.)
 
 - Like the Mind Flayer (Stranger Things) in spirit, but our own design: a colossal shape of
   drifting dark ash with real chains and shackles inside it, dragging and clanking.
@@ -304,6 +306,84 @@ whales first.
   across and a stretch behind you falls into the void (world/Level490Crumble); it is rebuilt from
   the layout two minutes later, and a gap still due is rebuilt after a restart too.
 
+## After the second play-test (the outside stair, figures, our own rain)
+
+The user's choices: the climb almost all outside on a broken spiral stair ("messy, chaotic"),
+inside only at the half-way room; the loop kept there; whales smooth and detailed with a painted
+skin, some passing close, the Great Whale at the top much better; silent hooded figures and one
+pilgrim who talks; a walk of about 400 blocks with more buildings; rain of our own, lighter; the
+Options screen and pause menu restyled.
+
+- **The climb** (world/layout/Level490Spire): flight 1 winds round the outside from beside the
+  hall's door (y 201) to a broken doorway into the half-way room (y 307); the inside stair goes up
+  from the room (the loop is on it) to a landing at y 357; a doorway leads out onto flight 2, which
+  winds on round the outside to the crumbled top (y 476). Each flight rises 34 blocks a turn
+  (under half a block per block walked, so every step is a half step), 3 wide, hugging the body (its inner edge just outside the body at that height, so it
+  swings out round the bulges) and cutting through the turrets and ribs it meets. Broken on
+  purpose: gaps of a block and a half (one ordinary jump), stretches crumbled to under 2 wide, a
+  stretch of rotten planks on posts, a stretch fallen away and crossed on one plank, a crumbled
+  outer edge, rubble, stumps of railing posts, candles, carved brackets under it. Stairs A and D,
+  the ledges, ladders, piers and breaches are gone. `stairGuide` / `flightPoint` give where the
+  stair is (used by the scripted tests).
+- **Whales** (client/Level490Whales): a humpback-like body (a broad flattened head with knobs,
+  throat pleats as real grooves, a dorsal hump, long pale pectoral fins with a bumpy leading edge,
+  broad flukes with a notch) wearing a painted skin (textures/entity/l490_whale, made by
+  `tex_l490_whale`: darker back, paler belly, pleats, barnacles on the chin and head, scars,
+  mottling), finer the nearer it is. Every minute or two one swims past 35-70 blocks to one side and
+  25-55 above you, clear of the chains and the spire. Far-off whales call to each other every 12-30
+  seconds (client/Level490WhaleSong).
+- **Rain** (client/Level490Rain): Minecraft's rain is off in the level; ours is thin translucent
+  streaks round you slanted by a wind that turns and gusts, stopping on the ground under them (none
+  under roofs) with small splashes, and pale sheets of rain drifting far off; lit by the lightning.
+  About half as heavy as before (client/Level490Weather).
+- **The walk** (world/layout/Level490Layout): the arrival is 9-10 island spacings (396-440 blocks'
+  walk) from the spire. Each island on the route has a set piece beside or across the way: a ruined
+  chapel you walk through (lit windows, pews, an altar with candles and a statue), a cemetery, two
+  gibbets with hanging cages, a colossal fallen statue, a wayside shrine; the third island has the
+  pilgrim's camp (tent, fire, log, barrel, lantern). `Level490Layout.spots` says where figures go.
+- **Figures** (entity/Penitent, entity/Pilgrim, world/Level490Figures): Penitents (after Holy
+  Week's nazarenos and the Maltese penitents: a tall pointed oxblood hood with eye holes, a dark robe
+  and rope belt, bare feet chained at the ankles with a length trailing, a tall lit candle or a chain
+  across the shoulders) kneel in chains by the colossal chains and at the graves, gibbets and fallen
+  statue, pray at the shrines and the chapel altars, walk slowly along the bridges toward the spire,
+  or stand watching you; about half vanish when you come within 6 blocks. The pilgrim (a burdened
+  traveller: bent double under a pack frame taller than he is, piled with a crate, bundles, sacks
+  and a blanket, pots and a bell dangling, a lantern on a pole over the top) keeps his fire, greets
+  you, and says one of eleven lines each time you right-click him, in a speech bubble over his head
+  (lang `entity.backrooms.pilgrim.line.N`). Code-built models (client/PenitentRenderer,
+  PilgrimRenderer).
+- **The creature** (world/Level490Hunt, client/Level490Creature; the main enemy, replacing the
+  Great Whale at the top). After the user's reference, Stranger Things' Mind Flayer, copied
+  closely: a tall spindle of dark ash, pointed at the top and trailing away below, four very long
+  thick legs out of its middle rising to a sharp knee and down, plus a huge head at the spindle's top
+  with two white glaring eyes and two arms ending in huge hands; smoke drifting off it. Each player
+  is hunted by their own:
+  - *On the walk* it builds up: scraping and chains rattling below the edges (from 12% of the way),
+    its shape far off in the clouds seen when lightning flashes behind it (from 30%), then (from
+    half way) an arm rising out of the clouds over the edge and slamming down where you stand.
+    Standing about in the open brings it sooner; a roof over you or a lit lantern within 6 blocks
+    keeps it off.
+  - *On the tower* it rises out of the fog as you start up the outside stair and climbs after you
+    below you on the outside (never more than 45 blocks behind), faster the longer you stand still;
+    if it gets within 5 blocks it has you. Every 15-30 seconds a hand slams onto the stair about 11
+    blocks ahead: hurry past or wait (and let it gain). Inside the tower it can't reach you; it waits.
+  - *At the top* it holds the top's edge in both hands, fingers over the rim, its head over the edge
+    staring at you, and does nothing more. As you cross to the chain and climb it, it lets go and
+    floats in the sky off the tower, following, staring, lightning flickering behind it.
+  - *If it catches you* the picture breaks up and you wake chained to the pillar of a punishment
+    platform (an island beside the route, joined to it by a bridge that is always there; behind
+    where you were caught, or the last one before the gate if caught on the tower). Press jump to
+    pull at the chains; twelve pulls and they give. Then it leaves you be for a minute.
+- **Chains above the world's top** (client/Level490ChainTops): the near colossal chains go on up
+  from y 512 to the storm's floor as solid chain-iron (they looked see-through drawn in the sky).
+- **Broken flagstones** (`tex_l490_rubble`): the rubble block is now a cracked paving stone (the
+  paving itself, struck), seven patterns picked at random per block; half the paving slabs are
+  cracked the same way. The posts on the outside stair stand only on full steps.
+- **Menus** (client/menu/VanillaRestyle): Minecraft's Options screen and pause menu drawn in our
+  menus' camcorder style: the game dimmed behind scanlines with a blinking PAUSE (the footage
+  background from the title screen), buttons as menu rows with the yellow play-arrow highlight,
+  sliders as thin tracks. The buttons themselves are vanilla's, so they work as before.
+
 ## Name and number
 
 **Level 490, "Penance".** 490 is "seventy times seven", how many times you must forgive:
@@ -321,4 +401,4 @@ record:
 
 ## Still open
 
-Stage 4 (the creature: the Great Whale becomes it).
+Nothing planned beyond the play-test notes.

@@ -51,6 +51,8 @@ public final class Backrooms {
         // Level 39 "Megalophobia": the town, superstructure and tunnel blocks (and their items).
         com.rickr.backrooms.registry.Level39Blocks.bootstrap();
         com.rickr.backrooms.registry.Level490Blocks.bootstrap();
+        // Level 490: the Penitents and the pilgrim.
+        com.rickr.backrooms.registry.Level490Mobs.bootstrap();
         // Level 39: the town/tunnel ambience, the indoor storm, echo quakes and far-off sounds.
         com.rickr.backrooms.registry.Level39Sounds.bootstrap();
         // Level 2: the pipe corridor's knocks, clanks, creaks, steam leaks, pump hum and drips.

@@ -1,7 +1,27 @@
 {
   "variants": {
-    "": {
-      "model": "backrooms:block/l490_rubble"
-    }
+    "": [
+      {
+        "model": "backrooms:block/l490_rubble"
+      },
+      {
+        "model": "backrooms:block/l490_rubble_1"
+      },
+      {
+        "model": "backrooms:block/l490_rubble_2"
+      },
+      {
+        "model": "backrooms:block/l490_rubble_3"
+      },
+      {
+        "model": "backrooms:block/l490_rubble_4"
+      },
+      {
+        "model": "backrooms:block/l490_rubble_5"
+      },
+      {
+        "model": "backrooms:block/l490_rubble_6"
+      }
+    ]
   }
 }

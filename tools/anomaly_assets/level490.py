@@ -67,8 +67,9 @@ def _stones(rng, base, rows, cols, offset_rows, tint, wear):
     return img, joint
 
 
-def tex_l490_paving() -> None:
-    """Pale, worn flagstones (two by two per block): smoothed by feet, cracked, a few pits."""
+def _paving_img():
+    """Pale, worn flagstones (two by two per block): smoothed by feet, cracked, a few pits.
+    Returns (image, joint darkness); the rubble is this same paving, broken."""
     rng = G.rng_for(49001)
     img, joint = _stones(rng, PAVING, 2, 2, False, 6.0, 6.0)
     # Hairline cracks wandering across some slabs.
@@ -79,7 +80,12 @@ def tex_l490_paving() -> None:
     img = G.add_lum(img, -G.blur(pits, 0.9) * 70)
     grime = G.smoothstep(0.8, 2.0, G.fnoise(rng, beta=2.2, kmin=2))
     img = G.over(img, np.array([118, 120, 126]), grime * 0.35)
-    _save(img, "l490_paving")
+    return img, joint
+
+
+def tex_l490_paving() -> None:
+    """The flagstones of the islands and the bridges."""
+    _save(_paving_img()[0], "l490_paving")
 
 
 def _gothic_img():
@@ -220,25 +226,138 @@ def tex_l490_rock() -> None:
     _save(img, "l490_rock")
 
 
-def tex_l490_rubble() -> None:
-    """Broken masonry and grit: chips of pale stone in dark grit."""
-    rng = G.rng_for(49008)
-    img = G.fill((84, 86, 90), (S, S)).astype(float)
-    img = G.add_lum(img, G.fnoise(rng, beta=1.4, kmin=6) * 6 + rng.normal(0, 4, (S, S)))
+# The broken flagstones' variants: each rubble block picks one at random (its blockstate).
+RUBBLE_VARIANTS = ("blow", "blow", "blow", "blow", "two", "line", "corner")
+
+
+def _crack_star(dl, rng, cx, cy, n, steps, step, ends):
+    """Cracks branching out from a blow at (cx, cy) (on the 4x canvas)."""
+    for k in range(n):
+        a = (k + rng.uniform(-0.35, 0.35)) / n * 2 * np.pi
+        x, y = cx, cy
+        pts = [(x, y)]
+        for _ in range(int(rng.uniform(*steps))):
+            a += rng.normal(0, 0.22)
+            x += np.cos(a) * step
+            y += np.sin(a) * step
+            pts.append((x, y))
+            if rng.random() < 0.15:
+                ba = a + rng.choice([-1, 1]) * rng.uniform(0.5, 1.0)
+                bx, by = x, y
+                bpts = [(bx, by)]
+                for _ in range(rng.integers(1, 4)):
+                    ba += rng.normal(0, 0.3)
+                    bx += np.cos(ba) * step
+                    by += np.sin(ba) * step
+                    bpts.append((bx, by))
+                dl.line(bpts, fill=120, width=4)
+        dl.line(pts, fill=230, width=4)
+        ends.append(pts[min(len(pts) - 1, 4)])
+
+
+def _rubble_img(kind, seed):
+    """One broken flagstone: the very same paving (so it sits among it without a seam, its joints
+    lining up), but struck. kind: "blow" (cracks out from one blow, in one of the four flagstones),
+    "two" (two smaller blows in two flagstones), "line" (one long crack wandering across the block),
+    "corner" (a flagstone's corner broken off and sunk). The cracks mostly stop at the joints, as a
+    cracked tile's do; a light lip along each; the pieces tilted a little; a few chips."""
+    from PIL import Image, ImageDraw
+    img, joint = _paving_img()
+    rng = G.rng_for(seed)
     X, Y = G.grid()
-    chips = np.zeros((S, S))
-    tone = np.zeros((S, S))
-    for _ in range(46):
-        cx, cy = rng.uniform(0, S, 2)
-        rx, ry = rng.uniform(4, 12, 2)
-        dx = (X - cx + S / 2) % S - S / 2
-        dy = (Y - cy + S / 2) % S - S / 2
-        m = G.smoothstep(1.05, 0.85, np.hypot(dx / rx, dy / ry) + 0.25 * G.fnoise(rng, beta=1.0, kmin=8) / 3)
-        tone = np.where(m > chips, rng.normal(0, 10), tone)
-        chips = np.maximum(chips, m)
-    stone = G.add_lum(G.fill((136, 138, 142), (S, S)).astype(float), tone + _relief(chips * 6, 6))
-    img = G.over(img, stone, chips)
-    _save(img, "l490_rubble")
+    K = 4  # drawn at 4x, then shrunk (smooth thin lines)
+    lines = Image.new("L", (S * K, S * K), 0)
+    pieces = Image.new("L", (S * K, S * K), 128)
+    dl = ImageDraw.Draw(lines)
+    dp = ImageDraw.Draw(pieces)
+    step = S * K * 0.04
+    # The four flagstones' middles; pick which get hit.
+    quads = [(0.25, 0.25), (0.75, 0.25), (0.25, 0.75), (0.75, 0.75)]
+    order = rng.permutation(4)
+    blows = []
+    across = True  # whether cracks may run on across the joints
+    if kind in ("blow", "two"):
+        across = False
+        for q in order[: 1 if kind == "blow" else 2]:
+            qx, qy = quads[q]
+            cx = (qx + rng.uniform(-0.1, 0.1)) * S * K
+            cy = (qy + rng.uniform(-0.1, 0.1)) * S * K
+            ends = []
+            if kind == "blow":
+                _crack_star(dl, rng, cx, cy, int(rng.integers(4, 8)), (5, 14), step, ends)
+            else:
+                _crack_star(dl, rng, cx, cy, int(rng.integers(3, 6)), (3, 8), step, ends)
+            for k in range(len(ends)):
+                dp.polygon([(cx, cy), ends[k], ends[(k + 1) % len(ends)]], fill=int(rng.uniform(60, 200)))
+            blows.append((cx / K, cy / K))
+    elif kind == "line":
+        # From one side of the block to another, wandering, a few short branches off it.
+        side = rng.integers(4)
+        t0 = rng.uniform(0.2, 0.8) * S * K
+        x, y = [(0, t0), (S * K, t0), (t0, 0), (t0, S * K)][side]
+        a = [0.0, np.pi, np.pi / 2, -np.pi / 2][side] + rng.normal(0, 0.3)
+        pts = [(x, y)]
+        while 0 <= x <= S * K and 0 <= y <= S * K and len(pts) < 60:
+            a += rng.normal(0, 0.2)
+            x += np.cos(a) * step
+            y += np.sin(a) * step
+            pts.append((x, y))
+            if rng.random() < 0.18:
+                ends = []
+                _crack_star(dl, rng, x, y, 1, (2, 5), step, ends)
+        dl.line(pts, fill=235, width=5)
+        # One side of the crack has sunk a little.
+        poly = pts + [(S * K * 2 if side != 1 else -S * K, pts[-1][1]), (S * K * 2 if side != 1 else -S * K, pts[0][1])]
+        dp.polygon(poly, fill=96)
+    else:  # corner
+        across = False
+        q = order[0]
+        qx, qy = quads[q]
+        # The flagstone's outer corner (away from the block's middle).
+        ox = (qx - 0.25) * 2 * S * K / 2 + (0 if qx < 0.5 else S * K / 2) - ((qx - 0.5) > 0) * 0
+        x0 = 0 if qx < 0.5 else S * K / 2
+        y0 = 0 if qy < 0.5 else S * K / 2
+        x1 = x0 + S * K / 2
+        y1 = y0 + S * K / 2
+        cxn = x0 if qx < 0.5 else x1
+        cyn = y0 if qy < 0.5 else y1
+        sx = 1 if qx < 0.5 else -1
+        sy = 1 if qy < 0.5 else -1
+        la = rng.uniform(0.35, 0.6) * S * K / 2
+        lb = rng.uniform(0.35, 0.6) * S * K / 2
+        p0 = (cxn + sx * la, cyn)
+        p1 = (cxn, cyn + sy * lb)
+        mid = ((p0[0] + p1[0]) / 2 + sx * rng.uniform(2, 8), (p0[1] + p1[1]) / 2 + sy * rng.uniform(2, 8))
+        dl.line([p0, mid, p1], fill=255, width=5)
+        dp.polygon([(cxn, cyn), p0, mid, p1], fill=70)
+        ends = []
+        _crack_star(dl, rng, mid[0], mid[1], 2, (2, 5), step, ends)
+        blows.append((mid[0] / K, mid[1] / K))
+    lines = np.asarray(lines.resize((S, S), Image.BILINEAR), float) / 255.0
+    pieces = np.asarray(pieces.resize((S, S), Image.BILINEAR), float) / 255.0
+    if not across:
+        lines *= 1 - 0.85 * np.clip(joint * 1.5, 0, 1)
+    img = G.add_lum(img, (pieces - 0.5) * 14)
+    img = G.add_lum(img, -lines * 48)
+    lip = np.clip(np.roll(np.roll(lines, -1, 0), -1, 1) - lines, 0, 1)
+    img = G.add_lum(img, lip * 16)
+    # A few chips knocked out near each blow.
+    for bx, by in blows:
+        r = np.hypot(X - bx, Y - by)
+        chips = (rng.random((S, S)) < 0.02) * G.smoothstep(S * 0.16, S * 0.03, r)
+        img = G.add_lum(img, -G.blur(chips.astype(float), 0.7) * 40)
+    return img
+
+
+def _rubble_name(i):
+    return "l490_rubble" if i == 0 else f"l490_rubble_{i}"
+
+
+def tex_l490_rubble() -> None:
+    """The broken flagstones (after the play-test: the old rubble "is ugly", then "not all the
+    same pattern"): one texture per variant, l490_rubble, l490_rubble_1, ..."""
+    for i, kind in enumerate(RUBBLE_VARIANTS):
+        _save(_rubble_img(kind, 49008 + i * 17), _rubble_name(i))
 
 
 def tex_l490_dead_grass() -> None:
@@ -481,6 +600,137 @@ def tex_l490_cloud_noise() -> None:
     Image.fromarray(atlas, "RGBA").save(path)
 
 
+def tex_l490_whale() -> None:
+    """The sky whales' skin (client/Level490Whales), 1024 x 512. The body wraps the top 384 rows:
+    u along it (0 the nose, 1 the tail), v round it (0 and 1 the top of the back, 0.5 the belly).
+    The bottom 128 rows are the fins and flukes (u along the fin, v across it).
+      - pale grey, darker along the back, paler and pinker-grey on the belly
+      - the throat pleats: dark grooves on the underside from the chin to half way
+      - knobbly bumps on the head, barnacle clusters on the chin, the head and the fins
+      - old scars: pale scratches, darker mottling"""
+    rng = G.rng_for(49070)
+    W, H = 1024, 512
+    BH = 384
+    yy, xx = np.mgrid[0:H, 0:W].astype(float)
+    u = xx / W
+    v = yy / BH
+    img = np.zeros((H, W, 3))
+    # Round the body: 0 back .. 0.5 belly .. 1 back.
+    belly = 1.0 - np.abs(np.cos(np.pi * v))  # 0 on the back, 1 on the belly
+    back = np.array([118, 121, 126], float)
+    under = np.array([196, 192, 190], float)
+    t = np.clip(belly * 1.3 - 0.15, 0, 1)
+    body = back[None, None] * (1 - t[..., None]) + under[None, None] * t[..., None]
+    def noise(shape, beta, kmin):
+        from numpy.fft import fft2, ifft2, fftfreq
+        h, w = shape
+        ky, kx = np.meshgrid(fftfreq(h) * h, fftfreq(w) * w, indexing="ij")
+        k = np.hypot(kx, ky * (w / h) * 0.5)
+        amp = np.where(k >= kmin, np.maximum(k, 1e-6) ** (-beta / 2), 0)
+        a = np.real(ifft2((rng.normal(size=k.shape) + 1j * rng.normal(size=k.shape)) * amp))
+        return a / (a.std() + 1e-9)
+    mott = noise((H, W), 2.2, 3)
+    fine = noise((H, W), 1.0, 40)
+    body = body + (mott * 7 + fine * 3)[..., None]
+    # The throat pleats: grooves round the underside, from the chin to half way along.
+    pleat_zone = (belly > 0.62) & (u > 0.03) & (u < 0.5)
+    groove = np.abs(np.sin(v * np.pi * 90)) ** 3
+    fade = np.clip((0.5 - u) / 0.12, 0, 1) * np.clip((belly - 0.62) / 0.12, 0, 1)
+    body = body - (groove * fade * 30)[..., None] * pleat_zone[..., None]
+    # Knobs on the head (the top, the first 15 %).
+    knobs = np.zeros((H, W))
+    for _ in range(140):
+        cu = rng.uniform(0.01, 0.15)
+        cv = rng.choice([rng.uniform(0.0, 0.12), rng.uniform(0.88, 1.0)])
+        r = rng.uniform(3, 6)
+        d = np.hypot((xx - cu * W), (yy - cv * BH))
+        knobs = np.maximum(knobs, np.clip(1 - d / r, 0, 1))
+    body = body + (knobs * 34)[..., None] - (np.roll(knobs, 3, 0) * 18)[..., None]
+    # Barnacles: clusters of pale rings on the chin and head.
+    def barnacles(region_u, region_v, count, size):
+        out = np.zeros((H, W))
+        for _ in range(count):
+            cu = rng.uniform(*region_u) * W
+            cv = rng.uniform(*region_v) * (BH if region_v[1] <= 1 else 1)
+            for _ in range(rng.integers(4, 14)):
+                px = cu + rng.normal(0, size * 2.2)
+                py = cv + rng.normal(0, size * 2.2)
+                rr = rng.uniform(size * 0.5, size)
+                d = np.hypot(xx - px, yy - py)
+                ring = np.clip(1 - np.abs(d - rr * 0.7) / (rr * 0.35), 0, 1) * (d < rr * 1.2)
+                out = np.maximum(out, ring)
+        return out
+    bar = barnacles((0.0, 0.1), (0.35, 0.65), 16, 4.5) + barnacles((0.02, 0.16), (0.0, 0.1), 10, 3.5)
+    body = body * (1 - np.clip(bar, 0, 1)[..., None] * 0.5) + np.clip(bar, 0, 1)[..., None] * np.array([214, 210, 200])[None, None] * 0.5
+    # Scars: long pale scratches.
+    scars = np.zeros((H, W))
+    for _ in range(11):
+        x0, y0 = rng.uniform(0.1, 0.9) * W, rng.uniform(0.05, 0.95) * BH
+        ang = rng.uniform(-0.5, 0.5)
+        ln = rng.uniform(30, 120)
+        for k in range(rng.integers(1, 4)):
+            off = k * 4
+            t = np.clip(((xx - x0) * np.cos(ang) + (yy - y0) * np.sin(ang)) / ln, 0, 1)
+            px = x0 + t * ln * np.cos(ang) - off * np.sin(ang)
+            py = y0 + t * ln * np.sin(ang) + off * np.cos(ang)
+            d = np.hypot(xx - px, yy - py)
+            scars = np.maximum(scars, np.clip(1 - d / 1.2, 0, 1) * (t > 0) * (t < 1) * (0.5 + 0.5 * np.sin(t * 9 + k)))
+    body = body + (scars * 24)[..., None]
+    img[:BH] = body[:BH]
+    # The fins (bottom quarter): pale, a darker trailing edge, bumps along the leading edge, barnacles.
+    fv = (yy[BH:] - BH) / (H - BH)
+    fu = xx[BH:] / W
+    fin = np.array([206, 204, 200], float)[None, None] + (noise((H - BH, W), 2.0, 3) * 6 + noise((H - BH, W), 1.0, 30) * 3)[..., None]
+    edge = np.clip((fv - 0.75) / 0.25, 0, 1)
+    fin = fin - (edge * 50)[..., None]
+    lead = np.clip(1 - np.abs(fv - 0.08) / 0.08, 0, 1) * (0.5 + 0.5 * np.sin(fu * np.pi * 60)) ** 4
+    fin = fin + (lead * 22)[..., None]
+    img[BH:] = fin
+    img = np.clip(img, 0, 255).astype(np.uint8)
+    from PIL import Image
+    path = G.TEX / "entity" / "l490_whale.png"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(img, "RGB").save(path)
+
+
+def tex_l490_rain() -> None:
+    """Level 490's own rain (client/Level490Rain).
+      - l490_rain_streak (16 x 64): one drop's streak, a soft line brightest at its head (v = 1),
+        fading up its tail; the bottom rows double as a splash ring.
+      - l490_rain_sheet (128 x 256, tiles up and down): many fine streaks for the far sheets."""
+    from PIL import Image
+    rng = G.rng_for(49080)
+    W, H = 16, 64
+    yy, xx = np.mgrid[0:H, 0:W].astype(float)
+    across = np.exp(-((xx - 7.5) / 2.6) ** 2)
+    head = (yy / (H - 1)) ** 1.6
+    a = across * head
+    img = np.zeros((H, W, 4), np.uint8)
+    img[..., :3] = 235
+    img[..., 3] = np.clip(a * 255, 0, 255).astype(np.uint8)
+    # Rows 32-38 (v 0.5-0.6): a ring for the splashes, drawn flat on the ground.
+    ring_rows = slice(32, 39)
+    rx = (xx[ring_rows] - 7.5) / 7.5
+    img[ring_rows, :, 3] = np.clip((1 - np.abs(np.abs(rx) - 0.75) / 0.25) * 200, 0, 255).astype(np.uint8)
+    Image.fromarray(img, "RGBA").save(G.TEX / "environment" / "l490_rain_streak.png")
+    W, H = 128, 256
+    sheet = np.zeros((H, W))
+    for _ in range(260):
+        x = rng.uniform(0, W)
+        y0 = rng.uniform(0, H)
+        ln = rng.uniform(20, 70)
+        for yv in range(int(ln)):
+            yi = int(y0 + yv) % H
+            for dx in (-1, 0, 1):
+                xi = int(x + dx) % W
+                sheet[yi, xi] = max(sheet[yi, xi], (yv / ln) * (0.6 if dx else 1.0))
+    sheet = sheet * 0.7 + 0.3 * np.clip(rng.normal(0.5, 0.15, (H, W)), 0, 1) * 0.4
+    img = np.zeros((H, W, 4), np.uint8)
+    img[..., :3] = 225
+    img[..., 3] = np.clip(sheet * 255, 0, 255).astype(np.uint8)
+    Image.fromarray(img, "RGBA").save(G.TEX / "environment" / "l490_rain_sheet.png")
+
+
 def tex_l490_moon() -> None:
     """The moon for the sky (RGBA): a pale disk with darker seas, in a soft glow that fades out."""
     rng = G.rng_for(49006)
@@ -535,12 +785,19 @@ IRON_TEX = {"iron": _ref("l490_iron"), "particle": _ref("l490_iron")}
 
 def tex_l490_models() -> None:
     """Block models, blockstates and item models of every Level 490 block."""
-    for name in ("l490_paving", "l490_stone", "l490_slate", "l490_rock", "l490_rubble", "l490_chain_iron", "l490_dead_wood",
+    for name in ("l490_paving", "l490_stone", "l490_slate", "l490_rock", "l490_chain_iron", "l490_dead_wood",
                  "l490_spire", "l490_spire_joint", "l490_words", "l490_gothic", "l490_gothic_carved",
                  "l490_window_lit", "l490_window_dark"):
         _model(name, {"parent": "minecraft:block/cube_all", "textures": {"all": _ref(name)}})
         _json(f"blockstates/{name}.json", {"variants": {"": {"model": _ref(name)}}})
         _json(f"models/item/{name}.json", {"parent": _ref(name)})
+
+    # The broken flagstones: each block picks one of the variants at random.
+    for i in range(len(RUBBLE_VARIANTS)):
+        _model(_rubble_name(i), {"parent": "minecraft:block/cube_all", "textures": {"all": _ref(_rubble_name(i))}})
+    _json("blockstates/l490_rubble.json",
+          {"variants": {"": [{"model": _ref(_rubble_name(i))} for i in range(len(RUBBLE_VARIANTS))]}})
+    _json("models/item/l490_rubble.json", {"parent": _ref("l490_rubble")})
 
     _model("l490_dead_grass", {"parent": "minecraft:block/cube_bottom_top", "textures": {
         "top": _ref("l490_dead_grass"), "side": _ref("l490_dead_grass_side"), "bottom": _ref("l490_rock")}})
@@ -553,9 +810,18 @@ def tex_l490_models() -> None:
     pav = {"bottom": _ref("l490_paving"), "top": _ref("l490_paving"), "side": _ref("l490_paving")}
     _model("l490_paving_slab", {"parent": "minecraft:block/slab", "textures": pav})
     _model("l490_paving_slab_top", {"parent": "minecraft:block/slab_top", "textures": pav})
+    # Half the slabs are cracked like the broken flagstones (after the play-test: "the slabs need the
+    # crack textures too"): each picks plain (weight 7) or one of the cracked variants (1 each).
+    bottoms = [{"model": _ref("l490_paving_slab"), "weight": len(RUBBLE_VARIANTS)}]
+    tops = [{"model": _ref("l490_paving_slab_top"), "weight": len(RUBBLE_VARIANTS)}]
+    for i in range(len(RUBBLE_VARIANTS)):
+        cracked = {"bottom": _ref(_rubble_name(i)), "top": _ref(_rubble_name(i)), "side": _ref("l490_paving")}
+        _model(f"l490_paving_slab_cracked_{i}", {"parent": "minecraft:block/slab", "textures": cracked})
+        _model(f"l490_paving_slab_top_cracked_{i}", {"parent": "minecraft:block/slab_top", "textures": cracked})
+        bottoms.append({"model": _ref(f"l490_paving_slab_cracked_{i}")})
+        tops.append({"model": _ref(f"l490_paving_slab_top_cracked_{i}")})
     _json("blockstates/l490_paving_slab.json", {"variants": {
-        "type=bottom": {"model": _ref("l490_paving_slab")}, "type=top": {"model": _ref("l490_paving_slab_top")},
-        "type=double": {"model": _ref("l490_paving")}}})
+        "type=bottom": bottoms, "type=top": tops, "type=double": {"model": _ref("l490_paving")}}})
     _json("models/item/l490_paving_slab.json", {"parent": _ref("l490_paving_slab")})
 
     # The railing: a picket post with a spear tip, and toward each neighbour two rails with a
@@ -667,5 +933,5 @@ TEXTURES = [tex_l490_paving, tex_l490_stone, tex_l490_slate, tex_l490_iron, tex_
             tex_l490_rock, tex_l490_rubble, tex_l490_dead_grass, tex_l490_chain_iron, tex_l490_dead_wood,
             tex_l490_red_leaves, tex_l490_spire, tex_l490_spire_joint, tex_l490_gothic, tex_l490_gothic_carved,
             tex_l490_window_lit, tex_l490_window_dark, tex_l490_statue, tex_l490_ladder, tex_l490_marks,
-            tex_l490_words, tex_l490_puff, tex_l490_cloud_noise, tex_l490_moon, tex_l490_models]
+            tex_l490_words, tex_l490_puff, tex_l490_cloud_noise, tex_l490_whale, tex_l490_rain, tex_l490_moon, tex_l490_models]
 SOUNDS = []

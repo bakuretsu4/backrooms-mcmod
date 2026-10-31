@@ -255,24 +255,37 @@ going down into the dark, until the picture breaks up and you are in the next le
   out: houses whose doorway is pure black lead on to Level 490, flooded houses (knee-deep water,
   steps going down into murk) lead to Level 7, and the light behind the throne leads to Level 1.
 - **Level 490 ("Penance"):** through a dark doorway in Level 94 you come out among crumbling ruins
-  on floating islands of rock over a sea of storm cloud, at night, in pouring rain (after Elden
+  on floating islands of rock over a sea of storm cloud, at night, in rain (after Elden
   Ring's Crumbling Farum Azula). On the islands stand rings of pillars, arcade walls with broken
   tops, tower stubs, rubble, dead trees and open shackles; stone bridges with spiked iron railings
   climb in half steps between them, some broken off. Colossal chains, every link 34 blocks long,
   hang out of the storm into the clouds. Rocks and masonry float in the air; whirlwinds stand far
   off; billowing clouds roll below and hang in lumps overhead. Kilometres off hang other ruins on
-  their own chains, and every few minutes one breaks loose and falls into the clouds. Pale whales
-  swim under the storm trailing fog, and sing. Lightning strikes far off, its thunder as late as
-  it is far; far chains jerk taut with a clank; the chains near you groan. About 220 blocks from
-  where you arrive, past a Gothic gatehouse and over a bridge that gives way behind you, stands the
+  their own chains, and every few minutes one breaks loose and falls into the clouds. Pale,
+  barnacled whales swim under the storm trailing fog, and sing; now and then one passes close
+  overhead. Lightning strikes far off, its thunder as late as it is far; far chains jerk taut with
+  a clank; the chains near you groan. The walk to the spire is about 400 blocks, past a ruined
+  chapel you walk through, graves, gibbets with hanging cages, a fallen colossal statue, wayside
+  shrines and a pilgrim's camp; silent Penitents in tall pointed hoods, chained at the ankles, kneel
+  in chains, pray at the shrines and walk toward the spire with candles (some are gone when you come
+  close), and the old pilgrim bent under his enormous pack talks, in a speech bubble, if you
+  right-click him. Then a Gothic gatehouse and a bridge that gives way behind you, and the
   spire: a tower of dark Gothic stone about 275 blocks tall, stacked like a spine, its ribs pale,
   turrets and flying buttresses clinging to it, candlelit windows and a rose window glowing, hanging
-  in four colossal chains. Climb it: stairs inside past statues and candles, ledges and ladders
-  outside, a half-way room with a radio; two stretches of the stairs never end until you go back
-  down (something changes every time round). From its crumbled top a broken bridge runs out to a
-  colossal chain; climb the ladder up it to the collar, as the Great Whale rises out of the storm
-  to watch you, and step off: the way on, to Level 9. Fall anywhere else (into the clouds, or a
-  long fall onto something) and you wake at the last radio you used, unhurt. No monsters yet.
+  in four colossal chains. Climb it by a broken stair winding round the outside (gaps to jump,
+  crumbled stretches, rotten planks), in through a half-way room with a radio, where the stair
+  inside never ends until you go back down (something changes every time round), and out again
+  round the outside to the top. From its crumbled top a broken bridge runs out to a
+  colossal chain; climb the ladder up it to the collar and step off: the way on, to Level 9. Fall
+  anywhere else (into the clouds, or a long fall onto something) and you wake at the last radio you
+  used, unhurt. And something hunts you: a colossal shape of dark ash like the Mind Flayer, white
+  eyes in a huge head, long spider legs. On the walk you hear it scraping below the edges, then see
+  it far off in the clouds when lightning flashes, then its hand comes over the edge for you if you
+  stand about in the open (a roof or a lit lantern keeps it off). On the tower it rises out of the
+  fog and climbs after you, faster when you stop, slamming its hand onto the stair ahead; inside the
+  tower you are safe. At the top it holds the tower in its hands and stares at you, then floats in
+  the sky watching as you climb the chain. If it catches you, you wake chained on a punishment
+  platform behind you: pull at the chains (jump) to break free.
 - **Level 9 (the Suburbs):** the last level, through the leap in Level 490. An endless suburb at midnight in thick fog that drains the colour
   from everything. Wet roads covered in leaves, old sodium streetlamps (most dead, some
   flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark

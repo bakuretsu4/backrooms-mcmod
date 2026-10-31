@@ -151,9 +151,18 @@ public final class ModNetwork {
             com.rickr.backrooms.world.Level490Hung.CLIENT.clear();
             com.rickr.backrooms.client.Level490ClientState.receiveSeed(payload.layoutSeed());
         });
-        registrar.playToClient(Level490WhalePayload.TYPE, Level490WhalePayload.STREAM_CODEC,
-                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.Level490Whales.rise(
-                        payload.x(), payload.y(), payload.z(), payload.start(), payload.yaw())));
+        // Level 490's creature: where it is, its hands coming for you, and the chains it leaves you in.
+        registrar.playToClient(Level490HuntPayload.TYPE, Level490HuntPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.Level490Creature.receive(payload)));
+        registrar.playToClient(Level490ReachPayload.TYPE, Level490ReachPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.Level490Creature.reach(payload)));
+        registrar.playToClient(Level490ShacklePayload.TYPE, Level490ShacklePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.Level490Shackles.receive(payload)));
+        registrar.playToServer(Level490StrugglePayload.TYPE, Level490StrugglePayload.STREAM_CODEC, (payload, context) -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.rickr.backrooms.world.Level490Hunt.struggle(player);
+            }
+        });
         registrar.playToClient(Level490FallPayload.TYPE, Level490FallPayload.STREAM_CODEC,
                 (payload, context) -> com.rickr.backrooms.world.Level490Hung.CLIENT.put(
                         com.rickr.backrooms.world.Level490Hung.key(payload.i(), payload.j()), new long[] {payload.gen(), payload.start()}));

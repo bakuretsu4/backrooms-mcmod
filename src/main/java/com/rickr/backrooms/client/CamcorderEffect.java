@@ -98,6 +98,8 @@ public final class CamcorderEffect {
             }
             // Level 9: Watchers (near / staring / charging) and Observers (a little unease).
             dangerTarget = Math.max(dangerTarget, WatcherInterference.danger());
+            // Level 490: the creature close behind you, or a hand coming down near you.
+            dangerTarget = Math.max(dangerTarget, Level490Creature.danger());
             // Smilers: the usual danger, plus colour fringing that gets strong when one is close.
             for (Smiler smiler : mc.level.getEntitiesOfClass(Smiler.class, mc.player.getBoundingBox().inflate(SMILER_RANGE))) {
                 float distance = smiler.distanceTo(mc.player);

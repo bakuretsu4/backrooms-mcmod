@@ -10,15 +10,19 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 /**
- * Level 490's whales singing: every minute or so one of the whales round you calls (client/
- * Level490Whales: a pod's or the Great Whale's deeper voice), and sometimes another answers a few
- * seconds later; with none near, a call comes from far off in the storm. Each comes as late as sound
- * takes to cross that far (Level490ChainEvents#hear). The recordings are NOAA's (tools/vendor/noaa).
+ * Level 490's whales singing: every half minute to a minute and a half one of the whales round you
+ * calls (client/Level490Whales: a pod's or the Great Whale's deeper voice), and sometimes another
+ * answers a few seconds later; with none near, a call comes from far off in the storm. And apart
+ * from those, every 12-30 seconds whales far off in the storm call to each other (after the
+ * play-test: "more whale sounds in the distance"). Each comes as late as sound takes to cross that
+ * far (Level490ChainEvents#hear). The recordings are NOAA's (tools/vendor/noaa).
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Level490WhaleSong {
     private static final Random RANDOM = new Random();
     private static long nextMs;
+    /** The far-off chorus, on its own clock. */
+    private static long nextFarMs;
 
     private Level490WhaleSong() {}
 
@@ -28,12 +32,21 @@ public final class Level490WhaleSong {
         long now = System.currentTimeMillis();
         if (mc.player == null || mc.isPaused() || !Level490Atmosphere.inLevel490()) {
             nextMs = now + 20_000;
+            nextFarMs = now + 8_000;
             return;
+        }
+        if (now >= nextFarMs) {
+            nextFarMs = now + 12_000 + RANDOM.nextInt(18_000);
+            double angle = RANDOM.nextDouble() * Math.PI * 2;
+            call(mc, angle, 0);
+            if (RANDOM.nextFloat() < 0.4f) {
+                call(mc, angle + Math.PI * (0.4 + RANDOM.nextDouble() * 1.2), 4_000 + RANDOM.nextInt(8_000));
+            }
         }
         if (now < nextMs) {
             return;
         }
-        nextMs = now + 30_000 + RANDOM.nextInt(70_000);
+        nextMs = now + 30_000 + RANDOM.nextInt(60_000);
         java.util.List<Level490Whales.Whale> whales = Level490ClientState.hasSeed()
                 ? Level490Whales.whales(Level490ClientState.seed(), mc.level.getGameTime(), mc.player.getEyePosition())
                 : java.util.List.of();

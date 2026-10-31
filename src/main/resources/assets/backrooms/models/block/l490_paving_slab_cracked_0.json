@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "backrooms:block/l490_rubble",
+    "top": "backrooms:block/l490_rubble",
+    "side": "backrooms:block/l490_paving"
+  }
+}

@@ -28,8 +28,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * breaks loose and falls: as you near the spire's island, at the half-way room of the climb, and
  * when you reach the top. The ruin that falls is chosen among those hanging 700-3000 blocks away,
  * the nearer the better, ahead of where you are looking if any are. Every client is told; the fall
- * is remembered in the save (so it stays fallen) and sent to anyone who arrives later. At the top
- * the Great Whale also comes down beside the spire to look at you (client/Level490Whales).
+ * is remembered in the save (so it stays fallen) and sent to anyone who arrives later.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
 public final class Level490Falls {
@@ -64,9 +63,6 @@ public final class Level490Falls {
         }
         if (moment != null && GIVEN.computeIfAbsent(player.getUUID(), k -> new HashSet<>()).add(moment)) {
             fallInFrontOf(level, player, seed);
-            if (moment.equals("top")) {
-                whaleRises(level, player, site);
-            }
         }
     }
 
@@ -113,23 +109,6 @@ public final class Level490Falls {
         forced.put(Level490Hung.key(best.i(), best.j()), new long[] {best.gen(), start});
         data(level).setDirty();
         Level490FallPayload payload = new Level490FallPayload(best.i(), best.j(), best.gen(), start);
-        for (ServerPlayer p : level.players()) {
-            PacketDistributor.sendToPlayer(p, payload);
-        }
-    }
-
-    /**
-     * At the top: the Great Whale comes down out of the storm on the far side of the spire from the
-     * player, about 130 blocks out, broadside on, so its eye looks at them.
-     */
-    private static void whaleRises(ServerLevel level, ServerPlayer player, int[] site) {
-        double away = Math.atan2(player.getZ() - site[1], player.getX() - site[0]) + Math.PI + 0.5;
-        int x = (int) Math.round(site[0] + Math.cos(away) * 130);
-        int z = (int) Math.round(site[1] + Math.sin(away) * 130);
-        // Its side to the player: heading at right angles to the line between them.
-        float yaw = (float) Math.toDegrees(Math.atan2(z - player.getZ(), x - player.getX()) + Math.PI / 2);
-        com.rickr.backrooms.network.Level490WhalePayload payload = new com.rickr.backrooms.network.Level490WhalePayload(
-                x, Level490Spire.TOP + 10, z, level.getGameTime() + 40, yaw);
         for (ServerPlayer p : level.players()) {
             PacketDistributor.sendToPlayer(p, payload);
         }
