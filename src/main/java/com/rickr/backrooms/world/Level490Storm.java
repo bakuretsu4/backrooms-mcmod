@@ -59,7 +59,7 @@ public final class Level490Storm {
             // A colossal chain within reach, if there is one.
             long layoutSeed = BackroomsSeeds.layoutSeed(level, BackroomsLevel.LEVEL_490);
             int[][] found = new int[1][];
-            Level490Layout.chainsNear(layoutSeed, near.getBlockX(), near.getBlockZ(), 700, (cx, cz) -> {
+            Level490Layout.chainsNear(layoutSeed, near.getBlockX(), near.getBlockZ(), 700, (cx, cz, phase) -> {
                 if (found[0] == null || random.nextInt(3) == 0) {
                     found[0] = new int[] {cx, cz};
                 }

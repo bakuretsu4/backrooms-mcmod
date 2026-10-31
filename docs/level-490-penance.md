@@ -1,7 +1,7 @@
 # Level 490 "Penance" (design notes)
 
-Status: **stage 1 built** (platforms, bridges, chains, lanterns, shelters, the storm sky, falling,
-the way in and the leap out). Stages 2-4 not built yet.
+Status: **stages 1 and 2 built** (the islands, bridges, chains and storm; the spire and its climb,
+the looping stairs, the leap from the top). Stages 3-4 not built yet.
 
 ## The idea
 
@@ -183,6 +183,42 @@ too small. Redesigned after Elden Ring's Crumbling Farum Azula:
 - Falling below y 150: within 34 blocks of the site's centre it is the leap (Level 9); anywhere
   else back to the last radio used here, or the arrival island.
 
+## Stage 2 as built: the spire
+
+Concept art (not in the repo) was agreed first: a spine-like spire hanging in the chains, and a
+climber on an outside ledge under a colossal link. Built per site (world/layout/Level490Spire):
+
+- **Body:** eleven vertebrae from the island (y 200) to the top platform (y 476), each turned,
+  shifted and tilted from the one below, lobed, narrow where they meet, with a darker disc at the
+  joints; roots flaring over the island, a capital under the platform. Pale bone-like stone
+  (l490_spire), darker joint stone (l490_spire_joint), a dressed-stone core the stairs are cut into.
+- **Ribs** curl out near the diagonals at four heights; nine **broken chunks** float round it.
+- **Iron:** a band round the upper body (y 433) bolted by beams to the four colossal chains, which
+  wear collars there and at y 505; four chains run from the top platform up to those. The colossal
+  chains go on up into the storm, drawn in the sky above the world's top (client/Level490SkyChains).
+- **The climb** (feet heights): the entrance faces the bridge you arrive by, into a round hall;
+  stair A 201-251 (windows); ledge 1 (3 wide) a quarter round to a ladder up to 267; stair B-C
+  267-357, enclosed and lantern-lit, through the half-way room at 307 (radio, two big windows);
+  ledge 2 (2 wide) half way round, ladder to 375; stair D 375-425 (windows); ledge 3 (1 wide, one
+  gap) a quarter round to a 50-block ladder up the outside to the top. Stairs are spirals 4 wide,
+  10 blocks a turn, in half steps (walked without jumping); doors and ladders sit on the spire's
+  axes so ladders face straight out.
+- **Looping stairs** (P.T.-like, world/Level490Loops): stair B-C at 267-297 and 317-347 is three
+  identical turns; climbing into the third moves you back one, unseen. Each lap something changes,
+  shown only to you: the first loop goes dark (lanterns out, an alcove bricked up, tally marks
+  counting your laps, shackles on the steps, GO BACK DOWN, at last every stone scratched full of
+  tallies); the second leaves lit lanterns and chains in the alcoves while its own lanterns go out.
+  Sounds above you each lap (a knock, footsteps, whispers, dragging, a knock behind, a heartbeat).
+  Walking back down to where you came in breaks it (a door creaks far above); then the stair goes
+  on.
+- **The leap:** any fall that starts at the top platform takes you to Level 9 (a spur reaches out
+  over open void for it). Falling into the clouds, or 12+ blocks onto something, sends you back to
+  your last radio (the half-way room has one), unhurt.
+- **Seen from afar:** past 110 blocks, where the fog takes its blocks, a pale outline of it is drawn
+  (client/Level490SpireFar), so you can steer by it from the arrival island.
+- Inside the spire the wind is muffled; the drone grows as you climb. (Whether its inside is safe
+  from the creature is for stage 4.)
+
 ## Name and number
 
 **Level 490, "Penance".** 490 is "seventy times seven", how many times you must forgive:
@@ -200,4 +236,5 @@ record:
 
 ## Still open
 
-Nothing big; details get decided while building.
+Stage 3 (distant structures in the chains, one falling now and then, the chain sounds) and stage 4
+(the creature).

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/ladder",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "texture": "backrooms:block/l490_ladder",
+    "particle": "backrooms:block/l490_ladder"
+  }
+}

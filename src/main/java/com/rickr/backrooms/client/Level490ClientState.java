@@ -35,11 +35,11 @@ public final class Level490ClientState {
         return layoutSeed;
     }
 
-    /** The colossal chains (axis {x, z}) around (x, z); render thread only. */
+    /** The colossal chains ({axis x, axis z, link phase}) around (x, z); render thread only. */
     public static List<int[]> chains(double x, double z) {
         if (hasSeed && (Double.isNaN(scannedX) || Math.hypot(x - scannedX, z - scannedZ) > RESCAN)) {
             CHAINS.clear();
-            Level490Layout.chainsNear(layoutSeed, (int) x, (int) z, CHAIN_SEARCH, (cx, cz) -> CHAINS.add(new int[] {cx, cz}));
+            Level490Layout.chainsNear(layoutSeed, (int) x, (int) z, CHAIN_SEARCH, (cx, cz, phase) -> CHAINS.add(new int[] {cx, cz, phase}));
             scannedX = x;
             scannedZ = z;
         }

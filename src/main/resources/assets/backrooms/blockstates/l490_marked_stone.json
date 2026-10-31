@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "marks=1": {
+      "model": "backrooms:block/l490_marked_stone_1"
+    },
+    "marks=2": {
+      "model": "backrooms:block/l490_marked_stone_2"
+    },
+    "marks=3": {
+      "model": "backrooms:block/l490_marked_stone_3"
+    },
+    "marks=4": {
+      "model": "backrooms:block/l490_marked_stone_4"
+    },
+    "marks=5": {
+      "model": "backrooms:block/l490_marked_stone_5"
+    },
+    "marks=6": {
+      "model": "backrooms:block/l490_marked_stone_6"
+    }
+  }
+}

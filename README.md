@@ -262,16 +262,28 @@ going down into the dark, until the picture breaks up and you are in the next le
   steps from island to island; some are broken off in the middle, stretches of railing are gone
   and small chains dangle underneath. Colossal chains, every link 34 blocks long, hang out of the
   storm and through some of the islands down into the clouds; four of them stand round the great
-  round island where the structure will rise (see docs/level-490-penance.md). Rocks and masonry
+  round island where the spire stands (see docs/level-490-penance.md). Rocks and masonry
   float in the air, slowly turning; whirlwinds of cloud stand far off in the storm. Lightning
   strikes in the distance every few seconds (real branching bolts that flicker, the clouds
   glowing round them, more far chains showing in the flash) and its thunder comes as late as the
   strike is far (recorded thunder: cracks close by, long rolls, low far rumbles), over howling
   wind, the chains singing in it, the whirlwinds' roar and a deep drone. Old lanterns on the
   bridges and little stone shelters with a checkpoint radio are the only warmth. A route of main
-  bridges leads about 300 blocks from where you arrive to the great island; stepping off it is the
-  way on, to Level 9. Fall anywhere else and you wake at the last radio you used (or where you
-  arrived). No monsters yet.
+  bridges leads about 300 blocks from where you arrive to the great island, where the spire
+  stands: a tower of pale, grown-looking stone about 275 blocks tall, stacked like a spine, each
+  vertebra turned and leaning its own way, ribs curling out of it, broken chunks of it floating
+  round it, an iron band round its upper body bolted to the four colossal chains and four more
+  chains running up to them from its top: it hangs in them. Through the fog it is the one thing you
+  can still see. Climb it: spiral stairs inside (lantern-lit, windows to the drop), then out a
+  narrow door onto a ledge with no railing and up a rusted ladder on the outside, in again, a
+  half-way room with a radio, and twice more, each ledge narrower (the last is a block wide with a
+  gap), the last ladder fifty blocks up the outside to the open top. Two stretches of the stairs
+  never end: you keep climbing the same turn, and every time round something is different (a
+  lantern out, an alcove bricked up, someone counting on the wall, shackles on the steps, footsteps
+  above you, GO BACK DOWN); walk back down to where you came in and it lets you go. Stepping off
+  the top is the way on, to Level 9. Fall anywhere else (into the clouds, or a long fall onto
+  something) and you wake at the last radio you used (or where you arrived), unhurt. No monsters
+  yet.
 - **Level 9 (the Suburbs):** the last level, through the leap in Level 490. An endless suburb at midnight in thick fog that drains the colour
   from everything. Wet roads covered in leaves, old sodium streetlamps (most dead, some
   flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark

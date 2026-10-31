@@ -3,6 +3,8 @@ package com.rickr.backrooms.client;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.client.audio.FadingLoopSound;
 import com.rickr.backrooms.registry.ModSounds;
+import com.rickr.backrooms.world.layout.Level490Layout;
+import com.rickr.backrooms.world.layout.Level490Spire;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.phys.Vec3;
@@ -16,8 +18,9 @@ import org.jetbrains.annotations.Nullable;
  * Level 490's air (client side): looping layers "in your head", fed every tick while you are there
  * (they fade out by themselves when you leave). Wind howling over the void in slow gusts; the
  * colossal chains singing in the wind, louder the closer you are to one; the far whirlwinds'
- * roar; a constant low rumble; a deep, slow drone like distant voices. The thunder is
- * {@link Level490Lightning}'s.
+ * roar; a constant low rumble; a deep, slow drone like distant voices, growing as you climb the
+ * spire. Inside the spire the wind, the chains and the whirlwinds are muffled by the stone. The
+ * thunder is {@link Level490Lightning}'s.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Level490Ambience {
@@ -48,17 +51,21 @@ public final class Level490Ambience {
         double s = (System.currentTimeMillis() % 3_600_000L) / 1000.0;
         // Gusts: two slow swells that rarely line up.
         float gust = (float) (0.5 + 0.5 * Math.sin(s / 6.3) * Math.sin(s / 11.7 + 1.0));
-        wind = keep(wind, ModSounds.LEVEL490_WIND.get(), 0.45f + 0.45f * gust);
         Vec3 eye = mc.player.getEyePosition();
+        boolean indoors = Level490ClientState.hasSeed()
+                && Level490Layout.insideSpire(Level490ClientState.seed(), eye.x, eye.y, eye.z);
+        float outside = indoors ? 0.25f : 1.0f;
+        wind = keep(wind, ModSounds.LEVEL490_WIND.get(), (0.45f + 0.45f * gust) * outside);
         double nearest = Double.MAX_VALUE;
         for (int[] c : Level490ClientState.chains(eye.x, eye.z)) {
             nearest = Math.min(nearest, Math.hypot(c[0] - eye.x, c[1] - eye.z));
         }
         float chain = (float) Math.max(0.0, Math.min(1.0, (WIRE_FAR - nearest) / (WIRE_FAR - WIRE_NEAR)));
-        wire = keep(wire, ModSounds.LEVEL490_WIRE.get(), chain * (0.55f + 0.4f * gust));
-        whirlwind = keep(whirlwind, ModSounds.LEVEL490_WHIRLWIND.get(), 0.55f);
+        wire = keep(wire, ModSounds.LEVEL490_WIRE.get(), chain * (0.55f + 0.4f * gust) * outside);
+        whirlwind = keep(whirlwind, ModSounds.LEVEL490_WHIRLWIND.get(), 0.55f * outside);
         rumble = keep(rumble, ModSounds.LEVEL490_RUMBLE.get(), 0.6f);
-        drone = keep(drone, ModSounds.LEVEL490_DRONE.get(), 0.55f);
+        float climbed = (float) Math.max(0.0, Math.min(1.0, (eye.y - Level490Layout.DECK_Y) / (Level490Spire.TOP - Level490Layout.DECK_Y)));
+        drone = keep(drone, ModSounds.LEVEL490_DRONE.get(), 0.4f + 0.5f * climbed);
     }
 
     /** Keeps a loop playing at {@code volume} (starting it if it isn't). */

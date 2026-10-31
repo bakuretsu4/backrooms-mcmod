@@ -1021,7 +1021,7 @@
   "subtitles.backrooms.gondola.whiteout": "Everything goes white",
   "menu.backrooms.notes.goal.3": "- Others came through before you. Some left notes in the crates and backpacks. And listen: an exit is never completely quiet.",
   "menu.backrooms.notes.levels.8": "- LEVEL 94, Motion: sunny toy-like hills, a little town and a castle on a glass mountain. Get indoors before night: Smilers come out. Houses with a dark doorway lead on to Level 490; flooded houses lead down to Level 7, and the light behind the castle's throne back to Level 1. A rare moulded-clay front door on a Level 9 house also opens onto Level 94.",
-  "menu.backrooms.notes.levels.9": "- LEVEL 490, Penance: a dark doorway in Level 94 brings you out among crumbling ruins on floating islands over a sea of storm cloud, at night, among colossal chains hanging out of the storm. Bridges join the islands; some are broken off. About 300 blocks away stands a great round island with four colossal chains round it: step off its edge to leave, to Level 9. Fall anywhere else and you wake at the last shelter radio you used. Lanterns and the little stone shelters are the only warmth.",
+  "menu.backrooms.notes.levels.9": "- LEVEL 490, Penance: a dark doorway in Level 94 brings you out among crumbling ruins on floating islands over a sea of storm cloud, at night, among colossal chains hanging out of the storm. Bridges join the islands; some are broken off. About 300 blocks away a pale spire rises out of a great round island, hanging in four colossal chains: the one thing the fog doesn't hide. Climb it, by the stairs inside and the ledges and ladders outside, and step off the top to leave, to Level 9. Some of the stairs go round and round: if nothing changes when you climb, go back down. Fall anywhere else and you wake at the last radio you used. Lanterns and the little stone shelters are the only warmth.",
   "message.backrooms.arrive.level_7": "Water as far as the fog lets you see, under a concrete sky. Hold your breath. Don't think about what's under you.",
   "subtitles.backrooms.l7_groan": "Something vast groans far below",
   "subtitles.backrooms.l7_heave": "The water heaves",
@@ -1276,5 +1276,10 @@
   "block.backrooms.l490_red_leaves": "Dark Red Leaves",
   "subtitles.backrooms.level490.thunder_close": "Thunder cracks",
   "subtitles.backrooms.level490.thunder_roll": "Thunder rolls",
-  "subtitles.backrooms.level490.thunder_far": "Distant thunder"
+  "subtitles.backrooms.level490.thunder_far": "Distant thunder",
+  "block.backrooms.l490_spire": "Spire Stone",
+  "block.backrooms.l490_spire_joint": "Spire Joint Stone",
+  "block.backrooms.l490_ladder": "Rusted Ladder",
+  "block.backrooms.l490_marked_stone": "Scratched Stone",
+  "block.backrooms.l490_words": "Scrawled Stone"
 }

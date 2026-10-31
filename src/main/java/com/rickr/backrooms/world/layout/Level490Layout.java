@@ -37,11 +37,12 @@ import net.minecraft.world.level.block.state.properties.SlabType;
  * bridges broken off in the middle, stretches of railing gone, small chains dangling underneath.
  *
  * <p>Each {@value #REGION}-block region holds one <b>site</b>, a great round island ringed with
- * broken pillars where the structure stands (stage 2), with four colossal chains around it, and
- * about 300 blocks away the <b>arrival</b> island. A route of main bridges always joins the two.
- * One island in forty or so has a colossal chain running straight through it, its ruins built
- * around the chain like a collar. Falling off the site is the way out (to Level 9); falling
- * anywhere else sends you back to your last checkpoint.
+ * broken pillars, with four colossal chains around it and the spire standing on it
+ * ({@link Level490Spire}), and about 300 blocks away the <b>arrival</b> island. A route of main
+ * bridges always joins the two. One island in forty or so has a colossal chain running straight
+ * through it, its ruins built around the chain like a collar. Leaping from the top of the spire is
+ * the way out (to Level 9); falling anywhere else sends you back to your last checkpoint
+ * (world/Level490Rules).
  */
 public final class Level490Layout extends LevelLayout {
     public static final int WORLD_HEIGHT = 512;
@@ -54,9 +55,8 @@ public final class Level490Layout extends LevelLayout {
     public static final int REGION = 1024;
     /** One site per region, far enough from its edges that its arrival island and route fit in. */
     static final ExitLocator SITES = new ExitLocator(REGION, 400, 490490);
-    public static final int SITE_RADIUS = 22;
-    /** Falling from within this far of a site's centre is the leap out. */
-    public static final int LEAP_REACH = SITE_RADIUS + 12;
+    /** The site's island: big enough for the spire's foot and a walk round it. */
+    public static final int SITE_RADIUS = 24;
     private static final int ARRIVAL_RADIUS = 16;
     /** Most an island's rim pokes out past its radius (see {@link #rim}). */
     private static final double RIM_MAX = 1.23;
@@ -89,7 +89,7 @@ public final class Level490Layout extends LevelLayout {
 
     @Override
     public int highestCeilingY() {
-        return DECK_Y + 12;
+        return Level490Spire.TOP + 6; // the spire's lanterns, all the way up
     }
 
     @Override
@@ -131,6 +131,32 @@ public final class Level490Layout extends LevelLayout {
     public static int[] siteCentre(long seed, int x, int z) {
         Site s = site(seed, Math.floorDiv(x, REGION), Math.floorDiv(z, REGION));
         return new int[] {s.si * SPACING, s.sj * SPACING};
+    }
+
+    /**
+     * Which way the route arrives at site s, in quarter turns from +x (0 east, 1 south, 2 west,
+     * 3 north): along the route's column from the arrival side, or along its row if they share one.
+     */
+    private static int entranceQuarter(Site s) {
+        if (s.aj != s.sj) {
+            return s.aj > s.sj ? 1 : 3;
+        }
+        return s.ai > s.si ? 0 : 2;
+    }
+
+    private static Level490Spire spire(long seed, Site s) {
+        return Level490Spire.of(seed, s.si * SPACING, s.sj * SPACING, entranceQuarter(s));
+    }
+
+    /** True if (x, y, z) is inside the spire of its region (its hall, stairwells, room): indoors. */
+    public static boolean insideSpire(long seed, double x, double y, double z) {
+        int[] c = siteCentre(seed, (int) Math.floor(x), (int) Math.floor(z));
+        return Math.hypot(x - c[0] - 0.5, z - c[1] - 0.5) < 10.5 && y > DECK_Y && y < Level490Spire.TOP - 48;
+    }
+
+    /** The spire of the region containing (x, z). */
+    public static Level490Spire spireAt(long seed, int x, int z) {
+        return spire(seed, site(seed, Math.floorDiv(x, REGION), Math.floorDiv(z, REGION)));
     }
 
     private static boolean onRouteRow(Site s, int i, int j) {
@@ -351,6 +377,11 @@ public final class Level490Layout extends LevelLayout {
             bridgeColumn(seed, x, z, ni, nj, out);
         }
         chainColumn(seed, x, z, ni, nj, out);
+        // The spire last: its stairs, doors and ladders cut through whatever else is there.
+        Site s = site(seed, Math.floorDiv(x, REGION), Math.floorDiv(z, REGION));
+        if (Math.abs(x - s.si * SPACING) <= Level490Spire.REACH && Math.abs(z - s.sj * SPACING) <= Level490Spire.REACH) {
+            spire(seed, s).fill(x, z, out);
+        }
     }
 
     // ---- islands ----
@@ -431,7 +462,7 @@ public final class Level490Layout extends LevelLayout {
         }
         int pick = (int) (h >>> 40) & 7;
         boolean colonnade = is.kind == SITE || is.kind == ARRIVAL || (big ? pick < 5 : pick < 3);
-        boolean wall = big && !colonnade || is.kind == ARRIVAL || big && pick >= 3;
+        boolean wall = is.kind != SITE && (big && !colonnade || is.kind == ARRIVAL || big && pick >= 3);
         boolean tower = big && pick % 3 == 1 && is.kind == PLAIN;
         if (colonnade && pillar(seed, is, dx, dz, top, x, z, out)) {
             return true;
@@ -442,13 +473,20 @@ public final class Level490Layout extends LevelLayout {
         return tower && tower(seed, is, dx, dz, top, x, z, out);
     }
 
-    /** A ring of 2 x 2 pillars, a third of them broken short, the rest topped by a 4 x 4 capital. */
+    /**
+     * A ring of 2 x 2 pillars, a third of them broken short, the rest topped by a 4 x 4 capital. On
+     * the site they ring the spire's foot, leaving the way to its door clear.
+     */
     private boolean pillar(long seed, Island is, int dx, int dz, int top, int x, int z, Column out) {
-        double ring = is.kind == SITE ? 15 : is.r * 0.62;
-        int n = is.kind == SITE ? 12 : Math.max(3, (int) Math.round(ring * 0.75));
+        double ring = is.kind == SITE ? 20 : is.r * 0.62;
+        int n = is.kind == SITE ? 14 : Math.max(3, (int) Math.round(ring * 0.75));
         int baseH = 9 + (int) (is.h & 7);
+        double door = is.kind == SITE ? entranceQuarter(siteOfNode(seed, is.i, is.j)) * Math.PI / 2 : 0;
         for (int k = 0; k < n; k++) {
             double a = Math.PI * 2 * k / n + is.p2;
+            if (is.kind == SITE && Math.abs(Math.IEEEremainder(a - door, Math.PI * 2)) < 0.35) {
+                continue;
+            }
             int px = (int) Math.round(ring * Math.cos(a));
             int pz = (int) Math.round(ring * Math.sin(a));
             int ox = dx - px;
@@ -889,9 +927,10 @@ public final class Level490Layout extends LevelLayout {
         return siteCentre(seed, x, z);
     }
 
+    /** The way out is the top of the spire. */
     @Override
     public int exitY(long seed, int x, int z) {
-        return STAND_Y;
+        return Level490Spire.TOP;
     }
 
     @Override
@@ -923,6 +962,10 @@ public final class Level490Layout extends LevelLayout {
      * an island (with its rock below), a bridge or a colossal chain.
      */
     public static boolean openAir(long seed, double x, double y, double z, double size) {
+        int[] site = siteCentre(seed, (int) Math.floor(x), (int) Math.floor(z));
+        if (Math.hypot(x - site[0], z - site[1]) < Level490Spire.REACH + 8 + size && y < WORLD_HEIGHT + 20) {
+            return false; // the spire, its floating chunks and its iron
+        }
         int ni = (int) Math.round(x / SPACING);
         int nj = (int) Math.round(z / SPACING);
         for (int di = -1; di <= 1; di++) {
@@ -968,8 +1011,14 @@ public final class Level490Layout extends LevelLayout {
     // For the client's sky: where the colossal chains hang
     // ==========================================================================================
 
-    /** Calls {@code out} with the axis {x, z} of every colossal chain within {@code radius} of (x, z). */
-    public static void chainsNear(long seed, int x, int z, int radius, java.util.function.BiConsumer<Integer, Integer> out) {
+    /** Receives a colossal chain: its axis (x, z) and its links' phase (link k is centred at y = phase + 22 k). */
+    @FunctionalInterface
+    public interface ChainSink {
+        void accept(int x, int z, int phase);
+    }
+
+    /** Calls {@code out} with every colossal chain within {@code radius} of (x, z). */
+    public static void chainsNear(long seed, int x, int z, int radius, ChainSink out) {
         int i0 = Math.floorDiv(x - radius, SPACING) - 1;
         int i1 = Math.floorDiv(x + radius, SPACING) + 1;
         int j0 = Math.floorDiv(z - radius, SPACING) - 1;
@@ -981,11 +1030,11 @@ public final class Level490Layout extends LevelLayout {
                     continue;
                 }
                 if (is.kind == CHAINED) {
-                    out.accept(is.cx, is.cz);
+                    out.accept(is.cx, is.cz, (int) (is.h & 31));
                 } else if (is.kind == SITE) {
                     for (int k = 0; k < 4; k++) {
                         out.accept(is.cx + ((k & 1) == 0 ? SITE_CHAIN_OFFSET : -SITE_CHAIN_OFFSET),
-                                is.cz + ((k & 2) == 0 ? SITE_CHAIN_OFFSET : -SITE_CHAIN_OFFSET));
+                                is.cz + ((k & 2) == 0 ? SITE_CHAIN_OFFSET : -SITE_CHAIN_OFFSET), 7 * k + (int) (is.h & 15));
                     }
                 }
             }

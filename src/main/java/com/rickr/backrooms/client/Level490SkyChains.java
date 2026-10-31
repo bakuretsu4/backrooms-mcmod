@@ -20,6 +20,10 @@ import org.joml.Vector3f;
  * distance; lightning lights up the ones near the strike, so a flash shows more of them than you
  * thought were there. Each link is drawn along its centre line as a ribbon facing the camera, as
  * thick as the link's bar: face on it reads as a ring, edge on as a bar.
+ *
+ * <p>The chains within render distance are blocks, but blocks stop at the top of the world (y 511);
+ * from there on up into the storm they are drawn here too, so from the top of the spire they don't
+ * just end over your head.
  */
 final class Level490SkyChains {
     // The built chains' links (world/layout/Level490Layout).
@@ -38,6 +42,8 @@ final class Level490SkyChains {
     private static final float[][] LOOP = loop();
     /** Drawn up to the storm layer (Level490Sky's lowest at y 640), which they vanish into. */
     private static final float TOP = 640.0f;
+    /** The built chains' blocks stop at the top of the world; a link's half length below that the sky takes over. */
+    private static final float BUILT_TOP = com.rickr.backrooms.world.layout.Level490Layout.WORLD_HEIGHT - 17.0f;
 
     private Level490SkyChains() {}
 
@@ -70,13 +76,18 @@ final class Level490SkyChains {
         int[] count = {0};
         for (int[] c : Level490ClientState.chains(eye.x, eye.z)) {
             double d = Math.hypot(c[0] - eye.x, c[1] - eye.z);
-            if (d < built || d > built + SHOW) {
+            if (d < built) {
+                // Lit like the blocks below them, so the join doesn't show.
+                chain(quads, view, eye, far, c[0], c[1], 1.0f, c[2], BUILT_TOP, TOP, 1.0f, d, 0.15f, count);
+                continue;
+            }
+            if (d > built + SHOW) {
                 continue;
             }
             float alpha = (float) Math.exp(-(d - built) / FADE);
             alpha = Math.min(1.0f, alpha + Level490Lightning.cloudGlow(c[0], c[1]) * 0.9f);
             if (alpha > 0.02f) {
-                chain(quads, view, eye, far, c[0], c[1], 1.0f, 0.0f, 0.0f, TOP, alpha, d, count);
+                chain(quads, view, eye, far, c[0], c[1], 1.0f, c[2], 0.0f, TOP, alpha, d, 0.06f, count);
             }
         }
         // The giants, miles off.
@@ -96,7 +107,7 @@ final class Level490SkyChains {
                     continue;
                 }
                 float alpha = (float) Math.min(1.0, 0.75 * Math.exp(-(d - 3000) / 4500.0) + Level490Lightning.cloudGlow(x, z));
-                chain(quads, view, eye, far, x, z, GIANT, -1500.0f, -2000.0f, TOP, alpha, d, count);
+                chain(quads, view, eye, far, x, z, GIANT, -1500.0f, -2000.0f, TOP, alpha, d, 0.06f, count);
             }
         }
         if (count[0] > 0) {
@@ -107,15 +118,15 @@ final class Level490SkyChains {
         RenderSystem.disableBlend();
     }
 
-    /** One chain hanging from yTop down past yBottom, size times a built chain's links. */
+    /** One chain hanging from yTop down past yBottom, size times a built chain's links, iron this bright. */
     private static void chain(BufferBuilder quads, Matrix4f view, Vec3 eye, float far, double x, double z, float size,
-                              float phase, float yBottom, float yTop, float alpha, double d, int[] count) {
+                              float phase, float yBottom, float yTop, float alpha, double d, float shade, int[] count) {
         float scale = (float) Math.min(1.0, 0.9 * far / (d + 600.0 * size));
         // Black iron, a little moonlight on it, lit up when lightning flashes near.
         float glow = Level490Lightning.cloudGlow(x, z);
-        float r = 0.06f + 0.05f * glow;
-        float g = 0.062f + 0.05f * glow;
-        float b = 0.07f + 0.06f * glow;
+        float r = shade + 0.05f * glow;
+        float g = shade * 1.03f + 0.05f * glow;
+        float b = shade * 1.17f + 0.06f * glow;
         float pitch = PITCH * size;
         int k0 = (int) Math.floor((yBottom - phase) / pitch);
         int k1 = (int) Math.ceil((yTop - phase) / pitch);

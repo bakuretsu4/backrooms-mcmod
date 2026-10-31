@@ -1,11 +1,13 @@
 package com.rickr.backrooms.registry;
 
 import com.rickr.backrooms.block.GiantChainBlock;
+import com.rickr.backrooms.block.MarkedStoneBlock;
 import com.rickr.backrooms.block.IronLanternBlock;
 import com.rickr.backrooms.block.ShackleBlock;
 import java.util.function.Function;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FenceBlock;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -61,10 +63,25 @@ public final class Level490Blocks {
     /** An open shackle on a ring in the paving. */
     public static final DeferredBlock<ShackleBlock> SHACKLE = block("l490_shackle", ShackleBlock::new,
             unbreakable(MapColor.COLOR_BLACK, SoundType.CHAIN).noOcclusion().noCollission());
+    /** The spire's pale, grown-looking stone (world/layout/Level490Spire): its vertebrae and ribs. */
+    public static final DeferredBlock<Block> SPIRE = structural("l490_spire", MapColor.TERRACOTTA_WHITE, SoundType.BONE_BLOCK);
+    /** Darker ridged stone where the spire's vertebrae meet, and its outside ledges. */
+    public static final DeferredBlock<Block> SPIRE_JOINT = structural("l490_spire_joint", MapColor.STONE, SoundType.BONE_BLOCK);
+    /** Rusted iron ladder bolted up the outside of the spire (climbable, see the climbable tag). */
+    public static final DeferredBlock<LadderBlock> LADDER = block("l490_ladder", LadderBlock::new,
+            unbreakable(MapColor.COLOR_BROWN, SoundType.METAL).noOcclusion());
+    /**
+     * The spire's stairwell stone with tally marks scratched into it: 1-5 marks, 6 a wall covered
+     * in them. Only ever shown to a player stuck in a looping stairwell (world/Level490Loops).
+     */
+    public static final DeferredBlock<MarkedStoneBlock> MARKED_STONE = block("l490_marked_stone", MarkedStoneBlock::new,
+            unbreakable(MapColor.STONE, SoundType.STONE));
+    /** Stairwell stone with "GO BACK DOWN" scratched into it (world/Level490Loops). */
+    public static final DeferredBlock<Block> WORDS = structural("l490_words", MapColor.STONE, SoundType.STONE);
 
     static {
         for (DeferredBlock<?> block : new DeferredBlock<?>[] {PAVING, PAVING_SLAB, STONE, SLATE, ROCK, RUBBLE, DEAD_GRASS, CHAIN_IRON,
-                DEAD_WOOD, RED_LEAVES, RAILING, POST, LANTERN, CHAIN, SHACKLE}) {
+                DEAD_WOOD, RED_LEAVES, RAILING, POST, LANTERN, CHAIN, SHACKLE, SPIRE, SPIRE_JOINT, LADDER, MARKED_STONE, WORDS}) {
             ModItems.ITEMS.registerSimpleBlockItem(block);
         }
     }

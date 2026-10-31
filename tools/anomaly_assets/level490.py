@@ -82,13 +82,17 @@ def tex_l490_paving() -> None:
     _save(img, "l490_paving")
 
 
-def tex_l490_stone() -> None:
+def _stone_img():
     """Big dressed stone blocks (two courses per block, joints staggered), streaked by the rain."""
     rng = G.rng_for(49002)
     img, _ = _stones(rng, STONE, 2, 1, True, 5.0, 5.0)
     streaks = G.blur(G.fnoise(rng, beta=1.4, kmin=6, aniso=(1.0, 0.08)), 0.6)
-    img = G.add_lum(img, -G.smoothstep(0.5, 2.0, streaks) * 16)
-    _save(img, "l490_stone")
+    return G.add_lum(img, -G.smoothstep(0.5, 2.0, streaks) * 16)
+
+
+def tex_l490_stone() -> None:
+    """Big dressed stone blocks (two courses per block, joints staggered), streaked by the rain."""
+    _save(_stone_img(), "l490_stone")
 
 
 def tex_l490_slate() -> None:
@@ -224,6 +228,107 @@ def tex_l490_red_leaves() -> None:
     G.save_png(img, _blk("l490_red_leaves"))
 
 
+def tex_l490_spire() -> None:
+    """The spire's stone: pale and dense like old bone, grown rather than built. No joints; long
+    fibres running up it, soft swellings, small pores, grime gathered in the hollows."""
+    rng = G.rng_for(49012)
+    img = G.fill((156, 152, 144), (S, S)).astype(float)
+    fibres = G.blur(G.fnoise(rng, beta=1.3, kmin=8, aniso=(0.12, 1.0)), 0.5)
+    swell = G.blur(G.fnoise(rng, beta=2.2, kmin=2), 1.0)
+    img = G.add_lum(img, fibres * 7 + _relief(swell, 10) + rng.normal(0, 2.0, (S, S)))
+    pores = G.blur((rng.random((S, S)) < 0.004).astype(float), 0.7)
+    img = G.add_lum(img, -pores * 45)
+    grime = G.smoothstep(0.9, 2.2, G.fnoise(rng, beta=2.0, kmin=2))
+    img = G.over(img, np.array([110, 106, 100]), grime * 0.4)
+    _save(img, "l490_spire")
+
+
+def tex_l490_spire_joint() -> None:
+    """Where the spire's vertebrae meet: darker, ridged round like a disc of cartilage turned to stone."""
+    rng = G.rng_for(49013)
+    X, Y = G.grid()
+    img = G.fill((98, 96, 94), (S, S)).astype(float)
+    ridges = np.sin(Y / S * np.pi * 2 * 4 + G.blur(G.fnoise(rng, beta=1.6, kmin=2, aniso=(1.0, 0.12)), 0.8) * 0.8)
+    img = G.add_lum(img, ridges * 9 + G.fnoise(rng, beta=1.8, kmin=3) * 4 + rng.normal(0, 2.5, (S, S)))
+    cracks = G.smoothstep(0.93, 0.995, np.abs(G.fnoise(rng, beta=1.5, kmin=4)) / 3.0)
+    img = G.add_lum(img, -cracks * 26)
+    _save(img, "l490_spire_joint")
+
+
+def tex_l490_ladder() -> None:
+    """A rusted iron ladder (RGBA): two flat rails, four round rungs, rivets, rust running down."""
+    rng = G.rng_for(49014)
+    X, Y = G.grid()
+    rails = ((X >= 14) & (X < 30)) | ((X >= 98) & (X < 114))
+    rungs = np.zeros((S, S), bool)
+    for y0 in (10, 42, 74, 106):
+        rungs |= (Y >= y0) & (Y < y0 + 9) & (X >= 24) & (X < 104)
+    alpha = (rails | rungs).astype(float)
+    img = G.add_lum(G.fill((72, 68, 66), (S, S)).astype(float), G.fnoise(rng, beta=2.0) * 4 + rng.normal(0, 2.5, (S, S)))
+    rust = G.smoothstep(0.4, 1.9, G.blur(G.fnoise(rng, beta=1.4, kmin=4, aniso=(1.0, 8.0)), 0.6))
+    img = G.over(img, np.array([118, 72, 44]), rust * 0.6)
+    # Rungs lit from above, shadowed below; rivets where they meet the rails.
+    for y0 in (10, 42, 74, 106):
+        band = (Y - y0) / 9.0
+        inside = rungs & (band >= 0) & (band < 1)
+        img = G.add_lum(img, np.where(inside & (band < 0.35), 12, 0) + np.where(inside & (band > 0.7), -10, 0))
+        for cx in (22, 106):
+            img = G.add_lum(img, -24 * (np.hypot(X - cx, Y - (y0 + 4.5)) < 2.2))
+    rgba = np.dstack([np.clip(img, 0, 255), alpha * 255])
+    G.save_png(rgba, _blk("l490_ladder"))
+
+
+def _scratch(mask, img):
+    """Scratches cut into stone: pale where the surface is broken, a dark lip on one side."""
+    m = G.blur(mask, 0.6)
+    shadow = np.roll(np.roll(m, 1, 0), 1, 1)
+    img = G.add_lum(img, -np.clip(shadow - m, 0, 1) * 40)
+    return G.over(img, np.array([196, 196, 190]), np.clip(m, 0, 1) * 0.75)
+
+
+def _tally(draw, rng, x, y, size, n):
+    """n tally strokes at (x, y): upright strokes, the fifth across them."""
+    gap = size * 0.24
+    for i in range(min(n, 4)):
+        x0 = x + i * gap + rng.uniform(-1.5, 1.5)
+        draw.line([(x0 + rng.uniform(-2, 2), y), (x0 + rng.uniform(-2, 2), y + size)], fill=255, width=3 if size > 40 else 2)
+    if n >= 5:
+        draw.line([(x - gap * 0.6, y + size * 0.8), (x + gap * 3.6, y + size * 0.2)], fill=255, width=3 if size > 40 else 2)
+
+
+def tex_l490_marks() -> None:
+    """The stairwell stone with tally marks scratched in: 1-5 strokes, and a wall covered in them."""
+    from PIL import Image, ImageDraw
+    base = _stone_img()
+    for n in range(1, 7):
+        rng = G.rng_for(49020 + n)
+        layer = Image.new("L", (S, S), 0)
+        draw = ImageDraw.Draw(layer)
+        if n <= 5:
+            _tally(draw, rng, 34, 30, 64, n)
+        else:
+            for row in range(3):
+                for col in range(3):
+                    _tally(draw, rng, 8 + col * 42 + rng.uniform(-3, 3), 8 + row * 40 + rng.uniform(-3, 3), 28, 5)
+        _save(_scratch(np.asarray(layer, float) / 255.0, base.copy()), f"l490_marked_{n}")
+
+
+def tex_l490_words() -> None:
+    """The stairwell stone with GO BACK / DOWN scratched into it, unevenly, gone over more than once
+    (Pillow's built-in font, Aileron, is CC0)."""
+    from PIL import Image, ImageDraw, ImageFont
+    rng = G.rng_for(49030)
+    font = ImageFont.load_default(size=24)
+    layer = Image.new("L", (S, S), 0)
+    draw = ImageDraw.Draw(layer)
+    for line, (x, y) in (("GO BACK", (12, 30)), ("DOWN", (30, 68))):
+        for _ in range(3):
+            draw.text((x + rng.uniform(-1.5, 1.5), y + rng.uniform(-1.5, 1.5)), line, fill=255, font=font)
+    mask = np.asarray(layer, float) / 255.0
+    mask *= G.smoothstep(-1.2, 0.2, G.fnoise(rng, beta=1.2, kmin=10))  # broken where the blade skipped
+    _save(_scratch(mask, _stone_img()), "l490_words")
+
+
 def tex_l490_moon() -> None:
     """The moon for the sky (RGBA): a pale disk with darker seas, in a soft glow that fades out."""
     rng = G.rng_for(49006)
@@ -278,7 +383,8 @@ IRON_TEX = {"iron": _ref("l490_iron"), "particle": _ref("l490_iron")}
 
 def tex_l490_models() -> None:
     """Block models, blockstates and item models of every Level 490 block."""
-    for name in ("l490_paving", "l490_stone", "l490_slate", "l490_rock", "l490_rubble", "l490_chain_iron", "l490_dead_wood"):
+    for name in ("l490_paving", "l490_stone", "l490_slate", "l490_rock", "l490_rubble", "l490_chain_iron", "l490_dead_wood",
+                 "l490_spire", "l490_spire_joint", "l490_words"):
         _model(name, {"parent": "minecraft:block/cube_all", "textures": {"all": _ref(name)}})
         _json(f"blockstates/{name}.json", {"variants": {"": {"model": _ref(name)}}})
         _json(f"models/item/{name}.json", {"parent": _ref(name)})
@@ -370,8 +476,24 @@ def tex_l490_models() -> None:
         for f, y in (("north", 0), ("east", 90), ("south", 180), ("west", 270))}})
     _json("models/item/l490_shackle.json", {"parent": _ref("l490_shackle")})
 
+    # The ladder: vanilla's flat ladder model with our rusted iron; facing is where it faces out.
+    _model("l490_ladder", {"parent": "minecraft:block/ladder", "render_type": "minecraft:cutout",
+                           "textures": {"texture": _ref("l490_ladder"), "particle": _ref("l490_ladder")}})
+    _json("blockstates/l490_ladder.json", {"variants": {
+        f"facing={f}": ({"model": _ref("l490_ladder"), "y": y} if y else {"model": _ref("l490_ladder")})
+        for f, y in (("north", 0), ("east", 90), ("south", 180), ("west", 270))}})
+    _json("models/item/l490_ladder.json", {"parent": "minecraft:item/generated", "textures": {"layer0": _ref("l490_ladder")}})
+
+    # The scratched stairwell stone, one model per number of marks.
+    for n in range(1, 7):
+        _model(f"l490_marked_stone_{n}", {"parent": "minecraft:block/cube_all", "textures": {"all": _ref(f"l490_marked_{n}")}})
+    _json("blockstates/l490_marked_stone.json", {"variants": {
+        f"marks={n}": {"model": _ref(f"l490_marked_stone_{n}")} for n in range(1, 7)}})
+    _json("models/item/l490_marked_stone.json", {"parent": _ref("l490_marked_stone_5")})
+
 
 TEXTURES = [tex_l490_paving, tex_l490_stone, tex_l490_slate, tex_l490_iron, tex_l490_lantern_glass,
             tex_l490_rock, tex_l490_rubble, tex_l490_dead_grass, tex_l490_chain_iron, tex_l490_dead_wood,
-            tex_l490_red_leaves, tex_l490_moon, tex_l490_models]
+            tex_l490_red_leaves, tex_l490_spire, tex_l490_spire_joint, tex_l490_ladder, tex_l490_marks,
+            tex_l490_words, tex_l490_moon, tex_l490_models]
 SOUNDS = []
