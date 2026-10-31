@@ -146,8 +146,14 @@ public final class ModNetwork {
         // layout seed (so the sky can place the far colossal chains).
         registrar.playToClient(Level490StrikePayload.TYPE, Level490StrikePayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.Level490Lightning.receive(payload)));
-        registrar.playToClient(Level490StatePayload.TYPE, Level490StatePayload.STREAM_CODEC,
-                (payload, context) -> com.rickr.backrooms.client.Level490ClientState.receiveSeed(payload.layoutSeed()));
+        registrar.playToClient(Level490StatePayload.TYPE, Level490StatePayload.STREAM_CODEC, (payload, context) -> {
+            // A fresh arrival: forget falls from before; the server sends the ones it remembers next.
+            com.rickr.backrooms.world.Level490Hung.CLIENT.clear();
+            com.rickr.backrooms.client.Level490ClientState.receiveSeed(payload.layoutSeed());
+        });
+        registrar.playToClient(Level490FallPayload.TYPE, Level490FallPayload.STREAM_CODEC,
+                (payload, context) -> com.rickr.backrooms.world.Level490Hung.CLIENT.put(
+                        com.rickr.backrooms.world.Level490Hung.key(payload.i(), payload.j()), new long[] {payload.gen(), payload.start()}));
         registrar.playToClient(Level39QuakePayload.TYPE, Level39QuakePayload.STREAM_CODEC,
                 (payload, context) -> com.rickr.backrooms.client.Level39QuakeEffects.receive(payload.x(), payload.y(), payload.z(), payload.strength()));
 

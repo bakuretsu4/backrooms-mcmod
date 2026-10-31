@@ -248,6 +248,25 @@ whirlwind, the great bridge) and the reel stills above.
   anchor chain (the jolts), metal creaks (the groans), a crack and lashing links (the snap), a
   rock slide (the fall).
 
+## After the stage 3 play-test
+
+The play-test verdict: the atmosphere works; the walk to the spire, the climb and the top do not
+yet (too long and samey, no pull or tension; plain repetitive stairs, too little outside; the top
+an anticlimax), falls should be common, the sky and the cloud sea felt flat. Planned: set pieces on
+the walk, a Gothic Farum Azula spire reworked inside and out, a final climb up the chains with
+something rising beside you as you leap, sky whales (passive pods and a rare great whale, inspired
+by Re:Zero's White Whale but our own design; later the great whale becomes stage 4's creature).
+Concept art for those first. Done so far, the parts that need no concept art:
+
+- **Clouds with depth** (client/Level490Clouds): the cloud sea's top a drifting, shaded height
+  field (rolling mounds, canyons showing the darker layer below), cloud towers far off as stacks of
+  soft puffs, the storm's underside hanging in lumps, anvil clouds on the horizon flickering with
+  lightning, faint moon shafts.
+- **Falls every few minutes**, and the three sure ones (above).
+- **Whale song** (client/Level490WhaleSong): every minute or two a whale sings far off, sometimes
+  answered from elsewhere: NOAA's public-domain recordings (a humpback's song, right whale up-calls,
+  sei whale downsweeps), slowed and darkened.
+
 ## Name and number
 
 **Level 490, "Penance".** 490 is "seventy times seven", how many times you must forgive:

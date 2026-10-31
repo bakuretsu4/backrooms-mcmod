@@ -329,6 +329,21 @@ def tex_l490_words() -> None:
     _save(_scratch(mask, _stone_img()), "l490_words")
 
 
+def tex_l490_puff() -> None:
+    """A soft puff of cloud (RGBA) for the cloud towers: a lumpy round body, denser in the middle,
+    its edge broken into wisps; lighter at the top, where the moon catches it."""
+    rng = G.rng_for(49040)
+    X, Y = G.grid()
+    c = S / 2
+    r = np.hypot(X - c, Y - c) / (S / 2)
+    lumps = G.blur(G.fnoise(rng, beta=1.6, kmin=2), 1.5) * 0.18 + G.fnoise(rng, beta=1.2, kmin=8) * 0.05
+    body = np.clip(1.0 - np.clip(r + lumps, 0, None) ** 1.6, 0, 1)
+    alpha = G.smoothstep(0.0, 0.55, body)
+    shade = 0.78 + 0.22 * (1 - Y / S) + G.fnoise(rng, beta=1.8, kmin=3) * 0.05
+    img = np.dstack([np.clip(shade * 255, 0, 255)] * 3 + [alpha * 255])
+    G.save_png(img, G.TEX / "environment" / "l490_puff.png")
+
+
 def tex_l490_moon() -> None:
     """The moon for the sky (RGBA): a pale disk with darker seas, in a soft glow that fades out."""
     rng = G.rng_for(49006)
@@ -495,5 +510,5 @@ def tex_l490_models() -> None:
 TEXTURES = [tex_l490_paving, tex_l490_stone, tex_l490_slate, tex_l490_iron, tex_l490_lantern_glass,
             tex_l490_rock, tex_l490_rubble, tex_l490_dead_grass, tex_l490_chain_iron, tex_l490_dead_wood,
             tex_l490_red_leaves, tex_l490_spire, tex_l490_spire_joint, tex_l490_ladder, tex_l490_marks,
-            tex_l490_words, tex_l490_moon, tex_l490_models]
+            tex_l490_words, tex_l490_puff, tex_l490_moon, tex_l490_models]
 SOUNDS = []

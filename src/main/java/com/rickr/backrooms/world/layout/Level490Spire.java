@@ -179,8 +179,9 @@ public final class Level490Spire {
     private final double[] discPhase;
     private final double platformPhase;
     private volatile float[][] outline;
-    /** Each rib's centre line {x, y, z, radius} in world coordinates, for drawing it far away. */
-    private final java.util.List<float[][]> ribLines = new java.util.ArrayList<>();
+    private volatile boolean built;
+    private volatile java.util.List<double[][]> ribPaths;
+    private volatile java.util.List<float[][]> ribLines;
     /** Per column (key(u, v)): packed (y << 5 | block) to set, in order. */
     private final Long2ObjectOpenHashMap<IntArrayList> decor = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectOpenHashMap<IntArrayList> route = new Long2ObjectOpenHashMap<>();
@@ -190,7 +191,7 @@ public final class Level490Spire {
         long key = Hash.of(seed, cx, cz, 4960);
         Level490Spire spire = CACHE.get(key);
         if (spire == null || spire.seed != seed || spire.cx != cx || spire.cz != cz) {
-            if (CACHE.size() > 32) {
+            if (CACHE.size() > 128) {
                 CACHE.clear();
             }
             spire = new Level490Spire(seed, cx, cz, q);
@@ -235,8 +236,18 @@ public final class Level490Spire {
             discPhase[k] = Hash.unit(Hash.mix(h + 8)) * Math.PI * 2;
         }
         platformPhase = Hash.unit(seed, cx, cz, 4964) * Math.PI * 2;
-        buildDecor();
-        buildRoute();
+    }
+
+    /**
+     * The blocks are only worked out when a column of this spire is first built (server side): the
+     * client only ever needs a spire's outline and ribs for drawing it far off, which are cheap.
+     */
+    private synchronized void build() {
+        if (!built) {
+            buildDecor();
+            buildRoute();
+            built = true;
+        }
     }
 
     public int centreX() {
@@ -454,9 +465,54 @@ public final class Level490Spire {
         return o;
     }
 
-    /** Each rib's centre line, {x, y, z, radius} points in world coordinates. */
+    /**
+     * Each rib's centre line in this spire's frame: {u, y, v, radius} points from its root in the
+     * body, curling round and down, thinning to a point.
+     */
+    private java.util.List<double[][]> ribPaths() {
+        java.util.List<double[][]> paths = ribPaths;
+        if (paths == null) {
+            paths = new java.util.ArrayList<>();
+            for (int level : RIB_LEVELS) {
+                for (int i = 0; i < 4; i++) {
+                    long h = Hash.of(seed, cx + level, cz + i, 4962);
+                    double a0 = Math.toRadians(45 + 90 * i + (Hash.unit(h) - 0.5) * 24);
+                    double sweep = Math.toRadians(14 + 16 * Hash.unit(Hash.mix(h))) * (((h >>> 8) & 1) == 0 ? 1 : -1);
+                    double len = 12 + 6 * Hash.unit(Hash.mix(h + 2));
+                    double drop = 10 + 8 * Hash.unit(Hash.mix(h + 3));
+                    double root = extent(Math.toDegrees(a0), level - 2, level + 2) - 1.5;
+                    double[][] path = new double[51][];
+                    for (int step = 0; step <= 50; step++) {
+                        double t = step / 50.0;
+                        double a = a0 + sweep * t;
+                        double rr = root + len * Math.sin(t * Math.PI * 0.6);
+                        path[step] = new double[] {rr * Math.cos(a), level - drop * Math.pow(t, 1.6), rr * Math.sin(a), 2.3 - 1.3 * t};
+                    }
+                    paths.add(path);
+                }
+            }
+            ribPaths = paths;
+        }
+        return paths;
+    }
+
+    /** Each rib's centre line, {x, y, z, radius} points in world coordinates (every fifth point). */
     public java.util.List<float[][]> ribLines() {
-        return ribLines;
+        java.util.List<float[][]> lines = ribLines;
+        if (lines == null) {
+            lines = new java.util.ArrayList<>();
+            for (double[][] path : ribPaths()) {
+                float[][] line = new float[path.length / 5 + 1][];
+                for (int k = 0; k < path.length; k += 5) {
+                    double[] p = path[k];
+                    line[k / 5] = new float[] {(float) (cx + 0.5 + worldDx(p[0], p[2])), (float) p[1],
+                            (float) (cz + 0.5 + worldDz(p[0], p[2])), (float) p[3]};
+                }
+                lines.add(line);
+            }
+            ribLines = lines;
+        }
+        return lines;
     }
 
     private double worldDx(double u, double v) {
@@ -522,6 +578,9 @@ public final class Level490Spire {
         int dz = z - cz;
         if (Math.abs(dx) > REACH || Math.abs(dz) > REACH) {
             return;
+        }
+        if (!built) {
+            build();
         }
         int u = relU(dx, dz);
         int v = relV(dx, dz);
@@ -660,29 +719,9 @@ public final class Level490Spire {
     private void buildDecor() {
         Long2IntOpenHashMap voxels = new Long2IntOpenHashMap();
         // Ribs: out of the body, curling round and down, thinning to a point.
-        for (int level : RIB_LEVELS) {
-            for (int i = 0; i < 4; i++) {
-                long h = Hash.of(seed, cx + level, cz + i, 4962);
-                double a0 = Math.toRadians(45 + 90 * i + (Hash.unit(h) - 0.5) * 24);
-                double sweep = Math.toRadians(14 + 16 * Hash.unit(Hash.mix(h))) * (((h >>> 8) & 1) == 0 ? 1 : -1);
-                double len = 12 + 6 * Hash.unit(Hash.mix(h + 2));
-                double drop = 10 + 8 * Hash.unit(Hash.mix(h + 3));
-                double root = extent(Math.toDegrees(a0), level - 2, level + 2) - 1.5;
-                float[][] line = new float[11][];
-                for (int step = 0; step <= 50; step++) {
-                    double t = step / 50.0;
-                    double a = a0 + sweep * t;
-                    double rr = root + len * Math.sin(t * Math.PI * 0.6);
-                    double u = rr * Math.cos(a);
-                    double v = rr * Math.sin(a);
-                    double y = level - drop * Math.pow(t, 1.6);
-                    double th = 2.3 - 1.3 * t;
-                    sphere(voxels, u, y, v, th, SPIRE);
-                    if (step % 5 == 0) {
-                        line[step / 5] = new float[] {(float) (cx + 0.5 + worldDx(u, v)), (float) y, (float) (cz + 0.5 + worldDz(u, v)), (float) th};
-                    }
-                }
-                ribLines.add(line);
+        for (double[][] rib : ribPaths()) {
+            for (double[] p : rib) {
+                sphere(voxels, p[0], p[1], p[2], p[3], SPIRE);
             }
         }
         // Broken chunks of it floating round it, clear of the ladders' axes, the chains and the leap.

@@ -15,13 +15,17 @@ and the chains (client/Level490ChainEvents, client/Level490SkyHung):
   chain_jolt   a far chain jerked taut: a clank rolling on like thunder
   chain_snap   a far chain breaking under a hung ruin
   collapse     the ruin falling into the cloud sea, heard long after
+and the whales (client/Level490WhaleSong), from NOAA's public-domain recordings (tools/vendor/noaa):
+  whale_call   a sky whale singing far off: humpback song phrases, slowed (something far bigger)
+  whale_far    farther still, deeper: right whale up-calls and sei whale downsweeps
 Everything that is meant to sound enormous is a real sound slowed down (lower and longer), its
 highs taken away by the distance, and given a long dark tail (a made-up impulse response: no
 extra recordings).
 
 The recordings are CC0 field recordings from Freesound (tools/vendor/freesound, see its
 License.txt and CREDITS.md). Loudness targets (LUFS): close -16, roll -20, far -27; the loops
--30 to -34 (their sounds.json volumes do the rest); snap -20, jolt -21, collapse -22, creak -24.
+-30 to -34 (their sounds.json volumes do the rest); snap -20, jolt -21, collapse -22, creak -24,
+whale_call -24, whale_far -27.
 
 Run only these with:  python tools/gen_assets.py level490_
 """
@@ -211,6 +215,41 @@ def snd_level490_chain_creak() -> None:
         _save(loud(x, -24), OUT / f"chain_creak_{k + 1}.ogg", fade_out=1.0)
 
 
+def _noaa(name: str) -> np.ndarray:
+    """A NOAA whale recording (tools/vendor/noaa), mono at SR."""
+    import soundfile as sf
+    from pathlib import Path
+    x, sr = sf.read(str(Path(__file__).resolve().parents[1] / "vendor" / "noaa" / f"{name}.ogg"))
+    assert sr == SR, (name, sr)
+    return x.mean(axis=1) if x.ndim == 2 else x
+
+
+def snd_level490_whale_call() -> None:
+    """A sky whale singing far off: humpback song phrases, slowed to something far bigger, the
+    highs gone with the distance, rolling on for seconds after."""
+    song = _clean(_noaa("humpback_song"), 40, 8000)
+    for k, (a, b) in enumerate(((6.0, 11.0), (13.0, 16.0), (17.0, 20.5), (21.0, 29.0), (34.5, 38.0))):
+        x = _slow(song[int(a * SR):int(b * SR)], 0.75)
+        i = int(0.3 * SR)
+        x[:i] *= np.linspace(0, 1, i)
+        x = _space(_dark(x, 30, 2600), 6.0, 0.55, 4940 + k)
+        _save(loud(x, -24), OUT / f"whale_call_{k + 1}.ogg", fade_out=3.0)
+
+
+def snd_level490_whale_far() -> None:
+    """Whales farther off still: deep up-calls and falling moans, nearly lost in the storm."""
+    upcall = _clean(_noaa("right_whale_upcall"), 30, 4000)
+    down = _clean(_noaa("sei_whale_downsweep"), 20, 2000)
+    takes = [_slow(upcall[int(4.2 * SR):int(6.6 * SR)], 0.6), _slow(upcall[int(7.4 * SR):int(9.8 * SR)], 0.55),
+             _slow(down[0:int(4.0 * SR)], 0.75)]
+    for k, x in enumerate(takes):
+        i = int(0.2 * SR)
+        x[:i] *= np.linspace(0, 1, i)
+        x = _space(_dark(x, 20, 900), 7.0, 0.7, 4950 + k)
+        _save(loud(x, -27), OUT / f"whale_far_{k + 1}.ogg", fade_out=3.0)
+
+
 SOUNDS = [snd_level490_thunder_close, snd_level490_thunder_roll, snd_level490_thunder_far, snd_level490_wind,
           snd_level490_wire, snd_level490_whirlwind, snd_level490_rumble, snd_level490_drone,
-          snd_level490_chain_jolt, snd_level490_chain_snap, snd_level490_collapse, snd_level490_chain_creak]
+          snd_level490_chain_jolt, snd_level490_chain_snap, snd_level490_collapse, snd_level490_chain_creak,
+          snd_level490_whale_call, snd_level490_whale_far]

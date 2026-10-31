@@ -1,0 +1,9 @@
+Whale recordings from NOAA Fisheries' Passive Acoustics Group ("Sounds in the Ocean: marine
+mammals", https://www.fisheries.noaa.gov/national/science-data/sounds-ocean-mammals). Works of the
+U.S. federal government, in the public domain in the United States (17 U.S.C. 105). Converted to
+44.1 kHz mono Ogg Vorbis, otherwise unchanged. Processed into Level 490's whale song by
+tools/level_assets/level490_sounds.py.
+
+humpback_song.ogg          Meno-song-NOAA-PAGroup-13-humpback-clip.mp3 (humpback whale song)
+right_whale_upcall.ogg     Eugl-upcall-NOAA-PAGroup-01-right-clip-1.mp3 (North Atlantic right whale up-calls)
+sei_whale_downsweep.ogg    Babo-downsweep-NOAA-PAGroup-06-x2speed-sei-whale-clip.mp3 (sei whale downsweeps, at twice their real speed)

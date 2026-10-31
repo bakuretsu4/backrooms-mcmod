@@ -4389,5 +4389,23 @@
       {"name": "backrooms:level490/collapse_2", "attenuation_distance": 48}
     ],
     "subtitle": "subtitles.backrooms.level490.collapse"
+  },
+  "level490.whale_call": {
+    "sounds": [
+      {"name": "backrooms:level490/whale_call_1", "attenuation_distance": 48},
+      {"name": "backrooms:level490/whale_call_2", "attenuation_distance": 48},
+      {"name": "backrooms:level490/whale_call_3", "attenuation_distance": 48},
+      {"name": "backrooms:level490/whale_call_4", "attenuation_distance": 48},
+      {"name": "backrooms:level490/whale_call_5", "attenuation_distance": 48}
+    ],
+    "subtitle": "subtitles.backrooms.level490.whale_call"
+  },
+  "level490.whale_far": {
+    "sounds": [
+      {"name": "backrooms:level490/whale_far_1", "attenuation_distance": 48},
+      {"name": "backrooms:level490/whale_far_2", "attenuation_distance": 48},
+      {"name": "backrooms:level490/whale_far_3", "attenuation_distance": 48}
+    ],
+    "subtitle": "subtitles.backrooms.level490.whale_far"
   }
 }

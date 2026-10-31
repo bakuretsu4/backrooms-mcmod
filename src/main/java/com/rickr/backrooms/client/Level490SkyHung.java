@@ -9,6 +9,8 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.Hash;
+import com.rickr.backrooms.world.Level490Hung;
+import com.rickr.backrooms.world.Level490Hung.Life;
 import com.rickr.backrooms.world.layout.Level490Layout;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import java.util.ArrayList;
@@ -35,29 +37,31 @@ import org.joml.Vector3f;
  * fortress, a broken tower, a span of a great bridge. Debris drifts round them. They are only ever
  * sky (never blocks): dark shapes in the haze, their moon side lit, lit up by lightning near them.
  *
- * <p>Now and then one's chains snap and it falls into the cloud sea, tilting as it goes; you hear
- * the chains break, and later the fall, as late as sound takes to come that far
- * (Level490ChainEvents#hear). Each ruin's life is worked out from the layout seed and the game
- * clock alone, so everyone sees the same ruin fall at the same moment, nothing needs sending, and a
- * fallen ruin stays gone; much later another hangs where it was, emerging from the haze.
+ * <p>Every few minutes one's chains snap somewhere around you and it falls into the cloud sea,
+ * tilting as it goes; you hear the chains break, and later the fall, as late as sound takes to come
+ * that far (Level490ChainEvents#hear). When each ruin falls comes from world/Level490Hung (the
+ * layout seed and the game clock, plus the falls the server forces at key moments,
+ * world/Level490Falls), so everyone sees the same ruin fall at the same moment; a fallen ruin stays
+ * gone until another hangs where it was, emerging from the haze.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Level490SkyHung {
-    /** One ruin (or none) per cell this big. */
-    private static final int CELL = 1500;
+    private static final int CELL = Level490Hung.CELL;
     /** Nearer than this the haze hides them; they come clear by CLEAR, and fade out past FAR. */
     private static final double NEAR = 500.0;
     private static final double CLEAR = 900.0;
     private static final double FAR = 7000.0;
     /** Haze thickens over this many blocks (e-folding). */
     private static final double HAZE = 2600.0;
-    private static final double HOUR = 72000.0;
-    /** A fall lasts this long (ticks); a new ruin emerges from the haze over APPEAR. */
-    private static final double FALL = 900.0;
+    /** A new ruin emerges from the haze over this many ticks. */
     private static final double APPEAR = 6000.0;
     /** Seconds a fall takes to reach well below the top of the cloud sea. */
     private static final double FALL_SECONDS = 26.0;
     private static final float TOP = 640.0f;
+    /** Only the nearest this many are drawn. */
+    private static final int MAX_DRAWN = 16;
+    /** Chains are drawn link by link nearer than this; farther, as one strip each. */
+    private static final double LINKS_WITHIN = 2000.0;
     private static final Vector3f MOON = new Vector3f((float) (Math.cos(Math.toRadians(24)) * Math.cos(Math.toRadians(35))),
             (float) Math.sin(Math.toRadians(24)), (float) (Math.cos(Math.toRadians(24)) * Math.sin(Math.toRadians(35))));
 
@@ -78,47 +82,16 @@ public final class Level490SkyHung {
 
     private record Shape(List<Part> parts, float[][] anchors, List<Debris> debris, float radius, Vector3f tiltAxis, float tilt) {}
 
-    /** Where cell (i, j)'s ruin is in its life at game time t (ticks), or null if the cell is empty now. */
-    record Life(long id, double x, double z, double y, double age, double falls) {
-        boolean falling() {
-            return age >= falls;
-        }
-
-        double fallSeconds() {
-            return (age - falls) / 20.0;
-        }
-    }
-
     private static final Map<Long, Shape> SHAPES = new HashMap<>();
+    /** A unit cube (half size 1) for the drifting debris, scaled and turned as each piece is drawn. */
+    private static final Part CUBE = box(0, 0, 0, 1, 1, 1, 0, ROCK);
     private static final Set<Long> HEARD = new HashSet<>();
 
     private Level490SkyHung() {}
 
-    /** Cell (i, j)'s ruin at game time t, from the layout seed and the clock alone. */
+    /** Cell (i, j)'s ruin at game time t (shared with the server: world/Level490Hung). */
     static Life life(long seed, int i, int j, double t) {
-        long h = Hash.of(seed, i, j, 4980);
-        if (Hash.unit(h) > 0.55) {
-            return null;
-        }
-        // Each ruin hangs for hours, then falls; some time later another hangs here.
-        double period = HOUR * (4 + 6 * Hash.unit(Hash.mix(h)));
-        double gap = 1200 * (20 + 30 * Hash.unit(Hash.mix(h + 1)));
-        double phase = t + Hash.unit(Hash.mix(h + 2)) * period;
-        long gen = (long) Math.floor(phase / period);
-        double age = phase - gen * period;
-        double falls = period - gap;
-        if (age > falls + FALL) {
-            return null;
-        }
-        long g = Hash.of(h, (int) gen, (int) (gen >>> 32), 4981);
-        double x = (i + 0.15 + 0.7 * Hash.unit(g)) * CELL;
-        double z = (j + 0.15 + 0.7 * Hash.unit(Hash.mix(g))) * CELL;
-        // Never over a spire's island: that is where you are going.
-        int[] site = Level490Layout.siteCentre(seed, (int) x, (int) z);
-        if (Math.hypot(x - site[0], z - site[1]) < 450) {
-            return null;
-        }
-        return new Life(g, x, z, 170 + 260 * Hash.unit(Hash.mix(g + 1)), age, falls);
+        return Level490Hung.life(seed, i, j, t, Level490Hung.CLIENT);
     }
 
     private static double now() {
@@ -145,7 +118,7 @@ public final class Level490SkyHung {
             for (int j = cj - reach; j <= cj + reach; j++) {
                 Life life = life(seed, i, j, t);
                 if (life != null) {
-                    double d = Math.hypot(life.x - eye.x, life.z - eye.z);
+                    double d = Math.hypot(life.x() - eye.x, life.z() - eye.z);
                     if (d > NEAR && d < FAR) {
                         lives.add(life);
                     }
@@ -155,75 +128,118 @@ public final class Level490SkyHung {
         if (lives.isEmpty()) {
             return;
         }
-        // Farthest first: no depth buffer up here, so nearer ruins simply paint over farther ones.
-        lives.sort((a, b) -> Double.compare(Math.hypot(b.x - eye.x, b.z - eye.z), Math.hypot(a.x - eye.x, a.z - eye.z)));
+        // The nearest few only; farthest first: no depth buffer up here, so nearer ruins simply paint over farther ones.
+        lives.sort((p, q) -> Double.compare(Math.hypot(p.x() - eye.x, p.z() - eye.z), Math.hypot(q.x() - eye.x, q.z() - eye.z)));
+        if (lives.size() > MAX_DRAWN) {
+            lives.subList(MAX_DRAWN, lives.size()).clear();
+        }
+        java.util.Collections.reverse(lives);
         float[] fog = Level490Atmosphere.fogColour(new float[3]);
         double seconds = (System.currentTimeMillis() % 3_600_000L) / 1000.0;
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionColorShader);
+        Vector3f v = new Vector3f();
+        Vector3f n = new Vector3f();
         for (Life life : lives) {
-            Shape shape = shape(life.id);
-            double d = Math.hypot(life.x - eye.x, life.z - eye.z);
+            Shape shape = shape(life.id());
+            double d = Math.hypot(life.x() - eye.x, life.z() - eye.z);
             float vis = (float) (smooth((d - NEAR) / (CLEAR - NEAR)) * (1.0 - smooth((d - FAR * 0.8) / (FAR * 0.2)))
-                    * Math.min(1.0, life.age / APPEAR));
+                    * Math.min(1.0, life.age() / APPEAR));
             if (vis < 0.01f) {
                 continue;
             }
-            float glow = Level490Lightning.cloudGlow(life.x, life.z);
+            float glow = Level490Lightning.cloudGlow(life.x(), life.z());
             float haze = (float) (1.0 - Math.exp(-d / HAZE)) * (1.0f - 0.6f * glow);
             float scale = (float) Math.min(1.0, 0.9 * far / (d + 600.0));
             // Falling: it drops faster and faster into the cloud sea, tilting over.
             double fs = life.falling() ? life.fallSeconds() : 0.0;
-            double g = 2.0 * (life.y - 40.0) / (FALL_SECONDS * FALL_SECONDS);
+            double g = 2.0 * (life.y() - 40.0) / (FALL_SECONDS * FALL_SECONDS);
             float dy = (float) (-0.5 * g * fs * fs);
-            Quaternionf tilt = new Quaternionf().fromAxisAngleRad(shape.tiltAxis, (float) (shape.tilt * (1.0 - Math.exp(-fs / 6.0))));
-            RenderSystem.enableCull();
-            BufferBuilder tris = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            List<Part> parts = new ArrayList<>(shape.parts);
-            for (Debris b : shape.debris) {
+            Quaternionf tilt = fs > 0 ? new Quaternionf().fromAxisAngleRad(shape.tiltAxis, (float) (shape.tilt * (1.0 - Math.exp(-fs / 6.0)))) : null;
+            Vector3f origin = new Vector3f((float) (life.x() - eye.x), (float) (life.y() - eye.y) + dy, (float) (life.z() - eye.z));
+            // Its parts and its drifting debris, farthest first.
+            int parts = shape.parts.size();
+            int count = parts + shape.debris.size();
+            float[] far2 = new float[count];
+            float[][] debrisAt = new float[shape.debris.size()][];
+            for (int k = 0; k < parts; k++) {
+                Part p = shape.parts.get(k);
+                far2[k] = place(v.set(p.cx, p.cy, p.cz), tilt, origin).lengthSquared();
+            }
+            for (int k = 0; k < debrisAt.length; k++) {
+                Debris b = shape.debris.get(k);
                 float a = (float) (b.angle + b.speed * seconds);
                 float orbit = (float) (b.orbit * (1.0 + 0.05 * fs));
-                parts.add(box(orbit * (float) Math.cos(a), b.y, orbit * (float) Math.sin(a), b.size, b.size, b.size, a, ROCK));
+                debrisAt[k] = new float[] {orbit * (float) Math.cos(a), b.y, orbit * (float) Math.sin(a), b.size, a};
+                far2[parts + k] = place(v.set(debrisAt[k][0], debrisAt[k][1], debrisAt[k][2]), tilt, origin).lengthSquared();
             }
-            Vector3f origin = new Vector3f((float) (life.x - eye.x), (float) (life.y - eye.y) + dy, (float) (life.z - eye.z));
-            parts.sort((p, q) -> Float.compare(dist(q, tilt, origin), dist(p, tilt, origin)));
-            Vector3f v = new Vector3f();
-            Vector3f n = new Vector3f();
-            for (Part p : parts) {
+            Integer[] order = new Integer[count];
+            for (int k = 0; k < count; k++) {
+                order[k] = k;
+            }
+            java.util.Arrays.sort(order, (p, q) -> Float.compare(far2[q], far2[p]));
+            RenderSystem.enableCull();
+            BufferBuilder tris = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            for (int idx : order) {
+                float[] at = idx < parts ? null : debrisAt[idx - parts];
+                Part p = at == null ? shape.parts.get(idx) : CUBE;
+                float[] colour = at == null ? p.colour : ROCK;
+                float c = at == null ? 1 : (float) Math.cos(at[4]);
+                float sn = at == null ? 0 : (float) Math.sin(at[4]);
                 for (int k = 0; k < p.normals.length / 3; k++) {
-                    tilt.transform(n.set(p.normals[k * 3], p.normals[k * 3 + 1], p.normals[k * 3 + 2]));
+                    n.set(p.normals[k * 3], p.normals[k * 3 + 1], p.normals[k * 3 + 2]);
+                    if (at != null) {
+                        n.set(n.x * c - n.z * sn, n.y, n.x * sn + n.z * c);
+                    }
+                    if (tilt != null) {
+                        tilt.transform(n);
+                    }
                     float shade = 0.30f + 0.55f * Math.max(0.0f, n.dot(MOON)) + 0.8f * glow;
-                    float r = p.colour[0] * shade * (1 - haze) + fog[0] * haze;
-                    float gg = p.colour[1] * shade * (1 - haze) + fog[1] * haze;
-                    float bl = p.colour[2] * shade * (1 - haze) + fog[2] * haze;
-                    for (int c = 0; c < 3; c++) {
-                        int o = k * 9 + c * 3;
-                        tilt.transform(v.set(p.tris[o], p.tris[o + 1], p.tris[o + 2])).add(origin).mul(scale);
+                    float r = colour[0] * shade * (1 - haze) + fog[0] * haze;
+                    float gg = colour[1] * shade * (1 - haze) + fog[1] * haze;
+                    float bl = colour[2] * shade * (1 - haze) + fog[2] * haze;
+                    for (int corner = 0; corner < 3; corner++) {
+                        int o = k * 9 + corner * 3;
+                        if (at == null) {
+                            v.set(p.tris[o], p.tris[o + 1], p.tris[o + 2]);
+                        } else {
+                            float x = p.tris[o] * at[3];
+                            float z = p.tris[o + 2] * at[3];
+                            v.set(at[0] + x * c - z * sn, at[1] + p.tris[o + 1] * at[3], at[2] + x * sn + z * c);
+                        }
+                        place(v, tilt, origin).mul(scale);
                         tris.addVertex(view, v.x, v.y, v.z).setColor(r, gg, bl, vis);
                     }
                 }
             }
             BufferUploader.drawWithShader(tris.buildOrThrow());
             RenderSystem.disableCull();
-            // Its chains, up into the storm; snapped, they whip up and are gone.
+            // Its chains, up into the storm; snapped, they whip up and are gone. Far off, where a link
+            // would be smaller than a pixel, each is one dark strip.
             BufferBuilder quads = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-            int[] count = {0};
+            int[] drawn = {0};
             for (float[] a : shape.anchors) {
-                double ax = life.x + a[0];
-                double az = life.z + a[2];
-                float bottom = (float) (life.y + a[1]);
+                double ax = life.x() + a[0];
+                double az = life.z() + a[2];
+                float bottom = (float) (life.y() + a[1]);
                 float alpha = vis * (1 - haze * 0.7f);
                 if (life.falling()) {
                     bottom += (float) (25 + 50 * (1 - Math.exp(-fs * 1.5)));
                     alpha *= (float) Math.max(0.0, 1.0 - fs / 5.0);
                 }
-                if (alpha > 0.02f) {
+                if (alpha <= 0.02f) {
+                    continue;
+                }
+                if (d < LINKS_WITHIN) {
                     Level490SkyChains.chain(quads, view, eye, far, ax, az, 0.55f, (float) Math.abs((a[0] * 13 + a[2] * 7) % 22), bottom, TOP, alpha, d,
-                            0.06f, count);
+                            0.06f, drawn);
+                } else {
+                    strip(quads, view, eye, ax, bottom, az, scale, alpha * 0.8f);
+                    drawn[0]++;
                 }
             }
-            if (count[0] > 0) {
+            if (drawn[0] > 0) {
                 BufferUploader.drawWithShader(quads.buildOrThrow());
             } else {
                 quads.build();
@@ -232,8 +248,29 @@ public final class Level490SkyHung {
         RenderSystem.disableBlend();
     }
 
-    private static float dist(Part p, Quaternionf tilt, Vector3f origin) {
-        return tilt.transform(new Vector3f(p.cx, p.cy, p.cz)).add(origin).lengthSquared();
+    /** A point in the ruin's frame, turned by its fall (if falling) and moved to where it hangs. */
+    private static Vector3f place(Vector3f p, Quaternionf tilt, Vector3f origin) {
+        if (tilt != null) {
+            tilt.transform(p);
+        }
+        return p.add(origin);
+    }
+
+    /** A far chain: one dark strip from (x, bottom, z) up to the storm, facing the camera. */
+    private static void strip(BufferBuilder quads, Matrix4f view, Vec3 eye, double x, float bottom, double z, float scale, float alpha) {
+        float px = (float) (x - eye.x);
+        float pz = (float) (z - eye.z);
+        float len = (float) Math.hypot(px, pz);
+        float half = 4.0f;
+        float sx = -pz / len * half;
+        float sz = px / len * half;
+        float y0 = (float) (bottom - eye.y);
+        float y1 = (float) (TOP - eye.y);
+        float c = 0.06f;
+        quads.addVertex(view, (px - sx) * scale, y0 * scale, (pz - sz) * scale).setColor(c, c, c * 1.15f, alpha);
+        quads.addVertex(view, (px + sx) * scale, y0 * scale, (pz + sz) * scale).setColor(c, c, c * 1.15f, alpha);
+        quads.addVertex(view, (px + sx) * scale, y1 * scale, (pz + sz) * scale).setColor(c, c, c * 1.15f, 0.0f);
+        quads.addVertex(view, (px - sx) * scale, y1 * scale, (pz - sz) * scale).setColor(c, c, c * 1.15f, 0.0f);
     }
 
     private static double smooth(double x) {
@@ -260,19 +297,19 @@ public final class Level490SkyHung {
         for (int i = ci - reach; i <= ci + reach; i++) {
             for (int j = cj - reach; j <= cj + reach; j++) {
                 Life life = life(seed, i, j, t);
-                if (life == null || !life.falling() || life.fallSeconds() > 3.0 || !HEARD.add(life.id)) {
+                if (life == null || !life.falling() || life.fallSeconds() > 3.0 || !HEARD.add(life.id())) {
                     continue;
                 }
-                double d = Math.hypot(life.x - mc.player.getX(), life.z - mc.player.getZ());
+                double d = Math.hypot(life.x() - mc.player.getX(), life.z() - mc.player.getZ());
                 if (d > 5000) {
                     continue;
                 }
                 float volume = (float) Math.max(0.3, Math.min(1.0, 1.3 - d / 4000.0));
-                Level490ChainEvents.hear(ModSounds.LEVEL490_CHAIN_SNAP.get(), life.x, life.z, volume, 0.9f, 0);
+                Level490ChainEvents.hear(ModSounds.LEVEL490_CHAIN_SNAP.get(), life.x(), life.z(), volume, 0.9f, 0);
                 // It reaches the top of the cloud sea (y 148) this long after the snap.
-                double g = 2.0 * (life.y - 40.0) / (FALL_SECONDS * FALL_SECONDS);
-                double hit = Math.sqrt(2.0 * Math.max(0.0, life.y - 148.0) / g) - life.fallSeconds();
-                Level490ChainEvents.hear(ModSounds.LEVEL490_COLLAPSE.get(), life.x, life.z, volume, 0.9f, (long) (hit * 1000));
+                double g = 2.0 * (life.y() - 40.0) / (FALL_SECONDS * FALL_SECONDS);
+                double hit = Math.sqrt(2.0 * Math.max(0.0, life.y() - 148.0) / g) - life.fallSeconds();
+                Level490ChainEvents.hear(ModSounds.LEVEL490_COLLAPSE.get(), life.x(), life.z(), volume, 0.9f, (long) (hit * 1000));
             }
         }
         if (HEARD.size() > 512) {

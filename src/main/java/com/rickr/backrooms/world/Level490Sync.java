@@ -10,7 +10,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Tells every client that arrives in Level 490 the level's layout seed, so its sky can place the
- * far colossal chains (client/Level490ClientState). Same arrival points as {@link Level39Sync}.
+ * far colossal chains (client/Level490ClientState), and every hung ruin the server has made fall
+ * ({@link Level490Falls}). Same arrival points as {@link Level39Sync}.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
 public final class Level490Sync {
@@ -41,6 +42,7 @@ public final class Level490Sync {
         }
         long seed = BackroomsSeeds.layoutSeed(player.serverLevel(), BackroomsLevel.LEVEL_490);
         PacketDistributor.sendToPlayer(player, new Level490StatePayload(seed));
+        Level490Falls.sendAll(player);
     }
 
     private Level490Sync() {}

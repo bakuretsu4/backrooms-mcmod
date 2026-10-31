@@ -24,6 +24,11 @@
     [Creaking Metal - Slow](https://freesound.org/s/172411/) by EagleStealthTeam,
     [grincements_helvetia](https://freesound.org/s/59160/) by f_ilippo, [Metal creaks](https://freesound.org/s/625616/)
     by hannahbelle144, [Cathedral Mountain rock slide](https://freesound.org/s/500638/) by betchkal
+- Level 490's whale song: recordings by NOAA Fisheries' Passive Acoustics Group (a humpback whale's
+  song, North Atlantic right whale up-calls, sei whale downsweeps) from
+  [Sounds in the Ocean](https://www.fisheries.noaa.gov/national/science-data/sounds-ocean-mammals),
+  U.S. government works in the public domain, vendored in `tools/vendor/noaa/` (see its `License.txt`)
+  and processed by `tools/level_assets/level490_sounds.py`.
 - The letters scratched into Level 490's stairwell stone ("GO BACK DOWN"): the Aileron typeface by
   Sora Sagano ([CC0](https://creativecommons.org/publicdomain/zero/1.0/)), as built into Pillow,
   roughened by `tools/anomaly_assets/level490.py`.
