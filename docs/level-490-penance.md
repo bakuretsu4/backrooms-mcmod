@@ -412,6 +412,24 @@ record:
 - Level 505 "Sky Bridges" (small fan wikis): endless bridges between clouds, no chains or theme.
 - Level 255 "Death Factory" (main wiki): catwalks over an abyss on rusted chains, but a factory.
 
-## Still open
+## Still open (third play-test, 2026-10-31; to do next session)
 
-Nothing planned beyond the play-test notes.
+The user played the walk, the climb and the leap. The creature's look is right ("looks really
+good"); everything else below is still to do.
+
+1. **Something like pieces of a chain pops up at the top of the tower** and shows more the higher
+   you go (their screenshot: `run/screenshots/2026-10-31_03.58.22.png`, a big link shape over the
+   top). Find out why. Suspects: client/Level490ChainTops (the solid links from y 512 up to the
+   storm, built per chain within render distance + 40 and drawn regardless of fog or chunk
+   loading; the cut at y 512 where blocks stop and it starts, or where it hands over to the sky
+   ribbons at y 583, Level490SkyChains.BUILT_TOP); the iron column and collar of the final
+   climb; the chains drawn inside the creature's smoke (client/Level490Creature, drawn with
+   Level490SkyChains.drape).
+2. **The creature never seemed to come up with them on the climb** ("unless I was too fast").
+   They climbed both flights in about 2.5 minutes; it starts at y 40 and rises 1.2 blocks a
+   second, so it was probably always far below the stair. Make it show and close in.
+3. **Not enough tension at all.** The chase needs to be felt: closer, faster, more often seen,
+   more sound; the hand slams and grabs to actually threaten.
+4. **Bring jumping back for Level 490** (the Backrooms-wide no-jumping rule is in
+   client/gameplay/MovementClientEvents): "too many parts of the level where it's needed". With
+   jumping allowed, the stair's broken stretches can go back to real gaps if wanted.
