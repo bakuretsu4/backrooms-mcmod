@@ -47,10 +47,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * and slamming down where you stand. Keep moving: standing about out in the open makes it come
  * sooner. A roof over you (the shelters, the chapel) or a lit lantern near you keeps it off.
  *
- * <p><b>On the tower</b> it rises out of the fog as you start up the outside stair and climbs after
- * you, below you on the outside, faster whenever you stop; if it reaches you, it has you. Now and
- * then a hand slams down onto the stair ahead of you: get past before it lands, or wait (and let it
- * gain). Inside (the half-way room and the stair inside) it can't reach you; it waits.
+ * <p><b>On the tower</b> (after the play-test: "move through the sky, not climb; start from the very
+ * bottom; way too quick") it rises out of the depths below the clouds as you start up the outside
+ * stair, slowly, hanging in the sky off the tower and drifting round it after you, a little slower
+ * than you climb and faster whenever you stop. If it rises level with you, a hand reaches across
+ * for you: keep walking and it closes on nothing. Now and then a hand slams down onto the stair
+ * ahead of you: get past before it lands, or wait (and let it gain). Inside (the half-way room and
+ * the stair inside) it can't reach you; it waits.
  *
  * <p><b>At the top</b> it hauls itself up and holds the top of the tower in its hands, its huge
  * head over the edge staring at you. It does nothing more: as you cross to the chain and climb it,
@@ -79,18 +82,25 @@ public final class Level490Hunt {
     /** Landing within this (horizontally) of you, and this vertically, it has you. */
     private static final double HIT = 2.6;
     private static final double HIT_Y = 3.0;
-    /** On the tower: its head this close below you and it has you; it never falls further behind than MAX_GAP. */
-    private static final double CAUGHT_GAP = 5.0;
-    private static final double MAX_GAP = 45.0;
-    /** Where it rises from (the cloud sea's top). */
+    /** On the tower: its head this close below you and a hand reaches across for you. */
+    private static final double REACH_GAP = 8.0;
+    /** It starts from down here (deep under the cloud sea), and never lags further behind than this. */
+    private static final double DEPTHS_Y = 40.0;
+    private static final double FAR_GAP = 150.0;
+    /** Rising, blocks a second: a little slower than you climb walking, and this much faster each second you stand still. */
+    private static final double RISE = 1.2;
+    private static final double RISE_STILL = 0.4;
+    /** How far out from the tower's axis it hangs in the sky while you climb. */
+    private static final double SKY_OUT = 75.0;
+    private static final int GRAB_LEAD = 25;
+    /** Where the cloud sea's top is (what it rises out of). */
     private static final double SEA_Y = 140.0;
     /** The chains give after this many pulls; or on their own after this long. */
     private static final int PULLS = 12;
     private static final int SHACKLED_MAX = 600;
     /** After a catch it leaves you be this long. */
     private static final int MERCY = 1200;
-    /** How far out from the tower its head is while climbing (it is huge), and at the top. */
-    private static final double HEAD_OUT = 26.0;
+    /** How far out from the tower's axis its head is when it holds the top. */
     private static final double HOLD_OUT = 42.0;
 
     private static final ResourceLocation STILL = Backrooms.id("level490_shackled_still");
@@ -244,45 +254,38 @@ public final class Level490Hunt {
         }
         h.holdAngle = Double.NaN;
 
-        // ---- the tower: it climbs after you ----
+        // ---- the tower: it rises through the sky after you ----
         boolean onTower = outside >= 0 || inside && !Double.isNaN(h.headY) && y > Level490Layout.DECK_Y + 6;
         if (onTower && t >= h.mercyUntil) {
             double angle = Math.atan2(z - cz, x - cx);
             if (Double.isNaN(h.headY)) {
-                // It rises out of the fog below.
-                h.headY = SEA_Y - 40;
-                h.headAngle = angle + 0.6;
-                h.nextSlam = t + 300 + random.nextInt(200);
-                sound(player, ModSounds.LEVEL490_RUMBLE.get(), cx + Math.cos(angle) * 40, y - 40, cz + Math.sin(angle) * 40, 3.0f, 0.5f);
-                sound(player, ModSounds.LEVEL490_CHAIN_JOLT.get(), cx + Math.cos(angle) * 40, y - 60, cz + Math.sin(angle) * 40, 3.0f, 0.6f);
+                // It starts from the very bottom, far below the clouds.
+                h.headY = DEPTHS_Y;
+                h.headAngle = angle + 0.8;
+                h.nextSlam = t + 900 + random.nextInt(400);
+                sound(player, ModSounds.LEVEL490_RUMBLE.get(), cx + Math.cos(angle) * 60, SEA_Y - 20, cz + Math.sin(angle) * 60, 3.0f, 0.45f);
             }
-            // Round the tower after you, lagging a little.
-            double diff = Math.IEEEremainder(angle - 0.35 - h.headAngle, Math.PI * 2);
-            h.headAngle += Math.max(-0.012, Math.min(0.012, diff));
-            // Up after you: rising fast out of the clouds, then climbing, faster the longer you stand still.
+            // Round the tower after you through the sky, lagging behind.
+            double diff = Math.IEEEremainder(angle - 0.5 - h.headAngle, Math.PI * 2);
+            h.headAngle += Math.max(-0.006, Math.min(0.006, diff));
             double speed;
-            if (h.headY < y - MAX_GAP) {
-                speed = 8.0;
-            } else if (inside) {
+            if (inside) {
                 speed = 0;
+            } else if (h.headY < y - FAR_GAP) {
+                speed = 3.0;
             } else {
-                speed = 1.4 + 0.45 * h.still;
+                speed = RISE + RISE_STILL * h.still;
             }
-            h.headY = Math.min(y - 1, h.headY + speed / 20.0);
+            h.headY = Math.min(y + 2, h.headY + speed / 20.0);
             double gap = y - h.headY;
-            double[] s = spire.surface(cx + Math.cos(h.headAngle) * 100, h.headY, cz + Math.sin(h.headAngle) * 100);
-            double ox = s[0] - cx;
-            double oz = s[1] - cz;
-            double ol = Math.max(1, Math.hypot(ox, oz));
-            h.hx = s[0] + ox / ol * HEAD_OUT;
+            h.hx = cx + Math.cos(h.headAngle) * SKY_OUT;
             h.hy = h.headY;
-            h.hz = s[1] + oz / ol * HEAD_OUT;
-            if (!inside && outside >= 0 && gap < CAUGHT_GAP) {
-                caught(player, h, seed, true);
-                return;
-            }
-            // A hand slams onto the stair ahead of you.
-            if (h.land == 0 && !inside && outside >= 0 && t >= h.nextSlam && gap < MAX_GAP - 5) {
+            h.hz = cz + Math.sin(h.headAngle) * SKY_OUT;
+            if (h.land == 0 && !inside && outside >= 0 && gap < REACH_GAP) {
+                // Level with you: a hand reaches across for where you stand.
+                startReach(player, h, Level490ReachPayload.SLAM, h.hx, h.hy - 20, h.hz, x, y, z, t + GRAB_LEAD);
+            } else if (h.land == 0 && !inside && outside >= 0 && t >= h.nextSlam && gap < 90) {
+                // A hand slams onto the stair ahead of you.
                 int f = (int) Math.min(1, Math.floor(outside));
                 double sweep = Level490Spire.flightSweep(f);
                 double sNow = (outside - f) * sweep;
@@ -291,14 +294,14 @@ public final class Level490Hunt {
                     double[] p = spire.flightPoint(f, ahead, 0.5);
                     startReach(player, h, Level490ReachPayload.SLAM, h.hx, h.hy - 20, h.hz, p[0], p[1], p[2], t + SLAM_LEAD);
                 }
-                h.nextSlam = t + 360 + random.nextInt(260) - (long) (h.still * 30);
+                h.nextSlam = t + 400 + random.nextInt(300) - (long) (h.still * 30);
             }
             if (t >= h.nextFlash) {
                 h.nextFlash = t + 300 + random.nextInt(400);
                 strike(player, h.hx + Math.cos(h.headAngle) * 160, h.hz + Math.sin(h.headAngle) * 160, Level490StrikePayload.CLOUD, random);
             }
             landing(player, h, t, inside);
-            send(player, h, CLIMB, (float) Math.max(0, Math.min(1, 1 - (gap - CAUGHT_GAP) / 40.0)));
+            send(player, h, CLIMB, (float) Math.max(0, Math.min(1, 1 - (gap - REACH_GAP) / 60.0)));
             return;
         }
         if (!onTower) {

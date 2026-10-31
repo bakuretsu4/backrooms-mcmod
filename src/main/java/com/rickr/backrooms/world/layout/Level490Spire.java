@@ -144,6 +144,8 @@ public final class Level490Spire {
     /** The outside stair is drawn every this many degrees round its sweep. */
     private static final double STEP_DEG = 0.25;
     private static final double STAIR_WIDTH = 3.0;
+    /** The stair's inner edge never comes nearer the axis than this (see {@link #flight}). */
+    private static final double MIN_INNER = 11.5;
 
     /**
      * A looping stretch of stair B-C: three identical turns from {@code bottom}. Climbing past
@@ -1310,6 +1312,8 @@ public final class Level490Spire {
     private double[][] rin;
     /** Width of each flight's stair every STEP_DEG of its sweep (narrower where it has crumbled). */
     private double[][] wide;
+    /** The highest tread (block y) of the outside stair in each column it crosses. */
+    private final it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap treadTop = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
 
     /** How far round flight f a position is, and the height difference: {s, dy}, or null if not near it. */
     private double[] onFlight(int f, double u, double v, double y) {
@@ -1329,7 +1333,7 @@ public final class Level490Spire {
 
     /**
      * Where to head to keep climbing from world position (x, y, z) on the outside stair: a point
-     * on the middle of its tread {@code ahead} blocks further up, {x, y, z} in world coordinates,
+     * on its inner lane (along the wall, never broken) {@code ahead} blocks further up, {x, y, z} in world coordinates,
      * or null when not on a flight. For the scripted tests and for anything that climbs it.
      */
     public double[] stairGuide(double x, double y, double z, double ahead) {
@@ -1357,9 +1361,10 @@ public final class Level490Spire {
             }
             Flight fl = FLIGHTS[f];
             int k = (int) Math.max(0, Math.min(rin[f].length - 1, at[0] / STEP_DEG));
-            double r = rin[f][k] + wide[f][k] * 0.45;
+            double r = rin[f][k] + 0.5;
             double s = Math.max(0, Math.min(fl.sweep(), at[0] + Math.toDegrees(ahead / r)));
-            return flightPoint(f, s, 0.45);
+            int k2 = (int) Math.max(0, Math.min(rin[f].length - 1, s / STEP_DEG));
+            return flightPoint(f, s, 0.5 / wide[f][k2]); // along the inner lane, which is never broken
         }
         return null;
     }
@@ -1449,9 +1454,11 @@ public final class Level490Spire {
      * proper and clean"). Swept round the body a quarter degree at a time: its inner edge just
      * outside the body at that height (so it bulges out where the body does), 3 wide, steps in half
      * blocks (walked, not jumped), thick stone under it propped on carved brackets. And broken:
-     * gaps you have to jump, stretches crumbled to a block or two wide, a stretch of rotten planks
-     * on posts, a stretch fallen away and crossed on a single plank, rubble on the steps, the stumps
-     * of a railing, candles left by someone. Where it meets a turret or a rib it cuts through.
+     * stretches where it has fallen away but for a ledge a block wide along the wall (you can't
+     * jump in the Backrooms: everything here is walked), stretches crumbled to a block or two wide,
+     * a stretch of rotten planks on posts, a stretch fallen away and crossed on a single plank,
+     * rubble on the wide steps, the stumps of a railing, candles left by someone. Where it meets a
+     * turret or a rib it cuts through.
      */
     private void flight(Flight fl, int f) {
         int n = (int) Math.ceil(fl.sweep() / STEP_DEG) + 1;
@@ -1461,11 +1468,13 @@ public final class Level490Spire {
             int y = (int) Math.floor(fl.y(s));
             radius[k] = extent(mod360(fl.deg0() + s), y - 1, y + 3) + 0.6;
         }
-        // Smooth it a little so the tread doesn't jump in and out block by block.
+        // Smooth it a little so the tread doesn't jump in and out block by block. And never closer to
+        // the axis than MIN_INNER: nearer in, a turn is so short the steps would rise more than half a
+        // block per block walked (a step up you would have to jump).
         double[] smooth = new double[n];
         int w = 24;
         for (int k = 0; k < n; k++) {
-            double m = 0;
+            double m = MIN_INNER;
             for (int j = Math.max(0, k - w); j <= Math.min(n - 1, k + w); j++) {
                 m = Math.max(m, radius[j]);
             }
@@ -1496,7 +1505,10 @@ public final class Level490Spire {
                 }
             }
             wide[f][k] = width;
-            for (double d = 0; d < width; d += 0.25) {
+            // From the body's surface (where MIN_INNER holds the stair out from a slim stretch of
+            // body, the tread is carried in to meet it, so there is no gap to fall through).
+            double inner = Math.min(0, radius[k] - 0.6 - smooth[k] + 0.25);
+            for (double d = inner; d < width; d += 0.25) {
                 double pu = (smooth[k] + d) * Math.cos(a);
                 double pv = (smooth[k] + d) * Math.sin(a);
                 int u = (int) Math.round(pu);
@@ -1525,7 +1537,7 @@ public final class Level490Spire {
             int u = (int) c[0];
             int v = (int) c[1];
             int k = (int) c[3];
-            double d = c[4];
+            double d = Math.max(0, c[4]); // the strip carried in to the body counts as the inner lane
             double width = c[5];
             double s = k * STEP_DEG;
             double frac = s / len;
@@ -1538,7 +1550,7 @@ public final class Level490Spire {
             double r0 = smooth[k];
             boolean wood = frac >= rotten[0] && frac <= rotten[1];
             boolean plankOnly = frac >= fallen[0] && frac <= fallen[1];
-            // A gap a block and a half long along the middle of the tread: one ordinary jump.
+            // Where it has fallen away (all but a ledge along the wall), a block and a half long.
             double gapHalf = Math.toDegrees(0.75 / (r0 + 1.5)) / len;
             boolean gap = false;
             for (double g : gaps) {
@@ -1548,15 +1560,20 @@ public final class Level490Spire {
             long hc = Hash.of(seed, worldX(u, v), worldZ(u, v), 4982 + f);
             // Headroom: 3 clear above the step, whatever it cuts through.
             op(u, v, base + (half ? 1 : 0), base + 3, AIR);
-            if (gap || (plankOnly && Math.abs(d - width / 2 + 0.25) > 0.6)) {
-                continue; // broken off here
+            // Broken off here: but you can't jump (no jumping in the Backrooms), so the inner lane, a
+            // block and a half wide along the wall, is never broken: where the rest has fallen away it is a ledge
+            // to edge round on, and where only a plank is left, the plank lies along the wall.
+            if (gap && d >= 1.6 || plankOnly && d >= 1.6) {
+                continue;
             }
-            if (outer && width >= 2.5 && Hash.unit(hc) < 0.22) {
+            if (outer && d >= 1.0 && width >= 2.5 && Hash.unit(hc) < 0.22) {
                 continue; // the crumbled edge
             }
+            treadTop.put(key(u, v), Math.max(treadTop.getOrDefault(key(u, v), Integer.MIN_VALUE), half ? base : base - 1));
             int tread = wood || plankOnly ? WOOD : PAVING;
             if (half) {
-                op(u, v, base, base, wood || plankOnly ? WOOD : SLAB);
+                // A half step is always a slab (a full block there would be a step up you could only jump).
+                op(u, v, base, base, SLAB);
                 if (!plankOnly) {
                     op(u, v, base - 1, base - 1, wood ? AIR : GOTHIC);
                 }
@@ -1574,8 +1591,8 @@ public final class Level490Spire {
             }
             double roll = Hash.unit(Hash.mix(hc));
             int stand = half ? base + 1 : base;
-            if (!half && d < 1 && roll < 0.025) {
-                op(u, v, stand, stand, RUBBLE);
+            if (!half && d >= 1 && d < 2 && roll < 0.025 && width >= STAIR_WIDTH && !gap && !wood && !plankOnly) {
+                op(u, v, stand, stand, RUBBLE); // only where there is room to walk round it
             } else if (!half && d < 1.5 && roll > 0.985) {
                 op(u, v, stand, stand, CANDLE);
             } else if (!half && outer && !wood && !plankOnly && roll > 0.93) {
@@ -1727,6 +1744,9 @@ public final class Level490Spire {
                 }
                 if (across > 0.6 && Hash.unit(seed, worldX(u, v), worldZ(u, v), 4976) < 0.2) {
                     continue; // crumbled edge
+                }
+                if (treadTop.getOrDefault(key(u, v), Integer.MIN_VALUE) >= PLATFORM_Y - 4) {
+                    continue; // the stair's last steps come up here: leave them be
                 }
                 op(u, v, PLATFORM_Y, PLATFORM_Y, JOINT);
                 if (across <= 0.6) {

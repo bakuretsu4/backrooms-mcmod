@@ -278,12 +278,13 @@ going down into the dark, until the picture breaks up and you are in the next le
   round the outside to the top. From its crumbled top a broken bridge runs out to a
   colossal chain; climb the ladder up it to the collar and step off: the way on, to Level 9. Fall
   anywhere else (into the clouds, or a long fall onto something) and you wake at the last radio you
-  used, unhurt. And something hunts you: a colossal shape of dark ash like the Mind Flayer, white
-  eyes in a huge head, long spider legs. On the walk you hear it scraping below the edges, then see
+  used, unhurt. And something hunts you: a colossal shape of drifting smoke like the Mind Flayer,
+  long spider legs fraying into tendrils, a crown of spines and a scatter of dim eyes, hard to see
+  until the lightning shows it. On the walk you hear it scraping below the edges, then see
   it far off in the clouds when lightning flashes, then its hand comes over the edge for you if you
-  stand about in the open (a roof or a lit lantern keeps it off). On the tower it rises out of the
-  fog and climbs after you, faster when you stop, slamming its hand onto the stair ahead; inside the
-  tower you are safe. At the top it holds the tower in its hands and stares at you, then floats in
+  stand about in the open (a roof or a lit lantern keeps it off). On the tower it rises slowly
+  through the sky from far below the clouds after you, faster when you stop, slamming its hand onto
+  the stair ahead and reaching for you if it draws level; inside the tower you are safe. At the top it holds the tower in its hands and stares at you, then floats in
   the sky watching as you climb the chain. If it catches you, you wake chained on a punishment
   platform behind you: pull at the chains (jump) to break free.
 - **Level 9 (the Suburbs):** the last level, through the leap in Level 490. An endless suburb at midnight in thick fog that drains the colour

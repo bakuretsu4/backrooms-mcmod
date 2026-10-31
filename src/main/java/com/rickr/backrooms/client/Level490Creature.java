@@ -30,24 +30,24 @@ import org.joml.Vector3f;
 
 /**
  * Level 490's creature as you see it (world/Level490Hunt decides what it does). After the
- * play-test, "copy the Mind Flayer pretty closely" (Stranger Things' shadow over Hawkins: a tall
- * spindle of smoke, pointed at the top and trailing off below, with very long thick legs coming out
- * of its middle, rising up and out to a sharp knee and down) with what the user asked for: a huge head
- * at the top of the spindle with two white eyes glaring, and arms ending in huge hands.
+ * play-tests: "copy the Mind Flayer pretty closely" (Stranger Things' shadow over Hawkins: a tall
+ * spindle of smoke with very long legs out of its middle rising to a sharp knee and down), then
+ * "way too noticeable... more smoky, not so solid... more eldritch":
  * <ul>
- *   <li><b>Far off</b> on the walk ({@link Level490Hunt#DISTANT}): standing in the cloud sea, its
- *       legs planted far out in the clouds, a black shape you see when lightning flashes behind it,
- *       its eyes faint.</li>
- *   <li><b>Climbing</b> ({@link Level490Hunt#CLIMB}): clinging to the outside of the tower below you,
- *       its legs wrapped round the tower, its hands taking hold above its head one after the other,
- *       its head turned up at you; a hand slams down on the stair ahead.</li>
- *   <li><b>Holding the top</b> ({@link Level490Hunt#HOLD}): its hands on the top's edge, fingers over
- *       the rim, its head over the edge, staring.</li>
- *   <li><b>Floating</b> ({@link Level490Hunt#FLOAT}): it lets go and hangs in the sky off the tower,
- *       its legs trailing, following you up the chain, staring.</li>
+ *   <li>It is made of smoke: thousands of dark ash particles drifting along its body and limbs,
+ *       flowing slowly, its edges fraying, wisps rising off it; nothing solid.</li>
+ *   <li>Hidden, but not quite: in the dark it is only a faint smudge in the fog; lightning shows it
+ *       whole; and it fades when you look straight at it (it is clearest at the edge of your
+ *       sight).</li>
+ *   <li>Eldritch: no face, but a scatter of small dim cold eyes that blink out of step; a crown of
+ *       long curved spines where a head would be; its limbs fray at their ends into tendrils (its
+ *       hands are bunches of them); real chains hang inside the smoke, glimpsed in the flashes.</li>
  * </ul>
- * Drawn in the world (behind the tower when it is behind the tower) from smooth tubes, near-black,
- * edged with a little light and lit up when lightning flashes, with ash and smoke drifting off it.
+ * Its poses: far off in the clouds on the walk ({@link Level490Hunt#DISTANT}); hanging in the sky
+ * off the tower as you climb, its legs trailing down into the clouds ({@link Level490Hunt#CLIMB});
+ * holding the top's edge, tendril-hands over the rim ({@link Level490Hunt#HOLD}); floating after you
+ * as you climb the chain ({@link Level490Hunt#FLOAT}). Its hands reach out of the sky to slam the
+ * stair or grab at you, or up out of the clouds over an island's edge.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Level490Creature {
@@ -129,7 +129,7 @@ public final class Level490Creature {
             return;
         }
         System.arraycopy(HEAD, 0, HEAD_O, 0, 3);
-        double k = stage == Level490Hunt.DISTANT ? 0.02 : 0.2;
+        double k = stage == Level490Hunt.DISTANT ? 0.02 : stage == Level490Hunt.HOLD ? 0.04 : 0.1;
         for (int i = 0; i < 3; i++) {
             HEAD[i] += (TARGET[i] - HEAD[i]) * k;
         }
@@ -147,12 +147,12 @@ public final class Level490Creature {
         grips(mc, t);
     }
 
-    /** Where its legs and hands take hold of the tower (climbing, holding the top), worked out once a tick. */
+    /** Where its legs and hands take hold of the tower when it holds the top, worked out once a tick. */
     private static void grips(Minecraft mc, long t) {
         for (int i = 0; i < 6; i++) {
             GRIP_O[i] = GRIP[i];
         }
-        if (stage != Level490Hunt.CLIMB && stage != Level490Hunt.HOLD || !Level490ClientState.hasSeed()) {
+        if (stage != Level490Hunt.HOLD || !Level490ClientState.hasSeed()) {
             for (int i = 0; i < 6; i++) {
                 GRIP[i] = null;
             }
@@ -164,22 +164,11 @@ public final class Level490Creature {
         double cz = spire.centreZ() + 0.5;
         towerCentre = new double[] {cx, cz};
         double a = Math.atan2(HEAD[2] - cz, HEAD[0] - cx);
-        double y = HEAD[1];
-        double[][] want;
-        if (stage == Level490Hunt.HOLD) {
-            double top = Level490Spire.TOP;
-            want = new double[][] {
-                    {a - 0.42, top + 1}, {a + 0.42, top + 1},          // hands on the rim
-                    {a - 0.8, top - 30}, {a + 0.8, top - 30},          // upper legs
-                    {a - 0.55, top - 95}, {a + 0.55, top - 95}};       // lower legs
-        } else {
-            // Climbing: the hands take hold above the head, one then the other.
-            double phase = t * 0.06;
-            want = new double[][] {
-                    {a - 0.38, y + 14 + 6 * Math.sin(phase)}, {a + 0.38, y + 14 + 6 * Math.sin(phase + Math.PI)},
-                    {a - 0.9, y + 20}, {a + 0.9, y + 20},
-                    {a - 0.6, y - 55}, {a + 0.6, y - 55}};
-        }
+        double top = Level490Spire.TOP;
+        double[][] want = {
+                {a - 0.42, top + 1}, {a + 0.42, top + 1},          // hands on the rim
+                {a - 0.8, top - 30}, {a + 0.8, top - 30},          // upper legs
+                {a - 0.55, top - 95}, {a + 0.55, top - 95}};       // lower legs
         for (int i = 0; i < 6; i++) {
             double gy = want[i][1];
             double[] s = spire.surface(cx + Math.cos(want[i][0]) * 100, Math.min(gy, Level490Spire.TOP - 0.5), cz + Math.sin(want[i][0]) * 100);
@@ -206,7 +195,7 @@ public final class Level490Creature {
     // Drawing
     // ==========================================================================================
 
-    /** A point of a tube: position (camera-relative, unscaled) and radius. */
+    /** A point of a curve through its body: position (camera-relative, unscaled) and how thick it is there. */
     private record P(float x, float y, float z, float r) {}
 
     @SubscribeEvent
@@ -229,9 +218,15 @@ public final class Level490Creature {
         float dist = h.length();
         float far = mc.gameRenderer.getDepthFar();
         float scale = Math.min(1f, 0.85f * far / (dist + 260f));
-        float glow = Level490Lightning.cloudGlow(hx, hz) + Level490Atmosphere.flash() * 0.6f;
+        float flash = Math.min(1f, Level490Lightning.cloudGlow(hx, hz) + Level490Atmosphere.flash() * 0.8f);
         float[] fog = Level490Atmosphere.fogColour(new float[3]);
         double seconds = t / 20.0;
+
+        // How much of it shows: a faint smudge in the dark, whole in a flash; looking straight at it, it fades.
+        Vector3f look = new Vector3f(event.getCamera().getLookVector());
+        float straight = Math.max(0f, look.dot(new Vector3f(h).normalize()));
+        float stare = 1f - 0.45f * smooth01((straight - 0.906f) / (0.985f - 0.906f)); // 25 degrees off .. 10 degrees off
+        float vis = (0.5f + 0.5f * flash) * stare;
 
         // Its frame: facing you (level), right, up.
         Vector3f f = new Vector3f(-h.x, 0, -h.z);
@@ -242,31 +237,41 @@ public final class Level490Creature {
         Vector3f up = new Vector3f(0, 1, 0);
         Vector3f right = new Vector3f(f).cross(up).normalize();
 
-        List<List<P>> tubes = new ArrayList<>();
-        List<float[]> puffs = new ArrayList<>();
-        int smoking;
-
-        // The spindle: its point above the head, the head, a neck, the chest, trailing off below.
-        Vector3f tip = new Vector3f(h).add(new Vector3f(up).mul(18f * SIZE));
+        List<List<P>> curves = new ArrayList<>();
+        // The spindle: from the crown's foot down through the head, a neck, the chest, trailing off below.
+        Vector3f crown = new Vector3f(h).add(new Vector3f(up).mul(HEAD_R * 0.7f));
         List<P> body = new ArrayList<>();
         int n = 46;
-        float lean = stage == Level490Hunt.CLIMB || stage == Level490Hunt.HOLD ? -14f : -6f;
+        float lean = stage == Level490Hunt.HOLD ? -14f : -6f;
         for (int i = 0; i <= n; i++) {
             float s = i / (float) n;
             float sway = (float) Math.sin(seconds * 0.25 + s * 3) * 7 * s * s;
-            Vector3f p = new Vector3f(tip).sub(new Vector3f(up).mul(BODY * s)).add(new Vector3f(f).mul(lean * s * s))
+            Vector3f p = new Vector3f(crown).sub(new Vector3f(up).mul(BODY * s)).add(new Vector3f(f).mul(lean * s * s))
                     .add(new Vector3f(right).mul(sway));
             body.add(new P(p.x, p.y, p.z, spindle(s)));
         }
-        tubes.add(body);
-        smoking = 1;
-        // Shoulders, where the limbs leave the chest.
+        curves.add(body);
+        // The crown: long curved spines out of the top, leaning back and out.
+        for (int k = 0; k < 7; k++) {
+            double a = k * 2 * Math.PI / 7 + 0.3 * Math.sin(k * 3.1);
+            Vector3f out = new Vector3f(right).mul((float) Math.cos(a)).add(new Vector3f(f).mul((float) Math.sin(a) * 0.6f - 0.4f)).normalize();
+            float len = (24 + 16 * (float) Math.abs(Math.sin(k * 2.3))) * SIZE;
+            List<P> spine = new ArrayList<>();
+            for (int i = 0; i <= 10; i++) {
+                float u = i / 10f;
+                Vector3f p = new Vector3f(crown).add(new Vector3f(out).mul(HEAD_R * 0.5f + len * 0.6f * u))
+                        .add(new Vector3f(up).mul(len * (float) Math.sin(u * 1.4f)))
+                        .add(new Vector3f(f).mul(-len * 0.35f * u * u));
+                spine.add(new P(p.x, p.y, p.z, (2.6f - 2.2f * u) * SIZE));
+            }
+            curves.add(spine);
+        }
         Vector3f chest = at(body, 0.27f);
         Vector3f armRoot = at(body, 0.2f);
 
-        // The four legs and the two arms.
+        // The four legs, fraying into tendrils at their ends.
         double[] grip = gripsNow(pt);
-        float[] legAngles = stage == Level490Hunt.FLOAT ? new float[] {-80, 80, -145, 145} : new float[] {-55, 55, -125, 125};
+        float[] legAngles = stage == Level490Hunt.HOLD ? new float[] {-55, 55, -125, 125} : new float[] {-80, 80, -145, 145};
         for (int i = 0; i < 4; i++) {
             Vector3f d = rotate(f, right, legAngles[i]);
             Vector3f s = new Vector3f(chest).add(new Vector3f(d).mul(12 * SIZE));
@@ -274,150 +279,205 @@ public final class Level490Creature {
             Vector3f foot;
             float writhe = (float) Math.sin(seconds * 0.3 + i * 1.7);
             if (grip != null) {
-                int g = i < 2 ? 2 + i : 4 + i - 2;
-                foot = rel(grip, g, cam);
+                foot = rel(grip, 2 + i, cam);
                 Vector3f out = new Vector3f(foot).sub(towerRel(cam, foot.y)).normalize();
                 knee = new Vector3f(s).add(foot).mul(0.5f).add(new Vector3f(out).mul(38 * SIZE)).add(new Vector3f(up).mul(20 * SIZE));
             } else {
-                float reachOut = (stage == Level490Hunt.FLOAT ? 105 : 160) * SIZE;
-                float drop = stage == Level490Hunt.FLOAT ? 150 * SIZE : (float) (hy - SEA + 120);
+                float reachOut = (stage == Level490Hunt.DISTANT ? 160 : 110) * SIZE;
+                // Down into the clouds.
+                float drop = (float) Math.max(60 * SIZE, hy - SEA + 60);
                 knee = new Vector3f(s).add(new Vector3f(d).mul(reachOut * 0.5f)).add(new Vector3f(up).mul((65 + 8 * writhe) * SIZE));
                 foot = new Vector3f(s).add(new Vector3f(d).mul(reachOut)).sub(new Vector3f(up).mul(drop))
                         .add(new Vector3f(right).mul(writhe * 10));
             }
-            tubes.add(limb(s, knee, foot, 6.5f * SIZE, 4.2f * SIZE, 1.0f * SIZE));
+            curves.add(limb(s, knee, foot, 6.5f * SIZE, 4.2f * SIZE, 1.6f * SIZE));
+            Vector3f dir = new Vector3f(foot).sub(knee).normalize();
+            tendrils(curves, foot, dir, up, 5, 26 * SIZE, 0.2f, seconds, i * 7);
         }
-        smoking = tubes.size();
+        // The two arms; their hands are bunches of tendrils.
         for (int side = -1; side <= 1; side += 2) {
             int idx = side < 0 ? 0 : 1;
             Vector3f d = rotate(f, right, side * 75);
             Vector3f s = new Vector3f(armRoot).add(new Vector3f(d).mul(10 * SIZE));
             Vector3f hand;
             Vector3f handFwd;
-            boolean grab = false;
-            Vector3f slam = slamHand(side, cam, t, s, f, right);
+            float curl;
+            Vector3f slam = slamHand(side, cam, t, s, right);
             if (slam != null) {
                 hand = slam;
-                handFwd = new Vector3f(f);
-                grab = false;
+                handFwd = new Vector3f(slam).sub(s).normalize();
+                curl = 0.35f;
             } else if (grip != null) {
                 hand = rel(grip, idx, cam);
                 Vector3f inward = new Vector3f(towerRel(cam, hand.y)).sub(hand);
                 inward.y = 0;
                 handFwd = inward.normalize();
-                grab = true;
-            } else if (stage == Level490Hunt.FLOAT) {
-                // Reaching out a little toward you, open.
+                curl = 0.9f;
+            } else {
+                // Reaching out a little toward you, slowly opening and closing.
                 hand = new Vector3f(s).add(new Vector3f(f).mul(45 * SIZE)).add(new Vector3f(right).mul(side * 38 * SIZE)).add(new Vector3f(up).mul(-12 * SIZE));
                 handFwd = new Vector3f(f);
-            } else {
-                hand = new Vector3f(s).add(new Vector3f(d).mul(40 * SIZE)).sub(new Vector3f(up).mul(90 * SIZE));
-                handFwd = new Vector3f(up).negate();
+                curl = 0.3f + 0.2f * (float) Math.sin(seconds * 0.4 + side);
             }
-            Vector3f out = new Vector3f(hand).sub(s);
             Vector3f elbow = new Vector3f(s).add(hand).mul(0.5f).add(new Vector3f(d).mul(28 * SIZE)).add(new Vector3f(up).mul(-14 * SIZE));
-            if (out.length() < 20 * SIZE) {
-                elbow.add(new Vector3f(up).mul(10 * SIZE));
-            }
-            tubes.add(limb(s, elbow, hand, 5f * SIZE, 3.6f * SIZE, 2.0f * SIZE));
-            hand(tubes, hand, handFwd, up, grab);
+            curves.add(limb(s, elbow, hand, 5f * SIZE, 3.6f * SIZE, 2.2f * SIZE));
+            tendrils(curves, hand, handFwd, up, 7, 20 * SIZE, curl, seconds, 40 + side);
         }
         // An arm out of the clouds over the edge (the walk's reach).
-        edgeArm(tubes, cam, t, up);
-
-        // Ash smoking thinly off the body and the limbs (not the hands: they stay sharp).
-        for (int ti = 0; ti < smoking; ti++) {
-            List<P> tube = tubes.get(ti);
-            for (int i = 0; i < tube.size(); i += 3) {
-                P p = tube.get(i);
-                if (p.r < 2.0f) {
-                    continue;
-                }
-                float drift = (float) ((seconds * 2.5 + i * 3.7 + ti * 11) % 14.0);
-                float ox = (float) Math.sin(i * 2.3 + ti) * p.r * 0.9f;
-                float oz = (float) Math.cos(i * 1.7 + ti * 2) * p.r * 0.9f;
-                float a = 0.13f * (1 - drift / 14f);
-                // Thinner near you, so it never fogs your view.
-                float d = (float) Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
-                a *= Math.min(1f, d / 40f);
-                puffs.add(new float[] {p.x + ox, p.y + drift, p.z + oz, p.r * (0.8f + drift * 0.05f), a});
-            }
-        }
+        edgeArm(curves, cam, t, up, seconds);
 
         Matrix4f pose = event.getPoseStack().last().pose();
         RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(true);
-        RenderSystem.disableCull();
-        RenderSystem.disableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        BufferBuilder tris = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-        float haze = (float) (0.75 * (1 - Math.exp(-dist / 900.0)));
-        for (List<P> tube : tubes) {
-            tube(tris, pose, tube, scale, glow, haze, fog, cam);
-        }
-        MeshData mesh = tris.build();
-        if (mesh != null) {
-            BufferUploader.drawWithShader(mesh);
-        }
-        // The eyes: white, glaring, glowing (faint far off unless lightning shows it).
-        float eyesLit = stage == Level490Hunt.DISTANT ? 0.25f + 0.75f * Math.min(1f, glow) : 1f;
-        RenderSystem.enableBlend();
-        RenderSystem.blendFunc(com.mojang.blaze3d.platform.GlStateManager.SourceFactor.SRC_ALPHA,
-                com.mojang.blaze3d.platform.GlStateManager.DestFactor.ONE);
         RenderSystem.depthMask(false);
+        RenderSystem.disableCull();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+
+        // Chains hanging inside the smoke, glimpsed in the flashes.
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        BufferBuilder links = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        float iron = 0.03f + 0.3f * flash;
+        float ironA = (0.1f + 0.8f * flash) * stare;
+        for (int k = 0; k < 3; k++) {
+            float ox = (k - 1) * 9 * SIZE;
+            float[][] pts = new float[7][];
+            for (int i = 0; i < 7; i++) {
+                Vector3f p = new Vector3f(at(body, 0.12f + 0.12f * i)).add(new Vector3f(right).mul(ox + (float) Math.sin(seconds * 0.2 + k + i) * 3))
+                        .add(new Vector3f(f).mul((float) Math.sin(i * 0.8 + k) * 4));
+                pts[i] = new float[] {p.x, Math.max(p.y, (float) (SEA - cam.y)), p.z};
+            }
+            Level490SkyChains.drape(links, pose, pts, 0.9f, scale, iron, iron * 1.03f, iron * 1.15f, ironA, true);
+        }
+        MeshData linkMesh = links.build();
+        if (linkMesh != null) {
+            BufferUploader.drawWithShader(linkMesh);
+        }
+
+        // The smoke: particles flowing slowly along every curve, frayed at the edges, wisps rising off.
+        List<float[]> puffs = new ArrayList<>();
+        for (int ci = 0; ci < curves.size(); ci++) {
+            smoke(curves.get(ci), ci, seconds, puffs);
+        }
+        puffs.sort((a, b) -> Float.compare(b[0] * b[0] + b[1] * b[1] + b[2] * b[2], a[0] * a[0] + a[1] * a[1] + a[2] * a[2]));
+        float haze = (float) (0.55 * (1 - Math.exp(-dist / 1200.0)));
         RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
         RenderSystem.setShaderTexture(0, PUFF);
-        BufferBuilder glowQuads = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-        Vector3f faceDir = new Vector3f(h).negate().normalize();
-        Vector3f eyeRight = new Vector3f(faceDir).cross(up).normalize();
-        Vector3f head = at(body, 0.075f);
-        for (int side = -1; side <= 1; side += 2) {
-            Vector3f e = new Vector3f(head).add(new Vector3f(faceDir).mul(HEAD_R * 1.35f)).add(new Vector3f(eyeRight).mul(side * 4.2f * SIZE))
-                    .add(new Vector3f(up).mul(1.5f * SIZE));
-            // A hard white core and a wide soft glare.
-            billboard(glowQuads, pose, e, 2.0f * SIZE, 1.0f, 1.0f, 1.0f, eyesLit, scale, up, eyeRight, 0.3f);
-            billboard(glowQuads, pose, e, 2.0f * SIZE, 1.0f, 1.0f, 1.0f, eyesLit, scale, up, eyeRight, 0.3f);
-            billboard(glowQuads, pose, e, 4.5f * SIZE, 0.85f, 0.88f, 1.0f, 0.14f * eyesLit, scale, up, eyeRight, 0.4f);
-        }
-        MeshData glowMesh = glowQuads.build();
-        if (glowMesh != null) {
-            BufferUploader.drawWithShader(glowMesh);
-        }
-        // The smoke, farthest first.
-        RenderSystem.defaultBlendFunc();
-        puffs.sort((a, b) -> Float.compare(b[0] * b[0] + b[1] * b[1] + b[2] * b[2], a[0] * a[0] + a[1] * a[1] + a[2] * a[2]));
         BufferBuilder smoke = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-        float c = 0.03f + 0.12f * Math.min(1f, glow);
         for (float[] p : puffs) {
-            Vector3f at = new Vector3f(p[0], p[1], p[2]);
-            if (p[1] + cam.y < SEA - 10) {
+            float worldY = (float) (p[1] + cam.y);
+            if (worldY < SEA - 20) {
+                continue; // down in the cloud sea
+            }
+            float sea = Math.min(1f, (float) ((worldY - (SEA - 20)) / 50.0));
+            float d = (float) Math.sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+            float a = p[4] * vis * sea * Math.min(1f, d / 30f);
+            if (a < 0.004f) {
                 continue;
             }
-            Vector3f dir = new Vector3f(at).normalize();
-            Vector3f r = new Vector3f(dir).cross(up).normalize();
-            Vector3f u = new Vector3f(r).cross(dir).normalize();
-            float s = p[3];
-            for (int k = 0; k < 4; k++) {
-                float sx = (k == 1 || k == 2) ? 1 : -1;
-                float sy = k >= 2 ? 1 : -1;
-                smoke.addVertex(pose, (at.x + (r.x * sx + u.x * sy) * s) * scale, (at.y + (r.y * sx + u.y * sy) * s) * scale,
-                                (at.z + (r.z * sx + u.z * sy) * s) * scale)
-                        .setUv(sx > 0 ? 1 : 0, sy > 0 ? 0 : 1).setColor(c, c, c * 1.05f, p[4] * (1 - haze));
-            }
+            // Near-black ash: a silhouette against the flash (only a little of it catches the light),
+            // lost in the haze far off.
+            float lum = 0.012f + 0.035f * p[5] * flash;
+            float r = lum * (1 - haze) + fog[0] * haze;
+            float g = lum * (1 - haze) + fog[1] * haze;
+            float b = lum * 1.1f * (1 - haze) + fog[2] * haze;
+            quad(smoke, pose, new Vector3f(p[0], p[1], p[2]), p[3], scale, up, r, g, b, a);
         }
         MeshData smokeMesh = smoke.build();
         if (smokeMesh != null) {
             BufferUploader.drawWithShader(smokeMesh);
         }
+
+        // Many small dim eyes, scattered over where a face would be, cold, blinking out of step.
+        RenderSystem.blendFunc(com.mojang.blaze3d.platform.GlStateManager.SourceFactor.SRC_ALPHA,
+                com.mojang.blaze3d.platform.GlStateManager.DestFactor.ONE);
+        BufferBuilder eyes = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        Vector3f face = new Vector3f(h).negate().normalize();
+        Vector3f faceRight = new Vector3f(face).cross(up).normalize();
+        Vector3f faceUp = new Vector3f(faceRight).cross(face).normalize();
+        Vector3f head = at(body, 0.07f);
+        float eyesLit = (0.3f + 0.7f * flash) * (0.5f + 0.5f * stare);
+        for (int k = 0; k < 11; k++) {
+            float ex = (float) Math.sin(k * 12.9898) * 0.55f;
+            float ey = (float) Math.sin(k * 78.233 + 1) * 0.45f;
+            Vector3f e = new Vector3f(head).add(new Vector3f(face).mul(HEAD_R * 0.95f)).add(new Vector3f(faceRight).mul(ex * HEAD_R))
+                    .add(new Vector3f(faceUp).mul(ey * HEAD_R));
+            // Each blinks on its own clock.
+            double period = 70 + (k * 37) % 90;
+            double phase = (t + k * 53) % period;
+            float open = phase < 6 ? 0f : 1f;
+            float size = (0.45f + 0.35f * (float) Math.abs(Math.sin(k * 4.7))) * SIZE;
+            float a = eyesLit * open * (0.55f + 0.25f * (float) Math.sin(k * 2.1));
+            quad(eyes, pose, e, size, scale, up, 0.72f, 0.8f, 0.9f, a);
+            quad(eyes, pose, e, size * 2.6f, scale, up, 0.6f, 0.68f, 0.8f, a * 0.18f);
+        }
+        MeshData eyeMesh = eyes.build();
+        if (eyeMesh != null) {
+            BufferUploader.drawWithShader(eyeMesh);
+        }
+        RenderSystem.defaultBlendFunc();
         RenderSystem.depthMask(true);
         RenderSystem.disableBlend();
         RenderSystem.enableCull();
     }
 
-    /** The spindle's radius at s (0 its point, 1 its end below): point, head, neck, chest, trailing off. */
+    private static float smooth01(float x) {
+        float c = Math.max(0f, Math.min(1f, x));
+        return c * c * (3 - 2 * c);
+    }
+
+    /**
+     * Smoke along one curve: particles spaced along it, each drifting slowly along it (so the smoke
+     * flows), scattered within its thickness, a few thrown out further (the frayed edge), and wisps
+     * rising off it. {x, y, z, size, alpha, how much lightning catches it}.
+     */
+    private static void smoke(List<P> curve, int ci, double seconds, List<float[]> out) {
+        int n = curve.size();
+        for (int i = 0; i + 1 < n; i++) {
+            P a = curve.get(i);
+            P b = curve.get(i + 1);
+            float seg = (float) Math.sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z));
+            float r = (a.r + b.r) * 0.5f;
+            int count = Math.max(1, Math.min(6, Math.round(seg / Math.max(0.8f, r * 0.55f))));
+            for (int k = 0; k < count; k++) {
+                int id = ci * 7919 + i * 31 + k;
+                float h1 = hash(id);
+                float h2 = hash(id + 1);
+                float h3 = hash(id + 2);
+                // Flowing along the curve.
+                float u = (float) ((k + h1 + seconds * 0.12) / count % 1.0);
+                float x = a.x + (b.x - a.x) * u;
+                float y = a.y + (b.y - a.y) * u;
+                float z = a.z + (b.z - a.z) * u;
+                float rr = a.r + (b.r - a.r) * u;
+                // Within its thickness; now and then further out, fraying.
+                float spread = h3 > 0.85f ? 1.4f : 0.7f;
+                float ox = (float) Math.sin(id * 1.7 + seconds * 0.3) * rr * spread * (h2 - 0.5f) * 2;
+                float oy = (float) Math.cos(id * 2.3 + seconds * 0.25) * rr * spread * (h1 - 0.5f) * 2;
+                float oz = (float) Math.sin(id * 0.9 - seconds * 0.35) * rr * spread * (h3 - 0.5f) * 2;
+                float size = rr * (0.9f + 0.6f * h2);
+                float alpha = h3 > 0.85f ? 0.18f : 0.5f;
+                out.add(new float[] {x + ox, y + oy, z + oz, size, alpha, h1});
+                if (k == 0 && (i % 3) == 0 && rr > 1.5f) {
+                    // A wisp coming off, rising and thinning.
+                    float w = (float) ((seconds * 0.15 + h2) % 1.0);
+                    out.add(new float[] {x + ox * 1.6f, y + w * rr * 4, z + oz * 1.6f, rr * (0.8f + w * 1.5f), 0.15f * (1 - w), h2});
+                }
+            }
+        }
+    }
+
+    private static float hash(int i) {
+        int x = i * 0x27d4eb2d;
+        x ^= x >>> 15;
+        x *= 0x85ebca6b;
+        x ^= x >>> 13;
+        return (x & 0xffff) / 65535f;
+    }
+
+    /** The spindle's thickness at s (0 its top, 1 its end below): the head, a neck, the chest, trailing off. */
     private static float spindle(float s) {
-        if (s < 0.05f) {
-            return 2 * SIZE + (HEAD_R - 2 * SIZE) * (float) Math.sqrt(s / 0.05f);
+        if (s < 0.04f) {
+            return HEAD_R * (0.55f + 0.45f * (float) Math.sqrt(s / 0.04f));
         }
         if (s < 0.1f) {
             return HEAD_R;
@@ -431,12 +491,12 @@ public final class Level490Creature {
         return (float) (18 * SIZE * Math.pow(1 - (s - 0.33f) / 0.67f, 1.4) + 0.6);
     }
 
-    private static Vector3f at(List<P> tube, float s) {
-        P p = tube.get(Math.round(s * (tube.size() - 1)));
+    private static Vector3f at(List<P> curve, float s) {
+        P p = curve.get(Math.round(s * (curve.size() - 1)));
         return new Vector3f(p.x, p.y, p.z);
     }
 
-    /** d turned by deg (degrees) about the vertical, from f toward right. */
+    /** f turned by deg (degrees) about the vertical, toward right. */
     private static Vector3f rotate(Vector3f f, Vector3f right, float deg) {
         double a = Math.toRadians(deg);
         return new Vector3f(f).mul((float) Math.cos(a)).add(new Vector3f(right).mul((float) Math.sin(a))).normalize();
@@ -467,26 +527,23 @@ public final class Level490Creature {
         return new Vector3f((float) (c[0] - cam.x), y, (float) (c[1] - cam.z));
     }
 
-    /** A limb through three joints, tapering: a smooth curve sampled into a tube. */
+    /** A limb through three joints, tapering, a little knobbly. */
     private static List<P> limb(Vector3f a, Vector3f b, Vector3f c, float ra, float rb, float rc) {
         List<P> out = new ArrayList<>();
-        int n = 30;
+        int n = 24;
         for (int i = 0; i <= n; i++) {
             float s = i / (float) n;
-            // A quadratic through b at the middle (b is the knee: pulled toward, sharp-ish).
             Vector3f p;
             float r;
             if (s < 0.5f) {
                 float u = s / 0.5f;
                 p = new Vector3f(a).mul(1 - u).add(new Vector3f(b).mul(u));
                 r = ra + (rb - ra) * u;
-                p.add(new Vector3f(b).sub(new Vector3f(a).add(c).mul(0.5f)).mul(0.12f * (float) Math.sin(u * Math.PI)));
             } else {
                 float u = (s - 0.5f) / 0.5f;
                 p = new Vector3f(b).mul(1 - u).add(new Vector3f(c).mul(u));
                 r = rb + (rc - rb) * u;
             }
-            // Knobbly, as if gnarled.
             r *= 1 + 0.12f * (float) Math.sin(i * 1.9);
             out.add(new P(p.x, p.y, p.z, r));
         }
@@ -494,59 +551,53 @@ public final class Level490Creature {
     }
 
     /**
-     * A huge hand at the wrist p, fingers toward fwd: long and bony like a spider's legs, the bones of
-     * the back of the hand fanning out from the wrist to the knuckles, then four long jointed fingers
-     * and a thumb; curled over and down when it grips (the rim, the tower), spread when it slams.
+     * A limb's end fraying into tendrils: {@code count} thin wavering strands out of p along dir,
+     * spreading, curling toward the ground by {@code curl} (gripping hands curl most).
      */
-    private static void hand(List<List<P>> tubes, Vector3f p, Vector3f fwd, Vector3f up, boolean grab) {
-        Vector3f fw = new Vector3f(fwd).normalize();
-        Vector3f side = new Vector3f(fw).cross(up);
+    private static void tendrils(List<List<P>> curves, Vector3f p, Vector3f dir, Vector3f up, int count, float len, float curl,
+                                 double seconds, int salt) {
+        Vector3f side = new Vector3f(dir).cross(up);
         if (side.lengthSquared() < 1e-4f) {
             side.set(1, 0, 0);
         }
         side.normalize();
-        Vector3f down = new Vector3f(side).cross(fw).normalize();
-        if (down.y > 0) {
-            down.negate();
-        }
-        float palm = 9 * SIZE;
-        for (int k = 0; k < 5; k++) {
-            boolean thumb = k == 4;
-            float spread = grab ? 0.16f : 0.32f;
-            float across = thumb ? -1.1f : (k - 1.5f) * spread;
-            Vector3f dir = new Vector3f(fw).add(new Vector3f(side).mul(across)).normalize();
-            // The bone of the back of the hand, wrist to knuckle (the thumb's starts lower and short).
-            Vector3f knuckle = new Vector3f(p).add(new Vector3f(dir).mul(thumb ? palm * 0.45f : palm)).add(new Vector3f(down).mul(grab ? 0.5f : 0));
-            tubes.add(limb(p, new Vector3f(p).add(knuckle).mul(0.5f).add(new Vector3f(down).mul(-0.6f * SIZE)), knuckle, 1.7f * SIZE, 1.5f * SIZE,
-                    1.3f * SIZE));
-            // The finger: two long joints, curling over and down when it grips.
-            float len = (thumb ? 8 : 15 - 2 * Math.abs(k - 1.5f)) * SIZE;
-            Vector3f mid = new Vector3f(knuckle).add(new Vector3f(dir).mul(len * 0.55f)).add(new Vector3f(down).mul((grab ? 1.5f : -0.6f) * SIZE));
-            Vector3f tipP = new Vector3f(mid).add(new Vector3f(dir).mul(len * (grab ? 0.2f : 0.45f)))
-                    .add(new Vector3f(down).mul((grab ? 6f : 1.5f) * SIZE));
-            tubes.add(limb(knuckle, mid, tipP, 1.3f * SIZE, 1.0f * SIZE, 0.35f * SIZE));
+        Vector3f other = new Vector3f(dir).cross(side).normalize();
+        for (int k = 0; k < count; k++) {
+            float a = (k - (count - 1) / 2f) / Math.max(1, count - 1);
+            float h = hash(salt * 97 + k);
+            Vector3f d = new Vector3f(dir).add(new Vector3f(side).mul(a * 1.1f)).add(new Vector3f(other).mul((h - 0.5f) * 0.8f)).normalize();
+            float l = len * (0.7f + 0.6f * h);
+            List<P> strand = new ArrayList<>();
+            for (int i = 0; i <= 9; i++) {
+                float u = i / 9f;
+                float wave = (float) Math.sin(seconds * 0.8 + k * 1.3 + u * 5) * l * 0.08f * u;
+                Vector3f q = new Vector3f(p).add(new Vector3f(d).mul(l * u)).add(new Vector3f(other).mul(wave))
+                        .sub(new Vector3f(up).mul(curl * l * u * u * 0.8f));
+                strand.add(new P(q.x, q.y, q.z, (1.4f - 1.2f * u) * SIZE));
+            }
+            curves.add(strand);
         }
     }
 
-    /** During a slam on the tower: where the arm on that side has its hand now, or null. */
-    private static Vector3f slamHand(int side, Vec3 cam, double t, Vector3f shoulder, Vector3f f, Vector3f right) {
+    /** During a slam or a grab: where the arm on that side has its hand now, or null. */
+    private static Vector3f slamHand(int side, Vec3 cam, double t, Vector3f shoulder, Vector3f right) {
         if (reach == null || reach.kind() != Level490ReachPayload.SLAM) {
             return null;
         }
         Vector3f target = new Vector3f((float) (reach.tx() - cam.x), (float) (reach.ty() - cam.y), (float) (reach.tz() - cam.z));
-        // The arm on the target's side.
         int want = new Vector3f(target).sub(shoulder).dot(right) < 0 ? -1 : 1;
         if (want != side) {
             return null;
         }
-        double start = reach.land() - 50;
+        double lead = Math.max(20, reach.lift() - reach.land() > 0 ? Math.min(50, reach.land() - reachSeen) : 50);
+        double start = reach.land() - lead;
         if (t < start || t > reach.lift() + 30) {
             return null;
         }
         Vector3f above = new Vector3f(target).add(0, 30, 0).add(new Vector3f(target).sub(shoulder).mul(-0.15f));
+        double rise = lead - 12;
         if (t < reach.land() - 12) {
-            // Rising up and over: from beside the shoulder to high above the stair.
-            float u = (float) ((t - start) / 38.0);
+            float u = (float) ((t - start) / rise);
             u = u * u * (3 - 2 * u);
             Vector3f from = new Vector3f(shoulder).add(new Vector3f(right).mul(side * 30)).add(0, 10, 0);
             return from.mul(1 - u).add(new Vector3f(above).mul(u));
@@ -563,7 +614,7 @@ public final class Level490Creature {
     }
 
     /** The walk's reach: an arm up out of the clouds, over the edge, its hand coming down on you. */
-    private static void edgeArm(List<List<P>> tubes, Vec3 cam, double t, Vector3f up) {
+    private static void edgeArm(List<List<P>> curves, Vec3 cam, double t, Vector3f up, double seconds) {
         if (reach == null || reach.kind() != Level490ReachPayload.OVER_EDGE) {
             return;
         }
@@ -580,7 +631,6 @@ public final class Level490Creature {
         Vector3f hand;
         Vector3f elbow;
         if (t < reach.land() - 15) {
-            // Rising out of the clouds up past the edge.
             float u = (float) ((t - start) / 45.0);
             u = u * u * (3 - 2 * u);
             elbow = new Vector3f(edge).sub(new Vector3f(dir).mul(4)).add(0, -40 + 50 * u, 0);
@@ -598,85 +648,24 @@ public final class Level490Creature {
             elbow = new Vector3f(edge).sub(new Vector3f(dir).mul(4)).add(0, 10 - 60 * u, 0);
             hand = new Vector3f(elbow).add(new Vector3f(dir).mul(4)).add(0, 6, 0);
         }
-        tubes.add(limb(base, elbow, hand, 6f * SIZE, 4.5f * SIZE, 2.0f * SIZE));
-        hand(tubes, hand, dir, up, false);
+        curves.add(limb(base, elbow, hand, 6f * SIZE, 4.5f * SIZE, 2.2f * SIZE));
+        tendrils(curves, hand, dir, up, 7, 16 * SIZE, 0.5f, seconds, 77);
     }
 
-    /** A tube along pts: rings round it, joined; dark, edged with light, lit by lightning, into the haze. */
-    private static void tube(BufferBuilder tris, Matrix4f pose, List<P> pts, float scale, float glow, float haze, float[] fog, Vec3 cam) {
-        int around = 12;
-        int n = pts.size();
-        float[][][] ring = new float[n][around + 1][];
-        Vector3f prevN = null;
-        for (int i = 0; i < n; i++) {
-            P p = pts.get(i);
-            P a = pts.get(Math.max(0, i - 1));
-            P b = pts.get(Math.min(n - 1, i + 1));
-            Vector3f tan = new Vector3f(b.x - a.x, b.y - a.y, b.z - a.z);
-            if (tan.lengthSquared() < 1e-6f) {
-                tan.set(0, 1, 0);
-            }
-            tan.normalize();
-            Vector3f n1;
-            if (prevN == null) {
-                n1 = new Vector3f(tan).cross(Math.abs(tan.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
-            } else {
-                // Carry the frame along so the rings don't twist.
-                n1 = new Vector3f(prevN).sub(new Vector3f(tan).mul(prevN.dot(tan)));
-                if (n1.lengthSquared() < 1e-6f) {
-                    n1 = new Vector3f(tan).cross(new Vector3f(0, 1, 0));
-                }
-                n1.normalize();
-            }
-            prevN = n1;
-            Vector3f n2 = new Vector3f(tan).cross(n1).normalize();
-            for (int k = 0; k <= around; k++) {
-                double ang = 2 * Math.PI * k / around;
-                Vector3f nn = new Vector3f(n1).mul((float) Math.cos(ang)).add(new Vector3f(n2).mul((float) Math.sin(ang)));
-                // Rough, as if made of churning ash.
-                float rough = 1 + 0.08f * (float) Math.sin(i * 2.7 + k * 1.9) + 0.06f * (float) Math.sin(i * 0.9 - k * 2.3);
-                Vector3f q = new Vector3f(p.x, p.y, p.z).add(new Vector3f(nn).mul(p.r * rough));
-                ring[i][k] = new float[] {q.x, q.y, q.z, nn.x, nn.y, nn.z};
-            }
+    /** A soft quad facing the camera at p (camera-relative), size half-width, drawn scaled toward the camera. */
+    private static void quad(BufferBuilder q, Matrix4f pose, Vector3f p, float size, float scale, Vector3f up, float r, float g, float b, float a) {
+        Vector3f dir = new Vector3f(p).normalize();
+        Vector3f rr = new Vector3f(dir).cross(up);
+        if (rr.lengthSquared() < 1e-6f) {
+            rr.set(1, 0, 0);
         }
-        for (int i = 0; i + 1 < n; i++) {
-            for (int k = 0; k < around; k++) {
-                vertex(tris, pose, ring[i][k], scale, glow, haze, fog, cam);
-                vertex(tris, pose, ring[i + 1][k], scale, glow, haze, fog, cam);
-                vertex(tris, pose, ring[i + 1][k + 1], scale, glow, haze, fog, cam);
-                vertex(tris, pose, ring[i][k], scale, glow, haze, fog, cam);
-                vertex(tris, pose, ring[i + 1][k + 1], scale, glow, haze, fog, cam);
-                vertex(tris, pose, ring[i][k + 1], scale, glow, haze, fog, cam);
-            }
-        }
-    }
-
-    private static void vertex(BufferBuilder tris, Matrix4f pose, float[] v, float scale, float glow, float haze, float[] fog, Vec3 cam) {
-        Vector3f view = new Vector3f(-v[0], -v[1], -v[2]).normalize();
-        float facing = Math.abs(v[3] * view.x + v[4] * view.y + v[5] * view.z);
-        float rim = (float) Math.pow(1 - facing, 2.5);
-        float g = Math.min(1.2f, glow);
-        float l = 0.03f + rim * (0.13f + 0.55f * g) + Math.max(0, v[4]) * 0.03f + g * 0.08f;
-        // Below the cloud sea's top it is lost in the cloud's grey.
-        float worldY = (float) (v[1] + cam.y);
-        float hz = Math.max(haze, Math.max(0, Math.min(1, (float) ((SEA + 10 - worldY) / 40.0))));
-        float r = l * (1 - hz) + fog[0] * hz;
-        float gg = l * (1 - hz) + fog[1] * hz;
-        float b = l * 1.08f * (1 - hz) + fog[2] * hz;
-        tris.addVertex(pose, v[0] * scale, v[1] * scale, v[2] * scale).setColor(r, gg, b, 1.0f);
-    }
-
-    /** A soft glowing quad facing the camera, squashed to an almond (squash < 1 makes it wider than tall). */
-    private static void billboard(BufferBuilder q, Matrix4f pose, Vector3f at, float size, float r, float g, float b, float a, float scale,
-                                  Vector3f up, Vector3f right, float squash) {
-        Vector3f dir = new Vector3f(at).normalize();
-        Vector3f rr = new Vector3f(dir).cross(up).normalize();
-        Vector3f uu = new Vector3f(rr).cross(dir).normalize().mul(squash);
+        rr.normalize();
+        Vector3f uu = new Vector3f(rr).cross(dir).normalize();
         for (int k = 0; k < 4; k++) {
             float sx = (k == 1 || k == 2) ? 1 : -1;
             float sy = k >= 2 ? 1 : -1;
-            q.addVertex(pose, (at.x + (rr.x * sx + uu.x * sy) * size) * scale, (at.y + (rr.y * sx + uu.y * sy) * size) * scale,
-                            (at.z + (rr.z * sx + uu.z * sy) * size) * scale)
+            q.addVertex(pose, (p.x + (rr.x * sx + uu.x * sy) * size) * scale, (p.y + (rr.y * sx + uu.y * sy) * size) * scale,
+                            (p.z + (rr.z * sx + uu.z * sy) * size) * scale)
                     .setUv(sx > 0 ? 1 : 0, sy > 0 ? 0 : 1).setColor(r, g, b, a);
         }
     }

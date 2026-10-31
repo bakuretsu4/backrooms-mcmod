@@ -317,7 +317,14 @@ Options screen and pause menu restyled.
 - **The climb** (world/layout/Level490Spire): flight 1 winds round the outside from beside the
   hall's door (y 201) to a broken doorway into the half-way room (y 307); the inside stair goes up
   from the room (the loop is on it) to a landing at y 357; a doorway leads out onto flight 2, which
-  winds on round the outside to the crumbled top (y 476). Each flight rises 34 blocks a turn
+  winds on round the outside to the crumbled top (y 476). Everything on it is walked: there is no
+  jumping in the Backrooms (client/gameplay/MovementClientEvents), so the inner lane along the wall,
+  a block and a half wide, is never broken (where the rest has fallen away it is a ledge, where only
+  a plank is left the plank lies along the wall), half steps are always slabs, rubble lies only in
+  the middle of the wide stretches, the stair never comes nearer the axis than 11.5 blocks (nearer
+  in, the steps would rise more than half a block per block walked) and is carried in to meet the
+  body where it is slimmer than that, and the bridge to the chain leaves the stair's last steps be.
+  The scripted test climbs both flights without jumping (58 and 66 seconds). Each flight rises 34 blocks a turn
   (under half a block per block walked, so every step is a half step), 3 wide, hugging the body (its inner edge just outside the body at that height, so it
   swings out round the bulges) and cutting through the turrets and ribs it meets. Broken on
   purpose: gaps of a block and a half (one ordinary jump), stretches crumbled to under 2 wide, a
@@ -353,20 +360,26 @@ Options screen and pause menu restyled.
   (lang `entity.backrooms.pilgrim.line.N`). Code-built models (client/PenitentRenderer,
   PilgrimRenderer).
 - **The creature** (world/Level490Hunt, client/Level490Creature; the main enemy, replacing the
-  Great Whale at the top). After the user's reference, Stranger Things' Mind Flayer, copied
-  closely: a tall spindle of dark ash, pointed at the top and trailing away below, four very long
-  thick legs out of its middle rising to a sharp knee and down, plus a huge head at the spindle's top
-  with two white glaring eyes and two arms ending in huge hands; smoke drifting off it. Each player
-  is hunted by their own:
+  Great Whale at the top). After the user's reference, Stranger Things' Mind Flayer: a tall
+  spindle with four very long legs out of its middle rising to a sharp knee and down, two arms. Then
+  (play-test: "way too noticeable, the eyes goofy, more smoky, more eldritch") it is made of
+  smoke, thousands of dark ash particles flowing along its body and limbs with wisps rising off;
+  only a faint smudge in the fog until lightning shows it whole; fading when you look straight at it.
+  No face: a scatter of small dim cold eyes blinking out of step, a crown of long curved spines,
+  limbs fraying into tendrils (its hands are bunches of them), chains hanging inside the smoke
+  glimpsed in the flashes. Each player is hunted by their own:
   - *On the walk* it builds up: scraping and chains rattling below the edges (from 12% of the way),
     its shape far off in the clouds seen when lightning flashes behind it (from 30%), then (from
     half way) an arm rising out of the clouds over the edge and slamming down where you stand.
     Standing about in the open brings it sooner; a roof over you or a lit lantern within 6 blocks
     keeps it off.
-  - *On the tower* it rises out of the fog as you start up the outside stair and climbs after you
-    below you on the outside (never more than 45 blocks behind), faster the longer you stand still;
-    if it gets within 5 blocks it has you. Every 15-30 seconds a hand slams onto the stair about 11
-    blocks ahead: hurry past or wait (and let it gain). Inside the tower it can't reach you; it waits.
+  - *On the tower* (play-test: "move through the sky, not climb; start from the very bottom") it
+    rises from far below the clouds (y 40) as you start up the outside stair, hanging in the sky 75
+    blocks off the tower's axis and drifting round it after you, rising 1.2 blocks a second (a
+    little slower than you climb) plus 0.4 for every second you stand still. If it rises level with
+    you a hand reaches across to grab you: keep walking and it closes on nothing. Every 20-35 seconds
+    a hand slams onto the stair about 11 blocks ahead: hurry past or wait (and let it gain). Inside
+    the tower it can't reach you; it waits.
   - *At the top* it holds the top's edge in both hands, fingers over the rim, its head over the edge
     staring at you, and does nothing more. As you cross to the chain and climb it, it lets go and
     floats in the sky off the tower, following, staring, lightning flickering behind it.
