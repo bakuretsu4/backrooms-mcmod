@@ -30,6 +30,8 @@ import org.joml.Vector3f;
  *   <li><b>The whirlwinds</b> ({@link Level490Whirlwinds}) and <b>the colossal chains</b> beyond
  *       render distance ({@link Level490SkyChains}), drawn over the storm layer (their tops fade
  *       out where they reach it) and under the cloud sea, which swallows their feet.</li>
+ *   <li><b>The hung ruins</b> ({@link Level490SkyHung}): ruins on rock hanging from chains far off
+ *       in the haze, falling now and then.</li>
  *   <li><b>Lightning</b> ({@link Level490Lightning}): the bolts, and the clouds glowing round each strike.</li>
  * </ul>
  * The clouds use Level 39's cloud texture.
@@ -90,6 +92,7 @@ final class Level490Sky {
         // In front of the storm layer (they stand between us and its far reaches), their tops
         // fading out where they go up into it.
         Level490Whirlwinds.render(view, eye, far);
+        Level490SkyHung.render(view, eye, far);
         Level490SkyChains.render(view, eye, far);
         Level490Lightning.render(view, eye, Math.min(1.0f, 0.9f * far / MAX_REACH));
         drawClouds(view, eye, 2, LAYER_Y.length);

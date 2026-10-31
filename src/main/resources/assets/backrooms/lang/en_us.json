@@ -1281,5 +1281,9 @@
   "block.backrooms.l490_spire_joint": "Spire Joint Stone",
   "block.backrooms.l490_ladder": "Rusted Ladder",
   "block.backrooms.l490_marked_stone": "Scratched Stone",
-  "block.backrooms.l490_words": "Scrawled Stone"
+  "block.backrooms.l490_words": "Scrawled Stone",
+  "subtitles.backrooms.level490.chain_creak": "A huge chain groans",
+  "subtitles.backrooms.level490.chain_jolt": "A far chain clanks",
+  "subtitles.backrooms.level490.chain_snap": "A far chain snaps",
+  "subtitles.backrooms.level490.collapse": "Something falls into the clouds"
 }

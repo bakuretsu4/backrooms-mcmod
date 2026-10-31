@@ -10,16 +10,25 @@ and the loops of client/Level490Ambience:
   whirlwind  the far-off roar of the whirlwind pillars
   rumble     a constant low rumble under everything
   drone      a deep, slow, voice-like drone (made here, not recorded)
+and the chains (client/Level490ChainEvents, client/Level490SkyHung):
+  chain_creak  a colossal chain near by groaning under its load
+  chain_jolt   a far chain jerked taut: a clank rolling on like thunder
+  chain_snap   a far chain breaking under a hung ruin
+  collapse     the ruin falling into the cloud sea, heard long after
+Everything that is meant to sound enormous is a real sound slowed down (lower and longer), its
+highs taken away by the distance, and given a long dark tail (a made-up impulse response: no
+extra recordings).
 
 The recordings are CC0 field recordings from Freesound (tools/vendor/freesound, see its
 License.txt and CREDITS.md). Loudness targets (LUFS): close -16, roll -20, far -27; the loops
--30 to -34 (their sounds.json volumes do the rest).
+-30 to -34 (their sounds.json volumes do the rest); snap -20, jolt -21, collapse -22, creak -24.
 
 Run only these with:  python tools/gen_assets.py level490_
 """
 from __future__ import annotations
 
 import numpy as np
+from scipy.signal import fftconvolve
 
 import gen_assets as G
 from level_assets.recorded import _clean, _loop, _rec, _save, loud
@@ -103,5 +112,105 @@ def snd_level490_drone() -> None:
     _save(loud(x, -34), OUT / "drone.ogg", loop=True)
 
 
+def _slow(x: np.ndarray, factor: float) -> np.ndarray:
+    """Played at `factor` times the speed: below 1, slower and lower, as if from something far bigger."""
+    return np.interp(np.arange(0, len(x) - 1, factor), np.arange(len(x)), x)
+
+
+def _dark(x: np.ndarray, lo: float, hi: float) -> np.ndarray:
+    """Only lo..hi Hz left (distance takes the highs)."""
+    return G.fft_filter(x, lambda f: G.hp_gain(f, lo, 2) * G.lp_gain(f, hi, 2))
+
+
+def _space(x: np.ndarray, seconds: float, mix: float, seed: int, hi: float = 2500.0) -> np.ndarray:
+    """x with a long dark tail `seconds` long: convolved with decaying, filtered noise."""
+    rng = np.random.default_rng(seed)
+    n = int(seconds * SR)
+    ir = rng.normal(0, 1, n) * np.exp(-np.arange(n) / (seconds * SR / 6.9))
+    ir = G.fft_filter(ir, lambda f: G.lp_gain(f, hi, 2))
+    dry = np.concatenate([x, np.zeros(n)])
+    wet = np.zeros(len(dry))
+    full = fftconvolve(x, ir)
+    wet[:min(len(full), len(dry))] = full[:len(dry)]
+    wet *= np.sqrt(np.mean(dry ** 2)) / (np.sqrt(np.mean(wet ** 2)) + 1e-12)
+    return dry * (1 - mix) + wet * mix
+
+
+def _grab(x: np.ndarray, at: float, before: float, after: float, search: float = 0.6) -> np.ndarray:
+    """The part of x round its loudest moment within `search` s of `at` s: `before` s ahead of it
+    to `after` s past it."""
+    a, b = int((at - search) * SR), int((at + search) * SR)
+    peak = a + int(np.argmax(np.abs(x[a:b])))
+    return x[max(0, peak - int(before * SR)): peak + int(after * SR)].copy()
+
+
+def _mixed(*parts: tuple[np.ndarray, float, float]) -> np.ndarray:
+    """(sound, start s, gain) parts laid over each other."""
+    n = max(int(s * SR) + len(x) for x, s, _ in parts)
+    out = np.zeros(n)
+    for x, s, g in parts:
+        i = int(s * SR)
+        out[i:i + len(x)] += x * g
+    return out
+
+
+def snd_level490_chain_jolt() -> None:
+    """A colossal chain jerked taut far off: a heavy chain dropped, slowed to something enormous,
+    rolling on like thunder; one with the grind of a chain dragged through its fitting under it,
+    one from a ship's anchor chain."""
+    chain = _rec("611673_heavy_chain")
+    drag = _clean(_rec("199282_big_metal_chain"), 30, 5000)
+    anchor = _clean(_rec("477129_anchor_raising"), 30, 6000)
+    takes = [
+        _slow(_clean(_grab(chain, 8.5, 0.03, 1.4), 30, 7000), 0.4),
+        _slow(_clean(_grab(chain, 19.5, 0.03, 1.2), 30, 7000), 0.38),
+        _mixed((_slow(_clean(_grab(chain, 1.0, 0.03, 1.4), 30, 7000), 0.42), 0.0, 1.0),
+               (_slow(drag[int(2.0 * SR):int(4.6 * SR)], 0.35), 0.15, 0.35)),
+        _slow(_grab(anchor, 4.0, 0.03, 1.6, search=1.0), 0.4),
+    ]
+    for k, x in enumerate(takes):
+        x = _space(_dark(x, 25, 1600), 4.5, 0.6, 4900 + k)
+        _save(loud(x, -21), OUT / f"chain_jolt_{k + 1}.ogg", fade_out=2.0)
+
+
+def snd_level490_chain_snap() -> None:
+    """A colossal chain breaking far off: the crack of overloaded iron, then links lashing loose."""
+    creaks = _rec("625616_metal_creaks")
+    chain = _rec("611673_heavy_chain")
+    for k, (crack_at, lash_at) in enumerate(((1.5, 5.0), (10.2, 11.0))):
+        crack = _slow(_clean(_grab(creaks, crack_at, 0.02, 1.2), 60, 9000), 0.55)
+        lash = _slow(_clean(_grab(chain, lash_at, 0.05, 3.0), 30, 8000), 0.5)
+        x = _mixed((crack, 0.0, 1.0), (lash, 0.35, 0.8))
+        x = _space(_dark(x, 25, 2500), 3.5, 0.5, 4910 + k)
+        _save(loud(x, -20), OUT / f"chain_snap_{k + 1}.ogg", fade_out=1.5)
+
+
+def snd_level490_collapse() -> None:
+    """A hung ruin falling into the cloud sea far off: a rock slide slowed and darkened, rumbling on."""
+    slide = _rec("500638_rock_slide")
+    for k, (a, b, factor, hi) in enumerate(((2.0, 14.0, 0.6, 900), (7.0, 20.0, 0.5, 700))):
+        x = _slow(_clean(slide[int(a * SR):int(b * SR)], 20, 5000), factor)
+        x = _space(_dark(x, 20, hi), 4.0, 0.45, 4920 + k)
+        i = int(0.4 * SR)
+        x[:i] *= np.linspace(0, 1, i)
+        _save(loud(x, -22), OUT / f"collapse_{k + 1}.ogg", fade_out=3.0)
+
+
+def snd_level490_chain_creak() -> None:
+    """A colossal chain near by groaning under its load: metal creaks slowed to half speed."""
+    grinding = _rec("59160_grincements_helvetia")
+    creaks = _rec("625616_metal_creaks")
+    slow = _rec("172411_creaking_metal_slow")
+    takes = [_grab(grinding, 2.0, 0.3, 2.2), _grab(grinding, 5.0, 0.3, 2.5), _grab(grinding, 13.5, 0.3, 2.5),
+             _grab(creaks, 10.2, 0.4, 2.0), slow[int(5.0 * SR):int(9.0 * SR)]]
+    for k, x in enumerate(takes):
+        x = _slow(_clean(x, 40, 9000), 0.55)
+        x = _space(_dark(x, 30, 3000), 1.8, 0.3, 4930 + k)
+        i = int(0.05 * SR)
+        x[:i] *= np.linspace(0, 1, i)
+        _save(loud(x, -24), OUT / f"chain_creak_{k + 1}.ogg", fade_out=1.0)
+
+
 SOUNDS = [snd_level490_thunder_close, snd_level490_thunder_roll, snd_level490_thunder_far, snd_level490_wind,
-          snd_level490_wire, snd_level490_whirlwind, snd_level490_rumble, snd_level490_drone]
+          snd_level490_wire, snd_level490_whirlwind, snd_level490_rumble, snd_level490_drone,
+          snd_level490_chain_jolt, snd_level490_chain_snap, snd_level490_collapse, snd_level490_chain_creak]

@@ -152,6 +152,10 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_WHIRLWIND = register("level490.whirlwind");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_RUMBLE = register("level490.rumble");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_DRONE = register("level490.drone");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_CHAIN_CREAK = register("level490.chain_creak");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_CHAIN_JOLT = register("level490.chain_jolt");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_CHAIN_SNAP = register("level490.chain_snap");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_COLLAPSE = register("level490.collapse");
     // Music (original pieces from tools/gen_assets.py, played by client/BackroomsMusic on the music
     // channel): the main theme on the title menu, a mix of the theme and a dark ambient piece in
     // most levels, and a dreamier piece (or the theme) in the Poolrooms and Level 37.

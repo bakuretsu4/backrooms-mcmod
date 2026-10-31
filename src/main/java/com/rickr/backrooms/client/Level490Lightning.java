@@ -139,6 +139,10 @@ public final class Level490Lightning {
         if (mc.player == null || !Level490Atmosphere.inLevel490()) {
             return;
         }
+        if (payload.kind() == Level490StrikePayload.JOLT) {
+            Level490ChainEvents.jolt(payload);
+            return;
+        }
         long now = System.currentTimeMillis();
         STRIKES.add(new Strike(payload, now));
         Vec3 eye = mc.player.getEyePosition();

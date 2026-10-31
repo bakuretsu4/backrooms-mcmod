@@ -46,3 +46,17 @@ Level 490 ("Penance"), processed by tools/level_assets/level490_sounds.py:
                                         https://freesound.org/s/735350/  (10 s to 52 s)
 512687_rumble.ogg                     "Rumble" by WavJunction.com
                                         https://freesound.org/s/512687/
+611673_heavy_chain.ogg                "heavy_chain_211112-152243.WAV" by genel
+                                        https://freesound.org/s/611673/  (2.5 s to 27 s)
+199282_big_metal_chain.ogg            "Big Metal Chain" by qubodup
+                                        https://freesound.org/s/199282/  (first 12 s)
+477129_anchor_raising.ogg             "anchor raising" by mycompasstv
+                                        https://freesound.org/s/477129/  (1 s to 13 s)
+172411_creaking_metal_slow.ogg        "Creaking Metal - Slow" by EagleStealthTeam
+                                        https://freesound.org/s/172411/  (1 s to 32 s)
+59160_grincements_helvetia.ogg        "grincements_helvetia.aif" by f_ilippo
+                                        https://freesound.org/s/59160/  (first 30 s)
+625616_metal_creaks.ogg               "Metal creaks.mp3" by hannahbelle144
+                                        https://freesound.org/s/625616/
+500638_rock_slide.ogg                 "20120808_064004 Cathedral Mountain rock slide, slow blocky chunks.wav" by betchkal
+                                        https://freesound.org/s/500638/  (first 22 s)

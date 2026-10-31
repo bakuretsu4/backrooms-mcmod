@@ -4356,5 +4356,38 @@
         "stream": true
       }
     ]
+  },
+  "level490.chain_creak": {
+    "sounds": [
+      {"name": "backrooms:level490/chain_creak_1", "attenuation_distance": 96},
+      {"name": "backrooms:level490/chain_creak_2", "attenuation_distance": 96},
+      {"name": "backrooms:level490/chain_creak_3", "attenuation_distance": 96},
+      {"name": "backrooms:level490/chain_creak_4", "attenuation_distance": 96},
+      {"name": "backrooms:level490/chain_creak_5", "attenuation_distance": 96}
+    ],
+    "subtitle": "subtitles.backrooms.level490.chain_creak"
+  },
+  "level490.chain_jolt": {
+    "sounds": [
+      {"name": "backrooms:level490/chain_jolt_1", "attenuation_distance": 48},
+      {"name": "backrooms:level490/chain_jolt_2", "attenuation_distance": 48},
+      {"name": "backrooms:level490/chain_jolt_3", "attenuation_distance": 48},
+      {"name": "backrooms:level490/chain_jolt_4", "attenuation_distance": 48}
+    ],
+    "subtitle": "subtitles.backrooms.level490.chain_jolt"
+  },
+  "level490.chain_snap": {
+    "sounds": [
+      {"name": "backrooms:level490/chain_snap_1", "attenuation_distance": 48},
+      {"name": "backrooms:level490/chain_snap_2", "attenuation_distance": 48}
+    ],
+    "subtitle": "subtitles.backrooms.level490.chain_snap"
+  },
+  "level490.collapse": {
+    "sounds": [
+      {"name": "backrooms:level490/collapse_1", "attenuation_distance": 48},
+      {"name": "backrooms:level490/collapse_2", "attenuation_distance": 48}
+    ],
+    "subtitle": "subtitles.backrooms.level490.collapse"
   }
 }

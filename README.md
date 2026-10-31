@@ -263,7 +263,11 @@ going down into the dark, until the picture breaks up and you are in the next le
   and small chains dangle underneath. Colossal chains, every link 34 blocks long, hang out of the
   storm and through some of the islands down into the clouds; four of them stand round the great
   round island where the spire stands (see docs/level-490-penance.md). Rocks and masonry
-  float in the air, slowly turning; whirlwinds of cloud stand far off in the storm. Lightning
+  float in the air, slowly turning; whirlwinds of cloud stand far off in the storm. Kilometres off
+  in the haze hang other ruins on their own chains (a domed rotunda among firs, a broken fortress,
+  a broken tower, a span of a great bridge); now and then one's chains snap and it falls into the
+  clouds, and you hear it long after. A far chain jerks taut now and then as if pulled from below,
+  its clank rolling in like thunder, and the chains near you groan under their load. Lightning
   strikes in the distance every few seconds (real branching bolts that flicker, the clouds
   glowing round them, more far chains showing in the flash) and its thunder comes as late as the
   strike is far (recorded thunder: cracks close by, long rolls, low far rumbles), over howling

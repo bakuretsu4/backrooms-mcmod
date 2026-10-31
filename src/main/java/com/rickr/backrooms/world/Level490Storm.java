@@ -16,7 +16,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * Level 490's storm (server side): picks where lightning strikes and tells everyone in the level,
  * so friends see the same bolt and hear its thunder each as late as their own distance makes it
  * (client/Level490Lightning). Most strikes are far off in the storm, some inside the clouds, now
- * and then one close by or on one of the colossal chains.
+ * and then one close by or on one of the colossal chains. Between them, every minute or two, one of
+ * the far colossal chains jerks taut as if something pulled it from below (client/Level490ChainEvents).
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
 public final class Level490Storm {
@@ -24,6 +25,10 @@ public final class Level490Storm {
     private static final int MIN_GAP = 5;
     private static final int MAX_GAP = 16;
     private static long nextTick = -1;
+    /** Seconds between chain jolts. */
+    private static final int JOLT_MIN_GAP = 40;
+    private static final int JOLT_MAX_GAP = 110;
+    private static long nextJolt = -1;
 
     @SubscribeEvent
     public static void onLevelTick(LevelTickEvent.Post event) {
@@ -35,9 +40,22 @@ public final class Level490Storm {
         long now = level.getGameTime();
         if (players.isEmpty()) {
             nextTick = -1;
+            nextJolt = -1;
             return;
         }
         RandomSource random = level.getRandom();
+        if (nextJolt < 0) {
+            nextJolt = now + 400 + random.nextInt(800);
+        }
+        if (now >= nextJolt) {
+            nextJolt = now + (JOLT_MIN_GAP + random.nextInt(JOLT_MAX_GAP - JOLT_MIN_GAP + 1)) * 20L;
+            Level490StrikePayload jolt = jolt(level, players.get(random.nextInt(players.size())), random);
+            if (jolt != null) {
+                for (ServerPlayer player : players) {
+                    PacketDistributor.sendToPlayer(player, jolt);
+                }
+            }
+        }
         if (nextTick < 0) {
             nextTick = now + 60 + random.nextInt(100);
         }
@@ -77,6 +95,23 @@ public final class Level490Storm {
         int x = near.getBlockX() + (int) Math.round(Math.cos(angle) * distance);
         int z = near.getBlockZ() + (int) Math.round(Math.sin(angle) * distance);
         return new Level490StrikePayload(seed, x, z, cloud ? Level490StrikePayload.CLOUD : Level490StrikePayload.BOLT);
+    }
+
+    /**
+     * A colossal chain 350-2400 blocks from the player: far enough that it is drawn in the sky (only
+     * those can move), near enough to see and hear.
+     */
+    private static Level490StrikePayload jolt(ServerLevel level, ServerPlayer near, RandomSource random) {
+        long layoutSeed = BackroomsSeeds.layoutSeed(level, BackroomsLevel.LEVEL_490);
+        int[][] found = new int[1][];
+        int[] count = {0};
+        Level490Layout.chainsNear(layoutSeed, near.getBlockX(), near.getBlockZ(), 2400, (cx, cz, phase) -> {
+            double d = Math.hypot(cx - near.getX(), cz - near.getZ());
+            if (d >= 350 && d <= 2400 && random.nextInt(++count[0]) == 0) {
+                found[0] = new int[] {cx, cz};
+            }
+        });
+        return found[0] == null ? null : new Level490StrikePayload(random.nextLong(), found[0][0], found[0][1], Level490StrikePayload.JOLT);
     }
 
     private Level490Storm() {}

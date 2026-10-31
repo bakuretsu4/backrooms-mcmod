@@ -118,8 +118,12 @@ final class Level490SkyChains {
         RenderSystem.disableBlend();
     }
 
-    /** One chain hanging from yTop down past yBottom, size times a built chain's links, iron this bright. */
-    private static void chain(BufferBuilder quads, Matrix4f view, Vec3 eye, float far, double x, double z, float size,
+    /**
+     * One chain hanging from yTop down past yBottom, size times a built chain's links, iron this
+     * bright; jerked down when Level490ChainEvents says it is being jolted. Level490SkyHung hangs its
+     * ruins on these too.
+     */
+    static void chain(BufferBuilder quads, Matrix4f view, Vec3 eye, float far, double x, double z, float size,
                               float phase, float yBottom, float yTop, float alpha, double d, float shade, int[] count) {
         float scale = (float) Math.min(1.0, 0.9 * far / (d + 600.0 * size));
         // Black iron, a little moonlight on it, lit up when lightning flashes near.
@@ -128,10 +132,11 @@ final class Level490SkyChains {
         float g = shade * 1.03f + 0.05f * glow;
         float b = shade * 1.17f + 0.06f * glow;
         float pitch = PITCH * size;
+        float pull = Level490ChainEvents.pull(x, z);
         int k0 = (int) Math.floor((yBottom - phase) / pitch);
         int k1 = (int) Math.ceil((yTop - phase) / pitch);
         for (int k = k0; k <= k1; k++) {
-            float cy = phase + k * pitch;
+            float cy = phase + k * pitch + pull;
             boolean inX = (k & 1) == 0;
             // Into the storm: the last links fade out.
             float a = alpha * Math.max(0.0f, Math.min(1.0f, (yTop - cy) / (pitch * 2)));

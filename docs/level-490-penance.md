@@ -1,7 +1,8 @@
 # Level 490 "Penance" (design notes)
 
-Status: **stages 1 and 2 built** (the islands, bridges, chains and storm; the spire and its climb,
-the looping stairs, the leap from the top). Stages 3-4 not built yet.
+Status: **stages 1-3 built** (the islands, bridges, chains and storm; the spire and its climb, the
+looping stairs, the leap from the top; the hung ruins far off, the chains' jolts and groans).
+Stage 4 (the creature) not built yet.
 
 ## The idea
 
@@ -219,6 +220,34 @@ climber on an outside ledge under a colossal link. Built per site (world/layout/
 - Inside the spire the wind is muffled; the drone grows as you climb. (Whether its inside is safe
   from the creature is for stage 4.)
 
+## Stage 3 as built: the far chains and what they hold
+
+References: Elden Ring's Crumbling Farum Azula (wiki screenshots: the domed rotunda on its rock
+among firs and debris, the fortress torn apart in the storm, a ruin seen only as a silhouette in a
+whirlwind, the great bridge) and the reel stills above.
+
+- **Hung ruins** (client/Level490SkyHung): one in most 1500-block cells, 650-7000 blocks off,
+  never over a spire's island. A jagged rock tapering to a point, carrying a tiered rotunda under a
+  dome with turrets and dark firs (now and then a red tree), a broken fortress (walls round the
+  rim, some gone, a keep, round towers, a wall leaning out), a tall broken tower on a long rock, or
+  a span of a great bridge with its piers. Hung from two to four chains going up into the storm;
+  debris drifting round them. Only ever sky: dark shapes in the haze, the moon side lit, lit up by
+  lightning near them; they fade out as you get within 650 blocks.
+- **Falls:** each ruin hangs for 4-10 hours of game time, then its chains snap (they whip up and
+  vanish) and it drops into the cloud sea over about half a minute, tilting. You hear the snap, and
+  the fall into the clouds, as late as sound takes to come that far. 20-50 minutes later another
+  ruin hangs there, slowly coming out of the haze. All worked out from the layout seed and the
+  game clock: everyone sees the same fall, nothing is sent, a fallen ruin stays gone.
+- **Jolts** (world/Level490Storm, client/Level490ChainEvents): every 40-110 seconds a colossal
+  chain 350-2400 blocks away (drawn in the sky there, so it can move) is snatched down eighteen blocks
+  as if pulled from below, bounces and settles; its clank reaches you later, rolling like thunder.
+- **Groans:** within 110 blocks of a colossal chain you hear it creak under its load every few
+  seconds, from the chain itself, more often the nearer you are.
+- **Sounds** (tools/level_assets/level490_sounds.py): real CC0 recordings slowed down to sound
+  enormous, their highs cut by the distance, with a long dark tail: a heavy chain dropped and an
+  anchor chain (the jolts), metal creaks (the groans), a crack and lashing links (the snap), a
+  rock slide (the fall).
+
 ## Name and number
 
 **Level 490, "Penance".** 490 is "seventy times seven", how many times you must forgive:
@@ -236,5 +265,5 @@ record:
 
 ## Still open
 
-Stage 3 (distant structures in the chains, one falling now and then, the chain sounds) and stage 4
-(the creature).
+Stage 4 (the creature). The spire may be reworked to look more gothic and Farum Azula-like,
+more chaotic inside and out (after the stage 2 play-test).
