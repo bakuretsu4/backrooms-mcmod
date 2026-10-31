@@ -156,6 +156,11 @@ public final class Level490SkyHung {
             double fs = life.falling() ? life.fallSeconds() : 0.0;
             double g = 2.0 * (life.y() - 40.0) / (FALL_SECONDS * FALL_SECONDS);
             float dy = (float) (-0.5 * g * fs * fs);
+            // Sinking into the cloud sea: gone as it goes under (the clouds are drawn before it).
+            vis *= (float) smooth((life.y() + dy - 60.0) / 90.0);
+            if (vis < 0.01f) {
+                continue;
+            }
             Quaternionf tilt = fs > 0 ? new Quaternionf().fromAxisAngleRad(shape.tiltAxis, (float) (shape.tilt * (1.0 - Math.exp(-fs / 6.0)))) : null;
             Vector3f origin = new Vector3f((float) (life.x() - eye.x), (float) (life.y() - eye.y) + dy, (float) (life.z() - eye.z));
             // Its parts and its drifting debris, farthest first.

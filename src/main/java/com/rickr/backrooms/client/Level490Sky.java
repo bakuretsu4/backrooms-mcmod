@@ -30,8 +30,8 @@ import org.joml.Vector3f;
  *   <li><b>The whirlwinds</b> ({@link Level490Whirlwinds}) and <b>the colossal chains</b> beyond
  *       render distance ({@link Level490SkyChains}), drawn over the storm layer (their tops fade
  *       out where they reach it) and under the cloud sea, which swallows their feet.</li>
- *   <li><b>Depth in the clouds</b> ({@link Level490Clouds}): the storm's underside and the cloud
- *       sea's top as shaded height fields, anvil clouds on the horizon, shafts of moonlight.</li>
+ *   <li><b>The clouds as volumes</b> ({@link Level490VolumeClouds}): the cloud sea and the storm
+ *       traced per pixel by a shader; the flat layers below are only the fallback if it fails.</li>
  *   <li><b>The hung ruins</b> ({@link Level490SkyHung}): ruins on rock hanging from chains far off
  *       in the haze, falling now and then.</li>
  *   <li><b>Lightning</b> ({@link Level490Lightning}): the bolts, and the clouds glowing round each strike.</li>
@@ -90,24 +90,21 @@ final class Level490Sky {
         float far = Minecraft.getInstance().gameRenderer.getDepthFar();
         drawVault(view, flash);
         drawMoon(view);
-        float cloudScale = Math.min(1.0f, 0.9f * far / MAX_REACH);
-        float moon = moonShows();
-        double seconds = (System.currentTimeMillis() % 3_600_000L) / 1000.0;
-        Level490Clouds.drawAnvils(view, eye, Math.min(1.0f, 0.9f * far / 10000.0f), FOG);
-        drawClouds(view, eye, 0, 1);
-        Level490Clouds.drawField(view, eye, false, seconds * DRIFT_X[1], seconds * DRIFT_Z[1], LAYER_RGB[1], moon, cloudScale,
-                LAYER_ALPHA[1], CLOUD_FADE[1]);
-        Level490Clouds.drawShafts(view, eye, cloudScale, moon);
-        // In front of the storm layer (they stand between us and its far reaches), their tops
-        // fading out where they go up into it.
+        boolean volumes = Level490VolumeClouds.available();
+        if (volumes) {
+            // The clouds as volumes; what hangs in the sky is drawn over them, each fading out where
+            // it goes down into the cloud sea or up into the storm.
+            Level490VolumeClouds.render(view, eye, moonShows(), FOG, flash);
+        } else {
+            drawClouds(view, eye, 0, 2);
+        }
         Level490Whirlwinds.render(view, eye, far);
         Level490SkyHung.render(view, eye, far);
         Level490SkyChains.render(view, eye, far);
         Level490Lightning.render(view, eye, Math.min(1.0f, 0.9f * far / MAX_REACH));
-        drawClouds(view, eye, 2, 3);
-        Level490Clouds.drawField(view, eye, true, seconds * DRIFT_X[3], seconds * DRIFT_Z[3], LAYER_RGB[3], moon, cloudScale,
-                LAYER_ALPHA[3], CLOUD_FADE[3]);
-        Level490Clouds.drawTowers(view, eye, seconds * DRIFT_X[3], seconds * DRIFT_Z[3], moon, cloudScale, LAYER_RGB[3]);
+        if (!volumes) {
+            drawClouds(view, eye, 2, LAYER_Y.length);
+        }
 
         RenderSystem.enableCull();
         RenderSystem.depthMask(true);

@@ -60,3 +60,5 @@ Level 490 ("Penance"), processed by tools/level_assets/level490_sounds.py:
                                         https://freesound.org/s/625616/
 500638_rock_slide.ogg                 "20120808_064004 Cathedral Mountain rock slide, slow blocky chunks.wav" by betchkal
                                         https://freesound.org/s/500638/  (first 22 s)
+505469_heavy_rain.ogg                 "Heavy Rain and Wind.wav" by SpaceJoe
+                                        https://freesound.org/s/505469/  (34 s to the end)

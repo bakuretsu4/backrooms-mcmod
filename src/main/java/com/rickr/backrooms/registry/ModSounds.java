@@ -152,6 +152,7 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_WHIRLWIND = register("level490.whirlwind");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_RUMBLE = register("level490.rumble");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_DRONE = register("level490.drone");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_RAIN = register("level490.rain");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_CHAIN_CREAK = register("level490.chain_creak");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_CHAIN_JOLT = register("level490.chain_jolt");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_CHAIN_SNAP = register("level490.chain_snap");

@@ -4,6 +4,7 @@ import com.rickr.backrooms.block.GiantChainBlock;
 import com.rickr.backrooms.block.MarkedStoneBlock;
 import com.rickr.backrooms.block.IronLanternBlock;
 import com.rickr.backrooms.block.ShackleBlock;
+import com.rickr.backrooms.block.StatueBlock;
 import java.util.function.Function;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FenceBlock;
@@ -78,10 +79,23 @@ public final class Level490Blocks {
             unbreakable(MapColor.STONE, SoundType.STONE));
     /** Stairwell stone with "GO BACK DOWN" scratched into it (world/Level490Loops). */
     public static final DeferredBlock<Block> WORDS = structural("l490_words", MapColor.STONE, SoundType.STONE);
+    /** The spire's dark, rain-streaked Gothic masonry: its body, turrets and the walls inside. */
+    public static final DeferredBlock<Block> GOTHIC = structural("l490_gothic", MapColor.COLOR_GRAY, SoundType.DEEPSLATE_BRICKS);
+    /** Darker carved stone: cornices, tracery, pinnacles, the turrets' pointed roofs. */
+    public static final DeferredBlock<Block> GOTHIC_CARVED = structural("l490_gothic_carved", MapColor.COLOR_BLACK, SoundType.DEEPSLATE_BRICKS);
+    /** A window with warm candlelight behind leaded glass (gives light). */
+    public static final DeferredBlock<Block> WINDOW_LIT = block("l490_window_lit", Block::new,
+            unbreakable(MapColor.COLOR_ORANGE, SoundType.GLASS).lightLevel(state -> 10));
+    /** A dark window: leaded glass with nothing lit behind it. */
+    public static final DeferredBlock<Block> WINDOW_DARK = structural("l490_window_dark", MapColor.COLOR_BLACK, SoundType.GLASS);
+    /** A weathered robed statue, two blocks tall, its head worn away. */
+    public static final DeferredBlock<StatueBlock> STATUE = block("l490_statue", StatueBlock::new,
+            unbreakable(MapColor.TERRACOTTA_WHITE, SoundType.STONE).noOcclusion());
 
     static {
         for (DeferredBlock<?> block : new DeferredBlock<?>[] {PAVING, PAVING_SLAB, STONE, SLATE, ROCK, RUBBLE, DEAD_GRASS, CHAIN_IRON,
-                DEAD_WOOD, RED_LEAVES, RAILING, POST, LANTERN, CHAIN, SHACKLE, SPIRE, SPIRE_JOINT, LADDER, MARKED_STONE, WORDS}) {
+                DEAD_WOOD, RED_LEAVES, RAILING, POST, LANTERN, CHAIN, SHACKLE, SPIRE, SPIRE_JOINT, LADDER, MARKED_STONE, WORDS,
+                GOTHIC, GOTHIC_CARVED, WINDOW_LIT, WINDOW_DARK, STATUE}) {
             ModItems.ITEMS.registerSimpleBlockItem(block);
         }
     }

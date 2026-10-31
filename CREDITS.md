@@ -24,6 +24,7 @@
     [Creaking Metal - Slow](https://freesound.org/s/172411/) by EagleStealthTeam,
     [grincements_helvetia](https://freesound.org/s/59160/) by f_ilippo, [Metal creaks](https://freesound.org/s/625616/)
     by hannahbelle144, [Cathedral Mountain rock slide](https://freesound.org/s/500638/) by betchkal
+  - Level 490's rain: [Heavy Rain and Wind](https://freesound.org/s/505469/) by SpaceJoe
 - Level 490's whale song: recordings by NOAA Fisheries' Passive Acoustics Group (a humpback whale's
   song, North Atlantic right whale up-calls, sei whale downsweeps) from
   [Sounds in the Ocean](https://www.fisheries.noaa.gov/national/science-data/sounds-ocean-mammals),

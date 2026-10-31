@@ -267,6 +267,43 @@ Concept art for those first. Done so far, the parts that need no concept art:
   answered from elsewhere: NOAA's public-domain recordings (a humpback's song, right whale up-calls,
   sei whale downsweeps), slowed and darkened.
 
+## After the concept art (the user's six images, in Downloads, not in the repo)
+
+The user's choices: the spire in dark Gothic stone with pale bone ribs and iron collars ("mix"),
+heavy rain, whales paler and closer to Re:Zero's White Whale (our own design, no horn or sigil),
+whales first.
+
+- **Whales** (client/Level490Whales): pods of two to four (60-110 blocks long) swim slow loops under
+  the storm, diving into the cloud sea now and then (only well away from you); the Great Whale
+  (about 400 long) wanders a wider loop. Bone-white, long fins, broad flukes, throat grooves, dark
+  eyes, a swimming wave down the body, fog pouring off the skin. At the top of the spire the Great
+  Whale comes down out of the storm beside the tower to look at you, then rises back into it
+  (Level490WhalePayload). The whale song (client/Level490WhaleSong) comes from them.
+- **Rain** (client/Level490Weather): always heavy; Minecraft's own rain (the biome allows it now) and
+  the hiss of a real downpour (CC0), muffled inside the spire.
+- **Clouds as volumes** (client/Level490VolumeClouds, shaders/core/l490_clouds): a full-screen pass
+  in the sky follows each pixel's ray through the cloud sea (y 40-150) and the storm (y 600-760)
+  in tileable 3D Perlin-Worley noise (textures/environment/l490_cloud_noise, 64 slices packed 8 x 8):
+  billowing heads, lumps hanging under the storm, moonlit and darker below, lit from inside by
+  lightning. Replaces the flat sheets (kept as the fallback), the cloud towers and the anvils.
+- **The spire reworked** (world/layout/Level490Spire): dark Gothic stone (l490_gothic, carved trim
+  l490_gothic_carved), the ribs pale; turrets on corbels with pointed roofs, or broken off with a
+  red-leaved tree growing out; flying buttresses between neighbouring turrets; pinnacles round the
+  joints; rows of pointed windows, some candlelit (l490_window_lit gives light); a rose window over
+  the entrance. Nothing is built where the climb comes out (doors, ledges, piers, ladders). Inside:
+  statues in niches round the hall and the half-way room (l490_statue), a fallen bell and rubble in
+  the hall, candles on the stairs, a statue niche each turn of the lit stairs, two great breaches
+  open to the storm.
+- **The final climb:** the top has crumbled to a broken floor with a radio (falling from here on
+  only costs this last stretch). A narrow broken bridge (one gap to step across) runs out to the
+  colossal chain on the diagonal; a rusted ladder is welded up an iron column bolted to it, up to an
+  iron plate at the chain's upper collar (y 508). Stepping off from there is the leap.
+- **The walk:** about 220 blocks now (was 300). Where the route turns toward the spire stands a
+  Gothic gatehouse over the bridge (two crenellated towers, a pointed arch, a statue in a niche on
+  each looking back at you, lanterns). The last bridge before the spire's island groans half way
+  across and a stretch behind you falls into the void (world/Level490Crumble); it is rebuilt from
+  the layout two minutes later, and a gap still due is rebuilt after a restart too.
+
 ## Name and number
 
 **Level 490, "Penance".** 490 is "seventy times seven", how many times you must forgive:
@@ -284,5 +321,4 @@ record:
 
 ## Still open
 
-Stage 4 (the creature). The spire may be reworked to look more gothic and Farum Azula-like,
-more chaotic inside and out (after the stage 2 play-test).
+Stage 4 (the creature: the Great Whale becomes it).

@@ -23,8 +23,9 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 /**
  * Server rules of Level 490, "Penance": falling.
  * <ul>
- *   <li><b>The leap:</b> stepping off the top of the spire ({@link Level490Spire#TOP}) is the way
- *       out, to Level 9: the one fall that doesn't bring you back, wherever it ends.</li>
+ *   <li><b>The leap:</b> stepping off the collar of the colossal chain at the very top of the climb
+ *       ({@link Level490Spire#LEAP_Y}) is the way out, to Level 9: the one fall that doesn't bring
+ *       you back, wherever it ends.</li>
  *   <li><b>Any other fall:</b> once you sink into the clouds (below {@link Level490Layout#FALL_Y}),
  *       or land on something after falling {@value #BIG_FALL} blocks or more (off a ledge onto the
  *       island, off a ladder), the picture breaks up and you wake where you last used a radio, or
@@ -35,8 +36,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 public final class Level490Rules {
     /** A fall at least this long, landing on something, counts as falling off. */
     private static final float BIG_FALL = 12.0f;
-    /** A fall that started this close below the top platform is the leap. */
-    private static final int LEAP_FROM = Level490Spire.TOP - 3;
+    /** A fall that started this high is the leap (only the chain's collar is up there). */
+    private static final int LEAP_FROM = Level490Spire.LEAP_Y - 2;
     /** Highest point of each player's current fall (reset whenever they stand, climb or swim). */
     private static final Map<UUID, Double> FALL_TOP = new HashMap<>();
 
@@ -55,7 +56,17 @@ public final class Level490Rules {
         } else {
             FALL_TOP.merge(player.getUUID(), y, Math::max);
         }
-        if (y >= Level490Layout.FALL_Y || Travel.isMoving(player) || !player.isAlive()) {
+        if (Travel.isMoving(player) || !player.isAlive()) {
+            return;
+        }
+        // Stepped off the collar: the leap, as soon as you are falling (whatever you would land on).
+        if (!player.onGround() && !player.onClimbable() && FALL_TOP.getOrDefault(player.getUUID(), y) >= LEAP_FROM
+                && y < Level490Spire.LEAP_Y - 3 && !player.getAbilities().flying) {
+            FALL_TOP.remove(player.getUUID());
+            Travel.useExit(player, BackroomsLevel.LEVEL_490);
+            return;
+        }
+        if (y >= Level490Layout.FALL_Y) {
             return;
         }
         fell(player);

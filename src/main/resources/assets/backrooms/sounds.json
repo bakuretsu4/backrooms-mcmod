@@ -4407,5 +4407,11 @@
       {"name": "backrooms:level490/whale_far_3", "attenuation_distance": 48}
     ],
     "subtitle": "subtitles.backrooms.level490.whale_far"
+  },
+  "level490.rain": {
+    "sounds": [
+      {"name": "backrooms:level490/rain", "stream": true}
+    ],
+    "subtitle": "subtitles.backrooms.level490.rain"
   }
 }

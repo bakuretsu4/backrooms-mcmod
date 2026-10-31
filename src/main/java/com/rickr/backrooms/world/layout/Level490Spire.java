@@ -3,6 +3,7 @@ package com.rickr.backrooms.world.layout;
 import com.rickr.backrooms.block.GiantChainBlock;
 import com.rickr.backrooms.block.IronLanternBlock;
 import com.rickr.backrooms.block.MarkedStoneBlock;
+import com.rickr.backrooms.block.StatueBlock;
 import com.rickr.backrooms.registry.Level490Blocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.Hash;
@@ -17,21 +18,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CandleBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 /**
- * The spire on each of Level 490's sites (stage 2, docs/level-490-penance.md): a tower of pale,
- * grown-looking stone about 275 blocks tall, stacked like a spine. Each vertebra is turned, shifted
+ * The spire on each of Level 490's sites (stage 2, docs/level-490-penance.md): a tower of dark
+ * Gothic stone about 275 blocks tall, stacked like a spine, its ribs pale bone; turrets cling to it
+ * (pointed roofs, or broken off with red trees growing out), flying buttresses arc between them,
+ * candlelit windows and a rose window glow in it, pinnacles stand round its joints. Each vertebra is turned, shifted
  * and tilted a little from the one below, with a darker disc where two meet, so its outline is
  * different from every side. Ribs curl out of it, broken chunks of it float around it, an iron band
  * round its upper body is bolted by beams to the site's four colossal chains, and four more chains
  * run from its top platform up to them: it hangs in the chains.
  *
  * <pre>
- *   y 476        the top platform, open, with a spur over the void: step off = the leap out
+ *   y 505-508    the iron collar on a colossal chain: step off = the leap out
+ *   y 476-507    a broken bridge from the top to that chain, a ladder welded up it
+ *   y 476        the crumbled top, a radio (checkpoint)
  *   y 425-475    ledge 3 (1 wide, a gap), then a 50-block ladder up the outside to the top
  *   y 375-425    stair D, inside, windows
  *   y 357        ledge 2 (2 wide, half way round), ladder to stair D
@@ -86,8 +93,11 @@ public final class Level490Spire {
     /** The iron band round the upper body, and the collars on the colossal chains. */
     private static final int BAND_Y = 433;
     private static final int UPPER_COLLAR_Y = 505;
-    /** The spur off the top platform (angle from +u), over open void. */
-    private static final double SPUR_DEG = 22.5;
+    /**
+     * Where you stand on the colossal chain's upper collar after the last climb (the top of the
+     * rungs welded to the chain): stepping off from up here is the leap out.
+     */
+    public static final int LEAP_Y = UPPER_COLLAR_Y + 3;
     /** The site's colossal chains stand this far out on the diagonals (Level490Layout). */
     private static final double CHAIN_OFFSET = 34;
 
@@ -145,6 +155,16 @@ public final class Level490Spire {
     /** + world direction index (0 east, 1 south, 2 west, 3 north). */
     private static final int LADDER = 8;
     private static final int RADIO = 12;
+    private static final int GOTHIC = 16;
+    private static final int CARVED = 17;
+    private static final int WIN_LIT = 18;
+    private static final int WIN_DARK = 19;
+    /** + world direction index; the upper half at + 4. */
+    private static final int STATUE = 20;
+    private static final int CANDLE = 28;
+    private static final int RUBBLE = 29;
+    private static final int WOOD = 30;
+    private static final int LEAVES = 31;
     private static final Direction[] DIRS = {Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTH};
     private static volatile BlockState[] palette;
 
@@ -178,6 +198,11 @@ public final class Level490Spire {
     private final double[] lobe3;
     private final double[] discPhase;
     private final double platformPhase;
+    /** The colossal chain of the last climb (its axis in this frame), the column the rungs are welded to, the bridge's heading. */
+    private final double[] finalChain;
+    private final int rungU;
+    private final int rungV;
+    private final double bridgeDeg;
     private volatile float[][] outline;
     private volatile boolean built;
     private volatile java.util.List<double[][]> ribPaths;
@@ -236,6 +261,18 @@ public final class Level490Spire {
             discPhase[k] = Hash.unit(Hash.mix(h + 8)) * Math.PI * 2;
         }
         platformPhase = Hash.unit(seed, cx, cz, 4964) * Math.PI * 2;
+        // The last climb: up the colossal chain on the diagonal at 135 degrees in this frame.
+        double[] best = null;
+        for (int i = 0; i < 4; i++) {
+            double[] c = chainAxis(i);
+            if (c[0] < 0 && c[1] > 0) {
+                best = c;
+            }
+        }
+        finalChain = best;
+        rungU = (int) Math.round(best[0]) + 15;
+        rungV = (int) Math.round(best[1]);
+        bridgeDeg = deg(rungU + 3, rungV);
     }
 
     /**
@@ -387,7 +424,7 @@ public final class Level490Spire {
     private static BlockState[] palette() {
         BlockState[] p = palette;
         if (p == null) {
-            p = new BlockState[16];
+            p = new BlockState[32];
             p[AIR] = Blocks.AIR.defaultBlockState();
             p[SPIRE] = Level490Blocks.SPIRE.get().defaultBlockState();
             p[JOINT] = Level490Blocks.SPIRE_JOINT.get().defaultBlockState();
@@ -400,7 +437,18 @@ public final class Level490Spire {
                 p[LADDER + i] = Level490Blocks.LADDER.get().defaultBlockState().setValue(LadderBlock.FACING, DIRS[i]);
                 p[RADIO + i] = ModBlocks.CHECKPOINT_RADIO.get().defaultBlockState()
                         .setValue(BlockStateProperties.HORIZONTAL_FACING, DIRS[i]);
+                BlockState statue = Level490Blocks.STATUE.get().defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, DIRS[i]);
+                p[STATUE + i] = statue.setValue(StatueBlock.HALF, DoubleBlockHalf.LOWER);
+                p[STATUE + 4 + i] = statue.setValue(StatueBlock.HALF, DoubleBlockHalf.UPPER);
             }
+            p[GOTHIC] = Level490Blocks.GOTHIC.get().defaultBlockState();
+            p[CARVED] = Level490Blocks.GOTHIC_CARVED.get().defaultBlockState();
+            p[WIN_LIT] = Level490Blocks.WINDOW_LIT.get().defaultBlockState();
+            p[WIN_DARK] = Level490Blocks.WINDOW_DARK.get().defaultBlockState();
+            p[CANDLE] = Blocks.CANDLE.defaultBlockState().setValue(CandleBlock.CANDLES, 3).setValue(CandleBlock.LIT, true);
+            p[RUBBLE] = Level490Blocks.RUBBLE.get().defaultBlockState();
+            p[WOOD] = Level490Blocks.DEAD_WOOD.get().defaultBlockState();
+            p[LEAVES] = Level490Blocks.RED_LEAVES.get().defaultBlockState();
             palette = p;
         }
         return p;
@@ -589,11 +637,11 @@ public final class Level490Spire {
         if (r <= BODY_REACH) {
             for (int y = BASE; y < PLATFORM_Y; y++) {
                 if (r < WALL_R) {
-                    out.set(y, pal[STONE]); // the masonry core the stairs are cut into
+                    out.set(y, pal[GOTHIC]); // the masonry core the stairs are cut into
                 } else if (inDisc(u, v, y)) {
-                    out.set(y, pal[JOINT]);
+                    out.set(y, pal[CARVED]);
                 } else if (inBody(u, v, y)) {
-                    out.set(y, pal[SPIRE]);
+                    out.set(y, pal[GOTHIC]);
                 }
             }
             if (r < HALL_WALL_R) {
@@ -620,20 +668,20 @@ public final class Level490Spire {
         for (Stair s : STAIRS) {
             if (r < WALL_R) {
                 for (int y = s.bottom - 1; y <= s.top + 3; y++) {
-                    out.set(y, pal[r < SHAFT_R && y >= s.bottom && y <= s.top + 2 ? AIR : STONE]);
+                    out.set(y, pal[r < SHAFT_R && y >= s.bottom && y <= s.top + 2 ? AIR : GOTHIC]);
                 }
             }
         }
         // The hall at the foot: a round room the first stair rises out of.
         for (int y = BASE; y <= HALL_TOP + 1; y++) {
             if (r >= HALL_R) {
-                out.set(y, pal[STONE]);
+                out.set(y, pal[GOTHIC]);
             } else if (y == BASE) {
                 out.set(y, pal[PAVING]);
             } else if (y <= HALL_TOP || r < SHAFT_R) {
                 out.set(y, pal[AIR]);
             } else {
-                out.set(y, pal[STONE]);
+                out.set(y, pal[GOTHIC]);
             }
         }
         // The half-way room: a ring of floor round the stair, walls, a ceiling.
@@ -643,7 +691,7 @@ public final class Level490Spire {
                     continue; // the stair's shaft runs on through
                 }
                 if (r >= ROOM_R || y == ROOM_TOP + 1) {
-                    out.set(y, pal[STONE]);
+                    out.set(y, pal[GOTHIC]);
                 } else {
                     out.set(y, pal[y == ROOM_FLOOR - 1 ? PAVING : AIR]);
                 }
@@ -652,7 +700,7 @@ public final class Level490Spire {
         for (Stair s : STAIRS) {
             if (r < NEWEL_R) {
                 for (int y = s.bottom - 1; y <= s.top + 2; y++) {
-                    out.set(y, pal[STONE]);
+                    out.set(y, pal[GOTHIC]);
                 }
                 continue;
             }
@@ -668,10 +716,10 @@ public final class Level490Spire {
                 int b = (int) Math.floor(q2);
                 if (q2 == b) {
                     out.set(b - 1, pal[PAVING]);
-                    out.set(b - 2, pal[STONE]);
+                    out.set(b - 2, pal[GOTHIC]);
                 } else {
                     out.set(b, pal[SLAB]);
-                    out.set(b - 1, pal[STONE]);
+                    out.set(b - 1, pal[GOTHIC]);
                 }
             }
             // Landings: the floor at the top leaves a hole over the last part of the climb.
@@ -684,31 +732,35 @@ public final class Level490Spire {
         }
     }
 
-    /** The top platform, its broken parapet, and the spur reaching out over the void. */
+    /**
+     * The top: the spire has crumbled away to a broken floor, rubble on it, the stumps of a parapet
+     * and of pinnacles round the edge; open where the ladder arrives and where the last bridge
+     * leaves for the colossal chain.
+     */
     private void platform(int u, int v, double r, LevelLayout.Column out, BlockState[] pal) {
         double a = Math.atan2(v, u);
-        double rim = 12.4 + 0.8 * Math.sin(5 * a + platformPhase);
-        double sr = Math.toRadians(SPUR_DEG);
-        double along = u * Math.cos(sr) + v * Math.sin(sr);
-        double across = -u * Math.sin(sr) + v * Math.cos(sr);
-        double tip = 32.5 - 1.5 * Hash.unit(seed, worldX(u, v), worldZ(u, v), 4967);
-        boolean spur = along >= 9 && along <= tip && Math.abs(across) <= 1.6 - 0.6 * (along - 9) / (tip - 9);
-        boolean on = r <= rim;
-        if (!on && !spur) {
+        double rim = 12.4 + 0.8 * Math.sin(5 * a + platformPhase) - 1.3 * Hash.unit(seed, worldX(u, v), worldZ(u, v), 4965);
+        if (r > rim) {
             return;
         }
-        out.set(PLATFORM_Y, pal[PAVING]);
-        if (on ? r <= rim - 1 : along < tip - 8) {
-            out.set(PLATFORM_Y - 1, pal[STONE]);
+        long h = Hash.of(seed, worldX(u, v), worldZ(u, v), 4966);
+        out.set(PLATFORM_Y, pal[Hash.unit(h) < 0.2 ? RUBBLE : PAVING]);
+        out.set(PLATFORM_Y - 1, pal[GOTHIC]);
+        if (r <= 11) {
+            out.set(PLATFORM_Y - 2, pal[GOTHIC]);
         }
-        if (on && r <= 11) {
-            out.set(PLATFORM_Y - 2, pal[STONE]);
-        }
-        // A low broken wall round the edge: open where the ladder arrives and where the spur leaves.
         double d = deg(u, v);
-        boolean open = Math.abs(Math.IEEEremainder(d - 270, 360)) < 14 || Math.abs(Math.IEEEremainder(d - SPUR_DEG, 360)) < 16;
-        if (on && !spur && !open && r > rim - 1.2 && Hash.unit(seed, worldX(u, v), worldZ(u, v), 4966) < 0.55) {
-            out.set(PLATFORM_Y + 1, pal[STONE]);
+        boolean open = Math.abs(Math.IEEEremainder(d - 270, 360)) < 16 || Math.abs(Math.IEEEremainder(d - bridgeDeg, 360)) < 16
+                || Math.abs(Math.IEEEremainder(d, 360)) < 12;
+        double edge = Hash.unit(Hash.mix(h));
+        if (!open && r > rim - 1.2 && edge < 0.6) {
+            // Stumps of the parapet and its pinnacles, broken off at different heights.
+            int height = edge < 0.12 ? 3 : edge < 0.3 ? 2 : 1;
+            for (int y = PLATFORM_Y + 1; y <= PLATFORM_Y + height; y++) {
+                out.set(y, pal[CARVED]);
+            }
+        } else if (!open && r < rim - 2 && r > 4 && edge > 0.93) {
+            out.set(PLATFORM_Y + 1, pal[RUBBLE]); // fallen masonry
         }
     }
 
@@ -718,7 +770,8 @@ public final class Level490Spire {
 
     private void buildDecor() {
         Long2IntOpenHashMap voxels = new Long2IntOpenHashMap();
-        // Ribs: out of the body, curling round and down, thinning to a point.
+        gothic(voxels);
+        // Ribs: out of the body, curling round and down, thinning to a point (pale bone against the dark stone).
         for (double[][] rib : ribPaths()) {
             for (double[] p : rib) {
                 sphere(voxels, p[0], p[1], p[2], p[3], SPIRE);
@@ -793,6 +846,274 @@ public final class Level490Spire {
         }
     }
 
+    // ==========================================================================================
+    // The Gothic outside: windows, the rose window, turrets, flying buttresses, pinnacles
+    // ==========================================================================================
+
+    /**
+     * Where the climb comes out of the spire or runs round it: {angle, half width (degrees), lowest
+     * y, highest y}. Nothing is built onto the outside there (doors, ledges, piers, ladders, the
+     * rose window).
+     */
+    private static final double[][] KEEP_CLEAR = {
+            {0, 14, 196, 214},                  // the entrance
+            {90, 14, 246, 260}, {135, 50, 246, 258}, {180, 14, 246, 272},   // ledge 1 and its ladder
+            {270, 14, 352, 366}, {0, 95, 352, 364}, {90, 14, 352, 380},     // ledge 2 and its ladder
+            {180, 14, 420, 432}, {225, 50, 420, 432}, {270, 14, 420, PLATFORM_Y + 6},  // ledge 3, the long ladder
+            {0, 42, 318, 342},                  // the rose window
+    };
+
+    private static boolean clear(double deg, double halfWidth, double y0, double y1) {
+        for (double[] k : KEEP_CLEAR) {
+            if (Math.abs(Math.IEEEremainder(deg - k[0], 360)) < k[1] + halfWidth && y1 > k[2] && y0 < k[3]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** The tallest stretch {from, to} within lo..hi left free at angle deg (with the given half width). */
+    private static int[] freeSpan(double deg, double halfWidth, int lo, int hi) {
+        int bestFrom = lo;
+        int bestTo = lo;
+        int from = lo;
+        for (int y = lo; y <= hi + 1; y++) {
+            boolean blocked = y > hi || !clear(deg, halfWidth, y, y + 1);
+            if (blocked) {
+                if (y - from > bestTo - bestFrom) {
+                    bestFrom = from;
+                    bestTo = y;
+                }
+                from = y + 1;
+            }
+        }
+        return new int[] {bestFrom, bestTo};
+    }
+
+    /** The outermost cell of the body at angle {@code rad} and height y (spire frame), or null. */
+    private int[] surface(double rad, int y) {
+        double c = Math.cos(rad);
+        double s = Math.sin(rad);
+        for (double r = BODY_REACH; r > WALL_R; r -= 0.5) {
+            int u = (int) Math.round(r * c);
+            int v = (int) Math.round(r * s);
+            if (solid(u, v, y)) {
+                return new int[] {u, v};
+            }
+        }
+        return null;
+    }
+
+    private void gothic(Long2IntOpenHashMap voxels) {
+        // Pointed windows round every vertebra, some lit by candles inside, some dark.
+        for (int k = 1; k < JOINTS.length - 1; k++) {
+            int y0 = (JOINTS[k] + JOINTS[k + 1]) / 2 - 2;
+            for (int n = 0; n < 12; n++) {
+                double deg = 15 + 30 * n;
+                if (!clear(deg, 6, y0, y0 + 5)) {
+                    continue;
+                }
+                long h = Hash.of(seed, cx + k * 13 + n, cz, 4971);
+                int glass = Hash.unit(h) < 0.55 ? WIN_LIT : WIN_DARK;
+                double ext = extent(deg, y0, y0 + 4);
+                for (int t = -1; t <= 1; t++) {
+                    for (int dy = 0; dy <= 4; dy++) {
+                        if (dy == 4 && t != 0) {
+                            continue; // the pointed top
+                        }
+                        int[] c = surface(Math.toRadians(deg) + t / ext, y0 + dy);
+                        if (c != null) {
+                            voxels.put(vkey(c[0], y0 + dy, c[1]), glass);
+                        }
+                    }
+                }
+            }
+        }
+        // The rose window over the entrance: a wheel of carved spokes, candlelit glass between.
+        int ry = 330;
+        double rext = extent(0, ry - 7, ry + 7);
+        for (int t = -7; t <= 7; t++) {
+            for (int dy = -7; dy <= 7; dy++) {
+                double rho = Math.hypot(t, dy);
+                if (rho > 6.6) {
+                    continue;
+                }
+                int[] c = surface(t / rext, ry + dy);
+                if (c == null) {
+                    continue;
+                }
+                double psi = Math.atan2(dy, t);
+                double spoke = Math.abs(Math.IEEEremainder(psi, Math.PI / 6)) * rho;
+                int block = rho > 5.4 || rho < 1.3 || spoke < 0.55 ? CARVED : WIN_LIT;
+                voxels.put(vkey(c[0], ry + dy, c[1]), block);
+            }
+        }
+        // Turrets clinging to the body, at the angles between the climb's axes and the chains' diagonals.
+        double[] candidates = {25, 65, 115, 155, 205, 245, 295, 335};
+        java.util.List<double[]> turrets = new java.util.ArrayList<>();
+        for (double base : candidates) {
+            long h = Hash.of(seed, cx + (int) base, cz, 4970);
+            if (Hash.unit(h) > 0.8) {
+                continue;
+            }
+            double deg = base + (Hash.unit(Hash.mix(h)) - 0.5) * 8;
+            double rt = 3.5 + 2.2 * Hash.unit(Hash.mix(h + 1));
+            boolean broken = Hash.unit(Hash.mix(h + 4)) < 0.35;
+            double roof = broken ? 0 : rt * 2.6 + 4;
+            double halfWidth = Math.toDegrees(Math.atan2(rt + 1.5, 12.0 + rt));
+            // Fitted into the tallest stretch at this angle the climb leaves free (it runs round
+            // the spire at three heights, so a turret goes between them).
+            int[] free = freeSpan(deg, halfWidth, 216, PLATFORM_Y - 4);
+            int low = free[0] + (int) Math.ceil(2 * rt) + 2;
+            int high = free[1] - (int) Math.ceil(roof) - 2;
+            int len = Math.min(high - low, 45 + (int) (70 * Hash.unit(Hash.mix(h + 3))));
+            if (len < 25) {
+                continue;
+            }
+            int y0 = low + (int) ((high - low - len) * Hash.unit(Hash.mix(h + 2)));
+            int y1 = y0 + len;
+            double ext = extent(deg, y0, y1);
+            double rc = ext + rt - 1.8;
+            turret(voxels, h, deg, rc, rt, y0, y1, broken);
+            turrets.add(new double[] {deg, rc, rt, y0, y1});
+        }
+        // Flying buttresses arcing between neighbouring turrets.
+        turrets.sort((p, q2) -> Double.compare(p[0], q2[0]));
+        for (int i = 0; i + 1 < turrets.size(); i++) {
+            double[] ta = turrets.get(i);
+            double[] tb = turrets.get(i + 1);
+            if (tb[0] - ta[0] > 62) {
+                continue;
+            }
+            double y = Math.min(ta[4], tb[4]) - 10;
+            if (y < Math.max(ta[3], tb[3]) + 6 || !clear((ta[0] + tb[0]) / 2, (tb[0] - ta[0]) / 2, y - 3, y + 12)) {
+                continue;
+            }
+            double[] p0 = {(ta[1] + ta[2]) * Math.cos(Math.toRadians(ta[0])), y, (ta[1] + ta[2]) * Math.sin(Math.toRadians(ta[0]))};
+            double[] p2 = {(tb[1] + tb[2]) * Math.cos(Math.toRadians(tb[0])), y, (tb[1] + tb[2]) * Math.sin(Math.toRadians(tb[0]))};
+            double mid = Math.toRadians((ta[0] + tb[0]) / 2);
+            double mr = Math.max(ta[1] + ta[2], tb[1] + tb[2]) + 7;
+            double[] p1 = {mr * Math.cos(mid), y + 9, mr * Math.sin(mid)};
+            for (double t = 0; t <= 1.0001; t += 0.02) {
+                double w0 = (1 - t) * (1 - t);
+                double w1 = 2 * t * (1 - t);
+                double w2 = t * t;
+                sphere(voxels, w0 * p0[0] + w1 * p1[0] + w2 * p2[0], w0 * p0[1] + w1 * p1[1] + w2 * p2[1],
+                        w0 * p0[2] + w1 * p1[2] + w2 * p2[2], 1.2, CARVED);
+            }
+        }
+        // Pinnacles round the joints between the vertebrae (not where the ledges run).
+        for (int k = 1; k < JOINTS.length - 1; k++) {
+            int j = JOINTS[k];
+            if (ledgeJoint(j)) {
+                continue;
+            }
+            for (int n = 0; n < 8; n++) {
+                double deg = 22.5 + 45 * n;
+                if (!clear(deg, 3, j, j + 6)) {
+                    continue;
+                }
+                int[] c = surface(Math.toRadians(deg), j);
+                if (c == null) {
+                    continue;
+                }
+                int height = 3 + Hash.range(Hash.of(seed, cx + j, cz + n, 4972), 3);
+                for (int y = j + 1; y <= j + height; y++) {
+                    voxels.put(vkey(c[0], y, c[1]), CARVED);
+                }
+            }
+        }
+    }
+
+    /**
+     * One turret: a round tower on a corbel narrowing into the body below it, carved bands up it,
+     * small lit and dark windows; a pointed roof and spike, or (broken) a jagged top, now and then
+     * with a dead red-leaved tree growing out of it.
+     */
+    private void turret(Long2IntOpenHashMap voxels, long h, double deg, double rc, double rt, int y0, int y1, boolean broken) {
+        double ca = Math.cos(Math.toRadians(deg));
+        double sa = Math.sin(Math.toRadians(deg));
+        double lean = (Hash.unit(Hash.mix(h + 5)) - 0.5) * 0.06;
+        int corbel = (int) Math.ceil(rt * 2);
+        int reach = (int) Math.ceil(rt + 2);
+        for (int y = y0 - corbel; y <= y1; y++) {
+            double off = rc + lean * Math.max(0, y - y0);
+            double tu = off * ca;
+            double tv = off * sa;
+            boolean band = y > y0 && (y - y0) % 18 == 0;
+            double rr = y < y0 ? Math.max(0.8, rt * (1.0 - (double) (y0 - y) / corbel)) : rt + (band ? 1.0 : 0.0);
+            for (int u = (int) Math.floor(tu) - reach; u <= (int) Math.ceil(tu) + reach; u++) {
+                for (int v = (int) Math.floor(tv) - reach; v <= (int) Math.ceil(tv) + reach; v++) {
+                    double du = u - tu;
+                    double dv = v - tv;
+                    double d = Math.hypot(du, dv);
+                    if (d > rr) {
+                        continue;
+                    }
+                    int block = band || y < y0 ? CARVED : GOTHIC;
+                    if (broken && d > rr - 1.5 && y > y1 - 8) {
+                        // The jagged broken top: each stone of the wall stops at its own height.
+                        int stop = y1 - Hash.range(Hash.of(seed, worldX(u, v), worldZ(u, v), 4973), 8);
+                        if (y > stop) {
+                            continue;
+                        }
+                    }
+                    if (!band && y >= y0 && d > rr - 1.2 && (y - y0) % 12 >= 5 && (y - y0) % 12 <= 7) {
+                        double phi = Math.atan2(dv, du);
+                        for (int w = 0; w < 4; w++) {
+                            if (Math.abs(Math.IEEEremainder(phi - (w * Math.PI / 2 + Math.PI / 4), Math.PI * 2)) < 0.24) {
+                                block = Hash.unit(Hash.of(h, w, y / 12, 4974)) < 0.6 ? WIN_LIT : WIN_DARK;
+                            }
+                        }
+                    }
+                    voxels.put(vkey(u, y, v), block);
+                }
+            }
+        }
+        double tu = (rc + lean * (y1 - y0)) * ca;
+        double tv = (rc + lean * (y1 - y0)) * sa;
+        if (!broken) {
+            // A carved cornice, then a steep pointed roof and a spike.
+            double roof = rt * 2.6;
+            for (int y = y1 + 1; y <= y1 + (int) roof; y++) {
+                double rr = (rt + 1) * (1.0 - (y - y1 - 1) / roof);
+                sphereDisc(voxels, tu, y, tv, rr, CARVED);
+            }
+            for (int y = y1 + (int) roof + 1; y <= y1 + (int) roof + 3; y++) {
+                voxels.put(vkey((int) Math.round(tu), y, (int) Math.round(tv)), CARVED);
+            }
+        } else if (Hash.unit(Hash.mix(h + 6)) < 0.55) {
+            // A dead tree rooted in the broken top, a few red leaves left on it.
+            int bu = (int) Math.round(tu);
+            int bv = (int) Math.round(tv);
+            int trunk = 4 + Hash.range(Hash.mix(h + 7), 3);
+            for (int y = y1 - 6; y <= y1 - 6 + trunk + 6; y++) {
+                voxels.put(vkey(bu, y, bv), WOOD);
+            }
+            int top = y1 + trunk;
+            for (int du = -2; du <= 2; du++) {
+                for (int dv = -2; dv <= 2; dv++) {
+                    for (int dy = -1; dy <= 1; dy++) {
+                        if (du * du + dv * dv + dy * dy * 2 <= 5 && Hash.unit(Hash.of(h, du * 7 + dv, dy, 4975)) < 0.6) {
+                            voxels.put(vkey(bu + du, top + dy, bv + dv), LEAVES);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /** A flat disc of radius rr at height y. */
+    private static void sphereDisc(Long2IntOpenHashMap voxels, double u, int y, double v, double rr, int block) {
+        for (int cu = (int) Math.floor(u - rr); cu <= (int) Math.ceil(u + rr); cu++) {
+            for (int cv = (int) Math.floor(v - rr); cv <= (int) Math.ceil(v + rr); cv++) {
+                if (Math.hypot(cu - u, cv - v) <= rr) {
+                    voxels.put(vkey(cu, y, cv), block);
+                }
+            }
+        }
+    }
+
     /** Axis (u, v) of the site's colossal chain on diagonal i, in this frame (they hang at block corners). */
     private double[] chainAxis(int i) {
         // World offsets of the axis from the centre of block (cx, cz), then into this frame.
@@ -835,7 +1156,7 @@ public final class Level490Spire {
                     double dy = (cy + 0.5 - y) / (s * 0.7);
                     double ragged = 0.25 * (Hash.unit(Hash.of(h, cu, cv * 4096 + cy, 4968)) - 0.5);
                     if (du * du + dv * dv + dy * dy <= 1 + ragged) {
-                        voxels.put(vkey(cu, cy, cv), dy > 0.55 ? JOINT : SPIRE);
+                        voxels.put(vkey(cu, cy, cv), dy > 0.55 ? CARVED : GOTHIC);
                     }
                 }
             }
@@ -961,6 +1282,189 @@ public final class Level490Spire {
         for (int i = 0; i < LEDGES.length; i++) {
             ledge(LEDGES[i], i);
         }
+        dress();
+        finalClimb();
+    }
+
+    /** World direction index (into DIRS) of the axis nearest to frame angle deg. */
+    private int nearestDir(double deg) {
+        return worldDir(((int) Math.round(mod360(deg) / 90.0) % 4) * 90);
+    }
+
+    /** A statue in a niche cut into the wall at cell c, standing on y, looking toward the spire's middle. */
+    private void statue(int[] c, int y) {
+        int dir = nearestDir(deg(c[0], c[1]) + 180);
+        op(c[0], c[1], y, y, STATUE + dir);
+        op(c[0], c[1], y + 1, y + 1, STATUE + 4 + dir);
+        op(c[0], c[1], y + 2, y + 2, AIR);
+    }
+
+    /**
+     * Inside (after the play-test: "chaotic inside"): statues in niches round the hall and the
+     * half-way room, a fallen bell and rubble in the hall, candles on the stairs, a statue niche a
+     * turn in the lit stairs, and great breaches in their walls open to the storm.
+     */
+    private void dress() {
+        // The hall: statues round the wall, candles at their feet, rubble, the bell that fell.
+        for (double a : new double[] {70, 130, 180, 230, 290}) {
+            statue(wallCell(a, 9.0, 10.4), BASE + 1);
+            int[] f = wallCell(a, 7.6, 8.4);
+            op(f[0], f[1], BASE + 1, BASE + 1, CANDLE);
+        }
+        for (double a : new double[] {100, 160, 255, 315}) {
+            int[] c = wallCell(a, 8.0, 8.9);
+            op(c[0], c[1], BASE + 1, BASE + 1, RUBBLE);
+        }
+        double ba = Math.toRadians(205);
+        double bu = 7.3 * Math.cos(ba);
+        double bv = 7.3 * Math.sin(ba);
+        double tu = -Math.sin(ba);
+        double tv = Math.cos(ba);
+        for (int u = (int) bu - 3; u <= (int) bu + 3; u++) {
+            for (int v = (int) bv - 3; v <= (int) bv + 3; v++) {
+                double along = (u - bu) * tu + (v - bv) * tv;
+                double across = -(u - bu) * tv + (v - bv) * tu;
+                if (Math.abs(along) > 1.8 || Math.hypot(u, v) < SHAFT_R + 0.3 || Math.hypot(u, v) >= HALL_R) {
+                    continue;
+                }
+                double flare = 1.0 + 0.45 * (along + 1.8) / 3.6;
+                for (int y = BASE + 1; y <= BASE + 3; y++) {
+                    if (Math.hypot(across, y + 0.5 - (BASE + 2.1)) <= flare) {
+                        op(u, v, y, y, IRON);
+                    }
+                }
+            }
+        }
+        // The stairs: candles along their outer edge; in the lit stairs a statue in a niche each
+        // turn, and here and there the wall broken open to the storm.
+        for (Stair s : STAIRS) {
+            for (int n = 0; n < s.revs(); n++) {
+                for (double f : new double[] {0.22, 0.72}) {
+                    int[] c = edgeCell(s, s.a0 + f * 360);
+                    if (c != null) {
+                        int y = (int) Math.round(s.surface(n, deg(c[0], c[1])));
+                        if (y > s.bottom && (y < ROOM_FLOOR - 1 || y > ROOM_TOP + 1)) {
+                            op(c[0], c[1], y, y, CANDLE);
+                        }
+                    }
+                }
+                if (s.windows) {
+                    int[] c = wallCell(s.a0 + 0.55 * 360, 5.5, 6.6);
+                    int y = (int) Math.round(s.surface(n, deg(c[0], c[1]))) + 1;
+                    if (y > HALL_TOP + 2) {
+                        statue(c, y);
+                    }
+                }
+            }
+        }
+        breach(A, 2, A.a0 + 150);
+        breach(D, 3, D.a0 + 330);
+        // The half-way room: statues between the windows, candles, fallen masonry.
+        for (double a : new double[] {135, 315}) {
+            statue(wallCell(a, 9.0, 10.4), ROOM_FLOOR);
+            int[] f = wallCell(a, 7.6, 8.4);
+            op(f[0], f[1], ROOM_FLOOR, ROOM_FLOOR, CANDLE);
+        }
+        for (double a : new double[] {160, 290, 20}) {
+            int[] c = wallCell(a, 7.2, 8.0);
+            op(c[0], c[1], ROOM_FLOOR, ROOM_FLOOR, RUBBLE);
+        }
+    }
+
+    /** A tread cell at the stair's outer edge near angle deg whose step is a whole block (a candle can stand on it). */
+    private static int[] edgeCell(Stair s, double deg) {
+        int[] best = null;
+        double bestD = Double.MAX_VALUE;
+        for (int u = -6; u <= 6; u++) {
+            for (int v = -6; v <= 6; v++) {
+                double r = Math.hypot(u, v);
+                double q2 = Math.round(s.surface(0, deg(u, v)) * 2) / 2.0;
+                if (r < 4.5 || r >= SHAFT_R || q2 != Math.floor(q2)) {
+                    continue;
+                }
+                double d = Math.abs(Math.IEEEremainder(deg(u, v) - deg, 360.0));
+                if (d < bestD) {
+                    bestD = d;
+                    best = new int[] {u, v};
+                }
+            }
+        }
+        return best;
+    }
+
+    /** A great breach in the stair's wall at turn n, angle deg: open to the storm, 3 wide, 5 tall. */
+    private void breach(Stair s, int n, double deg) {
+        int y = (int) Math.round(s.surface(n, deg)) + 1;
+        double a = mod360(deg);
+        ray(a, SHAFT_R - 0.3, extent(a, y, y + 4) + 2.5, 1.6, y, y + 4);
+    }
+
+    /**
+     * The last climb (after the play-test: "the top: a final challenge"): from the crumbled top a
+     * narrow broken bridge runs out to the colossal chain on the diagonal; a rusted ladder is welded
+     * up a column of iron bolted to the chain, up to an iron plate at its collar. Stepping off from
+     * up there is the leap ({@link #LEAP_Y}). A radio on the top, so a fall from the bridge or the
+     * chain only costs this last stretch.
+     */
+    private void finalClimb() {
+        int su = rungU;
+        int sv = rungV;
+        // The radio and its lanterns on the top.
+        op(8, 0, TOP, TOP, RADIO + worldDir(180));
+        op(8, 2, TOP, TOP, LANTERN);
+        op(8, -2, TOP, TOP, LANTERN);
+        // The bridge: from the top's edge to a landing in front of the ladder, three wide, crumbling.
+        double a = Math.toRadians(bridgeDeg);
+        double x0 = 10.5 * Math.cos(a);
+        double z0 = 10.5 * Math.sin(a);
+        double x1 = su + 3;
+        double z1 = sv;
+        double len = Math.hypot(x1 - x0, z1 - z0);
+        double dx = (x1 - x0) / len;
+        double dz = (z1 - z0) / len;
+        int lo = (int) Math.floor(Math.min(x0, x1)) - 3;
+        int hi = (int) Math.ceil(Math.max(x0, x1)) + 3;
+        int vlo = (int) Math.floor(Math.min(z0, z1)) - 3;
+        int vhi = (int) Math.ceil(Math.max(z0, z1)) + 3;
+        for (int u = lo; u <= hi; u++) {
+            for (int v = vlo; v <= vhi; v++) {
+                double t = (u - x0) * dx + (v - z0) * dz;
+                double across = Math.abs(-(u - x0) * dz + (v - z0) * dx);
+                if (t < -1 || t > len + 0.5 || across > 1.4) {
+                    continue;
+                }
+                if (t > len * 0.55 && t < len * 0.55 + 1.6) {
+                    continue; // where it broke: a step across the void
+                }
+                if (across > 0.6 && Hash.unit(seed, worldX(u, v), worldZ(u, v), 4976) < 0.2) {
+                    continue; // crumbled edge
+                }
+                op(u, v, PLATFORM_Y, PLATFORM_Y, JOINT);
+                if (across <= 0.6) {
+                    op(u, v, PLATFORM_Y - 1, PLATFORM_Y - 1, JOINT);
+                }
+                op(u, v, TOP, TOP + 2, AIR);
+            }
+        }
+        // The landing in front of the ladder.
+        for (int u = su + 1; u <= su + 3; u++) {
+            for (int v = sv - 1; v <= sv + 1; v++) {
+                op(u, v, PLATFORM_Y - 1, PLATFORM_Y, JOINT);
+                op(u, v, TOP, TOP + 2, AIR);
+            }
+        }
+        // The iron column, the ladder up it, room to climb, and the plate at the collar.
+        op(su, sv, PLATFORM_Y - 6, LEAP_Y - 1, IRON);
+        op(su + 1, sv, TOP, LEAP_Y - 1, LADDER + worldDir(0));
+        op(su + 1, sv, LEAP_Y, LEAP_Y + 2, AIR);
+        op(su + 2, sv, TOP, LEAP_Y + 2, AIR);
+        int cu = (int) Math.round(finalChain[0]);
+        for (int u = cu + 11; u <= su; u++) {
+            for (int v = sv - 1; v <= sv + 1; v++) {
+                op(u, v, UPPER_COLLAR_Y, LEAP_Y - 1, IRON);
+                op(u, v, LEAP_Y, LEAP_Y + 2, AIR);
+            }
+        }
     }
 
     /** Opens the cells within {@code half} of the ray at angle deg, from radius r0 to r1, heights y0..y1. */
@@ -1085,7 +1589,7 @@ public final class Level490Spire {
      */
     public Map<BlockPos, BlockState> loopView(int loop, int lap) {
         Map<BlockPos, BlockState> view = new LinkedHashMap<>();
-        BlockState stone = Level490Blocks.STONE.get().defaultBlockState();
+        BlockState stone = Level490Blocks.GOTHIC.get().defaultBlockState();
         BlockState unlit = Level490Blocks.LANTERN.get().defaultBlockState().setValue(IronLanternBlock.LIT, false);
         BlockState lit = Level490Blocks.LANTERN.get().defaultBlockState().setValue(IronLanternBlock.LIT, true);
         BlockState words = Level490Blocks.WORDS.get().defaultBlockState();

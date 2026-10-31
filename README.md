@@ -255,42 +255,24 @@ going down into the dark, until the picture breaks up and you are in the next le
   out: houses whose doorway is pure black lead on to Level 490, flooded houses (knee-deep water,
   steps going down into murk) lead to Level 7, and the light behind the throne leads to Level 1.
 - **Level 490 ("Penance"):** through a dark doorway in Level 94 you come out among crumbling ruins
-  on floating islands of rock over a sea of storm cloud, at night (after Elden Ring's Crumbling
-  Farum Azula). Each island tapers to a ragged point of rock below; on top stand rings of pillars
-  (many broken), arcade walls with jagged broken tops, tower stubs, rubble, dead trees (some with a
-  few red leaves) and open shackles. Straight stone bridges with spiked iron railings climb in half
-  steps from island to island; some are broken off in the middle, stretches of railing are gone
-  and small chains dangle underneath. Colossal chains, every link 34 blocks long, hang out of the
-  storm and through some of the islands down into the clouds; four of them stand round the great
-  round island where the spire stands (see docs/level-490-penance.md). Rocks and masonry
-  float in the air, slowly turning; whirlwinds of cloud stand far off in the storm. Kilometres off
-  in the haze hang other ruins on their own chains (a domed rotunda among firs, a broken fortress,
-  a broken tower, a span of a great bridge); every few minutes one's chains snap somewhere and it
-  falls into the clouds, and you hear it long after (and at a few moments of the way one is sure to
-  fall in front of you). Whales sing somewhere in the storm. The cloud sea rolls, with canyons and
-  towers of cloud rising out of it far off; the storm hangs low in lumps; anvil clouds flicker on
-  the horizon. A far chain jerks taut now and then as if pulled from below,
-  its clank rolling in like thunder, and the chains near you groan under their load. Lightning
-  strikes in the distance every few seconds (real branching bolts that flicker, the clouds
-  glowing round them, more far chains showing in the flash) and its thunder comes as late as the
-  strike is far (recorded thunder: cracks close by, long rolls, low far rumbles), over howling
-  wind, the chains singing in it, the whirlwinds' roar and a deep drone. Old lanterns on the
-  bridges and little stone shelters with a checkpoint radio are the only warmth. A route of main
-  bridges leads about 300 blocks from where you arrive to the great island, where the spire
-  stands: a tower of pale, grown-looking stone about 275 blocks tall, stacked like a spine, each
-  vertebra turned and leaning its own way, ribs curling out of it, broken chunks of it floating
-  round it, an iron band round its upper body bolted to the four colossal chains and four more
-  chains running up to them from its top: it hangs in them. Through the fog it is the one thing you
-  can still see. Climb it: spiral stairs inside (lantern-lit, windows to the drop), then out a
-  narrow door onto a ledge with no railing and up a rusted ladder on the outside, in again, a
-  half-way room with a radio, and twice more, each ledge narrower (the last is a block wide with a
-  gap), the last ladder fifty blocks up the outside to the open top. Two stretches of the stairs
-  never end: you keep climbing the same turn, and every time round something is different (a
-  lantern out, an alcove bricked up, someone counting on the wall, shackles on the steps, footsteps
-  above you, GO BACK DOWN); walk back down to where you came in and it lets you go. Stepping off
-  the top is the way on, to Level 9. Fall anywhere else (into the clouds, or a long fall onto
-  something) and you wake at the last radio you used (or where you arrived), unhurt. No monsters
-  yet.
+  on floating islands of rock over a sea of storm cloud, at night, in pouring rain (after Elden
+  Ring's Crumbling Farum Azula). On the islands stand rings of pillars, arcade walls with broken
+  tops, tower stubs, rubble, dead trees and open shackles; stone bridges with spiked iron railings
+  climb in half steps between them, some broken off. Colossal chains, every link 34 blocks long,
+  hang out of the storm into the clouds. Rocks and masonry float in the air; whirlwinds stand far
+  off; billowing clouds roll below and hang in lumps overhead. Kilometres off hang other ruins on
+  their own chains, and every few minutes one breaks loose and falls into the clouds. Pale whales
+  swim under the storm trailing fog, and sing. Lightning strikes far off, its thunder as late as
+  it is far; far chains jerk taut with a clank; the chains near you groan. About 220 blocks from
+  where you arrive, past a Gothic gatehouse and over a bridge that gives way behind you, stands the
+  spire: a tower of dark Gothic stone about 275 blocks tall, stacked like a spine, its ribs pale,
+  turrets and flying buttresses clinging to it, candlelit windows and a rose window glowing, hanging
+  in four colossal chains. Climb it: stairs inside past statues and candles, ledges and ladders
+  outside, a half-way room with a radio; two stretches of the stairs never end until you go back
+  down (something changes every time round). From its crumbled top a broken bridge runs out to a
+  colossal chain; climb the ladder up it to the collar, as the Great Whale rises out of the storm
+  to watch you, and step off: the way on, to Level 9. Fall anywhere else (into the clouds, or a
+  long fall onto something) and you wake at the last radio you used, unhurt. No monsters yet.
 - **Level 9 (the Suburbs):** the last level, through the leap in Level 490. An endless suburb at midnight in thick fog that drains the colour
   from everything. Wet roads covered in leaves, old sodium streetlamps (most dead, some
   flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark

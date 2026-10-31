@@ -9,6 +9,7 @@ import com.rickr.backrooms.world.Hash;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CrossCollisionBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.SlabBlock;
@@ -108,7 +109,7 @@ public final class Level490Layout extends LevelLayout {
         for (int a = -8; a <= 8; a++) {
             for (int b = -8; b <= 8; b++) {
                 double d = SPACING * Math.hypot(a, b);
-                if (d >= 280 && d <= 320) {
+                if (d >= 200 && d <= 240) {
                     steps.add(new int[] {a, b});
                 }
             }
@@ -154,6 +155,30 @@ public final class Level490Layout extends LevelLayout {
         return Math.hypot(x - c[0] - 0.5, z - c[1] - 0.5) < 10.5 && y > DECK_Y && y < Level490Spire.TOP - 48;
     }
 
+    /**
+     * The route's last bridge before the spire's island, in the region containing (x, z):
+     * {along x? 1 : 0, the line it runs on (z or x), where its deck starts at the rim of the island
+     * you come from, where it ends at the spire island's rim (along its axis), the island tops at
+     * either end}. world/Level490Crumble makes it give way behind you.
+     */
+    public static int[] lastBridge(long seed, int x, int z) {
+        Site s = site(seed, Math.floorDiv(x, REGION), Math.floorDiv(z, REGION));
+        boolean alongX = s.aj == s.sj;
+        int pi = alongX ? s.si - Integer.signum(s.si - s.ai) : s.si;
+        int pj = alongX ? s.sj : s.sj - Integer.signum(s.sj - s.aj);
+        Island a = island(seed, pi, pj);
+        Island c = island(seed, s.si, s.sj);
+        if (a == null || c == null) {
+            return null;
+        }
+        int line = alongX ? Math.round((a.cz + c.cz) / 2.0f) : Math.round((a.cx + c.cx) / 2.0f);
+        int sign = alongX ? Integer.signum(c.cx - a.cx) : Integer.signum(c.cz - a.cz);
+        // The deck itself: from one island's rim to the other's.
+        int from = (alongX ? a.cx : a.cz) + sign * (int) Math.round(a.r * 1.05);
+        int to = (alongX ? c.cx : c.cz) - sign * (int) Math.round(c.r * 1.05);
+        return new int[] {alongX ? 1 : 0, line, from, to, a.top, c.top};
+    }
+
     /** The spire of the region containing (x, z). */
     public static Level490Spire spireAt(long seed, int x, int z) {
         return spire(seed, site(seed, Math.floorDiv(x, REGION), Math.floorDiv(z, REGION)));
@@ -171,6 +196,8 @@ public final class Level490Layout extends LevelLayout {
     private static final int ARRIVAL = 1;
     private static final int SITE = 2;
     private static final int CHAINED = 3;
+    /** The route island with the gatehouse on it (see {@link #gate}). */
+    private static final int GATE = 4;
 
     /**
      * One island: its node, centre, ground height, radius, kind, the hash its details come from,
@@ -203,12 +230,35 @@ public final class Level490Layout extends LevelLayout {
         return Hash.unit(seed, i, j, 4901) < 0.72;
     }
 
+    /**
+     * The gate node of site s: where the route turns from its row into its column toward the site,
+     * or (if the route is straight) half way along it.
+     */
+    private static int[] gateNode(Site s) {
+        if (s.ai != s.si && s.aj != s.sj) {
+            return new int[] {s.si, s.aj};
+        }
+        return new int[] {(s.ai + s.si) / 2, (s.aj + s.sj) / 2};
+    }
+
+    /** The way through site s's gate, toward the site: {1, 0} along +x, {0, -1} along -z, ... */
+    private static int[] gateHeading(Site s, int i, int j) {
+        if (j != s.sj) {
+            return new int[] {0, s.sj > j ? 1 : -1};
+        }
+        return new int[] {s.si > i ? 1 : -1, 0};
+    }
+
     private static int kind(long seed, Site s, int i, int j) {
         if (i == s.si && j == s.sj) {
             return SITE;
         }
         if (i == s.ai && j == s.aj) {
             return ARRIVAL;
+        }
+        int[] g = gateNode(s);
+        if (i == g[0] && j == g[1]) {
+            return GATE;
         }
         return Hash.unit(seed, i, j, 4920) < 0.025 ? CHAINED : PLAIN;
     }
@@ -222,6 +272,9 @@ public final class Level490Layout extends LevelLayout {
         }
         if (k == ARRIVAL) {
             return ARRIVAL_RADIUS;
+        }
+        if (k == GATE) {
+            return 13;
         }
         double u = Hash.unit(seed, i, j, 4903);
         int r = u < 0.45 ? 7 + Hash.range(Hash.of(seed, i, j, 4904), 3)
@@ -279,7 +332,7 @@ public final class Level490Layout extends LevelLayout {
                     }
                 }
             }
-            r = Math.max(r, 7); // big enough to always meet its bridges (centres are jittered up to 4)
+            r = Math.max(r, k == GATE ? 10 : 7); // big enough to always meet its bridges (centres are jittered up to 4)
         }
         int top = k == SITE || k == ARRIVAL ? DECK_Y : DECK_Y + (int) Math.round(6 * (smooth(seed, i, j) - 0.5) * 2);
         long h = Hash.of(seed, i, j, 4907);
@@ -460,6 +513,9 @@ public final class Level490Layout extends LevelLayout {
             }
             return rr < CHAIN_REACH; // under the chain: nothing else
         }
+        if (is.kind == GATE) {
+            return gate(seed, is, dx, dz, top, out);
+        }
         int pick = (int) (h >>> 40) & 7;
         boolean colonnade = is.kind == SITE || is.kind == ARRIVAL || (big ? pick < 5 : pick < 3);
         boolean wall = is.kind != SITE && (big && !colonnade || is.kind == ARRIVAL || big && pick >= 3);
@@ -471,6 +527,63 @@ public final class Level490Layout extends LevelLayout {
             return true;
         }
         return tower && tower(seed, is, dx, dz, top, x, z, out);
+    }
+
+    /**
+     * The gatehouse (after the play-test: "the walk is too long, too samey"): over the route where
+     * it leaves the island toward the spire stands a Gothic gate of the spire's dark stone, two
+     * towers with crenellated tops either side of a pointed arch as wide as the bridge, a statue in
+     * a niche on each tower looking back at you, a lit lantern either side of the way through.
+     */
+    private boolean gate(long seed, Island is, int dx, int dz, int top, Column out) {
+        int[] heading = gateHeading(siteOfNode(seed, is.i, is.j), is.i, is.j);
+        int along = dx * heading[0] + dz * heading[1];
+        int across = dx * heading[1] - dz * heading[0];
+        int g = Math.max(5, is.r - 4);
+        int ca = Math.abs(across);
+        if (along < g - 3 || along > g + 1 || ca > 6) {
+            return false;
+        }
+        BlockState gothic = b(Level490Blocks.GOTHIC);
+        BlockState carved = b(Level490Blocks.GOTHIC_CARVED);
+        if (along == g - 3) {
+            // In front of the gate: the lantern posts, the way clear.
+            if (ca == 3) {
+                out.set(top + 1, Level490Blocks.POST.get().defaultBlockState());
+                out.set(top + 2, Level490Blocks.LANTERN.get().defaultBlockState().setValue(IronLanternBlock.LIT, true));
+                return true;
+            }
+            return ca <= 2;
+        }
+        if (ca <= 2) {
+            // The arch: pointed, 9 high in the middle; the lintel and a battlement over it.
+            int arch = top + 9 - ca * ca / 2;
+            for (int y = arch + 1; y <= top + 13; y++) {
+                out.set(y, y == top + 13 ? carved : gothic);
+            }
+            if ((ca + along) % 2 == 0) {
+                out.set(top + 14, carved);
+            }
+            return true;
+        }
+        // The towers.
+        for (int y = top + 1; y <= top + 17; y++) {
+            out.set(y, y == top + 12 || y == top + 1 ? carved : gothic);
+        }
+        if ((ca + along) % 2 == 0) {
+            out.set(top + 18, carved);
+        }
+        if (along == g - 2 && ca == 4) {
+            // The niche facing the island, its statue.
+            Direction facing = Direction.fromDelta(-heading[0], 0, -heading[1]);
+            BlockState statue = Level490Blocks.STATUE.get().defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, facing);
+            out.set(top + 3, statue.setValue(com.rickr.backrooms.block.StatueBlock.HALF,
+                    net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER));
+            out.set(top + 4, statue.setValue(com.rickr.backrooms.block.StatueBlock.HALF,
+                    net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+            out.set(top + 5, Blocks.AIR.defaultBlockState());
+        }
+        return true;
     }
 
     /**
@@ -927,10 +1040,10 @@ public final class Level490Layout extends LevelLayout {
         return siteCentre(seed, x, z);
     }
 
-    /** The way out is the top of the spire. */
+    /** The way out is the top of the climb, the colossal chain's collar over the spire. */
     @Override
     public int exitY(long seed, int x, int z) {
-        return Level490Spire.TOP;
+        return Level490Spire.LEAP_Y;
     }
 
     @Override

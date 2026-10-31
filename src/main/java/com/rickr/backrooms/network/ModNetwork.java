@@ -151,6 +151,9 @@ public final class ModNetwork {
             com.rickr.backrooms.world.Level490Hung.CLIENT.clear();
             com.rickr.backrooms.client.Level490ClientState.receiveSeed(payload.layoutSeed());
         });
+        registrar.playToClient(Level490WhalePayload.TYPE, Level490WhalePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.Level490Whales.rise(
+                        payload.x(), payload.y(), payload.z(), payload.start(), payload.yaw())));
         registrar.playToClient(Level490FallPayload.TYPE, Level490FallPayload.STREAM_CODEC,
                 (payload, context) -> com.rickr.backrooms.world.Level490Hung.CLIENT.put(
                         com.rickr.backrooms.world.Level490Hung.key(payload.i(), payload.j()), new long[] {payload.gen(), payload.start()}));

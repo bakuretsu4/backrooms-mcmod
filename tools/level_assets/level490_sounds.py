@@ -10,6 +10,7 @@ and the loops of client/Level490Ambience:
   whirlwind  the far-off roar of the whirlwind pillars
   rumble     a constant low rumble under everything
   drone      a deep, slow, voice-like drone (made here, not recorded)
+  rain       the downpour on stone (client/Level490Weather): its wind cut out, the level has its own
 and the chains (client/Level490ChainEvents, client/Level490SkyHung):
   chain_creak  a colossal chain near by groaning under its load
   chain_jolt   a far chain jerked taut: a clank rolling on like thunder
@@ -84,6 +85,12 @@ def snd_level490_whirlwind() -> None:
     # The hurricane far off: only its roar, the highs gone with the distance.
     x = _clean(_rec("735350_wind_hurricane"), 25, 1200)
     _save(loud(_loop(x, 38.0, 3.0), -31), OUT / "whirlwind.ogg", loop=True)
+
+
+def snd_level490_rain() -> None:
+    # A heavy rainstorm's hiss: the recording's wind rumble taken out (the level has its own wind).
+    x = _clean(_rec("505469_heavy_rain"), 250, 12000)
+    _save(loud(_loop(x, 27.0, 3.0), -31), OUT / "rain.ogg", loop=True)
 
 
 def snd_level490_rumble() -> None:
@@ -252,4 +259,4 @@ def snd_level490_whale_far() -> None:
 SOUNDS = [snd_level490_thunder_close, snd_level490_thunder_roll, snd_level490_thunder_far, snd_level490_wind,
           snd_level490_wire, snd_level490_whirlwind, snd_level490_rumble, snd_level490_drone,
           snd_level490_chain_jolt, snd_level490_chain_snap, snd_level490_collapse, snd_level490_chain_creak,
-          snd_level490_whale_call, snd_level490_whale_far]
+          snd_level490_whale_call, snd_level490_whale_far, snd_level490_rain]

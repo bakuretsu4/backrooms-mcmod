@@ -19,8 +19,9 @@ import org.jetbrains.annotations.Nullable;
  * (they fade out by themselves when you leave). Wind howling over the void in slow gusts; the
  * colossal chains singing in the wind, louder the closer you are to one; the far whirlwinds'
  * roar; a constant low rumble; a deep, slow drone like distant voices, growing as you climb the
- * spire. Inside the spire the wind, the chains and the whirlwinds are muffled by the stone. The
- * thunder is {@link Level490Lightning}'s.
+ * spire; the downpour's hiss, as hard as {@link Level490Weather} makes it rain. Inside the spire
+ * the wind, the rain, the chains and the whirlwinds are muffled by the stone. The thunder is
+ * {@link Level490Lightning}'s.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Level490Ambience {
@@ -39,6 +40,8 @@ public final class Level490Ambience {
     private static FadingLoopSound rumble;
     @Nullable
     private static FadingLoopSound drone;
+    @Nullable
+    private static FadingLoopSound rain;
 
     private Level490Ambience() {}
 
@@ -66,6 +69,7 @@ public final class Level490Ambience {
         rumble = keep(rumble, ModSounds.LEVEL490_RUMBLE.get(), 0.6f);
         float climbed = (float) Math.max(0.0, Math.min(1.0, (eye.y - Level490Layout.DECK_Y) / (Level490Spire.TOP - Level490Layout.DECK_Y)));
         drone = keep(drone, ModSounds.LEVEL490_DRONE.get(), 0.4f + 0.5f * climbed);
+        rain = keep(rain, ModSounds.LEVEL490_RAIN.get(), 0.75f * Level490Weather.rain() * (indoors ? 0.2f : 1.0f));
     }
 
     /** Keeps a loop playing at {@code volume} (starting it if it isn't). */

@@ -202,6 +202,19 @@ public final class Level490Lightning {
         return best;
     }
 
+    /** The brightest strike right now, {x, z, brightness}, or null (for the cloud shader's glow). */
+    static float[] brightest() {
+        long now = System.currentTimeMillis();
+        float[] best = null;
+        for (Strike s : STRIKES) {
+            float v = s.intensity(now);
+            if (best == null || v > best[2]) {
+                best = new float[] {s.x, s.z, v};
+            }
+        }
+        return best;
+    }
+
     /** How much lightning lights the cloud at world (x, z) right now (0..~1). */
     static float cloudGlow(double x, double z) {
         if (STRIKES.isEmpty()) {

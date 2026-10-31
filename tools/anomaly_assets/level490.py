@@ -82,6 +82,80 @@ def tex_l490_paving() -> None:
     _save(img, "l490_paving")
 
 
+def _gothic_img():
+    """Dark weathered Gothic ashlar: three staggered courses a block, each stone its own tone, rain
+    streaks down it, grime in the joints, a faint cold tint."""
+    rng = G.rng_for(49060)
+    img, joint = _stones(rng, (66, 65, 72), 3, 2, True, 5.0, 6.0)
+    streaks = G.blur(G.fnoise(rng, beta=1.4, kmin=6, aniso=(1.0, 0.08)), 0.6)
+    img = G.add_lum(img, -G.smoothstep(0.4, 2.0, streaks) * 14)
+    chips = G.smoothstep(1.7, 2.6, G.fnoise(rng, beta=1.3, kmin=8))
+    img = G.add_lum(img, chips * 12)
+    return img
+
+
+def tex_l490_gothic() -> None:
+    """The spire's dark Gothic masonry."""
+    _save(_gothic_img(), "l490_gothic")
+
+
+def tex_l490_gothic_carved() -> None:
+    """Darker carved stone: vertical fluting between a moulding at top and bottom (cornices,
+    tracery, pinnacles, the turrets' roofs)."""
+    rng = G.rng_for(49061)
+    X, Y = G.grid()
+    img = G.fill((54, 53, 60), (S, S)).astype(float)
+    flutes = np.cos(X / S * np.pi * 2 * 4)
+    img = G.add_lum(img, flutes * 9)
+    band = (Y < S * 0.12) | (Y > S * 0.88)
+    img = np.where(band[..., None], G.add_lum(img, 8 - flutes * 18), img)
+    edge = G.smoothstep(2.5, 0.0, np.minimum(np.abs(Y - S * 0.12), np.abs(Y - S * 0.88)))
+    img = G.add_lum(img, -edge * 22 + G.fnoise(rng, beta=1.8, kmin=3) * 4 + rng.normal(0, 2.5, (S, S)))
+    streaks = G.blur(G.fnoise(rng, beta=1.4, kmin=6, aniso=(1.0, 0.08)), 0.6)
+    img = G.add_lum(img, -G.smoothstep(0.5, 2.0, streaks) * 12)
+    _save(img, "l490_gothic_carved")
+
+
+def _window(rng, glass, glow: bool):
+    """Leaded glass in a dark stone frame: small panes, each its own tone; lit ones glow warm."""
+    X, Y = G.grid()
+    img = G.fill((40, 39, 45), (S, S)).astype(float)
+    frame = 14
+    inside = (X >= frame) & (X < S - frame) & (Y >= frame) & (Y < S - frame)
+    pw, ph = (S - 2 * frame) / 3, (S - 2 * frame) / 4
+    col = np.floor((X - frame) / pw).astype(int)
+    row = np.floor((Y - frame) / ph).astype(int)
+    tone = rng.normal(0, 0.12, 64)[np.clip(row * 3 + col, 0, 63)]
+    lead = (np.abs(((X - frame) % pw) - pw / 2) > pw / 2 - 2.5) | (np.abs(((Y - frame) % ph) - ph / 2) > ph / 2 - 2.5)
+    pane = np.array(glass, float)[None, None, :] * (1 + tone[..., None])
+    if glow:
+        # Brighter toward the middle: the candle behind it.
+        c = 1.0 - 0.45 * np.hypot((X - S / 2) / (S / 2), (Y - S / 2) / (S / 2))
+        pane = pane * c[..., None]
+    img = np.where((inside & ~lead)[..., None], pane, img)
+    img = np.where((inside & lead)[..., None], np.array([22, 21, 24], float), img)
+    img = G.add_lum(img, rng.normal(0, 2.0, (S, S)))
+    return img
+
+
+def tex_l490_window_lit() -> None:
+    _save(_window(G.rng_for(49062), (255, 170, 92), True), "l490_window_lit")
+
+
+def tex_l490_window_dark() -> None:
+    _save(_window(G.rng_for(49063), (34, 38, 50), False), "l490_window_dark")
+
+
+def tex_l490_statue() -> None:
+    """A statue's pale worn stone, grime run down into its folds."""
+    rng = G.rng_for(49064)
+    img = G.fill((150, 146, 138), (S, S)).astype(float)
+    img = G.add_lum(img, G.fnoise(rng, beta=2.0, kmin=2) * 6 + rng.normal(0, 2.5, (S, S)))
+    streaks = G.blur(G.fnoise(rng, beta=1.4, kmin=6, aniso=(1.0, 0.08)), 0.6)
+    img = G.add_lum(img, -G.smoothstep(0.2, 1.8, streaks) * 26)
+    _save(img, "l490_statue")
+
+
 def _stone_img():
     """Big dressed stone blocks (two courses per block, joints staggered), streaked by the rain."""
     rng = G.rng_for(49002)
@@ -299,7 +373,7 @@ def _tally(draw, rng, x, y, size, n):
 def tex_l490_marks() -> None:
     """The stairwell stone with tally marks scratched in: 1-5 strokes, and a wall covered in them."""
     from PIL import Image, ImageDraw
-    base = _stone_img()
+    base = _gothic_img()
     for n in range(1, 7):
         rng = G.rng_for(49020 + n)
         layer = Image.new("L", (S, S), 0)
@@ -326,11 +400,11 @@ def tex_l490_words() -> None:
             draw.text((x + rng.uniform(-1.5, 1.5), y + rng.uniform(-1.5, 1.5)), line, fill=255, font=font)
     mask = np.asarray(layer, float) / 255.0
     mask *= G.smoothstep(-1.2, 0.2, G.fnoise(rng, beta=1.2, kmin=10))  # broken where the blade skipped
-    _save(_scratch(mask, _stone_img()), "l490_words")
+    _save(_scratch(mask, _gothic_img()), "l490_words")
 
 
 def tex_l490_puff() -> None:
-    """A soft puff of cloud (RGBA) for the cloud towers: a lumpy round body, denser in the middle,
+    """A soft puff of cloud (RGBA) for the fog pouring off the whales: a lumpy round body, denser in the middle,
     its edge broken into wisps; lighter at the top, where the moon catches it."""
     rng = G.rng_for(49040)
     X, Y = G.grid()
@@ -342,6 +416,69 @@ def tex_l490_puff() -> None:
     shade = 0.78 + 0.22 * (1 - Y / S) + G.fnoise(rng, beta=1.8, kmin=3) * 0.05
     img = np.dstack([np.clip(shade * 255, 0, 255)] * 3 + [alpha * 255])
     G.save_png(img, G.TEX / "environment" / "l490_puff.png")
+
+
+def _worley3(rng, n_cells: int, size: int = 64) -> np.ndarray:
+    """Tileable 3D Worley noise (size^3): distance to the nearest of one random point per cell,
+    0 at a point, about 1 at the farthest."""
+    pts = rng.random((n_cells, n_cells, n_cells, 3))
+    c = (np.arange(size) + 0.5) * n_cells / size
+    X, Y, Z = np.meshgrid(c, c, c, indexing="ij")
+    ix, iy, iz = np.floor(X).astype(int), np.floor(Y).astype(int), np.floor(Z).astype(int)
+    best = np.full(X.shape, 9.0)
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            for dz in (-1, 0, 1):
+                cx, cy, cz = ix + dx, iy + dy, iz + dz
+                p = pts[cx % n_cells, cy % n_cells, cz % n_cells]
+                d = (X - (cx + p[..., 0])) ** 2 + (Y - (cy + p[..., 1])) ** 2 + (Z - (cz + p[..., 2])) ** 2
+                best = np.minimum(best, d)
+    return np.clip(np.sqrt(best) / 0.9, 0, 1)
+
+
+def _fbm3(rng, size: int = 64, beta: float = 3.0, kmin: float = 2.0) -> np.ndarray:
+    """Tileable 3D fractal noise (power spectrum ~ 1/k^beta), normalised to 0..1."""
+    k = np.fft.fftfreq(size) * size
+    KX, KY, KZ = np.meshgrid(k, k, k, indexing="ij")
+    kk = np.sqrt(KX ** 2 + KY ** 2 + KZ ** 2)
+    amp = np.where(kk >= kmin, np.maximum(kk, 1e-6) ** (-beta / 2), 0.0)
+    spec = (rng.normal(size=kk.shape) + 1j * rng.normal(size=kk.shape)) * amp
+    a = np.real(np.fft.ifftn(spec))
+    return (a - a.min()) / (a.max() - a.min())
+
+
+def tex_l490_cloud_noise() -> None:
+    """Tileable 3D noise for Level 490's cloud shader (shaders/core/l490_clouds.fsh): 64 slices of
+    64 x 64, packed 8 x 8 into one 512 x 512 image (slice z at column z % 8, row z // 8).
+      R  the clouds' shapes: smooth fractal noise made billowy by inverted Worley noise (Perlin-Worley)
+      G  detail that eats the edges: finer inverted Worley noise in three octaves
+      B  plain smooth fractal noise (coverage, variety)"""
+    from PIL import Image
+    rng = np.random.default_rng(49050)
+    size = 64
+    w4, w8, w16, w32 = (_worley3(rng, n, size) for n in (4, 8, 16, 32))
+    billow = 1.0 - (0.625 * w4 + 0.25 * w8 + 0.125 * w16)
+    smooth = _fbm3(rng, size, beta=3.2, kmin=1.5)
+    # Perlin-Worley: the smooth noise remapped by the billows, so it clumps into round heads.
+    pw = np.clip((smooth - (1.0 - billow)) / (1.0 - (1.0 - billow) + 1e-6), 0, 1)
+    pw = 0.5 * pw + 0.5 * billow
+    detail = 1.0 - (0.625 * w8 + 0.25 * w16 + 0.125 * w32)
+    plain = _fbm3(rng, size, beta=2.4, kmin=2.0)
+
+    def norm(a):
+        return (a - a.min()) / (a.max() - a.min())
+
+    channels = [norm(pw), norm(detail), norm(plain)]
+    atlas = np.zeros((512, 512, 4), np.uint8)
+    atlas[..., 3] = 255
+    for z in range(size):
+        col, row = z % 8, z // 8
+        for c in range(3):
+            # Rows are y, columns x within a slice.
+            atlas[row * 64:(row + 1) * 64, col * 64:(col + 1) * 64, c] = np.round(channels[c][:, :, z].T * 255)
+    path = G.TEX / "environment" / "l490_cloud_noise.png"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(atlas, "RGBA").save(path)
 
 
 def tex_l490_moon() -> None:
@@ -399,7 +536,8 @@ IRON_TEX = {"iron": _ref("l490_iron"), "particle": _ref("l490_iron")}
 def tex_l490_models() -> None:
     """Block models, blockstates and item models of every Level 490 block."""
     for name in ("l490_paving", "l490_stone", "l490_slate", "l490_rock", "l490_rubble", "l490_chain_iron", "l490_dead_wood",
-                 "l490_spire", "l490_spire_joint", "l490_words"):
+                 "l490_spire", "l490_spire_joint", "l490_words", "l490_gothic", "l490_gothic_carved",
+                 "l490_window_lit", "l490_window_dark"):
         _model(name, {"parent": "minecraft:block/cube_all", "textures": {"all": _ref(name)}})
         _json(f"blockstates/{name}.json", {"variants": {"": {"model": _ref(name)}}})
         _json(f"models/item/{name}.json", {"parent": _ref(name)})
@@ -499,6 +637,24 @@ def tex_l490_models() -> None:
         for f, y in (("north", 0), ("east", 90), ("south", 180), ("west", 270))}})
     _json("models/item/l490_ladder.json", {"parent": "minecraft:item/generated", "textures": {"layer0": _ref("l490_ladder")}})
 
+    # The statue: a robed figure in two blocks (the head worn to a stump), facing south unturned.
+    st = {"stone": _ref("l490_statue"), "particle": _ref("l490_statue")}
+    _model("l490_statue_lower", {"textures": st, "elements": [
+        _el((3.5, 0, 3.5), (12.5, 2, 12.5), "#stone"),
+        _el((4.5, 2, 5), (11.5, 16, 11.5), "#stone"),
+        _el((4, 2, 4.5), (12, 6, 12), "#stone"),
+    ]})
+    _model("l490_statue_upper", {"textures": st, "elements": [
+        _el((5, 0, 5.5), (11, 9, 11), "#stone"),
+        _el((3.5, 6, 6), (5, 9, 10), "#stone"), _el((11, 6, 6), (12.5, 9, 10), "#stone"),
+        _el((6.5, 9, 7), (9.5, 11, 10), "#stone"),
+        _el((6, 3, 10.5), (10, 6, 12), "#stone"),
+    ]})
+    _json("blockstates/l490_statue.json", {"variants": {
+        f"facing={f},half={h}": ({"model": _ref(f"l490_statue_{h}"), "y": y} if y else {"model": _ref(f"l490_statue_{h}")})
+        for f, y in (("south", 0), ("west", 90), ("north", 180), ("east", 270)) for h in ("lower", "upper")}})
+    _json("models/item/l490_statue.json", {"parent": _ref("l490_statue_lower")})
+
     # The scratched stairwell stone, one model per number of marks.
     for n in range(1, 7):
         _model(f"l490_marked_stone_{n}", {"parent": "minecraft:block/cube_all", "textures": {"all": _ref(f"l490_marked_{n}")}})
@@ -509,6 +665,7 @@ def tex_l490_models() -> None:
 
 TEXTURES = [tex_l490_paving, tex_l490_stone, tex_l490_slate, tex_l490_iron, tex_l490_lantern_glass,
             tex_l490_rock, tex_l490_rubble, tex_l490_dead_grass, tex_l490_chain_iron, tex_l490_dead_wood,
-            tex_l490_red_leaves, tex_l490_spire, tex_l490_spire_joint, tex_l490_ladder, tex_l490_marks,
-            tex_l490_words, tex_l490_puff, tex_l490_moon, tex_l490_models]
+            tex_l490_red_leaves, tex_l490_spire, tex_l490_spire_joint, tex_l490_gothic, tex_l490_gothic_carved,
+            tex_l490_window_lit, tex_l490_window_dark, tex_l490_statue, tex_l490_ladder, tex_l490_marks,
+            tex_l490_words, tex_l490_puff, tex_l490_cloud_noise, tex_l490_moon, tex_l490_models]
 SOUNDS = []

@@ -42,6 +42,8 @@ final class Level490SkyChains {
     private static final float[][] LOOP = loop();
     /** Drawn up to the storm layer (Level490Sky's lowest at y 640), which they vanish into. */
     private static final float TOP = 640.0f;
+    /** And down to the cloud sea's top, which they vanish into the same way. */
+    private static final float SEA = 130.0f;
     /** The built chains' blocks stop at the top of the world; a link's half length below that the sky takes over. */
     private static final float BUILT_TOP = com.rickr.backrooms.world.layout.Level490Layout.WORLD_HEIGHT - 17.0f;
 
@@ -87,7 +89,7 @@ final class Level490SkyChains {
             float alpha = (float) Math.exp(-(d - built) / FADE);
             alpha = Math.min(1.0f, alpha + Level490Lightning.cloudGlow(c[0], c[1]) * 0.9f);
             if (alpha > 0.02f) {
-                chain(quads, view, eye, far, c[0], c[1], 1.0f, c[2], 0.0f, TOP, alpha, d, 0.06f, count);
+                chain(quads, view, eye, far, c[0], c[1], 1.0f, c[2], SEA, TOP, alpha, d, 0.06f, count);
             }
         }
         // The giants, miles off.
@@ -107,7 +109,7 @@ final class Level490SkyChains {
                     continue;
                 }
                 float alpha = (float) Math.min(1.0, 0.75 * Math.exp(-(d - 3000) / 4500.0) + Level490Lightning.cloudGlow(x, z));
-                chain(quads, view, eye, far, x, z, GIANT, -1500.0f, -2000.0f, TOP, alpha, d, 0.06f, count);
+                chain(quads, view, eye, far, x, z, GIANT, -1500.0f, SEA, TOP, alpha, d, 0.06f, count);
             }
         }
         if (count[0] > 0) {
@@ -138,8 +140,9 @@ final class Level490SkyChains {
         for (int k = k0; k <= k1; k++) {
             float cy = phase + k * pitch + pull;
             boolean inX = (k & 1) == 0;
-            // Into the storm: the last links fade out.
-            float a = alpha * Math.max(0.0f, Math.min(1.0f, (yTop - cy) / (pitch * 2)));
+            // Into the storm and into the cloud sea: the end links fade out.
+            float a = alpha * Math.max(0.0f, Math.min(1.0f, (yTop - cy) / (pitch * 2)))
+                    * Math.max(0.0f, Math.min(1.0f, (cy - yBottom) / (pitch * 1.5f)));
             if (a < 0.02f) {
                 continue;
             }
