@@ -14,6 +14,8 @@ a faint tone beating against itself like ringing ears. Everything sits in a smal
 | hurt    | it is hit                              | -31             |
 | death   | it dies                                | -30             |
 | lost    | it gives up (you made it)              | -31             |
+| click   | a joint pops (its head snaps, a glitch) | -40, played at 0.16-0.32 volume |
+| scrape  | its claws drag along the floor         | -40, played at 0.28 volume |
 
 Run only these with:  python tools/gen_assets.py bacteria_
 """
@@ -199,6 +201,43 @@ def snd_bacteria_lost() -> None:
     _save(_room(rng, G.norm(x) + 0.25 * G.norm(_darken(clicks, 1500))), "bacteria_lost", -31.0, fade_out=0.5)
 
 
+def snd_bacteria_click() -> None:
+    """Three takes: one dry, small crack of bone or cartilage. Two tiny clicks a few milliseconds
+    apart (like a knuckle), bright but short, with a faint hollow knock under them. No room: dry
+    and close, as if right next to your ear."""
+    for i in range(1, 4):
+        rng = G.rng_for(3310 + i)
+        n = int(0.16 * SR)
+        tt = np.arange(n) / SR
+        x = np.zeros(n)
+        for t0, level in ((0.004, 1.0), (rng.uniform(0.012, 0.022), rng.uniform(0.4, 0.7))):
+            k = int(0.03 * SR)
+            kt = np.arange(k) / SR
+            snap = G.fft_filter(rng.normal(size=k) * np.exp(-kt / 0.0008), lambda f: G.bp_gain(f, 1800, 7000, 2))
+            G.add_at(x, G.norm(snap) * level, t0, circular=False)
+        knock = np.sin(2 * np.pi * rng.uniform(380, 620) * tt) * np.exp(-tt / 0.012) * (tt > 0.004)
+        x = G.norm(x) + 0.25 * G.norm(knock)
+        _save(_darken(x, 6500), f"bacteria_click{i}", -40.0, fade_out=0.02)
+
+
+def snd_bacteria_scrape() -> None:
+    """Two takes: claw tips dragged a short way over carpet and concrete: a rough, gritty hiss
+    with tiny catches in it, swelling in and dying away (about half a second)."""
+    for i in range(1, 3):
+        rng = G.rng_for(3320 + i)
+        n = int(0.55 * SR)
+        tt = np.arange(n) / SR
+        hiss = G.fft_filter(rng.normal(size=n), lambda f: G.bp_gain(f, 900, 4200, 2))
+        # Grit: the drag catches and releases many times a second.
+        grit = np.clip(rng.normal(size=n // 220 + 1), 0, None)
+        grit = np.repeat(grit, 220)[:n]
+        env = np.sin(np.pi * np.clip(tt / 0.55, 0, 1)) ** 1.5
+        x = hiss * (0.5 + grit) * env
+        x = x + 0.35 * _clicks(rng, n, rng.uniform(0.05, 0.45, size=3))
+        _save(_room(rng, _darken(x, 5000), 0.15), f"bacteria_scrape{i}", -40.0, fade_out=0.05)
+
+
 TEXTURES: list = []
 SOUNDS = [snd_bacteria_ambient, snd_bacteria_search, snd_bacteria_screech, snd_bacteria_steps,
-          snd_bacteria_hurt, snd_bacteria_death, snd_bacteria_lost]
+          snd_bacteria_hurt, snd_bacteria_death, snd_bacteria_lost, snd_bacteria_click,
+          snd_bacteria_scrape]

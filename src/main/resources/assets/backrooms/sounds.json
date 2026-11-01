@@ -265,6 +265,36 @@
     ],
     "subtitle": "subtitles.backrooms.bacteria.lost"
   },
+  "entity.bacteria.click": {
+    "sounds": [
+      {
+        "name": "backrooms:entity/bacteria_click1",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:entity/bacteria_click2",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:entity/bacteria_click3",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.bacteria.click"
+  },
+  "entity.bacteria.scrape": {
+    "sounds": [
+      {
+        "name": "backrooms:entity/bacteria_scrape1",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:entity/bacteria_scrape2",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.bacteria.scrape"
+  },
   "camcorder.rec_beep": {
     "sounds": [
       {

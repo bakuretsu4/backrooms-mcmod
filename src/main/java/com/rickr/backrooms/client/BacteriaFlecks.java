@@ -18,9 +18,10 @@ import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 /**
- * Little black squares that come off a Bacteria while it hunts or holds you, and drift slowly
- * down, like flakes of it falling apart (the reference video has them all through the close-up).
- * About two a second from each one, from random points along its arms and spine.
+ * Little black specks that come off a Bacteria while it runs at you or holds you, and drift
+ * slowly down, like dust off something falling apart (the reference video has them all through
+ * the close-up). About one a second from each one, from random points along its arms and spine;
+ * small, so they read as dust, not confetti.
  *
  * <p>Purely on the client and cheap: no particle type to register, just a particle showing the
  * black concrete texture (that is what makes it a solid black square). Off when the
@@ -28,8 +29,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class BacteriaFlecks {
-    /** Chance per tick for each Bacteria: 0.1 = about 2 flecks a second. */
-    private static final float CHANCE = 0.1f;
+    /** Chance per tick for each Bacteria: 0.05 = about 1 fleck a second. */
+    private static final float CHANCE = 0.05f;
     /** Only Bacteria this close to you shed flecks you could see. */
     private static final double RANGE = 32.0;
     private static final RandomSource RANDOM = RandomSource.create();
@@ -104,7 +105,7 @@ public final class BacteriaFlecks {
             super(level, x, y, z);
             setSprite(sprite);
             lifetime = 20 + random.nextInt(21);
-            quadSize = 0.03f + random.nextFloat() * 0.03f;
+            quadSize = 0.018f + random.nextFloat() * 0.018f;
             gravity = 0.0f;
             friction = 1.0f;
             hasPhysics = false;

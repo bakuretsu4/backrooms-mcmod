@@ -46,6 +46,8 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> BACTERIA_DEATH = register("entity.bacteria.death");
     public static final DeferredHolder<SoundEvent, SoundEvent> BACTERIA_SEARCH = register("entity.bacteria.search");
     public static final DeferredHolder<SoundEvent, SoundEvent> BACTERIA_LOST = register("entity.bacteria.lost");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BACTERIA_CLICK = register("entity.bacteria.click");
+    public static final DeferredHolder<SoundEvent, SoundEvent> BACTERIA_SCRAPE = register("entity.bacteria.scrape");
 
     public static final DeferredHolder<SoundEvent, SoundEvent> REC_BEEP = register("camcorder.rec_beep");
     public static final DeferredHolder<SoundEvent, SoundEvent> BATTERY_LOW = register("camcorder.battery_low");
