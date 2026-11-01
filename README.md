@@ -479,21 +479,22 @@ houses). Upside-down furniture doesn't count.
   breathing, soft clicks of its joints and the scrape of its claws, never a shriek. With NightShot
   on you can see it even in total darkness.
 
-  How it moves (like the Bacteria of the XP Games add-on): standing, it is tall and upright,
-  leaning on its long arms like two crutches with its claws on the floor in front of it, and only
-  the claws slowly slide back and forth. If it can see you, its head slowly turns onto you and
-  stays there, wherever its body goes. It walks upright on wide-apart legs with its arms held out
-  to the sides like a spider's, each claw planted on the floor and re-planted on its own. It runs
-  upright too, scurrying on fast short steps while its arms vault it along, one claw planted out to
-  the side as the other swings up and over, dropping little black flakes. Sometimes, before it has
-  properly seen you, its head slowly comes out from behind a pillar or door frame to look at you.
-  Within 3 blocks it stops dead in a wide stance and stares at you for a moment, then leaps with
-  its arms flung straight out and closes them around you. It stops about two blocks away and holds
-  you in a cage of its long arms (its body never ends up in your face); the hits come from the
-  arms, and now and then one whips across your face while its head slowly creeps in to look at
-  you. Get more than 3 blocks away and you have broken free; if its leap misses, it swipes at you
-  with one arm. Hit it and its head snaps back for a moment. After a kill it folds over the body
-  for a few seconds.
+  How it moves (like the Bacteria of the XP Games add-on): it stands about 2.5 blocks tall, so its
+  head clears the ceiling, with its neck pushed forward like a vulture's and its head tilted to one
+  side. Standing, it leans on its bent arms with the claws on the floor in front of it, and only the
+  claws slowly move: down to the floor, forward, back. If it can see you, its head slowly turns
+  onto you and stays there, wherever its body goes. It walks like a mantis on short, bent, wide-apart
+  legs, one arm cocked forward with the claws hanging while the other reaches back to the floor,
+  swapping with every step. It runs upright, scurrying on fast short steps while its arms vault it
+  along like spider legs, one planted wide out to the side as the other whips up and over, dropping
+  little black flakes. Sometimes, before it has properly seen you, its head slowly comes out from
+  behind a pillar or door frame to look at you. Within 3 blocks it stops dead in a wide crouch and
+  stares at you for a moment, then leaps with its arms flung straight out and closes them around
+  you. It stops about a block and a half away and holds you in a cage of its long arms (its body
+  never ends up in your face); the hits come from the arms, and now and then one whips across your
+  face while its head slowly creeps in to look at you. Get more than 2.5 blocks away and you have
+  broken free; if its leap misses, it swipes at you with one arm. Hit it and its head snaps back
+  for a moment. After a kill it folds over the body for a few seconds.
 - **Blackouts:** the lights fade out over two seconds. Only flashlights work, and the Bacteria come
   out three times as often, but they can't use the lamps to spot you either.
 - **Smilers (Levels 1 and 2 in blackouts, Level 1's dead zones, Level 9's dark streets, Level 94 at

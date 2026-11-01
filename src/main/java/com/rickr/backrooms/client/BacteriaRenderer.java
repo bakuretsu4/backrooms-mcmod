@@ -18,13 +18,23 @@ public class BacteriaRenderer extends MobRenderer<Bacteria, BacteriaModel> {
     private static final ResourceLocation TEXTURE = Backrooms.id("textures/entity/bacteria.png");
 
     public BacteriaRenderer(EntityRendererProvider.Context context) {
-        super(context, new BacteriaModel(context.bakeLayer(BacteriaModel.LAYER)), 0.5f);
+        super(context, new BacteriaModel(context.bakeLayer(BacteriaModel.LAYER)), 0.5f * Bacteria.BODY_SCALE);
         addLayer(new NightShotLayer(this));
     }
 
     @Override
     public ResourceLocation getTextureLocation(Bacteria entity) {
         return TEXTURE;
+    }
+
+    /**
+     * Draws the whole model (and so the NightShot layer too) at Bacteria.BODY_SCALE: 2.5 blocks
+     * tall instead of the model's own 3.4, so its head stays under a 3-block ceiling. Scaling about
+     * its feet keeps it standing on the floor; the model's shape is unchanged.
+     */
+    @Override
+    protected void scale(Bacteria entity, PoseStack poseStack, float partialTick) {
+        poseStack.scale(Bacteria.BODY_SCALE, Bacteria.BODY_SCALE, Bacteria.BODY_SCALE);
     }
 
     /**

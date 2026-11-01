@@ -17,14 +17,15 @@ public final class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registries.ENTITY_TYPE, Backrooms.MOD_ID);
 
     /**
-     * Kane Pixels' "Bacteria": very tall, wire-thin, black. The hitbox is only 2.9 blocks tall so it
-     * fits through the 3-block doorways of Levels 0 and 1 and the corridors of Level 2; the
-     * model stands about 3.4 blocks tall in open rooms and stoops under anything lower.
+     * Kane Pixels' "Bacteria": tall, wire-thin, black. It is drawn at Bacteria.BODY_SCALE, which
+     * makes it 2.5 blocks tall standing straight, so its head clears the 3-block ceilings of Level 0
+     * and the doorways of Levels 0-2; the hitbox matches (2.5 tall, eyes at 2.2). It still stoops
+     * under anything lower.
      */
     public static final DeferredHolder<EntityType<?>, EntityType<Bacteria>> BACTERIA = ENTITIES.register("bacteria",
             () -> EntityType.Builder.of(Bacteria::new, MobCategory.MONSTER)
-                    .sized(0.7f, 2.9f)
-                    .eyeHeight(2.6f)
+                    .sized(0.7f, 2.5f)
+                    .eyeHeight(2.2f)
                     .clientTrackingRange(12)
                     .build(Backrooms.id("bacteria").toString()));
 

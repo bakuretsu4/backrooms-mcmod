@@ -175,17 +175,19 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final double RUN_KICK = 0.27;
     /**
      * Its body stops this far from you (blocks, centre to centre) and its arms do the rest, so
-     * your camera is never inside it. It keeps between the MIN and MAX distance.
+     * your camera is never inside it. It keeps between the MIN and MAX distance. (Its arms are
+     * shorter at the drawn size, BODY_SCALE, so it holds you from 1.5 blocks: from further away its
+     * claws couldn't reach the floor beside you.)
      */
-    private static final double STANDOFF = 1.75;
-    private static final double STANDOFF_MIN = 1.5;
-    private static final double STANDOFF_MAX = 2.0;
+    private static final double STANDOFF = 1.5;
+    private static final double STANDOFF_MIN = 1.4;
+    private static final double STANDOFF_MAX = 1.75;
     /** How far its arms reach (centre to centre): the cage closes and the hits land from here. */
-    private static final double CAGE_REACH = 2.4;
+    private static final double CAGE_REACH = 1.9;
     /** ...and no more than this far above or below it. */
     private static final double CAGE_REACH_UP = 2.0;
     /** Get this far away and you have broken out of its arms. */
-    private static final double CAGE_RELEASE = 3.2;
+    private static final double CAGE_RELEASE = 2.6;
     /** If you walk into it, it eases back this fast (added to its speed each tick). */
     private static final double BACK_OFF = 0.08;
     /** While it holds you, an arm whips across your face at most every 40-60 ticks. */
@@ -213,6 +215,13 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final int PEEK_RETRY_TICKS = 20;
 
     // --- Animation timing shared with the model (client) --------------------------------------
+    /**
+     * How big it is drawn, compared with the model's own pixels: 0.75 makes it 2.5 blocks tall
+     * standing straight (the model itself is 3.4), so its head clears the 3-block ceilings of
+     * Level 0 even mid-stride. The hitbox (ModEntities) matches. Anything the animation measures
+     * in the world (stride length, where its head and claws are) is scaled by this too.
+     */
+    public static final float BODY_SCALE = 0.75f;
     /** Test command with "loop": the one-shot moves replay this often (2 s). */
     public static final int POSE_LOOP_TICKS = 40;
     /** While its pose is forced it looks at the nearest player within this range. */
@@ -222,12 +231,12 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     /** The client re-checks who it is watching this often (ticks): a ray check each time. */
     private static final int WATCH_CHECK_TICKS = 5;
     // The stride. Its feet travel STRIDE_BLOCKS per full stride (both feet), whatever the speed,
-    // so they never skate: walking (2 blocks/s) that is a 16-tick stride, running (6.5 blocks/s)
-    // a 5-tick one, a fast scurry of short steps. When the test command makes it walk or run on
-    // the spot, it uses those two rates.
-    private static final float STRIDE_BLOCKS = 1.6f;
-    public static final float WALK_STRIDE_TICKS = 16.0f;
-    public static final float RUN_STRIDE_TICKS = 5.0f;
+    // so they never skate: 1.6 blocks at full size, 1.2 at the drawn size. Walking (2 blocks/s)
+    // that is a 12-tick stride, running (6.5 blocks/s) a 3.7-tick one, a fast scurry of short
+    // steps. When the test command makes it walk or run on the spot, it uses those two rates.
+    private static final float STRIDE_BLOCKS = 1.6f * BODY_SCALE;
+    public static final float WALK_STRIDE_TICKS = 12.0f;
+    public static final float RUN_STRIDE_TICKS = 3.7f;
     /** Running, each step is up to this much longer or shorter (a fraction), so it isn't a metronome. */
     private static final float RUN_STEP_JITTER = 0.08f;
     /** Below this speed (blocks per tick) it counts as standing (the model fades the legs out). */
@@ -650,8 +659,8 @@ public class Bacteria extends Monster implements HidingService.Seeker {
 
     /**
      * Free height above its feet in blocks (up to {@link #HEADROOM_CHECK}), interpolated for this
-     * frame. The model stands about 3.4 blocks tall but the hitbox is 2.9 so it fits through the
-     * 3-block doorways; the model uses this to stoop under them instead of poking through.
+     * frame. It is drawn 2.5 blocks tall ({@link #BODY_SCALE}), so it only has to stoop under
+     * ceilings lower than that; the model uses this to stoop instead of poking through.
      */
     public float headroom(float partialTick) {
         return Mth.lerp(partialTick, headroomO, headroom);

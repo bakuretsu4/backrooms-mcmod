@@ -64,31 +64,38 @@ public final class BacteriaFlecks {
         double side;
         double up;
         double ahead;
+        // Points in the world at its drawn size (Bacteria.BODY_SCALE): blocks from its feet.
         if (RANDOM.nextFloat() < 0.35f) {
-            // The spine, leaning forward.
-            side = (RANDOM.nextDouble() - 0.5) * 0.2;
-            up = 1.3 + r * 1.2;
-            ahead = r * (caging ? 0.45 : 0.7);
+            // The spine.
+            side = (RANDOM.nextDouble() - 0.5) * 0.15;
+            up = 1.0 + r * 0.9;
+            ahead = r * (caging ? 0.4 : 0.25);
         } else {
             double s = RANDOM.nextBoolean() ? 1.0 : -1.0;
+            // Two straight pieces: shoulder to elbow, then elbow to claw.
+            double k = r < 0.5 ? r * 2.0 : r * 2.0 - 1.0;
             if (caging) {
-                // Arms: shoulder down to the elbow beside the victim, then forearm to the floor.
+                // Arms out past the victim and down to the floor beside them.
                 if (r < 0.5) {
-                    double k = r * 2.0;
-                    side = s * (0.64 + 0.47 * k);
-                    up = 2.65 - 1.15 * k;
-                    ahead = 0.4 + 0.5 * k;
+                    side = s * (0.48 + 0.37 * k);
+                    up = 1.85 - 0.65 * k;
+                    ahead = 0.4 + 0.6 * k;
                 } else {
-                    double k = r * 2.0 - 1.0;
-                    side = s * (1.11 - 0.36 * k);
-                    up = 1.5 - 1.45 * k;
-                    ahead = 0.9 + 0.35 * k;
+                    side = s * (0.85 - 0.17 * k);
+                    up = 1.2 - 1.2 * k;
+                    ahead = 1.0 + 0.1 * k;
                 }
             } else {
-                // Arms reaching out ahead at shoulder height.
-                side = s * (0.65 + r * 0.6);
-                up = 2.4 - r * 0.4;
-                ahead = 0.7 + r * 2.0;
+                // Running: spider-leg arms out to the sides, elbow up, claw down near the floor.
+                if (r < 0.5) {
+                    side = s * (0.48 + 0.82 * k);
+                    up = 1.95 - 0.45 * k;
+                    ahead = 0.25 + 0.2 * k;
+                } else {
+                    side = s * (1.3 + 0.3 * k);
+                    up = 1.5 - 1.2 * k;
+                    ahead = 0.45 + 0.05 * k;
+                }
             }
         }
         double x = bacteria.getX() + lx * side + fx * ahead;
