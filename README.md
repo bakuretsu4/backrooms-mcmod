@@ -470,27 +470,30 @@ houses). Upside-down furniture doesn't count.
   blocks from one of you, and if you leave it far behind it catches up after a while. It only
   knows where you are if it sees you or hears you
   sprint. In a lit room it spots you from about 24 blocks; in the dark only from about 8 (crouching
-  makes both shorter, your flashlight doesn't matter). When it spots you its head snaps onto you
-  (its body turns after it) and everything else goes dead still for about a second while it draws
-  in one long, wrong breath, its head slowly tilting over; then it runs. Break line of sight: it
-  runs to where it *last saw* you, searches for a few seconds (you hear it sniffing), and when it
-  gives up you hear a slow sigh moving away. It is quiet: wet, slow breathing, soft clicks of its
-  joints and the scrape of its claws, never a shriek. With NightShot on you can see it even in
-  total darkness.
+  makes both shorter, your flashlight doesn't matter). When it spots you it doesn't freeze: its
+  head snaps onto you, it bends right over to look while it swings round, and less than half a
+  second later it is running at you, as fast as 6.5 blocks a second, faster than you can sprint. So
+  don't try to outrun it: break line of sight. Then it runs to where it *last saw* you, searches
+  for a few seconds (you hear it sniffing), and when it gives up you hear a slow sigh moving away.
+  If it hears you sprint it walks over to the noise and swipes at the spot. It is quiet: wet, slow
+  breathing, soft clicks of its joints and the scrape of its claws, never a shriek. With NightShot
+  on you can see it even in total darkness.
 
-  How it moves: mostly, it doesn't. Standing, it is hunched and lopsided with its claws hanging
-  just off the floor, and only its fingers and a very slow breath move, until a joint suddenly
-  clicks out of place (its head tilts, a hand clenches, a shoulder jerks). If it can see you, its
-  head slowly turns onto you and stays there, wherever its body goes, like an owl's. It stalks with
-  a limp, sometimes stopping mid-step with a foot in the air, its arms swinging as dead weight.
-  Sometimes, before it has properly seen you, its head slowly comes out from behind a pillar or
-  door frame to look at you. It runs low and fast, clawing the air ahead of it with its arms down
-  toward the floor, its head perfectly still and aimed at you, dropping little black flakes. Within
-  3 blocks it lunges: arms swung low, then thrown open and closed around you. It stops about two
-  blocks away and holds you in a cage of its long arms (its body never ends up in your face); the
-  hits come from the arms, and now and then one whips across your face while its head slowly
-  creeps in to look at you. Get more than 3 blocks away and you have broken free. After a kill it
-  folds over the body for a few seconds.
+  How it moves (like the Bacteria of the XP Games add-on): standing, it is tall and upright,
+  leaning on its long arms like two crutches with its claws on the floor in front of it, and only
+  the claws slowly slide back and forth. If it can see you, its head slowly turns onto you and
+  stays there, wherever its body goes. It walks upright on wide-apart legs with its arms held out
+  to the sides like a spider's, each claw planted on the floor and re-planted on its own. It runs
+  upright too, scurrying on fast short steps while its arms vault it along, one claw planted out to
+  the side as the other swings up and over, dropping little black flakes. Sometimes, before it has
+  properly seen you, its head slowly comes out from behind a pillar or door frame to look at you.
+  Within 3 blocks it stops dead in a wide stance and stares at you for a moment, then leaps with
+  its arms flung straight out and closes them around you. It stops about two blocks away and holds
+  you in a cage of its long arms (its body never ends up in your face); the hits come from the
+  arms, and now and then one whips across your face while its head slowly creeps in to look at
+  you. Get more than 3 blocks away and you have broken free; if its leap misses, it swipes at you
+  with one arm. Hit it and its head snaps back for a moment. After a kill it folds over the body
+  for a few seconds.
 - **Blackouts:** the lights fade out over two seconds. Only flashlights work, and the Bacteria come
   out three times as often, but they can't use the lamps to spot you either.
 - **Smilers (Levels 1 and 2 in blackouts, Level 1's dead zones, Level 9's dark streets, Level 94 at
@@ -936,7 +939,7 @@ saturation, hiss and a big, empty room.
 /backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
 /backrooms sanity [players] <0-100>     set sanity (test the low-sanity effects)
 /backrooms spawn bacteria [count]       spawn Bacteria ~12 blocks in front of you (they only hunt survival players)
-/backrooms bacteria pose <idle|walk|chase|spotted|lunge|cage|feed|peek|auto> [loop]   film the Bacteria's animations: forces that pose on the nearest living one within 32 blocks and freezes it there (walk and chase run on the spot; its head locks on the nearest player); loop = replay: spotted = freeze then run every 2 s, lunge every 2 s, cage = a whip every 2.5 s, feed every 4 s, peek = a normal peek then a long one; auto = back to normal. Works with NoAI too
+/backrooms bacteria pose <idle|walk|chase|spotted|lunge|cage|feed|peek|auto> [loop]   film the Bacteria's animations: forces that pose on the nearest living one within 32 blocks and freezes it there (walk and chase run on the spot; its head locks on the nearest player); loop = replay: chase = a swipe every 2 s, spotted = the turn then the run every 2 s, lunge = stop-stare, leap and cage every 2 s, cage = a whip every 2.5 s, feed every 4 s, peek = a normal peek then a long one; auto = back to normal. Works with NoAI too
 /backrooms spawn smiler [count|bold]    spawn Smilers ~16 blocks in front of you (start a blackout first)
 /backrooms spawn <watcher|observer> [players]   Level 9 test spawns
 /backrooms spawn hound [count]          Level 39: Hounds ~14 blocks in front of you (they only hunt survival players)

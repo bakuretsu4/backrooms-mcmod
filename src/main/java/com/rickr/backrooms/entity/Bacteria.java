@@ -44,15 +44,15 @@ import org.jetbrains.annotations.Nullable;
  * <p>The behaviour is a small state machine ({@link Mode}) run by the server in
  * {@link #customServerAiStep()}:
  * <pre>
- * WANDER  --sees you-->           SPOTTED --24 ticks--> CHASE --3 s without seeing you--> SEARCH
+ * WANDER  --sees you-->           SPOTTED --8 ticks--> CHASE --3 s without seeing you--> SEARCH
  * WANDER  --hears a sprint / every 30-60 s a rough guess--> DRIFT --arrives--> WANDER
  * SEARCH  --sees or hears you--> CHASE      SEARCH --8 s, nothing--> WANDER ("lost" sigh)
  * </pre>
  * The mode is synced to clients so the model can pose and the camcorder can glitch.
  *
  * <p>Up close it never walks into you (your camera used to end up inside its body). Within
- * {@link #LUNGE_RANGE} it lunges, stops 1.5-2 blocks away and closes its long arms around you
- * like a cage; the hits come from the arms ({@link #closeIn()}). After a kill it folds over its
+ * {@link #LUNGE_RANGE} it stops dead, stares, then leaps to 1.5-2 blocks away and closes its long
+ * arms around you like a cage; the hits come from the arms ({@link #closeIn()}). After a kill it folds over its
  * victim for a few seconds. While wandering it sometimes leans out from behind cover to look at
  * you before it has properly seen you. Those moves are told to the clients as synced data
  * ({@link Action}, {@link #isCaging()}, {@link #preyId()}), so every player sees them at the
@@ -74,7 +74,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
      * the moment the client hears about them). The order matters: it is synced as a number.
      * PEEK_*_HOLD is the rare peek that stays out for an uncomfortably long time.
      */
-    public enum Action { NONE, LUNGE, WHIP, FEED, PEEK_LEFT, PEEK_RIGHT, PEEK_LEFT_HOLD, PEEK_RIGHT_HOLD }
+    public enum Action { NONE, LUNGE, WHIP, FEED, PEEK_LEFT, PEEK_RIGHT, PEEK_LEFT_HOLD, PEEK_RIGHT_HOLD, STARE, SWIPE }
 
     /**
      * Poses the test command {@code /backrooms bacteria pose} can force, so the lead can film
@@ -123,11 +123,11 @@ public class Bacteria extends Monster implements HidingService.Seeker {
 
     // --- Timings (ticks; 20 ticks = 1 second) -----------------------------------------------
     /**
-     * The freeze between spotting you and running at you: your warning. 24 ticks (1.2 s): its
-     * head snaps onto you, then nothing moves but the head slowly tilting over, then it runs.
-     * The model times its wind-up to this, so it is public.
+     * Between spotting you and running at you: 8 ticks. No freeze: its head snaps onto you, it
+     * bends over to look and swings round to face you, then it runs at once (as in the reference
+     * footage). The model times the turn to this, so it is public.
      */
-    public static final int SPOTTED_TICKS = 24;
+    public static final int SPOTTED_TICKS = 8;
     /** How long it keeps running to where it last saw you before it starts searching. */
     private static final int LOST_SIGHT_TICKS = 60;
     /** How long it searches before giving up. */
@@ -157,12 +157,22 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final double LONELY_RANGE = 32.0;
 
     // --- Close combat (see closeIn) -----------------------------------------------------------
-    /** The lunge: wind up, throw the arms wide, close them round you. Ticks from start to contact. */
-    public static final int LUNGE_TICKS = 9;
-    /** For those 9 ticks it bursts forward a bit faster than it runs (about 6.6 blocks/s). */
-    private static final double LUNGE_SPEED = 1.25;
-    /** After a lunge that missed, it waits this long before the next one. */
+    // Like the reference footage: it runs in, stops dead within 2 ticks in a wide stance with
+    // both claws planted out to the sides, stares at you for 3-6 ticks without moving, then
+    // leaps at you in 3 ticks with its arms flung straight out, into the cage of arms.
+    /** The stare before the leap, a random length between these (ticks). */
+    private static final int STARE_MIN_TICKS = 3;
+    private static final int STARE_MAX_TICKS = 6;
+    /** The test command's stare before each leap (ticks). */
+    public static final int POSE_STARE_TICKS = 5;
+    /** The leap: ticks from leaving the floor to closing its arms round you. */
+    public static final int LUNGE_TICKS = 3;
+    /** The leap covers the gap in its last 2 ticks, at most this far per tick (blocks). */
+    private static final double LEAP_STEP_MAX = 1.0;
+    /** After a leap that missed, it waits this long before the next one. */
     private static final int LUNGE_COOLDOWN_TICKS = 20;
+    /** Starting to run, it is given this much speed at once (blocks per tick): full speed in 1-2 ticks. */
+    private static final double RUN_KICK = 0.27;
     /**
      * Its body stops this far from you (blocks, centre to centre) and its arms do the rest, so
      * your camera is never inside it. It keeps between the MIN and MAX distance.
@@ -181,6 +191,8 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     /** While it holds you, an arm whips across your face at most every 40-60 ticks. */
     private static final int WHIP_GAP_MIN = 40;
     private static final int WHIP_GAP_MAX = 60;
+    /** Reaching a noise it heard, it swipes at the spot if it gets this close (blocks). */
+    private static final double NOISE_SWIPE_RANGE = 2.5;
     /** After a kill it folds over its victim this long (about 3 s), then goes back to wandering. */
     public static final int FEED_TICKS = 62;
 
@@ -201,7 +213,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final int PEEK_RETRY_TICKS = 20;
 
     // --- Animation timing shared with the model (client) --------------------------------------
-    /** Test command with "loop": the lunge replays this often (2 s). */
+    /** Test command with "loop": the one-shot moves replay this often (2 s). */
     public static final int POSE_LOOP_TICKS = 40;
     /** While its pose is forced it looks at the nearest player within this range. */
     private static final double POSE_LOOK_RANGE = 32.0;
@@ -209,32 +221,34 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final double WATCH_RANGE = 24.0;
     /** The client re-checks who it is watching this often (ticks): a ray check each time. */
     private static final int WATCH_CHECK_TICKS = 5;
-    // The stride. Running: one step takes 4-6 ticks (5 +- 1, picked per step), so a full stride
-    // is 9-11 ticks and the rhythm limps slightly. Stalking: a slow 32-tick stride.
-    public static final float CHASE_STEP_TICKS = 5.0f;
-    private static final float CHASE_STEP_JITTER = 1.0f;
-    public static final float WALK_STRIDE_TICKS = 32.0f;
-    private static final float SEARCH_STRIDE_TICKS = 16.0f;
-    private static final float DRIFT_STRIDE_TICKS = 24.0f;
-    /** Stalking, its bad leg's swing takes this much longer than the other's (a limp). */
-    private static final float LIMP = 1.3f;
-    /** Chance per stride that it stops mid-step with the bad foot in the air, for 8-20 ticks. */
-    private static final float STEP_PAUSE_CHANCE = 0.25f;
-    private static final int STEP_PAUSE_MIN = 8;
-    private static final int STEP_PAUSE_MAX = 20;
+    // The stride. Its feet travel STRIDE_BLOCKS per full stride (both feet), whatever the speed,
+    // so they never skate: walking (2 blocks/s) that is a 16-tick stride, running (6.5 blocks/s)
+    // a 5-tick one, a fast scurry of short steps. When the test command makes it walk or run on
+    // the spot, it uses those two rates.
+    private static final float STRIDE_BLOCKS = 1.6f;
+    public static final float WALK_STRIDE_TICKS = 16.0f;
+    public static final float RUN_STRIDE_TICKS = 5.0f;
+    /** Running, each step is up to this much longer or shorter (a fraction), so it isn't a metronome. */
+    private static final float RUN_STEP_JITTER = 0.08f;
+    /** Below this speed (blocks per tick) it counts as standing (the model fades the legs out). */
+    private static final float MIN_STRIDE_SPEED = 0.01f;
     // Quiet sounds the client plays itself (volume; they fade out within 12 blocks).
     private static final float CLICK_VOLUME = 0.32f;
     private static final float SCRAPE_VOLUME = 0.28f;
-    /** Chance per footfall while stalking that the claws scrape the floor. */
+    /** Chance per footfall while walking that the claws scrape the floor. */
     private static final float SCRAPE_CHANCE = 0.3f;
+    /** The client checks this far (blocks) to each side for walls, so running arms plant ahead instead. */
+    private static final double NARROW_CHECK = 1.5;
 
     // --- Speeds (multipliers of MOVEMENT_SPEED) ----------------------------------------------
-    // Mob speed works out to roughly (attribute x multiplier)^2, so 0.31 at 1.0 is about 4.2
-    // blocks/s: faster than your Backrooms walk (3.5), slower than your sprint (5.6).
-    private static final double CHASE_SPEED = 1.0;
-    private static final double SEARCH_SPEED = 0.75;
-    private static final double DRIFT_SPEED = 0.6;
-    private static final double WANDER_SPEED = 0.45;
+    // How fast a mob goes: each tick it is pushed by (attribute x multiplier)^2 x 0.98, and the
+    // floor's grip keeps 0.546 of its speed, so it settles at push / (1 - 0.546): for our 0.31
+    // that is 4.15 x multiplier^2 blocks/s on a normal floor. Your Backrooms walk is 3.5 blocks/s
+    // and your sprint 5.6: when it runs, you can't outrun it, only break its line of sight.
+    private static final double CHASE_SPEED = 1.25;   // 6.5 blocks/s, the reference's run
+    private static final double SEARCH_SPEED = 0.75;  // 2.3 blocks/s
+    private static final double DRIFT_SPEED = 0.69;   // 2.0 blocks/s, the reference's walk
+    private static final double WANDER_SPEED = 0.69;  // 2.0 blocks/s
 
     // Server-side brain state. Not saved: after a reload it simply starts wandering again.
     private Mode mode = Mode.WANDER;
@@ -252,6 +266,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private int lonelyTicks;
     // Close combat and the other one-shot moves (server side).
     private int lungeTicks = -1;
+    private int stareTicks = -1;
     private int lungeCooldown;
     private int nextWhipAt;
     private int feedTicks;
@@ -281,13 +296,11 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private Mode shownMode = Mode.WANDER;
     private int modeTick = -1000;
     private int forcedTick;
-    // Client-only, purely visual: the per-frame pose memory (head aim, swinging arms).
+    // Client-only, purely visual: the per-frame pose memory (head aim, arm blend, walls nearby).
     public final BacteriaPoseState animState = new BacteriaPoseState();
-    // Client-only: the gait's limp pause, who it watches, and the clocks the sounds follow.
-    private int gaitPause;
-    private int lastGaitCycle;
+    // Client-only: the footfall the scrape sound last checked.
     private int lastFootfall;
-    private int lastGlitchSlot = Integer.MIN_VALUE;
+    private final BlockPos.MutableBlockPos wallCheck = new BlockPos.MutableBlockPos();
 
     public Bacteria(EntityType<? extends Monster> type, Level level) {
         super(type, level);
@@ -434,6 +447,9 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             int a = entityData.get(ACTION) & 0xF;
             shownAction = a < ACTIONS.length ? ACTIONS[a] : Action.NONE;
             actionTick = firstTick ? tickCount - 1000 : tickCount;
+            if (!firstTick && shownAction == Action.SWIPE) {
+                playClick(1.0f); // the arm's joints crack as it whips round
+            }
         } else if (MODE.equals(key)) {
             Mode now = mode();
             if (firstTick) {
@@ -443,7 +459,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
                 shownMode = now;
                 modeTick = tickCount;
                 if (now == Mode.SPOTTED) {
-                    // Its head snaps onto you: one dry click of bone.
+                    // Its head snaps round onto you: one dry click of bone.
                     playClick(1.0f);
                 }
             }
@@ -468,7 +484,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             if ((tickCount + getId()) % WATCH_CHECK_TICKS == 0) {
                 pickWatchTarget();
             }
-            tickGlitchSound();
+            senseWalls();
             playForcedPlant();
         }
     }
@@ -508,69 +524,68 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     }
 
     /**
-     * The stride runs on its own clock, so it has the cadence of the references whatever the exact
-     * speed. Running: each step takes 4-6 ticks (picked per step), a slightly broken rhythm.
-     * Stalking: a slow 32-tick stride with a limp: the bad leg (the same side as its low shoulder)
-     * swings 30% slower, and about once every 8 steps it stops mid-step with that foot in the air
-     * for 8-20 ticks before it finishes the step. The model only shows the stride as much as the
-     * Bacteria is really moving, except when the test command forces a walk or run: then it plays
-     * on the spot.
+     * The stride clock. Its feet travel {@link #STRIDE_BLOCKS} per stride, so the stride runs as
+     * fast as it really moves: a 16-tick stride at its 2 blocks/s walk, a 5-tick scurry at its
+     * 6.5 blocks/s run (every step a little longer or shorter, so it isn't a metronome). Standing
+     * still the clock slows to a stop (and the model fades the legs out). On the test command's
+     * forced walk and run it plays on the spot at those two rates.
      */
     private void tickGait() {
         AnimPose forced = forcedPose();
         Mode current = mode();
         boolean running = forced == AnimPose.CHASE || forced == AnimPose.LUNGE
-                || (forced == AnimPose.AUTO && (current == Mode.CHASE || current == Mode.SPOTTED));
-        boolean stalking = forced == AnimPose.WALK || (forced == AnimPose.AUTO && current == Mode.WANDER);
-        int seed = BacteriaRhythm.seed(getId());
+                || (forced == AnimPose.AUTO && current == Mode.CHASE);
         gaitPhaseO = gaitPhase;
         float rate;
+        if (forced == AnimPose.WALK) {
+            rate = 1.0f / WALK_STRIDE_TICKS;
+        } else if (forced == AnimPose.CHASE || forced == AnimPose.LUNGE || forced == AnimPose.SPOTTED) {
+            rate = 1.0f / RUN_STRIDE_TICKS;
+        } else {
+            double dx = getX() - xo;
+            double dz = getZ() - zo;
+            float speed = (float) Math.sqrt(dx * dx + dz * dz);
+            rate = speed < MIN_STRIDE_SPEED ? 0.0f : speed / STRIDE_BLOCKS;
+        }
         if (running) {
             int step = Mth.floor(gaitPhase * 2.0f);
-            rate = 0.5f / (CHASE_STEP_TICKS + CHASE_STEP_JITTER * BacteriaRhythm.hash(seed + 301, step));
-        } else if (stalking) {
-            // The right leg swings forward in the middle half of each stride, the left leg in
-            // the outer quarters (see the model); "mid-swing" is 0.5 for the right, 0 for the left.
-            boolean lameRight = BacteriaRhythm.hash(seed, 1) > 0.0f;
-            float mid = lameRight ? 0.5f : 0.0f;
-            float frac = gaitPhase - Mth.floor(gaitPhase);
-            float fromMid = Math.abs(frac - mid);
-            boolean badSwing = Math.min(fromMid, 1.0f - fromMid) < 0.25f;
-            if (gaitPause > 0) {
-                gaitPause--;
-                rate = 0.0f;
-            } else {
-                rate = (badSwing ? 1.0f / LIMP : 1.0f) / WALK_STRIDE_TICKS;
-            }
-            int cycle = Mth.floor(gaitPhase + rate - mid);
-            if (cycle != lastGaitCycle && rate > 0.0f) {
-                // About to pass mid-swing of the bad leg: sometimes it stops right there.
-                lastGaitCycle = cycle;
-                if (BacteriaRhythm.unit(seed + 302, cycle) < STEP_PAUSE_CHANCE) {
-                    gaitPause = STEP_PAUSE_MIN + (int) (BacteriaRhythm.unit(seed + 303, cycle) * (STEP_PAUSE_MAX - STEP_PAUSE_MIN + 1));
-                    rate = 0.0f;
-                }
-            }
-        } else {
-            rate = 1.0f / (current == Mode.SEARCH ? SEARCH_STRIDE_TICKS : DRIFT_STRIDE_TICKS);
+            rate *= 1.0f + RUN_STEP_JITTER * BacteriaRhythm.hash(BacteriaRhythm.seed(getId()) + 301, step);
         }
         gaitPhase += rate;
         if (gaitPhase > 1000.0f) {
             gaitPhase -= 1000.0f;
             gaitPhaseO -= 1000.0f;
-            lastGaitCycle -= 1000;
         }
-        // Stalking with its hands down, now and then a footfall drags the claws over the floor.
+        // Walking with its claws on the floor, now and then a footfall drags them with a scrape.
         int footfall = Mth.floor(gaitPhase * 2.0f);
         if (footfall != lastFootfall) {
             lastFootfall = footfall;
-            double dx = getX() - xo;
-            double dz = getZ() - zo;
-            boolean moving = forced == AnimPose.WALK || dx * dx + dz * dz > 1.0e-4;
-            if (stalking && moving && random.nextFloat() < SCRAPE_CHANCE) {
+            boolean walking = forced == AnimPose.WALK || (forced == AnimPose.AUTO && !running && rate > 0.0f);
+            if (walking && random.nextFloat() < SCRAPE_CHANCE) {
                 level().playLocalSound(getX(), getY(), getZ(), ModSounds.BACTERIA_SCRAPE.get(), SoundSource.HOSTILE,
                         SCRAPE_VOLUME, 0.85f + random.nextFloat() * 0.3f, false);
             }
+        }
+    }
+
+    /**
+     * Client: is there a wall within 1.5 blocks to its left or right (at knee and chest height)?
+     * Running down a corridor its claws then plant ahead instead of out to that side, like the
+     * reference in a narrow hall. Two block checks per side per tick, eased over a few ticks.
+     */
+    private void senseWalls() {
+        float yaw = yBodyRot * Mth.DEG_TO_RAD;
+        // Its left, flat on the ground (its right is the opposite way).
+        double lx = Mth.cos(yaw);
+        double lz = Mth.sin(yaw);
+        for (int i = 0; i < 2; i++) {
+            double side = i == 0 ? -1.0 : 1.0; // 0 = its right, 1 = its left, like the arms
+            boolean wall = false;
+            for (int h = 0; h < 2 && !wall; h++) {
+                wallCheck.set(getX() + lx * side * NARROW_CHECK, getY() + 0.5 + h, getZ() + lz * side * NARROW_CHECK);
+                wall = !level().getBlockState(wallCheck).getCollisionShape(level(), wallCheck).isEmpty();
+            }
+            animState.narrow[i] += ((wall ? 1.0f : 0.0f) - animState.narrow[i]) * 0.35f;
         }
     }
 
@@ -603,43 +618,6 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         animState.nearestId = nearest;
     }
 
-    /**
-     * Client: a quiet dry click at the very tick one of the model's rare glitches pops (same
-     * clock as the model, see BacteriaRhythm). None while it is frozen staring at you.
-     */
-    private void tickGlitchSound() {
-        AnimPose forced = forcedPose();
-        boolean chase;
-        boolean cage;
-        if (forced != AnimPose.AUTO) {
-            chase = forced == AnimPose.CHASE;
-            cage = forced == AnimPose.CAGE || forced == AnimPose.LUNGE;
-            if (forced == AnimPose.SPOTTED) {
-                lastGlitchSlot = Integer.MIN_VALUE;
-                return;
-            }
-        } else {
-            Mode current = mode();
-            if (current == Mode.SPOTTED) {
-                lastGlitchSlot = Integer.MIN_VALUE;
-                return;
-            }
-            cage = current == Mode.CHASE && isCaging();
-            chase = current == Mode.CHASE && !cage;
-        }
-        int seed = BacteriaRhythm.seed(getId()) + BacteriaRhythm.GLITCH_SEED;
-        float period = chase ? BacteriaRhythm.CHASE_GLITCH_PERIOD : BacteriaRhythm.CALM_GLITCH_PERIOD;
-        float jitter = chase ? BacteriaRhythm.CHASE_GLITCH_JITTER : BacteriaRhythm.CALM_GLITCH_JITTER;
-        int slot = BacteriaRhythm.slot(seed, tickCount, period, jitter);
-        if (lastGlitchSlot != Integer.MIN_VALUE && slot != lastGlitchSlot) {
-            // Head pops and shoulder/spine jerks click; a hand clenching (and every cage re-grip)
-            // only ticks softly.
-            boolean soft = cage || (!chase && BacteriaRhythm.glitchChannel(seed, slot) == BacteriaRhythm.CLENCH);
-            playClick(soft ? 0.5f : 1.0f);
-        }
-        lastGlitchSlot = slot;
-    }
-
     private void playClick(float loudness) {
         level().playLocalSound(getX(), getY() + 2.6, getZ(), ModSounds.BACTERIA_CLICK.get(), SoundSource.HOSTILE,
                 CLICK_VOLUME * loudness, 0.85f + random.nextFloat() * 0.3f, false);
@@ -654,7 +632,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             return;
         }
         int age = tickCount - forcedTick;
-        if ((forcedLoop() ? age % POSE_LOOP_TICKS : age) == LUNGE_TICKS) {
+        if ((forcedLoop() ? age % POSE_LOOP_TICKS : age) == POSE_STARE_TICKS + LUNGE_TICKS) {
             level().playLocalSound(getX(), getY(), getZ(), ModSounds.BACTERIA_SCREECH.get(), SoundSource.HOSTILE,
                     1.5f, 0.8f, false);
         }
@@ -803,7 +781,12 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         }
 
         if (mode == Mode.DRIFT) {
-            if (getNavigation().isDone() || modeTicks > DRIFT_MAX_TICKS) {
+            if (getNavigation().isDone() && pathGoal != null && distanceToSqr(pathGoal) < NOISE_SWIPE_RANGE * NOISE_SWIPE_RANGE) {
+                // It got to the noise it heard: it stops dead and swipes at the spot.
+                stopDead();
+                sendAction(Action.SWIPE);
+                setMode(Mode.WANDER);
+            } else if (getNavigation().isDone() || modeTicks > DRIFT_MAX_TICKS) {
                 setMode(Mode.WANDER);
             }
             return;
@@ -836,19 +819,25 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         }
     }
 
+    /**
+     * It has seen you: no freeze, it turns. Its head snaps onto you at once, its body swings round
+     * to face you (30 degrees a tick, so even a full turn takes 6 ticks) while the model bends it
+     * over to look, and after {@link #SPOTTED_TICKS} it runs, at full speed straight away.
+     */
     private void tickSpotted() {
         if (!isHuntable(prey)) {
             giveUp(false);
             return;
         }
-        // Frozen, staring: this pause (plus the start of its long inhale) is the player's warning.
-        // Its head stays on you (the model aims it exactly); the body turns after it.
         getNavigation().stop();
-        getLookControl().setLookAt(prey, 30.0f, 30.0f);
+        float face = faceToward(prey, 30.0f);
+        yHeadRot = face;
+        getLookControl().setLookAt(prey, 180.0f, 180.0f);
         if (modeTicks >= SPOTTED_TICKS) {
             setMode(Mode.CHASE);
             repathIn = 0;
             pathGoal = null;
+            runKick();
         }
     }
 
@@ -879,7 +868,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             unseenTicks = 0;
             lastSeen = prey.position();
             getLookControl().setLookAt(prey, 30.0f, 30.0f);
-            if (lungeTicks >= 0 || isCaging() || distanceToSqr(prey) < LUNGE_RANGE * LUNGE_RANGE) {
+            if (lungeTicks >= 0 || stareTicks >= 0 || isCaging() || distanceToSqr(prey) < LUNGE_RANGE * LUNGE_RANGE) {
                 // Close and in plain view: no more paths (they stop a block short), it goes for you.
                 closeIn();
             } else if (--repathIn <= 0) {
@@ -894,6 +883,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         }
         // Lost sight of you: whatever its arms were doing, they let go.
         lungeTicks = -1;
+        stareTicks = -1;
         setCaged(false);
         // Can't see you: run to where you were LAST seen (not where you really are now).
         if (unseenTicks++ == 0) {
@@ -906,10 +896,13 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     }
 
     /**
-     * Up close and in sight. It used to walk right into you, so your camera ended up inside its
-     * body. Now it lunges (9 ticks: wind up, arms thrown wide, arms closing), stops 1.5-2 blocks
-     * away facing you, and holds you in a cage of its long arms; the hits come from the arms.
-     * Damage and the one-hit-a-second cooldown are the same as before.
+     * Up close and in sight, like the reference footage: it stops dead within a tick, both claws
+     * planted wide, and stares at you for 3-6 ticks without moving. Then the leap: its arms fling
+     * straight out (1 tick) and it covers the gap to 1.75 blocks from you in the next 2, and
+     * closes its arms round you: the cage. The body stays 1.5-2 blocks away while it holds you,
+     * so your camera is never inside it; the hits come from the arms. If the leap misses, it
+     * runs in and swipes at you with one arm until it can leap again. Damage and the
+     * one-hit-a-second cooldown are the same as always.
      */
     private void closeIn() {
         getNavigation().stop();
@@ -917,56 +910,109 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         double dx = prey.getX() - getX();
         double dz = prey.getZ() - getZ();
         double d = Math.sqrt(dx * dx + dz * dz);
-        if (lungeTicks < 0 && !isCaging() && lungeCooldown <= 0) {
-            lungeTicks = 0;
-            sendAction(Action.LUNGE);
+
+        if (lungeTicks >= 0) {
+            // The leap: tick 1 the arms fling out, ticks 2-3 it covers the gap.
+            faceToward(prey, 60.0f);
+            lungeTicks++;
+            double step = 0.0;
+            if (lungeTicks >= 2 && d > 1.0e-3) {
+                int ticksLeft = LUNGE_TICKS - lungeTicks + 1;
+                step = Mth.clamp((d - STANDOFF) / ticksLeft, 0.0, LEAP_STEP_MAX);
+                setDeltaMovement(dx / d * step, getDeltaMovement().y, dz / d * step);
+            } else {
+                stopDead();
+            }
+            if (lungeTicks >= LUNGE_TICKS) {
+                lungeTicks = -1;
+                lungeCooldown = LUNGE_COOLDOWN_TICKS;
+                if (d - step <= CAGE_REACH) {
+                    // The arms slam down around you. The loudest sound of the whole attack lands
+                    // here, like in the reference video: its long inhale, deeper than when it spots you.
+                    setCaged(true);
+                    nextWhipAt = tickCount + WHIP_GAP_MIN + random.nextInt(WHIP_GAP_MAX - WHIP_GAP_MIN);
+                    playSound(ModSounds.BACTERIA_SCREECH.get(), 1.5f, 0.75f + random.nextFloat() * 0.1f);
+                }
+            }
+            return;
         }
+        if (stareTicks >= 0) {
+            // The stare: dead still, facing you.
+            stopDead();
+            faceToward(prey, 30.0f);
+            if (--stareTicks < 0) {
+                if (d <= LUNGE_RANGE + 1.5) {
+                    lungeTicks = 0;
+                    sendAction(Action.LUNGE);
+                } else {
+                    lungeCooldown = LUNGE_COOLDOWN_TICKS; // you got away during the stare
+                }
+            }
+            return;
+        }
+        if (!isCaging() && lungeCooldown <= 0) {
+            // It stops dead and plants its claws: the stare begins.
+            stareTicks = STARE_MIN_TICKS + random.nextInt(STARE_MAX_TICKS - STARE_MIN_TICKS + 1);
+            stopDead();
+            sendAction(Action.STARE);
+            return;
+        }
+
         if (d > STANDOFF_MAX) {
-            // Not there yet: head for the spot STANDOFF short of you (a short burst while lunging).
+            // Not there: head for the spot STANDOFF short of you.
             double k = (d - STANDOFF) / d;
-            getMoveControl().setWantedPosition(getX() + dx * k, prey.getY(), getZ() + dz * k,
-                    lungeTicks >= 0 ? LUNGE_SPEED : CHASE_SPEED);
+            getMoveControl().setWantedPosition(getX() + dx * k, prey.getY(), getZ() + dz * k, CHASE_SPEED);
         } else {
             // There: stand and face you with the whole body, so the arms close around you.
-            float face = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0f;
-            setYRot(Mth.approachDegrees(getYRot(), face, 30.0f));
-            yBodyRot = getYRot();
+            faceToward(prey, 30.0f);
             if (d < STANDOFF_MIN && d > 1.0e-3) {
                 // You walked into it: it eases back (without turning round) to keep its distance.
                 setDeltaMovement(getDeltaMovement().add(-dx / d * BACK_OFF, 0.0, -dz / d * BACK_OFF));
             }
         }
-
-        boolean planted = false;
-        if (lungeTicks >= 0 && ++lungeTicks >= LUNGE_TICKS) {
-            lungeTicks = -1;
-            lungeCooldown = LUNGE_COOLDOWN_TICKS;
-            if (d <= CAGE_REACH) {
-                // The arms slam down around you. The loudest sound of the whole attack lands
-                // here, like in the reference video: its long inhale, deeper than when it spots you.
-                setCaged(true);
-                planted = true;
-                nextWhipAt = tickCount + WHIP_GAP_MIN + random.nextInt(WHIP_GAP_MAX - WHIP_GAP_MIN);
-                playSound(ModSounds.BACTERIA_SCREECH.get(), 1.5f, 0.75f + random.nextFloat() * 0.1f);
-            }
-        }
-        if (!isCaging()) {
-            return;
-        }
-        if (d > CAGE_RELEASE) {
-            setCaged(false); // you broke free: it chases again (and may lunge again)
+        if (isCaging() && d > CAGE_RELEASE) {
+            setCaged(false); // you broke free: it chases again (and may leap again)
             return;
         }
         if (attackCooldown <= 0 && d <= CAGE_REACH && Math.abs(prey.getY() - getY()) < CAGE_REACH_UP) {
             attackCooldown = ATTACK_COOLDOWN_TICKS;
             swing(InteractionHand.MAIN_HAND);
             doHurtTarget(prey);
-            if (!planted && tickCount >= nextWhipAt) {
-                // Now and then (every 2-3 s, not every hit) an arm whips across your face with
-                // the hit. The head's slow creep toward your face runs on its own in the model.
+            if (!isCaging()) {
+                // Not holding you (the leap missed): one arm swipes across in front of it.
+                sendAction(Action.SWIPE);
+            } else if (tickCount >= nextWhipAt) {
+                // Holding you: now and then (every 2-3 s, not every hit) an arm whips across your
+                // face with the hit. The head's slow creep toward your face runs in the model.
                 nextWhipAt = tickCount + WHIP_GAP_MIN + random.nextInt(WHIP_GAP_MAX - WHIP_GAP_MIN);
                 sendAction(Action.WHIP);
             }
+        }
+    }
+
+    /** Turns its whole body toward {@code target}, at most {@code maxStep} degrees this tick. Returns the facing it wants. */
+    private float faceToward(Player target, float maxStep) {
+        float face = (float) (Mth.atan2(target.getZ() - getZ(), target.getX() - getX()) * Mth.RAD_TO_DEG) - 90.0f;
+        setYRot(Mth.approachDegrees(getYRot(), face, maxStep));
+        yBodyRot = getYRot();
+        return face;
+    }
+
+    /** Stops on the spot this tick (it doesn't slide to a halt). */
+    private void stopDead() {
+        setDeltaMovement(0.0, getDeltaMovement().y, 0.0);
+    }
+
+    /** Starting to run: given most of its running speed at once, so it is at full speed in 1-2 ticks. */
+    private void runKick() {
+        if (prey == null) {
+            return;
+        }
+        double dx = prey.getX() - getX();
+        double dz = prey.getZ() - getZ();
+        double d = Math.sqrt(dx * dx + dz * dz);
+        if (d > 1.0e-3) {
+            setDeltaMovement(dx / d * RUN_KICK, getDeltaMovement().y, dz / d * RUN_KICK);
         }
     }
 
@@ -1008,8 +1054,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         getNavigation().stop();
         setMode(Mode.SPOTTED);
         entityData.set(PREY_ID, player.getId());
-        // Its head snaps round onto you at once; the body only turns after it, about half a
-        // second later (the body follows the head on its own, see getMaxHeadYRot).
+        // Its head snaps round onto you at once; the body swings round after it (tickSpotted).
         yHeadRot = (float) (Mth.atan2(player.getZ() - getZ(), player.getX() - getX()) * Mth.RAD_TO_DEG) - 90.0f;
         getLookControl().setLookAt(player, 180.0f, 180.0f);
         playSound(ModSounds.BACTERIA_SCREECH.get(), 1.5f, 0.9f + random.nextFloat() * 0.2f);
@@ -1017,9 +1062,8 @@ public class Bacteria extends Monster implements HidingService.Seeker {
 
     /**
      * How far its head may turn away from where its body faces: an owl's 150 degrees, not a
-     * person's 75. Its head goes first; the body only turns after the head has held still for
-     * half a second (vanilla's body control), so it turns its head right round to look at you,
-     * then its body follows.
+     * person's 75. Its head goes first; its body follows (and when it is still, vanilla's body
+     * control turns the body after the head has held still for half a second).
      */
     @Override
     public int getMaxHeadYRot() {
@@ -1035,6 +1079,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         pathGoal = null;
         setTarget(player);
         setMode(Mode.CHASE);
+        runKick();
         entityData.set(PREY_ID, player.getId());
         playSound(ModSounds.BACTERIA_SCREECH.get(), 1.5f, 0.9f + random.nextFloat() * 0.2f);
     }
@@ -1082,6 +1127,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         }
         if (next != Mode.CHASE) {
             lungeTicks = -1;
+            stareTicks = -1;
             setCaged(false);
         }
         if (next != Mode.SPOTTED && next != Mode.CHASE) {
