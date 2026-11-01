@@ -472,8 +472,9 @@ houses). Upside-down furniture doesn't count.
   sprint. In a lit room it spots you from about 24 blocks; in the dark only from about 8 (crouching
   makes both shorter, your flashlight doesn't matter). When it spots you it doesn't freeze: its
   head snaps onto you, it bends right over to look while it swings round, and less than half a
-  second later it is running at you, as fast as 6.5 blocks a second, faster than you can sprint. So
-  don't try to outrun it: break line of sight. Then it runs to where it *last saw* you, searches
+  second later it is running at you at 5 blocks a second: faster than you walk, a little slower
+  than your sprint. Sprint the moment it sees you and you slowly pull away; hesitate and it has you.
+  Breaking line of sight is still the surest escape. Then it runs to where it *last saw* you, searches
   for a few seconds (you hear it sniffing), and when it gives up you hear a slow sigh moving away.
   If it hears you sprint it walks over to the noise and swipes at the spot. It is quiet: wet, slow
   breathing, soft clicks of its joints and the scrape of its claws, never a shriek. With NightShot

@@ -174,8 +174,8 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final double LEAP_STEP_MAX = 1.0;
     /** After a leap that missed, it waits this long before the next one. */
     private static final int LUNGE_COOLDOWN_TICKS = 20;
-    /** Starting to run, it is kicked up to this speed (blocks per tick) over KICK_TICKS: full speed in about 3 ticks. */
-    private static final double RUN_KICK = 0.27;
+    /** Starting to run, it is kicked up to this speed (blocks per tick) over KICK_TICKS: its full running speed in about 3 ticks. */
+    private static final double RUN_KICK = 0.25;
     /**
      * Its body stops this far from you (blocks, centre to centre) and its arms do the rest, so
      * your camera is never inside it. It keeps between the MIN and MAX distance. (Its arms are
@@ -237,12 +237,12 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     // travel this far per full stride (both feet): 2.0 blocks walking, 2.6 running, and in
     // between the stride length follows the speed smoothly, so there is no jump in cadence going
     // from a walk to a run. At its 2 blocks/s walk that is a 20-tick stride (1 second); at its
-    // 6.5 blocks/s run an 8-tick one (the arms take two strides, 16 ticks, for one swing).
+    // 5 blocks/s run a 10-tick one (the arms take two strides, 20 ticks, for one swing).
     public static final float WALK_STRIDE_BLOCKS = 2.0f;
     public static final float RUN_STRIDE_BLOCKS = 2.6f;
-    /** Its walk and run speeds in blocks per tick (4.15 x 0.69^2 and 4.15 x 1.25^2 blocks/s, / 20). */
+    /** Its walk and run speeds in blocks per tick (4.15 x 0.69^2 and 4.15 x 1.10^2 blocks/s, / 20). */
     public static final float WALK_SPEED_PER_TICK = 0.0988f;
-    public static final float RUN_SPEED_PER_TICK = 0.3242f;
+    public static final float RUN_SPEED_PER_TICK = 0.2511f;
     /** Running, each step is up to this much longer or shorter (a fraction), so it isn't a metronome. */
     private static final float RUN_STEP_JITTER = 0.05f;
     /**
@@ -282,8 +282,9 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     // How fast a mob goes: each tick it is pushed by (attribute x multiplier)^2 x 0.98, and the
     // floor's grip keeps 0.546 of its speed, so it settles at push / (1 - 0.546): for our 0.31
     // that is 4.15 x multiplier^2 blocks/s on a normal floor. Your Backrooms walk is 3.5 blocks/s
-    // and your sprint 5.6: when it runs, you can't outrun it, only break its line of sight.
-    private static final double CHASE_SPEED = 1.25;   // 6.5 blocks/s, the reference's run
+    // and your sprint 5.6. Its run sits in between on purpose: it catches you if you walk, freeze
+    // or hesitate, but if you sprint the moment it sees you, you slowly pull away from it.
+    private static final double CHASE_SPEED = 1.10;   // 5.0 blocks/s
     private static final double SEARCH_SPEED = 0.75;  // 2.3 blocks/s
     private static final double DRIFT_SPEED = 0.69;   // 2.0 blocks/s, the reference's walk
     private static final double WANDER_SPEED = 0.69;  // 2.0 blocks/s
@@ -635,7 +636,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
      * The stride clock. The client's reading of how fast it moves is eased (GAIT_SPEED_EASE), so
      * the stride doesn't wobble with the position updates that come from the server in steps, and
      * its feet travel {@link #strideBlocks} per stride, so the stride runs as fast as it really
-     * moves: a 20-tick stride at its 2 blocks/s walk, an 8-tick one at its 6.5 blocks/s run (every
+     * moves: a 20-tick stride at its 2 blocks/s walk, a 10-tick one at its 5 blocks/s run (every
      * step a little longer or shorter, so it isn't a metronome). Stopping, the eased speed dies
      * away over a few ticks, so the legs finish their step and settle instead of freezing in the
      * air (the model fades them out with the same eased speed). On the test command's forced walk

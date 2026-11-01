@@ -1403,8 +1403,8 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     }
 
     /**
-     * Running: upright (15 degrees, 18 in the last 3 blocks), long loping strides (an 8-tick
-     * stride at its 6.5 blocks/s) on bent knees, feet a little apart, the body dipping, rocking and
+     * Running: upright (15 degrees, 18 in the last 3 blocks), long loping strides (a 10-tick
+     * stride at its 5 blocks/s) on bent knees, feet a little apart, the body dipping, rocking and
      * twisting with each step (stepWaves). The arms are spider legs: each plants far out to the
      * side (about 2 blocks) as a big angular Λ, the elbow about level with the shoulder; the claw
      * stays where it planted while the body runs on over it, then the arm whips up over the top
