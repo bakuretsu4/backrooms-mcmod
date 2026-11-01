@@ -10,6 +10,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.rickr.backrooms.camera.CameraService;
 import com.rickr.backrooms.player.SanityService;
+import com.rickr.backrooms.entity.Bacteria;
 import com.rickr.backrooms.entity.Smiler;
 import com.rickr.backrooms.entity.SmilerSpawner;
 import com.rickr.backrooms.world.BackroomsLevel;
@@ -39,7 +40,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import java.util.Locale;
 
 /**
  * Operator tools for hosting sessions with friends:
@@ -52,6 +55,7 @@ import net.minecraft.world.phys.Vec3;
  * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|end> [seconds]   start/stop an event on this floor
  * /backrooms drift <player> [sealed|door|lights|end]   separate realities: that player sees the room differently from the nearest friend (end = snap back)
  * /backrooms spawn bacteria [count]   spawn Bacteria about 12 blocks in front of you (for testing)
+ * /backrooms bacteria pose <idle|walk|chase|spotted|lunge|cage|feed|peek|auto> [loop]   force the nearest Bacteria (32 blocks) into a pose and freeze it, to film it; auto = back to normal
  * /backrooms spawn smiler [count|bold]  spawn Smilers about 16 blocks in front of you (start a blackout first)
  * /backrooms locate saferoom          distance/direction to the nearest safe room (for testing)
  * /backrooms time94 <day|dusk|night|dawn>   Level 94: jump its day/night clock to the start of that phase (for testing)
@@ -154,6 +158,8 @@ public final class BackroomsCommand {
                         .then(Commands.literal("dusk").executes(ctx -> time94(ctx, Level94Clock.DAY_TICKS - Level94Clock.DUSK_TICKS)))
                         .then(Commands.literal("night").executes(ctx -> time94(ctx, Level94Clock.DAY_TICKS)))
                         .then(Commands.literal("dawn").executes(ctx -> time94(ctx, Level94Clock.CYCLE - Level94Clock.DAWN_TICKS))))
+                // Film the Bacteria's animations: force a pose on the nearest one (it stands still).
+                .then(Commands.literal("bacteria").then(bacteriaPoseNode()))
                 .then(Commands.literal("spawn")
                         .then(Commands.literal("bacteria")
                                 .executes(ctx -> spawnBacteria(ctx, 1))
@@ -171,6 +177,50 @@ public final class BackroomsCommand {
                 .executes(ctx -> event(ctx, kind, defaultSeconds))
                 .then(Commands.argument("seconds", IntegerArgumentType.integer(1, 600))
                         .executes(ctx -> event(ctx, kind, IntegerArgumentType.getInteger(ctx, "seconds"))));
+    }
+
+    /** {@code pose <name> [loop]}, one literal per pose so the names tab-complete. */
+    private static LiteralArgumentBuilder<CommandSourceStack> bacteriaPoseNode() {
+        LiteralArgumentBuilder<CommandSourceStack> node = Commands.literal("pose");
+        for (Bacteria.AnimPose pose : Bacteria.AnimPose.values()) {
+            node.then(Commands.literal(pose.name().toLowerCase(Locale.ROOT))
+                    .executes(ctx -> bacteriaPose(ctx, pose, false))
+                    .then(Commands.literal("loop").executes(ctx -> bacteriaPose(ctx, pose, true))));
+        }
+        return node;
+    }
+
+    /**
+     * Forces the animation pose of the nearest living Bacteria within 32 blocks and freezes it
+     * there (the walk and the run play on the spot); "loop" replays the one-shot moves every 2 s;
+     * "auto" hands it back to its AI. Works on Bacteria summoned with NoAI too. Running it again
+     * restarts the pose from the beginning.
+     */
+    private static int bacteriaPose(CommandContext<CommandSourceStack> ctx, Bacteria.AnimPose pose, boolean loop) {
+        CommandSourceStack source = ctx.getSource();
+        Vec3 at = source.getPosition();
+        Bacteria nearest = null;
+        double best = 32.0 * 32.0;
+        for (Bacteria bacteria : source.getLevel().getEntitiesOfClass(Bacteria.class, AABB.ofSize(at, 64.0, 64.0, 64.0))) {
+            // Skip one that is still dying (after /kill it lingers for a second): it would take
+            // the pose instead of a new one summoned in the same spot.
+            double distance = bacteria.distanceToSqr(at);
+            if (bacteria.isAlive() && distance <= best) {
+                nearest = bacteria;
+                best = distance;
+            }
+        }
+        if (nearest == null) {
+            source.sendFailure(Component.literal("No Bacteria within 32 blocks"));
+            return 0;
+        }
+        nearest.forcePose(pose, loop);
+        String name = pose.name().toLowerCase(Locale.ROOT);
+        int id = nearest.getId();
+        source.sendSuccess(() -> Component.literal(pose == Bacteria.AnimPose.AUTO
+                ? "Bacteria #" + id + " back to normal"
+                : "Bacteria #" + id + " posing: " + name + (loop ? " (loop)" : "") + ". Use 'auto' to let it go."), false);
+        return 1;
     }
 
     /** The last outage started by the command, for {@code /backrooms outage end}. */

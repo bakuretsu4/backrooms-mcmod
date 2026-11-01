@@ -12,6 +12,7 @@ import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 
 /**
  * Kane Pixels' Bacteria, built in code instead of Blockbench.
@@ -62,6 +63,8 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     private final ModelPart root;
     private final ModelPart body;
     private final ModelPart spine;
+    private final ModelPart chest;
+    private final ModelPart neck;
     private final ModelPart head;
     private final ModelPart rightArm;
     private final ModelPart rightForearm;
@@ -75,13 +78,21 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     private final ModelPart lungRight;
     private final ModelPart lungLeft;
     private final ModelPart stomach;
+    // Index 0 = right arm, 1 = left arm (made once here, so setupAnim never has to).
+    private final ModelPart[] arms;
+    private final ModelPart[] forearms;
+    private final ModelPart[] hands;
+    private final ModelPart[][] fingers = new ModelPart[2][3];
+    /** Every part setupAnim moves; only these need putting back to rest each frame. */
+    private final ModelPart[] animated;
 
     public BacteriaModel(ModelPart root) {
         this.root = root;
         this.body = root.getChild("body");
         this.spine = body.getChild("spine");
-        ModelPart chest = spine.getChild("chest");
-        this.head = chest.getChild("neck").getChild("head");
+        this.chest = spine.getChild("chest");
+        this.neck = chest.getChild("neck");
+        this.head = neck.getChild("head");
         this.rightArm = chest.getChild("right_arm");
         this.rightForearm = rightArm.getChild("forearm");
         this.leftArm = chest.getChild("left_arm");
@@ -94,6 +105,17 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         this.lungRight = spine.getChild("lung_right");
         this.lungLeft = spine.getChild("lung_left");
         this.stomach = spine.getChild("stomach");
+        this.arms = new ModelPart[] {rightArm, leftArm};
+        this.forearms = new ModelPart[] {rightForearm, leftForearm};
+        this.hands = new ModelPart[] {rightForearm.getChild("hand"), leftForearm.getChild("hand")};
+        for (int i = 0; i < 2; i++) {
+            for (int f = 0; f < 3; f++) {
+                fingers[i][f] = hands[i].getChild("finger" + f);
+            }
+        }
+        this.animated = new ModelPart[] {body, spine, chest, neck, head, rightArm, rightForearm, leftArm, leftForearm,
+                hands[0], hands[1], fingers[0][0], fingers[0][1], fingers[0][2], fingers[1][0], fingers[1][1], fingers[1][2],
+                rightLeg, rightShin, leftLeg, leftShin, heart, lungRight, lungLeft, stomach};
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -284,14 +306,18 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         braid(arm, "upper", rng, 0, 0, 0, side * 1.5f, UPPER_ARM, 0, 3, 1.4f, 14.0f, WIRE);
         PartDefinition forearm = arm.addOrReplaceChild("forearm", CubeListBuilder.create(), PartPose.offset(side * 1.5f, UPPER_ARM, 0));
         braid(forearm, "lower", rng, 0, 0, 0, side * 1.5f, FOREARM, -0.5f, 3, 1.3f, 14.0f, WIRE);
-        // Three claw fingers, splayed like a rake, each with a slight bend in the middle.
+        // Three claw fingers, splayed like a rake, each with a slight bend in the middle. They
+        // hang off a "hand" at the wrist, one "finger" part each, so the animation can curl the
+        // hand and spread the claws. The points are measured from the wrist (wx, FOREARM, -0.5).
         float wx = side * 1.5f;
+        PartDefinition hand = forearm.addOrReplaceChild("hand", CubeListBuilder.create(), PartPose.offset(wx, FOREARM, -0.5f));
         for (int f = -1; f <= 1; f++) {
-            float mx = wx + f * 1.1f + side * 0.4f;
-            float tx = wx + f * 2.4f + side * 0.9f;
-            float tz = -0.5f - f * f * 0.8f + f * 0.6f;
-            wire(forearm, "claw" + (f + 1) + "_a", wx, FOREARM, -0.5f, mx, FOREARM + 2.6f, -0.3f + f * 0.3f, WIRE * 0.8f);
-            wire(forearm, "claw" + (f + 1) + "_b", mx, FOREARM + 2.6f, -0.3f + f * 0.3f, tx, FOREARM + 4.6f, tz, WIRE * 0.7f);
+            float mx = f * 1.1f + side * 0.4f;
+            float tx = f * 2.4f + side * 0.9f;
+            float tz = -f * f * 0.8f + f * 0.6f;
+            PartDefinition finger = hand.addOrReplaceChild("finger" + (f + 1), CubeListBuilder.create(), PartPose.ZERO);
+            wire(finger, "claw_a", 0.0f, 0.0f, 0.0f, mx, 2.6f, 0.2f + f * 0.3f, WIRE * 0.8f);
+            wire(finger, "claw_b", mx, 2.6f, 0.2f + f * 0.3f, tx, 4.6f, tz, WIRE * 0.7f);
         }
     }
 
@@ -355,13 +381,14 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         }
         sinew(forearm, "flesh_vein", rng, side * -0.8f, 1.0f, -0.6f, wx + side * 0.6f, FOREARM - 1.0f, -0.2f, 6, 0.8f, 0.4f, 0.4f);
         blob(forearm, "flesh_wrist", 0, 44, rng, wx, FOREARM, -0.5f, 1.5f, 1.3f, 1.5f, 0.0f, 0.3f, 0.0f);
+        PartDefinition hand = forearm.getChild("hand");
         for (int f = -1; f <= 1; f++) {
-            // Same knuckle points as the claws in arm().
-            float mx = wx + f * 1.1f + side * 0.4f;
-            blob(forearm, "flesh_knuckle" + (f + 1), 0, 0, rng, mx, FOREARM + 2.6f, -0.3f + f * 0.3f, 0.9f, 0.9f, 0.9f, 0.0f, 0.0f, 0.0f);
+            // Same knuckle points as the claws in arm(), measured from the wrist.
+            float mx = f * 1.1f + side * 0.4f;
+            blob(hand.getChild("finger" + (f + 1)), "flesh_knuckle", 0, 0, rng, mx, 2.6f, 0.2f + f * 0.3f, 0.9f, 0.9f, 0.9f, 0.0f, 0.0f, 0.0f);
         }
-        wire(forearm, "flesh_thumb_a", wx, FOREARM, -0.5f, wx - side * 0.6f, FOREARM + 1.6f, 1.0f, WIRE * 0.8f);
-        wire(forearm, "flesh_thumb_b", wx - side * 0.6f, FOREARM + 1.6f, 1.0f, wx - side * 0.9f, FOREARM + 3.6f, 1.6f, WIRE * 0.7f);
+        wire(hand, "flesh_thumb_a", 0.0f, 0.0f, 0.0f, -side * 0.6f, 1.6f, 1.5f, WIRE * 0.8f);
+        wire(hand, "flesh_thumb_b", -side * 0.6f, 1.6f, 1.5f, -side * 0.9f, 3.6f, 2.1f, WIRE * 0.7f);
     }
 
     /**
@@ -530,107 +557,683 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         return root;
     }
 
+    // ------------------------------------------------------------------ animation
+    //
+    // How it moves comes from a frame-by-frame study of the reference videos (Kane Pixels' found
+    // footage and the scariest Minecraft versions). What makes it frightening there:
+    //  - The motion itself is smooth, but its poses SNAP: the head holds a tilt, jumps to a new
+    //    one in a tick or two, and holds again. (The old version ran the whole body as choppy
+    //    stop-motion, which only looked laggy.)
+    //  - Every limb runs on its own clock, and every Bacteria on its own seed (its entity id), so
+    //    no two limbs and no two Bacteria ever move in step.
+    //  - Dead still once it has seen you; then everything at once: the lunge, the arms thrown
+    //    wide, the cage of arms around you, an arm whipping across your face, the head snapping in.
+    // Angles are written in degrees (times DEG turns them into radians); times are in ticks (20 a
+    // second). Model space: +Y is down, the front is -Z, +X is its left.
+    //
+    // setupAnim runs every frame for every Bacteria on screen, so it never creates objects: only
+    // numbers, the fields below, and the arrays made once in the constructor.
+
+    private static final float DEG = Mth.DEG_TO_RAD;
+    /** The calm sway and breathing period, the same as the lungs' calm breathing. */
+    private static final float BREATH_TICKS = 70.0f;
+    /** The faint shiver of the spine, neck and forearms while calm: smooth, about 10 a second. */
+    private static final float TREMOR = 1.2f * DEG;
+    /** Test command with "loop": the feed and the peek replay this often (ticks). */
+    private static final float FEED_LOOP_TICKS = Bacteria.FEED_TICKS + 18.0f;
+    private static final float PEEK_LOOP_TICKS = Bacteria.PEEK_TICKS + 20.0f;
+    /** Test command, SPOTTED with "loop": it twitches out of the freeze at this tick of each loop. */
+    private static final float SPOTTED_TWITCH_AT = 34.0f;
+    /** The head lean-in snaps in over 2 ticks, holds this long, then pulls back over 4. */
+    private static final float LEAN_IN_HOLD = 24.0f;
+
+    // What it is doing, as far as the model is concerned.
+    private static final int CALM = 0;
+    private static final int CHASE = 1;
+    private static final int SEARCH = 2;
+    private static final int SPOTTED = 3;
+    private static final int CAGE = 4;
+    private static final int FEED = 5;
+    private static final int PEEK = 6;
+
+    // The pose being built this frame (radians; pixels for the offsets). Each state below fills
+    // these in, the one-shot moves (lunge, whip, lean-in, twitch) then bend them, and apply()
+    // finally puts them on the model parts. Arm angles: index 0 = right arm, 1 = left arm.
+    private float room;          // free height above the feet (px)
+    private float squeeze;       // 0 = room to stand, 1 = squeezed under a 3-block ceiling
+    private float drop;          // how far the hips sink because the knees are bent (px)
+    private float hips;          // hip height (px)
+    private float ceilingLean;   // the least forward lean that fits the head under the ceiling
+    private float bob;           // extra up/down of the whole body (px, + is down)
+    private float lean;          // spine forward lean
+    private float sway;          // spine sideways lean (+ = to its left)
+    private float thighR;
+    private float thighL;
+    private float shinR;
+    private float shinL;
+    private float neckX;
+    private float neckZ;
+    private float headPitchW;    // head pitch measured in the world, whatever the spine does
+    private float headYaw;
+    private float headRoll;
+    private float headForward;   // px
+    // How far forward the arm is raised, measured from hanging straight down in the world
+    // (90 degrees = pointing straight ahead), and how far it swings out to its side from there.
+    private final float[] raise = new float[2];
+    private final float[] out = new float[2];
+    private final float[] splay = new float[2];    // sideways tilt of a hanging arm
+    private final float[] bend = new float[2];     // elbow: + folds the forearm down/back
+    private final float[] foreOut = new float[2];  // forearm tilted out to its side
+    private final float[] curl = new float[2];     // claws curled in (+) or flung open (-)
+    private final float[] spread = new float[2];   // claws fanned apart
+
     @Override
     public void setupAnim(Bacteria entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        root().getAllParts().forEach(ModelPart::resetPose);
-        Bacteria.Mode mode = entity.mode();
-        boolean chasing = mode == Bacteria.Mode.CHASE;
-        boolean searching = mode == Bacteria.Mode.SEARCH;
-        boolean spotted = mode == Bacteria.Mode.SPOTTED;
-
-        // Stop-motion feel: the pose only updates every other tick while chasing, every 3rd
-        // otherwise, so it moves in unsettling stutters instead of smoothly. Frozen when spotting.
-        float step = chasing ? 2.0f : 3.0f;
-        float t = Mth.floor(ageInTicks / step) * step;
-        float swing = Mth.floor(limbSwing * 2.0f) / 2.0f;
-        float amount = Math.min(limbSwingAmount * (chasing ? 1.6f : 1.0f), 1.0f);
-        int seed = entity.getId() * 31;
-        float jitter = spotted ? 0.0f : 1.0f;
-
-        // --- Stoop: fit under the ceiling ---------------------------------------------------
+        for (ModelPart part : animated) {
+            part.resetPose();
+        }
+        float t = ageInTicks;
         float partial = ageInTicks - entity.tickCount;
-        float room = entity.headroom(partial) * 16.0f - 1.5f; // free height in px, minus a margin
+        // Its own random clocks: the same id always gives the same moves, and no two ids match.
+        int seed = entity.getId() * 0x632BE5AB + 0x1B873593;
+        float yaw = netHeadYaw * DEG;
+        float pitch = headPitch * DEG;
+        // 0 = standing still, 1 = walking or running: fades the stride in and out.
+        float moving = Mth.clamp((limbSwingAmount - 0.02f) * 8.0f, 0.0f, 1.0f);
+        float gait = Mth.TWO_PI * entity.gaitPhase(partial);
+
+        // Under a low ceiling (doorways, all of Level 2) it stoops instead of poking through.
+        room = entity.headroom(partial) * 16.0f - 1.5f; // free height in px, minus a margin
         float standing = HIP_HEIGHT + SPINE + NECK_AND_HEAD;
-        // 0 = room to stand straight, 1 = squeezed under a 3-block ceiling.
-        float squeeze = Mth.clamp((standing - room) / (standing - 46.5f), 0.0f, 1.0f);
-        float knee = 0.35f * squeeze;
-        float legDrop = (THIGH + SHIN) * (1.0f - Mth.cos(knee));
-        float hips = HIP_HEIGHT - legDrop;
-        // Lean forward just enough that hips + spine + head fit under the ceiling.
-        float fit = (room - hips) / (SPINE + NECK_AND_HEAD);
-        float ceilingLean = fit >= 1.0f ? 0.0f : (float) Math.acos(Mth.clamp(fit, 0.2f, 1.0f));
+        squeeze = Mth.clamp((standing - room) / (standing - 46.5f), 0.0f, 1.0f);
 
-        // --- Body ---------------------------------------------------------------------------
-        float moodLean = spotted ? 0.0f : chasing ? 0.45f : searching ? 0.6f : 0.12f;
-        float lean = Math.max(moodLean, ceilingLean);
-        body.y += legDrop;
-        spine.xRot = lean + twitch(seed, t, 7, 0.05f) * jitter;
-        spine.zRot = twitch(seed + 1, t, 9, 0.04f) * jitter;
-
-        // --- Head: stays level while the body leans -----------------------------------------
-        if (searching) {
-            // Jerks left and right (about 70 degrees) every 12 ticks, peering down the halls.
-            head.yRot = twitch(seed + 2, t, 12, 1.2f);
-            head.zRot = twitch(seed + 4, t, 12, 0.3f);
-            head.xRot = 0.2f - spine.xRot;
+        // --- Which pose, and which one-shot moves are playing (their age in ticks, -1 = none) --
+        int state;
+        float age = 0.0f;
+        int occurrence = 0;    // tells repeats of a move apart, so each one goes a different way
+        float lunge = -1.0f;
+        float whip = -1.0f;
+        float leanIn = -1.0f;
+        float twitch = -1.0f;
+        int twitchId = 0;
+        int peekSide = 1;
+        float near = 0.0f;
+        Bacteria.AnimPose forced = entity.forcedPose();
+        if (forced != Bacteria.AnimPose.AUTO) {
+            // Forced by /backrooms bacteria pose. It stands still, so walk and run play on the spot.
+            float f = entity.forcedAge(partial);
+            boolean loop = entity.forcedLoop();
+            float loopTicks = Bacteria.POSE_LOOP_TICKS;
+            int cycle = loop ? (int) (f / loopTicks) : 0;
+            float inCycle = loop ? f % loopTicks : f;
+            moving = 0.0f;
+            switch (forced) {
+                case WALK -> {
+                    state = CALM;
+                    moving = 1.0f;
+                }
+                case CHASE -> {
+                    state = CHASE;
+                    moving = 1.0f;
+                }
+                case SPOTTED -> {
+                    state = SPOTTED;
+                    age = inCycle;
+                    occurrence = cycle;
+                    if (loop) {
+                        twitch = inCycle - SPOTTED_TWITCH_AT;
+                        twitchId = cycle;
+                    }
+                }
+                case LUNGE -> {
+                    // Runs at you, then holds you: the cage once the arms have closed.
+                    lunge = inCycle;
+                    occurrence = cycle;
+                    state = lunge < Bacteria.LUNGE_TICKS ? CHASE : CAGE;
+                    moving = state == CHASE ? 1.0f : 0.0f;
+                }
+                case CAGE -> {
+                    state = CAGE;
+                    occurrence = cycle;
+                    if (!loop) {
+                        whip = f - 10.0f;    // one whip, then one lean-in
+                        leanIn = f - 40.0f;
+                    } else if (cycle % 2 == 0) {
+                        whip = inCycle;      // whip, lean-in, whip, lean-in...
+                    } else {
+                        leanIn = inCycle;
+                    }
+                }
+                case FEED -> {
+                    state = FEED;
+                    age = loop ? f % FEED_LOOP_TICKS : f;
+                }
+                case PEEK -> {
+                    state = PEEK;
+                    age = loop ? f % PEEK_LOOP_TICKS : f;
+                    occurrence = loop ? (int) (f / PEEK_LOOP_TICKS) : 0;
+                    peekSide = hash(seed + 26, occurrence) > 0.0f ? 1 : -1;
+                }
+                default -> state = CALM; // IDLE
+            }
         } else {
-            // Tracks you, plus sudden sideways snaps every few seconds (not while frozen).
-            head.yRot = netHeadYaw * Mth.DEG_TO_RAD + twitch(seed + 2, t, 23, 0.9f) * snapGate(seed + 3, t, 23) * jitter;
-            head.zRot = twitch(seed + 4, t, 17, 0.5f) * snapGate(seed + 5, t, 17) * jitter;
-            head.xRot = headPitch * Mth.DEG_TO_RAD * 0.5f - spine.xRot;
+            Bacteria.Mode mode = entity.mode();
+            boolean calm = mode == Bacteria.Mode.WANDER || mode == Bacteria.Mode.DRIFT;
+            Bacteria.Action action = entity.action();
+            float since = entity.actionAge(partial);
+            occurrence = entity.actionStamp();
+            if (calm && action == Bacteria.Action.FEED && since < Bacteria.FEED_TICKS) {
+                state = FEED;
+                age = since;
+            } else if (calm && (action == Bacteria.Action.PEEK_LEFT || action == Bacteria.Action.PEEK_RIGHT)
+                    && since < Bacteria.PEEK_TICKS) {
+                state = PEEK;
+                age = since;
+                peekSide = action == Bacteria.Action.PEEK_LEFT ? 1 : -1;
+            } else if (mode == Bacteria.Mode.CHASE) {
+                state = entity.isCaging() ? CAGE : CHASE;
+                if (action == Bacteria.Action.LUNGE) {
+                    lunge = since;
+                } else if (action == Bacteria.Action.WHIP) {
+                    whip = since;
+                } else if (action == Bacteria.Action.LEAN_IN) {
+                    leanIn = since;
+                }
+                // The last few blocks before it lunges, it hunches lower and opens its arms.
+                Entity prey = entity.level().getEntity(entity.preyId());
+                if (prey != null) {
+                    near = Mth.clamp(((float) Bacteria.LUNGE_RANGE + 4.0f - entity.distanceTo(prey)) / 4.0f, 0.0f, 1.0f);
+                }
+            } else if (mode == Bacteria.Mode.SPOTTED) {
+                state = SPOTTED;
+                age = entity.modeAge(partial);
+                occurrence = entity.modeStamp();
+            } else if (mode == Bacteria.Mode.SEARCH) {
+                state = SEARCH;
+            } else {
+                state = CALM;
+            }
+            if (entity.previousMode() == Bacteria.Mode.SPOTTED && mode != Bacteria.Mode.SPOTTED) {
+                // The freeze breaks with one violent full-body twitch.
+                twitch = entity.modeAge(partial);
+                twitchId = entity.modeStamp();
+            }
         }
 
-        // --- Legs: short quick strides, knees bent when stooping -----------------------------
-        float stride = Mth.cos(swing * 0.6f) * 0.7f * amount;
-        rightLeg.xRot = stride - knee;
-        leftLeg.xRot = -stride - knee;
-        rightShin.xRot = Math.max(0.0f, Mth.sin(swing * 0.6f)) * 0.8f * amount + 2.0f * knee;
-        leftShin.xRot = Math.max(0.0f, -Mth.sin(swing * 0.6f)) * 0.8f * amount + 2.0f * knee;
-
-        // --- Arms: long enough to reach the floor --------------------------------------------
-        // Leaning lowers the shoulders, so the arms angle forward until the claws touch the floor
-        // in front of it instead of sinking into it (that is what makes it look like it walks on
-        // crutches when it hunches).
-        float shoulderHeight = hips + SPINE * Mth.cos(spine.xRot);
-        float reach = (float) Math.acos(Mth.clamp(shoulderHeight / ARM_REACH, 0.0f, 1.0f));
-        float base = -spine.xRot - reach;
-        // Crutch walk: the arms swing opposite to the legs.
-        float armSwing = Mth.cos(swing * 0.6f) * 0.3f * amount;
-        rightArm.xRot = base - armSwing;
-        leftArm.xRot = base + armSwing;
-        rightArm.zRot = 0.03f + twitch(seed + 10, t, 11, 0.04f) * jitter;
-        leftArm.zRot = -0.03f + twitch(seed + 11, t, 13, 0.04f) * jitter;
-        rightForearm.xRot = twitch(seed + 12, t, 19, 0.2f) * snapGate(seed + 13, t, 19) * jitter;
-        leftForearm.xRot = 0.0f;
-
-        if (chasing) {
-            // Reaching forward, arms flailing in big stuttering swings.
-            rightArm.xRot += -0.35f + Mth.cos(swing * 0.9f) * 0.35f * amount + twitch(seed + 6, t, 3, 0.12f);
-            leftArm.xRot += -0.35f - Mth.cos(swing * 0.9f) * 0.35f * amount + twitch(seed + 7, t, 3, 0.12f);
-            rightForearm.xRot = -0.3f + twitch(seed + 8, t, 2, 0.25f);
-            leftForearm.xRot = -0.3f + twitch(seed + 9, t, 2, 0.25f);
-        } else if (searching) {
-            // One arm reaches ahead, dragging its claws along the floor; the fingers twitch.
-            rightArm.xRot -= 0.35f;
-            rightForearm.xRot = 0.25f + twitch(seed + 14, t, 3, 0.2f);
+        // --- Build the pose ------------------------------------------------------------------
+        switch (state) {
+            case CHASE -> chase(seed, t, moving, gait, yaw, pitch, near);
+            case SEARCH -> search(seed, t, moving, gait);
+            case SPOTTED -> spotted(seed, age, occurrence, yaw, pitch);
+            case CAGE -> cage(seed, t, yaw, pitch);
+            case FEED -> {
+                calm(seed, t, 0.0f, gait, yaw, pitch);
+                feed(seed, t, age);
+            }
+            case PEEK -> {
+                calm(seed, t, 0.0f, gait, yaw, pitch);
+                peek(t, age, peekSide);
+            }
+            default -> calm(seed, t, moving, gait, yaw, pitch);
         }
+        if (lunge >= 0.0f) {
+            lunge(lunge);
+        }
+        if (whip >= 0.0f) {
+            whip(hash(seed + 27, occurrence) > 0.0f ? 0 : 1, whip);
+        }
+        if (leanIn >= 0.0f) {
+            leanIn(seed, t, leanIn);
+        }
+        if (twitch >= 0.0f) {
+            twitch(seed, twitchId, twitch);
+        }
+        apply();
+        organs(entity, partial, ageInTicks);
+    }
 
-        // --- Organs: smooth, never stuttered, so they read as alive inside the twitching wires --
-        // The heart's speed tells you its mood: slow while wandering, racing once it has seen you.
+    // ------------------------------------------------------------------ the states
+
+    /**
+     * Nobody seen: standing about (m = 0) or strolling (m = 1). Never quite still: a slow sway and
+     * breathing, a faint smooth tremor, a head that snaps to a new tilt every half second or so
+     * and now and then jerks round to one side, a forearm that spasms. Knees always bent, claws
+     * on the floor. Walking: a slow 27-tick stride, arms swinging on their own slow rhythm (not
+     * with the legs), and now and then one arm flung out sideways.
+     */
+    private void calm(int seed, float t, float m, float gait, float yaw, float pitch) {
+        stance(-10.0f * DEG, 25.0f * DEG);
+        float breath = Mth.TWO_PI * t / BREATH_TICKS;
+        lean = (12.0f + 5.5f * m) * DEG + 2.0f * DEG * Mth.sin(breath + 1.3f) + noise(seed + 1, t, 2.0f) * TREMOR;
+        sway = 5.0f * DEG * Mth.sin(breath) * (1.0f - 0.5f * m) + noise(seed + 2, t, 2.0f) * TREMOR;
+        // Stride: thighs swing 25 degrees each way; the knee folds up as the leg swings forward.
+        float swing = Mth.sin(gait);
+        float lift = Mth.cos(gait);
+        thighR += 25.0f * DEG * swing * m;
+        thighL -= 25.0f * DEG * swing * m;
+        shinR += m * (-10.0f * DEG + 35.0f * DEG * Math.max(0.0f, -lift));
+        shinL += m * (-10.0f * DEG + 35.0f * DEG * Math.max(0.0f, lift));
+        bob = 0.25f * (1.0f - Mth.cos(2.0f * gait)) * m; // up to half a pixel, once per step
+        neckX = noise(seed + 3, t, 2.0f) * TREMOR;
+        neckZ = noise(seed + 4, t, 2.0f) * TREMOR;
+        // A new head tilt every 8-14 ticks (6-10 while walking), reached in 1.5 ticks and held.
+        headRoll = m < 0.5f
+                ? snap(seed + 5, t, 11.0f, 1.5f, 1.5f, 15.0f, 30.0f)
+                : snap(seed + 6, t, 8.0f, 1.0f, 1.5f, 15.0f, 25.0f);
+        // Every 20-60 ticks the head jerks 25-60 degrees to one side in a tick, holds, comes back.
+        headYaw = yaw + pulse(seed + 7, t, 40.0f, 10.0f, 1.0f, 6.0f, 5.0f, 25.0f, 60.0f);
+        headPitchW = pitch * 0.5f;
+        float reach = floorReach();
+        float sweepTicks = 35.0f + 5.0f * hash(seed + 8, 0); // 30-40 ticks, different for each one
+        for (int i = 0; i < 2; i++) {
+            raise[i] = reach + 25.0f * DEG * m * Mth.sin(Mth.TWO_PI * (t / sweepTicks + 0.37f * i));
+            splay[i] = (4.5f + 1.5f * hash(seed + 9 + i, 0)) * DEG;
+            bend[i] = noise(seed + 11 + i, t, 2.0f) * TREMOR;
+            curl[i] = (10.0f + 6.0f * noise(seed + 13 + i, t, 20.0f)) * DEG;
+            spread[i] = 5.0f * DEG * noise(seed + 15 + i, t, 25.0f);
+        }
+        // Walking: about once every 2-4 s one arm flings out sideways (60-80 degrees in 3 ticks).
+        float fling = pulse(seed + 17, t, 60.0f, 10.0f, 3.0f, 4.0f, 6.0f, 60.0f, 80.0f) * m;
+        splay[fling > 0.0f ? 0 : 1] += Math.abs(fling);
+        // Every 15-40 ticks one forearm spasms forward 10-25 degrees and holds for a moment.
+        float spasm = pulse(seed + 18, t, 27.5f, 6.0f, 1.0f, 4.5f, 2.0f, 10.0f, 25.0f);
+        bend[spasm > 0.0f ? 0 : 1] -= Math.abs(spasm);
+    }
+
+    /**
+     * Running at you: an 11-tick stride, hunched 28-35 degrees (more in the last blocks before the
+     * lunge, {@code near}), both arms reaching straight out at you, about level, and flailing on
+     * their own: mostly big side-to-side sweeps, plus dips downward and a fast jitter. Never up:
+     * the hands stay below about 25 degrees above level (checked with the joint simulation for
+     * every lean and sweep, because a raised arm on a leaning body points higher than it looks).
+     * The head aims at you and rolls.
+     */
+    private void chase(int seed, float t, float m, float gait, float yaw, float pitch, float near) {
+        stance(-15.0f * DEG, 20.0f * DEG);
+        float swing = Mth.sin(gait);
+        float lift = Mth.cos(gait);
+        thighR += 40.0f * DEG * swing * m;
+        thighL -= 40.0f * DEG * swing * m;
+        shinR += m * (-10.0f * DEG + 60.0f * DEG * Math.max(0.0f, -lift));
+        shinL += m * (-10.0f * DEG + 60.0f * DEG * Math.max(0.0f, lift));
+        bob = 0.5f * (1.0f - Mth.cos(2.0f * gait)) * m;
+        lean = (31.5f + 8.5f * near) * DEG + noise(seed + 20, t, 6.0f) * 3.0f * DEG;
+        floorReach();
+        sway = noise(seed + 21, t, 7.0f) * 4.0f * DEG;
+        headPitchW = pitch + noise(seed + 22, t, 8.0f) * 10.0f * DEG;
+        headYaw = yaw;
+        headRoll = noise(seed + 23, t, 6.0f) * 20.0f * DEG + snap(seed + 24, t, 8.0f, 1.5f, 1.0f, 20.0f, 30.0f);
+        for (int i = 0; i < 2; i++) {
+            int s = seed + 40 + 10 * i;
+            float sweepTicks = 14.0f + 2.0f * hash(s, 0);     // 12-16 ticks
+            float swingTicks = 11.0f + 2.0f * hash(s + 1, 0); // 9-13 ticks
+            // Straight out at you, about level (aimed a little down if you are lower); the up/down
+            // flail only ever dips the arm DOWN from there, and it is capped at level.
+            float dip = 0.5f + 0.5f * noise(s + 2, t, sweepTicks); // 0..1
+            raise[i] = Mth.clamp(95.0f * DEG - pitch * 0.6f - dip * 25.0f * DEG + noise(s + 3, t, 4.0f) * 8.0f * DEG,
+                    50.0f * DEG, 90.0f * DEG);
+            // The big flail is side to side; close to you the arms open wide, ready to close around you.
+            out[i] = Math.min(75.0f * DEG, (15.0f + 40.0f * near) * DEG
+                    + noise(s + 4, t, swingTicks) * 40.0f * DEG * (1.0f - 0.5f * near)
+                    + noise(s + 5, t, 3.5f) * 12.0f * DEG);
+            // Forearms droop a little (never cocked upward), with their own slow wobble.
+            bend[i] = (12.0f + 6.0f * noise(s + 6, t, 6.0f)) * DEG;
+            spread[i] = (12.0f + 6.0f * noise(s + 7, t, 5.0f)) * DEG;
+            curl[i] = noise(s + 8, t, 4.0f) * 15.0f * DEG;
+        }
+    }
+
+    /** Searching: hunched, the head jerking left and right down the halls, one arm reaching ahead. */
+    private void search(int seed, float t, float m, float gait) {
+        stance(-12.0f * DEG, 25.0f * DEG);
+        float swing = Mth.sin(gait);
+        float lift = Mth.cos(gait);
+        thighR += 30.0f * DEG * swing * m;
+        thighL -= 30.0f * DEG * swing * m;
+        shinR += m * 45.0f * DEG * Math.max(0.0f, -lift);
+        shinL += m * 45.0f * DEG * Math.max(0.0f, lift);
+        lean = 34.0f * DEG + noise(seed + 30, t, 6.0f) * 2.0f * DEG;
+        float reach = floorReach();
+        sway = noise(seed + 31, t, 9.0f) * 3.0f * DEG;
+        neckX = noise(seed + 3, t, 2.0f) * TREMOR;
+        // Up to 70 degrees left or right, a new direction every 10-14 ticks, snapped in 1.5 ticks.
+        headYaw = snap(seed + 32, t, 12.0f, 2.0f, 1.5f, 20.0f, 70.0f);
+        headRoll = snap(seed + 33, t, 12.0f, 2.0f, 1.5f, 5.0f, 17.0f);
+        headPitchW = 11.0f * DEG;
+        for (int i = 0; i < 2; i++) {
+            raise[i] = reach;
+            splay[i] = (4.5f + 1.5f * hash(seed + 9 + i, 0)) * DEG;
+            curl[i] = 15.0f * DEG;
+        }
+        // The right arm reaches ahead, dragging its claws along the floor; the fingers twitch.
+        raise[0] += 20.0f * DEG;
+        bend[0] = 14.0f * DEG + noise(seed + 34, t, 3.0f) * 11.0f * DEG;
+        raise[1] += noise(seed + 35, t, 14.0f) * 10.0f * DEG;
+    }
+
+    /**
+     * It has seen you. A head cock of 20-30 degrees in 2 ticks, then nothing: no sway, no tremor,
+     * not a twitch. Only the head follows you, slowly (the server turns it 1.5 degrees a tick).
+     */
+    private void spotted(int seed, float age, int occurrence, float yaw, float pitch) {
+        stance(-10.0f * DEG, 25.0f * DEG);
+        lean = 4.0f * DEG;
+        float reach = floorReach();
+        headYaw = yaw;
+        headPitchW = pitch * 0.5f;
+        headRoll = spread(hash(seed + 25, occurrence), 20.0f, 30.0f) * DEG * smooth(age / 2.0f);
+        for (int i = 0; i < 2; i++) {
+            raise[i] = reach;
+            splay[i] = (4.5f + 1.5f * hash(seed + 9 + i, 0)) * DEG;
+            curl[i] = 10.0f * DEG;
+        }
+    }
+
+    /**
+     * Holding you (the reference video's "arm cage", key poses 05-07): it stands over you 1.5-2
+     * blocks away, torso fairly upright (18 degrees), knees a little bent, so its head stays about
+     * 1.25 blocks in front of you; only the lean-in brings it close. Each arm runs from its
+     * shoulder out and down to an elbow at about your shoulder height, a little out to the side
+     * and in front of you, and the forearm goes down to the floor, claws planted 0.5-0.9 blocks
+     * to your left and right and about half a block in front of you. Seen by the player being
+     * held, the two arms rise from the bottom corners of the screen up to its shoulders.
+     * Every 6-12 ticks an arm lifts and re-plants its claws somewhere else along the floor.
+     * All of this was computed with a joint-by-joint simulation of the model (including the lean
+     * of the spine the arms hang from), from where the held player's camera is.
+     */
+    private void cage(int seed, float t, float yaw, float pitch) {
+        stance(-20.0f * DEG, 40.0f * DEG);
+        lean = 18.0f * DEG + noise(seed + 50, t, 8.0f) * 3.0f * DEG;
+        floorReach();
+        sway = noise(seed + 51, t, 9.0f) * 3.0f * DEG;
+        neckX = 10.0f * DEG;
+        headYaw = yaw;
+        headPitchW = pitch;
+        headRoll = noise(seed + 52, t, 2.0f) * 5.0f * DEG;
+        for (int i = 0; i < 2; i++) {
+            int s = seed + 60 + 10 * i;
+            // Re-planting: the arm swings in or out (the claws slide 0.5-0.9 blocks to the side)
+            // and lifts a little, with the elbow folding to match so the claws stay near the floor.
+            float lift = snap(s, t, 9.0f, 1.5f, 2.0f, 2.0f, 6.0f);
+            raise[i] = 25.0f * DEG + lift;
+            bend[i] = 22.0f * DEG + 2.6f * lift + noise(s + 1, t, 5.0f) * 3.0f * DEG;
+            out[i] = 25.0f * DEG + snap(s + 2, t, 9.0f, 1.5f, 2.0f, 4.0f, 10.0f);
+            foreOut[i] = -30.0f * DEG + noise(s + 3, t, 6.0f) * 6.0f * DEG;
+            curl[i] = 30.0f * DEG + noise(s + 4, t, 4.0f) * 10.0f * DEG;
+            spread[i] = 8.0f * DEG;
+        }
+    }
+
+    /**
+     * After a kill: it folds nearly double over the body in 10 ticks, the head down at knee height
+     * pecking every 4-6 ticks, the arms planted in front like a mantis's forelegs; then it rises
+     * again over 12 ticks. Built on top of the calm pose, which it blends back into.
+     */
+    private void feed(int seed, float t, float age) {
+        float rise = Bacteria.FEED_TICKS - 12.0f;
+        float f = age < 10.0f ? smooth(age / 10.0f) : age < rise ? 1.0f : 1.0f - smooth((age - rise) / 12.0f);
+        if (f <= 0.0f) {
+            return;
+        }
+        float thigh = -45.0f * DEG;
+        float shin = 90.0f * DEG;
+        thighR = Mth.lerp(f, thighR, thigh);
+        thighL = Mth.lerp(f, thighL, thigh);
+        shinR = Mth.lerp(f, shinR, shin);
+        shinL = Mth.lerp(f, shinL, shin);
+        drop = Mth.lerp(f, drop, legDrop(thigh, shin));
+        lean = Mth.lerp(f, lean, 80.0f * DEG);
+        float peck = Math.abs(pulse(seed + 70, t, 5.0f, 0.8f, 1.0f, 1.0f, 2.0f, 8.0f, 15.0f));
+        neckX = Mth.lerp(f, neckX, 50.0f * DEG + peck);
+        headPitchW = Mth.lerp(f, headPitchW, 85.0f * DEG + peck);
+        headRoll *= 1.0f - 0.7f * f;
+        headYaw *= 1.0f - f;
+        for (int i = 0; i < 2; i++) {
+            raise[i] = Mth.lerp(f, raise[i], 80.0f * DEG);
+            out[i] = Mth.lerp(f, out[i], 50.0f * DEG);
+            splay[i] = Mth.lerp(f, splay[i], 0.0f);
+            bend[i] = Mth.lerp(f, bend[i], 140.0f * DEG);
+            foreOut[i] = Mth.lerp(f, foreOut[i], 45.0f * DEG);
+            curl[i] = Mth.lerp(f, curl[i], 30.0f * DEG);
+        }
+    }
+
+    /**
+     * Peeking round a pillar or door frame (Kane Pixels' doorway scene): the torso leans out
+     * 40 degrees over 10 ticks, the head leading; it holds there, bobbing slightly; then it
+     * snaps back in 3 ticks. {@code side}: +1 = to its left, -1 = to its right.
+     */
+    private void peek(float t, float age, int side) {
+        float back = Bacteria.PEEK_TICKS - 3.0f;
+        float e = age < 10.0f ? easeOut(age / 10.0f) : age < back ? 1.0f : 1.0f - smooth((age - back) / 3.0f);
+        float headFirst = age < back ? easeOut(age / 6.0f) : e;
+        sway += side * 40.0f * DEG * e;
+        neckZ += side * 20.0f * DEG * headFirst;
+        headRoll += side * 20.0f * DEG * e;
+        bob += 0.4f * Mth.sin(Mth.TWO_PI * t / 12.0f) * e;
+    }
+
+    // ------------------------------------------------------------------ one-shot moves
+
+    /**
+     * The lunge (Kane Pixels' corridor scene, about 9 ticks): wind up (hunch, head down, arms
+     * drawn in), throw both arms out wide, then swing them forward and in as it reaches you. At 9
+     * ticks the cage takes over, which the arms settle into over 3 more ticks (the "plant").
+     */
+    private void lunge(float a) {
+        if (a >= 12.0f) {
+            return;
+        }
+        lean = key(a, lean, lean + 10.0f * DEG, lean + 10.0f * DEG, lean + 5.0f * DEG);
+        headPitchW = key(a, headPitchW, headPitchW + 15.0f * DEG, headPitchW - 20.0f * DEG, headPitchW);
+        neckX = key(a, neckX, 0.0f, 0.0f, 0.0f);
+        // Legs at full stride for the leap, then landing into the crouch.
+        thighR = key(a, thighR, -30.0f * DEG, -45.0f * DEG, -20.0f * DEG);
+        thighL = key(a, thighL, 20.0f * DEG, 35.0f * DEG, 0.0f);
+        shinR = key(a, shinR, 30.0f * DEG, 20.0f * DEG, 50.0f * DEG);
+        shinL = key(a, shinL, 40.0f * DEG, 60.0f * DEG, 50.0f * DEG);
+        drop = key(a, drop, 0.8f, 0.6f, 2.0f);
+        bob = key(a, bob, 0.0f, 0.0f, 0.0f);
+        for (int i = 0; i < 2; i++) {
+            raise[i] = key(a, raise[i], 35.0f * DEG, 70.0f * DEG, 100.0f * DEG);
+            out[i] = key(a, out[i], 25.0f * DEG, 82.0f * DEG, 35.0f * DEG);
+            bend[i] = key(a, bend[i], -45.0f * DEG, -10.0f * DEG, 30.0f * DEG);
+            splay[i] = key(a, splay[i], 0.0f, 0.0f, 0.0f);
+            foreOut[i] = key(a, foreOut[i], 0.0f, 0.0f, 0.0f);
+            curl[i] = key(a, curl[i], 20.0f * DEG, -15.0f * DEG, 40.0f * DEG);
+            spread[i] = key(a, spread[i], 0.0f, 25.0f * DEG, 5.0f * DEG);
+        }
+    }
+
+    /**
+     * One arm whips across your face: in 1.5 ticks it lifts out to its side at your head height,
+     * in the next 2.5 it sweeps across in front of your face to the other side, stays a moment,
+     * sweeps back and plants again (9.5 ticks in all). {@code i}: 0 = right arm, 1 = left. The path
+     * was simulated from the held player's camera: the claws cross about half a block in front of
+     * it at about eye height (a quarter of a block at the closest stand-off), never through it or
+     * through your body.
+     */
+    private void whip(int i, float a) {
+        if (a >= 9.5f) {
+            return;
+        }
+        raise[i] = whipKey(a, raise[i], 100.0f * DEG, 100.0f * DEG);
+        out[i] = whipKey(a, out[i], -20.0f * DEG, -50.0f * DEG);
+        bend[i] = whipKey(a, bend[i], 135.0f * DEG, 105.0f * DEG);
+        foreOut[i] = whipKey(a, foreOut[i], -20.0f * DEG, 20.0f * DEG);
+        splay[i] = whipKey(a, splay[i], 0.0f, 0.0f);
+        curl[i] = whipKey(a, curl[i], -15.0f * DEG, -15.0f * DEG);
+        spread[i] = whipKey(a, spread[i], 25.0f * DEG, 25.0f * DEG);
+    }
+
+    /** Whip timeline: base, lifted out to the side at 1.5, across the face at 4-5, lifted out again at 7.5, base at 9.5. */
+    private static float whipKey(float a, float base, float lifted, float across) {
+        if (a < 1.5f) {
+            return Mth.lerp(smooth(a / 1.5f), base, lifted);
+        }
+        if (a < 4.0f) {
+            return Mth.lerp(smooth((a - 1.5f) / 2.5f), lifted, across);
+        }
+        if (a < 5.0f) {
+            return across;
+        }
+        if (a < 7.5f) {
+            return Mth.lerp(smooth((a - 5.0f) / 2.5f), across, lifted);
+        }
+        return Mth.lerp(smooth((a - 7.5f) / 2.0f), lifted, base);
+    }
+
+    /**
+     * The head snaps in at your face in 2 ticks (the whole upper body bends 20 degrees more and
+     * the neck 40), holds there shivering, then pulls back. Its head comes to about 0.6 blocks
+     * from the held player's camera (0.4 at the closest stand-off).
+     */
+    private void leanIn(int seed, float t, float a) {
+        float e = a < 2.0f ? smooth(a / 2.0f)
+                : a < 2.0f + LEAN_IN_HOLD ? 1.0f : 1.0f - smooth((a - 2.0f - LEAN_IN_HOLD) / 4.0f);
+        if (e <= 0.0f) {
+            return;
+        }
+        neckX += 40.0f * DEG * e;
+        headForward += 6.0f * e;
+        lean += 20.0f * DEG * e;
+        headRoll += noise(seed + 80, t, 1.5f) * 5.0f * DEG * e;
+        // The shoulders come down and forward with it: lift the arms a bit and fold the elbows
+        // more so the claws stay planted on the floor instead of sinking into it.
+        for (int i = 0; i < 2; i++) {
+            raise[i] += 10.0f * DEG * e;
+            bend[i] += 35.0f * DEG * e;
+        }
+    }
+
+    /** Coming out of the freeze: every limb jerks 15-25 degrees in 1 tick and back in 2. */
+    private void twitch(int seed, int id, float a) {
+        if (a >= 3.0f) {
+            return;
+        }
+        float e = a < 1.0f ? smooth(a) : 1.0f - smooth((a - 1.0f) / 2.0f);
+        lean += e * kick(seed, id, 0);
+        sway += e * kick(seed, id, 1);
+        headYaw += e * kick(seed, id, 2);
+        headRoll += e * kick(seed, id, 3);
+        thighR += e * kick(seed, id, 4);
+        thighL += e * kick(seed, id, 5);
+        for (int i = 0; i < 2; i++) {
+            raise[i] += e * kick(seed, id, 6 + i);
+            out[i] += e * kick(seed, id, 8 + i);
+            bend[i] += e * kick(seed, id, 10 + i);
+        }
+    }
+
+    private static float kick(int seed, int id, int limb) {
+        return spread(hash(seed + 100 + limb, id), 15.0f, 25.0f) * DEG;
+    }
+
+    // ------------------------------------------------------------------ pose helpers
+
+    /**
+     * Starts a pose: knees bent by these angles (more under a low ceiling), the hips dropped to
+     * match, and every other angle back to zero.
+     */
+    private void stance(float thigh, float shin) {
+        float knee = 0.35f * squeeze;
+        thighR = thighL = thigh - knee;
+        shinR = shinL = shin + 2.0f * knee;
+        drop = legDrop(thigh - knee, shin + 2.0f * knee);
+        hips = HIP_HEIGHT - drop;
+        // The least forward lean that gets hips + spine + head under the ceiling.
+        float fit = (room - hips) / (SPINE + NECK_AND_HEAD);
+        ceilingLean = fit >= 1.0f ? 0.0f : (float) Math.acos(Mth.clamp(fit, 0.2f, 1.0f));
+        bob = 0.0f;
+        lean = 0.0f;
+        sway = 0.0f;
+        neckX = 0.0f;
+        neckZ = 0.0f;
+        headPitchW = 0.0f;
+        headYaw = 0.0f;
+        headRoll = 0.0f;
+        headForward = 0.0f;
+        for (int i = 0; i < 2; i++) {
+            raise[i] = 0.0f;
+            out[i] = 0.0f;
+            splay[i] = 0.0f;
+            bend[i] = 0.0f;
+            foreOut[i] = 0.0f;
+            curl[i] = 0.0f;
+            spread[i] = 0.0f;
+        }
+    }
+
+    /** How far the hips sink (px) with the thigh and the shin (relative to the thigh) bent so. */
+    private static float legDrop(float thigh, float shin) {
+        return THIGH + SHIN - (THIGH * Mth.cos(thigh) + SHIN * Mth.cos(thigh + shin));
+    }
+
+    /**
+     * Applies the stoop under a low ceiling to the lean, then returns how far forward the arms
+     * must hang for the claws to rest on the floor instead of sinking into it (that is what makes
+     * it look like it walks on crutches when it hunches).
+     */
+    private float floorReach() {
+        lean = Math.max(lean, ceilingLean);
+        float shoulderHeight = hips + SPINE * Mth.cos(lean);
+        return (float) Math.acos(Mth.clamp(shoulderHeight / ARM_REACH, 0.0f, 1.0f));
+    }
+
+    /** Puts the pose built this frame onto the model parts. */
+    private void apply() {
+        body.y += drop + bob;
+        rightLeg.xRot = thighR;
+        leftLeg.xRot = thighL;
+        rightShin.xRot = shinR;
+        leftShin.xRot = shinL;
+        spine.xRot = lean;
+        spine.zRot = sway;
+        neck.xRot = neckX;
+        neck.zRot = neckZ;
+        // The head keeps its own pitch whatever the spine and neck do.
+        head.xRot = headPitchW - lean - neckX;
+        head.yRot = headYaw;
+        head.zRot = headRoll;
+        head.z -= headForward;
+        for (int i = 0; i < 2; i++) {
+            float side = i == 0 ? -1.0f : 1.0f; // the right arm is on the -X side
+            // The arm turns forward first (xRot), then out to the side (yRot). raise is measured in
+            // the world, so the spine's lean is taken back off.
+            arms[i].xRot = -(raise[i] + lean);
+            arms[i].yRot = -side * out[i];
+            arms[i].zRot = -side * splay[i];
+            forearms[i].xRot = bend[i];
+            forearms[i].zRot = -side * foreOut[i];
+            hands[i].xRot = curl[i];
+            for (int f = 0; f < 3; f++) {
+                fingers[i][f].zRot = (1 - f) * spread[i]; // the outer fingers fan away from the middle one
+            }
+        }
+    }
+
+    /**
+     * The organs move smoothly, so they read as alive inside the twitching wires. The heart's speed
+     * tells you its mood: slow while wandering, racing once it has seen you.
+     */
+    private void organs(Bacteria entity, float partial, float ageInTicks) {
         float beat = heartbeat(entity.heartPhase(partial));
         float heartScale = 1.0f + 0.16f * beat;
         heart.xScale = heartScale;
         heart.yScale = heartScale;
         heart.zScale = heartScale;
         float breath = 0.5f - 0.5f * Mth.cos(Mth.TWO_PI * entity.breathPhase(partial));
-        for (ModelPart lung : new ModelPart[] {lungRight, lungLeft}) {
-            lung.xScale = 1.0f + 0.12f * breath;
-            lung.zScale = 1.0f + 0.12f * breath;
-            lung.yScale = 1.0f + 0.05f * breath;
-        }
+        breathe(lungRight, breath);
+        breathe(lungLeft, breath);
         // The stomach churns: a slow lopsided wobble.
         stomach.zRot += Mth.sin(ageInTicks * 0.07f) * 0.12f;
         stomach.xScale = 1.0f + Mth.sin(ageInTicks * 0.05f + 1.3f) * 0.05f;
+    }
+
+    private static void breathe(ModelPart lung, float breath) {
+        lung.xScale = 1.0f + 0.12f * breath;
+        lung.zScale = 1.0f + 0.12f * breath;
+        lung.yScale = 1.0f + 0.05f * breath;
     }
 
     /** "Lub-dub": a strong beat and a weaker one just after it, then rest. 0..1. */
@@ -643,19 +1246,99 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         return Math.min(1.0f, a + 0.6f * b);
     }
 
-    /** Deterministic jitter that changes value every {@code period} ticks. */
-    private static float twitch(int seed, float t, int period, float amplitude) {
-        int bucket = Mth.floor(t / period);
-        long h = (long) (seed * 0x9E3779B1L) ^ (bucket * 0x85EBCA77L);
+    // ------------------------------------------------------------------ noise and timing
+
+    /** A fixed random number from -1 to 1 for (seed, n): the same inputs always give the same number. */
+    private static float hash(int seed, int n) {
+        int h = seed * 0x9E3779B1 + n * 0x85EBCA77;
         h ^= h >>> 15;
-        h *= 0x2C1B3C6DL;
+        h *= 0x2C1B3C6D;
         h ^= h >>> 12;
-        float unit = (h & 0xFFFF) / 65535.0f;
-        return (unit * 2.0f - 1.0f) * amplitude;
+        h *= 0x297A2D39;
+        h ^= h >>> 15;
+        return (h & 0xFFFF) / 32767.5f - 1.0f;
     }
 
-    /** 1 for roughly one bucket in six, else 0: makes the big snaps rare. */
-    private static float snapGate(int seed, float t, int period) {
-        return twitch(seed ^ 0x55AA, t, period, 1.0f) > 0.66f ? 1.0f : 0.0f;
+    /**
+     * Smooth noise from -1 to 1: a new random value every {@code period} ticks, with a soft
+     * (cosine) glide from one to the next. Never jumps, so it never looks like frame jitter.
+     */
+    private static float noise(int seed, float t, float period) {
+        float x = t / period;
+        int b = Mth.floor(x);
+        float w = 0.5f - 0.5f * Mth.cos((x - b) * Mth.PI);
+        float a = hash(seed, b);
+        return a + (hash(seed, b + 1) - a) * w;
+    }
+
+    /**
+     * Hold-then-snap: a random angle (lo to hi degrees, either way) held for a while, then a quick
+     * {@code ease}-tick move to the next one. The changes come every {@code period} ticks, each one
+     * up to {@code jitter} ticks early or late, so the rhythm is never regular. Returns radians.
+     */
+    private static float snap(int seed, float t, float period, float jitter, float ease, float lo, float hi) {
+        int b = bucket(seed, t, period, jitter);
+        float s = smooth((t - bucketStart(seed, b, period, jitter)) / ease);
+        float from = spread(hash(seed, b - 1), lo, hi);
+        float to = spread(hash(seed, b), lo, hi);
+        return (from + (to - from) * s) * DEG;
+    }
+
+    /**
+     * A sudden move now and then: at the start of every slot ({@code period} ticks, give or take
+     * {@code jitter}) it goes to a random angle (lo to hi degrees, the sign is random too) in
+     * {@code rise} ticks, holds {@code hold} ticks and comes back in {@code fall}. Returns radians;
+     * callers use the sign to pick a side.
+     */
+    private static float pulse(int seed, float t, float period, float jitter, float rise, float hold, float fall, float lo, float hi) {
+        int b = bucket(seed, t, period, jitter);
+        float a = t - bucketStart(seed, b, period, jitter);
+        float e = a < rise ? smooth(a / rise) : a < rise + hold ? 1.0f : 1.0f - smooth((a - rise - hold) / fall);
+        return e * spread(hash(seed + 1, b), lo, hi) * DEG;
+    }
+
+    /** When slot {@code b} starts: every {@code period} ticks, each start moved by up to +-jitter. */
+    private static float bucketStart(int seed, int b, float period, float jitter) {
+        return b * period + jitter * hash(seed ^ 0x5BD1E995, b);
+    }
+
+    /** Which slot tick {@code t} is in (jitter must be under half the period). */
+    private static int bucket(int seed, float t, float period, float jitter) {
+        int b = Mth.floor(t / period);
+        if (t < bucketStart(seed, b, period, jitter)) {
+            return b - 1;
+        }
+        return t >= bucketStart(seed, b + 1, period, jitter) ? b + 1 : b;
+    }
+
+    /** -1..1 to a size between lo and hi with the same sign. */
+    private static float spread(float u, float lo, float hi) {
+        return Math.copySign(lo + (hi - lo) * Math.abs(u), u);
+    }
+
+    /** 0..1 eased at both ends (clamped). */
+    private static float smooth(float x) {
+        float c = Mth.clamp(x, 0.0f, 1.0f);
+        return c * c * (3.0f - 2.0f * c);
+    }
+
+    /** 0..1 fast at first, slowing to a stop (clamped). */
+    private static float easeOut(float x) {
+        float c = 1.0f - Mth.clamp(x, 0.0f, 1.0f);
+        return 1.0f - c * c;
+    }
+
+    /** Lunge timeline: from {@code base} to the keys at ticks 2, 5 and 9, then back to base by 12. */
+    private static float key(float a, float base, float k2, float k5, float k9) {
+        if (a < 2.0f) {
+            return Mth.lerp(smooth(a / 2.0f), base, k2);
+        }
+        if (a < 5.0f) {
+            return Mth.lerp(smooth((a - 2.0f) / 3.0f), k2, k5);
+        }
+        if (a < 9.0f) {
+            return Mth.lerp(smooth((a - 5.0f) / 4.0f), k5, k9);
+        }
+        return Mth.lerp(smooth((a - 9.0f) / 3.0f), k9, base);
     }
 }

@@ -470,11 +470,22 @@ houses). Upside-down furniture doesn't count.
   blocks from one of you, and if you leave it far behind it catches up after a while. It only
   knows where you are if it sees you or hears you
   sprint. In a lit room it spots you from about 24 blocks; in the dark only from about 8 (crouching
-  makes both shorter, your flashlight doesn't matter). When it spots you it freezes for a moment and
-  draws in one long, wrong breath, then chases. Break line of sight: it runs to where it *last saw*
+  makes both shorter, your flashlight doesn't matter). When it spots you it cocks its head and goes
+  dead still for about a second while it draws in one long, wrong breath, its head slowly turning
+  after you; then it twitches once and chases. Break line of sight: it runs to where it *last saw*
   you, searches for a few seconds (you hear it sniffing), and when it gives up you hear a slow sigh
   moving away. It is quiet: wet, slow breathing and soft clicks, never a shriek. With
   NightShot on you can see it even in total darkness.
+
+  How it moves: calm, it is never quite still (a slow sway, breathing, a faint shiver) and its head
+  snaps from one tilt to the next every half second or so; every one moves to its own rhythm.
+  Sometimes, before it has properly seen you, it leans out from behind a pillar or door frame to
+  look at you. It runs hunched, arms reaching straight out at you and flailing, dropping little
+  black flakes. Within 3 blocks it lunges: arms thrown wide, then closed around you. It stops about
+  two blocks away and holds you in a cage of its long arms (its body never ends up in your face);
+  the hits come from the arms: one whips across your face, or its head snaps in close. Get more
+  than 3 blocks away and you have broken free. After a kill it folds over the body for a few
+  seconds.
 - **Blackouts:** the lights fade out over two seconds. Only flashlights work, and the Bacteria come
   out three times as often, but they can't use the lamps to spot you either.
 - **Smilers (Levels 1 and 2 in blackouts, Level 1's dead zones, Level 9's dark streets, Level 94 at
@@ -920,6 +931,7 @@ saturation, hiss and a big, empty room.
 /backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
 /backrooms sanity [players] <0-100>     set sanity (test the low-sanity effects)
 /backrooms spawn bacteria [count]       spawn Bacteria ~12 blocks in front of you (they only hunt survival players)
+/backrooms bacteria pose <idle|walk|chase|spotted|lunge|cage|feed|peek|auto> [loop]   film the Bacteria's animations: forces that pose on the nearest one within 32 blocks and freezes it there (walk and chase run on the spot); loop = replay the one-shot moves every 2 s (feed and peek when they finish); auto = back to normal. Works with NoAI too
 /backrooms spawn smiler [count|bold]    spawn Smilers ~16 blocks in front of you (start a blackout first)
 /backrooms spawn <watcher|observer> [players]   Level 9 test spawns
 /backrooms spawn hound [count]          Level 39: Hounds ~14 blocks in front of you (they only hunt survival players)

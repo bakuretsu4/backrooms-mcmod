@@ -12,6 +12,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
@@ -22,11 +23,13 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,11 +44,19 @@ import org.jetbrains.annotations.Nullable;
  * <p>The behaviour is a small state machine ({@link Mode}) run by the server in
  * {@link #customServerAiStep()}:
  * <pre>
- * WANDER  --sees you-->           SPOTTED --15 ticks--> CHASE --3 s without seeing you--> SEARCH
+ * WANDER  --sees you-->           SPOTTED --24 ticks--> CHASE --3 s without seeing you--> SEARCH
  * WANDER  --hears a sprint / every 30-60 s a rough guess--> DRIFT --arrives--> WANDER
  * SEARCH  --sees or hears you--> CHASE      SEARCH --8 s, nothing--> WANDER ("lost" sigh)
  * </pre>
  * The mode is synced to clients so the model can pose and the camcorder can glitch.
+ *
+ * <p>Up close it never walks into you (your camera used to end up inside its body). Within
+ * {@link #LUNGE_RANGE} it lunges, stops 1.5-2 blocks away and closes its long arms around you
+ * like a cage; the hits come from the arms ({@link #closeIn()}). After a kill it folds over its
+ * victim for a few seconds. While wandering it sometimes leans out from behind cover to look at
+ * you before it has properly seen you. Those moves are told to the clients as synced data
+ * ({@link Action}, {@link #isCaging()}, {@link #preyId()}), so every player sees them at the
+ * same moment.
  *
  * <p>Safe rooms ({@code world/SafeRooms}) are off limits: it never walks into one, and it can't
  * see or hear anyone inside. Reaching a safe room in a chase counts as escaping.
@@ -58,8 +69,38 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     /** What the Bacteria is doing right now. The order matters: it is synced as a byte. */
     public enum Mode { WANDER, DRIFT, SPOTTED, CHASE, SEARCH }
 
+    /**
+     * One-shot moves the server tells the clients to play right now (the model times them from
+     * the moment the client hears about them). The order matters: it is synced as a number.
+     */
+    public enum Action { NONE, LUNGE, WHIP, LEAN_IN, FEED, PEEK_LEFT, PEEK_RIGHT }
+
+    /**
+     * Poses the test command {@code /backrooms bacteria pose} can force, so the lead can film
+     * each one. AUTO = normal behaviour. The order matters: it is synced as a byte.
+     */
+    public enum AnimPose { AUTO, IDLE, WALK, CHASE, SPOTTED, LUNGE, CAGE, FEED, PEEK }
+
     private static final Mode[] MODES = Mode.values();
+    private static final Action[] ACTIONS = Action.values();
+    private static final AnimPose[] POSES = AnimPose.values();
     private static final EntityDataAccessor<Byte> MODE = SynchedEntityData.defineId(Bacteria.class, EntityDataSerializers.BYTE);
+    /** Entity id of the player it is after (SPOTTED and CHASE), -1 for nobody. */
+    private static final EntityDataAccessor<Integer> PREY_ID = SynchedEntityData.defineId(Bacteria.class, EntityDataSerializers.INT);
+    /** True while its arms are closed around its prey. */
+    private static final EntityDataAccessor<Boolean> CAGED = SynchedEntityData.defineId(Bacteria.class, EntityDataSerializers.BOOLEAN);
+    /**
+     * The latest one-shot move: {@code count << 4 | action}. The count goes up every time, so the
+     * value always changes and the clients notice even the same move twice in a row.
+     */
+    private static final EntityDataAccessor<Integer> ACTION = SynchedEntityData.defineId(Bacteria.class, EntityDataSerializers.INT);
+    /**
+     * The pose forced by the test command: {@code count << 8 | loop bit | AnimPose number}. The
+     * count goes up with every command, so running the same command again restarts the pose.
+     */
+    private static final EntityDataAccessor<Integer> FORCED = SynchedEntityData.defineId(Bacteria.class, EntityDataSerializers.INT);
+    private static final int LOOP_BIT = 0x40;
+    private static final int POSE_MASK = 0x3F;
 
     // --- Senses ------------------------------------------------------------------------------
     /** How far it can spot you when you stand in the light (lamps on, no blackout). */
@@ -80,8 +121,13 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final int SENSE_INTERVAL = 5;
 
     // --- Timings (ticks; 20 ticks = 1 second) -----------------------------------------------
-    /** The freeze between spotting you and running at you: your warning. */
-    private static final int SPOTTED_TICKS = 15;
+    /**
+     * The freeze between spotting you and running at you: your warning. 24 ticks (1.2 s) of a
+     * cocked head and not one other movement, then everything at once.
+     */
+    private static final int SPOTTED_TICKS = 24;
+    /** While frozen it turns its head after you this slowly (degrees per tick): it just watches. */
+    private static final float SPOTTED_TRACK_DEG = 1.5f;
     /** How long it keeps running to where it last saw you before it starts searching. */
     private static final int LOST_SIGHT_TICKS = 60;
     /** How long it searches before giving up. */
@@ -98,16 +144,66 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final double GUESS_ERROR = 8.0;
     /** Path updates while chasing: at most twice a second. Pathfinding is the expensive part. */
     private static final int CHASE_REPATH_TICKS = 10;
+    /** Same damage and rhythm as always: one hit a second at most. */
     private static final int ATTACK_COOLDOWN_TICKS = 20;
     /** Chasing someone further than this makes it give up and search instead. */
     private static final double CHASE_GIVE_UP = 48.0;
-    /** Within this many blocks (and in sight) it stops pathfinding and goes straight for you. */
-    private static final double LUNGE_RANGE = 3.0;
+    /** Within this many blocks (and in sight) it stops pathfinding, lunges and goes for you. */
+    public static final double LUNGE_RANGE = 3.0;
     /** How many blocks up the headroom check looks; more than this counts as "plenty". */
     private static final float HEADROOM_CHECK = 5.0f;
     /** With nobody within {@link #LONELY_RANGE} for 3 minutes, it slips away when unseen. */
     private static final int LONELY_DESPAWN_TICKS = 3 * 60 * 20;
     private static final double LONELY_RANGE = 32.0;
+
+    // --- Close combat (see closeIn) -----------------------------------------------------------
+    /** The lunge: wind up, throw the arms wide, close them round you. Ticks from start to contact. */
+    public static final int LUNGE_TICKS = 9;
+    /** For those 9 ticks it bursts forward a bit faster than it runs (about 6.6 blocks/s). */
+    private static final double LUNGE_SPEED = 1.25;
+    /** After a lunge that missed, it waits this long before the next one. */
+    private static final int LUNGE_COOLDOWN_TICKS = 20;
+    /**
+     * Its body stops this far from you (blocks, centre to centre) and its arms do the rest, so
+     * your camera is never inside it. It keeps between the MIN and MAX distance.
+     */
+    private static final double STANDOFF = 1.75;
+    private static final double STANDOFF_MIN = 1.5;
+    private static final double STANDOFF_MAX = 2.0;
+    /** How far its arms reach (centre to centre): the cage closes and the hits land from here. */
+    private static final double CAGE_REACH = 2.4;
+    /** ...and no more than this far above or below it. */
+    private static final double CAGE_REACH_UP = 2.0;
+    /** Get this far away and you have broken out of its arms. */
+    private static final double CAGE_RELEASE = 3.2;
+    /** If you walk into it, it eases back this fast (added to its speed each tick). */
+    private static final double BACK_OFF = 0.08;
+    /** After a kill it folds over its victim this long (about 3 s), then goes back to wandering. */
+    public static final int FEED_TICKS = 62;
+
+    // --- Peeking out from cover (see tryPeek) ---------------------------------------------------
+    /** How long one peek lasts: 10 ticks leaning out, a long hold, a 3-tick snap back. */
+    public static final int PEEK_TICKS = 70;
+    /** It only peeks at someone this far away (blocks)... */
+    private static final double PEEK_MIN = 8.0;
+    private static final double PEEK_MAX = 24.0;
+    /** ...if leaning about this far (blocks) to one side would let it see them. */
+    private static final double PEEK_REACH = 1.0;
+    /** After a peek it waits 20-40 s before the next; after a failed check, 1 s. */
+    private static final int PEEK_COOLDOWN_MIN = 400;
+    private static final int PEEK_COOLDOWN_MAX = 800;
+    private static final int PEEK_RETRY_TICKS = 20;
+
+    // --- Animation timing shared with the model (client) --------------------------------------
+    /** Test command with "loop": the lunge and cage moves replay this often (2 s). */
+    public static final int POSE_LOOP_TICKS = 40;
+    /** While its pose is forced it looks at the nearest player within this range. */
+    private static final double POSE_LOOK_RANGE = 32.0;
+    // One full stride (both feet) takes this many ticks: 3.5-4 steps a second when it runs.
+    private static final float CHASE_STRIDE_TICKS = 11.0f;
+    private static final float SEARCH_STRIDE_TICKS = 16.0f;
+    private static final float DRIFT_STRIDE_TICKS = 20.0f;
+    private static final float WALK_STRIDE_TICKS = 27.0f;
 
     // --- Speeds (multipliers of MOVEMENT_SPEED) ----------------------------------------------
     // Mob speed works out to roughly (attribute x multiplier)^2, so 0.31 at 1.0 is about 4.2
@@ -131,6 +227,16 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private int searchLegs;
     private int nextGuessIn = GUESS_MIN_TICKS;
     private int lonelyTicks;
+    // Close combat and the other one-shot moves (server side).
+    private int lungeTicks = -1;
+    private int lungeCooldown;
+    private int cageHits;
+    private int feedTicks;
+    private int peekTicks;
+    private int peekCooldown = PEEK_COOLDOWN_MIN;
+    @Nullable
+    private Player peekAt;
+    private int actionCount;
 
     // Client-only, purely visual: free space above it (blocks), smoothed, for the model's stoop.
     private float headroom = HEADROOM_CHECK;
@@ -142,6 +248,17 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private float heartPhaseO;
     private float breathPhase;
     private float breathPhaseO;
+    // Client-only, purely visual: the stride, counted in strides so far (same idea as the heart).
+    private float gaitPhase;
+    private float gaitPhaseO;
+    // Client-only: when (in this client's ticks) the latest move, mode and forced pose arrived,
+    // so the model can time them.
+    private Action shownAction = Action.NONE;
+    private int actionTick = -1000;
+    private Mode shownMode = Mode.WANDER;
+    private Mode previousMode = Mode.WANDER;
+    private int modeTick = -1000;
+    private int forcedTick;
 
     public Bacteria(EntityType<? extends Monster> type, Level level) {
         super(type, level);
@@ -162,6 +279,10 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(MODE, (byte) Mode.WANDER.ordinal());
+        builder.define(PREY_ID, -1);
+        builder.define(CAGED, false);
+        builder.define(ACTION, 0);
+        builder.define(FORCED, 0);
     }
 
     /**
@@ -197,6 +318,114 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         };
     }
 
+    // ------------------------------------------------------------------ animation data (synced)
+
+    /** Entity id of the player it is after while SPOTTED or chasing, else -1. */
+    public int preyId() {
+        return entityData.get(PREY_ID);
+    }
+
+    /** True while its arms are closed around its prey (the "cage"). */
+    public boolean isCaging() {
+        return entityData.get(CAGED);
+    }
+
+    /** The pose forced by the test command, or AUTO. */
+    public AnimPose forcedPose() {
+        int v = entityData.get(FORCED) & POSE_MASK;
+        return v < POSES.length ? POSES[v] : AnimPose.AUTO;
+    }
+
+    /** True if the forced pose should replay its one-shot moves over and over. */
+    public boolean forcedLoop() {
+        return (entityData.get(FORCED) & LOOP_BIT) != 0;
+    }
+
+    /**
+     * Test command: force an animation pose ({@code AUTO} gives it back to the AI). While a pose
+     * is forced it stands still and does nothing else (no senses, no attacks), so it can be
+     * filmed; the walk and run play on the spot. Works on Bacteria summoned with NoAI too,
+     * because the model only reads this synced value.
+     */
+    public void forcePose(AnimPose pose, boolean loop) {
+        int count = ((entityData.get(FORCED) >>> 8) + 1) & 0xFFFFFF;
+        entityData.set(FORCED, count << 8 | (loop ? LOOP_BIT : 0) | pose.ordinal());
+        if (pose != AnimPose.AUTO) {
+            getNavigation().stop();
+        }
+    }
+
+    /** Client: the latest one-shot move. */
+    public Action action() {
+        return shownAction;
+    }
+
+    /** Client: ticks since the latest one-shot move started, for this frame. */
+    public float actionAge(float partialTick) {
+        return tickCount - actionTick + partialTick;
+    }
+
+    /** Client: the tick the latest move started; tells repeats of the same move apart. */
+    public int actionStamp() {
+        return actionTick;
+    }
+
+    /** Client: the mode before the current one (the model twitches out of SPOTTED). */
+    public Mode previousMode() {
+        return previousMode;
+    }
+
+    /** Client: ticks since the mode last changed, for this frame. */
+    public float modeAge(float partialTick) {
+        return tickCount - modeTick + partialTick;
+    }
+
+    /** Client: the tick the mode last changed. */
+    public int modeStamp() {
+        return modeTick;
+    }
+
+    /** Client: ticks since the forced pose was set, for this frame. */
+    public float forcedAge(float partialTick) {
+        return tickCount - forcedTick + partialTick;
+    }
+
+    /** Strides so far, interpolated for this frame (only the fraction matters). */
+    public float gaitPhase(float partialTick) {
+        return Mth.lerp(partialTick, gaitPhaseO, gaitPhase);
+    }
+
+    /**
+     * Client: note the moment a move, mode or forced pose arrives, so the model can play it from
+     * there. Values that arrive with the entity itself (when it comes into view) are old news:
+     * they are taken as having happened long ago, so a lunge doesn't replay when you walk up.
+     */
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (!level().isClientSide) {
+            return;
+        }
+        if (ACTION.equals(key)) {
+            int a = entityData.get(ACTION) & 0xF;
+            shownAction = a < ACTIONS.length ? ACTIONS[a] : Action.NONE;
+            actionTick = firstTick ? tickCount - 1000 : tickCount;
+        } else if (MODE.equals(key)) {
+            Mode now = mode();
+            if (firstTick) {
+                shownMode = now;
+                previousMode = now;
+                modeTick = tickCount - 1000;
+            } else if (now != shownMode) {
+                previousMode = shownMode;
+                shownMode = now;
+                modeTick = tickCount;
+            }
+        } else if (FORCED.equals(key)) {
+            forcedTick = tickCount;
+        }
+    }
+
     // ------------------------------------------------------------------ headroom (client visual)
 
     @Override
@@ -209,6 +438,8 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             headroom = headroomMeasured ? headroom + (measured - headroom) * 0.3f : measured;
             headroomMeasured = true;
             tickOrgans();
+            tickGait();
+            playForcedPlant();
         }
     }
 
@@ -243,6 +474,50 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         if (breathPhase > 1000.0f) {
             breathPhase -= 1000.0f;
             breathPhaseO -= 1000.0f;
+        }
+    }
+
+    /**
+     * The stride runs on its own clock, so it runs at the cadence of the references whatever the
+     * exact speed: 11 ticks per stride (about 3.6 steps a second) when it runs, 27 when it strolls.
+     * The model only shows it as much as the Bacteria is really moving, except when the test
+     * command forces a walk or run: then it plays on the spot.
+     */
+    private void tickGait() {
+        AnimPose forced = forcedPose();
+        float strideTicks;
+        if (forced == AnimPose.WALK) {
+            strideTicks = WALK_STRIDE_TICKS;
+        } else if (forced == AnimPose.CHASE || forced == AnimPose.LUNGE) {
+            strideTicks = CHASE_STRIDE_TICKS;
+        } else {
+            strideTicks = switch (mode()) {
+                case SPOTTED, CHASE -> CHASE_STRIDE_TICKS;
+                case SEARCH -> SEARCH_STRIDE_TICKS;
+                case DRIFT -> DRIFT_STRIDE_TICKS;
+                case WANDER -> WALK_STRIDE_TICKS;
+            };
+        }
+        gaitPhaseO = gaitPhase;
+        gaitPhase += 1.0f / strideTicks;
+        if (gaitPhase > 1000.0f) {
+            gaitPhase -= 1000.0f;
+            gaitPhaseO -= 1000.0f;
+        }
+    }
+
+    /**
+     * Test command only: with a forced lunge the server isn't running, so the client plays the
+     * inhale itself at the moment the arms close (in normal play the server does that).
+     */
+    private void playForcedPlant() {
+        if (forcedPose() != AnimPose.LUNGE) {
+            return;
+        }
+        int age = tickCount - forcedTick;
+        if ((forcedLoop() ? age % POSE_LOOP_TICKS : age) == LUNGE_TICKS) {
+            level().playLocalSound(getX(), getY(), getZ(), ModSounds.BACTERIA_SCREECH.get(), SoundSource.HOSTILE,
+                    1.5f, 0.8f, false);
         }
     }
 
@@ -293,9 +568,19 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     @Override
     protected void customServerAiStep() {
         super.customServerAiStep();
+        if (forcedPose() != AnimPose.AUTO) {
+            holdForPose();
+            return;
+        }
         modeTicks++;
         if (attackCooldown > 0) {
             attackCooldown--;
+        }
+        if (lungeCooldown > 0) {
+            lungeCooldown--;
+        }
+        if (peekCooldown > 0) {
+            peekCooldown--;
         }
         if (keepOutOfSafeRooms()) {
             return;
@@ -307,6 +592,18 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             case SPOTTED -> tickSpotted();
             case CHASE -> tickChase();
             case SEARCH -> tickSearch(senseNow);
+        }
+    }
+
+    /**
+     * Test command: the pose is forced. It stands where it is (nothing else runs: no senses, no
+     * attacks, no despawning) and only turns its head to the nearest player, so it can be filmed.
+     */
+    private void holdForPose() {
+        getNavigation().stop();
+        Player near = level().getNearestPlayer(this, POSE_LOOK_RANGE);
+        if (near != null) {
+            getLookControl().setLookAt(near, 10.0f, 10.0f);
         }
     }
 
@@ -351,10 +648,30 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             }
         }
 
+        // Folded over a kill, or peeking out from cover: it stays put (the senses above still
+        // run, so it still notices you, and anything else it does ends this).
+        if (feedTicks > 0 || peekTicks > 0) {
+            getNavigation().stop();
+            if (peekTicks > 0) {
+                peekTicks--;
+                if (peekAt != null && peekAt.isAlive()) {
+                    getLookControl().setLookAt(peekAt, 10.0f, 10.0f);
+                }
+            } else {
+                feedTicks--;
+            }
+            return;
+        }
+
         if (mode == Mode.DRIFT) {
             if (getNavigation().isDone() || modeTicks > DRIFT_MAX_TICKS) {
                 setMode(Mode.WANDER);
             }
+            return;
+        }
+
+        // Standing about and someone is 8-24 blocks off, out of its sight: lean out and look.
+        if (senseNow && peekCooldown <= 0 && getNavigation().isDone() && tryPeek()) {
             return;
         }
 
@@ -386,8 +703,9 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             return;
         }
         // Frozen, staring: this pause (plus the start of its long inhale) is the player's warning.
+        // The head follows you, but slowly: it watches, it doesn't track.
         getNavigation().stop();
-        getLookControl().setLookAt(prey, 180.0f, 180.0f);
+        getLookControl().setLookAt(prey, SPOTTED_TRACK_DEG, SPOTTED_TRACK_DEG);
         if (modeTicks >= SPOTTED_TICKS) {
             setMode(Mode.CHASE);
             repathIn = 0;
@@ -398,7 +716,12 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private void tickChase() {
         if (prey != null && prey.isDeadOrDying()) {
             // Got them. No "lost" sigh: that sound must only ever mean "you escaped".
+            // If it was holding them, it folds over the body for a moment first.
+            boolean holding = distanceToSqr(prey) < CAGE_RELEASE * CAGE_RELEASE;
             giveUp(false);
+            if (holding) {
+                startFeeding();
+            }
             return;
         }
         if (prey != null && SafeRooms.isSafe(prey)) {
@@ -417,12 +740,9 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             unseenTicks = 0;
             lastSeen = prey.position();
             getLookControl().setLookAt(prey, 30.0f, 30.0f);
-            if (distanceToSqr(prey) < LUNGE_RANGE * LUNGE_RANGE) {
-                // Close and in plain view: walk straight at you. A path would stop a block short
-                // (paths end next to the target's block), leaving it hovering just out of reach.
-                getNavigation().stop();
-                getMoveControl().setWantedPosition(prey.getX(), prey.getY(), prey.getZ(), CHASE_SPEED);
-                repathIn = 0;
+            if (lungeTicks >= 0 || isCaging() || distanceToSqr(prey) < LUNGE_RANGE * LUNGE_RANGE) {
+                // Close and in plain view: no more paths (they stop a block short), it goes for you.
+                closeIn();
             } else if (--repathIn <= 0) {
                 // Re-path at most twice a second, and only if you actually moved.
                 repathIn = CHASE_REPATH_TICKS;
@@ -431,13 +751,11 @@ public class Bacteria extends Monster implements HidingService.Seeker {
                     pathGoal = lastSeen;
                 }
             }
-            if (attackCooldown <= 0 && isWithinMeleeAttackRange(prey)) {
-                attackCooldown = ATTACK_COOLDOWN_TICKS;
-                swing(InteractionHand.MAIN_HAND);
-                doHurtTarget(prey);
-            }
             return;
         }
+        // Lost sight of you: whatever its arms were doing, they let go.
+        lungeTicks = -1;
+        setCaged(false);
         // Can't see you: run to where you were LAST seen (not where you really are now).
         if (unseenTicks++ == 0) {
             getNavigation().moveTo(lastSeen.x, lastSeen.y, lastSeen.z, CHASE_SPEED);
@@ -445,6 +763,70 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         }
         if (unseenTicks >= LOST_SIGHT_TICKS) {
             startSearch();
+        }
+    }
+
+    /**
+     * Up close and in sight. It used to walk right into you, so your camera ended up inside its
+     * body. Now it lunges (9 ticks: wind up, arms thrown wide, arms closing), stops 1.5-2 blocks
+     * away facing you, and holds you in a cage of its long arms; the hits come from the arms.
+     * Damage and the one-hit-a-second cooldown are the same as before.
+     */
+    private void closeIn() {
+        getNavigation().stop();
+        repathIn = 0;
+        double dx = prey.getX() - getX();
+        double dz = prey.getZ() - getZ();
+        double d = Math.sqrt(dx * dx + dz * dz);
+        if (lungeTicks < 0 && !isCaging() && lungeCooldown <= 0) {
+            lungeTicks = 0;
+            sendAction(Action.LUNGE);
+        }
+        if (d > STANDOFF_MAX) {
+            // Not there yet: head for the spot STANDOFF short of you (a short burst while lunging).
+            double k = (d - STANDOFF) / d;
+            getMoveControl().setWantedPosition(getX() + dx * k, prey.getY(), getZ() + dz * k,
+                    lungeTicks >= 0 ? LUNGE_SPEED : CHASE_SPEED);
+        } else {
+            // There: stand and face you with the whole body, so the arms close around you.
+            float face = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0f;
+            setYRot(Mth.approachDegrees(getYRot(), face, 30.0f));
+            yBodyRot = getYRot();
+            if (d < STANDOFF_MIN && d > 1.0e-3) {
+                // You walked into it: it eases back (without turning round) to keep its distance.
+                setDeltaMovement(getDeltaMovement().add(-dx / d * BACK_OFF, 0.0, -dz / d * BACK_OFF));
+            }
+        }
+
+        boolean planted = false;
+        if (lungeTicks >= 0 && ++lungeTicks >= LUNGE_TICKS) {
+            lungeTicks = -1;
+            lungeCooldown = LUNGE_COOLDOWN_TICKS;
+            if (d <= CAGE_REACH) {
+                // The arms slam down around you. The loudest sound of the whole attack lands
+                // here, like in the reference video: its long inhale, deeper than when it spots you.
+                setCaged(true);
+                planted = true;
+                cageHits = 0;
+                playSound(ModSounds.BACTERIA_SCREECH.get(), 1.5f, 0.75f + random.nextFloat() * 0.1f);
+            }
+        }
+        if (!isCaging()) {
+            return;
+        }
+        if (d > CAGE_RELEASE) {
+            setCaged(false); // you broke free: it chases again (and may lunge again)
+            return;
+        }
+        if (attackCooldown <= 0 && d <= CAGE_REACH && Math.abs(prey.getY() - getY()) < CAGE_REACH_UP) {
+            attackCooldown = ATTACK_COOLDOWN_TICKS;
+            swing(InteractionHand.MAIN_HAND);
+            doHurtTarget(prey);
+            if (!planted) {
+                // Show each hit: an arm whips across your face, and every third time the head
+                // snaps in close instead.
+                sendAction(++cageHits % 3 == 0 ? Action.LEAN_IN : Action.WHIP);
+            }
         }
     }
 
@@ -485,6 +867,13 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         setTarget(player);
         getNavigation().stop();
         setMode(Mode.SPOTTED);
+        entityData.set(PREY_ID, player.getId());
+        // It turns to face you in one go (the clients smooth that over a couple of ticks), then
+        // only its head follows you, slowly.
+        float face = (float) (Mth.atan2(player.getZ() - getZ(), player.getX() - getX()) * Mth.RAD_TO_DEG) - 90.0f;
+        setYRot(face);
+        yBodyRot = face;
+        yHeadRot = face;
         playSound(ModSounds.BACTERIA_SCREECH.get(), 1.5f, 0.9f + random.nextFloat() * 0.2f);
     }
 
@@ -497,6 +886,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         pathGoal = null;
         setTarget(player);
         setMode(Mode.CHASE);
+        entityData.set(PREY_ID, player.getId());
         playSound(ModSounds.BACTERIA_SCREECH.get(), 1.5f, 0.9f + random.nextFloat() * 0.2f);
     }
 
@@ -534,9 +924,89 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     }
 
     private void setMode(Mode next) {
+        if (next != Mode.WANDER && (feedTicks > 0 || peekTicks > 0)) {
+            // Something came up: stop feeding / peeking, and tell the clients to stop showing it.
+            feedTicks = 0;
+            peekTicks = 0;
+            peekAt = null;
+            sendAction(Action.NONE);
+        }
+        if (next != Mode.CHASE) {
+            lungeTicks = -1;
+            setCaged(false);
+        }
+        if (next != Mode.SPOTTED && next != Mode.CHASE) {
+            entityData.set(PREY_ID, -1);
+        }
         mode = next;
         modeTicks = 0;
         entityData.set(MODE, (byte) next.ordinal());
+    }
+
+    private void setCaged(boolean caged) {
+        entityData.set(CAGED, caged);
+    }
+
+    /** Tells every client to play a one-shot move now (see {@link Action}). */
+    private void sendAction(Action action) {
+        actionCount = (actionCount + 1) & 0x07FFFFFF;
+        entityData.set(ACTION, actionCount << 4 | action.ordinal());
+    }
+
+    /** It killed the one it was holding: it folds over them for {@link #FEED_TICKS}. */
+    private void startFeeding() {
+        feedTicks = FEED_TICKS;
+        getNavigation().stop();
+        sendAction(Action.FEED);
+    }
+
+    /**
+     * Peeking (Kane Pixels' doorway scene): someone is 8-24 blocks away and it can't see them, but
+     * leaning about a block to one side would. Then it turns their way and leans out from behind
+     * the pillar or door frame for a few seconds (the model does the leaning; its hitbox and its
+     * senses stay where they are, so this changes nothing in the game, it is only seen). At most
+     * a couple of ray checks once a second, and only when someone is in that range.
+     */
+    private boolean tryPeek() {
+        peekCooldown = PEEK_RETRY_TICKS;
+        Player target = null;
+        double best = PEEK_MAX * PEEK_MAX;
+        for (Player player : level().players()) {
+            double distance = distanceToSqr(player);
+            if (distance >= PEEK_MIN * PEEK_MIN && distance < best && isHuntable(player)) {
+                target = player;
+                best = distance;
+            }
+        }
+        if (target == null || getSensing().hasLineOfSight(target)) {
+            return false;
+        }
+        Vec3 eye = getEyePosition();
+        Vec3 goal = target.getEyePosition();
+        float face = (float) (Mth.atan2(goal.z - getZ(), goal.x - getX()) * Mth.RAD_TO_DEG) - 90.0f;
+        float rad = face * Mth.DEG_TO_RAD;
+        int first = random.nextBoolean() ? 1 : -1;
+        for (int k = 0; k < 2; k++) {
+            int side = k == 0 ? first : -first;
+            // Its left when facing them is (cos, 0, sin) of its yaw; side -1 is its right.
+            Vec3 out = eye.add(Mth.cos(rad) * side * PEEK_REACH, 0.0, Mth.sin(rad) * side * PEEK_REACH);
+            if (clearLine(eye, out) && clearLine(out, goal)) {
+                setYRot(face);
+                yBodyRot = face;
+                yHeadRot = face;
+                peekTicks = PEEK_TICKS;
+                peekAt = target;
+                peekCooldown = PEEK_COOLDOWN_MIN + random.nextInt(PEEK_COOLDOWN_MAX - PEEK_COOLDOWN_MIN);
+                sendAction(side > 0 ? Action.PEEK_LEFT : Action.PEEK_RIGHT);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean clearLine(Vec3 from, Vec3 to) {
+        return level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this))
+                .getType() == HitResult.Type.MISS;
     }
 
     /** Ticks the "nobody around" timer. True if the Bacteria despawned. */
