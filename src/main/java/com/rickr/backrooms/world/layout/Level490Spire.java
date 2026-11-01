@@ -1454,8 +1454,8 @@ public final class Level490Spire {
      * proper and clean"). Swept round the body a quarter degree at a time: its inner edge just
      * outside the body at that height (so it bulges out where the body does), 3 wide, steps in half
      * blocks (walked, not jumped), thick stone under it propped on carved brackets. And broken:
-     * stretches where it has fallen away but for a ledge a block wide along the wall (you can't
-     * jump in the Backrooms: everything here is walked), stretches crumbled to a block or two wide,
+     * gaps a block and a half across to jump (jumping is allowed in this level), stretches where it has
+     * fallen away but for a ledge along the wall, stretches crumbled to a block or two wide,
      * a stretch of rotten planks on posts, a stretch fallen away and crossed on a single plank,
      * rubble on the wide steps, the stumps of a railing, candles left by someone. Where it meets a
      * turret or a rib it cuts through.
@@ -1550,20 +1550,27 @@ public final class Level490Spire {
             double r0 = smooth[k];
             boolean wood = frac >= rotten[0] && frac <= rotten[1];
             boolean plankOnly = frac >= fallen[0] && frac <= fallen[1];
-            // Where it has fallen away (all but a ledge along the wall), a block and a half long.
-            double gapHalf = Math.toDegrees(0.75 / (r0 + 1.5)) / len;
+            // Where it has fallen away, a block and a half long. Every other one (after the play-test
+            // brought jumping back for this level) is broken right across: a jump. The others leave a
+            // ledge along the wall.
             boolean gap = false;
-            for (double g : gaps) {
-                gap |= Math.abs(frac - g) < gapHalf;
+            boolean jump = false;
+            for (int gi = 0; gi < gaps.length; gi++) {
+                boolean real = gi % 2 == 0;
+                double reach = Math.toDegrees(0.75 / (r0 + 1.5)) / len;
+                if (Math.abs(frac - gaps[gi]) < reach) {
+                    gap = true;
+                    jump |= real;
+                }
             }
             boolean outer = d >= width - 0.75;
             long hc = Hash.of(seed, worldX(u, v), worldZ(u, v), 4982 + f);
             // Headroom: 3 clear above the step, whatever it cuts through.
             op(u, v, base + (half ? 1 : 0), base + 3, AIR);
-            // Broken off here: but you can't jump (no jumping in the Backrooms), so the inner lane, a
-            // block and a half wide along the wall, is never broken: where the rest has fallen away it is a ledge
-            // to edge round on, and where only a plank is left, the plank lies along the wall.
-            if (gap && d >= 1.6 || plankOnly && d >= 1.6) {
+            // Broken off here: right across where it is a jump; elsewhere the inner lane, a block and a
+            // half wide along the wall, stays (a ledge to edge round on; where only a plank is left, the
+            // plank lies along the wall).
+            if (jump || gap && d >= 1.6 || plankOnly && d >= 1.6) {
                 continue;
             }
             if (outer && d >= 1.0 && width >= 2.5 && Hash.unit(hc) < 0.22) {

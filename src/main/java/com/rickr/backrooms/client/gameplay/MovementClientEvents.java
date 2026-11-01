@@ -2,6 +2,7 @@ package com.rickr.backrooms.client.gameplay;
 
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.player.EnergyClientState;
+import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.Travel;
 import net.minecraft.client.player.Input;
 import net.minecraft.world.entity.player.Player;
@@ -28,9 +29,11 @@ public final class MovementClientEvents {
         Input input = event.getInput();
         // No jumping in the Backrooms: you are a tired person with a camcorder, not a parkour pro.
         // Except in water (the jump key is how you swim up, and how you climb out of a pool onto
-        // the raised tile walkways of the Poolrooms) and on anything you climb (ropes, frames):
-        // holding jump is how you go up them.
-        if (!player.isInWater() && !player.onClimbable()) {
+        // the raised tile walkways of the Poolrooms), on anything you climb (ropes, frames):
+        // holding jump is how you go up them, and in Level 490, a level of broken stairs and
+        // bridges over a void (after the play-test: "too many parts of the level where it's needed").
+        boolean level490 = BackroomsLevel.fromDimension(player.level().dimension()) == BackroomsLevel.LEVEL_490;
+        if (!player.isInWater() && !player.onClimbable() && !level490) {
             input.jumping = false;
         }
 

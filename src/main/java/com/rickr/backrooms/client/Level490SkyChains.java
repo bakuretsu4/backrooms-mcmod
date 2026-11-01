@@ -70,7 +70,7 @@ final class Level490SkyChains {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        double built = mc.options.getEffectiveRenderDistance() * 16.0 - 12.0;
+        double built = mc.options.getEffectiveRenderDistance() * 16.0 - 24.0;
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
@@ -78,7 +78,7 @@ final class Level490SkyChains {
         int[] count = {0};
         for (int[] c : Level490ClientState.chains(eye.x, eye.z)) {
             double d = Math.hypot(c[0] - eye.x, c[1] - eye.z);
-            if (d < built) {
+            if (Level490ChainTops.blocksShown(mc, c[0], c[1])) {
                 // Lit like the blocks below them, so the join doesn't show.
                 chain(quads, view, eye, far, c[0], c[1], 1.0f, c[2], BUILT_TOP, TOP, 1.0f, d, 0.15f, count);
                 continue;

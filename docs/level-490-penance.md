@@ -412,24 +412,33 @@ record:
 - Level 505 "Sky Bridges" (small fan wikis): endless bridges between clouds, no chains or theme.
 - Level 255 "Death Factory" (main wiki): catwalks over an abyss on rusted chains, but a factory.
 
-## Still open (third play-test, 2026-10-31; to do next session)
+## After the third play-test
 
-The user played the walk, the climb and the leap. The creature's look is right ("looks really
-good"); everything else below is still to do.
+The creature's look stays ("looks really good"). Fixed and changed:
 
-1. **Something like pieces of a chain pops up at the top of the tower** and shows more the higher
-   you go (their screenshot: `run/screenshots/2026-10-31_03.58.22.png`, a big link shape over the
-   top). Find out why. Suspects: client/Level490ChainTops (the solid links from y 512 up to the
-   storm, built per chain within render distance + 40 and drawn regardless of fog or chunk
-   loading; the cut at y 512 where blocks stop and it starts, or where it hands over to the sky
-   ribbons at y 583, Level490SkyChains.BUILT_TOP); the iron column and collar of the final
-   climb; the chains drawn inside the creature's smoke (client/Level490Creature, drawn with
-   Level490SkyChains.drape).
-2. **The creature never seemed to come up with them on the climb** ("unless I was too fast").
-   They climbed both flights in about 2.5 minutes; it starts at y 40 and rises 1.2 blocks a
-   second, so it was probably always far below the stair. Make it show and close in.
-3. **Not enough tension at all.** The chase needs to be felt: closer, faster, more often seen,
-   more sound; the hand slams and grabs to actually threaten.
-4. **Bring jumping back for Level 490** (the Backrooms-wide no-jumping rule is in
-   client/gameplay/MovementClientEvents): "too many parts of the level where it's needed". With
-   jumping allowed, the stair's broken stretches can go back to real gaps if wanted.
+- **The chain pieces over the top of the tower** were the solid tops of chains just past render
+  distance (client/Level490ChainTops): drawn from y 512 up while the chain's own blocks below were
+  not, so they hung in the sky, more of them showing the higher you went. Now a chain's solid top is
+  drawn only while its own blocks are (its column's section at the top of the world is compiled,
+  `LevelRenderer.isSectionCompiled`); otherwise Level490SkyChains draws that chain whole.
+- **Jumping is back in Level 490** (client/gameplay/MovementClientEvents; the rest of the
+  Backrooms still has none): every other broken stretch of the outside stair is a real gap again,
+  about a block and a half across the whole width, to jump; the others keep their ledge along the
+  wall. A probe of every walking lane of both flights finds holes only at those gaps and nothing
+  standing in the way but one railing post on an outer lane.
+- **The chase up the tower** ("never saw it come up with me"; "not enough tension"): it comes up
+  out of the depths fast (8 blocks a second or more, about 20 seconds from the bottom) as you start
+  up the outside stair, then keeps pace in the sky 70 blocks out from the tower's axis, a little
+  ahead of you round it, its head 15 blocks below you while you keep moving, so its crown and eyes
+  show just past the stair's edge and its smoky body and legs hang below. Stop and it closes in
+  (0.5 blocks a second, more the longer you stand: about 8 seconds from pacing to reaching you);
+  move on and it drops back again. Level with you, a hand reaches across for you; when it misses,
+  it sinks back a little. In the scripted climb it paced 18 blocks below all the way up flight 2
+  and took hold of the top as the player arrived.
+  Lightning flashes behind it every 5-10 seconds so you keep catching its whole shape. It groans
+  and its chains drag, louder and more often the closer it is; the camcorder's distress (jitter,
+  shake, breathing) follows how close it is.
+
+## Still open
+
+Nothing planned beyond the play-test notes.

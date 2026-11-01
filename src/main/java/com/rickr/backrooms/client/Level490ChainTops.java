@@ -66,14 +66,13 @@ public final class Level490ChainTops {
         }
         Minecraft mc = Minecraft.getInstance();
         Vec3 cam = event.getCamera().getPosition();
-        double reach = mc.options.getEffectiveRenderDistance() * 16.0 + 40;
         LongOpenHashSet near = new LongOpenHashSet();
         Matrix4f base = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(event.getPoseStack().last().pose());
         RenderType solid = RenderType.solid();
         boolean setUp = false;
         for (int[] c : Level490ClientState.chains(cam.x, cam.z)) {
-            if (Math.hypot(c[0] - cam.x, c[1] - cam.z) > reach) {
-                continue;
+            if (!blocksShown(mc, c[0], c[1])) {
+                continue; // its blocks aren't drawn: the top alone would float (Level490SkyChains draws it whole)
             }
             long k = key(c[0], c[1]);
             near.add(k);
@@ -102,6 +101,21 @@ public final class Level490ChainTops {
             }
             return false;
         });
+    }
+
+    /**
+     * True if the world is drawing chain (x, z)'s blocks right now: the top of its column is a
+     * compiled section, well inside render distance. Only then is its solid top drawn here; else
+     * the solid piece would hang in the sky with nothing under it (the play-test's "weird thing
+     * that looks like parts of a chain", from chains just past render distance), so
+     * Level490SkyChains draws that chain whole instead.
+     */
+    static boolean blocksShown(Minecraft mc, int x, int z) {
+        Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
+        if (Math.hypot(x - cam.x, z - cam.z) > mc.options.getEffectiveRenderDistance() * 16.0 - 24.0) {
+            return false;
+        }
+        return mc.levelRenderer.isSectionCompiled(new net.minecraft.core.BlockPos(x, FROM - 8, z));
     }
 
     private static void clear() {

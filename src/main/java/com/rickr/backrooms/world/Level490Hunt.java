@@ -84,14 +84,26 @@ public final class Level490Hunt {
     private static final double HIT_Y = 3.0;
     /** On the tower: its head this close below you and a hand reaches across for you. */
     private static final double REACH_GAP = 8.0;
-    /** It starts from down here (deep under the cloud sea), and never lags further behind than this. */
+    /**
+     * It starts from down here (deep under the cloud sea) and rises at least this fast (blocks a
+     * second; faster the further it has to come) until it is pacing you.
+     */
     private static final double DEPTHS_Y = 40.0;
-    private static final double FAR_GAP = 150.0;
-    /** Rising, blocks a second: a little slower than you climb walking, and this much faster each second you stand still. */
-    private static final double RISE = 1.2;
-    private static final double RISE_STILL = 0.4;
-    /** How far out from the tower's axis it hangs in the sky while you climb. */
-    private static final double SKY_OUT = 75.0;
+    private static final double RISE = 8.0;
+    /**
+     * Then it keeps pace (play-test: "never saw it come up with me"; "not enough tension"): its head
+     * this far below you while you keep moving; whenever you stop it closes the gap this fast (blocks a
+     * second, more the longer you stand), and when you move on it drops back this fast.
+     */
+    private static final double PACE_GAP = 15.0;
+    private static final double CLOSE = 0.5;
+    private static final double CLOSE_STILL = 0.25;
+    private static final double DROP_BACK = 0.6;
+    /** The fastest it follows you up or down (you sprint the stair at about 2.5 a second). */
+    private static final double FOLLOW = 4.0;
+    /** How far out from the tower's axis it hangs in the sky while you climb, and how far round ahead of you (radians). */
+    private static final double SKY_OUT = 70.0;
+    private static final double AHEAD = 0.6;
     private static final int GRAB_LEAD = 25;
     /** Where the cloud sea's top is (what it rises out of). */
     private static final double SEA_Y = 140.0;
@@ -112,6 +124,10 @@ public final class Level490Hunt {
         /** The tower: its head's height (NaN until it has risen) and its angle round the tower (radians, world). */
         double headY = Double.NaN;
         double headAngle;
+        /** On the tower: how far below you it is keeping, and whether it has risen up to you yet. */
+        double gap = PACE_GAP;
+        boolean risen;
+        long nextGroan;
         /** The top: the side it holds on from. */
         double holdAngle = Double.NaN;
         /** Where its head is (sent to the client). */
@@ -259,25 +275,45 @@ public final class Level490Hunt {
         if (onTower && t >= h.mercyUntil) {
             double angle = Math.atan2(z - cz, x - cx);
             if (Double.isNaN(h.headY)) {
-                // It starts from the very bottom, far below the clouds.
+                // It starts from the very bottom, far below the clouds, and comes up fast.
                 h.headY = DEPTHS_Y;
-                h.headAngle = angle + 0.8;
-                h.nextSlam = t + 900 + random.nextInt(400);
+                h.headAngle = angle + AHEAD;
+                h.gap = PACE_GAP;
+                h.risen = false;
+                h.nextSlam = t + 600 + random.nextInt(300);
+                h.nextFlash = t + 60;
                 sound(player, ModSounds.LEVEL490_RUMBLE.get(), cx + Math.cos(angle) * 60, SEA_Y - 20, cz + Math.sin(angle) * 60, 3.0f, 0.45f);
+                sound(player, ModSounds.LEVEL490_CHAIN_JOLT.get(), cx + Math.cos(angle) * 60, SEA_Y, cz + Math.sin(angle) * 60, 3.0f, 0.5f);
             }
-            // Round the tower after you through the sky, lagging behind.
-            double diff = Math.IEEEremainder(angle - 0.5 - h.headAngle, Math.PI * 2);
-            h.headAngle += Math.max(-0.006, Math.min(0.006, diff));
-            double speed;
-            if (inside) {
-                speed = 0;
-            } else if (h.headY < y - FAR_GAP) {
-                speed = 3.0;
-            } else {
-                speed = RISE + RISE_STILL * h.still;
+            // Round the tower with you through the sky, a little ahead (where you are looking as you climb).
+            double diff = Math.IEEEremainder(angle + AHEAD - h.headAngle, Math.PI * 2);
+            h.headAngle += Math.max(-0.035, Math.min(0.035, diff));
+            if (!inside && h.risen) {
+                if (h.still >= 1) {
+                    // Closing in, but never past you: level with you, it reaches for you.
+                    h.gap = Math.max(REACH_GAP - 2, h.gap - (CLOSE + CLOSE_STILL * h.still) / 20.0);
+                } else {
+                    h.gap = Math.min(PACE_GAP, h.gap + DROP_BACK / 20.0);
+                }
             }
-            h.headY = Math.min(y + 2, h.headY + speed / 20.0);
+            double want = y - h.gap;
+            if (!h.risen) {
+                // Up out of the depths: fast, faster the further it has to come (about 20 seconds from the bottom).
+                double rise = Math.max(RISE, (want - h.headY) / 8.0);
+                h.headY = Math.min(want, h.headY + rise / 20.0);
+                h.risen = h.headY >= want - 0.5;
+            } else if (!inside) {
+                h.headY += Math.max(-FOLLOW / 20.0, Math.min(FOLLOW / 20.0, want - h.headY));
+            }
             double gap = y - h.headY;
+            // It groans and its chains drag, louder and more often the closer it is.
+            float close = (float) Math.max(0, Math.min(1, (PACE_GAP + 15 - gap) / (PACE_GAP + 15 - REACH_GAP)));
+            if (h.risen && t >= h.nextGroan) {
+                h.nextGroan = t + 220 - (long) (150 * close) + random.nextInt(80);
+                SoundEvent groan = (random.nextFloat() < 0.5f ? ModSounds.LEVEL490_CHAIN_CREAK : random.nextBoolean()
+                        ? ModSounds.LEVEL490_RUMBLE : ModSounds.LEVEL490_CHAIN_JOLT).get();
+                sound(player, groan, h.hx, h.hy, h.hz, 1.5f + 2.0f * close, 0.5f + random.nextFloat() * 0.15f);
+            }
             h.hx = cx + Math.cos(h.headAngle) * SKY_OUT;
             h.hy = h.headY;
             h.hz = cz + Math.sin(h.headAngle) * SKY_OUT;
@@ -297,11 +333,17 @@ public final class Level490Hunt {
                 h.nextSlam = t + 400 + random.nextInt(300) - (long) (h.still * 30);
             }
             if (t >= h.nextFlash) {
-                h.nextFlash = t + 300 + random.nextInt(400);
-                strike(player, h.hx + Math.cos(h.headAngle) * 160, h.hz + Math.sin(h.headAngle) * 160, Level490StrikePayload.CLOUD, random);
+                // Lightning behind it, every 5-10 seconds, so you keep catching its whole shape.
+                h.nextFlash = t + 100 + random.nextInt(100);
+                double back = 140 + random.nextDouble() * 80;
+                double side = (random.nextDouble() - 0.5) * 120;
+                double ox = Math.cos(h.headAngle);
+                double oz = Math.sin(h.headAngle);
+                strike(player, h.hx + ox * back - oz * side, h.hz + oz * back + ox * side,
+                        random.nextFloat() < 0.35f ? Level490StrikePayload.BOLT : Level490StrikePayload.CLOUD, random);
             }
             landing(player, h, t, inside);
-            send(player, h, CLIMB, (float) Math.max(0, Math.min(1, 1 - (gap - REACH_GAP) / 60.0)));
+            send(player, h, CLIMB, h.risen ? 0.3f + 0.7f * close : 0.2f);
             return;
         }
         if (!onTower) {
@@ -370,6 +412,8 @@ public final class Level490Hunt {
                 caught(player, h, seed, h.stage == CLIMB);
                 return;
             }
+            // Missed: on the tower it sinks back a little before coming again.
+            h.gap = Math.max(h.gap, REACH_GAP + 6);
         }
         if (t >= h.lift) {
             h.reachClear();
