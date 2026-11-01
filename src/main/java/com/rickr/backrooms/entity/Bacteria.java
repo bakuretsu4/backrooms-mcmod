@@ -246,8 +246,11 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final float SCRAPE_VOLUME = 0.28f;
     /** Chance per footfall while walking that the claws scrape the floor. */
     private static final float SCRAPE_CHANCE = 0.3f;
-    /** The client checks this far (blocks) to each side for walls, so running arms plant ahead instead. */
-    private static final double NARROW_CHECK = 1.5;
+    /**
+     * The client checks this far (blocks) to each side for walls, so running arms plant ahead
+     * instead: as far as the long spider-leg arms plant their claws (about 2.1-2.45 blocks out).
+     */
+    private static final double NARROW_CHECK = 2.4;
 
     // --- Speeds (multipliers of MOVEMENT_SPEED) ----------------------------------------------
     // How fast a mob goes: each tick it is pushed by (attribute x multiplier)^2 x 0.98, and the
@@ -578,9 +581,10 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     }
 
     /**
-     * Client: is there a wall within 1.5 blocks to its left or right (at knee and chest height)?
-     * Running down a corridor its claws then plant ahead instead of out to that side, like the
-     * reference in a narrow hall. Two block checks per side per tick, eased over a few ticks.
+     * Client: is there a wall within {@link #NARROW_CHECK} blocks to its left or right (at knee
+     * and chest height)? Running down a corridor its claws then plant ahead instead of out to that
+     * side (into the wall), like the reference in a narrow hall. Two block checks per side per
+     * tick, eased over a few ticks.
      */
     private void senseWalls() {
         float yaw = yBodyRot * Mth.DEG_TO_RAD;

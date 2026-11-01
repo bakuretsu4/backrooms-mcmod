@@ -57,9 +57,18 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     private static final float SPINE = 23.2f;           // hips to shoulder bar
     private static final float NECK_AND_HEAD = 9.4f;    // shoulder bar to the top of the head
     private static final float SHOULDER_HALF = 10.3f;   // shoulder bar half width
-    private static final float UPPER_ARM = 21.0f;
-    private static final float FOREARM = 20.0f;
-    private static final float ARM_REACH = 45.5f;       // shoulder to claw tips, arm hanging straight
+    // Pass 5: the arms (and only the arms) are 1.5 times as long as the reference model's, so
+    // that, like the Bacteria in the owner's reference video, it can hold them as big spider legs
+    // (elbow up and out, forearm down to a claw on the floor far out to the side). Everything
+    // along the arm (the bones, the muscle on them, the hand and claws) is stretched by this;
+    // nothing gets thicker.
+    private static final float ARM_STRETCH = 1.5f;
+    private static final float UPPER_ARM = 21.0f * ARM_STRETCH;  // 31.5 px, 1.48 blocks as drawn
+    private static final float FOREARM = 20.0f * ARM_STRETCH;    // 30 px, 1.41 blocks as drawn
+    private static final float CLAW_KNUCKLE = 2.6f * ARM_STRETCH; // wrist to the claws' middle bend
+    private static final float CLAW_TIP = 4.6f * ARM_STRETCH;     // wrist to the claw tips (6.9 px)
+    /** Shoulder to claw tips, arm hanging straight (68.4 px, 3.2 blocks as drawn). */
+    private static final float ARM_REACH = UPPER_ARM + FOREARM + CLAW_TIP;
     private static final float THIGH = 11.0f;
     private static final float SHIN = 10.6f;
 
@@ -306,21 +315,26 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     /** {@code side}: -1 = right (the -X side, as in vanilla models), +1 = left. */
     private static void arm(PartDefinition chest, String name, RandomSource rng, int side) {
         PartDefinition arm = chest.addOrReplaceChild(name, CubeListBuilder.create(), PartPose.offset(side * SHOULDER_HALF, 0, 0));
-        braid(arm, "upper", rng, 0, 0, 0, side * 1.5f, UPPER_ARM, 0, 3, 1.4f, 14.0f, WIRE);
+        // The bones are stretched (ARM_STRETCH) but keep the same number of wire pieces and
+        // twists, so they draw exactly the same random numbers as before: the legs and body that
+        // are built after the arms come out exactly as they always did.
+        braid(arm, "upper", rng, 0, 0, 0, side * 1.5f, UPPER_ARM, 0, 3, 1.4f, 14.0f, WIRE, ARM_STRETCH);
         PartDefinition forearm = arm.addOrReplaceChild("forearm", CubeListBuilder.create(), PartPose.offset(side * 1.5f, UPPER_ARM, 0));
-        braid(forearm, "lower", rng, 0, 0, 0, side * 1.5f, FOREARM, -0.5f, 3, 1.3f, 14.0f, WIRE);
+        braid(forearm, "lower", rng, 0, 0, 0, side * 1.5f, FOREARM, -0.5f, 3, 1.3f, 14.0f, WIRE, ARM_STRETCH);
         // Three claw fingers, splayed like a rake, each with a slight bend in the middle. They
         // hang off a "hand" at the wrist, one "finger" part each, so the animation can curl the
-        // hand and spread the claws. The points are measured from the wrist (wx, FOREARM, -0.5).
+        // hand and spread the claws. The points are measured from the wrist (wx, FOREARM, -0.5);
+        // the whole hand is ARM_STRETCH times its old size, the wires just as thin.
         float wx = side * 1.5f;
         PartDefinition hand = forearm.addOrReplaceChild("hand", CubeListBuilder.create(), PartPose.offset(wx, FOREARM, -0.5f));
         for (int f = -1; f <= 1; f++) {
-            float mx = f * 1.1f + side * 0.4f;
-            float tx = f * 2.4f + side * 0.9f;
-            float tz = -f * f * 0.8f + f * 0.6f;
+            float mx = (f * 1.1f + side * 0.4f) * ARM_STRETCH;
+            float mz = (0.2f + f * 0.3f) * ARM_STRETCH;
+            float tx = (f * 2.4f + side * 0.9f) * ARM_STRETCH;
+            float tz = (-f * f * 0.8f + f * 0.6f) * ARM_STRETCH;
             PartDefinition finger = hand.addOrReplaceChild("finger" + (f + 1), CubeListBuilder.create(), PartPose.ZERO);
-            wire(finger, "claw_a", 0.0f, 0.0f, 0.0f, mx, 2.6f, 0.2f + f * 0.3f, WIRE * 0.8f);
-            wire(finger, "claw_b", mx, 2.6f, 0.2f + f * 0.3f, tx, 4.6f, tz, WIRE * 0.7f);
+            wire(finger, "claw_a", 0.0f, 0.0f, 0.0f, mx, CLAW_KNUCKLE, mz, WIRE * 0.8f);
+            wire(finger, "claw_b", mx, CLAW_KNUCKLE, mz, tx, CLAW_TIP, tz, WIRE * 0.7f);
         }
     }
 
@@ -363,10 +377,13 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
      * thumb pointing back.
      */
     private static void fleshArm(PartDefinition arm, PartDefinition forearm, RandomSource rng, int side) {
+        // The muscle masses sit at the same places along the (stretched) bone and are stretched
+        // with it, but no thicker. The deltoid stays at the shoulder.
+        float k = ARM_STRETCH;
         float ex = side * 1.5f;
         blob(arm, "flesh_deltoid", 0, 44, rng, side * 0.5f, 1.4f, 0.0f, 3.4f, 3.0f, 3.0f, 0.1f, 0.0f, -side * 0.25f);
-        blob(arm, "flesh_upper", 0, 44, rng, side * 0.8f, 6.0f, -0.3f, 2.3f, 6.5f, 2.1f, 0.08f, 0.2f, -side * 0.08f);
-        blob(arm, "flesh_upper_taper", 0, 44, rng, side * 1.2f, 11.8f, 0.1f, 1.4f, 5.0f, 1.3f, -0.05f, 0.0f, side * 0.04f);
+        blob(arm, "flesh_upper", 0, 44, rng, side * 0.8f, 6.0f * k, -0.3f, 2.3f, 6.5f * k, 2.1f, 0.08f, 0.2f, -side * 0.08f);
+        blob(arm, "flesh_upper_taper", 0, 44, rng, side * 1.2f, 11.8f * k, 0.1f, 1.4f, 5.0f * k, 1.3f, -0.05f, 0.0f, side * 0.04f);
         for (int i = 0; i < 3; i++) {
             float a = Mth.TWO_PI * i / 3.0f;
             float ox = Mth.sin(a) * 0.9f;
@@ -387,11 +404,11 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         PartDefinition hand = forearm.getChild("hand");
         for (int f = -1; f <= 1; f++) {
             // Same knuckle points as the claws in arm(), measured from the wrist.
-            float mx = f * 1.1f + side * 0.4f;
-            blob(hand.getChild("finger" + (f + 1)), "flesh_knuckle", 0, 0, rng, mx, 2.6f, 0.2f + f * 0.3f, 0.9f, 0.9f, 0.9f, 0.0f, 0.0f, 0.0f);
+            float mx = (f * 1.1f + side * 0.4f) * k;
+            blob(hand.getChild("finger" + (f + 1)), "flesh_knuckle", 0, 0, rng, mx, CLAW_KNUCKLE, (0.2f + f * 0.3f) * k, 0.9f, 0.9f, 0.9f, 0.0f, 0.0f, 0.0f);
         }
-        wire(hand, "flesh_thumb_a", 0.0f, 0.0f, 0.0f, -side * 0.6f, 1.6f, 1.5f, WIRE * 0.8f);
-        wire(hand, "flesh_thumb_b", -side * 0.6f, 1.6f, 1.5f, -side * 0.9f, 3.6f, 2.1f, WIRE * 0.7f);
+        wire(hand, "flesh_thumb_a", 0.0f, 0.0f, 0.0f, -side * 0.6f * k, 1.6f * k, 1.5f * k, WIRE * 0.8f);
+        wire(hand, "flesh_thumb_b", -side * 0.6f * k, 1.6f * k, 1.5f * k, -side * 0.9f * k, 3.6f * k, 2.1f * k, WIRE * 0.7f);
     }
 
     /**
@@ -460,6 +477,17 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     private static void braid(PartDefinition parent, String name, RandomSource rng,
                               float ax, float ay, float az, float bx, float by, float bz,
                               int strands, float radius, float period, float thickness) {
+        braid(parent, name, rng, ax, ay, az, bx, by, bz, strands, radius, period, thickness, 1.0f);
+    }
+
+    /**
+     * The same, for a bone {@code stretch} times longer than it was first laid out: the twists
+     * and the wire pieces are that much longer too, so there are just as many of them (and the
+     * same random numbers are used) and the bone looks the same, only longer.
+     */
+    private static void braid(PartDefinition parent, String name, RandomSource rng,
+                              float ax, float ay, float az, float bx, float by, float bz,
+                              int strands, float radius, float period, float thickness, float stretch) {
         float dx = bx - ax;
         float dy = by - ay;
         float dz = bz - az;
@@ -468,9 +496,10 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         // Two directions at right angles to the bone, to twist around.
         float[] u = perpendicular(dir[0], dir[1], dir[2]);
         float[] v = cross(dir[0], dir[1], dir[2], u);
-        int twists = Math.max(1, Math.round(length / period));
-        // Pieces are about 2.5 px long, not tied to the twist, so the kinks fall unevenly.
-        int pieces = Math.max(4, Math.round(length / 2.5f));
+        int twists = Math.max(1, Math.round(length / (period * stretch)));
+        // Pieces are about 2.5 px long (times the stretch), not tied to the twist, so the kinks
+        // fall unevenly.
+        int pieces = Math.max(4, Math.round(length / (2.5f * stretch)));
         for (int s = 0; s < strands; s++) {
             float r = radius * (0.65f + rng.nextFloat() * 0.7f);
             float rate = twists * (0.7f + rng.nextFloat() * 0.6f);
@@ -635,16 +664,19 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     /** Searching, its head turns now and then, either slowly over this many ticks or in one tick. */
     private static final float SLOW_TURN_TICKS = 30.0f;
 
-    // Arm poses are (raise, out, elbow bend, forearm out), in degrees. The claw positions in the
-    // comments are in world blocks at the drawn size, from its middle: (out to its side, ahead, up).
+    // Arm poses are (raise, out, elbow bend, forearm out), in degrees. The claw and elbow positions
+    // in the comments are in world blocks at the drawn size, from its middle: (out to its side,
+    // ahead, up). Pass 5: every pose below was worked out again for the 1.5 times longer arms
+    // (upper arm 1.48 blocks, forearm and claws 1.73) with the joint-by-joint simulation.
     //
-    // Standing: both arms bent forward with the claws on the floor in front of it, slowly cycling
-    // through three places: on the floor (0.6 out, 0.7 ahead), reached forward and lifted (1.0
-    // ahead, 0.35 up), drawn back (0.4 ahead, on the floor). One cycle takes 36 ticks; the left arm
-    // runs 0.4 of a cycle behind the right.
-    private static final float[] IDLE_RAISE = {0.0f, -6.0f, -12.0f};
-    private static final float[] IDLE_BEND = {-25.0f, -56.0f, -32.0f};
-    private static final float IDLE_OUT = -5.0f;
+    // Standing: both arms bent forward like a mantis's forelegs, the elbows out in front at about
+    // chest height (1.6-2.0 up, 1.6 ahead) and the forearms hanging down to the claws on the floor
+    // in front of it, slowly cycling through three places: on the floor (0.8 out, 1.1 ahead),
+    // reached forward and lifted (1.3 ahead, 0.35 up), drawn back (0.6 ahead, on the floor). One
+    // cycle takes 36 ticks; the left arm runs 0.4 of a cycle behind the right.
+    private static final float[] IDLE_RAISE = {75.0f, 90.0f, 67.0f};
+    private static final float[] IDLE_BEND = {90.0f, 100.0f, 98.0f};
+    private static final float IDLE_OUT = 5.0f;
     private static final float IDLE_ARM_TICKS = 36.0f;
     private static final float IDLE_ARM_OFFSET = 0.4f;
     /** Standing, one foot (its own side) is forward of the other: (thigh, shin) of each leg. */
@@ -652,48 +684,57 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     private static final float IDLE_FRONT_SHIN = 25.0f;
     private static final float IDLE_BACK_THIGH = 2.0f;
     private static final float IDLE_BACK_SHIN = 12.0f;
-    // Walking, mantis-like: one arm cocked forward, upper arm level and the elbow bent so the
-    // forearm hangs down and forward (elbow 1.85 up, claws hanging at 0.7 up, 1.1 ahead); the other
-    // arm reaching back and down to the floor behind it (claw 0.4 out, 0.8 behind). The two swap
-    // every stride, slowly, and the body shifts its weight toward the arm on the floor.
-    private static final float WALK_COCK_RAISE = 80.0f;
-    private static final float WALK_COCK_OUT = 25.0f;
-    private static final float WALK_COCK_BEND = 80.0f;
-    private static final float WALK_BACK_RAISE = -20.0f;
-    private static final float WALK_BACK_OUT = 30.0f;
-    private static final float WALK_BACK_BEND = 20.0f;
+    // Walking, mantis-like: one arm cocked forward, the elbow up at head height in front (0.8
+    // out, 1.7 ahead, 2.3 up) and the forearm hanging down and back so the claws dangle 0.7 above
+    // the floor; the other arm a spider leg reaching out and back to the floor (elbow 1.9 out and
+    // 1.4 up, claw 1.2 out and 0.4 behind). The two swap every stride, slowly, and the body shifts
+    // its weight toward the arm on the floor.
+    private static final float WALK_COCK_RAISE = 100.0f;
+    private static final float WALK_COCK_OUT = 15.0f;
+    private static final float WALK_COCK_BEND = 110.0f;
+    private static final float WALK_COCK_FORE = -20.0f;
+    private static final float WALK_BACK_RAISE = 60.0f;
+    private static final float WALK_BACK_OUT = 80.0f;
+    private static final float WALK_BACK_BEND = 100.0f;
+    private static final float WALK_BACK_FORE = -20.0f;
     /** Walking, the arms swap over this fraction of the arm cycle, then hold. */
     private static final float WALK_SWAP = 0.15f;
     /** Walking, the body leans this far (degrees) toward the arm on the floor. */
     private static final float WALK_WEIGHT_SHIFT = 4.0f;
-    // Running arms are spider legs: big angular "Λ"s out to the sides, elbow up and out, forearm
-    // down and out. Keyframes over one arm cycle (2 strides); the arm plants at 0:
-    //   0    plant      elbow 1.3 out, 1.4 up; claw 1.6 out, 0.5 ahead, just off the floor
-    //   0.25 push       the claw drags back under the body (0.7 out) and lifts
-    //   0.40 over-swing whipped up over the top: elbow above the shoulder (2.3 up), claw 1.7 out, 1.4 up
-    //   0.55 reach      the Λ in the air, out wide: elbow 1.4 out, 1.8 up; claw 1.7 out, 0.7 up
+    // Running arms are spider legs: big angular "Λ"s out to the sides, the elbow up and out, the
+    // forearm down and out to the claw on the floor. Keyframes over one arm cycle (2 strides); the
+    // arm plants at 0:
+    //   0    plant      elbow 1.8 out, 1.8 up (the shoulder is 1.94 up); claw 2.1 out, 0.6 ahead,
+    //                   on the floor; the elbow a sharp 98 degrees
+    //   0.25 push       the claw drags back in under the body (1.4 out) and lifts
+    //   0.40 over-swing whipped up over the top: elbow well above the shoulder (2.6 up, 1.2 out),
+    //                   claw 2.1 out, 1.2 up
+    //   0.55 reach      the Λ in the air, out wide: elbow 1.65 out, 2.15 up; claw 2.45 out, 0.65 up
     //   0.80 descend    on its way down to the plant
+    // Claws 1.4-2.45 out over the cycle, 0-1.3 up; the highest point (an elbow) is 2.7.
     private static final float[] RUN_ARM_PHASE = {0.0f, 0.25f, 0.40f, 0.55f, 0.80f, 1.0f};
-    private static final float[] RUN_ARM_RAISE = {45.0f, 30.0f, 110.0f, 75.0f, 60.0f, 45.0f};
-    private static final float[] RUN_ARM_OUT = {65.0f, 60.0f, 45.0f, 70.0f, 68.0f, 65.0f};
-    private static final float[] RUN_ARM_BEND = {40.0f, 70.0f, 80.0f, 70.0f, 55.0f, 40.0f};
-    private static final float[] RUN_ARM_FORE = {-20.0f, -20.0f, -30.0f, -40.0f, -30.0f, -20.0f};
-    // With a wall within 1.5 blocks on that side, the claw plants ahead instead (0.8 out, 1.2 ahead).
-    private static final float NARROW_RAISE = 30.0f;
-    private static final float NARROW_OUT = 5.0f;
-    private static final float NARROW_BEND = 0.0f;
-    // Each run one arm is different: either it plants further ahead and lower...
-    private static final float ASYM_RAISE = 6.0f;
-    private static final float ASYM_BEND = -8.0f;
+    private static final float[] RUN_ARM_RAISE = {78.0f, 78.0f, 120.0f, 90.0f, 84.0f, 78.0f};
+    private static final float[] RUN_ARM_OUT = {60.0f, 45.0f, 40.0f, 55.0f, 55.0f, 60.0f};
+    private static final float[] RUN_ARM_BEND = {82.0f, 120.0f, 115.0f, 80.0f, 80.0f, 82.0f};
+    private static final float[] RUN_ARM_FORE = {-20.0f, -20.0f, -40.0f, 30.0f, 20.0f, -20.0f};
+    // With a wall close on that side (Bacteria.NARROW_CHECK), the claw plants ahead instead (1.0
+    // out, 1.3 ahead), the elbow up in front.
+    private static final float NARROW_RAISE = 85.0f;
+    private static final float NARROW_OUT = 10.0f;
+    private static final float NARROW_BEND = 100.0f;
+    // Each run one arm is different: either it plants further out and ahead...
+    private static final float ASYM_RAISE = 2.0f;
+    private static final float ASYM_BEND = -10.0f;
     // ...or it is carried late (a fraction of the arm cycle).
     private static final float ASYM_DELAY_MIN = 0.2f;
     private static final float ASYM_DELAY_MAX = 0.4f;
     // Legs: keyframes over one stride for one leg (the other leg half a stride later):
     // contact, then 25%, 50%, 75% (thigh: - = forward; shin: + = the knee folds).
-    // Running: the foot lands under the hip, the stance leg sweeps back, the foot folds up behind,
+    // Running: a low scurry on bent knees (so the shoulders come down to the level of the planted
+    // elbows): the foot lands under the hip, the stance leg sweeps back, the foot folds up behind,
     // then the knee is driven up high in front.
-    private static final float[] RUN_THIGH = {-25.0f, 12.0f, -5.0f, -65.0f};
-    private static final float[] RUN_SHIN = {30.0f, 25.0f, 90.0f, 85.0f};
+    private static final float[] RUN_THIGH = {-35.0f, 5.0f, -15.0f, -70.0f};
+    private static final float[] RUN_SHIN = {55.0f, 50.0f, 100.0f, 95.0f};
     // Walking: short steps on knees that stay well bent, like a stool.
     private static final float[] WALK_THIGH = {-28.0f, -10.0f, 12.0f, -35.0f};
     private static final float[] WALK_SHIN = {40.0f, 35.0f, 40.0f, 70.0f};
@@ -706,52 +747,64 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     private static final float WALK_BOB = 0.6f;
     /** Running, the body rocks this far (degrees) toward the leg it stands on, once per stride. */
     private static final float STRIDE_SWAY = 3.0f;
-    // Stopped close to you: a wide crouched stance, both arms planted as spider legs
-    // (claws 1.3 out, 0.5 ahead).
-    private static final float TRIPOD_RAISE = 45.0f;
-    private static final float TRIPOD_OUT = 65.0f;
-    private static final float TRIPOD_BEND = 40.0f;
+    // Stopped close to you: a wide crouched stance, both arms planted as spider legs (elbows 1.8
+    // out and 1.75 up, claws 1.85 out and 0.55 ahead, on the floor).
+    private static final float TRIPOD_RAISE = 78.0f;
+    private static final float TRIPOD_OUT = 60.0f;
+    private static final float TRIPOD_BEND = 82.0f;
     private static final float TRIPOD_FORE = -20.0f;
-    // The leap: both arms straight out to the sides (a T, for 2-3 ticks only), head pushed forward.
-    private static final float LEAP_RAISE = 90.0f;
+    // The leap: both arms flung straight out to the sides (a T, for 2-3 ticks only: claws 3.65
+    // out, 2.35 up, under the ceiling), head pushed forward. (Leaning 20 degrees, a "raise" of 90
+    // would tip the straight arms up to 3.1 blocks: through the ceiling.)
+    private static final float LEAP_RAISE = 75.0f;
     private static final float LEAP_OUT = 85.0f;
     private static final float LEAP_HEAD_FORWARD = 3.0f;
-    // The swipe: one arm cocked out to its side at chest height, swept across the front in 1.5
-    // ticks, then back over 4 ticks.
+    // The swipe: one arm cocked up and out to its side like a mantis's strike (elbow 2.65 up,
+    // claws 2.6 out at 1.25 up), swept across the front in 1.5 ticks (claws to 2.0 ahead on the
+    // other side, at chest height), then back over 4 ticks.
     private static final float SWIPE_TICKS = 6.0f;
-    private static final float SWIPE_COCK_RAISE = 80.0f;
-    private static final float SWIPE_COCK_OUT = 45.0f;
-    private static final float SWIPE_COCK_BEND = 60.0f;
-    private static final float SWIPE_ACROSS_RAISE = 90.0f;
-    private static final float SWIPE_ACROSS_OUT = -50.0f;
-    private static final float SWIPE_ACROSS_BEND = 60.0f;
+    private static final float SWIPE_COCK_RAISE = 110.0f;
+    private static final float SWIPE_COCK_OUT = 65.0f;
+    private static final float SWIPE_COCK_BEND = 90.0f;
+    private static final float SWIPE_ACROSS_RAISE = 115.0f;
+    private static final float SWIPE_ACROSS_OUT = -45.0f;
+    private static final float SWIPE_ACROSS_BEND = 85.0f;
     // Hit: head thrown back, torso arched back, arms flung out, for 5 ticks, then on as before.
+    // (Only a little raise: the long arms flung up would poke through the ceiling.)
     private static final float HURT_TICKS = 5.0f;
     private static final float HURT_LEAN = -15.0f;
     private static final float HURT_PITCH = -50.0f;
     private static final float HURT_OUT = 30.0f;
-    private static final float HURT_RAISE = 20.0f;
+    private static final float HURT_RAISE = 5.0f;
     // Spotting you (8 ticks): bends right over with its head rolled and looking down, one arm
-    // thrown up and out (its claw no higher than 2.6 blocks: under the ceiling), while it swings
-    // round; then straightens into the run.
+    // thrown up and out ahead of it (its claw no higher than 2.55 blocks: under the ceiling),
+    // while it swings round; then straightens into the run.
     private static final float TURN_ROLL = 50.0f;
     private static final float TURN_PITCH = 30.0f;
     private static final float TURN_ARM_RAISE = 110.0f;
     private static final float TURN_ARM_OUT = 50.0f;
     private static final float TURN_ARM_BEND = 20.0f;
-    // Holding you: crouched, leaning 25 degrees, both arms out past you and down, claws planted
-    // 0.65-0.7 blocks either side of you and 0.4 in front of you (at the 1.5-block stand-off),
-    // elbows 0.85 out and 1.2 up. Checked from the held player's camera at the drawn size.
-    private static final float CAGE_RAISE = 40.0f;
-    private static final float CAGE_OUT = 20.0f;
-    private static final float CAGE_BEND = 40.0f;
-    private static final float CAGE_FORE = -30.0f;
+    // Holding you (from 1.5 blocks away): crouched, leaning 25 degrees, the long arms close round
+    // you like a cage. The upper arms run out and down from its shoulders to the elbows beside you,
+    // just in front of your face and below it (1.35 out, 1.45 ahead, 1.2 up), so from your camera
+    // they rise from the lower corners of the screen up to its shoulders; the forearms go on down
+    // past you to the claws on the floor behind you (0.8 either side of you, 1.05 behind you).
+    // No part of the arm comes within 1 block of your camera. Checked from the held player's
+    // camera at the drawn size.
+    private static final float CAGE_RAISE = 55.0f;
+    private static final float CAGE_OUT = 33.0f;
+    private static final float CAGE_BEND = 9.0f;
+    private static final float CAGE_FORE = -55.0f;
+    /** Caging, lifting the arm by 1 degree folds the elbow by this much, so the claw slides along the floor. */
+    private static final float CAGE_CRAWL_BEND = 1.0f;
+    /** Peeking, the arms tilt back against the sideways lean by this fraction of it. */
+    private static final float PEEK_ARM_COUNTER = 0.35f;
     /**
      * No claw ever ends up more than this far out to its side (world blocks at the drawn size),
-     * except in the cage, the peek, the leap's T and the swipe. The spider-leg arms of the walk
-     * and run reach about 1.6-1.9.
+     * except in the cage, the peek, the leap's T and the swipe. The spider-leg arms of the run
+     * reach about 1.4-2.45 (2.7 for the odd arm), the walk 1.2-1.65.
      */
-    private static final float MAX_SPREAD = 2.0f;
+    private static final float MAX_SPREAD = 2.8f;
     /** Changing pose (walk to run, run to stop...), the arms move to the new one over this many ticks. */
     private static final float BLEND_TICKS = 3.0f;
     private static final float QUICK_BLEND_TICKS = 2.0f;
@@ -828,7 +881,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     private final float[][] fingerCurl = new float[2][3]; // each finger's own curl (degrees)
     private boolean fingersLive; // false = the fingers hold still at fingerRest
     private float fingerRest;
-    // One arm's pose worked out by walkArm / runArm (degrees).
+    // One arm's pose worked out by idleArm / runArm (degrees).
     private float armRaise;
     private float armOut;
     private float armBend;
@@ -1071,13 +1124,15 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
      * Nobody seen yet: standing (m = 0) or walking (m = 1).
      * <p>Standing: upright (leaning 10 degrees), one foot a little forward of the other, feet
      * apart, the neck pushed forward with the head held tilted to one side. Both arms are bent
-     * forward with the claws on the floor in front of it, and they slowly cycle: claws on the
-     * floor, reached forward and lifted, drawn back. That, the fingers and a slow breath are all
-     * that moves. If it can see you within 24 blocks its head slowly turns onto you and stays.
+     * forward like a mantis's forelegs, elbows out in front, the forearms hanging down to the claws
+     * on the floor in front of it, and they slowly cycle: claws on the floor, reached forward and
+     * lifted, drawn back. That, the fingers and a slow breath are all that moves. If it can see you
+     * within 24 blocks its head slowly turns onto you and stays.
      * <p>Walking: mantis-like. Short steps on bent knees with the feet wide (a 12-tick stride at its
-     * 2 blocks/s), the body leaning 15 degrees. One arm is cocked forward, elbow bent and the claws
-     * hanging, while the other reaches back and down to the floor; they swap every stride and the
-     * body shifts its weight toward the arm on the floor. Each footfall jolts the head a little.
+     * 2 blocks/s), the body leaning 15 degrees. One arm is cocked forward, elbow up and the claws
+     * hanging, while the other reaches out and back to the floor like a spider's leg; they swap
+     * every stride and the body shifts its weight toward the arm on the floor. Each footfall jolts
+     * the head a little.
      */
     private void calm(int seed, float t, float m, float phase, float breath) {
         stance(-8.0f * DEG, 15.0f * DEG);
@@ -1107,6 +1162,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
             float r = armRaise;
             float o = armOut;
             float b = armBend;
+            float f = armFore;
             if (m > 0.0f) {
                 // The arm cycle is two strides; the arms are half a cycle apart.
                 float q = phase * 0.5f + 0.5f * i;
@@ -1116,10 +1172,12 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
                 r = Mth.lerp(m, r, Mth.lerp(cocked, WALK_BACK_RAISE, WALK_COCK_RAISE));
                 o = Mth.lerp(m, o, Mth.lerp(cocked, WALK_BACK_OUT, WALK_COCK_OUT));
                 b = Mth.lerp(m, b, Mth.lerp(cocked, WALK_BACK_BEND, WALK_COCK_BEND));
+                f = Mth.lerp(m, f, Mth.lerp(cocked, WALK_BACK_FORE, WALK_COCK_FORE));
             }
             raise[i] = r * DEG;
             out[i] = o * DEG;
             bend[i] = b * DEG;
+            foreOut[i] = f * DEG;
             curl[i] = 8.0f * DEG;
             spread[i] = 6.0f * DEG;
         }
@@ -1159,9 +1217,10 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     }
 
     /**
-     * Running: upright (15 degrees, 18 in the last 3 blocks), a fast scurry of short high-knee
-     * steps under its body, feet a little apart, a drop as each foot lands and a rock toward the
-     * leg it stands on. The arms are spider legs: each plants out to the side as a big angular Λ,
+     * Running: upright (15 degrees, 18 in the last 3 blocks), a fast, low scurry of short
+     * high-knee steps on bent knees under its body, feet a little apart, a drop as each foot lands
+     * and a rock toward the leg it stands on. The arms are spider legs: each plants far out to the
+     * side (about 2 blocks) as a big angular Λ, the elbow about level with the shoulder,
      * drags back under the body, then whips up over the top and out to plant again; one arm cycle
      * every 2 strides, the arms taking turns, the right arm planting as the left foot lands. Each
      * run one arm is a little different. Next to a wall the claw on that side plants ahead instead
@@ -1320,13 +1379,14 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
 
     /**
      * Holding you (the reference video's "arm cage"): it stands over you 1.5 blocks away, crouched
-     * and leaning 25 degrees, its arms out past you and down, the claws planted on the floor about
-     * 0.65 blocks either side of you and 0.4 in front of you, elbows out and up beside your
-     * shoulders (all checked from the held player's camera at the drawn size). Slow and intimate:
-     * the claws creep along the floor a little at a time over 25 ticks. The head creeps toward your
-     * face over 35 ticks, rolling over to 60-90 degrees as if examining you, snaps in the last bit
-     * in 2 ticks, holds, then slowly pulls back; it comes to about 0.35 blocks from the held
-     * player's camera.
+     * and leaning 25 degrees, its long arms closed round you: the upper arms out and down to the
+     * elbows beside you, a little below and in front of your face, the forearms on down past you
+     * to the claws planted on the floor about 0.8 blocks either side of you and 1 block behind you
+     * (all checked from the held player's camera at the drawn size: from there the arms rise from
+     * the lower corners of the screen up to its shoulders). Slow and intimate: the claws creep
+     * along the floor a little at a time over 25 ticks. The head creeps toward your face over 35
+     * ticks, rolling over to 60-90 degrees as if examining you, snaps in the last bit in 2 ticks,
+     * holds, then slowly pulls back; it comes to about 0.35 blocks from the held player's camera.
      */
     private void cage(int seed, float t, float clock) {
         stance(-25.0f * DEG, 50.0f * DEG);
@@ -1338,7 +1398,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
             // Lifting the arm and folding the elbow together slide the claws along the floor.
             float lift = crawl(s, t, 1.0f, 3.0f);
             raise[i] = (CAGE_RAISE + lift) * DEG;
-            bend[i] = (CAGE_BEND + 2.6f * lift) * DEG;
+            bend[i] = (CAGE_BEND + CAGE_CRAWL_BEND * lift) * DEG;
             out[i] = (CAGE_OUT + crawl(s + 2, t, 0.5f, 2.5f)) * DEG;
             foreOut[i] = CAGE_FORE * DEG;
             curl[i] = 30.0f * DEG;
@@ -1371,8 +1431,10 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
 
     /**
      * After a kill: it folds nearly double over the body in 10 ticks, the head down at knee height
-     * pecking, the arms planted in front like a mantis's forelegs; then it rises slowly (20 ticks),
-     * its head coming up locked on the nearest other player. Built on top of the calm pose.
+     * pecking, the long arms folded up like a mantis's forelegs (elbows 2.5 blocks out in front at
+     * shoulder height, forearms folded back down to the claws on the floor 1 block in front of it);
+     * then it rises slowly (20 ticks), its head coming up locked on the nearest other player. Built
+     * on top of the calm pose.
      */
     private void feed(int seed, float t, float age) {
         float rise = Bacteria.FEED_TICKS - 20.0f;
@@ -1395,11 +1457,11 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         headPitchFree = 85.0f + peck;
         freeWeight = f;
         for (int i = 0; i < 2; i++) {
-            raise[i] = Mth.lerp(f, raise[i], 80.0f * DEG);
-            out[i] = Mth.lerp(f, out[i], 50.0f * DEG);
+            raise[i] = Mth.lerp(f, raise[i], 85.0f * DEG);
+            out[i] = Mth.lerp(f, out[i], 40.0f * DEG);
             splay[i] = Mth.lerp(f, splay[i], 0.0f);
-            bend[i] = Mth.lerp(f, bend[i], 140.0f * DEG);
-            foreOut[i] = Mth.lerp(f, foreOut[i], 45.0f * DEG);
+            bend[i] = Mth.lerp(f, bend[i], 145.0f * DEG);
+            foreOut[i] = Mth.lerp(f, foreOut[i], 20.0f * DEG);
             curl[i] = Mth.lerp(f, curl[i], 30.0f * DEG);
         }
         aimMode = LOCK_EXACT;
@@ -1415,7 +1477,15 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         float back = (hold ? Bacteria.PEEK_HOLD_TICKS : Bacteria.PEEK_TICKS) - 2.0f;
         float e = age < 25.0f ? smooth(age / 25.0f) : age < back ? 1.0f : 1.0f - smooth((age - back) / 2.0f);
         float headFirst = age < back ? smooth(age / 18.0f) : e;
-        sway += side * 40.0f * DEG * e;
+        float leanOut = side * 40.0f * DEG * e;
+        sway += leanOut;
+        // Leaning out tips the arms with it: the arm on that side would push its claws into the
+        // floor and the other would lift right off. Tilting both arms back a third of the way
+        // keeps the claws on the floor (checked with the joint simulation).
+        for (int i = 0; i < 2; i++) {
+            float armSide = i == 0 ? -1.0f : 1.0f;
+            splay[i] -= armSide * PEEK_ARM_COUNTER * leanOut;
+        }
         neckZ += side * 20.0f * DEG * headFirst;
         headRoll = Mth.lerp(headFirst, headRoll, side * 35.0f * DEG);
         if (hold && age >= 25.0f) {
@@ -1433,17 +1503,19 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     // ------------------------------------------------------------------ one-shot moves
 
     /**
-     * One arm whips across your face (in the cage): in 1.5 ticks it lifts out to its side at your
-     * head height, in the next 2.5 it sweeps across in front of your face to the other side, stays
-     * a moment, sweeps back and plants again (9.5 ticks in all). {@code i}: 0 = right arm, 1 =
-     * left. The path was simulated from the held player's camera: the claws cross about half a
-     * block in front of it at about eye height, never through it or through your body.
+     * One arm whips across your face (in the cage): in 1.5 ticks the upper arm swings down and
+     * back and the forearm folds up, the claws out to its side at your head height; in the next
+     * 2.5 the forearm sweeps up and across in front of your face, like a scythe, to the other side,
+     * stays a moment, sweeps back and plants again (9.5 ticks in all). {@code i}: 0 = right arm, 1 =
+     * left. The path was simulated from the held player's camera with the long arms: the claws
+     * cross about half a block in front of it at about eye height (a third of a block while its
+     * head is leaning right in), never through it, your body or its own.
      */
     private void whip(int i, float a) {
-        raise[i] = whipKey(a, raise[i], 100.0f * DEG, 100.0f * DEG);
-        out[i] = whipKey(a, out[i], -20.0f * DEG, -50.0f * DEG);
-        bend[i] = whipKey(a, bend[i], 135.0f * DEG, 105.0f * DEG);
-        foreOut[i] = whipKey(a, foreOut[i], -20.0f * DEG, 20.0f * DEG);
+        raise[i] = whipKey(a, raise[i], -20.0f * DEG, -20.0f * DEG);
+        out[i] = whipKey(a, out[i], 15.0f * DEG, 5.0f * DEG);
+        bend[i] = whipKey(a, bend[i], -150.0f * DEG, -160.0f * DEG);
+        foreOut[i] = whipKey(a, foreOut[i], -30.0f * DEG, 45.0f * DEG);
         splay[i] = whipKey(a, splay[i], 0.0f, 0.0f);
         curl[i] = whipKey(a, curl[i], -15.0f * DEG, -15.0f * DEG);
         spread[i] = whipKey(a, spread[i], 25.0f * DEG, 25.0f * DEG);
@@ -1517,7 +1589,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
 
     /**
      * The upper body bending in toward the held player's face, {@code e} from 0 (not at all) to
-     * 1 (all the way: 20 degrees more lean, 40 more neck, the head 6 px forward). The arms lift
+     * 1 (all the way: 10 degrees more lean, 30 more neck, the head 2 px forward). The arms lift
      * and the elbows fold to match, so the claws stay planted instead of sinking into the floor.
      */
     private void leanToward(float e) {
@@ -1529,7 +1601,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         lean += 10.0f * DEG * e;
         for (int i = 0; i < 2; i++) {
             raise[i] += 10.0f * DEG * e;
-            bend[i] += 35.0f * DEG * e;
+            bend[i] += 12.0f * DEG * e;
         }
     }
 
@@ -1847,8 +1919,8 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         z += matArm[6] * side * 1.5f + matArm[7] * UPPER_ARM;
         x += matFore[0] * side * 1.5f + matFore[1] * FOREARM - matFore[2] * 0.5f;
         z += matFore[6] * side * 1.5f + matFore[7] * FOREARM - matFore[8] * 0.5f;
-        x += matHand[0] * side * 0.9f + matHand[1] * 4.6f;
-        z += matHand[6] * side * 0.9f + matHand[7] * 4.6f;
+        x += matHand[0] * side * 0.9f * ARM_STRETCH + matHand[1] * CLAW_TIP;
+        z += matHand[6] * side * 0.9f * ARM_STRETCH + matHand[7] * CLAW_TIP;
         clawSide = side * x;
         clawAhead = -z;
     }

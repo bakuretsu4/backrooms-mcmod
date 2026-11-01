@@ -34,7 +34,7 @@ public final class BacteriaPoseState {
     public final float[] shownForeOut = new float[2];
     public boolean shown;
 
-    /** How close a wall is to its right (0) and left (1) side: 0 = none, 1 = within 1.5 blocks. */
+    /** How close a wall is to its right (0) and left (1) side: 0 = none, 1 = within Bacteria's NARROW_CHECK (2.4 blocks). */
     public final float[] narrow = new float[2];
 
     /** A player near it that it can see (within 24 blocks), chosen a few times a second; -1 = none. */

@@ -75,26 +75,28 @@ public final class BacteriaFlecks {
             // Two straight pieces: shoulder to elbow, then elbow to claw.
             double k = r < 0.5 ? r * 2.0 : r * 2.0 - 1.0;
             if (caging) {
-                // Arms out past the victim and down to the floor beside them.
+                // Arms out and down to the elbows beside the victim, then on down past them to
+                // the claws on the floor behind them (the cage pose in BacteriaModel).
                 if (r < 0.5) {
-                    side = s * (0.48 + 0.37 * k);
-                    up = 1.85 - 0.65 * k;
-                    ahead = 0.4 + 0.6 * k;
+                    side = s * (0.48 + 0.86 * k);
+                    up = 1.9 - 0.7 * k;
+                    ahead = 0.46 + 0.99 * k;
                 } else {
-                    side = s * (0.85 - 0.17 * k);
-                    up = 1.2 - 1.2 * k;
-                    ahead = 1.0 + 0.1 * k;
+                    side = s * (1.34 - 0.53 * k);
+                    up = 1.2 - 1.16 * k;
+                    ahead = 1.45 + 1.1 * k;
                 }
             } else {
-                // Running: spider-leg arms out to the sides, elbow up, claw down near the floor.
+                // Running: spider-leg arms far out to the sides, the elbow about level with the
+                // shoulder, the forearm down and out to the claw on the floor (the run's plant).
                 if (r < 0.5) {
-                    side = s * (0.48 + 0.82 * k);
-                    up = 1.95 - 0.45 * k;
-                    ahead = 0.25 + 0.2 * k;
+                    side = s * (0.48 + 1.31 * k);
+                    up = 1.94 - 0.14 * k;
+                    ahead = 0.28 + 0.67 * k;
                 } else {
-                    side = s * (1.3 + 0.3 * k);
-                    up = 1.5 - 1.2 * k;
-                    ahead = 0.45 + 0.05 * k;
+                    side = s * (1.79 + 0.32 * k);
+                    up = 1.8 - 1.67 * k;
+                    ahead = 0.95 - 0.32 * k;
                 }
             }
         }
