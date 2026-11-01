@@ -55,7 +55,7 @@ import java.util.Locale;
  * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|end> [seconds]   start/stop an event on this floor
  * /backrooms drift <player> [sealed|door|lights|end]   separate realities: that player sees the room differently from the nearest friend (end = snap back)
  * /backrooms spawn bacteria [count]   spawn Bacteria about 12 blocks in front of you (for testing)
- * /backrooms bacteria pose <idle|walk|chase|spotted|lunge|cage|feed|peek|auto> [loop]   force the nearest Bacteria (32 blocks) into a pose and freeze it, to film it; auto = back to normal
+ * /backrooms bacteria pose <idle|walk|chase|spotted|lunge|cage|feed|peek|creep|auto> [loop]   force the nearest Bacteria (32 blocks) into a pose and freeze it, to film it; auto = back to normal (creep: it prowls round whatever is 1.3 blocks in front of it, then opens it)
  * /backrooms spawn smiler [count|bold]  spawn Smilers about 16 blocks in front of you (start a blackout first)
  * /backrooms locate saferoom          distance/direction to the nearest safe room (for testing)
  * /backrooms time94 <day|dusk|night|dawn>   Level 94: jump its day/night clock to the start of that phase (for testing)

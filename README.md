@@ -452,10 +452,15 @@ houses). Upside-down furniture doesn't count.
   has about a 1 in 4 chance each second to hear you and drag you out.
 - **Monsters** (the Bacteria, Hounds, Clumps, Smilers, Facelings, Watchers, Skin-stealers) can't
   see, hear or chase you while you hide, unless one saw you get in (it had you in sight in the last
-  2 seconds): that one comes over and pulls you out, then attacks. Otherwise it searches where it
-  last saw you and gives up as usual. Nothing new spawns for you while you hide, Wretches aren't
-  frightened by you and Level 39's windows don't see you. A monster within 16 blocks still makes
-  it nerve-racking: your sanity drains a little.
+  2 seconds): that one comes over and pulls you out, then attacks. The **Bacteria** takes its
+  time: it creeps up to your hiding place and prowls round it for 15 to 25 seconds, holding on
+  to the furniture and the walls, changing its grip slowly, standing still with a hand on the
+  furniture next to yours, reaching across the front; you hear it sniff and its claws scrape, and
+  you see it through the vents. Then it rips the door open, cranes its head in, and drags you
+  out. Get out yourself while it prowls and it is after you at once. A monster that didn't see
+  you get in searches where it last saw you and gives up as usual. Nothing new spawns for you
+  while you hide, Wretches aren't frightened by you and Level 39's windows don't see you. A
+  monster within 16 blocks still makes it nerve-racking: your sanity drains a little.
 - **Pulled out:** opening a hiding place someone is in (a friend right-clicking it) drags them out
   too. You're shoved out in front and can't hide again for 3 seconds.
 - Breaking the furniture, logging out, dying, changing level or being teleported just ends the
@@ -497,7 +502,10 @@ houses). Upside-down furniture doesn't count.
   (its body never ends up in your face); the hits come from the arms, and now and then one sweeps
   up across your face while its head slowly creeps in to look at you. Get more than 2.5 blocks away
   and you have broken free; if its leap misses, it swipes at you with one arm. Hit it and its head
-  snaps back for a moment. After a kill it folds over the body for a few seconds.
+  snaps back for a moment. After a kill it folds over the body for a few seconds. Searching near a
+  wall, it feels its way along it with one hand. If it saw you hide in furniture it creeps up and
+  prowls round your hiding place for 15 to 25 seconds, holding on to it and the walls (see Hiding),
+  before it rips the door open.
 - **Blackouts:** the lights fade out over two seconds. Only flashlights work, and the Bacteria come
   out three times as often, but they can't use the lamps to spot you either.
 - **Smilers (Levels 1 and 2 in blackouts, Level 1's dead zones, Level 9's dark streets, Level 94 at
@@ -943,7 +951,7 @@ saturation, hiss and a big, empty room.
 /backrooms hallucinate [players]        soak players in the Poolrooms: full hallucination + phantom friend
 /backrooms sanity [players] <0-100>     set sanity (test the low-sanity effects)
 /backrooms spawn bacteria [count]       spawn Bacteria ~12 blocks in front of you (they only hunt survival players)
-/backrooms bacteria pose <idle|walk|chase|spotted|lunge|cage|feed|peek|auto> [loop]   film the Bacteria's animations: forces that pose on the nearest living one within 32 blocks and freezes it there (walk and chase run on the spot; its head locks on the nearest player); loop = replay: chase = a swipe every 2 s, spotted = the turn then the run every 2 s, lunge = stop-stare, leap and cage every 2 s, cage = a whip every 2.5 s, feed every 4 s, peek = a normal peek then a long one; auto = back to normal. Works with NoAI too
+/backrooms bacteria pose <idle|walk|chase|spotted|lunge|cage|feed|peek|creep|auto> [loop]   film the Bacteria's animations: forces that pose on the nearest living one within 32 blocks and freezes it there (walk and chase run on the spot; its head locks on the nearest player); loop = replay: chase = a swipe every 2 s, spotted = the turn then the run every 2 s, lunge = stop-stare, leap and cage every 2 s, cage = a whip every 2.5 s, feed every 4 s, peek = a normal peek then a long one, creep = the 15 s prowl round whatever stands 1.3 blocks in front of it (hands on it, re-gripping, a long freeze, a reach across, then it opens it and cranes in; face it to a wall or a locker); auto = back to normal. Works with NoAI too
 /backrooms spawn smiler [count|bold]    spawn Smilers ~16 blocks in front of you (start a blackout first)
 /backrooms spawn <watcher|observer> [players]   Level 9 test spawns
 /backrooms spawn hound [count]          Level 39: Hounds ~14 blocks in front of you (they only hunt survival players)

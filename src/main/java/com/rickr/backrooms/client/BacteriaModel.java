@@ -12,9 +12,12 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 
 /**
  * Kane Pixels' Bacteria, built in code instead of Blockbench.
@@ -952,6 +955,140 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     private static final float PEEK_LOOP_TICKS = Bacteria.PEEK_TICKS + 20.0f;
     private static final float PEEK_HOLD_LOOP_TICKS = Bacteria.PEEK_HOLD_TICKS + 20.0f;
 
+    // Creeping round a hiding place (Bacteria.Mode.CREEP, and the test pose "creep"), after the
+    // locker scene of the owner's reference video (local://bacteria_locker_motion.md). It moves
+    // by changing its grip: its claws take hold of the walls and the furniture (gripControl) and
+    // stay exactly where they took hold while the body moves (holdArms), the arm angles worked
+    // out from the hold (solveArm). Its hands are never both off a surface.
+    private static final float CREEP_LEAN = 12.0f;
+    private static final float CREEP_STAND_LEAN = 15.0f;
+    /** It leans this far toward the hand it holds on with (degrees). */
+    private static final float CREEP_SWAY = 2.0f;
+    /** Craning in through the open door: lean (degrees), more neck (degrees), neck and head pushed in (px). */
+    private static final float CRANE_LEAN = 40.0f;
+    private static final float CRANE_NECK = 20.0f;
+    private static final float CRANE_NECK_FORWARD = 5.0f;
+    private static final float CRANE_HEAD_FORWARD = 4.0f;
+    /** The test pose "creep": the "door" is this far in front of it (blocks); one round of the loop lasts the prowl plus this. */
+    private static final float CREEP_POSE_DOOR = 1.3f;
+    private static final float CREEP_POSE_TAIL = 40.0f;
+    /** The test pose's hider's eyes (blocks above the floor): a locker's. */
+    private static final float CREEP_POSE_EYE = 0.8f;
+    // Where it takes hold (blocks, from the middle of the door on the floor; along the door to
+    // its own side, out from the door, up): braced either side of the door, wrapped round the
+    // furniture's side, holding the furniture next door, reaching across the front, at the door's
+    // edges before it opens it. GRIP_JITTER: each new hold moves a little (blocks).
+    private static final float BRACE_ALONG = 0.75f;
+    private static final float BRACE_UP = 1.35f;
+    private static final float WRAP_ALONG = 0.62f;
+    private static final float WRAP_BACK = 0.3f;
+    private static final float WRAP_UP = 1.3f;
+    private static final float NEIGHBOUR_ALONG = 1.35f;
+    private static final float NEIGHBOUR_UP = 1.45f;
+    private static final float ACROSS_ALONG = 0.3f;
+    private static final float ACROSS_UP = 1.25f;
+    private static final float DOOR_EDGE_ALONG = 0.48f;
+    private static final float DOOR_EDGE_UP = 1.3f;
+    private static final float GRIP_JITTER = 0.15f;
+    /** Opening the door: the other arm plants on the floor this far out to its side and ahead (blocks). */
+    private static final float RIP_PLANT_OUT = 1.5f;
+    private static final float RIP_PLANT_AHEAD = 0.6f;
+    // Re-gripping (ticks): a slow reach of GRIP_REACH_MIN-MAX, then a hold of GRIP_HOLD_MIN-MAX;
+    // the other hand may only let go GRIP_HANDOVER ticks after this one took hold. While it
+    // walks (searching, or on its way to the hiding place) the reaches and holds are quicker.
+    private static final float GRIP_REACH_MIN = 20.0f;
+    private static final float GRIP_REACH_MAX = 30.0f;
+    private static final float GRIP_HOLD_MIN = 40.0f;
+    private static final float GRIP_HOLD_MAX = 100.0f;
+    private static final float GRIP_HANDOVER = 10.0f;
+    private static final float GRIP_MOVING_REACH = 8.0f;
+    private static final float GRIP_MOVING_HOLD_MIN = 12.0f;
+    private static final float GRIP_MOVING_HOLD_MAX = 24.0f;
+    /** A hold whose place changed is only given up after it has lasted this long (ticks). */
+    private static final float GRIP_SETTLE = 15.0f;
+    /** Holding the furniture next door, the other hand only lets go this long into it (ticks: once the first has taken hold). */
+    private static final float FREEZE_LET_GO = 45.0f;
+    /** A claw is lifted this far off the surface (out, up; blocks) midway through a reach. */
+    private static final float GRIP_LIFT_OUT = 0.25f;
+    private static final float GRIP_LIFT_UP = 0.15f;
+    private static final float ACROSS_LIFT_OUT = 0.45f;
+    /** After finding nothing to hold, a claw looks again this much later (ticks). */
+    private static final float GRIP_RETRY = 10.0f;
+    // Feeling for a hold (findHold): from the shoulder, along 5 directions (degrees from straight
+    // ahead toward that arm's side) at 4 heights above its feet (blocks; the lowest one finds the
+    // tops of one-block furniture: lockers, cabinets, desks); a hold must be on an upright face
+    // 0.8-2.6 blocks from the shoulder and about 1.0-1.9 above its feet. It is let go if the
+    // shoulder gets more than GRIP_LET_GO from it or it falls GRIP_BEHIND behind the shoulder.
+    private static final float[] GRIP_ANGLES = {-30.0f, 0.0f, 30.0f, 60.0f, 90.0f};
+    private static final float[] GRIP_HEIGHTS = {1.45f, 1.15f, 1.75f, 0.85f};
+    private static final float GRIP_NEAR = 0.8f;
+    private static final float GRIP_FAR = 2.6f;
+    private static final float GRIP_STEP = 0.1f;
+    private static final float GRIP_START = 0.3f;
+    private static final float GRIP_LOW = 0.95f;
+    private static final float GRIP_HIGH = 1.9f;
+    private static final float GRIP_LET_GO = 2.95f;
+    private static final float GRIP_BEHIND = 0.8f;
+    /**
+     * Holding on, an elbow never goes higher than ELBOW_TOP blocks above its feet (about the top of
+     * its head), and stays ELBOW_CEILING_MARGIN under whatever ceiling is lower than that.
+     */
+    private static final float ELBOW_TOP = 2.3f;
+    private static final float ELBOW_CEILING_MARGIN = 0.25f;
+    // Working out the arm from the hold (solveArm): this many correcting passes, then up to this
+    // many nudges (each turning an angle by IK_NUDGE radians to measure, steadied by IK_DAMPING)
+    // until the claw is within IK_CLOSE px (under a hundredth of a block). The elbow points out
+    // to its own side, away from its middle (the wide "Λ" of the reference, bracing either side of
+    // the locker), tipped up by ELBOW_POLE_UP; if that would put it above the limit it tries
+    // IK_POLES more directions, round its side down to ELBOW_POLE_DOWN below level (and if none is
+    // low enough, the lowest one). A try that leaves the elbow over the limit counts as missing by
+    // IK_OVER_COST times as much again, and the nudges never lift an elbow over it.
+    private static final int IK_PASSES = 3;
+    private static final int IK_POLISH = 4;
+    private static final int IK_POLES = 8;
+    private static final float ELBOW_POLE_UP = 0.7f;
+    private static final float ELBOW_POLE_DOWN = 1.2f;
+    private static final float IK_OVER_COST = 4.0f;
+    /**
+     * A hold more than GRIP_SIDE_ANGLE degrees round from straight ahead (alongside the body) must
+     * be at least GRIP_SIDE_FAR blocks from the shoulder: any closer and the long forearm would fold
+     * the elbow in against the ribs instead of out wide.
+     */
+    private static final float GRIP_SIDE_ANGLE = 72.0f;
+    private static final float GRIP_SIDE_FAR = 2.0f;
+    private static final float IK_NUDGE = 0.002f;
+    private static final float IK_DAMPING = 20.0f;
+    private static final float IK_CLOSE = 0.15f;
+    // Hand shapes (curl and claw spread in degrees, fingers' own curl in degrees): hooked over an
+    // edge, flat on a face, open while reaching, relaxed while hanging.
+    private static final float HOOK_CURL = 40.0f;
+    private static final float HOOK_SPREAD = 8.0f;
+    private static final float HOOK_FINGERS = 40.0f;
+    private static final float FLAT_CURL = -5.0f;
+    private static final float FLAT_SPREAD = 28.0f;
+    private static final float FLAT_FINGERS = 5.0f;
+    private static final float REACH_CURL = -10.0f;
+    private static final float REACH_SPREAD = 30.0f;
+    /** A free arm hanging while the other holds on: the claws resting on the floor just ahead. */
+    private static final float HANG_RAISE = 66.0f;
+    private static final float HANG_OUT = -7.0f;
+    private static final float HANG_BEND = 102.0f;
+    /** Opening the door: the arm flung out wide before it plants on the floor. */
+    private static final float RIP_SWING_RAISE = 60.0f;
+    private static final float RIP_SWING_OUT = 85.0f;
+    // What each arm wants this frame (gripControl): to hang in its pose, hold on near a place,
+    // or plant its claw on the floor at a place.
+    private static final int WISH_FREE = 0;
+    private static final int WISH_HOLD = 1;
+    private static final int WISH_FLOOR = 2;
+    // The parts of creeping round a hiding place, as the model plays them.
+    private static final int CREEP_ARRIVING = 0;
+    private static final int CREEP_PROWL = 1;
+    private static final int CREEP_RIP = 2;
+    // The head's spring while it creeps: slow and steady, no faster than AIM_CREEP_SPEED.
+    private static final float AIM_CREEP_HZ = 1.0f;
+    private static final float AIM_CREEP_SPEED = 1.0f;
+
     /** How far the legs splay out sideways this frame (radians). */
     private float legSplay;
 
@@ -965,11 +1102,13 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     private static final int PEEK = 6;
     private static final int STARE = 7;
     private static final int LEAP = 8;
+    private static final int CREEP = 9;
     // How the head is aimed: its own way, or locked on someone, acquired slowly, fast or exactly.
     private static final int AIM_NONE = 0;
     private static final int LOCK_SLOW = 1;
     private static final int LOCK_FAST = 2;
     private static final int LOCK_EXACT = 3;
+    private static final int LOCK_CREEP = 4;
 
     // The pose being built this frame (radians; pixels for the offsets). Each state fills these
     // in as targets, the one-shot moves bend them, the springs carry the joints toward them, the
@@ -1063,6 +1202,74 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     // Where the claws of the arm last measured are, from its middle (px): out to its side, and ahead.
     private float clawSide;
     private float clawAhead;
+    // ...and the full point of a claw (model px), worked out by clawPoint.
+    private float clawMX;
+    private float clawMY;
+    private float clawMZ;
+    // ...and how high its elbow is (model y; up is smaller), from the same chain.
+    private float clawElbowY;
+    // Where the body is in the world this frame (eased), and which way it faces (radians).
+    private double bodyX;
+    private double bodyY;
+    private double bodyZ;
+    private float bodyYawRad;
+    // A world point turned into model space (modelPoint), and back (worldPoint).
+    private float modelX;
+    private float modelY;
+    private float modelZ;
+    private double worldX;
+    private double worldY;
+    private double worldZ;
+    // Holding on (gripControl / holdArms): whether the grip controller runs this frame, what
+    // each arm wants and near which place, whether it may re-grip on its own, how long its reach
+    // takes (0 = its own rhythm) and how far it is lifted off midway; how firmly each arm is pinned
+    // to its hold (0..1), the claw's place this frame (world), and its hand's finger curl.
+    private boolean gripping;
+    private boolean gripMoving;
+    private final int[] wish = new int[2];
+    private final double[] wishX = new double[2];
+    private final double[] wishY = new double[2];
+    private final double[] wishZ = new double[2];
+    private final boolean[] wishRegrip = new boolean[2];
+    private final float[] wishReach = new float[2];
+    private final float[] wishLift = new float[2];
+    private final float[] gripExact = new float[2];
+    private final double[] clawGoalX = new double[2];
+    private final double[] clawGoalY = new double[2];
+    private final double[] clawGoalZ = new double[2];
+    private boolean fingersHold;
+    private final float[] fingerHold = new float[2];
+    // The highest an elbow may go (model y; up is smaller), from the ceiling.
+    private float elbowCeilingY;
+    // Creeping round a hiding place this frame: which part, how far into it (ticks), the prowl's
+    // length and side, the middle of the door on the floor (world), the way the door faces, and
+    // the place the head looks at (the hider's eyes).
+    private int creepPart;
+    private float creepAge;
+    private int creepLength;
+    private int creepSide;
+    private double doorX;
+    private double doorY;
+    private double doorZ;
+    private float openX;
+    private float openZ;
+    private boolean aimPointOn;
+    private double aimPX;
+    private double aimPY;
+    private double aimPZ;
+    // Feeling for a hold (findHold): the block looked at, and the best hold found.
+    private final BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos();
+    private double holdX;
+    private double holdY;
+    private double holdZ;
+    private float holdNX;
+    private float holdNZ;
+    private int holdKind;
+    // The arm angles solveArm worked out (radians).
+    private float ikRaise;
+    private float ikOut;
+    private float ikSplay;
+    private float ikBend;
 
     @Override
     public void setupAnim(Bacteria entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
@@ -1086,7 +1293,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         float speed = entity.gaitSpeed(partial);
         float moving = smooth((speed - 0.005f) / 0.04f);
         runness = smooth((speed - Bacteria.WALK_SPEED_PER_TICK) / (Bacteria.RUN_SPEED_PER_TICK - Bacteria.WALK_SPEED_PER_TICK));
-        float stride = Bacteria.strideBlocks(speed);
+        float stride = entity.strideFor(speed);
         float phase = entity.gaitPhase(partial);
         // A tick after each foot lands, as a share of the stride (the body's dip comes then).
         float strideTicks = Math.min(stride / Math.max(speed, 1.0e-3f), 60.0f);
@@ -1095,12 +1302,23 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         strikeBoth = false;
         float breath = Mth.sin(Mth.TWO_PI * entity.breathPhase(partial));
         lowArm = BacteriaRhythm.hash(seed, 1) > 0.0f ? 0 : 1;
+        // Where the body is in the world this frame, and which way it faces (for holding on to
+        // walls, and for aiming the head at a place).
+        bodyX = Mth.lerp(partial, entity.xo, entity.getX());
+        bodyY = Mth.lerp(partial, entity.yo, entity.getY());
+        bodyZ = Mth.lerp(partial, entity.zo, entity.getZ());
+        bodyYawRad = Mth.rotLerp(partial, entity.yBodyRotO, entity.yBodyRot) * DEG;
+        gripping = false;
+        gripMoving = speed > 0.04f;
+        aimPointOn = false;
 
         // Under a low ceiling (doorways, all of Level 2) it stoops instead of poking through.
         // (The model is drawn smaller than its own pixels, so a block of headroom is more of them.)
         room = entity.headroom(partial) * 16.0f / SCALE - 1.5f; // free height in model px, minus a margin
         float standing = HIP_HEIGHT + SPINE + NECK_AND_HEAD;
         squeeze = Mth.clamp((standing - room) / (standing - 46.5f), 0.0f, 1.0f);
+        // An elbow stays under the ceiling (model y: up is smaller).
+        elbowCeilingY = 24.0f - Math.min(entity.headroom(partial) - ELBOW_CEILING_MARGIN, ELBOW_TOP) * 16.0f / SCALE;
 
         // --- Which pose, which one-shot move is playing (its age in ticks, -1 = none), who it
         // looks at ----------------------------------------------------------------------------
@@ -1189,6 +1407,26 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
                     }
                     peekSide = BacteriaRhythm.hash(seed + 26, occurrence) > 0.0f ? 1 : -1;
                 }
+                case CREEP -> {
+                    // In place, in front of whatever is ahead of it (the "door" CREEP_POSE_DOOR
+                    // ahead): the prowl, then opening the door and craning in; with loop, again.
+                    state = CREEP;
+                    target = -1;
+                    creepLength = Bacteria.CREEP_POSE_TICKS;
+                    float round = creepLength + Bacteria.RIP_PULL_TICK + CREEP_POSE_TAIL;
+                    float a = loop ? f % round : f;
+                    creepPart = a < creepLength ? CREEP_PROWL : CREEP_RIP;
+                    creepAge = a < creepLength ? a : a - creepLength;
+                    creepSide = Bacteria.creepSide(entity.getId(), creepLength);
+                    openX = Mth.sin(bodyYawRad);
+                    openZ = -Mth.cos(bodyYawRad);
+                    doorX = bodyX - openX * CREEP_POSE_DOOR;
+                    doorY = bodyY;
+                    doorZ = bodyZ - openZ * CREEP_POSE_DOOR;
+                    aimPX = doorX - openX * 0.3;
+                    aimPY = doorY + CREEP_POSE_EYE;
+                    aimPZ = doorZ - openZ * 0.3;
+                }
                 default -> state = CALM; // IDLE
             }
         } else {
@@ -1244,6 +1482,33 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
                 target = entity.preyId();
             } else if (mode == Bacteria.Mode.SEARCH) {
                 state = SEARCH;
+            } else if (mode == Bacteria.Mode.CREEP) {
+                // Creeping round the hiding place: getting there, the prowl (from the moment it
+                // got there), then opening it (both told by the server as one-shot moves).
+                state = CREEP;
+                creepLength = Math.max(1, entity.creepLength());
+                creepSide = Bacteria.creepSide(entity.getId(), creepLength);
+                boolean current = occurrence >= entity.modeStamp();
+                if (current && action == Bacteria.Action.CREEP_RIP) {
+                    creepPart = CREEP_RIP;
+                    creepAge = since;
+                } else if (current && action == Bacteria.Action.CREEP) {
+                    creepPart = CREEP_PROWL;
+                    creepAge = since;
+                } else {
+                    creepPart = CREEP_ARRIVING;
+                    creepAge = entity.modeAge(partial);
+                }
+                Direction open = entity.creepOpen();
+                BlockPos spot = entity.creepSpot();
+                openX = open.getStepX();
+                openZ = open.getStepZ();
+                doorX = spot.getX() + 0.5 + openX * 0.5;
+                doorY = spot.getY();
+                doorZ = spot.getZ() + 0.5 + openZ * 0.5;
+                aimPX = doorX - openX * 0.3;
+                aimPY = doorY + entity.creepEye();
+                aimPZ = doorZ - openZ * 0.3;
             } else {
                 state = CALM;
                 target = memory.watchId;
@@ -1257,7 +1522,10 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
             case SEARCH -> {
                 calm(seed, t, moving, phase, stride, breath);
                 searchHead(seed, t);
+                // Searching, it feels its way along a wall with the hand on that side.
+                wallGrip(entity, memory, seed, t, -1);
             }
+            case CREEP -> creep(entity, memory, seed, t, moving, phase, stride, breath);
             case SPOTTED -> turn(seed, age, occurrence);
             case STARE -> stare(seed);
             case LEAP -> leap(age);
@@ -1283,7 +1551,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         if (hurt) {
             flinch(10.0f - entity.hurtTime + partial);
         }
-        if (state != CAGE && state != PEEK && state != LEAP && !swiping) {
+        if (state != CAGE && state != PEEK && state != LEAP && state != CREEP && !swiping) {
             // (Not the cage, planted wide around you on purpose, the peek, where the whole body
             // leans out from cover, nor the leap's brief T and the swipe, which are meant to be wide.)
             limitSpread(MAX_SPREAD);
@@ -1293,7 +1561,12 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         // where they were (one-shot moves included), then the step's waves go on top.
         springs(memory, dt, fresh, hurt);
         stepWaves(phase, stepLag);
+        if (gripping) {
+            // Held claws stay exactly where they took hold, whatever the body did this frame.
+            holdArms(memory);
+        }
         aimHead(entity, memory, partial, dt, fresh, target);
+        noteClaws(memory);
         apply();
         organs(entity, partial, ageInTicks);
     }
@@ -1687,6 +1960,812 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         }
     }
 
+    // ------------------------------------------------------------------ creeping round a hiding place
+
+    // Scratch for the grip controller: the shoulder (model px), the best hold's score so far,
+    // and whether held hands lie flat this frame (opening the door).
+    private float shX;
+    private float shY;
+    private float shZ;
+    private double holdScore;
+    private boolean flatHold;
+
+    /**
+     * Creeping round a hiding place it saw someone get into (local://bacteria_locker_motion.md):
+     * <p>Getting there: an ordinary walk, then a slow creep; the hand on the side of the hiding
+     * place feels its way along the wall, and if it has to come round a corner, that hand hooks
+     * round the corner while the body waits (the server stops it there).
+     * <p>The prowl, in front of the furniture (upright, leaning a little, the head on the hider's
+     * eyes, turning slowly, no twitching), by the beats of Bacteria.creepBeat: braced with both
+     * hands either side of the door, re-gripping slowly one hand at a time; edging to one side
+     * with that hand wrapped round the furniture's side; holding the furniture or wall next door
+     * with one hand, the other hanging, nearly frozen; the hanging hand takes hold again and the
+     * other reaches across the front; braced again; then still at the door, a hand on each edge.
+     * <p>Opening it: one arm flung out wide and planted on the floor, the other hand flat on the
+     * door frame; the body cranes in between them (14 ticks), and holds.
+     */
+    private void creep(Bacteria entity, BacteriaPoseState memory, int seed, float t, float m, float phase,
+                       float stride, float breath) {
+        calm(seed, t, m, phase, stride, breath);
+        headRoll = restingTilt(seed); // steady: no drift, no twitch
+        aimPointOn = true;
+        aimMode = LOCK_CREEP;
+        fingersLive = false;
+        flatHold = false;
+        for (int i = 0; i < 2; i++) {
+            wish[i] = WISH_FREE;
+            wishRegrip[i] = false;
+            wishReach[i] = 0.0f;
+            wishLift[i] = GRIP_LIFT_OUT;
+        }
+        if (creepPart == CREEP_ARRIVING) {
+            // On its way: the hand on the hiding place's side feels its way along the wall.
+            double toward = (doorX - bodyX) * Mth.cos(bodyYawRad) + (doorZ - bodyZ) * Mth.sin(bodyYawRad);
+            wallGrip(entity, memory, seed, t, toward >= 0.0 ? 1 : 0);
+            return;
+        }
+        lean = CREEP_LEAN * DEG + BREATH_DEG * DEG * breath;
+        int s = creepSide;
+        int sArm = s > 0 ? 1 : 0;   // the arm on that side (1 = its left)
+        int oArm = 1 - sArm;
+        hang(0);
+        hang(1);
+        if (creepPart == CREEP_PROWL) {
+            int beat = Bacteria.creepBeat(creepLength, creepAge);
+            float inBeat = creepAge - Bacteria.creepBeatStart(creepLength, beat);
+            switch (beat) {
+                case Bacteria.BEAT_WRAP -> {
+                    wishAt(sArm, s * WRAP_ALONG, -WRAP_BACK, WRAP_UP, false);
+                    wishAt(oArm, -s * BRACE_ALONG, 0.02f, BRACE_UP, false);
+                }
+                case Bacteria.BEAT_FREEZE -> {
+                    wishAt(sArm, s * NEIGHBOUR_ALONG, 0.02f, NEIGHBOUR_UP, false);
+                    // The other hand keeps its hold until this one has the furniture next door,
+                    // then hangs.
+                    if (inBeat < FREEZE_LET_GO) {
+                        wishAt(oArm, -s * BRACE_ALONG, 0.02f, BRACE_UP, false);
+                    }
+                }
+                case Bacteria.BEAT_ACROSS -> {
+                    wishAt(oArm, -s * BRACE_ALONG, 0.02f, BRACE_UP, false);
+                    if (inBeat < GRIP_REACH_MIN) {
+                        wishAt(sArm, s * NEIGHBOUR_ALONG, 0.02f, NEIGHBOUR_UP, false);
+                    } else {
+                        // (It only lets go once the other hand has held on for a moment.)
+                        wishAt(sArm, -s * ACROSS_ALONG, 0.02f, ACROSS_UP, false);
+                        wishReach[sArm] = 25.0f;
+                        wishLift[sArm] = ACROSS_LIFT_OUT;
+                    }
+                }
+                case Bacteria.BEAT_STAND -> {
+                    lean = CREEP_STAND_LEAN * DEG;
+                    wishAt(0, -DOOR_EDGE_ALONG, 0.02f, DOOR_EDGE_UP, false);
+                    wishAt(1, DOOR_EDGE_ALONG, 0.02f, DOOR_EDGE_UP, false);
+                }
+                default -> {
+                    wishAt(0, -BRACE_ALONG, 0.02f, BRACE_UP, true);
+                    wishAt(1, BRACE_ALONG, 0.02f, BRACE_UP, true);
+                }
+            }
+        } else {
+            creepRip(s, sArm, oArm);
+        }
+        fitLean();
+        gripControl(entity.level(), memory, seed, t);
+        // It leans a little toward the hand it holds on with.
+        float balance = 0.0f;
+        for (int i = 0; i < 2; i++) {
+            if (memory.gripMode[i] == BacteriaPoseState.GRIP_HOLDING) {
+                balance += i == 1 ? 0.5f : -0.5f;
+            }
+        }
+        sway += CREEP_SWAY * DEG * balance;
+    }
+
+    /**
+     * Opening the door ({@code creepAge} ticks in): the arm on the far side ({@code oArm}) is
+     * flung out wide (a strike, it keeps its snap) and then planted on the floor out to its side;
+     * the other hand stays on the door's edge, now flat against the frame; the body cranes in
+     * between them. After the pull (test pose only: in the game the chase takes over) it
+     * straightens up and lets go.
+     */
+    private void creepRip(int s, int sArm, int oArm) {
+        float r = creepAge;
+        float back = smooth((r - Bacteria.RIP_PULL_TICK) / 10.0f);
+        if (back < 0.3f) {
+            wishAt(sArm, s * DOOR_EDGE_ALONG, 0.02f, DOOR_EDGE_UP, false);
+            flatHold = true;
+            if (r < Bacteria.RIP_SWING_END) {
+                raise[oArm] = RIP_SWING_RAISE * DEG;
+                out[oArm] = RIP_SWING_OUT * DEG;
+                bend[oArm] = 0.0f;
+                curl[oArm] = -15.0f * DEG;
+                spread[oArm] = 30.0f * DEG;
+                strikeArm = oArm;
+            } else {
+                float ahead = RIP_PLANT_AHEAD;
+                float outSide = (oArm == 1 ? 1.0f : -1.0f) * RIP_PLANT_OUT;
+                wish[oArm] = WISH_FLOOR;
+                wishX[oArm] = bodyX + Mth.cos(bodyYawRad) * outSide - Mth.sin(bodyYawRad) * ahead;
+                wishY[oArm] = bodyY;
+                wishZ[oArm] = bodyZ + Mth.sin(bodyYawRad) * outSide + Mth.cos(bodyYawRad) * ahead;
+                wishReach[oArm] = Bacteria.RIP_PLANT_END - Bacteria.RIP_SWING_END;
+                wishLift[oArm] = 0.0f;
+            }
+        }
+        float crane = smooth((r - Bacteria.RIP_PLANT_END) / (Bacteria.RIP_CRANE_END - Bacteria.RIP_PLANT_END)) * (1.0f - back);
+        lean = Mth.lerp(crane, CREEP_STAND_LEAN, CRANE_LEAN) * DEG;
+        neckX += CRANE_NECK * DEG * crane;
+        neckForward += CRANE_NECK_FORWARD * crane;
+        headForward += CRANE_HEAD_FORWARD * crane;
+    }
+
+    /**
+     * Feeling its way along a wall with one hand (searching, or on its way to a hiding place):
+     * the hand on the side with a wall close by (preferably {@code preferArm}, -1 = either) holds
+     * on a little ahead of it, and takes a new hold further on as the body walks past the old one.
+     * The other arm carries on as it was.
+     */
+    private void wallGrip(Bacteria entity, BacteriaPoseState memory, int seed, float t, int preferArm) {
+        int arm = -1;
+        if (preferArm >= 0 && memory.narrow[preferArm] > 0.5f) {
+            arm = preferArm;
+        } else if (Math.max(memory.narrow[0], memory.narrow[1]) > 0.5f) {
+            arm = memory.narrow[1] > memory.narrow[0] ? 1 : 0;
+        }
+        for (int i = 0; i < 2; i++) {
+            wish[i] = WISH_FREE;
+            wishRegrip[i] = gripMoving;
+            wishReach[i] = 0.0f;
+            wishLift[i] = GRIP_LIFT_OUT;
+        }
+        if (arm >= 0) {
+            float side = arm == 1 ? 1.0f : -1.0f;
+            float aheadBy = gripMoving ? 1.2f : 0.7f;
+            float fx = -Mth.sin(bodyYawRad);
+            float fz = Mth.cos(bodyYawRad);
+            float lx = Mth.cos(bodyYawRad) * side;
+            float lz = Mth.sin(bodyYawRad) * side;
+            wish[arm] = WISH_HOLD;
+            wishX[arm] = bodyX + fx * aheadBy + lx * 1.1;
+            wishY[arm] = bodyY + 1.45;
+            wishZ[arm] = bodyZ + fz * aheadBy + lz * 1.1;
+        }
+        gripControl(entity.level(), memory, seed, t);
+    }
+
+    /** Arm {@code i} wants to hold on near this place: along the door, out from it, up from the floor (blocks). */
+    private void wishAt(int i, float along, float outFrom, float up, boolean regrip) {
+        // "Along" runs toward its left as it faces the door.
+        wish[i] = WISH_HOLD;
+        wishX[i] = doorX - openZ * along + openX * outFrom;
+        wishY[i] = doorY + up;
+        wishZ[i] = doorZ + openX * along + openZ * outFrom;
+        wishRegrip[i] = regrip;
+    }
+
+    /** A free arm hanging, its claws resting on the floor just ahead. */
+    private void hang(int i) {
+        raise[i] = HANG_RAISE * DEG;
+        out[i] = HANG_OUT * DEG;
+        splay[i] = 0.0f;
+        bend[i] = HANG_BEND * DEG;
+        foreOut[i] = 0.0f;
+        curl[i] = 8.0f * DEG;
+        spread[i] = 6.0f * DEG;
+    }
+
+    /**
+     * The grip controller: for each arm, from what it wants this frame (wish), decides whether to
+     * keep holding, reach for a new hold, or let go, and poses the arm. A reach starts from where
+     * the claw really is and travels to the new hold along an arc lifted off the surface (slowly:
+     * 20-30 ticks, or as the beat says), easing the arm from its own pose onto the hold; a hold
+     * lasts 40-100 ticks (re-gripping only where the beat allows). One hand only lets go once the
+     * other has held on for GRIP_HANDOVER ticks. A held claw stays exactly where it took hold
+     * (holdArms puts it back there after the springs and the step's waves). Arm angles come from
+     * the hold (solveArm); the hand hooks over an edge or lies flat on a face. Nothing is created.
+     */
+    private void gripControl(Level level, BacteriaPoseState m, int seed, float t) {
+        gripping = true;
+        for (int i = 0; i < 2; i++) {
+            int other = 1 - i;
+            int mode = m.gripMode[i];
+            if (wish[i] == WISH_FREE) {
+                m.gripMode[i] = BacteriaPoseState.GRIP_FREE;
+            } else {
+                boolean handover = m.gripMode[other] != BacteriaPoseState.GRIP_REACHING
+                        && (m.gripMode[other] == BacteriaPoseState.GRIP_FREE || t - m.holdStart[other] >= GRIP_HANDOVER);
+                if (mode == BacteriaPoseState.GRIP_FREE) {
+                    if (t >= m.senseAfter[i] && handover) {
+                        startReach(level, m, seed, i, t);
+                    }
+                } else if (mode == BacteriaPoseState.GRIP_HOLDING) {
+                    shoulderModel(i);
+                    toWorld(shX, shY, shZ);
+                    double gx = m.gripX[i] - worldX;
+                    double gy = m.gripY[i] - worldY;
+                    double gz = m.gripZ[i] - worldZ;
+                    boolean lost = Math.sqrt(gx * gx + gy * gy + gz * gz) > GRIP_LET_GO;
+                    boolean behind = -gx * Mth.sin(bodyYawRad) + gz * Mth.cos(bodyYawRad) < -GRIP_BEHIND;
+                    double wx = wishX[i] - m.wantX[i];
+                    double wy = wishY[i] - m.wantY[i];
+                    double wz = wishZ[i] - m.wantZ[i];
+                    boolean moved = !gripMoving && wx * wx + wy * wy + wz * wz > 0.16 && t - m.holdStart[i] >= GRIP_SETTLE;
+                    boolean due = wishRegrip[i] && t - m.holdStart[i] >= m.holdLen[i];
+                    if (lost) {
+                        m.gripMode[i] = BacteriaPoseState.GRIP_FREE; // out of reach: let go at once
+                    } else if ((behind || moved || due) && handover) {
+                        startReach(level, m, seed, i, t);
+                    }
+                } else if (t - m.reachStart[i] >= m.reachLen[i]) {
+                    m.gripMode[i] = BacteriaPoseState.GRIP_HOLDING;
+                    m.holdStart[i] = t;
+                    m.gripLanded++;
+                }
+            }
+            poseHold(m, i, t);
+        }
+        // The fingers take the hand's shape while a hand holds on (otherwise they curl on their own).
+        fingersHold = m.gripMode[0] != BacteriaPoseState.GRIP_FREE || m.gripMode[1] != BacteriaPoseState.GRIP_FREE;
+    }
+
+    /** Starts arm {@code i}'s reach for a new hold near what it wants (or on the floor), or leaves it free if there is none. */
+    private void startReach(Level level, BacteriaPoseState m, int seed, int i, float t) {
+        int n = m.gripCount[i];
+        if (wish[i] == WISH_FLOOR) {
+            holdX = wishX[i];
+            holdY = wishY[i];
+            holdZ = wishZ[i];
+            holdNX = 0.0f;
+            holdNZ = 0.0f;
+            holdKind = BacteriaPoseState.HOLD_FLOOR;
+        } else {
+            // Each new hold moves a little, so the re-grips shift its grip a few degrees.
+            double jx = wishRegrip[i] ? GRIP_JITTER * BacteriaRhythm.hash(seed + 930 + i, n) : 0.0;
+            double jy = wishRegrip[i] ? 0.8 * GRIP_JITTER * BacteriaRhythm.hash(seed + 940 + i, n) : 0.0;
+            double jz = wishRegrip[i] ? GRIP_JITTER * BacteriaRhythm.hash(seed + 950 + i, n) : 0.0;
+            if (!findHold(level, i, wishX[i] + jx, wishY[i] + jy, wishZ[i] + jz)) {
+                m.gripMode[i] = BacteriaPoseState.GRIP_FREE;
+                m.senseAfter[i] = t + GRIP_RETRY;
+                return;
+            }
+        }
+        if (m.clawsKnown) {
+            m.fromX[i] = m.clawX[i];
+            m.fromY[i] = m.clawY[i];
+            m.fromZ[i] = m.clawZ[i];
+        } else {
+            m.fromX[i] = holdX;
+            m.fromY[i] = holdY;
+            m.fromZ[i] = holdZ;
+        }
+        m.gripX[i] = holdX;
+        m.gripY[i] = holdY;
+        m.gripZ[i] = holdZ;
+        m.gripNX[i] = holdNX;
+        m.gripNZ[i] = holdNZ;
+        m.gripKind[i] = holdKind;
+        m.wantX[i] = wishX[i];
+        m.wantY[i] = wishY[i];
+        m.wantZ[i] = wishZ[i];
+        m.reachStart[i] = t;
+        if (wishReach[i] > 0.0f) {
+            m.reachLen[i] = wishReach[i];
+        } else if (gripMoving) {
+            m.reachLen[i] = GRIP_MOVING_REACH;
+        } else {
+            m.reachLen[i] = Mth.lerp(BacteriaRhythm.unit(seed + 910 + i, n), GRIP_REACH_MIN, GRIP_REACH_MAX);
+        }
+        m.holdLen[i] = gripMoving
+                ? Mth.lerp(BacteriaRhythm.unit(seed + 900 + i, n), GRIP_MOVING_HOLD_MIN, GRIP_MOVING_HOLD_MAX)
+                : Mth.lerp(BacteriaRhythm.unit(seed + 900 + i, n), GRIP_HOLD_MIN, GRIP_HOLD_MAX);
+        m.gripMode[i] = BacteriaPoseState.GRIP_REACHING;
+        m.gripCount[i] = n + 1;
+    }
+
+    /**
+     * Poses arm {@code i} for this frame from its hold: where the claw should be (the hold, or on
+     * its way there along the lifted arc), how firmly the arm is pinned to it, the hand's shape,
+     * and the arm angles that put the claw there (with the pose being built: holdArms corrects
+     * them for the body as finally shown).
+     */
+    private void poseHold(BacteriaPoseState m, int i, float t) {
+        int mode = m.gripMode[i];
+        if (mode == BacteriaPoseState.GRIP_FREE) {
+            gripExact[i] = 0.0f;
+            fingerHold[i] = 10.0f;
+            return;
+        }
+        int kind = m.gripKind[i];
+        double gx = m.gripX[i];
+        double gy = m.gripY[i];
+        double gz = m.gripZ[i];
+        float open = 0.0f;
+        float exact = 1.0f;
+        if (mode == BacteriaPoseState.GRIP_REACHING) {
+            float u = Mth.clamp((t - m.reachStart[i]) / Math.max(m.reachLen[i], 1.0f), 0.0f, 1.0f);
+            float s = smooth(u);
+            float lift = Mth.sin(Mth.PI * u);
+            open = lift;
+            // From its own pose onto the hold over the first half of the reach.
+            exact = smooth(u * 2.0f);
+            float liftOut = kind == BacteriaPoseState.HOLD_FLOOR ? 0.0f : wishLift[i];
+            float liftUp = kind == BacteriaPoseState.HOLD_FLOOR ? 0.3f : GRIP_LIFT_UP;
+            gx = Mth.lerp(s, m.fromX[i], gx) + m.gripNX[i] * liftOut * lift;
+            gy = Mth.lerp(s, m.fromY[i], gy) + liftUp * lift;
+            gz = Mth.lerp(s, m.fromZ[i], gz) + m.gripNZ[i] * liftOut * lift;
+        }
+        clawGoalX[i] = gx;
+        clawGoalY[i] = gy;
+        clawGoalZ[i] = gz;
+        // The hand: hooked over an edge, flat on a face (or on the door frame), planted on the
+        // floor; open while it reaches.
+        boolean hooked = !flatHold && (kind == BacteriaPoseState.HOLD_EDGE || kind == BacteriaPoseState.HOLD_TOP);
+        float handCurl = kind == BacteriaPoseState.HOLD_FLOOR ? 10.0f : hooked ? HOOK_CURL : FLAT_CURL;
+        float handSpread = kind == BacteriaPoseState.HOLD_FLOOR ? 20.0f : hooked ? HOOK_SPREAD : FLAT_SPREAD;
+        float handFingers = kind == BacteriaPoseState.HOLD_FLOOR ? 10.0f : hooked ? HOOK_FINGERS : FLAT_FINGERS;
+        curl[i] = Mth.lerp(open, handCurl, REACH_CURL) * DEG;
+        spread[i] = Mth.lerp(open, handSpread, REACH_SPREAD) * DEG;
+        fingerHold[i] = Mth.lerp(open, handFingers, 0.0f);
+        toModel(gx, gy, gz);
+        solveArm(i, modelX, modelY, modelZ);
+        raise[i] = Mth.lerp(exact, raise[i], ikRaise);
+        out[i] = Mth.lerp(exact, out[i], ikOut);
+        splay[i] = Mth.lerp(exact, splay[i], ikSplay);
+        bend[i] = Mth.lerp(exact, bend[i], ikBend);
+        foreOut[i] = Mth.lerp(exact, foreOut[i], 0.0f);
+        armPlant[i] = Math.max(armPlant[i], exact);
+        gripExact[i] = exact;
+    }
+
+    /**
+     * After the springs and the step's waves: each arm pinned to a hold is solved again for the
+     * body exactly as it will be shown, so its claw stays on the hold (no sliding), and the
+     * springs are told, so the arm carries on smoothly from there when it lets go.
+     */
+    private void holdArms(BacteriaPoseState m) {
+        for (int i = 0; i < 2; i++) {
+            float e = gripExact[i];
+            if (e <= 0.0f) {
+                continue;
+            }
+            toModel(clawGoalX[i], clawGoalY[i], clawGoalZ[i]);
+            solveArm(i, modelX, modelY, modelZ);
+            raise[i] = Mth.lerp(e, raise[i], ikRaise);
+            out[i] = Mth.lerp(e, out[i], ikOut);
+            splay[i] = Mth.lerp(e, splay[i], ikSplay);
+            bend[i] = Mth.lerp(e, bend[i], ikBend);
+            foreOut[i] = Mth.lerp(e, foreOut[i], 0.0f);
+            pinSpring(m, CH_RAISE + i, raise[i], e);
+            pinSpring(m, CH_OUT + i, out[i], e);
+            pinSpring(m, CH_SPLAY + i, splay[i], e);
+            pinSpring(m, CH_BEND + i, bend[i], e);
+            pinSpring(m, CH_FORE + i, foreOut[i], e);
+        }
+    }
+
+    /** Tells spring {@code ch} that it is shown at {@code value} (its speed dies away by {@code e}). */
+    private static void pinSpring(BacteriaPoseState m, int ch, float value, float e) {
+        m.springPos[ch] = value;
+        m.springVel[ch] *= 1.0f - e;
+    }
+
+    /**
+     * Feels for a hold for arm {@code i} near the place ({@code px}, {@code py}, {@code pz}): from
+     * the shoulder along GRIP_ANGLES (straight ahead round to that arm's side) at GRIP_HEIGHTS
+     * above its feet, out to GRIP_FAR, the first solid block each way. A hold must be on an
+     * upright face with air in front of it, 0.8-2.6 blocks from the shoulder. An upright edge
+     * (a corner, the side of a locker) or a top edge (the top of furniture 1-1.9 blocks high) is
+     * better than a flat face: the claws can hook over it. The best one (an edge, near the
+     * place, about 1.5 blocks up) goes into holdX/Y/Z, holdNX/NZ (which way the face faces) and
+     * holdKind. Only done when a claw is about to take a new hold, never every frame.
+     */
+    private boolean findHold(Level level, int i, double px, double py, double pz) {
+        float side = i == 0 ? -1.0f : 1.0f;
+        shoulderModel(i);
+        toWorld(shX, shY, shZ);
+        double sx = worldX;
+        double sy = worldY;
+        double sz = worldZ;
+        float fx = -Mth.sin(bodyYawRad);
+        float fz = Mth.cos(bodyYawRad);
+        float lx = Mth.cos(bodyYawRad) * side;
+        float lz = Mth.sin(bodyYawRad) * side;
+        holdScore = -1.0e9;
+        boolean found = false;
+        for (float h : GRIP_HEIGHTS) {
+            double y = bodyY + h;
+            int cy = Mth.floor(y);
+            for (float angle : GRIP_ANGLES) {
+                float a = angle * DEG;
+                float dx = fx * Mth.cos(a) + lx * Mth.sin(a);
+                float dz = fz * Mth.cos(a) + lz * Mth.sin(a);
+                int pcx = Mth.floor(sx + dx * GRIP_START);
+                int pcz = Mth.floor(sz + dz * GRIP_START);
+                if (solid(level, pcx, cy, pcz)) {
+                    continue; // starts inside something
+                }
+                for (float d = GRIP_START + GRIP_STEP; d <= GRIP_FAR; d += GRIP_STEP) {
+                    int cx = Mth.floor(sx + dx * d);
+                    int cz = Mth.floor(sz + dz * d);
+                    if (cx == pcx && cz == pcz) {
+                        continue;
+                    }
+                    if (solid(level, cx, cy, cz)) {
+                        found |= tryHold(level, cx, cy, cz, pcx, pcz, sx, sy, sz, dx, dz, y, px, py, pz);
+                        break;
+                    }
+                    pcx = cx;
+                    pcz = cz;
+                }
+            }
+        }
+        return found;
+    }
+
+    /**
+     * One ray of findHold entered solid block (cx, cy, cz) from (pcx, cz/pcz): works out which
+     * face it hit and where, whether that face will do, what kind of hold it is, and keeps it if
+     * it is the best so far. True if it was kept.
+     */
+    private boolean tryHold(Level level, int cx, int cy, int cz, int pcx, int pcz, double sx, double sy, double sz,
+                            float dx, float dz, double y, double px, double py, double pz) {
+        int hx = cx;
+        int hz = cz;
+        int nx = 0;
+        int nz = 0;
+        if (cx != pcx && cz != pcz) {
+            // It crossed a corner diagonally: which of the two faces did it really hit?
+            if (solid(level, cx, cy, pcz)) {
+                hz = pcz;
+                nx = pcx - cx;
+            } else if (solid(level, pcx, cy, cz)) {
+                hx = pcx;
+                nz = pcz - cz;
+            } else if (Math.abs(dx) > Math.abs(dz)) {
+                nx = pcx - cx;
+            } else {
+                nz = pcz - cz;
+            }
+        } else if (cx != pcx) {
+            nx = pcx - cx;
+        } else {
+            nz = pcz - cz;
+        }
+        if (solid(level, hx + nx, cy, hz + nz)) {
+            return false; // no air in front of that face
+        }
+        double hitX;
+        double hitZ;
+        if (nx != 0) {
+            hitX = nx > 0 ? hx + 1.0 : hx;
+            hitZ = sz + dz * (hitX - sx) / dx;
+        } else {
+            hitZ = nz > 0 ? hz + 1.0 : hz;
+            hitX = sx + dx * (hitZ - sz) / dz;
+        }
+        double hitY = y;
+        double ex = hitX - sx;
+        double ey = hitY - sy;
+        double ez = hitZ - sz;
+        double reach = Math.sqrt(ex * ex + ey * ey + ez * ez);
+        if (reach < GRIP_NEAR || reach > GRIP_FAR) {
+            return false;
+        }
+        // Not right alongside the body unless it is far enough out for the elbow to stay wide.
+        float faceX = -Mth.sin(bodyYawRad);
+        float faceZ = Mth.cos(bodyYawRad);
+        double ahead = ex * faceX + ez * faceZ;
+        if (ahead < Math.sqrt(ex * ex + ez * ez) * Mth.cos(GRIP_SIDE_ANGLE * DEG) && reach < GRIP_SIDE_FAR) {
+            return false;
+        }
+        // Along the face, toward the shoulder: is the block beside it open (an upright edge)?
+        int tx = nz != 0 ? 1 : 0;
+        int tz = nx != 0 ? 1 : 0;
+        if ((sx - hitX) * tx + (sz - hitZ) * tz < 0.0) {
+            tx = -tx;
+            tz = -tz;
+        }
+        int kind = BacteriaPoseState.HOLD_FACE;
+        boolean low = hitY - bodyY < GRIP_LOW;
+        boolean topOpen = !solid(level, hx, cy + 1, hz) && cy + 1 - bodyY >= GRIP_LOW && cy + 1 - bodyY <= GRIP_HIGH;
+        if (low && !topOpen) {
+            return false; // too low to hold on to (only the top of low furniture will do)
+        }
+        if (!low && !solid(level, hx + tx, cy, hz + tz) && !solid(level, hx + tx + nx, cy, hz + tz + nz)) {
+            kind = BacteriaPoseState.HOLD_EDGE;
+            if (tx != 0) {
+                hitX = tx > 0 ? hx + 0.95 : hx + 0.05;
+            } else {
+                hitZ = tz > 0 ? hz + 0.95 : hz + 0.05;
+            }
+        } else if (topOpen) {
+            // The top edge of something low enough to reach over: the claws hook over it.
+            kind = BacteriaPoseState.HOLD_TOP;
+            hitY = cy + 1.02;
+            hitX -= nx * 0.1;
+            hitZ -= nz * 0.1;
+        } else {
+            // A flat face: the claws rest just on it.
+            hitX += nx * 0.04;
+            hitZ += nz * 0.04;
+        }
+        double qx = hitX - px;
+        double qy = hitY - py;
+        double qz = hitZ - pz;
+        double score = (kind != BacteriaPoseState.HOLD_FACE ? 1.0 : 0.0) - 0.3 * Math.sqrt(qx * qx + qy * qy + qz * qz)
+                - 0.5 * Math.abs(hitY - bodyY - 1.5);
+        if (score <= holdScore) {
+            return false;
+        }
+        holdScore = score;
+        holdX = hitX;
+        holdY = hitY;
+        holdZ = hitZ;
+        holdNX = nx;
+        holdNZ = nz;
+        holdKind = kind;
+        return true;
+    }
+
+    /** True if block (x, y, z) has something solid to hold. */
+    private boolean solid(Level level, int x, int y, int z) {
+        probe.set(x, y, z);
+        return !level.getBlockState(probe).getCollisionShape(level, probe).isEmpty();
+    }
+
+    /** Arm {@code i}'s shoulder joint (model px, into shX/shY/shZ) with this frame's body (and matSpine set). */
+    private void shoulderModel(int i) {
+        float side = i == 0 ? -1.0f : 1.0f;
+        rotation(matSpine, sway, spineYaw, lean);
+        float sy = -SPINE + (i == lowArm ? LOW_SHOULDER_DROP : 0.0f);
+        float sz = i == lowArm ? -LOW_SHOULDER_FORWARD : 0.0f;
+        shX = matSpine[0] * side * SHOULDER_HALF + matSpine[1] * sy + matSpine[2] * sz;
+        shY = 24.0f - HIP_HEIGHT + drop + bob + matSpine[3] * side * SHOULDER_HALF + matSpine[4] * sy + matSpine[5] * sz;
+        shZ = matSpine[6] * side * SHOULDER_HALF + matSpine[7] * sy + matSpine[8] * sz;
+    }
+
+    /**
+     * The arm angles (into ikRaise/ikOut/ikSplay/ikBend) that put arm {@code i}'s claw tip on
+     * model point ({@code tx}, {@code ty}, {@code tz}) with this frame's body and hand curl. A
+     * two-bone reach: the elbow sits where the upper arm and forearm meet (law of cosines),
+     * pointing out to its own side and a little up like a spider's leg (never above about the top
+     * of its head, nor near a low ceiling). The joints are a little offset from the bones' lines, so it measures where
+     * the claw really ends up and corrects (keeping the closest try), then nudges the raise,
+     * swing and elbow a few times until the claw is within a tiny fraction of a block.
+     */
+    private void solveArm(int i, float tx, float ty, float tz) {
+        float side = i == 0 ? -1.0f : 1.0f;
+        float c = curl[i];
+        float a = Mth.sqrt(2.25f + UPPER_ARM * UPPER_ARM);
+        float hx = side * (1.5f + 0.9f * ARM_STRETCH);
+        float hy = FOREARM + CLAW_TIP * Mth.cos(c);
+        float hz = -0.5f + CLAW_TIP * Mth.sin(c);
+        float b = Mth.sqrt(hx * hx + hy * hy + hz * hz);
+        float ax = tx;
+        float ay = ty;
+        float az = tz;
+        float bestMiss = Float.MAX_VALUE;
+        float bestRaise = 0.0f;
+        float bestOut = 0.0f;
+        float bestSplay = 0.0f;
+        float bestBend = 0.0f;
+        for (int pass = 0; pass < IK_PASSES; pass++) {
+            shoulderModel(i);
+            aimArm(side, ax, ay, az, a, b);
+            clawPoint(i, ikRaise, ikOut, ikSplay, ikBend, 0.0f, c);
+            float mx = tx - clawMX;
+            float my = ty - clawMY;
+            float mz = tz - clawMZ;
+            float miss = Mth.sqrt(mx * mx + my * my + mz * mz) + IK_OVER_COST * Math.max(elbowCeilingY - clawElbowY, 0.0f);
+            if (miss < bestMiss) {
+                bestMiss = miss;
+                bestRaise = ikRaise;
+                bestOut = ikOut;
+                bestSplay = ikSplay;
+                bestBend = ikBend;
+            }
+            ax += mx;
+            ay += my;
+            az += mz;
+        }
+        ikRaise = bestRaise;
+        ikOut = bestOut;
+        ikSplay = bestSplay;
+        ikBend = bestBend;
+        polishArm(i, tx, ty, tz, c);
+    }
+
+    /**
+     * Nudges ikRaise, ikOut and ikBend (damped least squares: a cautious Newton step on the three
+     * angles, measured by moving each a little) until the claw is within IK_CLOSE px of the point.
+     * A nudge that would lift the elbow over the limit is not taken (better a claw a hair off its
+     * hold than an elbow sticking up over the head).
+     */
+    private void polishArm(int i, float tx, float ty, float tz, float c) {
+        for (int it = 0; it < IK_POLISH; it++) {
+            clawPoint(i, ikRaise, ikOut, ikSplay, ikBend, 0.0f, c);
+            float ex = tx - clawMX;
+            float ey = ty - clawMY;
+            float ez = tz - clawMZ;
+            if (ex * ex + ey * ey + ez * ez < IK_CLOSE * IK_CLOSE) {
+                return;
+            }
+            float elbowBefore = clawElbowY;
+            float cx = clawMX;
+            float cy = clawMY;
+            float cz = clawMZ;
+            // How the claw moves for a small turn of each angle (columns r, o, b).
+            clawPoint(i, ikRaise + IK_NUDGE, ikOut, ikSplay, ikBend, 0.0f, c);
+            float rx = (clawMX - cx) / IK_NUDGE;
+            float ry = (clawMY - cy) / IK_NUDGE;
+            float rz = (clawMZ - cz) / IK_NUDGE;
+            clawPoint(i, ikRaise, ikOut + IK_NUDGE, ikSplay, ikBend, 0.0f, c);
+            float ox = (clawMX - cx) / IK_NUDGE;
+            float oy = (clawMY - cy) / IK_NUDGE;
+            float oz = (clawMZ - cz) / IK_NUDGE;
+            clawPoint(i, ikRaise, ikOut, ikSplay, ikBend + IK_NUDGE, 0.0f, c);
+            float bx = (clawMX - cx) / IK_NUDGE;
+            float by = (clawMY - cy) / IK_NUDGE;
+            float bz = (clawMZ - cz) / IK_NUDGE;
+            // (J^T J + damping) step = J^T miss, solved by Cramer's rule.
+            float a00 = rx * rx + ry * ry + rz * rz + IK_DAMPING;
+            float a01 = rx * ox + ry * oy + rz * oz;
+            float a02 = rx * bx + ry * by + rz * bz;
+            float a11 = ox * ox + oy * oy + oz * oz + IK_DAMPING;
+            float a12 = ox * bx + oy * by + oz * bz;
+            float a22 = bx * bx + by * by + bz * bz + IK_DAMPING;
+            float g0 = rx * ex + ry * ey + rz * ez;
+            float g1 = ox * ex + oy * ey + oz * ez;
+            float g2 = bx * ex + by * ey + bz * ez;
+            float det = a00 * (a11 * a22 - a12 * a12) - a01 * (a01 * a22 - a12 * a02) + a02 * (a01 * a12 - a11 * a02);
+            if (Math.abs(det) < 1.0e-6f) {
+                return;
+            }
+            float s0 = (g0 * (a11 * a22 - a12 * a12) - a01 * (g1 * a22 - a12 * g2) + a02 * (g1 * a12 - a11 * g2)) / det;
+            float s1 = (a00 * (g1 * a22 - a12 * g2) - g0 * (a01 * a22 - a12 * a02) + a02 * (a01 * g2 - g1 * a02)) / det;
+            float s2 = (a00 * (a11 * g2 - g1 * a12) - a01 * (a01 * g2 - g1 * a02) + g0 * (a01 * a12 - a11 * a02)) / det;
+            clawPoint(i, ikRaise + s0, ikOut + s1, ikSplay, ikBend + s2, 0.0f, c);
+            if (clawElbowY < elbowCeilingY && clawElbowY < elbowBefore) {
+                return;
+            }
+            ikRaise += s0;
+            ikOut += s1;
+            ikBend += s2;
+        }
+    }
+
+    /**
+     * One pass of solveArm: from the shoulder (shX/shY/shZ, matSpine set) the arm of bones
+     * {@code a} and {@code b} to point ({@code tx}, {@code ty}, {@code tz}).
+     */
+    private void aimArm(float side, float tx, float ty, float tz, float a, float b) {
+        float dx = tx - shX;
+        float dy = ty - shY;
+        float dz = tz - shZ;
+        float d = Mth.sqrt(dx * dx + dy * dy + dz * dz);
+        if (d < 1.0e-3f) {
+            dy = 1.0f;
+            d = 1.0f;
+        }
+        float ux = dx / d;
+        float uy = dy / d;
+        float uz = dz / d;
+        float dc = Mth.clamp(d, Math.abs(a - b) + 0.5f, a + b - 0.5f);
+        float cosA = Mth.clamp((a * a + dc * dc - b * b) / (2.0f * a * dc), -1.0f, 1.0f);
+        float sinA = Mth.sqrt(1.0f - cosA * cosA);
+        // The elbow: out to its own side and a little up, or tipped further down round its side
+        // as far as it must be to stay under the limit (head-top height, or a low ceiling).
+        float ex = shX;
+        float ey = shY;
+        float ez = shZ;
+        boolean placed = false;
+        for (int k = 0; k <= IK_POLES; k++) {
+            float w = (float) k / IK_POLES;
+            float px = side;
+            float py = -ELBOW_POLE_UP + (ELBOW_POLE_UP + ELBOW_POLE_DOWN) * w;
+            float dot = px * ux + py * uy;
+            float qx = px - dot * ux;
+            float qy = py - dot * uy;
+            float qz = -dot * uz;
+            float ql = Mth.sqrt(qx * qx + qy * qy + qz * qz);
+            if (ql < 1.0e-3f) {
+                continue;
+            }
+            float nx = shX + ux * a * cosA + qx / ql * a * sinA;
+            float ny = shY + uy * a * cosA + qy / ql * a * sinA;
+            float nz = shZ + uz * a * cosA + qz / ql * a * sinA;
+            // Keep the lowest elbow so far, in case none is under the limit.
+            if (!placed || ny > ey) {
+                placed = true;
+                ex = nx;
+                ey = ny;
+                ez = nz;
+            }
+            if (ny >= elbowCeilingY) {
+                break;
+            }
+        }
+        // The upper arm's and the forearm's directions, in the chest's own frame (the spine's
+        // lean, rock and twist taken back off: matSpine turned the other way).
+        float ux1 = (ex - shX) / a;
+        float uy1 = (ey - shY) / a;
+        float uz1 = (ez - shZ) / a;
+        float fx0 = shX + ux * dc - ex;
+        float fy0 = shY + uy * dc - ey;
+        float fz0 = shZ + uz * dc - ez;
+        float fl = Math.max(Mth.sqrt(fx0 * fx0 + fy0 * fy0 + fz0 * fz0), 1.0e-4f);
+        float yx = matSpine[0] * ux1 + matSpine[3] * uy1 + matSpine[6] * uz1;
+        float yy = matSpine[1] * ux1 + matSpine[4] * uy1 + matSpine[7] * uz1;
+        float yz = matSpine[2] * ux1 + matSpine[5] * uy1 + matSpine[8] * uz1;
+        float gx = (matSpine[0] * fx0 + matSpine[3] * fy0 + matSpine[6] * fz0) / fl;
+        float gy = (matSpine[1] * fx0 + matSpine[4] * fy0 + matSpine[7] * fz0) / fl;
+        float gz = (matSpine[2] * fx0 + matSpine[5] * fy0 + matSpine[8] * fz0) / fl;
+        // The arm's own frame: Y along the upper arm, Z the way the forearm bends, X = Y x Z.
+        float along = gx * yx + gy * yy + gz * yz;
+        float zx = gx - along * yx;
+        float zy = gy - along * yy;
+        float zz = gz - along * yz;
+        float zl = Mth.sqrt(zx * zx + zy * zy + zz * zz);
+        if (zl < 1.0e-4f) {
+            // Straight arm: any bend direction will do; take the one facing forward.
+            zx = -yx * yz;
+            zy = -yy * yz;
+            zz = 1.0f - yz * yz;
+            float l = Math.max(Mth.sqrt(zx * zx + zy * zy + zz * zz), 1.0e-4f);
+            zx /= l;
+            zy /= l;
+            zz /= l;
+        } else {
+            zx /= zl;
+            zy /= zl;
+            zz /= zl;
+        }
+        float xx = yy * zz - yz * zy;
+        float xy = yz * zx - yx * zz;
+        float xz = yx * zy - yy * zx;
+        // Read the ModelPart angles (Z, then Y, then X) back out of that frame.
+        float turn = (float) Math.asin(Mth.clamp(-xz, -1.0f, 1.0f));
+        float pitch = (float) Mth.atan2(yz, zz);
+        float roll = (float) Mth.atan2(xy, xx);
+        ikRaise = -pitch - lean;
+        ikOut = -side * turn;
+        ikSplay = -side * roll;
+        ikBend = (float) Mth.atan2(zl, along);
+    }
+
+    /** A world point into model space (modelX/Y/Z, px), for this frame's body. */
+    private void toModel(double wx, double wy, double wz) {
+        float c = Mth.cos(bodyYawRad);
+        float s = Mth.sin(bodyYawRad);
+        double dx = wx - bodyX;
+        double dz = wz - bodyZ;
+        modelX = (float) ((dx * c + dz * s) * 16.0 / SCALE);
+        modelY = (float) (24.0 - (wy - bodyY) * 16.0 / SCALE);
+        modelZ = (float) ((dx * s - dz * c) * 16.0 / SCALE);
+    }
+
+    /** A model point (px) into the world (worldX/Y/Z), for this frame's body (the renderer turns it to the body's yaw and flips it). */
+    private void toWorld(float mx, float my, float mz) {
+        float c = Mth.cos(bodyYawRad);
+        float s = Mth.sin(bodyYawRad);
+        worldX = bodyX + (mx * c + mz * s) / 16.0f * SCALE;
+        worldY = bodyY + (24.0f - my) / 16.0f * SCALE;
+        worldZ = bodyZ + (mx * s - mz * c) / 16.0f * SCALE;
+    }
+
+    /** Notes where each claw tip is shown this frame (world), so the next reach starts from there. */
+    private void noteClaws(BacteriaPoseState m) {
+        for (int i = 0; i < 2; i++) {
+            clawPoint(i, raise[i], out[i], splay[i], bend[i], foreOut[i], curl[i]);
+            toWorld(clawMX, clawMY, clawMZ);
+            m.clawX[i] = worldX;
+            m.clawY[i] = worldY;
+            m.clawZ[i] = worldZ;
+        }
+        m.clawsKnown = true;
+    }
+
     // ------------------------------------------------------------------ one-shot moves
 
     /**
@@ -1813,7 +2892,9 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         for (int i = 0; i < 2; i++) {
             for (int f = 0; f < 3; f++) {
                 float c = fingerRest;
-                if (fingersCycle) {
+                if (fingersHold) {
+                    c = fingerHold[i] + 3.0f * (f - 1);
+                } else if (fingersCycle) {
                     c = fingerCycle[i] + 4.0f * (f - 1);
                 } else if (fingersLive) {
                     int s = seed + 400 + 3 * i + f;
@@ -2061,7 +3142,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         float hz;
         float damp;
         float topSpeed;
-        if (target != null) {
+        if (target != null || aimPointOn) {
             // Where its head is in model space: hips, up the spine, the neck, about 4.6 px up it.
             float hipY = 24.0f - HIP_HEIGHT + drop + bob;
             float nx = matA[1] * -SPINE + matA[2] * -neckForward;
@@ -2078,9 +3159,10 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
             double worldX = Mth.lerp(partial, entity.xo, entity.getX()) + (px * cos + pz * sin) / 16.0f * SCALE;
             double worldY = Mth.lerp(partial, entity.yo, entity.getY()) + (24.0f - py) / 16.0f * SCALE;
             double worldZ = Mth.lerp(partial, entity.zo, entity.getZ()) + (px * sin - pz * cos) / 16.0f * SCALE;
-            double dx = Mth.lerp(partial, target.xo, target.getX()) - worldX;
-            double dy = Mth.lerp(partial, target.yo, target.getY()) + target.getEyeHeight() - worldY;
-            double dz = Mth.lerp(partial, target.zo, target.getZ()) - worldZ;
+            // Its target's eyes, or the place it looks at (the hider's eyes inside the furniture).
+            double dx = (target != null ? Mth.lerp(partial, target.xo, target.getX()) : aimPX) - worldX;
+            double dy = (target != null ? Mth.lerp(partial, target.yo, target.getY()) + target.getEyeHeight() : aimPY) - worldY;
+            double dz = (target != null ? Mth.lerp(partial, target.zo, target.getZ()) : aimPZ) - worldZ;
             wantYaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0f;
             wantPitch = (float) (-Mth.atan2(dy, Math.sqrt(dx * dx + dz * dz)) * Mth.RAD_TO_DEG);
             if (aimMode == LOCK_EXACT) {
@@ -2091,6 +3173,11 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
                 hz = AIM_FAST_HZ;
                 damp = AIM_FAST_DAMP;
                 topSpeed = AIM_FAST_SPEED;
+            } else if (aimMode == LOCK_CREEP) {
+                // Creeping: its head stays on the hiding place, turning slowly and steadily.
+                hz = AIM_CREEP_HZ;
+                damp = 1.0f;
+                topSpeed = AIM_CREEP_SPEED;
             } else {
                 boolean onTarget = Math.abs(Mth.wrapDegrees(wantYaw - memory.aimYaw)) + Math.abs(wantPitch - memory.aimPitch) < 4.0f;
                 hz = onTarget ? AIM_TRACK_HZ : AIM_SLOW_HZ;
@@ -2228,6 +3315,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         aimMode = AIM_NONE;
         fingersLive = true;
         fingersCycle = false;
+        fingersHold = false;
         fingerRest = 10.0f;
         for (int i = 0; i < 2; i++) {
             raise[i] = 0.0f;
@@ -2355,28 +3443,45 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
      * arm's side, {@link #clawAhead} ahead. The same chain of joints the model parts use.
      */
     private void measureClaw(int i) {
+        clawPoint(i, raise[i], out[i], splay[i], bend[i], foreOut[i], curl[i]);
+        clawSide = (i == 0 ? -1.0f : 1.0f) * clawMX;
+        clawAhead = -clawMZ;
+    }
+
+    /**
+     * Where arm {@code i}'s middle claw tip is (model px, into clawMX/MY/MZ) with these arm
+     * angles and this frame's body: the same chain of joints the model parts use (hips, up the
+     * spine with its lean, rock and twist, the shoulder, upper arm, forearm, hand).
+     */
+    private void clawPoint(int i, float r, float o, float sp, float bd, float fo, float cu) {
         float side = i == 0 ? -1.0f : 1.0f;
-        rotation(matSpine, sway, 0.0f, lean);
-        rotation(matA, -side * splay[i], -side * out[i], -(raise[i] + lean));
+        rotation(matSpine, sway, spineYaw, lean);
+        rotation(matA, -side * sp, -side * o, -(r + lean));
         multiply(matArm, matSpine, matA);
-        rotation(matA, -side * foreOut[i], 0.0f, bend[i]);
+        rotation(matA, -side * fo, 0.0f, bd);
         multiply(matFore, matArm, matA);
-        rotation(matA, 0.0f, 0.0f, curl[i]);
+        rotation(matA, 0.0f, 0.0f, cu);
         multiply(matHand, matFore, matA);
         // The shoulder: up the spine to the shoulder bar, out to this side (and the lopsided offset).
         float sy = -SPINE + (i == lowArm ? LOW_SHOULDER_DROP : 0.0f);
         float sz = i == lowArm ? -LOW_SHOULDER_FORWARD : 0.0f;
         float x = matSpine[0] * side * SHOULDER_HALF + matSpine[1] * sy + matSpine[2] * sz;
+        float y = 24.0f - HIP_HEIGHT + drop + bob + matSpine[3] * side * SHOULDER_HALF + matSpine[4] * sy + matSpine[5] * sz;
         float z = matSpine[6] * side * SHOULDER_HALF + matSpine[7] * sy + matSpine[8] * sz;
         // Upper arm, forearm, then the middle claw (the same points the arm parts are built from).
         x += matArm[0] * side * 1.5f + matArm[1] * UPPER_ARM;
+        y += matArm[3] * side * 1.5f + matArm[4] * UPPER_ARM;
         z += matArm[6] * side * 1.5f + matArm[7] * UPPER_ARM;
+        clawElbowY = y;
         x += matFore[0] * side * 1.5f + matFore[1] * FOREARM - matFore[2] * 0.5f;
+        y += matFore[3] * side * 1.5f + matFore[4] * FOREARM - matFore[5] * 0.5f;
         z += matFore[6] * side * 1.5f + matFore[7] * FOREARM - matFore[8] * 0.5f;
         x += matHand[0] * side * 0.9f * ARM_STRETCH + matHand[1] * CLAW_TIP;
+        y += matHand[3] * side * 0.9f * ARM_STRETCH + matHand[4] * CLAW_TIP;
         z += matHand[6] * side * 0.9f * ARM_STRETCH + matHand[7] * CLAW_TIP;
-        clawSide = side * x;
-        clawAhead = -z;
+        clawMX = x;
+        clawMY = y;
+        clawMZ = z;
     }
 
     /** How far the hips sink (px) with the thigh and the shin (relative to the thigh) bent so. */

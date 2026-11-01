@@ -80,6 +80,15 @@ public final class HidingService {
 
         /** Called right after this monster dragged {@code player} out of hiding: go for them. */
         void onPulledOut(ServerPlayer player);
+
+        /**
+         * False while this monster is busy with the hider in its own way and drags them out
+         * itself when it is ready (the Bacteria prowls round the furniture first). Until then
+         * neither reaching the furniture nor hearing them breathe makes it pull them out.
+         */
+        default boolean mayPullOut(ServerPlayer player) {
+            return true;
+        }
     }
 
     /** After being pulled out you can't get back in for 3 seconds. */
@@ -154,6 +163,13 @@ public final class HidingService {
             return HidingClientState.isHidden(player.getId());
         }
         return HIDERS.containsKey(player.getUUID());
+    }
+
+    /** Where {@code player} is hiding (server side), or null if they aren't. */
+    @Nullable
+    public static HidingSpots.Spot spotOf(Player player) {
+        Hider hider = HIDERS.get(player.getUUID());
+        return hider == null ? null : hider.spot;
     }
 
     /**
@@ -434,7 +450,7 @@ public final class HidingService {
         Vec3 inside = hider.spot.camera();
         // A monster that saw you get in comes to the furniture and drags you out.
         for (UUID id : hider.witnesses) {
-            if (level.getEntity(id) instanceof Mob mob && mob.isAlive()) {
+            if (level.getEntity(id) instanceof Mob mob && mob.isAlive() && ((Seeker) mob).mayPullOut(player)) {
                 AABB reach = mob.getBoundingBox().inflate(PULL_REACH);
                 if (reach.contains(torso) || reach.contains(inside)) {
                     pullOut(player, mob);
@@ -453,7 +469,8 @@ public final class HidingService {
             return; // holding your breath, you make no sound at all
         }
         for (Mob mob : near) {
-            if (mob.distanceToSqr(inside) <= HEAR_RANGE * HEAR_RANGE && player.getRandom().nextFloat() < HEAR_CHANCE) {
+            if (mob.distanceToSqr(inside) <= HEAR_RANGE * HEAR_RANGE && ((Seeker) mob).mayPullOut(player)
+                    && player.getRandom().nextFloat() < HEAR_CHANCE) {
                 pullOut(player, mob); // it heard you breathing
                 return;
             }

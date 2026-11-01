@@ -1,11 +1,13 @@
 package com.rickr.backrooms.entity;
 
 import com.rickr.backrooms.player.HidingService;
+import com.rickr.backrooms.player.HidingSpots;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.LevelEvents;
 import com.rickr.backrooms.world.SafeRooms;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -65,25 +67,32 @@ import org.jetbrains.annotations.Nullable;
  * see or hear anyone inside. Reaching a safe room in a chase counts as escaping.
  *
  * <p>Nor can it see or hear anyone hiding in furniture ({@code player/HidingService}), unless it
- * saw them get in: then it comes over and drags them out, and the chase goes on. Hiding mid-chase
- * makes it search where it last saw you, then give up.
+ * saw them get in: then it creeps over and prowls round the hiding place for 15-25 s, holding on
+ * to the furniture and the walls, before it rips it open and drags them out, and the chase goes
+ * on ({@link #tickCreep()}). Hiding mid-chase where it didn't see makes it search where it last
+ * saw you, then give up.
  */
 public class Bacteria extends Monster implements HidingService.Seeker {
-    /** What the Bacteria is doing right now. The order matters: it is synced as a byte. */
-    public enum Mode { WANDER, DRIFT, SPOTTED, CHASE, SEARCH }
+    /**
+     * What the Bacteria is doing right now. The order matters: it is synced as a byte. CREEP:
+     * someone it saw get into hiding furniture is in there, and it is creeping round it (see
+     * {@link #tickCreep()}).
+     */
+    public enum Mode { WANDER, DRIFT, SPOTTED, CHASE, SEARCH, CREEP }
 
     /**
      * One-shot moves the server tells the clients to play right now (the model times them from
      * the moment the client hears about them). The order matters: it is synced as a number.
-     * PEEK_*_HOLD is the rare peek that stays out for an uncomfortably long time.
+     * PEEK_*_HOLD is the rare peek that stays out for an uncomfortably long time. CREEP: it has
+     * reached the hiding place and starts prowling round it; CREEP_RIP: it rips the door open.
      */
-    public enum Action { NONE, LUNGE, WHIP, FEED, PEEK_LEFT, PEEK_RIGHT, PEEK_LEFT_HOLD, PEEK_RIGHT_HOLD, STARE, SWIPE }
+    public enum Action { NONE, LUNGE, WHIP, FEED, PEEK_LEFT, PEEK_RIGHT, PEEK_LEFT_HOLD, PEEK_RIGHT_HOLD, STARE, SWIPE, CREEP, CREEP_RIP }
 
     /**
      * Poses the test command {@code /backrooms bacteria pose} can force, so the lead can film
      * each one. AUTO = normal behaviour. The order matters: it is synced as a byte.
      */
-    public enum AnimPose { AUTO, IDLE, WALK, CHASE, SPOTTED, LUNGE, CAGE, FEED, PEEK }
+    public enum AnimPose { AUTO, IDLE, WALK, CHASE, SPOTTED, LUNGE, CAGE, FEED, PEEK, CREEP }
 
     private static final Mode[] MODES = Mode.values();
     private static final Action[] ACTIONS = Action.values();
@@ -105,6 +114,14 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final EntityDataAccessor<Integer> FORCED = SynchedEntityData.defineId(Bacteria.class, EntityDataSerializers.INT);
     private static final int LOOP_BIT = 0x40;
     private static final int POSE_MASK = 0x3F;
+    /** CREEP: the hiding furniture it creeps round (its bottom block). */
+    private static final EntityDataAccessor<BlockPos> CREEP_SPOT = SynchedEntityData.defineId(Bacteria.class, EntityDataSerializers.BLOCK_POS);
+    /**
+     * CREEP: {@code eye << 13 | open side << 10 | prowl length}: how long it prowls before it
+     * opens the door (ticks), which way the furniture opens (2D direction number) and how high
+     * the hider's eyes are above its bottom (1/16 blocks).
+     */
+    private static final EntityDataAccessor<Integer> CREEP_INFO = SynchedEntityData.defineId(Bacteria.class, EntityDataSerializers.INT);
 
     // --- Senses ------------------------------------------------------------------------------
     /** How far it can spot you when you stand in the light (lamps on, no blackout). */
@@ -200,6 +217,103 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final double NOISE_SWIPE_RANGE = 2.5;
     /** After a kill it folds over its victim this long (about 3 s), then goes back to wandering. */
     public static final int FEED_TICKS = 62;
+
+    // --- Creeping round a hiding place (see tickCreep) -----------------------------------------
+    // Like the locker scene of the owner's reference video (qRyd5rkjZpM 37:45-38:21,
+    // local://bacteria_locker_motion.md): when it saw you get into hiding furniture it doesn't
+    // drag you out at once. It creeps up to it and prowls there for 15-25 s, holding on to the
+    // furniture and the walls, re-gripping slowly, freezing with a hand on the furniture next
+    // door, reaching across the front, standing right at the door; then it rips the door open,
+    // plants one arm on the floor and one hand on the frame, cranes its head in, and drags you
+    // out. Come out yourself during the prowl and the chase is on at once.
+    /** How long it prowls round the hiding place before it opens it: a random length between these (ticks). */
+    public static final int CREEP_MIN_TICKS = 300;
+    public static final int CREEP_MAX_TICKS = 500;
+    /** The test command's prowl length (ticks). */
+    public static final int CREEP_POSE_TICKS = 300;
+    // The prowl is a fixed run of "beats" (the model and the server both work it out from the
+    // prowl length, so they agree without sending anything more):
+    //   BRACE   in front, both hands on the surfaces either side of the door (50-100 ticks)
+    //   WRAP    edges to one side; that hand wraps round the side of the furniture
+    //   FREEZE  holds the furniture or wall beside it with that hand, nearly frozen; the other hangs
+    //   ACROSS  the hanging hand takes hold again, then the other reaches across the front
+    //   BRACE2  back in front, braced, re-gripping slowly (whatever time is left)
+    //   STAND   right at the door, still, both hands on the door's edges
+    public static final int BEAT_BRACE = 0;
+    public static final int BEAT_WRAP = 1;
+    public static final int BEAT_FREEZE = 2;
+    public static final int BEAT_ACROSS = 3;
+    public static final int BEAT_BRACE2 = 4;
+    public static final int BEAT_STAND = 5;
+    private static final int CREEP_FIRST_BRACE = 50;
+    private static final int CREEP_WRAP_TICKS = 60;
+    private static final int CREEP_FREEZE_TICKS = 105;
+    private static final int CREEP_ACROSS_TICKS = 50;
+    private static final int CREEP_STAND_TICKS = 55;
+    // Opening the door (ticks from the rip): the arm swings out wide (to RIP_SWING_END), plants
+    // on the floor (to RIP_PLANT_END); the head cranes in (to RIP_CRANE_END), holds, and at
+    // RIP_PULL_TICK it drags you out and the chase begins.
+    public static final int RIP_SWING_END = 2;
+    public static final int RIP_PLANT_END = 10;
+    public static final int RIP_CRANE_END = 24;
+    public static final int RIP_PULL_TICK = 26;
+    /** Where it stands while prowling: this far out from the door (blocks, its middle)... */
+    private static final double CREEP_STAND = 0.8;
+    /** ...this far out right before it opens the door... */
+    private static final double CREEP_DOOR = 0.65;
+    /** ...and this far to the side while it holds the furniture next door. */
+    private static final double CREEP_SIDE = 0.75;
+    /** Shuffling between those places it moves at most this fast (blocks per tick: 0.4 blocks/s). */
+    private static final double CREEP_STEP_SPEED = 0.02;
+    /** Getting there: an ordinary walk, then from this far (blocks) a slow creep... */
+    private static final double CREEP_NEAR = 4.0;
+    private static final double CREEP_SLOW_SPEED = 0.33;  // about 0.45 blocks/s
+    /**
+     * ...and if it comes round a corner within this many blocks of the hiding place (it can't
+     * see the door yet), it stops for CREEP_HOOK_TICKS with its lead arm hooked round the corner
+     * before it steps out.
+     */
+    private static final double CREEP_HOOK_RANGE = 3.5;
+    private static final int CREEP_HOOK_TICKS = 32;
+    /** If it can't get to the hiding place within this long it gives up and searches instead. */
+    private static final int CREEP_APPROACH_MAX_TICKS = 400;
+    /** While prowling it sniffs quietly every 80-120 ticks. */
+    private static final int CREEP_SNIFF_MIN = 80;
+    private static final int CREEP_SNIFF_MAX = 120;
+    private static final float CREEP_SNIFF_VOLUME = 0.45f;
+    /** Creeping, its steps are short (a whole stride is this long, blocks: two 0.35-block steps). */
+    private static final float CREEP_STRIDE_BLOCKS = 0.7f;
+    /** A claw taking hold of a surface scrapes this quietly (client). */
+    private static final float GRIP_SCRAPE_VOLUME = 0.16f;
+
+    /** Which beat of the prowl (BEAT_*) it is at {@code age} ticks into a prowl of {@code length} ticks. */
+    public static int creepBeat(int length, float age) {
+        for (int beat = BEAT_STAND; beat > BEAT_BRACE; beat--) {
+            if (age >= creepBeatStart(length, beat)) {
+                return beat;
+            }
+        }
+        return BEAT_BRACE;
+    }
+
+    /** When beat {@code beat} starts (ticks into a prowl of {@code length} ticks). */
+    public static float creepBeatStart(int length, int beat) {
+        // The first brace grows with the prowl (50-100 ticks); the second brace gets the rest.
+        int first = CREEP_FIRST_BRACE + Math.max(0, length - CREEP_MIN_TICKS) / 4;
+        return switch (beat) {
+            case BEAT_BRACE -> 0;
+            case BEAT_WRAP -> first;
+            case BEAT_FREEZE -> first + CREEP_WRAP_TICKS;
+            case BEAT_ACROSS -> first + CREEP_WRAP_TICKS + CREEP_FREEZE_TICKS;
+            case BEAT_BRACE2 -> first + CREEP_WRAP_TICKS + CREEP_FREEZE_TICKS + CREEP_ACROSS_TICKS;
+            default -> Math.max(first + CREEP_WRAP_TICKS + CREEP_FREEZE_TICKS + CREEP_ACROSS_TICKS, length - CREEP_STAND_TICKS);
+        };
+    }
+
+    /** Which side it edges to and grips the furniture next door with: +1 its left, -1 its right. */
+    public static int creepSide(int entityId, int length) {
+        return BacteriaRhythm.hash(BacteriaRhythm.seed(entityId) + 800, length) > 0.0f ? 1 : -1;
+    }
 
     // --- Peeking out from cover (see tryPeek) ---------------------------------------------------
     /** How long one peek lasts: 25 ticks easing out, a hold, a 2-tick snap back in. */
@@ -316,6 +430,20 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private int actionCount;
     // Starting to run: ticks of the kick still to come (server side).
     private int kickTicks;
+    // Creeping round a hiding place (server side; see tickCreep): the furniture, how long it
+    // prowls, what it is doing (getting there, prowling, opening it), for how long, whether it
+    // already stopped at a corner on the way, how long it still waits there, the next sniff.
+    @Nullable
+    private HidingSpots.Spot creepSpot;
+    private int creepLength;
+    private int creepPhase;
+    private int creepTicks;
+    private boolean creepHooked;
+    private int creepHookTicks;
+    private int creepSniffIn;
+    private static final int CREEP_GETTING_THERE = 0;
+    private static final int CREEP_PROWLING = 1;
+    private static final int CREEP_OPENING = 2;
 
     // Client-only, purely visual: free space above it (blocks), smoothed, for the model's stoop.
     private float headroom = HEADROOM_CHECK;
@@ -342,8 +470,9 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private int forcedTick;
     // Client-only, purely visual: the per-frame pose memory (head aim, arm blend, walls nearby).
     public final BacteriaPoseState animState = new BacteriaPoseState();
-    // Client-only: the footfall the scrape sound last checked.
+    // Client-only: the footfall the scrape sound last checked, and the claw grips it scraped for.
     private int lastFootfall;
+    private int lastGripLanded;
     private final BlockPos.MutableBlockPos wallCheck = new BlockPos.MutableBlockPos();
 
     public Bacteria(EntityType<? extends Monster> type, Level level) {
@@ -419,6 +548,8 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         builder.define(CAGED, false);
         builder.define(ACTION, 0);
         builder.define(FORCED, 0);
+        builder.define(CREEP_SPOT, BlockPos.ZERO);
+        builder.define(CREEP_INFO, 0);
     }
 
     /**
@@ -450,6 +581,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         return switch (mode()) {
             case SPOTTED, CHASE -> 1.0f;
             case SEARCH -> 0.75f;
+            case CREEP -> 0.9f;
             case WANDER, DRIFT -> 0.55f;
         };
     }
@@ -470,6 +602,40 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     public AnimPose forcedPose() {
         int v = entityData.get(FORCED) & POSE_MASK;
         return v < POSES.length ? POSES[v] : AnimPose.AUTO;
+    }
+
+    /** CREEP: the bottom block of the hiding furniture it creeps round (synced). */
+    public BlockPos creepSpot() {
+        return entityData.get(CREEP_SPOT);
+    }
+
+    /** CREEP: how long it prowls before it opens the door (ticks; synced). */
+    public int creepLength() {
+        return entityData.get(CREEP_INFO) & 0x3FF;
+    }
+
+    /** CREEP: the side the hiding furniture opens to (synced). */
+    public Direction creepOpen() {
+        return Direction.from2DDataValue(entityData.get(CREEP_INFO) >> 10 & 3);
+    }
+
+    /** CREEP: how high the hider's eyes are above the furniture's bottom (blocks; synced). */
+    public float creepEye() {
+        return (entityData.get(CREEP_INFO) >> 13 & 63) / 16.0f;
+    }
+
+    /**
+     * How far its feet travel per full stride right now (blocks): {@link #strideBlocks}, except
+     * while it creeps slowly round a hiding place, when its steps are short and few.
+     */
+    public float strideFor(float speed) {
+        AnimPose forced = forcedPose();
+        boolean creeping = forced == AnimPose.CREEP || (forced == AnimPose.AUTO && mode() == Mode.CREEP);
+        if (!creeping) {
+            return strideBlocks(speed);
+        }
+        float walking = Mth.clamp((speed - 0.03f) / 0.07f, 0.0f, 1.0f);
+        return Mth.lerp(walking, CREEP_STRIDE_BLOCKS, strideBlocks(speed));
     }
 
     /** True if the forced pose should replay its one-shot moves over and over. */
@@ -556,8 +722,8 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             int a = entityData.get(ACTION) & 0xF;
             shownAction = a < ACTIONS.length ? ACTIONS[a] : Action.NONE;
             actionTick = firstTick ? tickCount - 1000 : tickCount;
-            if (!firstTick && shownAction == Action.SWIPE) {
-                playClick(1.0f); // the arm's joints crack as it whips round
+            if (!firstTick && (shownAction == Action.SWIPE || shownAction == Action.CREEP_RIP)) {
+                playClick(1.0f); // the arm's joints crack as it whips round (or rips the door open)
             }
         } else if (MODE.equals(key)) {
             Mode now = mode();
@@ -595,7 +761,21 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             }
             senseWalls();
             playForcedPlant();
+            playGripScrape();
         }
+    }
+
+    /**
+     * Client: each time one of its claws takes hold of a wall or a piece of furniture (the model
+     * counts them in animState), a quiet scrape of claw on surface.
+     */
+    private void playGripScrape() {
+        if (animState.gripLanded == lastGripLanded) {
+            return;
+        }
+        lastGripLanded = animState.gripLanded;
+        level().playLocalSound(getX(), getY() + 1.4, getZ(), ModSounds.BACTERIA_SCRAPE.get(), SoundSource.HOSTILE,
+                GRIP_SCRAPE_VOLUME, 0.8f + random.nextFloat() * 0.3f, false);
     }
 
     /**
@@ -610,11 +790,13 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             case SPOTTED -> 7.0f;
             case CHASE -> 9.0f;
             case SEARCH -> 12.0f;
+            case CREEP -> 10.0f;
             case WANDER, DRIFT -> 22.0f;
         };
         float breathTicks = switch (current) {
             case SPOTTED, CHASE -> 18.0f;
             case SEARCH -> 30.0f;
+            case CREEP -> 60.0f; // slow, deep breaths while it listens at the door
             case WANDER, DRIFT -> 115.0f; // one slow breath every ~6 s
         };
         heartPhaseO = heartPhase;
@@ -662,7 +844,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             measured = (float) Math.sqrt(dx * dx + dz * dz);
         }
         gaitSpeed += (measured - gaitSpeed) * GAIT_SPEED_EASE;
-        float rate = gaitSpeed / strideBlocks(gaitSpeed);
+        float rate = gaitSpeed / strideFor(gaitSpeed);
         if (running) {
             int step = Mth.floor(gaitPhase * 2.0f);
             rate *= 1.0f + RUN_STEP_JITTER * BacteriaRhythm.hash(BacteriaRhythm.seed(getId()) + 301, step);
@@ -827,6 +1009,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             case SPOTTED -> tickSpotted();
             case CHASE -> tickChase();
             case SEARCH -> tickSearch(senseNow);
+            case CREEP -> tickCreep();
         }
     }
 
@@ -855,7 +1038,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             return false;
         }
         getNavigation().stop();
-        if (mode == Mode.SPOTTED || mode == Mode.CHASE || mode == Mode.SEARCH) {
+        if (mode == Mode.SPOTTED || mode == Mode.CHASE || mode == Mode.SEARCH || mode == Mode.CREEP) {
             giveUp(true);
         } else if (mode == Mode.DRIFT) {
             setMode(Mode.WANDER);
@@ -979,6 +1162,10 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         }
         if (!isHuntable(prey) || distanceToSqr(prey) > CHASE_GIVE_UP * CHASE_GIVE_UP) {
             startSearch();
+            return;
+        }
+        if (HidingService.isHidden(prey) && startCreep()) {
+            // It saw you get into that furniture: it creeps over and prowls round it first.
             return;
         }
         if (getSensing().hasLineOfSight(prey)) {
@@ -1181,6 +1368,174 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         }
     }
 
+    // ------------------------------------------------------------------ creeping round a hiding place
+
+    /**
+     * Its prey just hid in furniture it saw them get into: instead of dragging them out at once it
+     * creeps over and prowls round the hiding place (tickCreep). The clients are told which
+     * furniture it is, which way it opens and how long the prowl will last, so the model can play
+     * the same prowl. False if the hiding place can't be found (then it carries on as before).
+     */
+    private boolean startCreep() {
+        HidingSpots.Spot spot = prey == null ? null : HidingService.spotOf(prey);
+        if (spot == null) {
+            return false;
+        }
+        creepSpot = spot;
+        creepLength = CREEP_MIN_TICKS + random.nextInt(CREEP_MAX_TICKS - CREEP_MIN_TICKS + 1);
+        creepPhase = CREEP_GETTING_THERE;
+        creepTicks = 0;
+        creepHooked = false;
+        creepHookTicks = 0;
+        creepSniffIn = CREEP_SNIFF_MIN;
+        lungeTicks = -1;
+        stareTicks = -1;
+        setCaged(false);
+        setMode(Mode.CREEP);
+        BlockPos anchor = spot.anchor();
+        int eye = Mth.clamp(Math.round((float) (spot.camera().y - anchor.getY()) * 16.0f), 0, 63);
+        entityData.set(CREEP_SPOT, anchor);
+        entityData.set(CREEP_INFO, eye << 13 | spot.open().get2DDataValue() << 10 | creepLength);
+        Vec3 stand = creepStation(BEAT_BRACE);
+        getNavigation().moveTo(stand.x, stand.y, stand.z, DRIFT_SPEED);
+        return true;
+    }
+
+    /**
+     * Creeping round the hiding place: getting there (a walk, then a slow creep, stopping at a
+     * corner on the way with an arm hooked round it), then the prowl, slowly shuffling between a
+     * few places in front of and beside the furniture (the same beats the model plays: see
+     * creepBeat), its head on the hider's eyes, sniffing now and then; then it opens the door and
+     * drags them out (RIP_PULL_TICK), and the chase is on. If they get out first, it goes for them
+     * at once.
+     */
+    private void tickCreep() {
+        if (prey == null || !prey.isAlive() || prey.isRemoved() || prey.level() != level() || creepSpot == null) {
+            giveUp(false);
+            return;
+        }
+        if (!HidingService.isHidden(prey)) {
+            reacquire(prey); // they got out (or were found by someone else): straight into the chase
+            return;
+        }
+        Vec3 inside = creepSpot.camera();
+        getLookControl().setLookAt(inside.x, inside.y, inside.z, 3.0f, 3.0f);
+        creepTicks++;
+        if (creepPhase == CREEP_GETTING_THERE) {
+            creepGetThere();
+        } else if (creepPhase == CREEP_PROWLING) {
+            creepProwl();
+        } else {
+            creepRipOpen();
+        }
+    }
+
+    /** Getting to the hiding place: a walk, then a slow creep, with a pause at a corner on the way. */
+    private void creepGetThere() {
+        Vec3 stand = creepStation(BEAT_BRACE);
+        double dx = stand.x - getX();
+        double dz = stand.z - getZ();
+        double d = Math.sqrt(dx * dx + dz * dz);
+        if (creepHookTicks > 0) {
+            // Its lead arm is hooked round the corner (the model shows it): wait, then step out.
+            creepHookTicks--;
+            getNavigation().stop();
+            brake();
+            return;
+        }
+        Vec3 front = creepFront();
+        if (!creepHooked && d < CREEP_HOOK_RANGE && !clearLine(getEyePosition(), front.add(0.0, 1.2, 0.0))) {
+            creepHooked = true;
+            creepHookTicks = CREEP_HOOK_TICKS;
+            getNavigation().stop();
+            return;
+        }
+        if (d < 0.6 || (getNavigation().isDone() && d < 1.6)) {
+            // There: the prowl begins (the clients time it from this moment).
+            creepPhase = CREEP_PROWLING;
+            creepTicks = 0;
+            getNavigation().stop();
+            sendAction(Action.CREEP);
+            return;
+        }
+        if (creepTicks > CREEP_APPROACH_MAX_TICKS) {
+            startSearch(); // it can't get there
+            return;
+        }
+        if (getNavigation().isDone() || creepTicks % 20 == 1) {
+            getNavigation().moveTo(stand.x, stand.y, stand.z, d > CREEP_NEAR ? DRIFT_SPEED : CREEP_SLOW_SPEED);
+        }
+    }
+
+    /** The prowl: the beats of creepBeat, shuffling between places in front of and beside the furniture. */
+    private void creepProwl() {
+        if (creepTicks >= creepLength) {
+            creepPhase = CREEP_OPENING;
+            creepTicks = 0;
+            brake();
+            sendAction(Action.CREEP_RIP);
+            return;
+        }
+        creepShuffleTo(creepStation(creepBeat(creepLength, creepTicks)));
+        faceSpot(3.0f);
+        if (--creepSniffIn <= 0) {
+            creepSniffIn = CREEP_SNIFF_MIN + random.nextInt(CREEP_SNIFF_MAX - CREEP_SNIFF_MIN + 1);
+            playSound(ModSounds.BACTERIA_SEARCH.get(), CREEP_SNIFF_VOLUME, 0.85f + random.nextFloat() * 0.15f);
+        }
+    }
+
+    /** Opening the door: it stands still while the model rips it open and cranes in, then drags them out. */
+    private void creepRipOpen() {
+        brake();
+        faceSpot(10.0f);
+        if (creepTicks >= RIP_PULL_TICK && prey instanceof ServerPlayer player) {
+            HidingService.pullOut(player, this); // calls onPulledOut: the chase begins
+        }
+    }
+
+    /** The middle of the furniture's open side, on the floor. */
+    private Vec3 creepFront() {
+        Direction open = creepSpot.open();
+        return Vec3.atBottomCenterOf(creepSpot.anchor()).add(open.getStepX() * 0.5, 0.0, open.getStepZ() * 0.5);
+    }
+
+    /**
+     * Where it stands during prowl beat {@code beat}: in front of the door, beside it while it
+     * holds the furniture next door, close to it before it opens it.
+     */
+    private Vec3 creepStation(int beat) {
+        Direction open = creepSpot.open();
+        double out = beat == BEAT_STAND ? CREEP_DOOR : CREEP_STAND;
+        double side = beat == BEAT_WRAP || beat == BEAT_FREEZE ? creepSide(getId(), creepLength) * CREEP_SIDE : 0.0;
+        // Its left while it faces the door is (-open z, open x).
+        return creepFront().add(open.getStepX() * out - open.getStepZ() * side, 0.0,
+                open.getStepZ() * out + open.getStepX() * side);
+    }
+
+    /** A slow sideways shuffle toward {@code to} (at most CREEP_STEP_SPEED a tick), still facing the door. */
+    private void creepShuffleTo(Vec3 to) {
+        getNavigation().stop();
+        Vec3 v = getDeltaMovement();
+        double dx = to.x - getX();
+        double dz = to.z - getZ();
+        double d = Math.sqrt(dx * dx + dz * dz);
+        if (d < 0.05) {
+            setDeltaMovement(v.x * BRAKE, v.y, v.z * BRAKE);
+            return;
+        }
+        // It picks up speed gently and slows as it arrives.
+        double now = Math.sqrt(v.x * v.x + v.z * v.z);
+        double speed = Math.min(Math.min(CREEP_STEP_SPEED, now + 0.004), d * 0.2);
+        setDeltaMovement(dx / d * speed, v.y, dz / d * speed);
+    }
+
+    /** Turns its body toward the hiding place, at most {@code maxStep} degrees a tick. */
+    private void faceSpot(float maxStep) {
+        Vec3 front = creepFront();
+        float face = (float) (Mth.atan2(front.z - getZ(), front.x - getX()) * Mth.RAD_TO_DEG) - 90.0f;
+        setYRot(Mth.approachDegrees(getYRot(), face, maxStep));
+    }
+
     // ------------------------------------------------------------------ transitions
 
     private void spot(Player player) {
@@ -1267,7 +1622,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             stareTicks = -1;
             setCaged(false);
         }
-        if (next != Mode.SPOTTED && next != Mode.CHASE) {
+        if (next != Mode.SPOTTED && next != Mode.CHASE && next != Mode.CREEP) {
             entityData.set(PREY_ID, -1);
         }
         mode = next;
@@ -1433,6 +1788,17 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     @Override
     public void onPulledOut(ServerPlayer player) {
         reacquire(player);
+    }
+
+    /**
+     * It opens your hiding place itself, when its prowl is done (tickCreep). So it never drags out
+     * its own prey any other way: not while it prowls, and not in the moment between you getting
+     * in and its next step, when it is still chasing you (it starts the prowl then).
+     */
+    @Override
+    public boolean mayPullOut(ServerPlayer player) {
+        boolean mine = prey == player && (mode == Mode.CHASE || mode == Mode.SPOTTED);
+        return mode != Mode.CREEP && !mine;
     }
 
     private boolean anyPlayerCanSee() {
