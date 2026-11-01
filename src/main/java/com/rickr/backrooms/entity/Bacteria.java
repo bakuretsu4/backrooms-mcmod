@@ -19,6 +19,9 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.control.BodyRotationControl;
+import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
@@ -51,7 +54,7 @@ import org.jetbrains.annotations.Nullable;
  * The mode is synced to clients so the model can pose and the camcorder can glitch.
  *
  * <p>Up close it never walks into you (your camera used to end up inside its body). Within
- * {@link #LUNGE_RANGE} it stops dead, stares, then leaps to 1.5-2 blocks away and closes its long
+ * {@link #LUNGE_RANGE} it brakes to a stop, stares, then leaps to 1.5-2 blocks away and closes its long
  * arms around you like a cage; the hits come from the arms ({@link #closeIn()}). After a kill it folds over its
  * victim for a few seconds. While wandering it sometimes leans out from behind cover to look at
  * you before it has properly seen you. Those moves are told to the clients as synced data
@@ -157,7 +160,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final double LONELY_RANGE = 32.0;
 
     // --- Close combat (see closeIn) -----------------------------------------------------------
-    // Like the reference footage: it runs in, stops dead within 2 ticks in a wide stance with
+    // Like the reference footage: it runs in, brakes to a stop in 2-3 ticks in a wide stance with
     // both claws planted out to the sides, stares at you for 3-6 ticks without moving, then
     // leaps at you in 3 ticks with its arms flung straight out, into the cage of arms.
     /** The stare before the leap, a random length between these (ticks). */
@@ -171,7 +174,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final double LEAP_STEP_MAX = 1.0;
     /** After a leap that missed, it waits this long before the next one. */
     private static final int LUNGE_COOLDOWN_TICKS = 20;
-    /** Starting to run, it is given this much speed at once (blocks per tick): full speed in 1-2 ticks. */
+    /** Starting to run, it is kicked up to this speed (blocks per tick) over KICK_TICKS: full speed in about 3 ticks. */
     private static final double RUN_KICK = 0.27;
     /**
      * Its body stops this far from you (blocks, centre to centre) and its arms do the rest, so
@@ -230,17 +233,40 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private static final double WATCH_RANGE = 24.0;
     /** The client re-checks who it is watching this often (ticks): a ray check each time. */
     private static final int WATCH_CHECK_TICKS = 5;
-    // The stride. Its feet travel STRIDE_BLOCKS per full stride (both feet), whatever the speed,
-    // so they never skate: 1.6 blocks at full size, 1.2 at the drawn size. Walking (2 blocks/s)
-    // that is a 12-tick stride, running (6.5 blocks/s) a 3.7-tick one, a fast scurry of short
-    // steps. When the test command makes it walk or run on the spot, it uses those two rates.
-    private static final float STRIDE_BLOCKS = 1.6f * BODY_SCALE;
-    public static final float WALK_STRIDE_TICKS = 12.0f;
-    public static final float RUN_STRIDE_TICKS = 3.7f;
+    // The stride (pass 6: long, loping strides like the smooth reference animations). Its feet
+    // travel this far per full stride (both feet): 2.0 blocks walking, 2.6 running, and in
+    // between the stride length follows the speed smoothly, so there is no jump in cadence going
+    // from a walk to a run. At its 2 blocks/s walk that is a 20-tick stride (1 second); at its
+    // 6.5 blocks/s run an 8-tick one (the arms take two strides, 16 ticks, for one swing).
+    public static final float WALK_STRIDE_BLOCKS = 2.0f;
+    public static final float RUN_STRIDE_BLOCKS = 2.6f;
+    /** Its walk and run speeds in blocks per tick (4.15 x 0.69^2 and 4.15 x 1.25^2 blocks/s, / 20). */
+    public static final float WALK_SPEED_PER_TICK = 0.0988f;
+    public static final float RUN_SPEED_PER_TICK = 0.3242f;
     /** Running, each step is up to this much longer or shorter (a fraction), so it isn't a metronome. */
-    private static final float RUN_STEP_JITTER = 0.08f;
-    /** Below this speed (blocks per tick) it counts as standing (the model fades the legs out). */
-    private static final float MIN_STRIDE_SPEED = 0.01f;
+    private static final float RUN_STEP_JITTER = 0.05f;
+    /**
+     * The client's speed reading is eased by this much of the difference each tick, so the
+     * stride doesn't wobble with the position updates that come from the server in steps.
+     */
+    private static final float GAIT_SPEED_EASE = 0.3f;
+    /**
+     * Body turning: the drawn body follows the way it faces (yRot) like a damped spring with this
+     * stiffness (per tick: it trails a turn by a couple of ticks and settles a 90-degree turn in
+     * about 6, easing in and out),
+     * never faster than BODY_TURN_MAX degrees a tick. Its own steering is capped at
+     * MOVE_TURN_MAX degrees a tick (vanilla: 90).
+     */
+    private static final float BODY_TURN_STIFFNESS = 0.6f;
+    private static final float BODY_TURN_MAX = 25.0f;
+    private static final float MOVE_TURN_MAX = 30.0f;
+    /** Turning on the spot to face you: this fraction of the way each tick, at most FACE_TURN_MAX degrees. */
+    private static final float FACE_TURN_EASE = 0.5f;
+    private static final float FACE_TURN_MAX = 25.0f;
+    /** Stopping: each tick its speed is cut to this fraction, so it stops in 2-3 ticks instead of one. */
+    private static final double BRAKE = 0.35;
+    /** Starting to run, its kick toward you builds up over this many ticks. */
+    private static final int KICK_TICKS = 3;
     // Quiet sounds the client plays itself (volume; they fade out within 12 blocks).
     private static final float CLICK_VOLUME = 0.32f;
     private static final float SCRAPE_VOLUME = 0.28f;
@@ -287,6 +313,8 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     @Nullable
     private Player peekAt;
     private int actionCount;
+    // Starting to run: ticks of the kick still to come (server side).
+    private int kickTicks;
 
     // Client-only, purely visual: free space above it (blocks), smoothed, for the model's stoop.
     private float headroom = HEADROOM_CHECK;
@@ -298,9 +326,12 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private float heartPhaseO;
     private float breathPhase;
     private float breathPhaseO;
-    // Client-only, purely visual: the stride, counted in strides so far (same idea as the heart).
+    // Client-only, purely visual: the stride, counted in strides so far (same idea as the heart),
+    // and the eased speed (blocks per tick) that drives it.
     private float gaitPhase;
     private float gaitPhaseO;
+    private float gaitSpeed;
+    private float gaitSpeedO;
     // Client-only: when (in this client's ticks) the latest move, mode and forced pose arrived,
     // so the model can time them.
     private Action shownAction = Action.NONE;
@@ -317,6 +348,56 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     public Bacteria(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         this.xpReward = 20;
+        // Its own steering: like vanilla's, but it turns at most MOVE_TURN_MAX degrees a tick.
+        this.moveControl = new SmoothMoveControl(this);
+    }
+
+    /**
+     * Its own body turning (vanilla's snaps the body to the way it is going while it moves and
+     * hardly turns it at all while it stands, which made the body jump round by up to 180
+     * degrees when a run began). This one, on the server and on every client, eases the drawn
+     * body toward the way the entity faces, moving or not, like a damped spring.
+     */
+    @Override
+    protected BodyRotationControl createBodyControl() {
+        return new SmoothBodyControl(this);
+    }
+
+    /** See {@link #createBodyControl()}. Made by Mob's constructor, so it only keeps the mob. */
+    private static final class SmoothBodyControl extends BodyRotationControl {
+        private final Mob mob;
+        // How fast the body is turning now (degrees per tick).
+        private float turnSpeed;
+
+        SmoothBodyControl(Mob mob) {
+            super(mob);
+            this.mob = mob;
+        }
+
+        @Override
+        public void clientTick() {
+            // A critically damped spring: it starts turning gently, speeds up, and settles onto
+            // the new facing without overshooting.
+            float error = Mth.wrapDegrees(mob.getYRot() - mob.yBodyRot);
+            float k = BODY_TURN_STIFFNESS;
+            turnSpeed += k * k * error - 2.0f * k * turnSpeed;
+            turnSpeed = Mth.clamp(turnSpeed, -BODY_TURN_MAX, BODY_TURN_MAX);
+            mob.yBodyRot += turnSpeed;
+            // Like vanilla, the head may not be turned further than its limit from the body.
+            mob.yHeadRot = Mth.rotateIfNecessary(mob.yHeadRot, mob.yBodyRot, mob.getMaxHeadYRot());
+        }
+    }
+
+    /** Vanilla steering, but turning at most {@link #MOVE_TURN_MAX} degrees a tick toward the path (vanilla: 90). */
+    private static final class SmoothMoveControl extends MoveControl {
+        SmoothMoveControl(Mob mob) {
+            super(mob);
+        }
+
+        @Override
+        protected float rotlerp(float sourceAngle, float targetAngle, float maximumChange) {
+            return super.rotlerp(sourceAngle, targetAngle, Math.min(maximumChange, MOVE_TURN_MAX));
+        }
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -444,6 +525,21 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         return Mth.lerp(partialTick, gaitPhaseO, gaitPhase);
     }
 
+    /** Client: how fast it moves (blocks per tick), eased, for this frame. Drives the stride and the leg fade. */
+    public float gaitSpeed(float partialTick) {
+        return Mth.lerp(partialTick, gaitSpeedO, gaitSpeed);
+    }
+
+    /**
+     * How far its feet travel per full stride (blocks) at {@code speed} blocks per tick: 2.0 at
+     * its walk and below, 2.6 at its run and above, and in between in proportion, so the cadence
+     * changes smoothly with the speed.
+     */
+    public static float strideBlocks(float speed) {
+        float run = Mth.clamp((speed - WALK_SPEED_PER_TICK) / (RUN_SPEED_PER_TICK - WALK_SPEED_PER_TICK), 0.0f, 1.0f);
+        return Mth.lerp(run, WALK_STRIDE_BLOCKS, RUN_STRIDE_BLOCKS);
+    }
+
     /**
      * Client: note the moment a move, mode or forced pose arrives, so the model can play it from
      * there. Values that arrive with the entity itself (when it comes into view) are old news:
@@ -536,11 +632,14 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     }
 
     /**
-     * The stride clock. Its feet travel {@link #STRIDE_BLOCKS} per stride, so the stride runs as
-     * fast as it really moves: a 16-tick stride at its 2 blocks/s walk, a 5-tick scurry at its
-     * 6.5 blocks/s run (every step a little longer or shorter, so it isn't a metronome). Standing
-     * still the clock slows to a stop (and the model fades the legs out). On the test command's
-     * forced walk and run it plays on the spot at those two rates.
+     * The stride clock. The client's reading of how fast it moves is eased (GAIT_SPEED_EASE), so
+     * the stride doesn't wobble with the position updates that come from the server in steps, and
+     * its feet travel {@link #strideBlocks} per stride, so the stride runs as fast as it really
+     * moves: a 20-tick stride at its 2 blocks/s walk, an 8-tick one at its 6.5 blocks/s run (every
+     * step a little longer or shorter, so it isn't a metronome). Stopping, the eased speed dies
+     * away over a few ticks, so the legs finish their step and settle instead of freezing in the
+     * air (the model fades them out with the same eased speed). On the test command's forced walk
+     * and run it plays on the spot at those two speeds.
      */
     private void tickGait() {
         AnimPose forced = forcedPose();
@@ -548,17 +647,21 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         boolean running = forced == AnimPose.CHASE || forced == AnimPose.LUNGE
                 || (forced == AnimPose.AUTO && current == Mode.CHASE);
         gaitPhaseO = gaitPhase;
-        float rate;
+        gaitSpeedO = gaitSpeed;
+        float measured;
         if (forced == AnimPose.WALK) {
-            rate = 1.0f / WALK_STRIDE_TICKS;
+            measured = WALK_SPEED_PER_TICK;
         } else if (forced == AnimPose.CHASE || forced == AnimPose.LUNGE || forced == AnimPose.SPOTTED) {
-            rate = 1.0f / RUN_STRIDE_TICKS;
+            measured = RUN_SPEED_PER_TICK;
+        } else if (forced != AnimPose.AUTO) {
+            measured = 0.0f;
         } else {
             double dx = getX() - xo;
             double dz = getZ() - zo;
-            float speed = (float) Math.sqrt(dx * dx + dz * dz);
-            rate = speed < MIN_STRIDE_SPEED ? 0.0f : speed / STRIDE_BLOCKS;
+            measured = (float) Math.sqrt(dx * dx + dz * dz);
         }
+        gaitSpeed += (measured - gaitSpeed) * GAIT_SPEED_EASE;
+        float rate = gaitSpeed / strideBlocks(gaitSpeed);
         if (running) {
             int step = Mth.floor(gaitPhase * 2.0f);
             rate *= 1.0f + RUN_STEP_JITTER * BacteriaRhythm.hash(BacteriaRhythm.seed(getId()) + 301, step);
@@ -572,7 +675,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         int footfall = Mth.floor(gaitPhase * 2.0f);
         if (footfall != lastFootfall) {
             lastFootfall = footfall;
-            boolean walking = forced == AnimPose.WALK || (forced == AnimPose.AUTO && !running && rate > 0.0f);
+            boolean walking = forced == AnimPose.WALK || (forced == AnimPose.AUTO && !running && gaitSpeed > 0.02f);
             if (walking && random.nextFloat() < SCRAPE_CHANCE) {
                 level().playLocalSound(getX(), getY(), getZ(), ModSounds.BACTERIA_SCRAPE.get(), SoundSource.HOSTILE,
                         SCRAPE_VOLUME, 0.85f + random.nextFloat() * 0.3f, false);
@@ -598,6 +701,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
                 wallCheck.set(getX() + lx * side * NARROW_CHECK, getY() + 0.5 + h, getZ() + lz * side * NARROW_CHECK);
                 wall = !level().getBlockState(wallCheck).getCollisionShape(level(), wallCheck).isEmpty();
             }
+            animState.narrowO[i] = animState.narrow[i];
             animState.narrow[i] += ((wall ? 1.0f : 0.0f) - animState.narrow[i]) * 0.35f;
         }
     }
@@ -795,8 +899,8 @@ public class Bacteria extends Monster implements HidingService.Seeker {
 
         if (mode == Mode.DRIFT) {
             if (getNavigation().isDone() && pathGoal != null && distanceToSqr(pathGoal) < NOISE_SWIPE_RANGE * NOISE_SWIPE_RANGE) {
-                // It got to the noise it heard: it stops dead and swipes at the spot.
-                stopDead();
+                // It got to the noise it heard: it brakes to a stop and swipes at the spot.
+                brake();
                 sendAction(Action.SWIPE);
                 setMode(Mode.WANDER);
             } else if (getNavigation().isDone() || modeTicks > DRIFT_MAX_TICKS) {
@@ -855,6 +959,8 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     }
 
     private void tickChase() {
+        // The rest of the run's kick, if it has only just started running (see runKick).
+        applyKick();
         if (prey != null && prey.isDeadOrDying()) {
             // Got them. No "lost" sigh: that sound must only ever mean "you escaped".
             // If it was holding them, it folds over the body for a moment first.
@@ -909,7 +1015,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     }
 
     /**
-     * Up close and in sight, like the reference footage: it stops dead within a tick, both claws
+     * Up close and in sight, like the reference footage: it brakes to a stop in 2-3 ticks, both claws
      * planted wide, and stares at you for 3-6 ticks without moving. Then the leap: its arms fling
      * straight out (1 tick) and it covers the gap to 1.75 blocks from you in the next 2, and
      * closes its arms round you: the cage. The body stays 1.5-2 blocks away while it holds you,
@@ -934,7 +1040,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
                 step = Mth.clamp((d - STANDOFF) / ticksLeft, 0.0, LEAP_STEP_MAX);
                 setDeltaMovement(dx / d * step, getDeltaMovement().y, dz / d * step);
             } else {
-                stopDead();
+                brake();
             }
             if (lungeTicks >= LUNGE_TICKS) {
                 lungeTicks = -1;
@@ -951,7 +1057,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         }
         if (stareTicks >= 0) {
             // The stare: dead still, facing you.
-            stopDead();
+            brake();
             faceToward(prey, 30.0f);
             if (--stareTicks < 0) {
                 if (d <= LUNGE_RANGE + 1.5) {
@@ -964,9 +1070,9 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             return;
         }
         if (!isCaging() && lungeCooldown <= 0) {
-            // It stops dead and plants its claws: the stare begins.
+            // It brakes to a stop and plants its claws: the stare begins.
             stareTicks = STARE_MIN_TICKS + random.nextInt(STARE_MAX_TICKS - STARE_MIN_TICKS + 1);
-            stopDead();
+            brake();
             sendAction(Action.STARE);
             return;
         }
@@ -1003,29 +1109,46 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         }
     }
 
-    /** Turns its whole body toward {@code target}, at most {@code maxStep} degrees this tick. Returns the facing it wants. */
+    /**
+     * Turns its whole body toward {@code target}: part of the way each tick (FACE_TURN_EASE), so
+     * the turn slows as it lines up, and at most {@code maxStep} (and FACE_TURN_MAX) degrees a
+     * tick. The drawn body follows through the body control. Returns the facing it wants.
+     */
     private float faceToward(Player target, float maxStep) {
         float face = (float) (Mth.atan2(target.getZ() - getZ(), target.getX() - getX()) * Mth.RAD_TO_DEG) - 90.0f;
-        setYRot(Mth.approachDegrees(getYRot(), face, maxStep));
-        yBodyRot = getYRot();
+        float error = Mth.wrapDegrees(face - getYRot());
+        float limit = Math.min(maxStep, FACE_TURN_MAX);
+        float step = Math.abs(error) < 1.0f ? error : Mth.clamp(error * FACE_TURN_EASE, -limit, limit);
+        setYRot(getYRot() + step);
         return face;
     }
 
-    /** Stops on the spot this tick (it doesn't slide to a halt). */
-    private void stopDead() {
-        setDeltaMovement(0.0, getDeltaMovement().y, 0.0);
+    /** Brakes hard: its speed is cut to BRAKE each tick it is called, so it stops in 2-3 ticks without sliding on. */
+    private void brake() {
+        Vec3 v = getDeltaMovement();
+        setDeltaMovement(v.x * BRAKE, v.y, v.z * BRAKE);
     }
 
-    /** Starting to run: given most of its running speed at once, so it is at full speed in 1-2 ticks. */
+    /** Starting to run: a kick toward you that builds up over KICK_TICKS ticks to most of its running speed. */
     private void runKick() {
-        if (prey == null) {
+        kickTicks = KICK_TICKS;
+        applyKick();
+    }
+
+    /** One tick of the run's kick: a third, two thirds, then all of RUN_KICK (never slowing it down). */
+    private void applyKick() {
+        if (kickTicks <= 0 || prey == null) {
+            kickTicks = 0;
             return;
         }
         double dx = prey.getX() - getX();
         double dz = prey.getZ() - getZ();
         double d = Math.sqrt(dx * dx + dz * dz);
-        if (d > 1.0e-3) {
-            setDeltaMovement(dx / d * RUN_KICK, getDeltaMovement().y, dz / d * RUN_KICK);
+        double want = RUN_KICK * (KICK_TICKS - kickTicks + 1) / KICK_TICKS;
+        kickTicks--;
+        Vec3 v = getDeltaMovement();
+        if (d > 1.0e-3 && v.x * v.x + v.z * v.z < want * want) {
+            setDeltaMovement(dx / d * want, v.y, dz / d * want);
         }
     }
 

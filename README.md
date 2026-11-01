@@ -484,13 +484,13 @@ houses). Upside-down furniture doesn't count.
   side, and its arms are far too long for its body (over 3 blocks). Standing, it holds them like a
   mantis's forelegs, elbows out in front and the claws on the floor before it, and only the claws
   slowly move: down to the floor, forward, back. If it can see you, its head slowly turns onto you
-  and stays there, wherever its body goes. It walks like a mantis on short, bent, wide-apart legs,
+  and stays there, wherever its body goes. It walks like a mantis in long, slow strides on bent, wide-apart legs,
   one arm cocked forward with the claws hanging while the other reaches out and back to the floor,
-  swapping with every step. It runs in a low scurry of fast short steps while its arms vault it
+  swapping with every step. It runs in long, loping strides while its arms vault it
   along like huge spider legs, one planted two blocks out to the side as the other whips up and
   over, dropping little black flakes; in a corridor the claws plant ahead instead. Sometimes,
   before it has properly seen you, its head slowly comes out from behind a pillar or door frame to
-  look at you. Within 3 blocks it stops dead in a wide crouch and stares at you for a moment, then
+  look at you. Within 3 blocks it brakes to a stop in a wide crouch and stares at you for a moment, then
   leaps with its arms flung straight out and closes them around you. It stops about a block and a
   half away and holds you in a cage of its long arms, the claws planted on the floor behind you
   (its body never ends up in your face); the hits come from the arms, and now and then one sweeps

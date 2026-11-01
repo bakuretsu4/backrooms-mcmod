@@ -27,6 +27,9 @@ public final class ModEntities {
                     .sized(0.7f, 2.5f)
                     .eyeHeight(2.2f)
                     .clientTrackingRange(12)
+                    // Position and facing updates every 2 ticks (vanilla 3), so the client's
+                    // smoothed path and turning follow it more closely.
+                    .updateInterval(2)
                     .build(Backrooms.id("bacteria").toString()));
 
     /**
