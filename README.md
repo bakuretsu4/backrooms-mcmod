@@ -284,7 +284,9 @@ going down into the dark, until the picture breaks up and you are in the next le
   it far off in the clouds when lightning flashes, then its hand comes over the edge for you if you
   stand about in the open (a roof or a lit lantern keeps it off). On the tower it rises slowly
   through the sky from far below the clouds after you, faster when you stop, slamming its hand onto
-  the stair ahead and reaching for you if it draws level; inside the tower you are safe. At the top it holds the tower in its hands and stares at you, then floats in
+  the stair ahead and tearing it out, hurling masonry at you, shaking the whole tower, the world
+  going silent just before each attack; it reaches for you if it draws level; inside the tower you
+  are safe. At the top it holds the tower in its hands and stares at you, then floats in
   the sky watching as you climb the chain. If it catches you, you wake chained on a punishment
   platform behind you: pull at the chains (jump) to break free.
 - **Level 9 (the Suburbs):** the last level, through the leap in Level 490. An endless suburb at midnight in thick fog that drains the colour

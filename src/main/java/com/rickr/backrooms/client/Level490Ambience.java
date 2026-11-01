@@ -57,7 +57,9 @@ public final class Level490Ambience {
         Vec3 eye = mc.player.getEyePosition();
         boolean indoors = Level490ClientState.hasSeed()
                 && Level490Layout.insideSpire(Level490ClientState.seed(), eye.x, eye.y, eye.z);
-        float outside = indoors ? 0.25f : 1.0f;
+        // Indoors it is muffled; and the world goes quiet just before the creature acts (Level490Attacks).
+        float quiet = 1.0f - 0.92f * Level490Attacks.hush();
+        float outside = (indoors ? 0.25f : 1.0f) * quiet;
         wind = keep(wind, ModSounds.LEVEL490_WIND.get(), (0.45f + 0.45f * gust) * outside);
         double nearest = Double.MAX_VALUE;
         for (int[] c : Level490ClientState.chains(eye.x, eye.z)) {
@@ -66,10 +68,10 @@ public final class Level490Ambience {
         float chain = (float) Math.max(0.0, Math.min(1.0, (WIRE_FAR - nearest) / (WIRE_FAR - WIRE_NEAR)));
         wire = keep(wire, ModSounds.LEVEL490_WIRE.get(), chain * (0.55f + 0.4f * gust) * outside);
         whirlwind = keep(whirlwind, ModSounds.LEVEL490_WHIRLWIND.get(), 0.55f * outside);
-        rumble = keep(rumble, ModSounds.LEVEL490_RUMBLE.get(), 0.6f);
+        rumble = keep(rumble, ModSounds.LEVEL490_RUMBLE.get(), 0.6f * quiet);
         float climbed = (float) Math.max(0.0, Math.min(1.0, (eye.y - Level490Layout.DECK_Y) / (Level490Spire.TOP - Level490Layout.DECK_Y)));
-        drone = keep(drone, ModSounds.LEVEL490_DRONE.get(), 0.4f + 0.5f * climbed);
-        rain = keep(rain, ModSounds.LEVEL490_RAIN.get(), 0.75f * Level490Weather.rain() * (indoors ? 0.2f : 1.0f));
+        drone = keep(drone, ModSounds.LEVEL490_DRONE.get(), (0.4f + 0.5f * climbed) * quiet);
+        rain = keep(rain, ModSounds.LEVEL490_RAIN.get(), 0.75f * Level490Weather.rain() * (indoors ? 0.2f : 1.0f) * quiet);
     }
 
     /** Keeps a loop playing at {@code volume} (starting it if it isn't). */

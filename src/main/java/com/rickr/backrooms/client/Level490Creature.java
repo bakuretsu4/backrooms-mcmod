@@ -98,6 +98,10 @@ public final class Level490Creature {
 
     /** Network: a hand coming for you. */
     public static void reach(Level490ReachPayload p) {
+        Level490Attacks.attack(p);
+        if (p.kind() == Level490ReachPayload.THROW || p.kind() == Level490ReachPayload.SHAKE) {
+            return; // drawn and felt in Level490Attacks
+        }
         reach = p;
         Minecraft mc = Minecraft.getInstance();
         reachSeen = mc.level == null ? 0 : mc.level.getGameTime();

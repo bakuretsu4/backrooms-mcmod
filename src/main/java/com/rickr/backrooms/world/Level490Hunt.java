@@ -105,6 +105,10 @@ public final class Level490Hunt {
     private static final double SKY_OUT = 70.0;
     private static final double AHEAD = 0.6;
     private static final int GRAB_LEAD = 25;
+    /** A thrown chunk is in the air this long; the shake is felt coming this long and lasts this long (ticks). */
+    private static final int THROW_LEAD = 40;
+    private static final int SHAKE_LEAD = 40;
+    private static final int SHAKE_TICKS = 70;
     /** Where the cloud sea's top is (what it rises out of). */
     private static final double SEA_Y = 140.0;
     /** The chains give after this many pulls; or on their own after this long. */
@@ -149,6 +153,19 @@ public final class Level490Hunt {
         double tz;
         long land;
         long lift;
+        /** Whether the hand coming down tears the stair out where it lands (the slams ahead; not a grab). */
+        boolean tears;
+        /** A chunk of masonry thrown at you: where it lands and when (0 when none). */
+        double[] throwTo;
+        long throwLand;
+        long nextThrow;
+        /** It shaking the tower: from when to when (game ticks). */
+        long shakeFrom;
+        long shakeUntil;
+        long nextShake;
+        /** Where you were last tick, and how you are moving (blocks a tick, smoothed): for aiming throws. */
+        Vec3 prevTick;
+        Vec3 vel = Vec3.ZERO;
         /** How you have been moving: where you were a second ago, and how long you have been still (seconds). */
         Vec3 last;
         double still;
@@ -161,6 +178,12 @@ public final class Level490Hunt {
         void reachClear() {
             land = 0;
             lift = 0;
+            tears = false;
+        }
+
+        /** True while nothing else it does is under way (one act at a time). */
+        boolean idle(long t) {
+            return land == 0 && throwLand == 0 && t >= shakeUntil + 40;
         }
     }
 
@@ -281,6 +304,8 @@ public final class Level490Hunt {
                 h.gap = PACE_GAP;
                 h.risen = false;
                 h.nextSlam = t + 600 + random.nextInt(300);
+                h.nextThrow = t + 360 + random.nextInt(200);
+                h.nextShake = t + 800 + random.nextInt(300);
                 h.nextFlash = t + 60;
                 sound(player, ModSounds.LEVEL490_RUMBLE.get(), cx + Math.cos(angle) * 60, SEA_Y - 20, cz + Math.sin(angle) * 60, 3.0f, 0.45f);
                 sound(player, ModSounds.LEVEL490_CHAIN_JOLT.get(), cx + Math.cos(angle) * 60, SEA_Y, cz + Math.sin(angle) * 60, 3.0f, 0.5f);
@@ -317,11 +342,16 @@ public final class Level490Hunt {
             h.hx = cx + Math.cos(h.headAngle) * SKY_OUT;
             h.hy = h.headY;
             h.hz = cz + Math.sin(h.headAngle) * SKY_OUT;
-            if (h.land == 0 && !inside && outside >= 0 && gap < REACH_GAP) {
+            if (h.prevTick != null) {
+                h.vel = h.vel.scale(0.8).add(now.subtract(h.prevTick).scale(0.2));
+            }
+            h.prevTick = now;
+            boolean exposed = !inside && outside >= 0 && h.risen;
+            if (h.land == 0 && h.throwLand == 0 && exposed && gap < REACH_GAP) {
                 // Level with you: a hand reaches across for where you stand.
                 startReach(player, h, Level490ReachPayload.SLAM, h.hx, h.hy - 20, h.hz, x, y, z, t + GRAB_LEAD);
-            } else if (h.land == 0 && !inside && outside >= 0 && t >= h.nextSlam && gap < 90) {
-                // A hand slams onto the stair ahead of you.
+            } else if (h.idle(t) && exposed && t >= h.nextSlam) {
+                // A hand slams onto the stair ahead of you and tears it out.
                 int f = (int) Math.min(1, Math.floor(outside));
                 double sweep = Level490Spire.flightSweep(f);
                 double sNow = (outside - f) * sweep;
@@ -329,9 +359,35 @@ public final class Level490Hunt {
                 if (ahead < sweep - 10) {
                     double[] p = spire.flightPoint(f, ahead, 0.5);
                     startReach(player, h, Level490ReachPayload.SLAM, h.hx, h.hy - 20, h.hz, p[0], p[1], p[2], t + SLAM_LEAD);
+                    h.tears = true;
                 }
                 h.nextSlam = t + 400 + random.nextInt(300) - (long) (h.still * 30);
+            } else if (h.idle(t) && exposed && t >= h.nextThrow) {
+                // It hurls a chunk of masonry at where you are heading.
+                Vec3 aim = now.add(h.vel.scale(THROW_LEAD));
+                double side = random.nextBoolean() ? 1 : -1;
+                double ox = Math.cos(h.headAngle);
+                double oz = Math.sin(h.headAngle);
+                double fx = h.hx - oz * side * 40;
+                double fz = h.hz + ox * side * 40;
+                h.throwTo = new double[] {aim.x, y, aim.z};
+                h.throwLand = t + THROW_LEAD;
+                PacketDistributor.sendToPlayer(player, new Level490ReachPayload(Level490ReachPayload.THROW, (float) fx, (float) (h.hy + 30),
+                        (float) fz, (float) aim.x, (float) y, (float) aim.z, h.throwLand, h.throwLand + 30));
+                sound(player, ModSounds.LEVEL490_CHAIN_JOLT.get(), fx, h.hy + 30, fz, 2.0f, 0.5f);
+                h.nextThrow = t + 300 + random.nextInt(240);
+            } else if (h.idle(t) && exposed && t >= h.nextShake) {
+                // It seizes the tower and shakes it.
+                double[] grip = spire.surface(h.hx, y - 6, h.hz);
+                h.shakeFrom = t + SHAKE_LEAD;
+                h.shakeUntil = h.shakeFrom + SHAKE_TICKS;
+                PacketDistributor.sendToPlayer(player, new Level490ReachPayload(Level490ReachPayload.SHAKE, (float) grip[0], (float) (y - 6),
+                        (float) grip[1], (float) x, (float) y, (float) z, h.shakeFrom, h.shakeUntil));
+                sound(player, ModSounds.LEVEL490_CHAIN_JOLT.get(), grip[0], y - 6, grip[1], 3.0f, 0.45f);
+                h.nextShake = t + 700 + random.nextInt(500);
             }
+            shaking(player, h, spire, t, inside, cx, cz, random);
+            throwLanding(player, h, spire, t, cx, cz, random);
             if (t >= h.nextFlash) {
                 // Lightning behind it, every 5-10 seconds, so you keep catching its whole shape.
                 h.nextFlash = t + 100 + random.nextInt(100);
@@ -412,12 +468,72 @@ public final class Level490Hunt {
                 caught(player, h, seed, h.stage == CLIMB);
                 return;
             }
-            // Missed: on the tower it sinks back a little before coming again.
+            // Missed: on the tower it sinks back a little before coming again; a slam tears the stair out.
             h.gap = Math.max(h.gap, REACH_GAP + 6);
+            if (h.tears) {
+                long seed = BackroomsSeeds.layoutSeed(level, BackroomsLevel.LEVEL_490);
+                Level490Wrecks.tear(level, Level490Layout.spireAt(seed, (int) h.tx, (int) h.tz), h.tx, h.ty, h.tz, 1.3);
+            }
         }
         if (t >= h.lift) {
             h.reachClear();
         }
+    }
+
+    /** While it shakes the tower: you are shoved about, toward the edge, and the stair's edge crumbles. */
+    private static void shaking(ServerPlayer player, Hunt h, Level490Spire spire, long t, boolean inside, double cx, double cz,
+                                RandomSource random) {
+        if (t < h.shakeFrom || t > h.shakeUntil) {
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        if (t == h.shakeFrom || t == h.shakeFrom + 35) {
+            sound(player, ModSounds.LEVEL490_COLLAPSE.get(), player.getX(), player.getY() - 4, player.getZ(), 2.0f, 0.5f);
+            if (!inside) {
+                Level490Wrecks.crumble(level, spire, player.getX(), player.getY(), player.getZ(), t == h.shakeFrom ? 3 : 2);
+            }
+        }
+        if (inside || (t - h.shakeFrom) % 10 != 0) {
+            return;
+        }
+        // Out from the tower, and a little along it, either way.
+        double ox = player.getX() - cx;
+        double oz = player.getZ() - cz;
+        double ol = Math.max(1, Math.hypot(ox, oz));
+        ox /= ol;
+        oz /= ol;
+        double along = (random.nextDouble() - 0.5) * 0.4;
+        double out = 0.18 + 0.16 * random.nextDouble();
+        player.setDeltaMovement(player.getDeltaMovement().add(ox * out - oz * along, 0.06, oz * out + ox * along));
+        player.hurtMarked = true;
+    }
+
+    /** A thrown chunk landing: a direct hit knocks you hard (off the stair, likely), a near miss shoves you. */
+    private static void throwLanding(ServerPlayer player, Hunt h, Level490Spire spire, long t, double cx, double cz, RandomSource random) {
+        if (h.throwLand == 0 || t < h.throwLand) {
+            return;
+        }
+        double[] p = h.throwTo;
+        h.throwLand = 0;
+        ServerLevel level = player.serverLevel();
+        sound(player, ModSounds.LEVEL490_COLLAPSE.get(), p[0], p[1], p[2], 2.0f, 0.7f);
+        level.playSound(null, p[0], p[1], p[2], net.minecraft.sounds.SoundEvents.DEEPSLATE_BRICKS_BREAK, net.minecraft.sounds.SoundSource.HOSTILE,
+                2.0f, 0.5f);
+        double d = Math.hypot(player.getX() - p[0], player.getZ() - p[2]);
+        if (Math.abs(player.getY() - p[1]) > 3 || d > 4.5 || player.isCreative() || player.isSpectator()) {
+            return;
+        }
+        double ax = player.getX() - p[0];
+        double az = player.getZ() - p[2];
+        if (Math.hypot(ax, az) < 0.3) {
+            ax = player.getX() - cx;
+            az = player.getZ() - cz;
+        }
+        double al = Math.max(0.01, Math.hypot(ax, az));
+        double k = d < 1.8 ? 1.0 : 0.4;
+        player.setDeltaMovement(player.getDeltaMovement().add(ax / al * k, d < 1.8 ? 0.45 : 0.2, az / al * k));
+        player.hurtMarked = true;
+        Level490Wrecks.crumble(level, spire, p[0], p[1], p[2], 2);
     }
 
     private static void startReach(ServerPlayer player, Hunt h, int kind, double fx, double fy, double fz, double tx, double ty, double tz, long land) {

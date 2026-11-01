@@ -35,6 +35,9 @@ public final class Level490WhaleSong {
             nextFarMs = now + 8_000;
             return;
         }
+        if (Level490Attacks.hush() > 0.3f) {
+            return; // the silence before the creature acts
+        }
         if (now >= nextFarMs) {
             nextFarMs = now + 12_000 + RANDOM.nextInt(18_000);
             double angle = RANDOM.nextDouble() * Math.PI * 2;

@@ -439,6 +439,30 @@ The creature's look stays ("looks really good"). Fixed and changed:
   and its chains drag, louder and more often the closer it is; the camcorder's distress (jitter,
   shake, breathing) follows how close it is.
 
+## After the fourth play-test
+
+"Still not suspenseful enough"; "the weird objects hanging at the top of the screen, coming out of
+nowhere"; "more violent".
+
+- **The objects at the top of the screen** were the solid chain tops (client/Level490ChainTops)
+  drawn without the camera's rotation: at the "after solid blocks" stage the shared model-view
+  matrix doesn't have it yet and the event's pose stack is empty, so the chains above y 512 were
+  drawn as if you always faced one way, hanging over the screen and moving as you turned (found by
+  switching each sky feature off in turn). Now drawn with the event's own model-view matrix; the
+  colossal chains run on unbroken from the blocks into the sky.
+- **It wrecks the stair** (world/Level490Wrecks): a hand slamming down ahead of you tears that
+  stretch out, the whole width (a gap of 2-2.5 blocks to jump); it is built again from the layout a
+  minute and a half later (remembered in the save).
+- **It shakes the tower** every 35-60 seconds: a tremor as it takes hold, then for three and a half
+  seconds the view lurches and you are shoved about, mostly toward the edge, while the stair's
+  outer edge crumbles and masonry falls past.
+- **It throws masonry** every 15-27 seconds: a chunk arcs in from its hand at where you are heading;
+  a direct hit knocks you hard (off the stair, often), a near miss shoves you; the edge crumbles where
+  it lands.
+- **Silence before it acts** (client/Level490Attacks#hush): from the moment it starts an attack until
+  just after it lands, the rain, wind, drone and whale song fade nearly out.
+- One attack at a time; inside the tower none reach you.
+
 ## Still open
 
 Nothing planned beyond the play-test notes.

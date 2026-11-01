@@ -67,7 +67,11 @@ public final class Level490ChainTops {
         Minecraft mc = Minecraft.getInstance();
         Vec3 cam = event.getCamera().getPosition();
         LongOpenHashSet near = new LongOpenHashSet();
-        Matrix4f base = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(event.getPoseStack().last().pose());
+        // The camera's rotation: at this stage it is only in the event's model-view matrix (the shared
+        // model-view stack doesn't have it yet, and the pose stack is empty). Using those instead drew
+        // the chains as if you always faced one way: pieces of chain hanging in the sky at the top of
+        // the screen, moving as you turned (the play-test's "weird objects coming out of nowhere").
+        Matrix4f base = new Matrix4f(event.getModelViewMatrix());
         RenderType solid = RenderType.solid();
         boolean setUp = false;
         for (int[] c : Level490ClientState.chains(cam.x, cam.z)) {
