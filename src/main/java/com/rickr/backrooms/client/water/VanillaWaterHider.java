@@ -13,9 +13,10 @@ import org.slf4j.LoggerFactory;
  * Decides whether vanilla's water faces are left out of the chunk meshes (asked by
  * {@code mixin/client/LiquidBlockRendererMixin} for every water block it is about to draw).
  *
- * <p>Yes only when ALL of these hold: we are in a level with a {@link WaterStyle} (the Poolrooms,
- * Level 37), our water shader compiled, and no Iris shader pack is running (a shader pack draws
- * its own water, and our pass would not match its picture). Otherwise vanilla water stays, so
+ * <p>Yes only when ALL of these hold: we are in a level with a {@link WaterStyle#forLevel} (the
+ * Poolrooms, Level 37, Level 39, Level 7, Level 227), our water shader compiled, and no Iris
+ * shader pack is running (a shader pack draws its own water, and our pass would not match its
+ * picture). Otherwise vanilla water stays, so
  * there is never a level with no visible water at all.
  *
  * <p>The chunk builder calls this from several worker threads at once, so the answer is cached

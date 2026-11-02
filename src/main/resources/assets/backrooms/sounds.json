@@ -699,6 +699,98 @@
     ],
     "subtitle": "subtitles.backrooms.water_splash"
   },
+  "level227.water.splash_small": {
+    "sounds": [
+      {
+        "name": "backrooms:level227/water/splash_small1",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "backrooms:level227/water/splash_small2",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "backrooms:level227/water/splash_small3",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "backrooms:level227/water/splash_small4",
+        "attenuation_distance": 14
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level227.splash"
+  },
+  "level227.water.splash_medium": {
+    "sounds": [
+      {
+        "name": "backrooms:level227/water/splash_medium1",
+        "attenuation_distance": 20
+      },
+      {
+        "name": "backrooms:level227/water/splash_medium2",
+        "attenuation_distance": 20
+      },
+      {
+        "name": "backrooms:level227/water/splash_medium3",
+        "attenuation_distance": 20
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level227.splash"
+  },
+  "level227.water.splash_big": {
+    "sounds": [
+      {
+        "name": "backrooms:level227/water/splash_big1",
+        "attenuation_distance": 26
+      },
+      {
+        "name": "backrooms:level227/water/splash_big2",
+        "attenuation_distance": 26
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level227.splash_big"
+  },
+  "level227.water.paddle": {
+    "sounds": [
+      {
+        "name": "backrooms:level227/water/paddle1",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level227/water/paddle2",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level227/water/paddle3",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "backrooms:level227/water/paddle4",
+        "attenuation_distance": 12
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level227.paddle"
+  },
+  "level227.water.under_bed": {
+    "sounds": [
+      {
+        "name": "backrooms:level227/water/under_bed",
+        "stream": true
+      }
+    ]
+  },
+  "level227.water.under_enter": {
+    "sounds": [
+      "backrooms:level227/water/under_enter1",
+      "backrooms:level227/water/under_enter2"
+    ]
+  },
+  "level227.water.under_exit": {
+    "sounds": [
+      "backrooms:level227/water/under_exit1",
+      "backrooms:level227/water/under_exit2"
+    ]
+  },
   "sanity.whisper": {
     "sounds": [
       {

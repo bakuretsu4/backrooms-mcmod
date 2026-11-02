@@ -25,7 +25,8 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Eyes under the water in the Poolrooms, Level 37 and Level 7: a tinted view instead of vanilla's
+ * Eyes under the water in every level with a {@link WaterStyle} (the pools, Level 39, Level 7,
+ * Level 227's ponds): a tinted view instead of vanilla's
  * murky blue. The fog colour and distance come from the level's {@link WaterStyle} (in Level 7's
  * deep sea also from how far under the surface you are); vanilla's
  * dark "underwater" screen overlay is switched off; the camcorder gets an {@code Underwater}

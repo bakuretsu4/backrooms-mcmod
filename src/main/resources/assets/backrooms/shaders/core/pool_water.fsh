@@ -1,10 +1,12 @@
 #version 150
 
-// Pool water surface for the Poolrooms and Level 37.
+// Water surface of every level with a WaterStyle (the Poolrooms, Level 37, Level 39, Level 7,
+// Level 227's ponds).
 //
 // The surface is drawn after the whole room has been drawn and lit, so SceneColor/SceneDepth
 // (a copy of the screen) show exactly what lies behind each water pixel. From that:
-//  1. Ripples: two scrolling layers of a tileable normal map bend the surface.
+//  1. Ripples: two scrolling layers of a tileable normal map bend the surface, plus rings
+//     spreading from where something just fell in (Impact0..3).
 //  2. Refraction: the floor behind is looked up a little off to the side, following the ripples.
 //  3. Caustics: the moving web of light that a rippled surface focuses onto the pool floor,
 //     projected along the light direction; it brightens the (already lit) floor, so dark rooms
@@ -50,6 +52,15 @@ uniform float SceneFogEnd;
 uniform vec4 SceneFogColor;
 uniform int SceneFogShape;
 
+// Impacts (client/water/WaterRipples): where something fell in, rings spread over the surface.
+// ImpactN: xy = impact point minus the camera (x, z), z = seconds since, w = strength 0..1
+// (0 = no ring). ImpactY: each impact's surface height minus the camera's (x, y, z, w = 0..3).
+uniform vec4 Impact0;
+uniform vec4 Impact1;
+uniform vec4 Impact2;
+uniform vec4 Impact3;
+uniform vec4 ImpactY;
+
 in vec3 relPos;
 in vec3 viewPos;
 
@@ -93,6 +104,37 @@ vec3 surfaceNormal(vec2 p, float dist) {
     // Far away the ripples are smaller than a pixel: calm them so the water doesn't shimmer.
     slope /= 1.0 + dist * 0.035;
     return normalize(vec3(-slope.x, 1.0, -slope.y));
+}
+
+// Impact rings spread this fast (blocks per second) and live this long (WaterRipples.LIFE_SECONDS).
+const float RING_SPEED = 1.2;
+const float RING_LIFE = 2.6;
+
+// Surface slope (xz) of the short train of ring waves spreading from one impact, at the
+// camera-relative surface point rel. The train widens and its waves lengthen as it travels, and
+// it flattens out with time and distance.
+vec2 ringSlope(vec4 imp, float impY, vec3 rel) {
+    if (imp.w <= 0.0 || abs(rel.y - impY) > 0.35) {
+        return vec2(0.0);                         // no impact, or another pond at another height
+    }
+    vec2 d = rel.xz - imp.xy;
+    float r = length(d);
+    float x = r - imp.z * RING_SPEED;             // < 0 behind the front, > 0 ahead of it
+    float width = 0.18 + 0.3 * imp.z;
+    if (r < 1.0e-3 || x > width * 2.5 || x < -width * 3.0) {
+        return vec2(0.0);
+    }
+    float wavelength = 0.28 + 0.12 * imp.z;
+    float envelope = exp(-(x * x) / (width * width));
+    float fade = (1.0 - smoothstep(RING_LIFE - 0.6, RING_LIFE, imp.z)) / (1.0 + r * 0.9);
+    return d / r * (cos(x / wavelength * 6.2831853) * imp.w * 0.32 * envelope * fade);
+}
+
+// The surface normal N tilted by every live impact's rings.
+vec3 addImpacts(vec3 N, vec3 rel) {
+    vec2 s = ringSlope(Impact0, ImpactY.x, rel) + ringSlope(Impact1, ImpactY.y, rel)
+           + ringSlope(Impact2, ImpactY.z, rel) + ringSlope(Impact3, ImpactY.w, rel);
+    return normalize(N + vec3(-s.x, 0.0, -s.y));
 }
 
 // The caustic web at pattern position p (in blocks).
@@ -182,7 +224,8 @@ void main() {
     float surfDist = length(viewPos);
     vec3 V = -relPos / max(surfDist, 1.0e-4);   // towards the eye
     vec2 p = relPos.xz + CameraLow.xz;           // world xz (wrapped) for the textures
-    vec3 N = surfaceNormal(p, surfDist);
+    // The ripples, plus the rings spreading from anything that just fell in.
+    vec3 N = addImpacts(surfaceNormal(p, surfDist), relPos);
     // Only the ripple part of the normal moves things on screen (the flat "up" part must not).
     vec3 bend = mat3(ModelViewMat) * (N - vec3(0.0, 1.0, 0.0));
     bool fromBelow = relPos.y > 0.0;             // the surface is above the eye

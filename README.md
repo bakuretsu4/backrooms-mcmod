@@ -21,7 +21,7 @@ Lithium, FerriteCore, ModernFix, Entity Culling, ImmediatelyFast and Dynamic FPS
 | NightShot (infrared) | `N` (drains the battery 3x faster) |
 | Camcorder REC overlay | `H` (off by default). Switching it on shows REC, battery, clock and exit signal clearly for a few seconds; then they sink to a faint ghost until one of them changes. A low battery (15% or less) pulses soft red at the top right even with the overlay off. |
 | Sprint | Limited by energy: a short, thin faint line above your hearts shows it while you run (turns soft red when you're out of breath). Rest to refill it. |
-| Jump | Not possible in the Backrooms (except in water, to swim and climb out) |
+| Jump | Not possible in the Backrooms (except in water, to swim and climb out; on ropes and other climbables; and in Level 490 and Level 227, where the levels need it) |
 | Loot | Right-click Wooden Crates, Backpacks and Supply Cabinets (see Supplies below) |
 | New battery | Right-click a Camcorder Battery |
 | Settings | **SETTINGS** on the main menu, **Backrooms Settings...** in the pause menu, or Config in the Mods list: camera smoothing (default 35%; the original feel was 88%), handheld shake, view tilt, motion blur, wide lens, **footage look** and **4:3 frame** (see The camcorder picture below), stamina line, and **QUALITY** for weaker computers (see Performance below). Changes apply immediately and are saved per player in `config/backrooms-client.toml`. |
@@ -320,10 +320,27 @@ going down into the dark, until the picture breaks up and you are in the next le
   (walk outward and you slowly descend), splitting into sub-branches and limbs that end in tapered
   tips or broken stumps showing their growth rings. Here and there two branch systems have grown
   into each other or are joined by a thin bridging limb: the only ways across, so look for them.
-  On top: 4-8 blocks of rooted soil, moss and grass with roots snaking over it and puddles in the
-  dips, under a forest of giant trees 25-70 blocks tall (buttress roots, layered crowns, lianas
+  On top: 4-8 blocks of rooted soil, moss and grass with roots snaking over it and forest pools in
+  the dips, under a forest of giant trees 25-70 blocks tall (buttress roots, layered crowns, lianas
   you can climb, epiphytes, bracket fungi), shrubs, tall grass, giant ferns, fallen logs and snapped
-  stumps. At the edges the soil thins to moss-streaked bark curving away into nothing, where purple
+  stumps. The pools (`world/layout/Level227Ponds`) are real, still water you can jump, fall and dive
+  into and swim in: one flat surface each, a dark silty bottom that shelves down a block at a time
+  (1 deep at the rim, 2-4 in the middle of the bigger ones), banks at most a block above the water
+  so you can always climb out, and open sky over them (no roots, logs or trunks in or over the
+  water, nothing solid within 3 blocks above it). Jumping works everywhere in Level 227: you hop
+  over roots and into the pools. Pools only appear in newly generated chunks; where you have
+  already been, the old one-block puddles stay.
+  The water is a tea-coloured forest pool (`client/water/WaterStyle.LEVEL_227`): clear amber-green
+  in the shallows, peaty green-black where it is deep, mirroring the canopy, with soft ripples,
+  light patterns on the bottom where light reaches and sun glints from the real sun overhead; under
+  it a murky green haze. With a shader pack (Iris, e.g. Complementary) the pack draws the water
+  instead, tinted the same amber-green by the biome's water colour. Anything falling in splashes
+  by how fast it hits (a plop, a splash, a belly-flop from six blocks up): drops, rings, foam,
+  bubbles dragged down, and rings rippling across the surface (`client/water/WaterSplashes`);
+  wading and swimming leave small rings and soft water sounds. With your head under, a quiet
+  muffled hush replaces vanilla's ocean sounds and everything else goes dull and quiet
+  (`client/water/UnderwaterAudio`). Test it with `/backrooms l227 pond [height]`.
+  At the edges the soil thins to moss-streaked bark curving away into nothing, where purple
   Lestron grows; moss curtains, fern fronds and lianas hang off the undersides into the void. Bear
   caves open as mossy holes in the forest floor; hollow knots gape at the branch edges. Rare
   clearings of white ash mark the deadly sunbeams of the Sun over the Void. Mind the glowing
@@ -1019,6 +1036,9 @@ saturation, hiss and a big, empty room.
   bubbles shimmer. Far off, branches groan as the tree moves, limbs crack in the canopy, something
   big calls and the void howls from below. The forest's echo is soft and diffuse (thousands of
   trunks scatter it). Loops at -30 LUFS (the void wind and the beam hum -27), the lurch -20.
+  Its ponds (`client/water/WaterSplashes`, `UnderwaterAudio`, `tools/level227_water/gen_water.py`):
+  splashes in three sizes (-27 / -23 / -20 LUFS), soft strokes -31, the underwater hush -33; with
+  your head under, every other sound is muffled through the same filter as the walls.
 
 ## Operator commands
 
@@ -1058,6 +1078,7 @@ saturation, hiss and a big, empty room.
 /backrooms l227 drag                    in another level: get dragged into Level 227 now
 /backrooms l227 bubble                  Level 227: a fallen bubble drifts by the nearest branch edge
 /backrooms l227 beam                    Level 227: stand on the forest floor 6 blocks outside the nearest sunbeam, facing it
+/backrooms l227 pond [height]           Level 227: dig a test pond 7 blocks ahead (4 deep in the middle); with a height, drop into it from that high
 /backrooms spawn l227_bear [awake]      Level 227: a bear ~10 blocks ahead, asleep facing you (or waking)
 /backrooms spawn l227_doe               Level 227: a doe ~12 blocks ahead (walk within 4 blocks and you fall)
 /backrooms spawn l227_boar [standing]   Level 227: a boar ~10 blocks ahead, lounging on its back (or up)
@@ -1111,9 +1132,9 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`; team-shared ones in `SharedCheckpoints`, game rule in `registry/ModGameRules`, death-screen buttons in `client/CheckpointChoiceButtons`), hiding in furniture (`HidingService`, which furniture and where the view sits: `HidingSpots`), friends hearing a panicking player's heartbeat (`SharedHeartbeat`) |
 | `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas); Level 0's versions cluster in worn patches and some keep to one wall row (`Level0SurfaceBlock`, art in `tools/anomaly_assets/level0_surfaces.py`); Level 2's wet versions gather in damp stretches (`Level2SurfaceBlock` with `world/layout/Level2Damp`, art in `tools/anomaly_assets/level2_materials.py`); Level 227's flora (`Level227*Block`: tall plants, hanging strands, the Palette, GammaPali, Lestron; registered in `registry/Level227Blocks`, art in `tools/anomaly_assets/level227_flora.py`) |
 | `network` | Packets between server and clients |
-| `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`) |
+| `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`); Level 227's splash drops, surface rings and foam, and bubbles (`WaterDropletParticle`, `WaterSurfaceParticle`, `WaterBubbleParticle`) |
 | `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, Level 0's faulty tubes (stutter, lazy restart, dying pulse: `FixturePower`; the tube ages and colours themselves are block states, `block/Level0TubeGlow`, picked by `world/layout/Level0Tubes`), Level 0's own light type with wall-map shadows and the power/corner screen pass (`Level0LightRenderer`, `Level0WallGrid`, `Level0PowerMap`, shaders in `pinwheel/shaders/program/light/level0_*`), its blackout wave and local outages (`Level0Power`), flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
-| `client/water` | Pool water (also Level 7's sea): surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), underwater fog and its darkening with depth (`UnderwaterView`) |
+| `client/water` | Pool water (also Level 7's sea and Level 227's ponds): surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), impact rings on the surface (`WaterRipples`), underwater fog and its darkening with depth (`UnderwaterView`); Level 227's splashes (`WaterSplashes`) and underwater sound (`UnderwaterAudio`) |
 | `client/audio` | Wall muffling and room reverb through OpenAL EFX (`Acoustics`, `AcousticsEfx`); distant one-off sounds per level (`DistantAmbience`) |
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`); moves your view inside the furniture while you hide (`CameraMixin`) |
 | `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`); lets anomaly teleports update the server's movement check, and keeps players held in the air (Level 39's sky arrival, window grabs, the chairlift) from being kicked for "flying" (`ServerGamePacketListenerAccessor`) |

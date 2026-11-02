@@ -447,7 +447,19 @@ public final class Level227Tree {
 
     /** Puddle dips: in the low parts of the rolling ground, away from root ridges. */
     static boolean isPuddle(double x, double z) {
-        return noise(x * 0.06, z * 0.06, 34) < -0.52 && noise(x * 0.027, z * 0.027, 31) < -0.15;
+        return puddleStrength(x, z) > 0;
+    }
+
+    /**
+     * How far inside a puddle dip (x, z) is: above 0 inside (just above 0 at its rim, towards 1 in
+     * the middle of the biggest), 0 or below outside. It is how far each of the two noises that make
+     * the dip lies under its threshold, scaled to 0..1, and the smaller of the two: so it grows
+     * smoothly from the rim inwards, and the pools of {@link Level227Ponds} are deepest in the middle.
+     */
+    static double puddleStrength(double x, double z) {
+        double small = (-0.52 - noise(x * 0.06, z * 0.06, 34)) / 0.48;
+        double large = (-0.15 - noise(x * 0.027, z * 0.027, 31)) / 0.85;
+        return Math.min(small, large);
     }
 
     /** Distance (horizontal) from (x, z) to piece {@code id}'s axis line. */

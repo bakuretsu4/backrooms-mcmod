@@ -89,6 +89,18 @@ public final class ModSounds {
     /** Soft splash that replaces vanilla's loud one when you drop into the pools of the Poolrooms / Level 37. */
     public static final DeferredHolder<SoundEvent, SoundEvent> WATER_SPLASH = register("water.splash");
 
+    // Level 227's ponds (client/water/WaterSplashes and UnderwaterAudio, made by
+    // tools/level227_water/gen_water.py): a splash in three sizes picked by how fast something hits
+    // the water, a soft stroke for wading and swimming at the surface, and under the water a quiet
+    // muffled bed with a soft sound for ducking under and for coming up.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_SPLASH_SMALL = register("level227.water.splash_small");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_SPLASH_MEDIUM = register("level227.water.splash_medium");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_SPLASH_BIG = register("level227.water.splash_big");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_WATER_PADDLE = register("level227.water.paddle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_UNDER_BED = register("level227.water.under_bed");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_UNDER_ENTER = register("level227.water.under_enter");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_UNDER_EXIT = register("level227.water.under_exit");
+
     // Noclip intro: reality glitching apart, the rush of falling, crashing through the ceiling.
     public static final DeferredHolder<SoundEvent, SoundEvent> INTRO_GLITCH = register("intro.glitch");
     public static final DeferredHolder<SoundEvent, SoundEvent> INTRO_WIND = register("intro.wind");
