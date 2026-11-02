@@ -49,10 +49,37 @@ def lerp(a, b, t):
     return a + (b - a) * t
 
 
+# Small parts and material swatches of rarely-seen props, saved at half size (64 px): the block
+# atlas must stay 4096 x 4096 and these are mapped onto little model elements, where the lost
+# detail doesn't show.
+HALF_RES = frozenset({
+    "l39_bulb", "l39_bulb_lit", "l39_bushing", "l39_cart_wheel", "l39_cart_wood", "l39_cast_iron",
+    "l39_chain", "l39_clip", "l39_crossarm", "l39_insulator", "l39_lamp_metal", "l39_mailbox_flag",
+    "l39_mailbox_tin", "l39_pole_top", "l39_rungs", "l39_spindle", "l39_handrail",
+    "l39_furn_almond_bottle", "l39_furn_black_iron", "l39_furn_brass", "l39_furn_bulb_dead",
+    "l39_furn_chrome", "l39_furn_cream_paint", "l39_furn_enamel", "l39_furn_enamel_cream",
+    "l39_furn_enamel_green", "l39_furn_icebox_coil", "l39_furn_lampshade", "l39_furn_linen",
+    "l39_furn_porcelain", "l39_furn_ticking", "l39_furn_toilet_bowl", "l39_furn_tub_inside",
+    "l39_furn_velvet_green", "l39_furn_velvet_red", "l39_gondola_bullwheel", "l39_gondola_rime",
+    "l39_gondola_rubber", "l39_gondola_sheave", "l39_gondola_steel", "l39_gondola_seat",
+    "l39_gondola_lattice_top",
+    "l94_lamp_bulb", "l94_lamp_base", "l94_milk_caps", "l94_milk_bottles", "l94_siren_bracket",
+    "l94_tower_tap", "l94_tower_tap_wheel", "l94_play_pipe_end",
+})
+
+
+def half_res(img: np.ndarray) -> np.ndarray:
+    """Box-filter a texture to half its size."""
+    h, w = img.shape[0] // 2, img.shape[1] // 2
+    return img[:h * 2, :w * 2].reshape(h, 2, w, 2, img.shape[2]).mean(axis=(1, 3))
+
+
 def save_png(img: np.ndarray, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if img.shape[2] == 3:
         img = np.concatenate([img, np.full(img.shape[:2] + (1,), 255.0)], axis=2)
+    if Path(path).stem in HALF_RES and img.shape[0] >= 128:
+        img = half_res(img)
     arr = np.clip(np.round(img), 0, 255).astype(np.uint8)
     Image.fromarray(arr, "RGBA").save(path)
 
