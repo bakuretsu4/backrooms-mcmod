@@ -5,7 +5,7 @@
 // Four slightly spread taps average out single-pixel sparkle before blurring.
 
 uniform sampler2D DiffuseSampler;
-uniform float Threshold; // luminance where glow starts (0.92); fully on at 1.0
+uniform float Threshold; // luminance where glow starts (0.92; lower in Level 37, see AtmosphereGrade); fully on at 1.0
 
 in vec2 texCoord;
 in vec2 oneTexel;

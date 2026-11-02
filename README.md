@@ -392,6 +392,17 @@ bubbles, sloshing and spray, and the water slows you down a little. Only deep po
 With an Iris shader pack active, vanilla water is kept (the pack draws its own).
 Sodium/Embeddium-style renderers that skip vanilla's fluid renderer are not covered.
 
+**Curved tile (Level 37's pillars, rounded corners, arches, tunnels and rotundas; the Poolrooms'
+sunlit archway)** is lit by the mod while each chunk is built (`client/CurveTileRenderer`), not by
+vanilla's block lighting, which can only light a curve one block at a time (dark blocks and
+triangles on curved ceilings). Light and ambient occlusion are sampled per vertex half a block in
+front of the surface, so they run smoothly round the curve and match vanilla smooth lighting where
+a curve meets a flat wall; the face shading follows the way the surface faces (the same shades
+the flat walls get for north/south, east/west, up and down). The flat Level 37 tile walls now use
+vanilla's normal face shading. With smooth lighting off the curves are flat-lit like every other
+block. It works the same under Sodium/Iris (shader packs do their own face shading from the
+normals); it does not need NeoForge's experimental light pipeline.
+
 ### Supplies
 
 Containers are filled the first time anyone opens them, from a loot table for the floor you are
@@ -839,7 +850,9 @@ evenly over the whole picture and blended over about two seconds when you change
 old camera recorded, after the found footage in the Backrooms film: a mix of tape and early
 digital. The picture is read at about 480 lines, soft and then over-sharpened (pale halos round
 dark edges), its colour bleeds sideways and sits in 8x8 compression blocks, and a faint ghost
-echoes each edge. A cheap white balance turns the Lobby buttery yellow and the whites blow out.
+echoes each edge. A cheap white balance turns the Lobby buttery yellow and the whites blow out
+(except in the Poolrooms and Level 37, where the brightest parts roll off softly so skylights and
+sunlit openings keep their shape).
 Digital noise grows in the dark as the camera turns its gain up, and its auto-exposure hunts:
 step from a dark corridor into a lit room and the picture flares, dips and settles. **4:3 FRAME**
 (also on by default) puts it between black bars like the old camera's picture, with the HUD kept
@@ -854,8 +867,8 @@ left). Turn the footage look off for a clean picture.
 | Level 1 | Cold, damp concrete: blue shadows, little colour, grey-blue air |
 | Level 2 | Warm amber pools from the caged lamps receding down the line, cold blue-grey darkness between and beyond them, pipe chases sunk in shadow, a thin cold haze far off. With Veil the lamps take block-exact shadows from the same wall map as Level 0 (48 lamps within 39 blocks on HIGH) and wet floors, puddles, sweating pipes and bare metal get a small highlight of the nearby lamps (`client/light/Level2Gloss` says which blocks are damp, wet or metal). F3 shows the Level 2 lights' GPU time |
 | Level 4 | Cold fluorescent blue-grey, quiet |
-| Poolrooms | Teal shadows, soft cool highlights, a gentle wet glow |
-| Level 37 | Dreamlike: low contrast, milky shadows, warm overexposed highlights, the strongest glow |
+| Poolrooms | Teal shadows, soft cool highlights, a gentle wet glow; skylights and the tiles under the tubes roll off softly instead of clipping |
+| Level 37 | Dreamlike: warm overexposed highlights, warm air and a soft glow, with natural contrast (tunnels fade into real darkness). The sunlit openings stay a soft cream-white with a gentle halo over the tile around them instead of a flat clipped white: the camcorder rolls the highlights off along a soft shoulder, the bloom is half as strong, and the shafts of sun land just under white with their grout still showing |
 | Level 9 | Deep blue shadows, sodium-orange highlights, cold dark air |
 | Level 94 | A touch over-saturated and soft by day, pale blue distance; colour drains away at night |
 | Level 7 | Colour almost gone: pale grey bone-dust fog above the water, murky dark teal under it, near-black in the deep |
@@ -870,7 +883,9 @@ The camera also reacts like a real one:
 
 - **Eyes adjusting** (`client/EyeAdaptation`): the auto-exposure follows how bright it is where you
   look, slowly. Step from the dark into a lit hall and the picture is blown out for a moment
-  before it settles; step into the dark and it stays too dark for a couple of seconds.
+  before it settles; step into the dark and it stays too dark for a couple of seconds. In Level 37
+  it (and the footage look's auto-exposure) meters the room light rather than the raw light level,
+  since its rooms are evenly lit: turning toward a sunlit opening no longer flares the picture.
 - **Dust in the light** (`client/particle/DustMotes`): fine specks drift in the air near the lamps
   and in your flashlight beam (only where there is light to see them by). In Level 0 they are
   rare, small and faint: the odd speck in your beam or right under a tube.
@@ -1141,6 +1156,6 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | `client/camera` | Handheld camera shake, roll, smoothing |
 | `client/hud` | Minimal HUD, stamina line, the arrival card (`ArrivalCard`), and the shared camcorder OSD look (`OsdStyle`: font, colours, margins, fades) used by `CamcorderHud`, `SafeRoomOsd`, `HidingOsd` and `ArrivalCard` |
 | `client/trailer` | Dev-only trailer camera and frame recorder (`TrailerRecorder`, off unless started with `-Dbackrooms.trailerDir`) |
-| `client` | Camcorder post-shader control, per-level picture mood (`AtmosphereGrade`), overlay, Bacteria model/renderer, keys |
+| `client` | Camcorder post-shader control, per-level picture mood (`AtmosphereGrade`), overlay, Bacteria model/renderer, keys; Level 37's curved tile drawn into the chunk meshes with smooth per-vertex lighting (`CurveTileRenderer`) |
 | `assets/backrooms/shaders` | Lens, bloom, motion blur, contact shadows, distance haze, glow and grade post-processing |
 | `tools/gen_assets.py`, `tools/anomaly_assets` | Every texture and sound, generated in code; the anomalous areas' assets live in one module per level, loaded by `gen_assets.py` |

@@ -80,10 +80,14 @@ public final class SunBeams {
     private static final float SUN_G = 0xE9 / 255.0f;
     private static final float SUN_B = 0xBF / 255.0f;
     /**
-     * Level 37: a lit patch of white tile lands around the sun colour (#f1e9bf) on top of the
-     * fill, bright but not clipped to white (2.6 blew pillars and walls out).
+     * Level 37: a lit patch of white tile lands just under white on top of the room fill. The fill
+     * already puts lit tile at ~0.54-0.65 in the picture (vanilla's brightness slider lifts it), and
+     * everything is drawn into an 8-bit picture before the camcorder grades it, so whatever passes
+     * 1.0 there is lost for good: at 1.25 every sun patch, sill and window reveal was a flat
+     * clipped white (~1.2-1.5) with no grout left. At 0.65 a patch peaks around 0.9-1.0 with its
+     * grout visible, and the camcorder's highlight shoulder (AtmosphereGrade) does the rest.
      */
-    private static final float BRIGHTNESS_37 = 1.25f;
+    private static final float BRIGHTNESS_37 = 0.65f;
     /** The Poolrooms archway: warm light spilling into a dim room. */
     private static final float BRIGHTNESS_ARCHWAY = 1.2f;
     /** How far a beam reaches (it fades out smoothly by this distance). */

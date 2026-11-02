@@ -242,7 +242,7 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> L37_TILE_FLOOR = structural("l37_tile_floor", MapColor.QUARTZ, SoundType.STONE);
     public static final DeferredBlock<Block> L37_TILE_CEILING = structural("l37_tile_ceiling", MapColor.QUARTZ, SoundType.STONE);
     public static final DeferredBlock<Block> L37_TILE_DEEP = structural("l37_tile_deep", MapColor.COLOR_GREEN, SoundType.STONE);
-    /** Curved tile: one piece of a circle (see block/CurveShape). OBJ models; lets light through. */
+    /** Curved tile: one piece of a circle (see block/CurveShape). OBJ models drawn by client/CurveTileRenderer; lets light through. */
     public static final DeferredBlock<TileCurveBlock> L37_TILE_CURVE = BLOCKS.registerBlock("l37_tile_curve",
             TileCurveBlock::new, unbreakable(MapColor.QUARTZ, SoundType.STONE).noOcclusion());
     /** Tile slab; the floating treads of the spiral stairs. Can stand in the shallows (FLOODED). */

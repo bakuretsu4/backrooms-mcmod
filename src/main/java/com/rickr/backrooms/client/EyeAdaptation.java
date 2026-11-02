@@ -67,13 +67,14 @@ public final class EyeAdaptation {
         Vec3 look = Vec3.directionFromRotation(mc.gameRenderer.getMainCamera().getXRot(), mc.gameRenderer.getMainCamera().getYRot());
         float day = daylight(mc);
         float power = 0.15f + 0.85f * FixturePower.mainsPower();
-        float here = lightAt(mc, eye, power, day);
+        boolean byFill = Level37Atmosphere.metersByFill(mc);
+        float here = lightAt(mc, eye, power, day, byFill);
         float ahead = 0.0f;
         for (int i = 1; i <= 3; i++) {
             Vec3 target = eye.add(look.scale(i * 3.0));
             BlockHitResult hit = mc.level.clip(new ClipContext(eye, target, ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, mc.player));
             Vec3 at = hit.getType() == HitResult.Type.MISS ? target : hit.getLocation().subtract(look.scale(0.3));
-            ahead += lightAt(mc, at, power, day);
+            ahead += lightAt(mc, at, power, day, byFill);
         }
         float light = 0.5f * here + 0.5f * ahead / 3.0f;
         if (CameraClientState.flashlight && CameraClientState.battery > 0.0f) {
@@ -82,11 +83,17 @@ public final class EyeAdaptation {
         return 0.04f + light;
     }
 
-    /** 0 .. 1: block light (dimmed in a blackout) or real daylight, whichever is brighter. */
-    private static float lightAt(Minecraft mc, Vec3 pos, float power, float day) {
+    /**
+     * 0 .. 1: block light (dimmed in a blackout) or real daylight, whichever is brighter. In Level 37
+     * (with Veil) the block light counts as the share of the room fill it gets
+     * ({@link Level37Atmosphere#litShare}): its rooms look the same from light 6 to 15, and the raw
+     * level flared the picture by ~35% for a second whenever you turned toward an opening.
+     */
+    private static float lightAt(Minecraft mc, Vec3 pos, float power, float day, boolean byFill) {
         CURSOR.set(pos.x, pos.y, pos.z);
-        return Math.max(mc.level.getBrightness(LightLayer.BLOCK, CURSOR) * power,
-                mc.level.getBrightness(LightLayer.SKY, CURSOR) * day) / 15.0f;
+        int block = mc.level.getBrightness(LightLayer.BLOCK, CURSOR);
+        float blockShare = byFill ? Level37Atmosphere.litShare(block) : block / 15.0f;
+        return Math.max(blockShare * power, mc.level.getBrightness(LightLayer.SKY, CURSOR) * day / 15.0f);
     }
 
     /** How much of the sky light is real: Level 94 follows its own clock, elsewhere the sky's own darkening. */

@@ -2,6 +2,7 @@ package com.rickr.backrooms.client;
 
 import com.mojang.blaze3d.shaders.FogShape;
 import com.rickr.backrooms.Backrooms;
+import com.rickr.backrooms.client.light.BackroomsLights;
 import com.rickr.backrooms.client.light.SunBeams;
 import com.rickr.backrooms.world.BackroomsLevel;
 import net.minecraft.client.DeltaTracker;
@@ -29,8 +30,9 @@ import org.joml.Vector3f;
  *       around white tile. Strong and soft, warm (#f1e9bf-ish), so lit rooms read bright and
  *       pale, while far from any opening (deep in a round tunnel, the end of a long corridor)
  *       it falls off to a dark olive, like the references.</li>
- *   <li><b>Haze:</b> a soft warm-white haze in the bright rooms that turns into dim olive gloom in
- *       the dark tunnels: the fog colour follows how much light is around you.</li>
+ *   <li><b>Haze:</b> a soft warm haze in the bright rooms (about as bright as lit tile, so dark
+ *       tunnels fade into darkness instead of milky grey) that turns into dim olive gloom in the
+ *       dark tunnels: the fog colour follows how much light is around you.</li>
  *   <li><b>Walking into the light:</b> in the Poolrooms, nearing a sunlit archway slowly whitens
  *       the screen (the move itself datamoshes, like every move between floors).</li>
  * </ul>
@@ -39,15 +41,21 @@ import org.joml.Vector3f;
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Level37Atmosphere implements LayeredDraw.Layer {
     // ---- Fill light ------------------------------------------------------------------------------
-    /** "No light at all": a very dark warm olive (the far end of a tunnel, #2d2e20 darkened). */
-    private static final float UNLIT_R = 0.020f;
-    private static final float UNLIT_G = 0.021f;
-    private static final float UNLIT_B = 0.015f;
+    /**
+     * "No light at all": a very dark warm olive (the far end of a tunnel). Vanilla's brightness
+     * slider lifts the lightmap after this (at the default 50% a 0.020 black came out ~0.077, a milky
+     * grey on camera), so it starts near black: ~0.045 after the slider.
+     */
+    private static final float UNLIT_R = 0.0060f;
+    private static final float UNLIT_G = 0.0063f;
+    private static final float UNLIT_B = 0.0045f;
     /**
      * The bounce in a lit room. It is the SAME for every light level from {@link #FULL_FROM} up:
-     * vanilla light falls by one level per block, and a fill that followed it stepped visibly from
-     * block to block up every round pillar (curved pieces are lit per block). The brightness
-     * differences inside a room come from the sun beams instead.
+     * the level's hidden lights are placed only to say "this room is lit", so the light level
+     * inside a lit room means nothing and the room reads evenly bright (the camera meters it the
+     * same way, {@link #litShare}). The brightness differences inside a room come from the sun beams
+     * and the face shading instead. (Curves are now lit smoothly per vertex, client/CurveTileRenderer,
+     * so this is a look choice, no longer a workaround for per-block steps on round pillars.)
      */
     private static final float MAX_FILL = 0.52f;
     /** Light level from which a place counts as fully lit (rooms keep their hidden lights dense). */
@@ -59,14 +67,20 @@ public final class Level37Atmosphere implements LayeredDraw.Layer {
     private static final float TINT_B = 0.83f;
 
     // ---- Haze ------------------------------------------------------------------------------------
-    private static final float HAZE_R = 0.88f;
-    private static final float HAZE_G = 0.85f;
-    private static final float HAZE_B = 0.75f;
+    /**
+     * The haze in a lit room: warm, and about as bright as lit tile on screen (not near-white), so
+     * distant lit rooms stay as they are while the far end of a dark tunnel only greys a little
+     * (it used to be 0.88 from 10 blocks: a tunnel 60 blocks away came out ~0.39 before the grade,
+     * milky instead of dark). It starts a little later and thickens more slowly too.
+     */
+    private static final float HAZE_R = 0.52f;
+    private static final float HAZE_G = 0.50f;
+    private static final float HAZE_B = 0.43f;
     private static final float GLOOM_R = 0.16f;
     private static final float GLOOM_G = 0.165f;
     private static final float GLOOM_B = 0.12f;
-    private static final float BRIGHT_FOG_START = 10.0f;
-    private static final float BRIGHT_FOG_END = 120.0f;
+    private static final float BRIGHT_FOG_START = 18.0f;
+    private static final float BRIGHT_FOG_END = 160.0f;
     private static final float DARK_FOG_START = 4.0f;
     private static final float DARK_FOG_END = 70.0f;
 
@@ -78,7 +92,10 @@ public final class Level37Atmosphere implements LayeredDraw.Layer {
     /** ... and is this white when you are right at it. */
     private static final float APPROACH_MAX = 0.85f;
 
-    /** 0..1: how bright it is around you (smoothed vanilla block light at your eyes). */
+    /**
+     * 0..1: how bright it is around you: the smoothed share of the room fill at your eyes
+     * ({@link #litShare}; the raw block light without Veil).
+     */
     private static float brightness = 1.0f;
     private static float approach;
 
@@ -90,9 +107,27 @@ public final class Level37Atmosphere implements LayeredDraw.Layer {
 
     /** Lightmap fill for Level 37 (Veil mode): see the class comment. */
     public static void applyFill(Vector3f colors, int blockLight) {
-        float t = Mth.clamp((blockLight - DARK_BELOW) / (FULL_FROM - DARK_BELOW), 0.0f, 1.0f);
-        float fill = MAX_FILL * t * t * (3.0f - 2.0f * t);
+        float fill = MAX_FILL * litShare(blockLight);
         colors.set(UNLIT_R + fill * TINT_R, UNLIT_G + fill * TINT_G, UNLIT_B + fill * TINT_B);
+    }
+
+    /**
+     * How much of the full room fill a block light level gets (0..1): everything from
+     * {@link #FULL_FROM} up is fully lit, so a room's hidden lights at level 6 look exactly like
+     * level 15. The camera's meters (CamcorderEffect's auto-exposure, EyeAdaptation) use this in
+     * Level 37 instead of the raw light level, which made them open up by 13-30% in rooms that are
+     * just as bright as any other (and flare by ~35% for a second when you turned to an opening).
+     * Only true while Veil's lights run: without them the vanilla light curve is the light.
+     */
+    public static float litShare(int blockLight) {
+        float t = Mth.clamp((blockLight - DARK_BELOW) / (FULL_FROM - DARK_BELOW), 0.0f, 1.0f);
+        return t * t * (3.0f - 2.0f * t);
+    }
+
+    /** True when the camera should meter Level 37 by {@link #litShare} (in Level 37 with Veil's lights on). */
+    public static boolean metersByFill(Minecraft mc) {
+        return mc.level != null && BackroomsLights.isVeilLightingActive()
+                && BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_37;
     }
 
     // ------------------------------------------------------------------------------------------
@@ -108,7 +143,8 @@ public final class Level37Atmosphere implements LayeredDraw.Layer {
         }
         if (floor == BackroomsLevel.LEVEL_37) {
             BlockPos eyes = BlockPos.containing(mc.player.getEyePosition());
-            float target = mc.level.getBrightness(LightLayer.BLOCK, eyes) / 15.0f;
+            int light = mc.level.getBrightness(LightLayer.BLOCK, eyes);
+            float target = metersByFill(mc) ? litShare(light) : light / 15.0f;
             brightness += (target - brightness) * 0.05f;
         }
         float target = 0.0f;

@@ -268,7 +268,10 @@ public final class CamcorderEffect {
         net.minecraft.core.BlockPos eyes = net.minecraft.core.BlockPos.containing(mc.player.getEyePosition());
         int light = Math.max(mc.level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, eyes),
                 mc.level.getBrightness(net.minecraft.world.level.LightLayer.SKY, eyes));
-        float bright = Mth.clamp((light - 2.0f) / 9.0f, 0.0f, 1.0f);
+        // Level 37's rooms are evenly lit from light 6 up, so it meters the fill there, not the raw
+        // light level (which held the camera 13-30% too open in perfectly bright rooms).
+        float bright = Level37Atmosphere.metersByFill(mc) ? Level37Atmosphere.litShare(light)
+                : Mth.clamp((light - 2.0f) / 9.0f, 0.0f, 1.0f);
         float target = Mth.lerp(bright * bright * (3.0f - 2.0f * bright), EXPOSURE_DARK, EXPOSURE_BRIGHT);
         exposureSpeed += (EXPOSURE_SPRING * (target - exposure) - EXPOSURE_DAMPING * exposureSpeed) * dt;
         exposure = Mth.clamp(exposure + exposureSpeed * dt, 0.75f, 1.8f);
