@@ -496,13 +496,17 @@ def _simple(name: str) -> None:
 
 def _meadow(name: str, tex: str, fill: str, height: float, fill_height: float) -> None:
     """A meadow plant: two crossed planes of `tex` (`height` px tall, taller than a block for long
-    grass), and two straight planes of `fill` grass (`fill_height` px) set off the middle."""
+    grass), and two straight planes of `fill` grass (`fill_height` px) set off the middle. Every
+    face takes tint 0: the block colour is the sway marker the cutout shader looks for
+    (assets/minecraft/shaders/core/rendertype_cutout_mipped.vsh), and no top is a whole block
+    high (the shader keeps vertices at whole block heights, the roots, still)."""
     def plane(frm, to, faces, texture, rotate):
         e = {"from": frm, "to": to, "shade": False,
-             "faces": {f: {"uv": [0, 0, 16, 16], "texture": texture} for f in faces}}
+             "faces": {f: {"uv": [0, 0, 16, 16], "texture": texture, "tintindex": 0} for f in faces}}
         if rotate:
             e["rotation"] = {"origin": [8, 8, 8], "axis": "y", "angle": 45, "rescale": True}
         return e
+    assert height % 16 and fill_height % 16
     F._model(name, {"parent": "minecraft:block/block", "render_type": "minecraft:cutout_mipped", "ambientocclusion": False,
                     "textures": {"plant": F._ref(tex), "fill": F._ref(fill), "particle": F._ref(tex)},
                     "elements": [plane([0.8, 0, 8], [15.2, height, 8], ("north", "south"), "#plant", True),
@@ -533,7 +537,7 @@ def tex_l369_models() -> None:
     # planes of soft grass (tuft 0; tuft 1 for tuft 0 itself), so blocks merge into one meadow.
     # Mipmapped cutout, so it stays soft in the distance instead of breaking up into speckle.
     for k in range(4):
-        _meadow(f"l369_flower_{k}", f"l369_flower_{k}", "l369_tuft_0", 16, 12)
+        _meadow(f"l369_flower_{k}", f"l369_flower_{k}", "l369_tuft_0", 15.5, 12)
         _meadow(f"l369_tuft_{k}", f"l369_tuft_{k}", "l369_tuft_1" if k == 0 else "l369_tuft_0",
                 20 if k == 1 else 15, 11)
         _bright_cross(f"l369_glow_{k}", f"l369_glow_{k}")

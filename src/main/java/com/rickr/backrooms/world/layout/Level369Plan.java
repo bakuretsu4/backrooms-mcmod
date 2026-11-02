@@ -133,10 +133,10 @@ public final class Level369Plan {
     private static final int CORRIDOR_LO = MID - 2;
     private static final int CORRIDOR_HI = MID + 2;
 
-    static final int HALL = 0;
-    static final int PILLAR = 1;
-    static final int GARDEN = 2;
-    static final int DARK = 3;
+    public static final int HALL = 0;
+    public static final int PILLAR = 1;
+    public static final int GARDEN = 2;
+    public static final int DARK = 3;
 
     // Edges between cells: the one on a cell's west side, and on its north side.
     public static final int WEST = 0;
@@ -258,6 +258,11 @@ public final class Level369Plan {
         }
         double zone = Hash.unit(seed, zoneX(cx), zoneX(cz), 3691);
         return zone < 0.3 ? HALL : zone < 0.6 ? PILLAR : GARDEN;
+    }
+
+    /** The kind of room (HALL, PILLAR, GARDEN or DARK) that column (x, z) belongs to (for the client's light). */
+    public static int roomKind(long seed, int x, int z) {
+        return kind(seed, Math.floorDiv(x, CELL), Math.floorDiv(z, CELL));
     }
 
     static int kind(long seed, int cx, int cz) {
@@ -575,14 +580,14 @@ public final class Level369Plan {
         if (inShaft(variant, lx, lz)) {
             out[SKYLIGHT_Y] = SKYLIGHT;
             out[ROOF_TOP] = code(PLASTER, colour);
-            out[ceiling - 1] = code(LIGHT, 15); // the daylight pouring down the shaft
+            out[ceiling - 1] = code(LIGHT, 13); // the daylight pouring down the shaft
         } else {
             out[ceiling] = code(CEIL, 0);
             for (int y = ceiling + 1; y <= ROOF_TOP; y++) {
                 out[y] = code(PLASTER, colour);
             }
             if (lx % 5 == 0 && lz % 5 == 0) {
-                out[ceiling - 2] = code(LIGHT, 13); // soft fill: the light bounces round the room
+                out[ceiling - 2] = code(LIGHT, 11); // soft fill: the light bounces round the room
             }
         }
         if (isExitCell(seed, cx, cz) && arch(lx, lz, out)) {
