@@ -94,6 +94,8 @@ public final class ExitHints {
             case POOLROOMS -> new Guidance(0.30, 0);
             // Its pits are only ~170 blocks apart, so a longer reach would show marks everywhere.
             case LEVEL_37 -> new Guidance(0.20, 60);
+            // Its arches are 140 blocks apart; the marks show only on the way to the nearest one.
+            case LEVEL_369 -> new Guidance(0.18, 60);
             case LEVEL_7 -> new Guidance(0.15, 120);
             case LEVEL_39 -> new Guidance(0.10, 100);
             case LEVEL_94 -> new Guidance(0.07, 80);
@@ -186,6 +188,7 @@ public final class ExitHints {
             // Never played: Level 227 has no exit, so the server sends no hint there.
             case LEVEL_227 -> ModSounds.EXIT_HINT_LEVEL_94;
             case LEVEL_490 -> ModSounds.EXIT_HINT_LEVEL_490;
+            case LEVEL_369 -> ModSounds.EXIT_HINT_LEVEL_369;
         }).get();
     }
 

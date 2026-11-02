@@ -9,6 +9,8 @@ import com.rickr.backrooms.entity.Watcher;
 import com.rickr.backrooms.network.SanityPayload;
 import com.rickr.backrooms.registry.ModAttachments;
 import com.rickr.backrooms.world.BackroomsLevel;
+import com.rickr.backrooms.world.BackroomsSeeds;
+import com.rickr.backrooms.world.Level369Light;
 import com.rickr.backrooms.world.LevelEvents;
 import com.rickr.backrooms.world.Level94Clock;
 import com.rickr.backrooms.world.SafeRooms;
@@ -39,6 +41,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *       house by day and drains slowly outside at night.</li>
  *   <li>Level 37 itself never drains it: a small trickle back anywhere, more while you stand or
  *       swim in its water ({@link HealingWater}).</li>
+ *   <li>Level 369 never drains it either; the warm light drifting through it brings it back
+ *       ({@link Level369Light}).</li>
  * </ul>
  * The client only displays it ({@link SanityClientState}) and does the scary stuff on its own.
  * Creative and spectator players are never affected.
@@ -153,6 +157,12 @@ public final class SanityService {
         }
         if (BackroomsLevel.fromDimension(player.level().dimension()) == BackroomsLevel.LEVEL_37) {
             return HealingWater.sanityPerSecond(player); // calm everywhere, the water most of all
+        }
+        if (BackroomsLevel.fromDimension(player.level().dimension()) == BackroomsLevel.LEVEL_369) {
+            // Too peaceful to fray your nerves anywhere; the drifting light gives them back.
+            long seed = BackroomsSeeds.layoutSeed(player.serverLevel(), BackroomsLevel.LEVEL_369);
+            return Level369Light.SANITY_PER_SECOND
+                    * Level369Light.strength(seed, player.getX(), player.getZ(), player.level().getGameTime());
         }
         boolean dark = isDark(player);
         boolean company = !dark && otherPlayerWithin(player, COMPANY_RANGE);

@@ -153,6 +153,16 @@ public final class AtmosphereGrade {
      */
     private static final Mood LEVEL_490 = new Mood(1.35f, 1.14f, 0.38f, 0.90f, 0.95f, 1.08f, 0.98f, 1.0f, 1.04f,
             0.018f, 0.020f, 0.028f, 0.135f, 0.145f, 0.175f, 40.0f, 0.006f, 0.15f, 0.30f, 0.20f, 0.008f);
+    /**
+     * Level 369, "Comely": a summer afternoon remembered. Soft contrast, the flowers' colour turned
+     * up a little, warm golden highlights, faintly green shadows, warm cream air and a generous glow
+     * so skylights and windows bloom: lovely, and a little too soft to trust.
+     */
+    private static final Mood LEVEL_369 = new Mood(1.02f, 0.95f, 1.08f, 0.97f, 1.0f, 0.94f, 1.04f, 1.01f, 0.93f,
+            0.028f, 0.028f, 0.022f, 0.92f, 0.88f, 0.80f, 14.0f, 0.016f, 0.30f, 0.30f, 0.26f, 0.012f);
+    /** Level 369 in the drifting light: brighter, more colour, golden highlights, golden air, a big glow. */
+    private static final Mood LEVEL_369_GOLDEN = new Mood(1.12f, 0.93f, 1.16f, 1.0f, 0.98f, 0.88f, 1.08f, 1.0f, 0.82f,
+            0.034f, 0.030f, 0.020f, 0.98f, 0.86f, 0.62f, 12.0f, 0.020f, 0.34f, 0.26f, 0.40f, 0.012f);
     /** A stagnant (Hydrolitis) tunnel segment: orbs dead, sick green-black air. */
     private static final Mood LEVEL_39_STAGNANT = new Mood(0.98f, 1.08f, 0.80f, 0.90f, 1.04f, 0.94f, 0.98f, 1.02f, 0.94f,
             0.008f, 0.012f, 0.010f, 0.05f, 0.09f, 0.07f, 4.0f, 0.040f, 0.45f, 0.40f, 0.18f, 0.012f);
@@ -216,6 +226,8 @@ public final class AtmosphereGrade {
             // Level 227: misty forest, clearing with height, black in the void, white in a sunbeam.
             case LEVEL_227 -> Level227Lighting.mood();
             case LEVEL_490 -> LEVEL_490;
+            // Level 369: golden while its drifting light passes over you.
+            case LEVEL_369 -> LEVEL_369.lerp(LEVEL_369_GOLDEN, Level369Atmosphere.light());
         };
     }
 

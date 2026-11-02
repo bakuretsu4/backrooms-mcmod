@@ -50,6 +50,7 @@ public final class Level227Noclip {
         DANGER.put(BackroomsLevel.POOLROOMS, 1);
         DANGER.put(BackroomsLevel.LEVEL_4, 1);
         DANGER.put(BackroomsLevel.LEVEL_37, 1);
+        DANGER.put(BackroomsLevel.LEVEL_369, 1); // nothing hunts you there
         DANGER.put(BackroomsLevel.LEVEL_227, 0); // never back into the tree itself
     }
 

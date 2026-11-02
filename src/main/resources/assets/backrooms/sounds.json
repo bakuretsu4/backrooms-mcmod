@@ -4573,5 +4573,38 @@
       {"name": "backrooms:level490/rain", "stream": true}
     ],
     "subtitle": "subtitles.backrooms.level490.rain"
+  },
+  "exit_hint.level_369": {
+    "sounds": [
+      {
+        "name": "backrooms:exit_hint/level_369",
+        "stream": true,
+        "attenuation_distance": 44
+      }
+    ]
+  },
+  "ambient.level369_ambience": {
+    "sounds": [
+      {
+        "name": "backrooms:ambient/level369_ambience",
+        "stream": true,
+        "volume": 0.45
+      }
+    ]
+  },
+  "music.level369": {
+    "sounds": [
+      {
+        "name": "backrooms:music/level369",
+        "stream": true,
+        "weight": 3,
+        "volume": 0.55
+      },
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true,
+        "volume": 0.55
+      }
+    ]
   }
 }

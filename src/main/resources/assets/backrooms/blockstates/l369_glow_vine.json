@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "tip=false": [
+      {
+        "model": "backrooms:block/l369_glow_vine"
+      },
+      {
+        "model": "backrooms:block/l369_glow_vine",
+        "y": 90
+      }
+    ],
+    "tip=true": [
+      {
+        "model": "backrooms:block/l369_glow_vine_tip"
+      },
+      {
+        "model": "backrooms:block/l369_glow_vine_tip",
+        "y": 90
+      }
+    ]
+  }
+}

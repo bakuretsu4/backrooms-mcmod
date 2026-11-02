@@ -27,6 +27,8 @@ import net.minecraft.util.RandomSource;
  *       and an empty one says NO BATTERY in the middle.</li>
  *   <li>Your heart rate (sanity) at the top right in the Backrooms, only when it matters: while it's
  *       raised (100 BPM or more) or for a few seconds after it changes; otherwise it fades away.</li>
+ *   <li>In Level 369 the readouts are forgotten one by one, the longer you stay: the battery, then
+ *       the tape counter and clock, then the heart rate, then REC ({@link Level369ClientState}).</li>
  * </ul>
  * When something is close the OSD itself starts to jitter. The date always reads 1990, like the
  * Kane Pixels tapes.
@@ -143,6 +145,8 @@ public final class CamcorderHud implements LayeredDraw.Layer {
         boolean batteryDrawn = shown || low;
         if (batteryDrawn) {
             float a = low ? Math.max(batteryAlpha, OsdStyle.warning(now, critical ? 700L : 1400L)) : batteryAlpha;
+            // Level 369 makes you forget: the battery goes first (client/Level369ClientState).
+            a *= Level369ClientState.remembered(0);
             battery(g, font, right, top, pct, low ? OsdStyle.ALERT : OsdStyle.TEXT, a);
         }
 
@@ -168,13 +172,16 @@ public final class CamcorderHud implements LayeredDraw.Layer {
         float tapeAlpha = this.tape.update(now, OsdStyle.FULL, OsdStyle.REST);
         brackets(g, left - 6, top - 5, right + 6, bottom + 5, tapeAlpha * BRACKET_ALPHA);
 
-        // REC with its blinking lamp, and the tape counter.
+        // REC with its blinking lamp, and the tape counter. In Level 369 the counter and clock are
+        // forgotten second, REC last.
+        float recAlpha = tapeAlpha * Level369ClientState.remembered(3);
+        float counterAlpha = tapeAlpha * Level369ClientState.remembered(1);
         if ((now / 700) % 2 == 0) {
-            OsdStyle.box(g, left, top + 4, left + 5, top + 8, OsdStyle.REC, tapeAlpha);
-            OsdStyle.box(g, left + 1, top + 3, left + 4, top + 9, OsdStyle.REC, tapeAlpha);
+            OsdStyle.box(g, left, top + 4, left + 5, top + 8, OsdStyle.REC, recAlpha);
+            OsdStyle.box(g, left + 1, top + 3, left + 4, top + 9, OsdStyle.REC, recAlpha);
         }
-        OsdStyle.draw(g, font, REC, left + 8, top, OsdStyle.LARGE, OsdStyle.TEXT, tapeAlpha);
-        OsdStyle.draw(g, font, OsdStyle.text("SP  " + tapeCounter()), left, top + LINE + 4, OsdStyle.SMALL, OsdStyle.TEXT, tapeAlpha);
+        OsdStyle.draw(g, font, REC, left + 8, top, OsdStyle.LARGE, OsdStyle.TEXT, recAlpha);
+        OsdStyle.draw(g, font, OsdStyle.text("SP  " + tapeCounter()), left, top + LINE + 4, OsdStyle.SMALL, OsdStyle.TEXT, counterAlpha);
         if (CameraClientState.nightShot) {
             // Switching NightShot wakes the battery readout, so this follows that fade.
             OsdStyle.draw(g, font, NIGHTSHOT, left, top + 2 * LINE + 4, OsdStyle.SMALL, OsdStyle.TEXT, batteryAlpha);
@@ -182,9 +189,9 @@ public final class CamcorderHud implements LayeredDraw.Layer {
 
         LocalDateTime clock = LocalDateTime.now();
         OsdStyle.draw(g, font, OsdStyle.text(clock.format(TIME).toUpperCase(Locale.ENGLISH)), left, bottom - 2 * LINE - 1,
-                OsdStyle.SMALL, OsdStyle.TEXT, tapeAlpha);
+                OsdStyle.SMALL, OsdStyle.TEXT, counterAlpha);
         OsdStyle.draw(g, font, OsdStyle.text(clock.format(DATE).toUpperCase(Locale.ENGLISH)), left, bottom - LINE,
-                OsdStyle.SMALL, OsdStyle.TEXT, tapeAlpha);
+                OsdStyle.SMALL, OsdStyle.TEXT, counterAlpha);
 
         signal(g, font, right, bottom, now);
     }
@@ -223,6 +230,7 @@ public final class CamcorderHud implements LayeredDraw.Layer {
         } else if (sanity < UNEASY_SANITY) {
             rgb = OsdStyle.WARN;
         }
+        alpha *= Level369ClientState.remembered(2); // Level 369: the heart rate is forgotten third
         if (alpha < 0.02f) {
             return;
         }
