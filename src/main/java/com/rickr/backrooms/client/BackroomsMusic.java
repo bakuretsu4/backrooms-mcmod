@@ -18,11 +18,12 @@ import net.neoforged.neoforge.client.event.SelectMusicEvent;
  * <ul>
  *   <li><b>Title menu</b> (and every screen opened from it): our main theme, over and over.</li>
  *   <li><b>In the Backrooms:</b> instead of the vanilla game music, now and then one of our own
- *       pieces, with long silences in between like Minecraft's music: the theme or the dark
- *       ambient piece in most levels, the dreamy piece (or the theme) in the Poolrooms and
- *       Level 37. Level 94 has none: its siren poles play their own tune. Level 39 is meant to be
- *       quiet and huge: only the dark piece, and only every 10 to 25 minutes. Level 227 has its
- *       own piece ("megaflora"), every 4 to 10 minutes.</li>
+ *       pieces, with long silences in between like Minecraft's music. Every level has a piece of
+ *       its own (and now and then the main theme instead, see sounds.json). Level 94 has none: its
+ *       siren poles play their own tune. Level 39 is meant to be quiet and huge, so its music
+ *       comes only every 10 to 25 minutes; Level 7's sea is loud and Level 490 is meant to be
+ *       near-silent (every creak of the chains should stand out), so both every 5 to 12 minutes.
+ *       Level 227 has its own piece ("megaflora"), every 4 to 10 minutes.</li>
  *   <li><b>Real world:</b> vanilla music as normal.</li>
  * </ul>
  *
@@ -35,14 +36,24 @@ import net.neoforged.neoforge.client.event.SelectMusicEvent;
 public final class BackroomsMusic {
     /** The theme loops on the menu with only a short breath between plays. */
     private static final Music MENU = new Music(ModSounds.MUSIC_MENU, 40, 200, true);
-    /**
-     * In the levels: 3 to 8 minutes of silence between pieces, so the music is an event and the
-     * level's own sounds carry the rest. Cuts off vanilla music when you noclip in.
+    /*
+     * One Music per level: which sound event, then the shortest and longest silence before the
+     * next piece (in ticks: 3600 = 3 minutes, 9600 = 8 minutes). "true" = it may cut off whatever
+     * is playing when you arrive (for example vanilla music when you noclip in).
      */
-    private static final Music LEVELS = new Music(ModSounds.MUSIC_BACKROOMS, 3600, 9600, true);
-    private static final Music DREAM = new Music(ModSounds.MUSIC_DREAM, 3600, 9600, true);
-    /** Level 39: very rare; the echoing silence of the town is the soundtrack. */
-    private static final Music RARE = new Music(ModSounds.MUSIC_BACKROOMS, 12000, 30000, true);
+    private static final Music LEVEL_0 = new Music(ModSounds.MUSIC_LEVEL0, 3600, 9600, true);
+    private static final Music LEVEL_1 = new Music(ModSounds.MUSIC_LEVEL1, 3600, 9600, true);
+    private static final Music LEVEL_2 = new Music(ModSounds.MUSIC_LEVEL2, 3600, 9600, true);
+    private static final Music LEVEL_4 = new Music(ModSounds.MUSIC_LEVEL4, 3600, 9600, true);
+    private static final Music POOLROOMS = new Music(ModSounds.MUSIC_POOLROOMS, 3600, 9600, true);
+    private static final Music LEVEL_37 = new Music(ModSounds.MUSIC_LEVEL37, 3600, 9600, true);
+    /** Level 7: the sea is loud, so music only every 5 to 12 minutes. */
+    private static final Music LEVEL_7 = new Music(ModSounds.MUSIC_LEVEL7, 6000, 14000, true);
+    /** Level 39: very rare (10 to 25 minutes); the echoing silence of the town is the soundtrack. */
+    private static final Music LEVEL_39 = new Music(ModSounds.MUSIC_LEVEL39, 12000, 30000, true);
+    /** Level 490: near silence is part of the place (the chains, the rain), so only every 5 to 12 minutes. */
+    private static final Music LEVEL_490 = new Music(ModSounds.MUSIC_LEVEL490, 6000, 14000, true);
+    private static final Music LEVEL_9 = new Music(ModSounds.MUSIC_LEVEL9, 3600, 9600, true);
     /**
      * Level 227: its own piece (wonder turning into dread), every 4 to 10 minutes; the forest and
      * the tree's groans carry the silences.
@@ -62,12 +73,18 @@ public final class BackroomsMusic {
         if (floor != null) {
             // null = no music at all (anything playing stops).
             event.setMusic(switch (floor) {
-                // Penance: near silence, so every creak of the chains stands out.
-                case LEVEL_94, LEVEL_7, LEVEL_490 -> null;
-                case POOLROOMS, LEVEL_37 -> DREAM;
-                case LEVEL_39 -> RARE;
+                case LEVEL_0 -> LEVEL_0;
+                case LEVEL_1 -> LEVEL_1;
+                case LEVEL_2 -> LEVEL_2;
+                case LEVEL_4 -> LEVEL_4;
+                case POOLROOMS -> POOLROOMS;
+                case LEVEL_37 -> LEVEL_37;
+                case LEVEL_7 -> LEVEL_7;
+                case LEVEL_39 -> LEVEL_39;
+                case LEVEL_94 -> null; // its siren poles play their own tune
+                case LEVEL_490 -> LEVEL_490;
+                case LEVEL_9 -> LEVEL_9;
                 case LEVEL_227 -> MEGAFLORA;
-                default -> LEVELS;
             });
             return;
         }

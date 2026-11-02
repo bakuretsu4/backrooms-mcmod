@@ -946,8 +946,124 @@
       }
     ]
   },
-  "music.backrooms": {
+  "music.level0": {
     "sounds": [
+      {
+        "name": "backrooms:music/level0",
+        "stream": true,
+        "weight": 3,
+        "volume": 0.55
+      },
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true,
+        "volume": 0.55
+      }
+    ]
+  },
+  "music.level1": {
+    "sounds": [
+      {
+        "name": "backrooms:music/level1",
+        "stream": true,
+        "weight": 3,
+        "volume": 0.55
+      },
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true,
+        "volume": 0.55
+      }
+    ]
+  },
+  "music.level2": {
+    "sounds": [
+      {
+        "name": "backrooms:music/level2",
+        "stream": true,
+        "weight": 3,
+        "volume": 0.55
+      },
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true,
+        "volume": 0.55
+      }
+    ]
+  },
+  "music.level4": {
+    "sounds": [
+      {
+        "name": "backrooms:music/level4",
+        "stream": true,
+        "weight": 3,
+        "volume": 0.55
+      },
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true,
+        "volume": 0.55
+      }
+    ]
+  },
+  "music.poolrooms": {
+    "sounds": [
+      {
+        "name": "backrooms:music/poolrooms",
+        "stream": true,
+        "weight": 3,
+        "volume": 0.55
+      },
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true,
+        "volume": 0.55
+      },
+      {
+        "name": "backrooms:music/drift",
+        "stream": true,
+        "volume": 0.55
+      }
+    ]
+  },
+  "music.level37": {
+    "sounds": [
+      {
+        "name": "backrooms:music/level37",
+        "stream": true,
+        "weight": 3,
+        "volume": 0.55
+      },
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true,
+        "volume": 0.55
+      }
+    ]
+  },
+  "music.level7": {
+    "sounds": [
+      {
+        "name": "backrooms:music/level7",
+        "stream": true,
+        "weight": 3,
+        "volume": 0.55
+      },
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true,
+        "volume": 0.55
+      }
+    ]
+  },
+  "music.level39": {
+    "sounds": [
+      {
+        "name": "backrooms:music/level39",
+        "stream": true,
+        "weight": 3,
+        "volume": 0.55
+      },
       {
         "name": "backrooms:music/liminal",
         "stream": true,
@@ -956,17 +1072,31 @@
       {
         "name": "backrooms:music/deep",
         "stream": true,
-        "weight": 2,
         "volume": 0.55
       }
     ]
   },
-  "music.dream": {
+  "music.level490": {
     "sounds": [
       {
-        "name": "backrooms:music/drift",
+        "name": "backrooms:music/level490",
         "stream": true,
-        "weight": 2,
+        "weight": 3,
+        "volume": 0.55
+      },
+      {
+        "name": "backrooms:music/liminal",
+        "stream": true,
+        "volume": 0.55
+      }
+    ]
+  },
+  "music.level9": {
+    "sounds": [
+      {
+        "name": "backrooms:music/level9",
+        "stream": true,
+        "weight": 3,
         "volume": 0.55
       },
       {

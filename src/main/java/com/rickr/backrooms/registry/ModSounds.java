@@ -161,12 +161,21 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_COLLAPSE = register("level490.collapse");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_WHALE_CALL = register("level490.whale_call");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_WHALE_FAR = register("level490.whale_far");
-    // Music (original pieces from tools/gen_assets.py, played by client/BackroomsMusic on the music
-    // channel): the main theme on the title menu, a mix of the theme and a dark ambient piece in
-    // most levels, and a dreamier piece (or the theme) in the Poolrooms and Level 37.
+    // Music (original pieces composed in code under tools/, played by client/BackroomsMusic on the
+    // music channel): the main theme on the title menu, and one piece of its own for each level.
+    // Each level's event (see sounds.json) mostly picks that level's piece, but now and then the
+    // main theme instead, so the theme runs through the whole soundtrack like a thread.
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_MENU = register("music.menu");
-    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_BACKROOMS = register("music.backrooms");
-    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_DREAM = register("music.dream");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL0 = register("music.level0");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL1 = register("music.level1");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL2 = register("music.level2");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL4 = register("music.level4");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_POOLROOMS = register("music.poolrooms");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL37 = register("music.level37");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL7 = register("music.level7");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL39 = register("music.level39");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL490 = register("music.level490");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL9 = register("music.level9");
     // Level 94 anomalies: the high, glassy hum of the blinding hall's light (looped by the client
     // while you are in it) and the coin rattling in a furniture-pile sink.
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_BLINDING_HUM = register("level94.blinding_hum");

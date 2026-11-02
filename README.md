@@ -829,20 +829,33 @@ the main theme plays (see Music below). **FIELD NOTES** is a short in-game guide
 
 ### Music
 
-Four original pieces, composed in code in `tools/gen_assets.py` (`snd_music_*`; Level 227's in
-`tools/anomaly_assets/level227_audio.py`) and played on the game's music channel, so the Music
-volume slider controls them (`client/BackroomsMusic`):
+Fourteen original pieces, composed in code (the first three in `tools/gen_assets.py`,
+`snd_music_*`; the rest in `tools/anomaly_assets/`: Level 227's in `level227_audio.py`, the
+per-level pieces in `music_*.py`) and played on the game's music channel, so the Music volume
+slider controls them (`client/BackroomsMusic`). Every level has a piece in its own style; now and
+then the main theme plays instead, so it runs through the whole soundtrack:
 
 | Piece | Where | What it is |
 |---|---|---|
-| `liminal` | Title menu (looping); now and then in every level except Level 94 | The main theme: slow, washed-out tape chords in D minor with an uneasy E-flat. Single tones fade in, it swells into a wall of sound, then falls apart into wind, a creak, a far boom and an out-of-tune music box |
-| `deep` | Now and then in Levels 0, 1, 2, 4 and 9 | Drones, wind and far-off noises with long near-silences; a muffled memory of the theme drifts past |
-| `drift` | Now and then in the Poolrooms and Level 37 | Softer and dreamier: warm chords that never settle, water drips, a slow music-box line |
+| `liminal` | Title menu (looping); now and then in every level except Levels 94 and 227 | The main theme: slow, washed-out tape chords in D minor with an uneasy E-flat. Single tones fade in, it swells into a wall of sound, then falls apart into wind, a creak, a far boom and an out-of-tune music box |
+| `level0` | Level 0 | "Fluorescent": office muzak heard through a wall at half speed: a soft electric piano on lounge chords that never resolve, a ghost of a bossa rhythm, sitting slightly flat against the 60 Hz mains hum |
+| `level1` | Level 1 | "Concrete": cold, wide industrial ambient: a sub drone, far metallic pillar strikes, a breathing ventilation pulse, a swelling minor pad and drips |
+| `level2` | Level 2 | "Pressure": tuned struck pipes in a slow interlocking pattern, steam-hiss swells, a boiler heartbeat and a dark brassy drone; hot and claustrophobic |
+| `level4` | Level 4 | "Night Shift": sparse, lonely jazz piano over soft rain and distant thunder, one muted-horn phrase, ending on an unresolved chord |
+| `poolrooms` | The Poolrooms | "Chlorine": slowed, chorused dream pads and a glassy arpeggio in F Lydian that dip underwater and come back; a childhood indoor pool at dusk |
+| `level37` | Level 37 | "Sublimity": airy synthesized choir and glass-harmonica shimmer, bright and almost bassless; near the end one voice drifts out of tune |
+| `level7` | Level 7 | "Thalassophobia": huge, very low drones swelling like waves, far whale-like glides, sonar pings, and once a low brass cluster rising from the deep |
+| `level39` | Level 39, every 10 to 25 minutes | "Megalophobia": a small-town waltz on a music box or piano from impossibly far away in a gigantic echo, interrupted by enormous metallic groans |
+| `level490` | Level 490 | "Penance": a slow processional on a synthesized pipe organ, a low male-choir drone, a tolling bell, thunder, chain rattles and a bowed lament |
+| `level9` | Level 9 | "Suburbs": warped 80s analog synth pads and a drifting lullaby, a faint drum machine and sodium-lamp buzz; at the end the tape slows down and dies |
+| `deep` | Now and then in Level 39 | Drones, wind and far-off noises with long near-silences; a muffled memory of the theme drifts past |
+| `drift` | Now and then in the Poolrooms | Softer and dreamier: warm chords that never settle, water drips, a slow music-box line |
 | `megaflora` | Level 227 only, every 4 to 10 minutes | Wonder turning into dread: wide, warm chords in E Lydian and a celesta figure climbing like light through leaves; then the bass slides a tritone down under the same chords, the sun's choir sings a long E that bends up to F, the tree groans, and it ends on E and F together, fading into wind |
 
 In the levels a piece plays only every 3 to 8 minutes, like Minecraft's own music; in between
-you hear only the level. Level 94 has no music because its siren poles play their own tune, and
-Level 7 none because the sea is louder.
+you hear only the level. Level 7's sea is loud and Level 490 is meant to be near-silent, so there
+it's every 5 to 12 minutes. Level 94 has
+no music because its siren poles play their own tune.
 Everything goes through a worn-tape sound: a slow pitch wobble shared by every note, soft
 saturation, hiss and a big, empty room.
 
