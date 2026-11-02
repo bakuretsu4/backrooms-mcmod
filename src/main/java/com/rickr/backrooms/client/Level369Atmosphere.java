@@ -69,8 +69,8 @@ public final class Level369Atmosphere {
     private static final float GLOOM_R = 0.035f;
     private static final float GLOOM_G = 0.06f;
     private static final float GLOOM_B = 0.055f;
-    private static final float BRIGHT_FOG_START = 14.0f;
-    private static final float BRIGHT_FOG_END = 110.0f;
+    private static final float BRIGHT_FOG_START = 24.0f;
+    private static final float BRIGHT_FOG_END = 190.0f;
     private static final float DARK_FOG_START = 3.0f;
     private static final float DARK_FOG_END = 40.0f;
     private static final float GOLDEN_HAZE_R = 0.98f;

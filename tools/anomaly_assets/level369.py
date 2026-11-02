@@ -136,27 +136,17 @@ def tex_l369_brick() -> None:
     _save(img, "l369_brick")
 
 
-GRASS_TOP = ((54, 104, 38), (66, 120, 44), (80, 132, 50), (46, 92, 34), (92, 140, 56))
-
-
 def tex_l369_ground() -> None:
-    """The lawn: dense blades seen from above, a little sun-bleached here and there; its side
-    (the soil under a fringe of grass) and the soil itself."""
+    """The lawn: mostly hidden under the meadow, so a calm, even green with soft, broad changes
+    of tone and the faintest grain (no speckle); its side (the soil under a fringe of grass) and
+    the soil itself."""
     rng = G.rng_for(36940)
     X, Y = F._grid(N)
-    img = G.fill((58, 104, 40), (N, N))
-    patch = G.blur(F._noise(rng, N, beta=2.2, kmin=1.5), 1.5)
-    img = G.add_lum(img, patch * 6, (0.8, 1.0, 0.6))
-    for _ in range(900):
-        x, y = rng.uniform(0, N), rng.uniform(0, N)
-        ang = rng.uniform(0, np.pi)
-        L = rng.uniform(1.5, 3.5)
-        col = np.array(GRASS_TOP[rng.integers(len(GRASS_TOP))], float) * rng.uniform(0.85, 1.12)
-        for k in np.linspace(0, 1, 5):
-            px = int(x + np.cos(ang) * L * k) % N
-            py = int(y + np.sin(ang) * L * k) % N
-            img[py, px] = G.lerp(img[py, px], col, 0.75)
-    img = G.add_lum(img, rng.normal(0, 2.0, (N, N)))
+    img = G.fill((56, 100, 40), (N, N))
+    patch = G.blur(F._noise(rng, N, beta=2.6, kmin=1.0), 2.5)
+    img = G.add_lum(img, patch * 5, (0.8, 1.0, 0.6))
+    streak = G.blur(F._noise(rng, N, beta=1.2, aniso=(1.0, 0.35), kmin=4), 1.0)
+    img = G.add_lum(img, streak * 2.0, (0.8, 1.0, 0.6))
     _save(img, "l369_grass")
 
     soil = G.fill((86, 62, 44), (N, N))
@@ -230,117 +220,167 @@ def tex_l369_vines() -> None:
     G.save_png(F._cutout(F._down(rgb, SS), F._down(a, SS)), F._blk("l369_veil"))
 
 
-# ------------------------------------------------------------------------------- plants (32 px)
+# ------------------------------------------------------------------------------- plants (64 px)
+#
+# The meadow of the user's pictures: long soft blades and lots of small flowers. Every plant is
+# drawn at 64 px from a few dozen broad blades, each one shaded from dark at its foot to sunlit at
+# its tip with a light edge down one side, so the grass reads as soft and smooth (no one-pixel
+# speckle, which the camcorder's sharpening turns to grit). Flower heads are small, several to a
+# block. The models (tex_l369_models) stand two crossed planes of the plant with two straight
+# planes of grass, so neighbouring blocks merge into one meadow.
 
-def _daisy(rgb, a, X, Y, cx, cy, r, petals, col, centre, tilt=0.55, width=0.42, rng=None):
-    """A daisy-like head seen a little from the side (squashed by `tilt`): `petals` petals of
-    colour `col` round a centre."""
-    for k in range(petals):
-        ang = k * 2 * np.pi / petals + (rng.uniform(-0.12, 0.12) if rng is not None else 0)
-        ex, ey = np.cos(ang), np.sin(ang) * tilt
-        px, py = cx + ex * r * 0.55, cy + ey * r * 0.55
-        r2, a2 = F._leaf_at(X, Y, px, py, np.arctan2(ey, ex), r * 1.05, r * width, col, veins=0, gloss=0.15)
-        rgb, a = F._composite(rgb, a, r2, a2)
-    rr = np.hypot((X - cx) / 1.0, (Y - cy) / tilt)
-    rgb, a = F._composite(rgb, a, np.broadcast_to(_col(centre), rgb.shape), np.clip(r * 0.32 - rr + 0.5, 0, 1))
+P = 64          # plant texture size
+
+# Blade colour from foot to tip: shadowed root green, fresh mid green, sunlit yellow-green.
+BLADE_FOOT = (34, 72, 30)
+BLADE_MID = (72, 132, 48)
+BLADE_TIP = (150, 190, 78)
+
+
+def _blade_canvas():
+    return F._canvas(P)
+
+
+def _soft_blades(rng, X, Y, rgb, a, count, heights, width=(1.6, 2.6), lean=0.22, depth=True):
+    """`count` tapered, gently curving blades rising from the bottom edge to `heights` (fraction
+    of the texture). Drawn back to front: the first are darker (deeper in the meadow)."""
+    base = P * SS
+    for i in range(count):
+        x0 = rng.uniform(2, P - 2) * SS
+        h = rng.uniform(*heights) * base
+        bend = rng.normal(0, lean) * h
+        wb = rng.uniform(*width) * SS
+        tint = rng.uniform(0.9, 1.08) * ((0.78 + 0.22 * i / max(count - 1, 1)) if depth else 1.0)
+        segs = 8
+        pts = [(x0 + bend * (k / segs) ** 2, base - h * k / segs) for k in range(segs + 1)]
+        cover = np.zeros(X.shape)
+        along = np.zeros(X.shape)
+        side = np.zeros(X.shape)
+        for k in range(segs):
+            (xa, ya), (xb, yb) = pts[k], pts[k + 1]
+            vx, vy = xb - xa, yb - ya
+            tt = np.clip(((X - xa) * vx + (Y - ya) * vy) / max(vx * vx + vy * vy, 1e-6), 0, 1)
+            px, py = X - xa - tt * vx, Y - ya - tt * vy
+            d = np.hypot(px, py)
+            tg = (k + tt) / segs
+            half = 0.5 * wb * (1 - tg) ** 0.85
+            c = np.clip(half - d + 0.5, 0, 1)
+            better = c > cover
+            cover = np.where(better, c, cover)
+            along = np.where(better, tg, along)
+            # Which side of the blade's spine (for the light edge): sign of the cross product.
+            side = np.where(better, np.sign(vx * py - vy * px) * d / np.maximum(half, 1e-3), side)
+        col = np.where((along < 0.5)[..., None],
+                       G.lerp(_col(BLADE_FOOT), _col(BLADE_MID), (along / 0.5)[..., None]),
+                       G.lerp(_col(BLADE_MID), _col(BLADE_TIP), ((along - 0.5) / 0.5)[..., None]))
+        col = col * tint * (1.0 + 0.12 * np.clip(side, 0, 1))[..., None]      # the edge facing the light
+        rgb, a = F._composite(rgb, a, col, cover)
     return rgb, a
 
 
-def _stems_with_leaves(rng, X, Y, rgb, a, tops, col=(60, 104, 42)):
-    for x, y in tops:
-        r2, a2 = F._stem(X, Y, [(x + rng.normal(0, 1) * SS, M * SS), (x, y)], 0.8 * SS, col)
-        rgb, a = F._composite(rgb, a, r2, a2)
-    for _ in range(3):
-        x = rng.uniform(8, 24) * SS
-        for side in (-1, 1):
-            r2, a2 = F._leaf_at(X, Y, x, M * SS, -np.pi / 2 + side * rng.uniform(0.5, 0.9), rng.uniform(8, 12) * SS,
-                                2.6 * SS, (52, 100, 38))
-            rgb, a = F._composite(rgb, a, r2, a2)
+def _stem_to(rng, X, Y, rgb, a, x, y, col=(64, 112, 44)):
+    """A thin, slightly bowed stem from the bottom edge up to a flower head at (x, y) (big px)."""
+    x0 = x + rng.normal(0, 1.5) * SS
+    mid = ((x0 + x) / 2 + rng.normal(0, 1.0) * SS, (P * SS + y) / 2)
+    r2, a2 = F._stem(X, Y, [(x0, P * SS), mid, (x, y)], 0.9 * SS, col)
+    return F._composite(rgb, a, r2, a2)
+
+
+def _petal_head(rgb, a, X, Y, cx, cy, r, petals, col, edge, centre, tilt=0.6, width=0.34, rng=None, ragged=0.0):
+    """A flower head seen a little from the side: `petals` petals shaded from `col` at the heart to
+    `edge` at the tips round a `centre` disc. `ragged` cuts fringed tips (cornflowers)."""
+    for k in range(petals):
+        ang = k * 2 * np.pi / petals + (rng.uniform(-0.15, 0.15) if rng is not None else 0)
+        ex, ey = np.cos(ang), np.sin(ang) * tilt
+        L = r * (0.85 + (rng.uniform(0, 0.2) if rng is not None else 0)) * np.hypot(ex, ey)
+        t, s, half, cover = F._leaf_shape(X, Y, 0, cx, cy, np.arctan2(ey, ex), L, r * width, wrap=False, tip=0.6, blunt=0.5)
+        if ragged:
+            cover = cover * (1 - ragged * (t > 0.78) * (np.sin(s / max(r * 0.06, 1e-3)) > 0.3))
+        shade = G.lerp(_col(col), _col(edge), np.clip(t, 0, 1)[..., None])
+        shade = shade * (0.9 + 0.1 * (1 - np.abs(s) / np.maximum(half, 1e-3)))[..., None]
+        rgb, a = F._composite(rgb, a, shade, cover)
+    rr = np.hypot(X - cx, (Y - cy) / tilt)
+    disc = np.clip(r * 0.26 - rr + 0.5, 0, 1)
+    shade = _col(centre) * (1.0 + 0.25 * np.clip(1 - rr / max(r * 0.26, 1e-3), 0, 1))[..., None]
+    return F._composite(rgb, a, np.broadcast_to(shade, rgb.shape) if shade.ndim == 1 else shade, disc)
+
+
+def _flower_texture(seed, heads, draw, grass=26):
+    """Grass behind, then each head on its stem: `heads` (x, y) in texture px; `draw(rgb, a, X, Y,
+    cx, cy, rng)` paints one head."""
+    rng = G.rng_for(seed)
+    X, Y, rgb, a = _blade_canvas()
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, grass, (0.3, 0.7))
+    for hx, hy in heads:
+        cx, cy = hx * SS, hy * SS
+        rgb, a = _stem_to(rng, X, Y, rgb, a, cx, cy)
+        rgb, a = draw(rgb, a, X, Y, cx, cy, rng)
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 8, (0.15, 0.35))     # a few blades in front of the stems
     return rgb, a
 
 
 def tex_l369_flowers() -> None:
-    """Flowers 0-3: blue forget-me-nots, red daisies, pink cosmos, white daisies."""
-    # 0: forget-me-nots: clusters of small sky-blue five-petalled flowers with yellow eyes.
-    rng = G.rng_for(36960)
-    X, Y, rgb, a = F._canvas()
-    rgb, a = F._blades(rng, X, Y, rgb, a, 10, M * SS, (0.2, 0.5), GRASS_TOP)
-    for _ in range(4):
-        x0, top = rng.uniform(7, 25) * SS, rng.uniform(6, 15) * SS
-        r2, a2 = F._stem(X, Y, [(x0, M * SS), (x0 + rng.normal(0, 1.5) * SS, top)], 0.7 * SS, (64, 104, 44))
-        rgb, a = F._composite(rgb, a, r2, a2)
-        for _ in range(6):
-            cx, cy = x0 + rng.normal(0, 2.6) * SS, top + rng.normal(0, 2.0) * SS
-            ang = np.arctan2(Y - cy, X - cx)
-            rr = np.hypot(X - cx, Y - cy)
-            petal = rr < (1.3 + 0.8 * (0.5 + 0.5 * np.cos(5 * ang))) * SS
-            col = G.lerp(_col((64, 112, 236)), _col((150, 186, 252)), np.clip(rr / (2.0 * SS), 0, 1)[..., None])
-            rgb, a = F._composite(rgb, a, col, petal.astype(float))
-            rgb, a = F._composite(rgb, a, np.broadcast_to(_col((250, 222, 90)), rgb.shape),
-                                  (rr < 0.5 * SS).astype(float))
+    """Flowers 0-3 (64 px): blue cornflowers (the hallways), red daisies (the pillar halls), pink
+    cosmos and white daisies (the skylit rooms), several small heads to a block among grass."""
+    def cornflower(rgb, a, X, Y, cx, cy, rng):
+        r = rng.uniform(5.6, 6.8) * SS
+        return _petal_head(rgb, a, X, Y, cx, cy, r, 10, (58, 76, 196), (120, 156, 250), (70, 40, 110), tilt=0.72,
+                           width=0.42, rng=rng, ragged=0.6)
+    rgb, a = _flower_texture(36960, [(12, 28), (27, 21), (42, 30), (54, 19), (33, 38)], cornflower)
     F._finish(rgb, a, "l369_flower_0")
 
-    # 1: red daisies (gerbera): wide flat heads of narrow red petals round a dark centre.
-    rng = G.rng_for(36961)
-    X, Y, rgb, a = F._canvas()
-    heads = [(10 * SS, 12 * SS), (22 * SS, 9 * SS)]
-    rgb, a = _stems_with_leaves(rng, X, Y, rgb, a, heads)
-    for cx, cy in heads:
-        rgb, a = _daisy(rgb, a, X, Y, cx, cy, 6.5 * SS, 18, (214, 34, 46), (70, 34, 20), rng=rng)
+    def red_daisy(rgb, a, X, Y, cx, cy, rng):
+        r = rng.uniform(9.0, 10.5) * SS
+        return _petal_head(rgb, a, X, Y, cx, cy, r, 18, (176, 18, 34), (236, 64, 70), (92, 40, 18), tilt=0.66, rng=rng)
+    rgb, a = _flower_texture(36961, [(16, 24), (40, 17), (52, 34)], red_daisy)
     F._finish(rgb, a, "l369_flower_1")
 
-    # 2: pink cosmos: eight broad petals, a yellow centre, on thin stems with feathery leaves.
-    rng = G.rng_for(36962)
-    X, Y, rgb, a = F._canvas()
-    heads = [(9 * SS, 9 * SS), (21 * SS, 14 * SS)]
-    rgb, a = _stems_with_leaves(rng, X, Y, rgb, a, heads, col=(70, 112, 48))
-    for cx, cy in heads:
-        rgb, a = _daisy(rgb, a, X, Y, cx, cy, 6.0 * SS, 8, (238, 140, 184), (242, 196, 64), width=0.7, rng=rng)
+    def cosmos(rgb, a, X, Y, cx, cy, rng):
+        r = rng.uniform(8.0, 9.2) * SS
+        return _petal_head(rgb, a, X, Y, cx, cy, r, 8, (214, 104, 158), (248, 184, 214), (236, 186, 56), tilt=0.7,
+                           width=0.62, rng=rng)
+    rgb, a = _flower_texture(36962, [(18, 22), (44, 28)], cosmos)
     F._finish(rgb, a, "l369_flower_2")
 
-    # 3: white daisies: small, many petals, yellow button centres, three heads.
-    rng = G.rng_for(36963)
-    X, Y, rgb, a = F._canvas()
-    heads = [(8 * SS, 14 * SS), (16 * SS, 8 * SS), (24 * SS, 15 * SS)]
-    rgb, a = _stems_with_leaves(rng, X, Y, rgb, a, heads)
-    for cx, cy in heads:
-        rgb, a = _daisy(rgb, a, X, Y, cx, cy, 4.6 * SS, 16, (246, 244, 236), (238, 190, 40), rng=rng)
+    def white_daisy(rgb, a, X, Y, cx, cy, rng):
+        r = rng.uniform(6.6, 7.6) * SS
+        return _petal_head(rgb, a, X, Y, cx, cy, r, 16, (226, 222, 210), (252, 250, 244), (236, 186, 40), tilt=0.7, rng=rng)
+    rgb, a = _flower_texture(36963, [(13, 27), (31, 19), (49, 29)], white_daisy)
     F._finish(rgb, a, "l369_flower_3")
 
 
 def tex_l369_tufts() -> None:
-    """Grass tufts 0-3: short, tall, clover, seed heads."""
+    """Grass 0-3 (64 px): short soft grass, tall grass, grass with seed heads, grass with tiny
+    buttercups. Tuft 0 also fills the straight planes of every plant model."""
     rng = G.rng_for(36964)
-    X, Y, rgb, a = F._canvas()
-    rgb, a = F._blades(rng, X, Y, rgb, a, 34, M * SS, (0.18, 0.45), GRASS_TOP)
+    X, Y, rgb, a = _blade_canvas()
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 44, (0.35, 0.75))
     F._finish(rgb, a, "l369_tuft_0")
 
-    X, Y, rgb, a = F._canvas()
-    rgb, a = F._blades(rng, X, Y, rgb, a, 30, M * SS, (0.45, 0.9), GRASS_TOP, lean=0.35)
-    rgb, a = F._blades(rng, X, Y, rgb, a, 16, M * SS, (0.2, 0.4), GRASS_TOP)
+    X, Y, rgb, a = _blade_canvas()
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 30, (0.6, 0.98), lean=0.3)
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 16, (0.25, 0.5))
     F._finish(rgb, a, "l369_tuft_1")
 
-    X, Y, rgb, a = F._canvas()
-    rgb, a = F._blades(rng, X, Y, rgb, a, 10, M * SS, (0.15, 0.35), GRASS_TOP)
+    X, Y, rgb, a = _blade_canvas()
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 30, (0.3, 0.65))
     for _ in range(5):
-        x0, top = rng.uniform(6, 26) * SS, rng.uniform(17, 25) * SS
-        r2, a2 = F._stem(X, Y, [(x0, M * SS), (x0 + rng.normal(0, 1) * SS, top)], 0.6 * SS, (70, 112, 48))
+        x, top = rng.uniform(8, 56) * SS, rng.uniform(4, 14) * SS
+        rgb, a = _stem_to(rng, X, Y, rgb, a, x, top, col=(118, 130, 70))
+        r2, a2 = F._leaf_at(X, Y, x, top + 5 * SS, -np.pi / 2, 9 * SS, 2.2 * SS, (204, 190, 128), veins=0, gloss=0.1)
         rgb, a = F._composite(rgb, a, r2, a2)
-        for k in range(3):
-            ang = -np.pi / 2 + (k - 1) * 2.1
-            col = np.array((62, 118, 46)) * rng.uniform(0.9, 1.1)
-            r2, a2 = F._leaf_at(X, Y, x0, top, ang, 3.4 * SS, 3.0 * SS, col, veins=0, tip=1.2, blunt=0.6)
-            rgb, a = F._composite(rgb, a, r2, a2)
     F._finish(rgb, a, "l369_tuft_2")
 
-    X, Y, rgb, a = F._canvas()
-    rgb, a = F._blades(rng, X, Y, rgb, a, 22, M * SS, (0.25, 0.55), GRASS_TOP)
-    for _ in range(4):
-        x0, top = rng.uniform(6, 26) * SS, rng.uniform(3, 9) * SS
-        r2, a2 = F._stem(X, Y, [(x0, M * SS), (x0 + rng.normal(0, 2) * SS, top)], 0.5 * SS, (120, 132, 70))
-        rgb, a = F._composite(rgb, a, r2, a2)
-        r2, a2 = F._leaf_at(X, Y, x0, top + 3.5 * SS, -np.pi / 2, 7 * SS, 1.8 * SS, (190, 176, 110), veins=0)
-        rgb, a = F._composite(rgb, a, r2, a2)
+    X, Y, rgb, a = _blade_canvas()
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 32, (0.3, 0.7))
+
+    def buttercup(rgb, a, X, Y, cx, cy, rng):
+        return _petal_head(rgb, a, X, Y, cx, cy, 2.6 * SS, 5, (232, 188, 30), (252, 226, 80), (200, 150, 20),
+                           width=0.8, rng=rng)
+    for hx, hy in ((14, 30), (30, 22), (44, 34), (54, 26)):
+        rgb, a = _stem_to(rng, X, Y, rgb, a, hx * SS, hy * SS)
+        rgb, a = buttercup(rgb, a, X, Y, hx * SS, hy * SS, rng)
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 8, (0.15, 0.3))
     F._finish(rgb, a, "l369_tuft_3")
 
 
@@ -454,6 +494,23 @@ def _simple(name: str) -> None:
     F._item_block(name, name)
 
 
+def _meadow(name: str, tex: str, fill: str, height: float, fill_height: float) -> None:
+    """A meadow plant: two crossed planes of `tex` (`height` px tall, taller than a block for long
+    grass), and two straight planes of `fill` grass (`fill_height` px) set off the middle."""
+    def plane(frm, to, faces, texture, rotate):
+        e = {"from": frm, "to": to, "shade": False,
+             "faces": {f: {"uv": [0, 0, 16, 16], "texture": texture} for f in faces}}
+        if rotate:
+            e["rotation"] = {"origin": [8, 8, 8], "axis": "y", "angle": 45, "rescale": True}
+        return e
+    F._model(name, {"parent": "minecraft:block/block", "render_type": "minecraft:cutout_mipped", "ambientocclusion": False,
+                    "textures": {"plant": F._ref(tex), "fill": F._ref(fill), "particle": F._ref(tex)},
+                    "elements": [plane([0.8, 0, 8], [15.2, height, 8], ("north", "south"), "#plant", True),
+                                 plane([8, 0, 0.8], [8, height, 15.2], ("east", "west"), "#plant", True),
+                                 plane([0, 0, 4.5], [16, fill_height, 4.5], ("north", "south"), "#fill", False),
+                                 plane([11.5, 0, 0], [11.5, fill_height, 16], ("east", "west"), "#fill", False)]})
+
+
 def tex_l369_models() -> None:
     """Block models, blockstates and item models of every Level 369 block."""
     for name in [f"l369_plaster_{c}" for c in PLASTERS] + ["l369_ceiling", "l369_ceiling_rose", "l369_brick",
@@ -472,12 +529,17 @@ def tex_l369_models() -> None:
     _bright_cube("l369_veil", "l369_veil", cutout=True)
     _simple("l369_veil")
 
-    for block, prefix, bright in (("l369_flower", "l369_flower", False), ("l369_tuft", "l369_tuft", False),
-                                  ("l369_glow", "l369_glow", True)):
-        for k in range(4):
-            (_bright_cross if bright else F._cross)(f"{prefix}_{k}", f"{prefix}_{k}")
-        F._state(block, {f"kind={k}": [F._v(f"{prefix}_{k}", 0, y) for y in F.SPINS] for k in range(4)})
-        F._item_flat(block, F._ref(f"{prefix}_0"))
+    # The meadow: flowers and grass are two crossed planes of their own texture and two straight
+    # planes of soft grass (tuft 0; tuft 1 for tuft 0 itself), so blocks merge into one meadow.
+    # Mipmapped cutout, so it stays soft in the distance instead of breaking up into speckle.
+    for k in range(4):
+        _meadow(f"l369_flower_{k}", f"l369_flower_{k}", "l369_tuft_0", 16, 12)
+        _meadow(f"l369_tuft_{k}", f"l369_tuft_{k}", "l369_tuft_1" if k == 0 else "l369_tuft_0",
+                20 if k == 1 else 15, 11)
+        _bright_cross(f"l369_glow_{k}", f"l369_glow_{k}")
+    for block in ("l369_flower", "l369_tuft", "l369_glow"):
+        F._state(block, {f"kind={k}": [F._v(f"{block}_{k}", 0, y) for y in F.SPINS] for k in range(4)})
+        F._item_flat(block, F._ref(f"{block}_0"))
 
     _bright_cross("l369_glow_vine", "l369_glow_vine")
     _bright_cross("l369_glow_vine_tip", "l369_glow_vine_tip")

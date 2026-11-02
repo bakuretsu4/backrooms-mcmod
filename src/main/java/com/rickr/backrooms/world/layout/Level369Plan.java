@@ -12,9 +12,12 @@ import org.jetbrains.annotations.Nullable;
  * {@link Level369Layout} turns the codes into blocks. A pure function of (seed, x, z).
  *
  * <h2>Floor plan</h2>
- * A grid of 20 x 20 cells, one room each. The 1-thick wall between two cells lies on a cell's west
+ * A grid of 32 x 32 cells, one room each. The 1-thick wall between two cells lies on a cell's west
  * and north edge (cell-local 0). Every floor is lawn (y40) carpeted with grass tufts and flowers.
- * Rooms come in zones of 3 x 3 cells sharing one kind:
+ * Rooms come in zones of 4 x 4 cells sharing one kind, so a pillar hall opens out about 128 blocks
+ * across and a hallway runs about 128 blocks straight. Now and then (about one block of 3 x 3 zones
+ * in eight) a huge area takes all of its zones: one pillar hall 384 across, or hallways 384 long.
+ * The kinds:
  * <ul>
  *   <li><b>hallway</b> (white): a 5-wide corridor straight through the cell; a zone's hallways all
  *       run the same way, so they join into long corridors. Tall windows full of pale light down
@@ -30,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li><b>dark room</b> (sage, about 1 cell in 11): unlit, a single doorway, vines with small
  *       glowing flowers hanging from the ceiling and glowing plants in the grass.</li>
  * </ul>
- * The way out (one per 140 x 140 blocks, never in a region's outer cells): a skylit room with a
+ * The way out (one per 160 x 160 blocks, never in a region's outer cells): a skylit room with a
  * great arch of vines against its north wall, filled with a curtain of hanging flowers (the veil).
  * Walk into the veil and you come out in Level 7 ({@code Level369Rules}).
  *
@@ -117,15 +120,18 @@ public final class Level369Plan {
     // ==========================================================================================
     // Grid
     // ==========================================================================================
-    public static final int CELL = 20;
-    /** The middle of a cell's interior (cell-local 1..19). */
-    public static final int MID = 10;
+    public static final int CELL = 32;
+    /** The middle of a cell's interior (cell-local 1..31). */
+    public static final int MID = 16;
     /** Rooms come in zones of ZONE x ZONE cells. */
-    private static final int ZONE = 3;
+    private static final int ZONE = 4;
+    /** A huge area is HUGE x HUGE zones of one kind (see {@link #huge}). */
+    private static final int HUGE = 3;
+    private static final double HUGE_SHARE = 0.12;
     private static final double DARK_SHARE = 0.09;
-    /** A hallway's corridor: cell-local 8..12 across. */
-    private static final int CORRIDOR_LO = 8;
-    private static final int CORRIDOR_HI = 12;
+    /** A hallway's corridor: cell-local MID-2..MID+2 across. */
+    private static final int CORRIDOR_LO = MID - 2;
+    private static final int CORRIDOR_HI = MID + 2;
 
     static final int HALL = 0;
     static final int PILLAR = 1;
@@ -142,8 +148,9 @@ public final class Level369Plan {
     /** Two hallways meeting end to end: the corridor runs on through. */
     static final int E_JOIN = -3;
 
-    /** One way out per 140 x 140 blocks (7 x 7 cells), never in a region's outer cells. */
-    static final ExitLocator EXITS = new ExitLocator(7 * CELL, 30, 3690);
+    /** One way out per region of EXIT_CELLS x EXIT_CELLS cells (160 x 160 blocks), never in its outer cells. */
+    private static final int EXIT_CELLS = 5;
+    static final ExitLocator EXITS = new ExitLocator(EXIT_CELLS * CELL, 40, 3690);
 
     // ==========================================================================================
     // Public queries
@@ -223,15 +230,33 @@ public final class Level369Plan {
     // ==========================================================================================
 
     static boolean isExitCell(long seed, int cx, int cz) {
-        int size = 7 * CELL;
+        int size = EXIT_CELLS * CELL;
         int rx = Math.floorDiv(cx * CELL, size);
         int rz = Math.floorDiv(cz * CELL, size);
         return Math.floorDiv(EXITS.exitX(seed, rx, rz), CELL) == cx && Math.floorDiv(EXITS.exitZ(seed, rx, rz), CELL) == cz;
     }
 
-    /** The kind its zone gives a cell (hallway, pillar hall or skylit room). */
+    /** True if the block of HUGE x HUGE zones (hx, hz) is one huge area. */
+    private static boolean huge(long seed, int hx, int hz) {
+        return Hash.unit(seed, hx, hz, 3710) < HUGE_SHARE;
+    }
+
+    private static int zoneX(int cx) {
+        return Math.floorDiv(cx, ZONE);
+    }
+
+    private static int hugeX(int cx) {
+        return Math.floorDiv(zoneX(cx), HUGE);
+    }
+
+    /** The kind its zone gives a cell (hallway, pillar hall or skylit room); a huge area's is a pillar hall or hallways. */
     private static int zoneKind(long seed, int cx, int cz) {
-        double zone = Hash.unit(seed, Math.floorDiv(cx, ZONE), Math.floorDiv(cz, ZONE), 3691);
+        int hx = hugeX(cx);
+        int hz = hugeX(cz);
+        if (huge(seed, hx, hz)) {
+            return Hash.unit(seed, hx, hz, 3711) < 0.6 ? PILLAR : HALL;
+        }
+        double zone = Hash.unit(seed, zoneX(cx), zoneX(cz), 3691);
         return zone < 0.3 ? HALL : zone < 0.6 ? PILLAR : GARDEN;
     }
 
@@ -239,19 +264,36 @@ public final class Level369Plan {
         if (isExitCell(seed, cx, cz)) {
             return GARDEN;
         }
-        if (Hash.unit(seed, cx, cz, 3692) < DARK_SHARE) {
+        if (darkPick(seed, cx, cz) && !darkPick(seed, cx - 1, cz) && !darkPick(seed, cx, cz - 1)
+                && !huge(seed, hugeX(cx), hugeX(cz))) {
+            // Never inside a huge area (it stays one open space), and never next to another dark
+            // room: a dark room's one doorway always opens onto a lit room.
             return DARK;
         }
         return zoneKind(seed, cx, cz);
     }
 
-    private static boolean sameZone(int ax, int az, int bx, int bz) {
-        return Math.floorDiv(ax, ZONE) == Math.floorDiv(bx, ZONE) && Math.floorDiv(az, ZONE) == Math.floorDiv(bz, ZONE);
+    /** The dice for a dark room; a cell whose west or north neighbour also rolled one stays lit. */
+    private static boolean darkPick(long seed, int cx, int cz) {
+        return Hash.unit(seed, cx, cz, 3692) < DARK_SHARE;
     }
 
-    /** A zone's hallways all run along X, or all along Z. */
+    /** Two cells of one zone, or of one huge area. */
+    private static boolean sameZone(long seed, int ax, int az, int bx, int bz) {
+        if (zoneX(ax) == zoneX(bx) && zoneX(az) == zoneX(bz)) {
+            return true;
+        }
+        return hugeX(ax) == hugeX(bx) && hugeX(az) == hugeX(bz) && huge(seed, hugeX(ax), hugeX(az));
+    }
+
+    /** A zone's hallways all run along X, or all along Z (a huge area's all one way). */
     private static boolean hallAlongX(long seed, int cx, int cz) {
-        return Hash.unit(seed, Math.floorDiv(cx, ZONE), Math.floorDiv(cz, ZONE), 3693) < 0.5;
+        int hx = hugeX(cx);
+        int hz = hugeX(cz);
+        if (huge(seed, hx, hz)) {
+            return Hash.unit(seed, hx, hz, 3712) < 0.5;
+        }
+        return Hash.unit(seed, zoneX(cx), zoneX(cz), 3693) < 0.5;
     }
 
     private static int colour(long seed, int cx, int cz, int kind) {
@@ -289,16 +331,16 @@ public final class Level369Plan {
         boolean crossA = ka == HALL && crosses(seed, ax, az, side);
         boolean crossB = kb == HALL && crosses(seed, cx, cz, side);
         if (ka == DARK || kb == DARK) {
-            if (ka == DARK && kb == DARK) {
-                return E_SOLID;
+            if (crossA || crossB) {
+                // A corridor ending at a dark room always runs on into it (a second doorway, in line
+                // with the corridor), so no corridor is ever a dead end.
+                return MID;
             }
-            // A dark room has a single doorway. Seen from cell b this edge is its west (0) or north
-            // (1) wall; seen from cell a it is its east (2) or south (3) wall.
+            // Otherwise a dark room has a single doorway (its neighbours are never dark). Seen from
+            // cell b this edge is its west (0) or north (1) wall; seen from cell a, its east (2) or
+            // south (3) wall.
             boolean match = kb == DARK ? darkDoorSide(seed, cx, cz) == side : darkDoorSide(seed, ax, az) == side + 2;
-            if (!match) {
-                return E_SOLID;
-            }
-            return crossA || crossB ? MID : doorOffset(h);
+            return match ? doorOffset(h) : E_SOLID;
         }
         if (crossA && crossB) {
             return E_JOIN;
@@ -310,7 +352,7 @@ public final class Level369Plan {
             // Along the side of a corridor: now and then a side passage leads off it.
             return Hash.unit(h) < (ka == HALL && kb == HALL ? 0.3 : 0.5) ? doorOffset(h) : E_SOLID;
         }
-        boolean zone = sameZone(ax, az, cx, cz);
+        boolean zone = sameZone(seed, ax, az, cx, cz);
         if (ka == PILLAR && kb == PILLAR && zone) {
             return E_OPEN;
         }
@@ -335,9 +377,9 @@ public final class Level369Plan {
         return kind(seed, cx, cz) == HALL || kind(seed, ax, az) == HALL ? -1 : e;
     }
 
-    /** A doorway somewhere along the middle of an edge (cell-local 4..16). */
+    /** A doorway somewhere along the middle of an edge (cell-local 4..CELL-4). */
     private static int doorOffset(long h) {
-        return 4 + Hash.range(Hash.mix(h + 1), 13);
+        return 4 + Hash.range(Hash.mix(h + 1), CELL - 7);
     }
 
     private static int ceilingY(int kind) {
@@ -491,27 +533,38 @@ public final class Level369Plan {
         }
     }
 
-    /** The winding brick paths: a band along one contour line of a smooth noise, about 3 wide. */
+    /**
+     * The winding brick paths: a band about 3-4 wide along one contour line of a smooth noise. The
+     * distance to the line is the noise's offset divided by its slope, so the path keeps an even
+     * width instead of swelling into blobs where the noise flattens out.
+     */
     private static boolean onPath(long seed, int x, int z) {
-        return Math.abs(smooth(seed, x, z, 22.0, 3703) - 0.5) < 0.035;
+        double v = smooth(seed, x, z, 30.0, 3703) - 0.5;
+        if (Math.abs(v) > 0.08) {
+            return false;
+        }
+        double gx = (smooth(seed, x + 1, z, 30.0, 3703) - smooth(seed, x - 1, z, 30.0, 3703)) * 0.5;
+        double gz = (smooth(seed, x, z + 1, 30.0, 3703) - smooth(seed, x, z - 1, 30.0, 3703)) * 0.5;
+        return Math.abs(v) < 1.7 * Math.max(Math.hypot(gx, gz), 0.004);
     }
 
     // ---- Skylit room ----------------------------------------------------------------------------
 
     /** Where to fall in, per skylight layout: a shaft column clear of the young tree. */
-    private static final int[][] ARRIVAL = {{MID, MID}, {5, 5}, {14, MID}};
+    private static final int[][] ARRIVAL = {{MID, MID}, {8, 8}, {24, MID}};
     /** Where the young tree stands, per skylight layout (none under the one big skylight). */
-    private static final int[][] TREE = {null, {15, 15}, {5, MID}};
+    private static final int[][] TREE = {null, {24, 24}, {8, MID}};
 
     private static int skylightVariant(long seed, int cx, int cz) {
         return isExitCell(seed, cx, cz) ? 0 : Hash.range(Hash.of(seed, cx, cz, 3697), 3);
     }
 
+    /** One big skylight (9 x 9), four small ones (4 x 4), or a long strip (21 x 5). */
     private static boolean inShaft(int variant, int lx, int lz) {
         return switch (variant) {
-            case 0 -> lx >= 8 && lx <= 12 && lz >= 8 && lz <= 12;
-            case 1 -> (lx >= 4 && lx <= 6 || lx >= 14 && lx <= 16) && (lz >= 4 && lz <= 6 || lz >= 14 && lz <= 16);
-            default -> lx >= 4 && lx <= 16 && lz >= 9 && lz <= 11;
+            case 0 -> Math.abs(lx - MID) <= 4 && Math.abs(lz - MID) <= 4;
+            case 1 -> (lx >= 7 && lx <= 10 || lx >= 22 && lx <= 25) && (lz >= 7 && lz <= 10 || lz >= 22 && lz <= 25);
+            default -> lx >= 6 && lx <= 26 && Math.abs(lz - MID) <= 2;
         };
     }
 
@@ -561,9 +614,9 @@ public final class Level369Plan {
                 }
             }
         }
-        // Bushes along the walls.
-        boolean nearWall = lx <= 2 || lx >= 18 || lz <= 2 || lz >= 18;
-        if (nearWall && smooth(seed, x, z, 3.0, 3704) > 0.62) {
+        // Bushes along the walls (never in front of a doorway).
+        boolean nearWall = lx <= 2 || lx >= CELL - 2 || lz <= 2 || lz >= CELL - 2;
+        if (nearWall && smooth(seed, x, z, 3.0, 3704) > 0.62 && !byDoorway(seed, cx, cz, lx, lz)) {
             out[FEET_Y] = LEAVES;
             if (smooth(seed, x, z, 2.0, 3705) > 0.55) {
                 out[FEET_Y + 1] = LEAVES;
@@ -571,6 +624,18 @@ public final class Level369Plan {
             return;
         }
         plant(seed, x, z, GARDEN, out);
+    }
+
+    /** True within 3 blocks of a doorway in any of the cell's four walls (cell-local lx, lz). */
+    private static boolean byDoorway(long seed, int cx, int cz, int lx, int lz) {
+        return lx <= 3 && near(edge(seed, cx, cz, WEST), lz)
+                || lz <= 3 && near(edge(seed, cx, cz, NORTH), lx)
+                || lx >= CELL - 3 && near(edge(seed, cx + 1, cz, WEST), lz)
+                || lz >= CELL - 3 && near(edge(seed, cx, cz + 1, NORTH), lx);
+    }
+
+    private static boolean near(int doorway, int along) {
+        return doorway >= 0 && Math.abs(along - doorway) <= 3;
     }
 
     /** The arch's front face (cell-local z); the veil fills the opening behind it. */
@@ -620,26 +685,18 @@ public final class Level369Plan {
 
     // ---- The lawn -------------------------------------------------------------------------------
 
-    /** The plant (or none) growing from the lawn at (x, z) in a room of {@code kind}. */
+    /**
+     * The plant (or none) growing from the lawn at (x, z) in a room of {@code kind}. Lit rooms are
+     * one dense meadow: every block carries grass or flowers, the flowers thick in drifts (a
+     * smooth noise) and scattered between them, like the user's pictures.
+     */
     private static void plant(long seed, int x, int z, int kind, int[] out) {
         double r = Hash.unit(seed, x, z, 3700);
         double patch = smooth(seed, x, z, 7.0, 3701);
         int tuftKind = tuftKind(Hash.unit(seed, x, z, 3707));
         switch (kind) {
-            case HALL -> {
-                if (r < 0.20 + 0.45 * patch) {
-                    out[FEET_Y] = code(FLOWER, 0);
-                } else if (r < 0.75) {
-                    out[FEET_Y] = code(TUFT, tuftKind);
-                }
-            }
-            case PILLAR -> {
-                if (r < 0.25 + 0.45 * patch) {
-                    out[FEET_Y] = code(FLOWER, 1);
-                } else if (r < 0.78) {
-                    out[FEET_Y] = code(TUFT, tuftKind);
-                }
-            }
+            case HALL -> out[FEET_Y] = r < 0.12 + 0.5 * patch ? code(FLOWER, 0) : code(TUFT, tuftKind);
+            case PILLAR -> out[FEET_Y] = r < 0.15 + 0.6 * patch ? code(FLOWER, 1) : code(TUFT, tuftKind);
             case DARK -> {
                 if (r < 0.18) {
                     out[FEET_Y] = code(GLOW, Hash.range(Hash.of(seed, x, z, 3708), 4));
@@ -648,20 +705,20 @@ public final class Level369Plan {
                 }
             }
             default -> {
-                if (r < 0.20 + 0.40 * patch) {
+                if (r < 0.15 + 0.5 * patch) {
                     // Patches of one colour: the kind follows a second, slower noise.
                     int flower = Math.min(3, (int) (smooth(seed, x, z, 9.0, 3702) * 4.0));
                     out[FEET_Y] = code(FLOWER, flower);
-                } else if (r < 0.72) {
+                } else {
                     out[FEET_Y] = code(TUFT, tuftKind);
                 }
             }
         }
     }
 
-    /** Short tufts are the most common, then tall ones and clover, a few with seed heads. */
+    /** Short soft grass is the most common, then tall grass, a few seed heads and buttercups. */
     private static int tuftKind(double u) {
-        return u < 0.5 ? 0 : u < 0.7 ? 1 : u < 0.9 ? 2 : 3;
+        return u < 0.55 ? 0 : u < 0.85 ? 1 : u < 0.93 ? 2 : 3;
     }
 
     /** Smooth value noise in [0, 1): random values on a {@code scale}-block lattice, eased in between. */
