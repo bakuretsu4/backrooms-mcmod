@@ -237,12 +237,17 @@ going down into the dark, until the picture breaks up and you are in the next le
   soft flowers (no landing ever hurts here). An endless indoor garden: rooms of pastel-painted
   plaster, every floor a lawn carpeted wall to wall with grass and flowers. Long white hallways
   with tall windows full of pale blue light down one side, closed doors down the other and blue
-  forget-me-nots in the grass; low, wide peach halls of cream pillars under salmon ceiling tiles,
+  cornflowers in the grass; low, wide peach halls of cream pillars under salmon ceiling tiles,
   red daisies and winding brick paths; tall mint, lavender, cream and rose rooms under skylight
   shafts, bushes along the walls and young trees under the light; and, now and then, a dark sage
   room with a single doorway, glowing flowers in the grass and glowing vines hanging from the
-  ceiling. Nothing lives here and nothing happens. The way on is a great **arch of vines** filled
-  with a curtain of hanging flowers (one every ~140 blocks; `/backrooms locate` points to it): walk
+  ceiling. The halls are big: pillar halls open a hundred and more blocks across, hallways run as
+  far, and now and then one goes on for nearly four hundred. Every floor is one soft meadow that
+  sways in a breeze (not under shader packs), rustles as you wade through it, and sheds petals and
+  pollen into the light. Each kind of room has its own light: cool white hallways with shafts of
+  sun from their windows, pillar halls in a low golden sunset, soft daylight under the skylights.
+  Nothing lives here and nothing happens. The way on is a great **arch of vines** filled
+  with a curtain of hanging flowers (one every ~160 blocks; `/backrooms locate` points to it): walk
   into the flowers and you come out in Level 7. See `docs/level-369-comely.md`.
 - **Level 7 ("Thalassophobia"):** reached through Level 369's arch of vines (or, as a shortcut, down
   the stairs of a flooded house in Level 94, about one exit house in three). You come up in a

@@ -106,7 +106,7 @@ Time spent in the level this visit; nothing for 5 minutes, total at 25.
   moved doorways are rebuilt as the level made them, and the next visit starts from nothing.
   Visits are saved with the world (SavedData "backrooms_level369_visits").
 
-## Second pass (planned after the first play-test, not built yet)
+## Second pass (after the first play-test)
 
 The user's verdict: "doesn't feel dreamlike or satisfying enough. The foliage is too gritty (or
 noisy) and doesn't feel completely like the reference images", and "areas need to be bigger".
@@ -139,23 +139,44 @@ The user's choices:
 - Unchanged: the drifting light wave, the forgetting, the way in from Level 37 and the arch of
   vines out to Level 7.
 
-### Plan
+### What was built
 
-1. **Bigger** (Level369Plan): larger cells and zones; most pillar-hall zones open into one hall
-   about 120 across with long winding brick paths; hallways run about 130 blocks straight; a rare
-   "huge" zone (a 200+ pillar hall, or a 300+ corridor); skylit and dark rooms scaled to match.
-   Longer view distance in the level's fog.
-2. **Plants** (tools/anomaly_assets/level369.py, registry/Level369Blocks): new grass and flower
-   models built from several crossed thin planes per block with 64 px textures (the recent
-   texture cleanup freed about 340k texels of block-atlas room; it must stay 4096 x 4096), smooth
-   gradients instead of pixel noise; a calm lawn texture; denser, more even planting with small
-   flowers in drifts like the pictures.
-3. **Light** (client): warm low golden light in pillar halls; window beams in hallways (reusing
-   Level 227's client/light/SunBeams); a white glow at the far end of long corridors; a softer
-   camcorder mood for the level (more bloom and haze, less contrast).
-4. **Satisfying:** plant sway (a vertex wave limited to Level 369's plant blocks; to be checked
-   against Veil, with animated textures as the fallback); rustle and grass-footstep sounds when
-   wading through flowers; drifting petal and pollen particles in lit areas; the ambience redone
-   quieter and warmer.
-5. **Test** side by side with the pictures (screenshots), FPS check in the biggest hall, docs,
-   ship, play session. Existing worlds need their Level 369 folder deleted to get the new layout.
+- **Bigger** (world/layout/Level369Plan): 32-block cells in zones of 4 x 4, so a pillar hall
+  opens about 128 blocks across and a hallway runs about 128 straight; about one 384-block square
+  in 16 is a huge area (one pillar hall, or hallways, 384 across). Dark rooms are never inside a
+  huge area or next to each other, and a corridor that ends at a dark room always runs on into
+  it (the first layout had a few sealed rooms); bushes never grow in front of a doorway; the
+  brick paths keep an even width. Checked on a 1024 x 1024 map: no room is shut off.
+- **The meadow** (tools/anomaly_assets/level369.py): 64 px grass and flowers drawn from soft
+  tapered blades shaded root to tip (no pixel speckle), big open flower heads (cornflowers, red
+  daisies, pink cosmos, white daisies, buttercups), every lit lawn block planted with flowers in
+  drifts. Each plant is two crossed planes of its own texture and two straight planes of grass,
+  mipmapped cutout, so the blocks merge into one field and stay soft in the distance. The lawn
+  under it is a calm, even green.
+- **The light, per kind of room** (client/Level369Atmosphere, client/AtmosphereGrade): window
+  hallways cool white, their windows throwing shafts of light (client/light/SunBeams: only the
+  six nearest windows, only while you are in a hallway); pillar halls a low golden sunset with
+  amber air; skylit rooms soft cream daylight. Calibrated against the two pictures by average
+  brightness of the frame (the pillar hall picture 0.24, the hallway 0.37): pillar halls now
+  0.26, skylit rooms 0.37, hallways about 0.41 (0.47 while the drifting light passes), nothing
+  clipped to white (it was 0.40-0.76 with up to 27% pure white, "it looks like heaven"). The
+  drifting light now lifts the room you are in by 15% and turns it golden, instead of setting
+  one bright exposure everywhere. Highlights roll off softly; the haze is a darker tint of each
+  room's light, so the distance softens into colour instead of white.
+- **It sways** (assets/minecraft/shaders/core/rendertype_cutout_mipped.vsh): the meadow's grass
+  and flowers carry a marker block colour (client/Level369Atmosphere SWAY_MARKER); the cutout
+  shader moves only those vertices, only their tops, in slow travelling waves with gusts. Every
+  other block is untouched. Under Iris or a shader pack there is no sway (nothing breaks).
+- **Sound:** the lawn has grass footsteps (it fell back to concrete before), and wading through
+  the flowers rustles (step.meadow, layered over the footstep; player/PlayerGameplay). The
+  ambience is quieter and warmer: low breeze, a faint warm room tone, the flowers' faint song in
+  the strongest gusts; the far sprinkler is gone.
+- **Petals and pollen** (client/Level369Petals, client/particle/PetalParticle): a few petals at a
+  time from the room's own flowers ride the breeze and settle; pollen hangs in the lit air,
+  faintly glowing. None in the dark rooms.
+- Frame rate: unchanged once the area around you has loaded (about 450-480 FPS in the huge
+  pillar hall on the test machine, as before the second pass); lower for the first minute after
+  a long teleport while the meadow's chunks build.
+
+Existing worlds keep their old Level 369 rooms where they were already generated: delete the
+world's dimensions/backrooms/level_369 folder to get the new layout.

@@ -552,13 +552,45 @@ def tex_l369_models() -> None:
     F._item_flat("l369_glow_vine", F._ref("l369_glow_vine_tip"))
 
 
+def tex_l369_particles() -> None:
+    """Drifting petals and pollen (16 px, the particle sheet, not the block atlas), in the order the
+    particle picks them: 0-1 red, 2-3 blue, 4-5 pink, 6-7 white petals (two shapes each, shaded
+    from the base to a lighter tip, a soft centre crease), 8-9 pollen (a soft warm speck)."""
+    colours = [((168, 20, 34), (232, 70, 76)), ((56, 74, 190), (126, 158, 246)),
+               ((206, 100, 152), (246, 182, 212)), ((220, 214, 200), (252, 250, 244))]
+    i = 0
+    for base, tip in colours:
+        for shape in range(2):
+            rng = G.rng_for(36980 + i)
+            X, Y, rgb, a = F._canvas(16)
+            L = (12.5 if shape == 0 else 10.5) * SS
+            W = (5.5 if shape == 0 else 6.5) * SS
+            t, s, half, cover = F._leaf_shape(X, Y, 0, 8 * SS - L / 2 * 0.9, 8 * SS + L / 2 * 0.5, -0.6, L, W, wrap=False,
+                                              tip=0.55 if shape == 0 else 0.35, blunt=0.55)
+            col = G.lerp(_col(base), _col(tip), np.clip(t, 0, 1)[..., None])
+            crease = np.exp(-(s / (0.5 * SS)) ** 2) * (t < 0.9)
+            col = col * (1.0 - 0.12 * crease)[..., None] * rng.uniform(0.95, 1.05)
+            rgb, a = F._composite(rgb, a, col, cover)
+            G.save_png(np.concatenate([F._down(rgb, SS), (F._down(a, SS) * 255.0)[..., None]], axis=2),
+                       G.TEX / "particle" / f"l369_petal_{i}.png")
+            i += 1
+    for k, (r0, col) in enumerate(((2.6, (255, 236, 170)), (1.8, (255, 248, 214)))):
+        X, Y, rgb, a = F._canvas(16)
+        rr = np.hypot(X - 8 * SS, Y - 8 * SS) / SS
+        alpha = np.clip(1.0 - rr / r0, 0, 1) ** 1.5
+        rgb = np.broadcast_to(_col(col), rgb.shape).copy()
+        G.save_png(np.concatenate([F._down(rgb, SS), (F._down(alpha, SS) * 255.0)[..., None]], axis=2),
+                   G.TEX / "particle" / f"l369_petal_{8 + k}.png")
+
+
 # ------------------------------------------------------------------------------- ambience
 
 def snd_l369_ambience() -> None:
-    """The level's ambience (the biome's ambient loop, 48 s, seamless): a soft breeze moving
-    through the rooms in slow gusts, leaves and grass stirring with it, a sprinkler ticking round
-    far off now and then, and, when the gusts are strongest, the flowers 'singing' (the wiki): a
-    very faint, high, warm chord that swells in and out with the wind."""
+    """The level's ambience (the biome's ambient loop, 48 s, seamless), quiet and warm: a soft
+    breeze moving through the rooms in slow gusts, low and rounded, over a faint warm room tone;
+    the grass stirring a little in the gusts; and, when they are strongest, the flowers 'singing'
+    (the wiki), a very faint, high, warm chord that swells in and out with the wind. No birds, no
+    events: nothing to listen for."""
     rng = G.rng_for(36990)
     T = 48.0
     n = int(T * G.SR)
@@ -568,10 +600,11 @@ def snd_l369_ambience() -> None:
         return 0.5 + 0.5 * np.sin(2 * np.pi * cycles * t / T + phase)
 
     gust = 0.35 + 0.65 * (0.6 * swell(3, 0.0) + 0.4 * swell(5, 1.7)) ** 1.6
-    breeze = G.norm(G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 70, 900, 1) / np.sqrt(np.maximum(f, 30))))
-    rustle = G.norm(G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 2200, 8000, 2)))
+    breeze = G.norm(G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 50, 520, 1) / np.sqrt(np.maximum(f, 30))))
+    room = G.norm(G.periodic_noise(n, rng, lambda f: G.lp_gain(f, 180, 2) / np.maximum(f, 20)))
+    rustle = G.norm(G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 1500, 4500, 2)))
     flutter = np.clip(G.norm(G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 4, 16, 1))), 0, None)
-    x = breeze * gust * 0.55 + rustle * (0.15 + flutter) * gust ** 2 * 0.22
+    x = breeze * gust * 0.55 + room * 0.22 + rustle * (0.1 + flutter) * gust ** 2 * 0.10
 
     # The flowers' song: a warm chord (F major add9), whole cycles per loop, only in the gusts.
     song = np.zeros(n)
@@ -579,17 +612,32 @@ def snd_l369_ambience() -> None:
         f = round(hz * T) / T
         song += amp * np.sin(2 * np.pi * f * t + rng.uniform(0, 6.3))
     sing = np.clip((gust - 0.75) / 0.25, 0, 1) ** 2
-    x += G.norm(song) * sing * 0.035
-
-    # A sprinkler far off: a soft ticking burst of hiss twice a loop.
-    tick = np.zeros(n)
-    for start in (11.0, 33.5):
-        for k in range(26):
-            G.add_at(tick, G.norm(rng.normal(size=int(0.03 * G.SR))) * np.exp(-np.arange(int(0.03 * G.SR)) / 200)
-                     * (0.4 + 0.6 * np.sin(np.pi * k / 25)), start + k * 0.18, circular=True)
-    tick = G.fft_filter(tick, lambda f: G.bp_gain(f, 1500, 6000, 2), circular=True)
-    x += G.norm(tick) * 0.06
+    x += G.norm(song) * sing * 0.025
     _save_loop(x, G.SND / "ambient" / "level369_ambience.ogg", peak=0.5)
+
+
+def snd_l369_rustle() -> None:
+    """Wading through the meadow (step.meadow, four takes, layered over the grass footstep): the
+    swish of blades brushing past your legs, a soft breathy sweep, and a scatter of tiny crisp
+    ticks of stems and leaves, about a third of a second, quiet."""
+    for k in range(4):
+        rng = G.rng_for(36995 + k)
+        dur = rng.uniform(0.32, 0.44)
+        n = int(dur * G.SR)
+        t = np.arange(n) / G.SR
+        peak_at = rng.uniform(0.08, 0.14)
+        env = np.where(t < peak_at, (t / peak_at) ** 1.5, np.exp(-(t - peak_at) / rng.uniform(0.07, 0.11)))
+        sweep = G.fft_filter(rng.normal(size=n), lambda f: G.bp_gain(f, 700, 3200, 2))
+        brush = G.fft_filter(rng.normal(size=n), lambda f: G.bp_gain(f, 2600, 7500, 2))
+        flutter = 0.6 + 0.4 * np.abs(G.fft_filter(rng.normal(size=n), lambda f: G.bp_gain(f, 18, 60, 1)))
+        x = G.norm(sweep) * env * 0.5 + G.norm(brush) * env * flutter * 0.35
+        ticks = np.zeros(n)
+        for _ in range(int(rng.integers(14, 24))):
+            at = rng.uniform(0.02, dur * 0.8)
+            m = int(rng.uniform(0.002, 0.006) * G.SR)
+            G.add_at(ticks, rng.normal(size=m) * np.exp(-np.arange(m) / (m / 3)) * rng.uniform(0.3, 1.0), at, False)
+        x += G.norm(G.fft_filter(ticks, lambda f: G.bp_gain(f, 2500, 9000, 2))) * 0.18
+        G.save_ogg(x, G.SND / "step" / f"meadow{k + 1}.ogg", peak=0.55)
 
 
 def _save_loop(x: np.ndarray, path, peak: float) -> None:
@@ -612,5 +660,5 @@ def _save_loop(x: np.ndarray, path, peak: float) -> None:
 
 
 TEXTURES = [tex_l369_plasters, tex_l369_ceilings, tex_l369_lights, tex_l369_brick, tex_l369_ground, tex_l369_vines,
-            tex_l369_flowers, tex_l369_tufts, tex_l369_glow, tex_l369_models]
-SOUNDS = [snd_l369_ambience]
+            tex_l369_flowers, tex_l369_tufts, tex_l369_glow, tex_l369_models, tex_l369_particles]
+SOUNDS = [snd_l369_ambience, snd_l369_rustle]

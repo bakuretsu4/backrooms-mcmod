@@ -3,20 +3,23 @@ package com.rickr.backrooms.registry;
 import com.rickr.backrooms.block.Level227HangingBlock;
 import com.rickr.backrooms.block.Level227PlantBlock;
 import java.util.function.Function;
+import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.neoforge.registries.DeferredBlock;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 /**
  * The blocks of Level 369, "Comely" (world/layout/Level369Plan): pastel plaster walls, acoustic
  * ceilings with light panels, frosted skylights, glowing hallway windows, brick paths, a lawn for a
  * floor, flowers, bushes, glowing plants for the dark rooms, and the arch of vines that leads out.
  * The young trees' trunks are Level 227's logs; the hallway doors are the Lobby's. Textures
- * and models come from tools/anomaly_assets/level369.py (64 px surfaces and 32 px plants: the
- * block atlas is nearly full).
+ * and models come from tools/anomaly_assets/level369.py (64 px surfaces and 64 px plants: the
+ * block atlas is nearly full). Also the drifting petals' particle type.
  */
 public final class Level369Blocks {
     /** Painted plaster walls, one block per colour (see Level369Plan's wall colours). */
@@ -76,6 +79,13 @@ public final class Level369Blocks {
     /** A vine hanging from the dark rooms' ceilings, with small glowing flowers; TIP = the lowest one. */
     public static final DeferredBlock<Level227HangingBlock> GLOW_VINE = block("l369_glow_vine",
             props -> new Level227HangingBlock(props, 3, false), plant(MapColor.PLANT, SoundType.VINE).lightLevel(state -> 6));
+
+    /**
+     * A petal or a speck of pollen drifting through the light (client/particle/PetalParticle). The
+     * spawn's x speed argument picks the sprite (0-1 red, 2-3 blue, 4-5 pink, 6-7 white, 8-9 pollen).
+     */
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> PETAL = ModParticles.PARTICLES.register("l369_petal",
+            () -> new SimpleParticleType(false));
 
     static {
         for (DeferredBlock<?> block : new DeferredBlock<?>[] {PLASTER_WHITE, PLASTER_PEACH, PLASTER_MINT, PLASTER_LAVENDER,

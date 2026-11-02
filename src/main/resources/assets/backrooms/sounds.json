@@ -4745,7 +4745,7 @@
       {
         "name": "backrooms:ambient/level369_ambience",
         "stream": true,
-        "volume": 0.45
+        "volume": 0.35
       }
     ]
   },
@@ -4773,5 +4773,26 @@
       }
     ],
     "subtitle": "subtitles.backrooms.level0.ceiling_fan"
+  },
+  "step.meadow": {
+    "sounds": [
+      {
+        "name": "backrooms:step/meadow1",
+        "volume": 0.6
+      },
+      {
+        "name": "backrooms:step/meadow2",
+        "volume": 0.6
+      },
+      {
+        "name": "backrooms:step/meadow3",
+        "volume": 0.6
+      },
+      {
+        "name": "backrooms:step/meadow4",
+        "volume": 0.6
+      }
+    ],
+    "subtitle": "subtitles.backrooms.step"
   }
 }

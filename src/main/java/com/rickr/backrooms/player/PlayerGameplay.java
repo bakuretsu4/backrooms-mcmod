@@ -3,6 +3,7 @@ package com.rickr.backrooms.player;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.network.EnergyPayload;
 import com.rickr.backrooms.registry.ModAttachments;
+import com.rickr.backrooms.registry.Level369Blocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.Travel;
@@ -54,6 +55,9 @@ public final class PlayerGameplay {
     private static final double RUN_STRIDE = 2.3;
     private static final float WALK_VOLUME = 0.15f;
     private static final float RUN_VOLUME = 0.45f;
+    /** The rustle of Level 369's meadow under the footstep: soft walking, a little more running. */
+    private static final float MEADOW_WALK_VOLUME = 0.35f;
+    private static final float MEADOW_RUN_VOLUME = 0.6f;
     /** Walking through water is never quiet: wading steps are much louder than a dry shuffle. */
     private static final float WADE_WALK_VOLUME = 0.55f;
 
@@ -168,6 +172,13 @@ public final class PlayerGameplay {
         }
         float pitch = 0.92f + player.getRandom().nextFloat() * 0.16f;
         player.level().playSound(player, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, volume, pitch);
+        // Level 369's meadow: the blades and flowers you wade through rustle over the footstep.
+        BlockState feet = player.level().getBlockState(player.blockPosition());
+        if (feet.is(Level369Blocks.FLOWER.get()) || feet.is(Level369Blocks.TUFT.get())) {
+            float rustle = (running ? MEADOW_RUN_VOLUME : MEADOW_WALK_VOLUME) * (player.isCrouching() ? 0.4f : 1.0f);
+            player.level().playSound(player, player.getX(), player.getY(), player.getZ(), ModSounds.STEP_MEADOW.get(),
+                    SoundSource.PLAYERS, rustle, 0.9f + player.getRandom().nextFloat() * 0.25f);
+        }
     }
 
     /**
@@ -191,7 +202,7 @@ public final class PlayerGameplay {
         if (isCarpet(on)) {
             return running ? ModSounds.STEP_CARPET_RUN.get() : ModSounds.STEP_CARPET_WALK.get();
         }
-        if (on.is(ModBlocks.LAWN_GRASS.get())) {
+        if (on.is(ModBlocks.LAWN_GRASS.get()) || on.is(Level369Blocks.GRASS.get())) {
             return running ? ModSounds.STEP_GRASS_RUN.get() : ModSounds.STEP_GRASS_WALK.get();
         }
         if (on.is(ModBlocks.WOOD_FLOOR.get()) || on.is(ModBlocks.PORCH_PLANKS.get()) || on.is(Blocks.DARK_OAK_STAIRS)) {
