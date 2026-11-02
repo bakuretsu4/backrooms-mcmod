@@ -20,7 +20,7 @@ hit those means exactly.
 Run with `python tools/gen_assets.py level0_surfaces` from the project root. Textures derived
 from these (wall drawings, the carpet arrow, graffiti, the corridor light strip, the red-room and
 anomaly papers) come from their own generators: `lobby_carpet_arrow wall_decals rug
-level0_revamp_chevron level0_revamp_graffiti level0_revamp_strip level0_a_`. Every texture uses
+level0_revamp_graffiti level0_revamp_strip level0_a_`. Every texture uses
 fixed seeds, so re-running gives identical files.
 """
 from __future__ import annotations
@@ -589,18 +589,15 @@ def ceiling_marks(i, rng, img):
 # =============================================================================
 
 # The SurfaceBlocks drawn here (their entries in gen_assets.SURFACE_VARIANTS).
-SURFACES = ("yellow_wallpaper", "yellow_wallpaper_baseboard", "lobby_carpet", "ceiling_tile",
-            "l0_wallpaper_chevron", "l0_wallpaper_chevron_baseboard")
+SURFACES = ("yellow_wallpaper", "yellow_wallpaper_baseboard", "lobby_carpet", "ceiling_tile")
 
 
 def tex_level0_surfaces() -> None:
-    """The plain textures, every aged version, and their models and blockstates (the chevron
-    paper's plain texture comes from level0_revamp.py, which also uses baseboard() here)."""
+    """The plain textures, every aged version, and their models and blockstates."""
     G.tex_yellow_wallpaper()
     G.tex_yellow_wallpaper_baseboard()
     G.tex_lobby_carpet()
     G.tex_ceiling_tile()
-    G.save_png(baseboard(G._l0w().chevron_base()), G._blk("l0_wallpaper_chevron_baseboard"))
     for name in SURFACES:
         G.save_surface_variants(name)
         G.write_variant_states(name, G.SURFACE_VARIANTS[name][2])

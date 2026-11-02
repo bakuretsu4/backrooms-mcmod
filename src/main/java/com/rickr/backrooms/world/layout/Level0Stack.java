@@ -18,14 +18,14 @@ import org.jetbrains.annotations.Nullable;
  * The stack, from the film: a square void through Level 0, ringed by floor after floor of open
  * office space, partitions and doorways and the odd chair, going down into the dark and up out of
  * sight. Most of the floors are not there: five are built (y35-y59, the one you walk in on in the
- * middle) and client/Level0StackRenderer draws dozens more above and below them, the same plan,
- * darker the further they go.
+ * middle) and client/Level0StackRenderer draws dozens more above and below them, copies of the
+ * real ones, darker the further they go.
  *
- * <p>Plan (local frame, see {@link Level0SetPieces}; m = rings from the middle, 0..15):
+ * <p>Plan (local frame, see {@link Level0SetPieces}; m = rings from the middle, 0..19):
  * <pre>
- *   m  0- 6  the void: open from the bottom of the world to the top
- *   m  7-13  the ring of floor round it, partitioned into bays (partitions every 7, with doorways)
- *   m 14-15  the outer wall, with a doorway into the maze on three sides of the entry floor
+ *   m  0-10  the void, 22 wide: open from the bottom of the world to the top
+ *   m 11-17  the ring of floor round it, partitioned into bays (partitions every 7, with doorways)
+ *   m 18-19  the outer wall, with a doorway into the maze on three sides of the entry floor
  * </pre>
  * Floors: carpet at y35, 40, 45, 50, 55 (story 5: carpet, three of air, the ceiling tile). You walk
  * in on y40. On three sides its ring is ordinary floor that just ends at the void ("from a floor's
@@ -36,14 +36,19 @@ import org.jetbrains.annotations.Nullable;
  * (world/anomaly/level0/StackBehavior): you wake somewhere else on Level 0, hurt.
  */
 public final class Level0Stack {
-    public static final int BOX = 32;
+    public static final int BOX = 40;
     public static final int MOAT = 1;
     private static final int HALF = BOX / 2;
 
-    public static final int VOID_MAX = 6;
-    public static final int RING_MIN = 7;
-    public static final int RING_MAX = 13;
-    public static final int WALL_MIN = 14;
+    public static final int VOID_MAX = 10;
+    public static final int RING_MIN = 11;
+    public static final int RING_MAX = 17;
+    public static final int WALL_MIN = 18;
+    /** The entry floor's ledge on the stair side: the two rings along the wall. */
+    private static final int LEDGE_MIN = RING_MAX - 1;
+    /** The two rings the floating stair climbs over, just off the ledge. */
+    private static final int STAIR_M0 = RING_MAX - 3;
+    private static final int STAIR_M1 = RING_MAX - 2;
 
     /** The real floors (carpet layers); the entry floor is LevelLayout.FLOOR_Y = 40. */
     public static final int[] FLOORS = {35, 40, 45, 50, 55};
@@ -93,9 +98,9 @@ public final class Level0Stack {
         return Math.floorMod(along + shift, PARTITION_STEP) == 0 && Math.abs(along) <= RING_MAX - 1;
     }
 
-    /** The doorway through a partition (ring offsets m 9-10). */
+    /** The doorway through a partition (the middle two rings). */
     public static boolean partitionDoor(int m) {
-        return m == 9 || m == 10;
+        return m == RING_MIN + 2 || m == RING_MIN + 3;
     }
 
     /** Which side of the entry floor (local, 0-3) has the ledge and the stair: always local west. */
@@ -111,7 +116,7 @@ public final class Level0Stack {
     // ---- The stair ----------------------------------------------------------------------------------
 
     /**
-     * The stair runs along the ledge side over ring offsets m 10-11, from along STAIR_FROM up 10
+     * The stair runs along the ledge side over rings STAIR_M0-STAIR_M1, from along STAIR_FROM up 10
      * half steps (it starts inside the hidden room's walls, so the slot never opens into the
      * neighbouring side's floor).
      */
@@ -121,7 +126,7 @@ public final class Level0Stack {
     /** Height of the stair's tread at {@code along} (half blocks: 41.5 ... 46), or NaN off the stair. */
     private static double stairSurface(int along, int m) {
         int k = along - STAIR_FROM;
-        if (m < 10 || m > 11 || k < 0 || k >= STAIR_STEPS) {
+        if (m < STAIR_M0 || m > STAIR_M1 || k < 0 || k >= STAIR_STEPS) {
             return Double.NaN;
         }
         return ENTRY + 1 + 0.5 * (k + 1);
@@ -130,7 +135,7 @@ public final class Level0Stack {
     /** The slot through the ceiling over the stair, from its second step up (head room). */
     private static boolean inSlot(int m, int along) {
         int k = along - STAIR_FROM;
-        return m >= 10 && m <= 11 && k >= 1 && k < STAIR_STEPS;
+        return m >= STAIR_M0 && m <= STAIR_M1 && k >= 1 && k < STAIR_STEPS;
     }
 
     // ---- Building a column -------------------------------------------------------------------------
@@ -151,9 +156,9 @@ public final class Level0Stack {
         int side = l[3];
         int along = l[4];
         if (m >= WALL_MIN) {
-            // The outer wall, from the lowest real slab to the highest real ceiling: above and below
+            // The outer wall, from the lowest real floor to the highest real ceiling: above and below
             // that, client/Level0StackRenderer draws it on with the floors it draws.
-            for (int y = LOWEST_REAL - 1; y <= HIGHEST_REAL_CEILING; y++) {
+            for (int y = LOWEST_REAL; y <= HIGHEST_REAL_CEILING; y++) {
                 out.set(y, paper);
             }
             for (int f : FLOORS) {
@@ -174,8 +179,8 @@ public final class Level0Stack {
         for (int f : FLOORS) {
             story(site, x, z, f, m, side, along, carpet, tile, paper, base, out);
         }
-        // The ceiling slab under the lowest real floor (the fake floor below's ceiling).
-        out.set(LOWEST_REAL - 1, tile);
+        // Under the lowest real floor there is nothing: the first floor the renderer draws below
+        // brings its own ceiling.
     }
 
     private static void story(AnomalySite site, int x, int z, int f, int m, int side, int along, BlockState carpet,
@@ -186,13 +191,13 @@ public final class Level0Stack {
         // The ceiling: tiles, a light panel in a loose grid (some dead), the slot over the stair.
         boolean slot = ledgeSide(side) && f == ENTRY && inSlot(m, along);
         if (!slot) {
-            boolean panel = Math.floorMod(along, 4) == 1 && (m == 9 || m == 12) && !hidden;
+            boolean panel = Math.floorMod(along, 4) == 1 && (m == RING_MIN + 2 || m == RING_MAX - 1) && !hidden;
             boolean dead = Hash.unit(Hash.mix(site.salt() + f * 7919L + x * 31L + z)) < (f == ENTRY ? 0.15 : 0.35);
             out.set(ceil, panel ? Level0Tubes.pick(site.salt(), x, z, dead, false) : tile);
         }
         if (entryLedgeSide) {
-            // The ledge (m 12-13) and the stair; the rest of this side's floor is gone.
-            if (m >= 12) {
+            // The ledge (the two rings along the wall) and the stair; the rest of this side's floor is gone.
+            if (m >= LEDGE_MIN) {
                 out.set(f, carpet);
             }
             double s = stairSurface(along, m);
@@ -236,7 +241,7 @@ public final class Level0Stack {
         }
         // Now and then a chair or a filing cabinet, as if someone had just left.
         long h = Hash.mix(site.salt() ^ (f * 104729L + x * 31L + z * 17L));
-        if (m >= 11 && Hash.unit(h) < 0.03) {
+        if (m >= RING_MIN + 4 && Hash.unit(h) < 0.03) {
             Direction d = Direction.from2DDataValue(Hash.range(Hash.mix(h), 4));
             out.set(f + 1, (Hash.unit(Hash.mix(h ^ 5)) < 0.6 ? ModBlocks.OFFICE_CHAIR : ModBlocks.FILING_CABINET).get()
                     .defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, d));
@@ -257,14 +262,14 @@ public final class Level0Stack {
             return;
         }
         Direction toVoid = Level0SetPieces.toWorld(site, Direction.EAST);
-        if (m == 13 && along == 0) {
+        if (m == RING_MAX && along == 0) {
             out.set(f + 1, ModBlocks.CHECKPOINT_RADIO.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, toVoid));
-        } else if (m == 13 && along == 2) {
+        } else if (m == RING_MAX && along == 2) {
             out.set(f + 1, ModBlocks.SUPPLY_CRATE.get().defaultBlockState());
-        } else if (m == 9 && along == 4) {
+        } else if (m == RING_MIN + 2 && along == 4) {
             out.set(f + 1, ModBlocks.OFFICE_CHAIR.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING,
                     toVoid.getOpposite()));
-        } else if (m == 12 && along == -4) {
+        } else if (m == RING_MAX - 1 && along == -4) {
             out.set(f + 3, Blocks.LIGHT.defaultBlockState().setValue(LightBlock.LEVEL, 12));
         }
     }
@@ -300,7 +305,7 @@ public final class Level0Stack {
             return m >= WALL_MIN && !isSolid(site, x, z);
         }
         if (ledgeSide(l[3])) {
-            return m >= 12;
+            return m >= LEDGE_MIN;
         }
         return !isSolid(site, x, z);
     }
@@ -323,10 +328,10 @@ public final class Level0Stack {
             // On the entry floor at the void's edge, looking down into it.
             case "edge" -> Level0SetPieces.spot(site, MOAT, HALF, HALF - RING_MIN - 1, ENTRY + 1, Direction.SOUTH, 55.0f);
             // On the ledge, the void and the stair in front (image 3).
-            case "ledge" -> Level0SetPieces.spot(site, MOAT, HALF - 13, HALF - 13, ENTRY + 1, Direction.SOUTH, 15.0f);
-            case "stairs" -> Level0SetPieces.spot(site, MOAT, HALF - 11, HALF + STAIR_FROM + 4, ENTRY + 3.5, Direction.SOUTH, -10.0f);
-            case "hidden" -> Level0SetPieces.spot(site, MOAT, HALF - 13, HALF + 2, HIDDEN_FLOOR + 1, Direction.NORTH, 10.0f);
-            case "below" -> Level0SetPieces.spot(site, MOAT, HALF, HALF - 11, LOWEST_REAL + 1, Direction.SOUTH, 20.0f);
+            case "ledge" -> Level0SetPieces.spot(site, MOAT, HALF - RING_MAX, HALF - RING_MAX, ENTRY + 1, Direction.SOUTH, 15.0f);
+            case "stairs" -> Level0SetPieces.spot(site, MOAT, HALF - STAIR_M0 - 1, HALF + STAIR_FROM + 4, ENTRY + 3.5, Direction.SOUTH, -10.0f);
+            case "hidden" -> Level0SetPieces.spot(site, MOAT, HALF - RING_MAX, HALF + 2, HIDDEN_FLOOR + 1, Direction.NORTH, 10.0f);
+            case "below" -> Level0SetPieces.spot(site, MOAT, HALF, HALF - RING_MIN - 4, LOWEST_REAL + 1, Direction.SOUTH, 20.0f);
             // Looking straight down and straight up the void from the entry floor's edge.
             case "down" -> Level0SetPieces.spot(site, MOAT, HALF, HALF - RING_MIN - 1, ENTRY + 1, Direction.SOUTH, 80.0f);
             case "up" -> Level0SetPieces.spot(site, MOAT, HALF, HALF - RING_MIN - 1, ENTRY + 1, Direction.SOUTH, -70.0f);

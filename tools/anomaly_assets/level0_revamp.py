@@ -1,14 +1,13 @@
 """Level 0 revamp (Kane Pixels' series + the A24 film "Backrooms"): textures, block models,
 blockstates and item models of the blocks in registry/Level0Blocks.java.
 
-The film's chevron wallpaper, the chest-high partitions with their wooden cap rail, the corridor
+The chest-high partitions with their wooden cap rail, the corridor
 light strip, missing ceiling tiles, the green exit sign and hazard stripes of the exit alcove,
 wall switch boxes with conduit, scrawled words on the walls, teal tape lines, mannequins, the
 gold-and-purple throne, an Async equipment case, a cable hanging out of the ceiling, a dark hole
 high in a wall and the metal ladder up to it.
 
-Run with `python tools/gen_assets.py level0_revamp` from the project root (the chevron paper's
-versions come from `python tools/gen_assets.py surface_variants variant_models`). Every texture
+Run with `python tools/gen_assets.py level0_revamp` from the project root. Every texture
 uses its own fixed random seed (60100-60199), so re-running gives identical files. Models reuse
 the box helpers of level39_props.py (`P._el` etc.): every box is listed in block pixels (0..16,
 allowed -16..32) for the block facing north; the blockstates turn it for the other directions.
@@ -33,46 +32,6 @@ def _ref(name: str) -> str:
 
 def _fill(color) -> np.ndarray:
     return G.fill(color, (S, S))
-
-
-# =============================================================================
-# The film's chevron wallpaper ("Classic" areas, the half-wall rooms)
-# =============================================================================
-
-CHEVRON = (190, 178, 116)     # a touch paler and creamier than Kane's paper, still the same family
-
-
-def chevron_base() -> np.ndarray:
-    """Tone-on-tone vertical columns (two per block, half a block wide) of small, shallow stacked
-    chevrons, printed a shade lighter than the paper, with a faint darker line between the
-    columns, on plain matte paper (not the lobby's printed design). Kept fine and faint: from a
-    few blocks away it should read as a texture, not as a zigzag."""
-    rng = G.rng_for(60100)
-    img = G._paper(G.rng_for(60101), CHEVRON)
-    X, Y = G.grid()
-    col = 64.0
-    u = G.wrapd(X - col / 2, col)                                    # -32..32 across a column
-    pitch = S / 20                                                   # 20 chevrons per block height
-    t = G.wrapd(Y + np.abs(u) * 0.12, pitch)                         # shallow ^-shaped rows
-    arms = G.smoothstep(30.0, 26.0, np.abs(u))
-    line = np.exp(-(t / 0.8) ** 2) * arms
-    under = np.exp(-((t - 1.4) / 0.7) ** 2) * arms
-    gutter = np.exp(-((np.abs(u) - 32) / 0.8) ** 2)
-    sheen = 1 + 0.25 * G.fnoise(rng, beta=2.5)                       # the print isn't perfectly even
-    img = G.add_lum(img, (4.0 * line - 1.5 * under) * sheen - 2.5 * gutter, (1.0, 0.97, 0.85))
-    return img
-
-
-def chevron_marks(i, rng, img):
-    if i == 1:
-        return G.mark_damp(img, rng, (36, 32), 0.05, (1.0, 0.97, 0.85))
-    return G.mark_paper_scuff(img, rng)
-
-
-def tex_level0_revamp_chevron() -> None:
-    base = chevron_base()
-    G.save_png(base, _blk("l0_wallpaper_chevron"))
-    G.save_png(G._baseboard(base), _blk("l0_wallpaper_chevron_baseboard"))
 
 
 # =============================================================================
@@ -112,16 +71,12 @@ def tex_level0_revamp_materials() -> None:
     zinc = _paint(rng, (168, 170, 166), mottle=2.0, fine=0.8)
     zinc = G.add_lum(zinc, 4 * G.blur(G.fnoise(rng, beta=0.6, kmin=10), 1.2))
     G.save_png(zinc, _blk("l0_conduit"))
-    # Mannequin plastic: matte warm grey, very smooth, with faint handling marks.
-    plastic = _paint(rng, (166, 158, 156), mottle=2.2, fine=0.4)
-    G.save_png(G.add_lum(plastic, -4 * G.smoothstep(1.0, 2.2, G.fnoise(rng, beta=2.0))), _blk("l0_mannequin"))
-    # Its round display base: pale blue-green glass, darker towards the edge.
-    glass = _paint(rng, (150, 172, 172), mottle=1.5, fine=0.3)
-    G.save_png(G.add_lum(glass, 14 * np.exp(-((X - 40) / 30) ** 2 - ((Y - 40) / 30) ** 2)), _blk("l0_mannequin_glass"))
-    # Red price/size sticker with a white mark.
-    tag = _fill((196, 36, 32))
-    mark = G.pil_mask(lambda d, k: d.line([(40 * k, 34 * k), (86 * k, 34 * k), (58 * k, 98 * k)], fill=255, width=int(14 * k)))
-    G.save_png(G.over(G.add_lum(tag, rng.normal(0, 2, (S, S))), np.array([240, 236, 230]), mark), _blk("l0_red_tag"))
+    # Mannequin cardboard: kraft-brown corrugated board, the flutes showing faintly through the
+    # liner as fine vertical ribs, a few dents and darker handling marks.
+    board = _paint(rng, (170, 130, 86), mottle=2.0, fine=0.6)
+    board = G.add_lum(board, 2.5 * np.cos(2 * np.pi * X / 4.0), (1.0, 0.95, 0.85))
+    dents = G.smoothstep(1.2, 2.4, G.fnoise(rng, beta=1.8, kmin=4))
+    G.save_png(G.add_lum(board, -14 * dents - 5 * G.smoothstep(0.8, 2.0, G.fnoise(rng, beta=2.4))), _blk("l0_mannequin"))
     # Black rubber cable and bare copper.
     rubber = _paint(rng, (30, 30, 32), mottle=2.0, fine=0.8)
     G.save_png(G.add_lum(rubber, 10 * np.exp(-((X % 32 - 12) / 4) ** 2)), _blk("l0_cable"))
@@ -508,7 +463,7 @@ def tex_level0_revamp_mattress() -> None:
     G.save_png(G.over(side, np.array([176, 156, 110]), stain * 0.25), _blk("l0_mattress_side"))
 
 
-TEXTURE_GENS = [tex_level0_revamp_chevron, tex_level0_revamp_materials, tex_level0_revamp_throne,
+TEXTURE_GENS = [tex_level0_revamp_materials, tex_level0_revamp_throne,
                 tex_level0_revamp_case, tex_level0_revamp_strip, tex_level0_revamp_plenum,
                 tex_level0_revamp_exit_sign, tex_level0_revamp_hazard, tex_level0_revamp_switch_box,
                 tex_level0_revamp_graffiti, tex_level0_revamp_tape, tex_level0_revamp_hole,
@@ -539,14 +494,10 @@ def _facing_variants(models: dict, extra_props: dict | None = None) -> dict:
 
 
 def _wall_models() -> None:
-    # Chevron paper: plain models (the variant models and blockstates come from gen_assets
-    # variant_models, which copies these).
-    _bm("l0_wallpaper_chevron", {"parent": "minecraft:block/cube_all", "textures": {"all": _ref("l0_wallpaper_chevron")}})
-    _bm("l0_wallpaper_chevron_baseboard", {"parent": "minecraft:block/cube_bottom_top", "textures": {
-        "side": _ref("l0_wallpaper_chevron_baseboard"), "top": _ref("l0_wallpaper_chevron"),
-        "bottom": _ref("l0_wallpaper_chevron")}})
-    _im("l0_wallpaper_chevron")
-    _im("l0_wallpaper_chevron_baseboard")
+    # The builders' rooms' old "chevron" paper (registry/Level0Blocks.CHEVRON_WALLPAPER) is only
+    # in worlds generated before it was dropped: it now shows the lobby paper's own models.
+    for old, new in (("l0_wallpaper_chevron", "yellow_wallpaper"), ("l0_wallpaper_chevron_baseboard", "yellow_wallpaper_baseboard")):
+        _bs(old, {"variants": {f"variant={i}": {"model": _ref(new if i == 0 else f"{new}_v{i}")} for i in range(4)}})
 
     # Half-wall cap: paper to 8 px, the dark wood rail 8-10 px overhanging both faces by 3/4 px,
     # with a thin lighter top bevel strip.
@@ -748,43 +699,31 @@ def _tape_models() -> None:
 
 
 def _mannequin_models() -> None:
-    """A slim featureless shop mannequin (the film's grey female mannequins) on a round glass
-    base with a thin rod up into one calf; red stickers on the hip and shoulder. Lower half: base,
-    legs, hips (y 0-16). Upper half: waist, torso, arms, neck and head (y 16-32, drawn 0-16).
-    Faces north."""
-    tex = {"particle": _ref("l0_mannequin"), "skin": _ref("l0_mannequin"), "glass": _ref("l0_mannequin_glass"),
-           "tag": _ref("l0_red_tag"), "rod": _ref("l0_conduit")}
+    """A life-size cardboard cutout of a person: a flat, blank silhouette 1 px thick (head, neck,
+    shoulders, arms a little apart from the body, legs), kraft-brown corrugated board, held up by
+    a folded cardboard strut behind it. Lower half: legs, hips and the strut (y 0-16). Upper half:
+    torso, arms, neck and head (y 16-32, drawn 0-16). Faces north (the strut is on the south side)."""
+    tex = {"particle": _ref("l0_mannequin"), "board": _ref("l0_mannequin")}
+    z0, z1 = 7.5, 8.5
     lower = [
-        _el((3.5, 0, 3.5), (12.5, 0.5, 12.5), "#glass"),
-        _el((3.5, 0.02, 3.5), (12.5, 0.48, 12.5), "#glass", rot=((8, 0.25, 8), "y", 45)),
-        _el((9.2, 0.5, 8.6), (9.7, 5, 9.1), "#rod"),
-        # feet (on tiptoe, heels up), shins, knees, thighs
-        _el((6.1, 0.5, 6.6), (7.5, 1.4, 9.0), "#skin"),
-        _el((8.5, 0.6, 6.4), (9.9, 1.5, 8.8), "#skin"),
-        _el((6.2, 1.4, 7.4), (7.5, 8.2, 8.9), "#skin"),
-        _el((8.6, 1.5, 7.0), (9.9, 8.2, 8.5), "#skin"),     # (Minecraft only turns boxes by 22.5-degree steps, so the pose is built straight)
-        _el((5.9, 8, 7.1), (7.7, 14, 9.2), "#skin"),
-        _el((8.3, 8, 7.0), (10.1, 14, 9.1), "#skin"),
-        # hips
-        _el((5.5, 12.8, 6.8), (10.5, 16, 9.6), "#skin"),
-        _el((9.0, 13.6, 6.74), (10.0, 15.2, 6.8), "#tag", faces=("north",)),
+        _el((5.4, 0, z0), (7.6, 13, z1), "#board"),                    # legs
+        _el((8.4, 0, z0), (10.6, 13, z1), "#board"),
+        _el((5.2, 12, z0), (10.8, 16, z1), "#board"),                  # hips
+        # The strut: a strip folded out from the back, stepped down to the floor.
+        _el((7.5, 0, z1), (8.5, 12, 9.5), "#board"),
+        _el((7.5, 0, 9.5), (8.5, 8, 10.5), "#board"),
+        _el((7.5, 0, 10.5), (8.5, 4, 11.5), "#board"),
     ]
     upper = [
-        _el((6.0, 0, 7.0), (10.0, 3, 9.3), "#skin"),                    # waist
-        _el((5.4, 3, 6.6), (10.6, 9.2, 9.6), "#skin"),                  # ribcage and chest
-        _el((5.8, 5.6, 6.2), (10.2, 8.2, 6.6), "#skin"),                # bust
-        _el((4.6, 8.6, 7.0), (11.4, 10.2, 9.3), "#skin"),               # shoulders
-        _el((7.3, 10.2, 7.4), (8.7, 11.8, 8.8), "#skin"),               # neck
-        _el((6.7, 11.6, 6.6), (9.3, 15.2, 9.6), "#skin"),               # head
-        _el((7.0, 11.9, 6.3), (9.0, 14.6, 6.6), "#skin"),               # face
-        # arms hanging down past the hips (the lower arms reach into the block below)
-        _el((3.8, 2.6, 7.3), (5.0, 9.6, 8.7), "#skin"),
-        _el((11.0, 2.6, 7.3), (12.2, 9.6, 8.7), "#skin"),
-        _el((3.6, -3.8, 7.4), (4.6, 2.8, 8.6), "#skin"),
-        _el((11.4, -3.8, 7.4), (12.4, 2.8, 8.6), "#skin"),
-        _el((3.7, -5.6, 7.3), (4.5, -3.8, 8.9), "#skin"),
-        _el((11.5, -5.6, 7.3), (12.3, -3.8, 8.9), "#skin"),
-        _el((5.6, 7.0, 9.6), (6.6, 8.4, 9.66), "#tag", faces=("south",)),
+        _el((5.4, 0, z0), (10.6, 3, z1), "#board"),                    # waist
+        _el((4.9, 3, z0), (11.1, 9, z1), "#board"),                    # chest
+        _el((4.4, 8.5, z0), (11.6, 10.2, z1), "#board"),               # shoulders
+        _el((7.2, 10.2, z0), (8.8, 11.6, z1), "#board"),               # neck
+        _el((6.4, 11.6, z0), (9.6, 15.0, z1), "#board"),               # head
+        _el((6.9, 15.0, z0), (9.1, 15.6, z1), "#board"),
+        # arms, hanging a hand's width from the body, down into the block below
+        _el((3.0, -4.5, z0), (4.4, 9.4, z1), "#board"),
+        _el((11.6, -4.5, z0), (13.0, 9.4, z1), "#board"),
     ]
     _bm("l0_mannequin_lower", _model(tex, lower, render=None))
     _bm("l0_mannequin_upper", _model(tex, upper, render=None))

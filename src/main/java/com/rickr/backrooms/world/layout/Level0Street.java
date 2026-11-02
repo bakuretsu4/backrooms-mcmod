@@ -13,13 +13,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.LightBlock;
-import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoorHingeSide;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-import net.minecraft.world.level.block.state.properties.SlabType;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -268,8 +266,9 @@ public final class Level0Street {
 
     private static void street(AnomalySite site, int u, int v, int c, int floor, LevelLayout.Column out) {
         if (c <= 13) {
-            // The sidewalk, flat with the road (a raised curb would need jumping in a corridor's worth of doorway).
-            out.set(floor, ModBlocks.SIDEWALK_SLAB.get().defaultBlockState().setValue(SlabBlock.TYPE, SlabType.DOUBLE));
+            // The sidewalk is Level 0's own carpet, flat with the road (no paving: it would sound
+            // and look like nothing else on the level).
+            out.set(floor, ModBlocks.LOBBY_CARPET.get().defaultBlockState());
             if (c == 12 && v == 97 && u < IN_W / 2) {
                 out.set(floor + 1, Level0StreetBlocks.STOP_SIGN.get().defaultBlockState()
                         .setValue(BlockStateProperties.HORIZONTAL_FACING, dir(site, Direction.NORTH)));
@@ -297,8 +296,8 @@ public final class Level0Street {
                     .setValue(BlockStateProperties.HORIZONTAL_FACING, toRoad));
         }
         if (!isFence(a) && a != 6) {
-            // The driveway and the path to the door.
-            out.set(floor, ModBlocks.SIDEWALK_SLAB.get().defaultBlockState().setValue(SlabBlock.TYPE, SlabType.DOUBLE));
+            // The driveway and the path to the door: carpet, like the sidewalk.
+            out.set(floor, ModBlocks.LOBBY_CARPET.get().defaultBlockState());
             return;
         }
         out.set(floor, ModBlocks.LAWN_GRASS.get().defaultBlockState());
@@ -451,8 +450,8 @@ public final class Level0Street {
                 }
             }
             default -> {
-                // The garage: concrete, a desk under the window, a filing cabinet, boxes, a crate.
-                out.set(floor, ModBlocks.SIDEWALK_SLAB.get().defaultBlockState().setValue(SlabBlock.TYPE, SlabType.DOUBLE));
+                // The garage: carpet, a desk under the window, a filing cabinet, boxes, a crate.
+                out.set(floor, ModBlocks.LOBBY_CARPET.get().defaultBlockState());
                 if (c == 1 && a >= 2 && a <= 4) {
                     out.set(floor + 1, facing(ModBlocks.OFFICE_DESK.get().defaultBlockState(), front));
                 } else if (c == 1 && a == 6) {

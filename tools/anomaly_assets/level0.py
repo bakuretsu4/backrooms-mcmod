@@ -54,8 +54,20 @@ def tex_level0_a_red_wallpaper() -> None:
     G.save_png(_red_wallpaper(), _blk("red_wallpaper"))
 
 
+def _damp(img: np.ndarray, rng) -> np.ndarray:
+    """Old water damage on paper: soft, darker, browner streaks where water ran down behind it,
+    with a faint dried edge. Stretched up and down and seamless every way, so a wall column
+    repeats it block after block as one long run; no specks."""
+    field = G.blur(G.fnoise(rng, beta=2.6, aniso=(1, 5)), 2.0)
+    wet = G.smoothstep(-0.2, 1.1, field)                           # how soaked the paper got
+    tide = np.exp(-((field + 0.15) / 0.12) ** 2) * G.smoothstep(-0.6, 0.2, field)
+    img = G.over(img, img * np.array([0.74, 0.64, 0.6]), np.clip(wet * 0.6, 0, 0.6))
+    return G.over(img, np.array([96.0, 44.0, 36.0]), np.clip(tide * 0.16, 0, 0.2))
+
+
 def tex_level0_a_red_wallpaper_mould() -> None:
-    G.save_png(_mould(_red_wallpaper(), G.rng_for(5001), 0.8), _blk("red_wallpaper_mould"))
+    """The crimson paper where the damp got in (the block keeps its old "mould" name)."""
+    G.save_png(_damp(_red_wallpaper(), G.rng_for(5001)), _blk("red_wallpaper_mould"))
 
 
 def tex_level0_a_red_wall_tally() -> None:
@@ -81,12 +93,14 @@ def tex_level0_a_red_wall_tally() -> None:
 
 
 def tex_level0_a_red_carpet_coarse() -> None:
-    """Coarse, sticky dark-red carpet: the Lobby carpet's weave, wine red, with tacky dark patches."""
+    """The Lobby carpet's weave in wine red, evenly worn: the pile a touch paler in broad, faint
+    stretches where people have walked, no blotches."""
     rng = G.rng_for(5003)
     img = _recolour(G._carpet(5003), G.CARPET, (122, 30, 28))
-    img = G.add_lum(img, rng.normal(0, 1, (S, S)) * 7.0, (1.0, 0.5, 0.45))
-    tacky = G.smoothstep(0.5, 1.8, G.fnoise(rng, beta=2.8))
-    img = G.over(img, np.array([60, 14, 14]), tacky * 0.45)
+    broad = G.blur(img, 6.0)
+    img = img - broad + broad.mean(axis=(0, 1)) + 0.25 * (broad - broad.mean(axis=(0, 1)))   # keep the weave, flatten the patches
+    worn = G.blur(G.fnoise(rng, beta=2.4), 2.0)
+    img = G.add_lum(img, 4.0 * worn, (1.0, 0.7, 0.65))
     G.save_png(img, _blk("red_carpet_coarse"))
 
 

@@ -29,7 +29,7 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 
 /**
  * The extra blocks of the Level 0 revamp, which makes the Lobby look like Kane Pixels' series and
- * the A24 film "Backrooms": the film's chevron paper and chest-high partitions, carpeted ramps,
+ * the A24 film "Backrooms": chest-high partitions, carpeted ramps,
  * the long corridor light strip, missing ceiling tiles, the exit-sign alcove, switch boxes, wall
  * scrawls, tape lines and the odd objects left lying about (mannequins, the throne, a hazmat case).
  * The lobby's own wallpaper, carpet, ceiling tile and troffer stay in {@link ModBlocks}.
@@ -41,7 +41,7 @@ import net.neoforged.neoforge.registries.DeferredBlock;
  *
  * <p>Where things go (the world generator, world/layout/Level0Layout, places them):
  * <ul>
- *   <li>FULL blocks that take the place of a wall block: the chevron papers, GRAFFITI, WALL_HOLE,
+ *   <li>FULL blocks that take the place of a wall block: GRAFFITI, WALL_HOLE,
  *       HAZARD_FRAME. GRAFFITI and WALL_HOLE show their drawing/recess on the FACING side.</li>
  *   <li>Full blocks that take the place of a ceiling tile: TROFFER_STRIP(_OFF), CEILING_HOLE.</li>
  *   <li>Thin things in the AIR block in front of a wall, FACING pointing away from the wall into
@@ -56,13 +56,14 @@ public final class Level0Blocks {
 
     // ================================================================== Walls
     /**
-     * The film's "Classic" paper: tone-on-tone vertical chevron columns (used only in some zones).
-     * Three versions: plain, faintly discoloured, scuffed; aged ones cluster in worn patches (see
-     * block/Level0SurfaceBlock). Counts must match gen_assets SURFACE_VARIANTS.
+     * Worlds generated before 2 November 2026 have builders' rooms in a "chevron" paper of their
+     * own. It now looks exactly like the lobby's wallpaper (its blockstates use the lobby paper's
+     * models), and the generator no longer places it; it stays registered so those rooms still
+     * load. Counts must match the lobby paper's (block/Level0SurfaceBlock).
      */
     public static final DeferredBlock<SurfaceBlock> CHEVRON_WALLPAPER = ModBlocks.level0Surface("l0_wallpaper_chevron", MapColor.COLOR_YELLOW, SoundType.WOOD,
             new int[] {14, 1, 2}, new int[] {7, 4, 2}, Level0SurfaceBlock.ANY_ROW, Level0SurfaceBlock.ANY_ROW, Level0SurfaceBlock.ANY_ROW);
-    /** The same paper with the slim matching baseboard: plain, rising damp, kick marks. */
+    /** The same, with the baseboard (see {@link #CHEVRON_WALLPAPER}). */
     public static final DeferredBlock<SurfaceBlock> CHEVRON_WALLPAPER_BASEBOARD = ModBlocks.level0Surface("l0_wallpaper_chevron_baseboard", MapColor.COLOR_YELLOW, SoundType.WOOD,
             new int[] {14, 1, 2}, new int[] {7, 5, 2}, Level0SurfaceBlock.ANY_ROW, Level0SurfaceBlock.ANY_ROW, Level0SurfaceBlock.ANY_ROW);
     /**
@@ -147,7 +148,7 @@ public final class Level0Blocks {
     static {
         // Block items so builders can use every Level 0 block in creative (the mannequin needs the tall item).
         for (DeferredBlock<?> block : new DeferredBlock<?>[] {
-                CHEVRON_WALLPAPER, CHEVRON_WALLPAPER_BASEBOARD, HALF_WALL_CAP, WALL_HOLE, GRAFFITI, HAZARD_FRAME,
+                HALF_WALL_CAP, WALL_HOLE, GRAFFITI, HAZARD_FRAME,
                 CARPET_STAIRS, CARPET_SLAB, TROFFER_STRIP, TROFFER_STRIP_OFF, CEILING_HOLE, DANGLING_CABLE,
                 EXIT_SIGN, SWITCH_BOX, CONDUIT, TAPE, LADDER, THRONE, HAZMAT_CASE, EMBEDDED}) {
             ModItems.ITEMS.registerSimpleBlockItem(block);
