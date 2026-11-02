@@ -1998,6 +1998,7 @@ public final class Level0Layout extends LevelLayout {
             out.set(floor, sticky ? stickyCarpet : carpet);
             if (blackout) {
                 out.set(floor + 1, fluid);
+                Level0Clutter.wear(seed ^ 0xB1AC0L, x, z, floor, ceiling, 0.04, out); // tiles down in the dark
                 return;
             }
             int fixture = fixture(seed, x, z, column, sx, sz);
@@ -2013,6 +2014,7 @@ public final class Level0Layout extends LevelLayout {
             out.set(floor, sticky ? stickyCarpet : carpet);
             if (blackout) {
                 out.set(floor + 1, fluid);
+                Level0Clutter.wear(seed ^ 0xB1AC0L, x, z, floor, ceiling, 0.04, out);
                 return;
             }
             int fixture = fixture(seed, x, z, column, sx, sz);

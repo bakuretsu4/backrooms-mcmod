@@ -24,7 +24,7 @@ Lithium, FerriteCore, ModernFix, Entity Culling, ImmediatelyFast and Dynamic FPS
 | Jump | Not possible in the Backrooms (except in water, to swim and climb out) |
 | Loot | Right-click Wooden Crates, Backpacks and Supply Lockers (see Supplies below) |
 | New battery | Right-click a Camcorder Battery |
-| Settings | **SETTINGS** on the main menu, **Backrooms Settings...** in the pause menu, or Config in the Mods list: camera smoothing (default 35%; the original feel was 88%), handheld shake, view tilt, motion blur, wide lens, stamina line, and **QUALITY** for weaker computers (see Performance below). Changes apply immediately and are saved per player in `config/backrooms-client.toml`. |
+| Settings | **SETTINGS** on the main menu, **Backrooms Settings...** in the pause menu, or Config in the Mods list: camera smoothing (default 35%; the original feel was 88%), handheld shake, view tilt, motion blur, wide lens, **footage look** and **4:3 frame** (see The camcorder picture below), stamina line, and **QUALITY** for weaker computers (see Performance below). Changes apply immediately and are saved per player in `config/backrooms-client.toml`. |
 
 ### Performance
 
@@ -722,7 +722,10 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **The Atrium:** A big hall whose low ceiling suddenly stops: above the middle, a black shaft rises out of sight, with warm pendant lamps hanging in it on long chains, and a balcony runs all the way round the void up there. You can get up. One alcove has no light, only a dead emergency lamp, and a steel ladder going up into the dark. Up on the balcony someone left supplies and scuffed arrows on the carpet, and they point the true way to the nearest exit. Something stands at the railing looking down. Don't be surprised if the hall below goes dark while you're up there.
 - **The Shaft Hall:** A wide, low, almost dark hall whose ceiling is full of holes. Each one is a tile-lined shaft going straight up, and a few have a light burning far up at the top. You hear things up there now and then, and once in a while a ceiling tile comes loose and falls the whole way down. Mind the broken tiles on the carpet.
 - **The Front Office:** You'll hear it before you see it: an alarm and a red light turning in a huge dark room, around a block of yellow wallpaper with a door and a window drawn on it, and a row of empty chairs facing the drawing. The PA sometimes asks you to come to the front office. If you go while you're expected (or simply arrive at the right moment), the alarm stops and there is light under the drawn door. Walk into it. Behind it is a small warm reception office that can't possibly fit in that block: supplies, Almond Water, a radio that saves your checkpoint, and another drawn door under an EXIT sign that really is the way out.
-- **Findability:** One of these three set pieces is built in (nearly) every 256x256 square of the map, so together with the pit rooms and pillar halls there is always a big anomalous building close by (measured over four seeds: median 39 blocks away, 99% of places within 116 blocks, the worst spot 183).
+- **The street:** A doorway opens into a hall so big it doesn't belong: yellow walls going up and up, rows of light panels twenty blocks overhead, huge ceiling fans slowly turning up there, and down the middle a whole suburban street: a pale road with a double yellow line, sidewalks, garages, gabled houses with porch lights, picket fences and mailboxes, a stop sign at the far end. About one door in three opens: into someone's living room, into more yellow wallpaper and carpet, or into a garage with supplies.
+- **The stack:** A square void through Level 0, floor after floor of open office space around it, down into the dark and up out of sight. Most of those floors aren't really there. On one side the floor is gone but for a ledge along the wall, and a floating stair climbs from it over the drop into a hole in the ceiling: a sealed room with supplies and a radio. Fall in and you wake somewhere else, hurt.
+- **Findability:** One of these five set pieces (the Atrium, the Shaft Hall, the Front Office, the street and the stack) is built in (nearly) every 256x256 square of the map, so together with the pit rooms and pillar halls there is always a big anomalous building close by (measured over four seeds with the first three: median 39 blocks away, 99% of places within 116 blocks, the worst spot 183).
+- **Left behind:** Like the film's tapes of the Lobby, the big halls (the Atrium, the Shaft Hall, the Front Office, the stack) have abandoned furniture piled in their open floor: old dressers and shelves, side tables, armchairs, filing cabinets, cardboard boxes, the odd thing upside down on top of another. In the pit rooms, the pillar halls and (more of them) the blackout zones, ceiling tiles are missing here and there, a cable hanging out of the hole, the tile lying broken on the carpet below. None of it ever blocks a way through.
 
 **Level 1**
 - **Crate halls:** In some of the open garage halls, aisles of steel pallet racking stand in a brighter, better-lit hall. Wooden crates turn up there: you hear something settle behind you, and there is a crate that wasn't there before. When the lights fail, the crates are gone; when the power comes back, new ones are waiting. Not everything inside is worth taking.
@@ -793,6 +796,19 @@ jitter and grain; colour fringes only while the tape misbehaves: something dange
 sanity, glitches, a Smiler, a level change), soft bloom on the lights and a little motion blur
 when you turn. On top of that each level has its own mood (`client/AtmosphereGrade`), applied
 evenly over the whole picture and blended over about two seconds when you change level:
+
+**The footage look** (on by default; FOOTAGE LOOK in the settings) makes the picture what a cheap
+old camera recorded, after the found footage in the Backrooms film: a mix of tape and early
+digital. The picture is read at about 480 lines, soft and then over-sharpened (pale halos round
+dark edges), its colour bleeds sideways and sits in 8x8 compression blocks, and a faint ghost
+echoes each edge. A cheap white balance turns the Lobby buttery yellow and the whites blow out.
+Digital noise grows in the dark as the camera turns its gain up, and its auto-exposure hunts:
+step from a dark corridor into a lit room and the picture flares, dips and settles. **4:3 FRAME**
+(also on by default) puts it between black bars like the old camera's picture, with the HUD kept
+inside the frame; the overlay itself is the camera's (REC and the tape counter top left, the
+battery and heart rate top right, the date stamp in amber bottom right, the exit signal bottom
+left). Turn the footage look off for a clean picture.
+
 
 | Level | Mood |
 |---|---|

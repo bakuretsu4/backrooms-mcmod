@@ -277,6 +277,15 @@ public final class Level0AnomalyPlan {
             case STACK -> Level0Stack.fill(site, x, z, floor, ceiling, out);
             default -> Level0HiddenRooms.fill(site, x, z, floor, ceiling, out);
         }
+        // Abandoned furniture in the big halls, like the film's tapes (only in open floor).
+        switch (site.kind()) {
+            case ATRIUM -> Level0Clutter.overlay(site, x, z, floor, (px, pz) -> site.contains(px, pz) && Level0Atrium.isWalkable(site, px, pz), out);
+            case SHAFT_HALL -> Level0Clutter.overlay(site, x, z, floor, (px, pz) -> site.contains(px, pz) && Level0ShaftHall.isWalkable(site, px, pz), out);
+            case FRONT_OFFICE -> Level0Clutter.overlay(site, x, z, floor, (px, pz) -> site.contains(px, pz) && Level0FrontOffice.isWalkable(site, px, pz), out);
+            case STACK -> Level0Clutter.overlay(site, x, z, floor, (px, pz) -> site.contains(px, pz) && Level0Stack.isWalkable(site, px, pz), out);
+            default -> {
+            }
+        }
     }
 
     private static void put(int code, Direction facing, int extra, AnomalySite site, int x, int y, int z, LevelLayout.Column out) {

@@ -170,6 +170,8 @@ public final class Level0Pitfalls {
                 // lit as the rest of the level, and the light still dies a few blocks down the shafts.
                 if (p % PITCH == 0 && q % PITCH == 0 && p > 0 && q > 0 && p < BOX - 3 && q < BOX - 3) {
                     out.set(ceiling, ModBlocks.FLUORESCENT_LIGHT.get().defaultBlockState());
+                } else {
+                    Level0Clutter.wear(site.salt(), x, z, floor, ceiling, 0.03, out); // a tile gone here and there
                 }
             }
             case SHAFT -> out.set(SHAFT_BOTTOM, ModBlocks.L2_VOID_BLACK.get().defaultBlockState());
