@@ -31,6 +31,13 @@
 //  Underwater (uniform 0..1, eyes in the pool water of the Poolrooms / Level 37) makes the picture
 //  sway gently (step 2) and flicker faintly with the light on the surface (step 6); 0 = unchanged.
 //  The pool water itself is drawn by the mod's own water renderer before this effect runs.
+//  Footage (uniform 0 or 1, the FOOTAGE LOOK setting) turns the picture into what a cheap old camera
+//  recorded: a mix of tape and early digital (the film's found footage). In step 3 the picture is
+//  read at about 480 lines, soft, then over-sharpened (white halos), its colour bleeds sideways and
+//  sits in 8x8 compression blocks, and a faint ghost echoes each edge. In step 6 a cheap white
+//  balance warms it and the whites blow out; AutoExposure (Java, CamcorderEffect) hunts like an
+//  auto-iris. In step 7 digital noise grows in the dark and with the camera's Gain. Bars puts it in
+//  a 4:3 frame with black bars at the sides. Footage = 0 changes nothing at all.
 
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;
@@ -86,6 +93,10 @@ uniform float Glow;         // 0..1 soft glow around bright areas
 uniform float Breath;       // tiny slow exposure drift (0.01 = 1%)
 uniform float Near;
 uniform float Far;
+uniform float Footage;      // 0 or 1: the footage look (see the top)
+uniform float Bars;         // 0 or 1: 4:3 frame with black bars at the sides
+uniform float AutoExposure; // the camera's hunting auto-exposure (1 = none)
+uniform float Gain;         // 0..1 how far the camera has turned its gain up (noise in the dark)
 
 in vec2 texCoord;
 in vec2 oneTexel;
@@ -155,6 +166,68 @@ vec3 sampleCA(vec2 uv, vec2 caOffset) {
     float g = texture(DiffuseSampler, clamp(uv - caOffset, 0.0, 1.0)).g;
     float b = texture(DiffuseSampler, uv).b;
     return vec3(r, g, b);
+}
+
+// ---- The footage look ----------------------------------------------------------------------
+// The camera records about this many lines; everything below works in its pixels.
+const float FOOTAGE_LINES = 480.0;
+// Over-sharpening (the white halo round dark edges a cheap digital camera paints).
+const float FOOTAGE_SHARPEN = 0.85;
+// The faint echo of each edge a little to its right, and how far (camera pixels).
+const float FOOTAGE_GHOST = 0.13;
+const float FOOTAGE_GHOST_PX = 4.0;
+// How strongly the colour sits in 8x8 compression blocks.
+const float FOOTAGE_BLOCKS = 0.3;
+
+vec3 toYuv(vec3 c) {
+    float y = dot(c, vec3(0.299, 0.587, 0.114));
+    return vec3(y, (c.b - y) * 0.565, (c.r - y) * 0.713);
+}
+
+vec3 fromYuv(vec3 c) {
+    return vec3(c.x + 1.403 * c.z, c.x - 0.344 * c.y - 0.714 * c.z, c.x + 1.770 * c.y);
+}
+
+// One colour of the picture as the cheap camera recorded it at uv (see the top).
+vec3 footageSample(vec2 uv, vec2 caOffset, float aspect) {
+    vec2 px = vec2(1.0 / (FOOTAGE_LINES * aspect), 1.0 / FOOTAGE_LINES);
+    // Soft: the sensor's few pixels.
+    vec3 c0 = sampleCA(uv, caOffset);
+    float soft = 0.4 * toYuv(c0).x;
+    soft += 0.15 * toYuv(sampleCA(clamp(uv + vec2(px.x * 0.7, 0.0), 0.0, 1.0), caOffset)).x;
+    soft += 0.15 * toYuv(sampleCA(clamp(uv - vec2(px.x * 0.7, 0.0), 0.0, 1.0), caOffset)).x;
+    soft += 0.15 * toYuv(sampleCA(clamp(uv + vec2(0.0, px.y * 0.7), 0.0, 1.0), caOffset)).x;
+    soft += 0.15 * toYuv(sampleCA(clamp(uv - vec2(0.0, px.y * 0.7), 0.0, 1.0), caOffset)).x;
+    // Then sharpened against a wider blur: halos round every edge.
+    float wide = 0.25 * (toYuv(sampleCA(clamp(uv + px * vec2(1.8, 1.8), 0.0, 1.0), caOffset)).x
+            + toYuv(sampleCA(clamp(uv + px * vec2(-1.8, 1.8), 0.0, 1.0), caOffset)).x
+            + toYuv(sampleCA(clamp(uv + px * vec2(1.8, -1.8), 0.0, 1.0), caOffset)).x
+            + toYuv(sampleCA(clamp(uv + px * vec2(-1.8, -1.8), 0.0, 1.0), caOffset)).x);
+    float y = soft + FOOTAGE_SHARPEN * (soft - wide);
+    // The ghost: the picture a few pixels to the left echoes faintly here.
+    float ghost = toYuv(sampleCA(clamp(uv - vec2(px.x * FOOTAGE_GHOST_PX, 0.0), 0.0, 1.0), caOffset)).x;
+    y += FOOTAGE_GHOST * (ghost - soft);
+    // Colour: smeared sideways (lagging to the right), and partly held in 8x8 blocks.
+    vec2 chroma = vec2(0.0);
+    for (int i = -2; i <= 4; i++) {
+        chroma += toYuv(sampleCA(clamp(uv - vec2(px.x * float(i), 0.0), 0.0, 1.0), caOffset)).yz;
+    }
+    chroma /= 7.0;
+    vec2 block = (floor(uv / (px * 8.0)) + 0.5) * px * 8.0;
+    chroma = mix(chroma, toYuv(sampleCA(clamp(block, 0.0, 1.0), caOffset)).yz, FOOTAGE_BLOCKS);
+    return clamp(fromYuv(vec3(y, chroma * 1.1)), 0.0, 1.0);
+}
+
+// The cheap camera's colour (the film's tape: pale, buttery yellow, too bright): a white balance
+// that turns warm light yellow rather than orange, an auto-exposure that leans bright (mids lifted),
+// a little more colour, and whites that blow out (above ~0.78 each channel climbs steeply to
+// clipping, so yellow walls go buttery and the light panels burn white).
+vec3 footageTone(vec3 c) {
+    c *= vec3(1.0, 1.0, 0.82) * 1.1;
+    c = pow(max(c, 0.0), vec3(0.88));
+    c = mix(vec3(luma(c)), c, 1.06);
+    c += max(c - 0.78, 0.0) * 1.2;
+    return clamp(c, 0.0, 1.0);
 }
 
 void main() {
@@ -249,9 +322,11 @@ void main() {
     }
 
     vec2 blurVec = vec2(BlurX, BlurY);
+    bool footage = Footage > 0.5;
     vec3 col;
     if (length(blurVec * InSize) < 0.75) {
-        col = sampleCA(uv, caOffset); // camera still: one sharp sample
+        // Camera still: one sharp sample (or the footage look's soft, smeared one).
+        col = footage ? footageSample(uv, caOffset, aspect) : sampleCA(uv, caOffset);
     } else {
         // Taps spread evenly along the streak, shifted by a per-pixel random amount so the gaps
         // between taps turn into fine noise instead of visible copies.
@@ -262,6 +337,10 @@ void main() {
             acc += sampleCA(clamp(uv + blurVec * (f - 0.5), 0.0, 1.0), caOffset);
         }
         col = acc / float(BLUR_TAPS);
+        if (footage) {
+            // The footage look on top of the streak: what the camera adds to a still picture.
+            col = clamp(col + footageSample(uv, caOffset, aspect) - sampleCA(uv, caOffset), 0.0, 1.0);
+        }
     }
 
     // 4. Fallback flashlight. It lifts dark surfaces toward a target brightness that depends on
@@ -352,11 +431,14 @@ void main() {
     // 6d. The level's grade: exposure (drifting very slowly, like an auto-iris that never settles),
     //     shadows and highlights tinted separately, saturation, then contrast around a dark mid-grey
     //     (so dark rooms don't get their shadows crushed).
-    col *= Exposure * (1.0 + Breath * (0.6 * sin(t * 0.31) + 0.4 * sin(t * 0.73 + 1.3)));
+    col *= Exposure * AutoExposure * (1.0 + Breath * (0.6 * sin(t * 0.31) + 0.4 * sin(t * 0.73 + 1.3)));
     float gradeLuma = luma(col);
     col *= mix(vec3(ShadowR, ShadowG, ShadowB), vec3(HighlightR, HighlightG, HighlightB), smoothstep(0.04, 0.55, gradeLuma));
     col = mix(vec3(luma(col)), col, Saturation);
     col = clamp((col - 0.18) * Contrast + 0.18, 0.0, 1.0);
+    if (footage) {
+        col = footageTone(col); // the cheap camera's warm colour and blown whites
+    }
 
     // 6e. Event overlays on top of the level's grade, so their colours stay true.
     // Level 9 fog drains the colour: near things keep it, beyond ~25 blocks they fade toward grey.
@@ -410,6 +492,17 @@ void main() {
         float grain = hash12(floor(gl_FragCoord.xy / scale) + fract(t * 7.13) * vec2(431.0, 177.0)) - 0.5;
         col += grain * grainAmount * (0.4 + luma(col));
     }
+    if (footage) {
+        // Digital noise in the camera's own pixels, worst in the dark and when its gain is up.
+        vec2 cell = floor(texCoord * vec2(FOOTAGE_LINES * aspect, FOOTAGE_LINES)) + fract(t * 29.97) * vec2(173.0, 311.0);
+        float dark = pow(1.0 - clamp(luma(col), 0.0, 1.0), 1.5);
+        float amount = (0.025 + 0.08 * clamp(Gain, 0.0, 1.0)) * dark;
+        vec3 chromaNoise = vec3(hash12(cell + 17.0), hash12(cell + 41.0), hash12(cell + 83.0)) - 0.5;
+        col += (hash12(cell) - 0.5 + chromaNoise * 0.6) * amount;
+        // A cheap lens: the corners of the picture a little darker.
+        vec2 fp = (texCoord - 0.5) * vec2(Bars > 0.5 ? min(aspect, 4.0 / 3.0) : aspect, 1.0) * 2.0;
+        col *= 1.0 - 0.14 * smoothstep(0.8, 1.6, length(fp));
+    }
     // White dropout specks: only in heavy glitches (a clean picture has none).
     col += step(0.9998, hash12(gl_FragCoord.xy + floor(t * 30.0) * 17.0)) * heavy;
     if (texCoord.y < 0.02 * heavy) {
@@ -442,6 +535,15 @@ void main() {
 
     if (lowBattery > 0.5) {
         col *= 1.0 - step(0.965, hash12(vec2(floor(t * 12.0), 3.0))) * 0.55;
+    }
+
+    // The 4:3 frame: black bars at the sides, the picture's corners slightly rounded like a tape's.
+    if (footage && Bars > 0.5 && aspect > 4.0 / 3.0 + 0.01) {
+        vec2 g = vec2((texCoord.x - 0.5) * aspect, texCoord.y - 0.5);   // height units
+        float radius = 0.018;
+        vec2 q = abs(g) - (vec2(2.0 / 3.0, 0.5) - radius);
+        float edge = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+        col *= 1.0 - smoothstep(-0.7 / InSize.y, 0.7 / InSize.y, edge);
     }
 
     fragColor = vec4(clamp(col, 0.0, 1.0), 1.0);

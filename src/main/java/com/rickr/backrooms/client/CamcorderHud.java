@@ -20,7 +20,7 @@ import net.minecraft.util.RandomSource;
  * the shared camcorder look in {@link OsdStyle}: a thin VHS font, warm off-white, see-through.
  * <ul>
  *   <li>With the OSD on (H key, or filming the real world): REC + tape counter (top left), battery
- *       (top right), clock and 1990 date (bottom left), exit signal bars (bottom right) and thin
+ *       (top right), the date stamp in amber (bottom right), exit signal bars (bottom left) and thin
  *       viewfinder corner marks. They show clearly when you bring the OSD up or when what they show
  *       changes, then sink to a faint ghost after a few seconds.</li>
  *   <li>Always, even with the OSD off: a low battery (15% or less) pulses soft red at the top right,
@@ -187,13 +187,16 @@ public final class CamcorderHud implements LayeredDraw.Layer {
             OsdStyle.draw(g, font, NIGHTSHOT, left, top + 2 * LINE + 4, OsdStyle.SMALL, OsdStyle.TEXT, batteryAlpha);
         }
 
+        // The camera's date stamp, bottom right in the amber of a date imprint.
         LocalDateTime clock = LocalDateTime.now();
-        OsdStyle.draw(g, font, OsdStyle.text(clock.format(TIME).toUpperCase(Locale.ENGLISH)), left, bottom - 2 * LINE - 1,
-                OsdStyle.SMALL, OsdStyle.TEXT, counterAlpha);
-        OsdStyle.draw(g, font, OsdStyle.text(clock.format(DATE).toUpperCase(Locale.ENGLISH)), left, bottom - LINE,
-                OsdStyle.SMALL, OsdStyle.TEXT, counterAlpha);
+        Component time = OsdStyle.text(clock.format(TIME).toUpperCase(Locale.ENGLISH));
+        Component date = OsdStyle.text(clock.format(DATE).toUpperCase(Locale.ENGLISH));
+        OsdStyle.draw(g, font, time, right - OsdStyle.width(font, time, OsdStyle.SMALL), bottom - 2 * LINE - 1,
+                OsdStyle.SMALL, OsdStyle.STAMP, counterAlpha);
+        OsdStyle.draw(g, font, date, right - OsdStyle.width(font, date, OsdStyle.SMALL), bottom - LINE,
+                OsdStyle.SMALL, OsdStyle.STAMP, counterAlpha);
 
-        signal(g, font, right, bottom, now);
+        signal(g, font, left, bottom, now);
     }
 
     /** Bring every readout up to full for a moment (the OSD was just switched on). */
@@ -273,8 +276,8 @@ public final class CamcorderHud implements LayeredDraw.Layer {
         OsdStyle.draw(g, font, text, x - 4 - OsdStyle.width(font, text, OsdStyle.SMALL), y, OsdStyle.SMALL, rgb, alpha);
     }
 
-    /** Exit signal: "SIG" and four thin rising bars, bottom-right. Comes up when a bar is gained or lost. */
-    private void signal(GuiGraphics g, Font font, int right, int bottom, long now) {
+    /** Exit signal: "SIG" and four thin rising bars, bottom-left. Comes up when a bar is gained or lost. */
+    private void signal(GuiGraphics g, Font font, int left, int bottom, long now) {
         int bars = Mth.clamp(Mth.ceil(CameraClientState.exitSignal * 4.0f), 0, 4);
         if (bars != this.lastSignalBars) {
             if (this.lastSignalBars >= 0) {
@@ -283,14 +286,14 @@ public final class CamcorderHud implements LayeredDraw.Layer {
             this.lastSignalBars = bars;
         }
         float alpha = this.signal.update(now, OsdStyle.FULL, OsdStyle.REST);
-        int x = right - 18; // 4 bars, 3 wide with 2 px gaps
+        OsdStyle.draw(g, font, SIG, left, bottom - LINE, OsdStyle.SMALL, OsdStyle.TEXT, alpha);
+        int x = left + OsdStyle.width(font, SIG, OsdStyle.SMALL) + 4; // 4 bars, 3 wide with 2 px gaps
         int base = bottom - 1;
         for (int i = 0; i < 4; i++) {
             int bh = 3 + i * 2;
             // Missing bars stay as faint stubs so you can count what you have.
             OsdStyle.box(g, x + i * 5, base - bh, x + i * 5 + 3, base, OsdStyle.TEXT, i < bars ? alpha : alpha * 0.3f);
         }
-        OsdStyle.draw(g, font, SIG, x - 4 - OsdStyle.width(font, SIG, OsdStyle.SMALL), bottom - LINE, OsdStyle.SMALL, OsdStyle.TEXT, alpha);
     }
 
     /** Thin L-shaped viewfinder marks in the four corners. */
