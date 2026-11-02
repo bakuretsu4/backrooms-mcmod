@@ -25,6 +25,7 @@ public final class ModSounds {
     // Level 37, Sublimity: the calm tiled-pool ambience, and the soft swell as you walk into the light.
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL37_AMBIENCE = register("ambient.level37_ambience");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL369_AMBIENCE = register("ambient.level369_ambience");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L0_CEILING_FAN = register("level0.ceiling_fan");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL37_ARRIVE = register("level37.arrive");
 
     // Level 9, the Suburbs: buzzing sodium streetlamps, lamps stuttering, The Mangled moving far off.

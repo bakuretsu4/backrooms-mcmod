@@ -62,13 +62,15 @@ public final class Level0AnomalyPlan {
     public static final String SHAFT_HALL = "level_0/shaft_hall";
     /** The dark alarm room with the drawn door that is sometimes real ({@link Level0FrontOffice}). */
     public static final String FRONT_OFFICE = "level_0/front_office";
-    /** The three set pieces, in the order of the pattern that spreads them over the 256x256 squares. */
-    private static final String[] SET_PIECES = {ATRIUM, SHAFT_HALL, FRONT_OFFICE};
+    /** The colossal hall with a suburban street down it, from the film ({@link Level0Street}). */
+    public static final String STREET = "level_0/street";
+    /** The set pieces, in the order of the pattern that spreads them over the 256x256 squares. */
+    private static final String[] SET_PIECES = {ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET};
     public static final List<String> KINDS;
 
     static {
         List<String> kinds = new ArrayList<>(List.of(RED_ROOMS, BLACKOUT_ZONE, MANILA_ROOM, PERIPHERAL_SHIFT, PITFALLS,
-                ATRIUM, SHAFT_HALL, FRONT_OFFICE));
+                ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET));
         kinds.addAll(Level0HiddenRooms.KINDS);
         KINDS = Collections.unmodifiableList(kinds);
     }
@@ -195,7 +197,7 @@ public final class Level0AnomalyPlan {
             case RED_ROOMS -> red.nearest(seed, x, z, s -> true, 10);
             case PITFALLS -> pits.nearest(seed, x, z, s -> true, 12);
             case PERIPHERAL_SHIFT -> pillars.nearest(seed, x, z, s -> true, 12);
-            case ATRIUM, SHAFT_HALL, FRONT_OFFICE -> setPieces.nearest(seed, x, z, s -> s.kind().equals(kind), 10);
+            case ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET -> setPieces.nearest(seed, x, z, s -> s.kind().equals(kind), 10);
             case BLACKOUT_ZONE -> blackout.nearest(seed, x, z, s -> true, 16);
             default -> Level0HiddenRooms.KINDS.contains(kind) ? hidden.nearest(seed, x, z, s -> s.kind().equals(kind), 12) : null;
         };
@@ -269,6 +271,7 @@ public final class Level0AnomalyPlan {
                             site, x, y, z, out);
                 }
             }
+            case STREET -> Level0Street.fill(site, x, z, floor, ceiling, out);
             default -> Level0HiddenRooms.fill(site, x, z, floor, ceiling, out);
         }
     }
@@ -303,6 +306,7 @@ public final class Level0AnomalyPlan {
             case ATRIUM -> Level0Atrium.VISIT_POINTS;
             case SHAFT_HALL -> Level0ShaftHall.VISIT_POINTS;
             case FRONT_OFFICE -> Level0FrontOffice.VISIT_POINTS;
+            case STREET -> Level0Street.VISIT_POINTS;
             default -> Level0VisitPoints.names(kind);
         };
     }
@@ -314,6 +318,7 @@ public final class Level0AnomalyPlan {
             case ATRIUM -> Level0Atrium.visit(site, name, layout.floorY());
             case SHAFT_HALL -> Level0ShaftHall.visit(site, name, layout.floorY());
             case FRONT_OFFICE -> Level0FrontOffice.visit(site, name, layout.floorY());
+            case STREET -> Level0Street.visit(site, name, layout.floorY());
             default -> Level0VisitPoints.point(layout, seed, site, name);
         };
     }
@@ -328,6 +333,7 @@ public final class Level0AnomalyPlan {
             case ATRIUM -> Level0Atrium.isSolid(site, x, z);
             case SHAFT_HALL -> Level0ShaftHall.isSolid(site, x, z);
             case FRONT_OFFICE -> Level0FrontOffice.isSolid(site, x, z);
+            case STREET -> Level0Street.isSolid(site, x, z);
             default -> Level0HiddenRooms.isSolid(site, x, z);
         };
     }
@@ -342,6 +348,7 @@ public final class Level0AnomalyPlan {
             case ATRIUM -> Level0Atrium.isWalkable(site, x, z);
             case SHAFT_HALL -> Level0ShaftHall.isWalkable(site, x, z);
             case FRONT_OFFICE -> Level0FrontOffice.isWalkable(site, x, z);
+            case STREET -> Level0Street.isWalkable(site, x, z);
             default -> Level0HiddenRooms.isWalkable(site, x, z);
         };
     }
@@ -454,19 +461,25 @@ public final class Level0AnomalyPlan {
     private AnomalySite planSetPiece(long seed, int cellX, int cellZ) {
         int shift = Hash.range(Hash.mix(seed ^ 0x5E7B1ECE5L), SET_PIECES.length);
         String kind = SET_PIECES[Math.floorMod(cellX + 2 * cellZ + shift, SET_PIECES.length)];
-        int size = switch (kind) {
+        int turns = (int) (Hash.mix(Hash.of(seed, cellX, cellZ, 3702)) >>> 60) & 3;
+        int w = switch (kind) {
             case ATRIUM -> Level0Atrium.BOX + 2 * Level0Atrium.MOAT;
             case SHAFT_HALL -> Level0ShaftHall.BOX + 2 * Level0ShaftHall.MOAT;
+            case STREET -> Level0Street.sizeX(turns);
             default -> Level0FrontOffice.BOX + 2 * Level0FrontOffice.MOAT;
         };
-        Spot spot = pickSpot(seed, cellX, cellZ, setPieces, 3701, 1.0, P_SET_PIECE, size, size, 6, -1, 32);
+        int d = kind.equals(STREET) ? Level0Street.sizeZ(turns) : w;
+        Spot spot = pickSpot(seed, cellX, cellZ, setPieces, 3701, 1.0, P_SET_PIECE, w, d, 6, -1, 32);
         if (spot == null) {
             return null;
         }
         // facing = how many quarter turns the plan is turned (Level0SetPieces): four looks per kind.
-        int turns = (int) (spot.salt >>> 60) & 3;
-        return new AnomalySite(kind, spot.x0, spot.z0, spot.x0 + size - 1, spot.z0 + size - 1,
-                spot.x0 + size / 2, spot.z0 + size / 2, turns, spot.salt);
+        // The street is long, so it picks its turn before its spot (its width and depth depend on it).
+        if (!kind.equals(STREET)) {
+            turns = (int) (spot.salt >>> 60) & 3;
+        }
+        return new AnomalySite(kind, spot.x0, spot.z0, spot.x0 + w - 1, spot.z0 + d - 1,
+                spot.x0 + w / 2, spot.z0 + d / 2, turns, spot.salt);
     }
 
     /** The small hidden rooms (Level0HiddenRooms picks the kind in a pattern, like the set pieces). */

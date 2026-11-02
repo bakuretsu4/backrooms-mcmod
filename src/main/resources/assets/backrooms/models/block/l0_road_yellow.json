@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "backrooms:block/l0_road",
+    "up": "backrooms:block/l0_road_yellow",
+    "down": "backrooms:block/l0_road",
+    "north": "backrooms:block/l0_road",
+    "south": "backrooms:block/l0_road",
+    "east": "backrooms:block/l0_road",
+    "west": "backrooms:block/l0_road"
+  }
+}

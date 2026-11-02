@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=z": {
+      "model": "backrooms:block/l0_road_yellow"
+    },
+    "axis=x": {
+      "model": "backrooms:block/l0_road_yellow",
+      "y": 90
+    }
+  }
+}
