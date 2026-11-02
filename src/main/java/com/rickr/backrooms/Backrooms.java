@@ -89,6 +89,8 @@ public final class Backrooms {
         ModParticles.PARTICLES.register(modBus);
         ModChunkGenerators.CHUNK_GENERATORS.register(modBus);
         ModAttachments.ATTACHMENTS.register(modBus);
+        // Game rules (/gamerule backroomsSharedCheckpoints): must exist before any world loads.
+        com.rickr.backrooms.registry.ModGameRules.bootstrap();
         ModCreativeTab.TABS.register(modBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modBus);
 

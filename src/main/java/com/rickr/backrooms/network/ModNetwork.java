@@ -85,6 +85,20 @@ public final class ModNetwork {
                 (payload, context) -> SafeRoomClientState.inSafeRoom = payload.inSafeRoom());
         registrar.playToClient(CheckpointSavedPayload.TYPE, CheckpointSavedPayload.STREAM_CODEC,
                 (payload, context) -> SafeRoomClientState.checkpointSavedMs = System.currentTimeMillis());
+        // Shared checkpoints (player/SharedCheckpoints): "NAME SAVED A CHECKPOINT" for teammates on
+        // the level; on death, "you may also wake up at NAME's checkpoint" (the death screen's extra
+        // buttons, client/CheckpointChoiceButtons); and the button the player picked.
+        registrar.playToClient(SharedCheckpointSavedPayload.TYPE, SharedCheckpointSavedPayload.STREAM_CODEC, (payload, context) -> {
+            SafeRoomClientState.sharedSavedName = payload.name();
+            SafeRoomClientState.sharedSavedMs = System.currentTimeMillis();
+        });
+        registrar.playToClient(CheckpointOptionsPayload.TYPE, CheckpointOptionsPayload.STREAM_CODEC,
+                (payload, context) -> SafeRoomClientState.offeredSharedName = payload.sharedName());
+        registrar.playToServer(CheckpointChoicePayload.TYPE, CheckpointChoicePayload.STREAM_CODEC, (payload, context) -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.rickr.backrooms.player.Checkpoints.choose(player, payload.shared());
+            }
+        });
 
         // Level 94 (Sky slice): when the day began and where your nearest castle is, for the
         // client's sky, light and the castle on the horizon.

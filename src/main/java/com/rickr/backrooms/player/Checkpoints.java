@@ -1,6 +1,7 @@
 package com.rickr.backrooms.player;
 
 import com.rickr.backrooms.Backrooms;
+import com.rickr.backrooms.network.CheckpointOptionsPayload;
 import com.rickr.backrooms.network.CheckpointSavedPayload;
 import com.rickr.backrooms.network.SafeRoomPayload;
 import com.rickr.backrooms.registry.ModAttachments;
@@ -30,6 +31,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * only checks that the two blocks there are free to stand in (air). Dying anywhere else clears a
  * Backrooms respawn point again, so you go back to world spawn as before.
  *
+ * <p>Shared checkpoints ({@link SharedCheckpoints}, game rule {@code backroomsSharedCheckpoints}):
+ * a save is also shared with the saver's team. If you die on a level where you have no checkpoint
+ * of your own but a teammate saved one, you wake up at theirs. If you have both, the death screen
+ * lets you pick (the client sends {@code CheckpointChoicePayload}, handled by {@link #choose});
+ * plain "Respawn" keeps your own.
+ *
  * <p>Also tells each player's camcorder whether they are standing in a safe room.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
@@ -47,7 +54,10 @@ public final class Checkpoints {
             return; // the radios only pick up the Backrooms' own frequency
         }
         BlockPos spot = radioPos.relative(facing);
-        player.getData(ModAttachments.CHECKPOINT).set(player.level().dimension(), spot, facing.toYRot());
+        float yaw = facing.toYRot();
+        player.getData(ModAttachments.CHECKPOINT).set(player.level().dimension(), spot, yaw, player.level().getGameTime());
+        // Also share it with the saver's team (does nothing while the game rule is off).
+        SharedCheckpoints.record(player, radioPos, spot, yaw);
         // Static crackle + chime from the radio itself (everyone nearby hears it).
         player.level().playSound(null, radioPos, ModSounds.CHECKPOINT_SAVE.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
         PacketDistributor.sendToPlayer(player, CheckpointSavedPayload.INSTANCE);
@@ -55,14 +65,17 @@ public final class Checkpoints {
 
     /**
      * You left the level (used its exit or escaped): the checkpoint belongs to that level, so
-     * forget it, and stop respawning there.
+     * forget it, and stop respawning there. A shared checkpoint you saved stays for your friends.
      */
     public static void clear(ServerPlayer player) {
         player.getData(ModAttachments.CHECKPOINT).clear();
         clearBackroomsRespawn(player);
     }
 
-    /** Points your respawn at the checkpoint if you died on its level; otherwise back to world spawn. */
+    /**
+     * Points your respawn at your checkpoint if you died on its level, or at a teammate's shared
+     * checkpoint there if you have none of your own; otherwise back to world spawn.
+     */
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
@@ -70,12 +83,64 @@ public final class Checkpoints {
         }
         ResourceKey<Level> deathDimension = player.level().dimension();
         CheckpointData checkpoint = player.getData(ModAttachments.CHECKPOINT);
-        if (checkpoint.isSet() && deathDimension.equals(checkpoint.dimension()) && Travel.inBackrooms(player.level())) {
-            // forced = true: no bed needed. sendMessage = false: no "Respawn point set" chat line.
-            player.setRespawnPosition(deathDimension, checkpoint.pos(), checkpoint.yaw(), true, false);
-        } else if (!player.getRespawnDimension().equals(deathDimension)) {
+        // Null whenever the game rule is off, so then everything below works exactly as before.
+        SharedCheckpoints.Entry shared = SharedCheckpoints.usableFor(player);
+        if (ownCheckpointHere(player, checkpoint)) {
+            respawnAtOwn(player, checkpoint);
+            // A friend's checkpoint worth offering too (newer than yours, or somewhere else): the
+            // death screen gets two extra buttons. Plain "Respawn" keeps yours (set just above).
+            if (shared != null && (shared.gameTime() > checkpoint.savedAt() || !shared.spot().equals(checkpoint.pos()))) {
+                PacketDistributor.sendToPlayer(player, new CheckpointOptionsPayload(shared.saverName()));
+            }
+        } else if (shared != null) {
+            respawnAtShared(player, shared); // no checkpoint of your own here: use your friend's
+        } else if (checkpoint.sharedRespawn() || !player.getRespawnDimension().equals(deathDimension)) {
+            // The respawn point is a shared checkpoint that no longer applies, or belongs to
+            // another level: back to world spawn.
             clearBackroomsRespawn(player);
         }
+    }
+
+    /**
+     * The death screen's choice (see {@code CheckpointChoicePayload}). It arrives just before the
+     * respawn request, so we only move the respawn point. Nothing the client says is trusted: you
+     * must still be dead, and the checkpoint you picked must still be one you may use.
+     */
+    public static void choose(ServerPlayer player, boolean shared) {
+        if (!player.isDeadOrDying()) {
+            return; // already respawned (or never died): nothing to choose
+        }
+        if (shared) {
+            SharedCheckpoints.Entry entry = SharedCheckpoints.usableFor(player);
+            if (entry != null) {
+                respawnAtShared(player, entry);
+            }
+        } else {
+            CheckpointData checkpoint = player.getData(ModAttachments.CHECKPOINT);
+            if (ownCheckpointHere(player, checkpoint)) {
+                respawnAtOwn(player, checkpoint);
+            }
+        }
+    }
+
+    /** Is your own checkpoint on the Backrooms level you are on (died on)? */
+    private static boolean ownCheckpointHere(ServerPlayer player, CheckpointData checkpoint) {
+        return checkpoint.isSet() && player.level().dimension().equals(checkpoint.dimension()) && Travel.inBackrooms(player.level());
+    }
+
+    private static void respawnAtOwn(ServerPlayer player, CheckpointData checkpoint) {
+        // forced = true: no bed needed. sendMessage = false: no "Respawn point set" chat line.
+        player.setRespawnPosition(checkpoint.dimension(), checkpoint.pos(), checkpoint.yaw(), true, false);
+        checkpoint.setSharedRespawn(false);
+    }
+
+    /**
+     * Same kind of forced respawn point as your own checkpoint, so you also wake up on the floor in
+     * front of the radio (and respawning resets your sanity, as always).
+     */
+    private static void respawnAtShared(ServerPlayer player, SharedCheckpoints.Entry shared) {
+        player.setRespawnPosition(shared.dimension(), shared.spot(), shared.yaw(), true, false);
+        player.getData(ModAttachments.CHECKPOINT).setSharedRespawn(true);
     }
 
     /** A respawn point inside the Backrooms is removed (back to world spawn); beds in the real world stay. */
@@ -83,6 +148,7 @@ public final class Checkpoints {
         if (player.getRespawnPosition() != null && BackroomsLevel.fromDimension(player.getRespawnDimension()) != null) {
             player.setRespawnPosition(Level.OVERWORLD, null, 0.0f, false, false);
         }
+        player.getData(ModAttachments.CHECKPOINT).setSharedRespawn(false);
     }
 
     /** Sends "you're in a safe room: yes/no" to the camcorder whenever it changes. */

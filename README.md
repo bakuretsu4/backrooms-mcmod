@@ -432,6 +432,27 @@ light on and the sign over the front door.
   **CHECKPOINT SAVED** on the camcorder). If you die on that level you wake up on the floor in front
   of the radio. Dying anywhere else still sends you back to the real world, and leaving the level
   through its exit forgets the checkpoint. Clicking the radio again just saves again.
+- **Shared checkpoints (multiplayer):** saving at a radio also leaves a checkpoint for your
+  friends on that level. Everyone else on the level who can use it sees **NAME SAVED A
+  CHECKPOINT** on their camcorder.
+  - **Who counts as a friend:** players on the same vanilla scoreboard team (`/team add cavers`,
+    `/team join cavers Alice Bob`). Players without a team all count as one big "everyone" team,
+    so on a small server with no teams set up, everybody shares with everybody.
+  - Each level keeps every player's latest save (per team), so saving your own checkpoint never
+    wipes out your friend's. When you die, the newest one saved by someone else on your team is
+    used. It is stored with the world, so it is still there after a restart or when the person
+    who saved it has logged out, and it stays when they leave the level (others may still be
+    down there).
+  - **If you die on that level without a checkpoint of your own**, you wake up at your friend's
+    one instead of in the real world (on the floor in front of the radio, sanity reset, the same
+    as your own checkpoint).
+  - **If you have your own checkpoint too** and your friend's one is newer or at another radio,
+    the death screen shows two extra buttons: **Respawn: my checkpoint** and **Respawn: NAME's
+    checkpoint**. The normal Respawn button keeps your own.
+  - A shared checkpoint is skipped if its radio is gone or something is blocking the spot in
+    front of it.
+  - **Turning it off:** `/gamerule backroomsSharedCheckpoints false` (it is on by default). Then
+    every checkpoint is private again, exactly as above.
 
 ### Hiding
 
@@ -1018,7 +1039,7 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | `client/anomaly` | Client side of the anomalous areas: which sites are near (`AnomalyClientState`), per-level picture moods, sounds and overlays; one sub-package per level |
 | `entity` | The Bacteria and its spawner; Level 39's mobs (`Hound`, `Faceling`, `Clump`, `SkinStealer`, `Wretch`) and their spawning (`Level39Spawner`, `TunnelDwellers`); Level 227's grazers (`L227Bear`, `L227Doe`, `L227Boar`) and their spawning (`Level227GrazerSpawner`); Level 227's hunters (`L227Wolf`, `L227Stag`, `L227Squirrel` and the swarm brain `SquirrelSwarm`) and their spawning (`Level227PredatorSpawner`); Level 227's giant Venus flytrap (`VenusFlytrap`, planted by `Level227FloraSpawner`) |
 | `camera` | Camcorder battery/flashlight/NightShot server rules, flashlight sync |
-| `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`), hiding in furniture (`HidingService`, which furniture and where the view sits: `HidingSpots`), friends hearing a panicking player's heartbeat (`SharedHeartbeat`) |
+| `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`; team-shared ones in `SharedCheckpoints`, game rule in `registry/ModGameRules`, death-screen buttons in `client/CheckpointChoiceButtons`), hiding in furniture (`HidingService`, which furniture and where the view sits: `HidingSpots`), friends hearing a panicking player's heartbeat (`SharedHeartbeat`) |
 | `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas); Level 0's versions cluster in worn patches and some keep to one wall row (`Level0SurfaceBlock`, art in `tools/anomaly_assets/level0_surfaces.py`); Level 2's wet versions gather in damp stretches (`Level2SurfaceBlock` with `world/layout/Level2Damp`, art in `tools/anomaly_assets/level2_materials.py`); Level 227's flora (`Level227*Block`: tall plants, hanging strands, the Palette, GammaPali, Lestron; registered in `registry/Level227Blocks`, art in `tools/anomaly_assets/level227_flora.py`) |
 | `network` | Packets between server and clients |
 | `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`) |
