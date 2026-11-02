@@ -463,6 +463,32 @@ nowhere"; "more violent".
   just after it lands, the rain, wind, drone and whale song fade nearly out.
 - One attack at a time; inside the tower none reach you.
 
-## Still open
+## Still open: the creature, redesigned (planned after the fifth play-test, not built yet)
 
-Nothing planned beyond the play-test notes.
+The play-test verdict on the chase above: "still doesn't feel good enough". Diagnosis: it was built
+as a giant monster you watch (always in the sky, attacks on a timer, cheap to be caught), so it
+became scenery and an obstacle course instead of something to fear. The user's choices for the
+redesign (asked one by one):
+
+- **Rare, so every meeting counts.** Mostly it is not there at all; a few close moments per run,
+  never on a timer, silence before and after.
+- **Only on the tape.** To your own eyes the sky is empty. It shows two ways: plainly through
+  **NightShot** (which already costs 3x battery: you choose when to look, and pay for it), and in
+  the frames where the **tape glitches** (it tears, rolls or freezes and it is there, closer than you
+  thought), which you don't control.
+- **It gets into your head** (the existing sanity: SanityService / SanityData / the BPM readout):
+  the lower your sanity, the **more often** the close moments come; you hear **voices** (the
+  pilgrim's calling from below the edge, your own footsteps a beat late); and the set-piece attacks
+  are **real only below half sanity** (above it, it can only frighten you).
+- **The close moments** (pick among them each time): huge **fingers curl over the stair's edge**
+  beside your feet and slide away; on the tape it is **on the stair right behind you**, turn round
+  and nothing; the **moon and the lightning go dark** as something passes between; the tape
+  **freezes on its face**, its eyes filling the frame, then jumps on; **the lights die**, lanterns
+  and candles near you going out one by one, the flashlight stuttering.
+- **Kept from the current attacks, as one-off set pieces only:** the stair torn out ahead of you
+  (once on the climb), the tower shake (once). Gone: the pacing in the sky, the hand slams on a
+  timer, the thrown masonry, the arm over the edge on the walk.
+- **If it gets you:** the punishment platform, as now.
+- **The top: a last chase.** As you reach the top it tears the platform away behind you; you run
+  the crumbling bridge for the ladder; its hands snatch at you as you climb the chain (stop and it
+  has you); then you jump.
