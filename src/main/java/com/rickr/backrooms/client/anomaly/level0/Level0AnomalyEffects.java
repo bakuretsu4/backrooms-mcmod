@@ -33,6 +33,7 @@ public final class Level0AnomalyEffects {
         AnomalyClientEffects.register(Level0AnomalyPlan.SHAFT_HALL, new SetPieceEffects.ShaftHall());
         AnomalyClientEffects.register(Level0AnomalyPlan.FRONT_OFFICE, new SetPieceEffects.FrontOffice());
         AnomalyClientEffects.register(Level0AnomalyPlan.STREET, new SetPieceEffects.Street());
+        AnomalyClientEffects.register(Level0AnomalyPlan.STACK, new SetPieceEffects.Stack());
     }
 
     /**

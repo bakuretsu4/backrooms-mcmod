@@ -64,13 +64,15 @@ public final class Level0AnomalyPlan {
     public static final String FRONT_OFFICE = "level_0/front_office";
     /** The colossal hall with a suburban street down it, from the film ({@link Level0Street}). */
     public static final String STREET = "level_0/street";
+    /** The void through floor after floor of offices, mostly drawn, from the film ({@link Level0Stack}). */
+    public static final String STACK = "level_0/stack";
     /** The set pieces, in the order of the pattern that spreads them over the 256x256 squares. */
-    private static final String[] SET_PIECES = {ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET};
+    private static final String[] SET_PIECES = {ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET, STACK};
     public static final List<String> KINDS;
 
     static {
         List<String> kinds = new ArrayList<>(List.of(RED_ROOMS, BLACKOUT_ZONE, MANILA_ROOM, PERIPHERAL_SHIFT, PITFALLS,
-                ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET));
+                ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET, STACK));
         kinds.addAll(Level0HiddenRooms.KINDS);
         KINDS = Collections.unmodifiableList(kinds);
     }
@@ -197,7 +199,7 @@ public final class Level0AnomalyPlan {
             case RED_ROOMS -> red.nearest(seed, x, z, s -> true, 10);
             case PITFALLS -> pits.nearest(seed, x, z, s -> true, 12);
             case PERIPHERAL_SHIFT -> pillars.nearest(seed, x, z, s -> true, 12);
-            case ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET -> setPieces.nearest(seed, x, z, s -> s.kind().equals(kind), 10);
+            case ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET, STACK -> setPieces.nearest(seed, x, z, s -> s.kind().equals(kind), 10);
             case BLACKOUT_ZONE -> blackout.nearest(seed, x, z, s -> true, 16);
             default -> Level0HiddenRooms.KINDS.contains(kind) ? hidden.nearest(seed, x, z, s -> s.kind().equals(kind), 12) : null;
         };
@@ -272,6 +274,7 @@ public final class Level0AnomalyPlan {
                 }
             }
             case STREET -> Level0Street.fill(site, x, z, floor, ceiling, out);
+            case STACK -> Level0Stack.fill(site, x, z, floor, ceiling, out);
             default -> Level0HiddenRooms.fill(site, x, z, floor, ceiling, out);
         }
     }
@@ -307,6 +310,7 @@ public final class Level0AnomalyPlan {
             case SHAFT_HALL -> Level0ShaftHall.VISIT_POINTS;
             case FRONT_OFFICE -> Level0FrontOffice.VISIT_POINTS;
             case STREET -> Level0Street.VISIT_POINTS;
+            case STACK -> Level0Stack.VISIT_POINTS;
             default -> Level0VisitPoints.names(kind);
         };
     }
@@ -319,6 +323,7 @@ public final class Level0AnomalyPlan {
             case SHAFT_HALL -> Level0ShaftHall.visit(site, name, layout.floorY());
             case FRONT_OFFICE -> Level0FrontOffice.visit(site, name, layout.floorY());
             case STREET -> Level0Street.visit(site, name, layout.floorY());
+            case STACK -> Level0Stack.visit(site, name, layout.floorY());
             default -> Level0VisitPoints.point(layout, seed, site, name);
         };
     }
@@ -334,6 +339,7 @@ public final class Level0AnomalyPlan {
             case SHAFT_HALL -> Level0ShaftHall.isSolid(site, x, z);
             case FRONT_OFFICE -> Level0FrontOffice.isSolid(site, x, z);
             case STREET -> Level0Street.isSolid(site, x, z);
+            case STACK -> Level0Stack.isSolid(site, x, z);
             default -> Level0HiddenRooms.isSolid(site, x, z);
         };
     }
@@ -349,6 +355,7 @@ public final class Level0AnomalyPlan {
             case SHAFT_HALL -> Level0ShaftHall.isWalkable(site, x, z);
             case FRONT_OFFICE -> Level0FrontOffice.isWalkable(site, x, z);
             case STREET -> Level0Street.isWalkable(site, x, z);
+            case STACK -> Level0Stack.isWalkable(site, x, z);
             default -> Level0HiddenRooms.isWalkable(site, x, z);
         };
     }
@@ -466,6 +473,7 @@ public final class Level0AnomalyPlan {
             case ATRIUM -> Level0Atrium.BOX + 2 * Level0Atrium.MOAT;
             case SHAFT_HALL -> Level0ShaftHall.BOX + 2 * Level0ShaftHall.MOAT;
             case STREET -> Level0Street.sizeX(turns);
+            case STACK -> Level0Stack.BOX + 2 * Level0Stack.MOAT;
             default -> Level0FrontOffice.BOX + 2 * Level0FrontOffice.MOAT;
         };
         int d = kind.equals(STREET) ? Level0Street.sizeZ(turns) : w;

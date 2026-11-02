@@ -33,6 +33,7 @@ public final class Level0Anomalies {
         Anomalies.register(Level0AnomalyPlan.ATRIUM, new AtriumBehavior());
         Anomalies.register(Level0AnomalyPlan.SHAFT_HALL, new ShaftHallBehavior());
         Anomalies.register(Level0AnomalyPlan.FRONT_OFFICE, new FrontOfficeBehavior());
+        Anomalies.register(Level0AnomalyPlan.STACK, new StackBehavior());
         Level0LocalEvents.register();
     }
 
