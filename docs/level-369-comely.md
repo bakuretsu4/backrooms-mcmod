@@ -105,3 +105,57 @@ Time spent in the level this visit; nothing for 5 minutes, total at 25.
   grass come back to your inventory (and vanish from the grass, even from unloaded chunks), the
   moved doorways are rebuilt as the level made them, and the next visit starts from nothing.
   Visits are saved with the world (SavedData "backrooms_level369_visits").
+
+## Second pass (planned after the first play-test, not built yet)
+
+The user's verdict: "doesn't feel dreamlike or satisfying enough. The foliage is too gritty (or
+noisy) and doesn't feel completely like the reference images", and "areas need to be bigger".
+
+Compared with the two pictures:
+- **Plants:** the pictures have long soft grass blades and many small flowers in one smooth
+  meadow. Now: one 32 px cross sprite per block with hard pixel edges and high-contrast noise, a
+  noisy lawn texture, few and oversized flowers.
+- **Light:** the pictures have warm low sunset light across the pillar hall, bright beams from the
+  hallway windows lying on the grass, and a glowing white corridor end. Now: dim, greenish-grey,
+  far walls fading to murk, no beams, no glow.
+- **Size:** the pictures are a huge open pillar hall and a corridor that seems endless. Now: 20-block
+  cells, pillar halls at most ~57 wide, straight corridor runs of ~60.
+
+The user's choices:
+- **Size: mostly big, a few huge.** About twice the size as the norm (pillar halls ~120 across,
+  straight corridor runs ~130 before they turn), and now and then a vast pillar hall (200+) or a
+  corridor that seems endless (300+).
+- **Rooms:** all four kinds stay (peach pillar halls, white window hallways, skylit pastel rooms,
+  dark rooms with glowing plants).
+- **Plants: a soft, dense meadow**, as close to the pictures as Minecraft allows: several thin
+  blade planes per block, small flowers several to a block (red daisies, blue cornflowers),
+  smooth colours, a calm lawn under them. FPS in the big halls to be checked.
+- **Light, all four:** visible light beams from the hallway windows lying across the grass;
+  golden sunset light in the pillar halls; long corridors fading into soft white light far ahead;
+  a soft dreamy glow over everything (gentle bloom and haze, lower contrast).
+- **Satisfying, all four:** plants sway gently as if a breeze passes; walking through flowers
+  rustles (and grass footsteps); petals and pollen drift through the light; a quiet, warm
+  ambience with faint wind (no birds).
+- Unchanged: the drifting light wave, the forgetting, the way in from Level 37 and the arch of
+  vines out to Level 7.
+
+### Plan
+
+1. **Bigger** (Level369Plan): larger cells and zones; most pillar-hall zones open into one hall
+   about 120 across with long winding brick paths; hallways run about 130 blocks straight; a rare
+   "huge" zone (a 200+ pillar hall, or a 300+ corridor); skylit and dark rooms scaled to match.
+   Longer view distance in the level's fog.
+2. **Plants** (tools/anomaly_assets/level369.py, registry/Level369Blocks): new grass and flower
+   models built from several crossed thin planes per block with 64 px textures (the recent
+   texture cleanup freed about 340k texels of block-atlas room; it must stay 4096 x 4096), smooth
+   gradients instead of pixel noise; a calm lawn texture; denser, more even planting with small
+   flowers in drifts like the pictures.
+3. **Light** (client): warm low golden light in pillar halls; window beams in hallways (reusing
+   Level 227's client/light/SunBeams); a white glow at the far end of long corridors; a softer
+   camcorder mood for the level (more bloom and haze, less contrast).
+4. **Satisfying:** plant sway (a vertex wave limited to Level 369's plant blocks; to be checked
+   against Veil, with animated textures as the fallback); rustle and grass-footstep sounds when
+   wading through flowers; drifting petal and pollen particles in lit areas; the ambience redone
+   quieter and warmer.
+5. **Test** side by side with the pictures (screenshots), FPS check in the biggest hall, docs,
+   ship, play session. Existing worlds need their Level 369 folder deleted to get the new layout.
