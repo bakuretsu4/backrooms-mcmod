@@ -241,7 +241,8 @@ final class Level2Chambers {
                 }
             }
             case 'C' -> out.set(floor + 1, ModBlocks.SUPPLY_CRATE.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, facing));
-            case 'K' -> out.set(floor + 1, ModBlocks.SUPPLY_LOCKER.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, facing));
+            // 'K' was a Supply Locker (saved for a future level); the supply filing cabinet works the same.
+            case 'K' -> out.set(floor + 1, ModBlocks.SUPPLY_CABINET.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, facing));
             case 'B' -> {
                 BlockState panel = Level2Blocks.BREAKER_PANEL.get().defaultBlockState();
                 out.set(floor + 1, Level2Parts.tall(panel, facing, false));

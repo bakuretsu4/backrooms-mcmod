@@ -127,7 +127,8 @@ final class Level2Rooms {
             }
             case WORKBENCH -> out.set(floor + 1, Level2Blocks.WORKBENCH.get().defaultBlockState().setValue(WallMountBlock.FACING, sideFacing));
             // Supplies (filled from the loot tables the first time they're opened).
-            case LOCKER -> out.set(floor + 1, ModBlocks.SUPPLY_LOCKER.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, facing));
+            // Was a Supply Locker (saved for a future level); the supply filing cabinet works the same.
+            case LOCKER -> out.set(floor + 1, ModBlocks.SUPPLY_CABINET.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, facing));
             case CRATE -> out.set(floor + 1, ModBlocks.SUPPLY_CRATE.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, facing));
             case BACKPACK -> out.set(floor + 1, ModBlocks.BACKPACK.get().defaultBlockState()
                     .setValue(SupplyContainerBlock.FACING, Direction.from2DDataValue(Hash.range(salt, 4))));

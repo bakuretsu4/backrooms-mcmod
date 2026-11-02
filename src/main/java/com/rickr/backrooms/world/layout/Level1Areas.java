@@ -256,7 +256,7 @@ final class Level1Areas {
         return d != null && d[0] == (wallAcrossU ? 0 : 1) && d[1] == wallCoord && d[2] == other;
     }
 
-    /** What stands in a room cell (null for nothing): mattresses, a locker, crates or a backpack. */
+    /** What stands in a room cell (null for nothing): mattresses, crates or a backpack. */
     @Nullable
     private static BlockState roomThing(long seed, int x, int z, int u, int v, int floor, int[] height) {
         Room room = roomAt(Math.floorDiv(x, ZONE), Math.floorDiv(z, ZONE), u, v);
@@ -276,8 +276,11 @@ final class Level1Areas {
                 return ModBlocks.L1_MATTRESS.get().defaultBlockState().setValue(FurnitureBlock.FACING, intoU);
             }
         } else if (r < 0.38) {
+            // This used to be a Supply Locker. The owner took lockers out of the garage and is saving
+            // them for a later level (the block, loot table and hiding support all still exist), so a
+            // single crate stands here instead and the room's other odds stay exactly the same.
             if (u == fu && v == fv) {
-                return ModBlocks.SUPPLY_LOCKER.get().defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, intoU);
+                return ModBlocks.SUPPLY_CRATE.get().defaultBlockState();
             }
         } else if (r < 0.47) {
             if (u == fu && v == fv) {

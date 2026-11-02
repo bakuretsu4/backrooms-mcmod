@@ -540,7 +540,8 @@ public final class ModBlocks {
                     Block.box(4, 0, 2.5, 12, 3, 3.5))),
             BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(0.5f).sound(SoundType.WOOL)
                     .pushReaction(PushReaction.BLOCK).noOcclusion().noLootTable());
-    /** A painted metal cabinet with a vented door, its back against the wall. */
+    /** A painted metal cabinet with a vented door, its back against the wall. Not placed by any level
+     *  right now: saved for a future level (block, item, loot and hiding support all still work). */
     public static final DeferredBlock<SupplyContainerBlock> SUPPLY_LOCKER = BLOCKS.registerBlock("supply_locker",
             props -> new SupplyContainerBlock(props, SupplyKind.LOCKER, Block.box(1, 0, 1.5, 15, 16, 16)),
             BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GREEN).strength(3.0f).sound(SoundType.METAL)

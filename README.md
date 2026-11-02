@@ -22,7 +22,7 @@ Lithium, FerriteCore, ModernFix, Entity Culling, ImmediatelyFast and Dynamic FPS
 | Camcorder REC overlay | `H` (off by default). Switching it on shows REC, battery, clock and exit signal clearly for a few seconds; then they sink to a faint ghost until one of them changes. A low battery (15% or less) pulses soft red at the top right even with the overlay off. |
 | Sprint | Limited by energy: a short, thin faint line above your hearts shows it while you run (turns soft red when you're out of breath). Rest to refill it. |
 | Jump | Not possible in the Backrooms (except in water, to swim and climb out) |
-| Loot | Right-click Wooden Crates, Backpacks and Supply Lockers (see Supplies below) |
+| Loot | Right-click Wooden Crates, Backpacks and Supply Cabinets (see Supplies below) |
 | New battery | Right-click a Camcorder Battery |
 | Settings | **SETTINGS** on the main menu, **Backrooms Settings...** in the pause menu, or Config in the Mods list: camera smoothing (default 35%; the original feel was 88%), handheld shake, view tilt, motion blur, wide lens, **footage look** and **4:3 frame** (see The camcorder picture below), stamina line, and **QUALITY** for weaker computers (see Performance below). Changes apply immediately and are saved per player in `config/backrooms-client.toml`. |
 
@@ -133,7 +133,7 @@ going down into the dark, until the picture breaks up and you are in the next le
   stacks, loose boxes, the odd collapsed one), and a red-banded decrepit one of cracked concrete,
   puddles and dead lights. Push-bar fire doors under green EXIT
   signs lead into walled-off **corridor blocks**: tight white corridors lined with small rooms
-  (mattresses, supply lockers, crates), where nothing hunts you. Now and then a hallway of
+  (mattresses, crates, the odd backpack), where nothing hunts you. Now and then a hallway of
   **storage lockers** opens off the halls: roll-up shutters, a few rolled up with supplies
   inside, something growling behind one or two, and a white door at the end that never opens. Car
   **ramps** lead down to a dimmer lower floor here and there. A stairwell leads down.
@@ -377,7 +377,8 @@ on (`data/backrooms/loot_table/supplies/<crate|backpack|locker>/<level>.json`, f
 - **Wooden Crate** (27 slots): mostly food: canned food, backshrooms, bread, almond water, energy bars.
 - **Backpack** (9 slots, lying in corridors): few items but the best ones: pills, bandages, energy
   bars, and the best chance of a camcorder battery.
-- **Supply Locker** (27 slots, metal cabinet): bandages, calm pills, energy bars, some food.
+- **Supply Cabinet** (27 slots, a filing cabinet marked SUPPLIES): bandages, calm pills, energy bars,
+  some food. (The green metal Supply Locker is saved for a future level and isn't placed anywhere yet.)
 
 Each floor leans its own way: Level 0 has more almond water, Level 1 more batteries, Level 2 more
 bandages, the Poolrooms more almond water and pills, Level 9 ordinary kitchen food (cookies,
@@ -467,8 +468,8 @@ light on and the sign over the front door.
 
 ### Hiding
 
-You can hide in furniture that is already there: a **Supply Locker** (or the filing cabinet that
-is really one), an **office desk** (Level 4's offices and cubicles, Level 0's furniture heaps,
+You can hide in furniture that is already there: a **Supply Cabinet** (the filing cabinet marked
+SUPPLIES), an **office desk** (Level 4's offices and cubicles, Level 0's furniture heaps,
 Level 94's drawing desks), a Level 39 **wardrobe**, or under a **bed** (Level 9 and Level 39
 houses). Upside-down furniture doesn't count.
 
@@ -509,8 +510,9 @@ houses). Upside-down furniture doesn't count.
   sprint. In a lit room it spots you from about 24 blocks; in the dark only from about 8 (crouching
   makes both shorter, your flashlight doesn't matter). When it spots you it doesn't freeze: its
   head snaps onto you, it bends right over to look while it swings round, and less than half a
-  second later it is running at you at 5 blocks a second: faster than you walk, a little slower
-  than your sprint. Sprint the moment it sees you and you slowly pull away; hesitate and it has you.
+  second later it is running at you at about 5 blocks a second: faster than you walk, a little slower
+  than your sprint on average, though its pace surges and slackens, and in the last few blocks it
+  bursts forward at twice that. Sprint the moment it sees you and you slowly pull away; hesitate and it has you.
   Breaking line of sight is still the surest escape. Then it runs to where it *last saw* you, searches
   for a few seconds (you hear it sniffing), and when it gives up you hear a slow sigh moving away.
   If it hears you sprint it walks over to the noise and swipes at the spot. It is quiet: wet, slow
@@ -524,9 +526,12 @@ houses). Upside-down furniture doesn't count.
   slowly move: down to the floor, forward, back. If it can see you, its head slowly turns onto you
   and stays there, wherever its body goes. It walks like a mantis in long, slow strides on bent, wide-apart legs,
   one arm cocked forward with the claws hanging while the other reaches out and back to the floor,
-  swapping with every step. It runs in long, loping strides while its arms vault it
-  along like huge spider legs, one planted two blocks out to the side as the other whips up and
-  over, dropping little black flakes; in a corridor the claws plant ahead instead. Sometimes,
+  swapping with every step. It runs (like Kane Pixels' Bacteria) hunched and never in a steady
+  rhythm: no two strides alike, now and then a stumble or a lurch, the torso rolling and twisting,
+  the head jerking while it stays on you. Its arms vault it along like huge spider legs, one
+  planted two blocks out to the side (that claw stays put on the floor) while the other whips up
+  and over, flailing and now and then flung up or forward, dropping little black flakes; in a
+  corridor the claws plant ahead instead. It leans into corners and skids when it stops. Sometimes,
   before it has properly seen you, its head slowly comes out from behind a pillar or door frame to
   look at you. Within 3 blocks it brakes to a stop in a wide crouch and stares at you for a moment, then
   leaps with its arms flung straight out and closes them around you. It stops about a block and a

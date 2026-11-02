@@ -19,6 +19,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
+import static com.rickr.backrooms.entity.BacteriaRhythm.noise;
+
 /**
  * Kane Pixels' Bacteria, built in code instead of Blockbench.
  *
@@ -659,14 +661,14 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     private static final float LOW_SHOULDER_FORWARD = 0.8f;
     // Head: with nobody to look at it looks this far down (degrees). It always holds its head
     // tilted to one side (its own side, 20-32 degrees), the tilt drifting slowly a few degrees;
-    // running, the drift is a bit bigger and faster.
+    // running, the roll swings further and much faster (and jerks: the pass-8 constants).
     private static final float HEAD_PITCH_DOWN = 15.0f;
     private static final float HEAD_TILT_MIN = 20.0f;
     private static final float HEAD_TILT_MAX = 32.0f;
     private static final float HEAD_ROLL_DRIFT = 6.0f;
     private static final float HEAD_ROLL_TICKS = 60.0f;
-    private static final float RUN_HEAD_ROLL = 10.0f;
-    private static final float RUN_HEAD_ROLL_TICKS = 25.0f;
+    private static final float RUN_HEAD_ROLL = 20.0f;
+    private static final float RUN_HEAD_ROLL_TICKS = 6.0f;
     /**
      * Each footfall dips the head this much (degrees), a tick after the foot lands, and rocks it
      * this much to one side and then the other, both as smooth waves.
@@ -755,6 +757,10 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     private static final int CH_SHIN = 31;              // 31 right, 32 left
     private static final int CH_GAIT = 33;
     private static final int CH_FREE = 34;
+    private static final int CH_TURN_ROLL = 35;
+    private static final int CH_TWIST = 36;
+    private static final int CH_CHEST = 37;
+    private static final int CH_SPLAY_JIT = 38;         // 38 right, 39 left
 
     // Arm poses are (raise, out, elbow bend, forearm out), in degrees. The claw and elbow positions
     // in the comments are in world blocks at the drawn size, from its middle: (out to its side,
@@ -830,11 +836,184 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     // forward this much, so the claw plants ahead (1.25 out, 1.75 ahead) instead of in the wall.
     private static final float NARROW_RAISE_ADD = 8.0f;
     private static final float NARROW_OUT_ADD = -40.0f;
-    // Each run one arm is different: either it plants further out and ahead...
+    // Each run one arm plants a little further out and ahead (its elbow opened this much).
     private static final float ASYM_BEND = -8.0f;
-    // ...or it is carried late (a fraction of the arm cycle).
-    private static final float ASYM_DELAY_MIN = 0.2f;
-    private static final float ASYM_DELAY_MAX = 0.4f;
+
+    // --- Pass 8: the running chaos, after Kane Pixels' Found Footage runner (FF1 508.75-509.96 s,
+    // local://bacteria_kane_chase.md). Each fades in with the run (chaos) and leaves the poses'
+    // shapes alone: it only shakes the timing, the size and the coupling around them. All of it
+    // is smooth noise, eased snaps and springs, never a random jump. (The numbers match the
+    // study's ranked changes.)
+    // (1) Each arm keeps its own clock: half the stride rate, sped up or slowed by up to
+    // RUN_ARM_DRIFT (smooth noise, period RUN_ARM_DRIFT_TICKS), so the arms drift in and out of
+    // step. From RUN_ARM_RESYNC_FROM of its swing on, it is pulled back toward its place in the
+    // stride by at most RUN_ARM_RESYNC of a cycle a tick, so the claw still lands with the feet.
+    // (The stride clock itself wanders too: BacteriaRhythm.runRate.)
+    private static final float RUN_ARM_DRIFT = 0.25f;
+    private static final float RUN_ARM_DRIFT_TICKS = 7.0f;
+    private static final float RUN_ARM_RESYNC_FROM = 0.75f;
+    private static final float RUN_ARM_RESYNC = 0.03f;
+    /** After this many ticks not running, the arms' clocks start again from the stride. */
+    private static final float RUN_ARM_STALE_TICKS = 10.0f;
+    // (2) Flailing on top of the running keys (degrees; each noise's period in ticks), each arm
+    // and joint with its own noise, none of it while the claw is on the floor. (The quick raise
+    // and swing are bigger and quicker than the study's 15 and 12 degrees every 2-2.2 ticks: with
+    // those, under a 3-block ceiling, too few frames moved as fast as Kane's arms.) All of the
+    // chaos on an arm fades in from RUN_LOOSE_FROM to RUN_LOOSE_FULL of its swing and out from
+    // RUN_LOOSE_END to RUN_LOOSE_GONE, so the arm lands on its plain running pose.
+    private static final float FLAIL_RAISE_SLOW = 35.0f;
+    private static final float FLAIL_RAISE_SLOW_TICKS = 6.0f;
+    private static final float FLAIL_RAISE_FAST = 34.0f;
+    private static final float FLAIL_RAISE_FAST_TICKS = 1.3f;
+    private static final float FLAIL_OUT_SLOW = 25.0f;
+    private static final float FLAIL_OUT_SLOW_TICKS = 5.0f;
+    private static final float FLAIL_OUT_FAST = 24.0f;
+    private static final float FLAIL_OUT_FAST_TICKS = 1.3f;
+    private static final float RUN_LOOSE_FROM = 0.27f;
+    private static final float RUN_LOOSE_FULL = 0.33f;
+    private static final float RUN_LOOSE_END = 0.80f;
+    private static final float RUN_LOOSE_GONE = 0.89f;
+    private static final float FLAIL_BEND = 20.0f;
+    private static final float FLAIL_BEND_TICKS = 4.0f;
+    private static final float FLAIL_FORE = 15.0f;
+    private static final float FLAIL_FORE_TICKS = 3.0f;
+    // (3) Running, the arm springs are quicker and looser (Hz, damping; see springs()), so the
+    // arms whip and overshoot (about 20 % on the upper arm, 35 % on the forearm and hand), and
+    // may turn up to RUN_ARM_MAX_SPEED degrees a tick (Kane's peak is 70-95). (The upper arm and
+    // forearm are quicker than the study's 5 and 4 Hz, for the same reason as the flail.)
+    private static final float RUN_UPPER_ARM_HZ = 8.0f;
+    private static final float RUN_UPPER_ARM_DAMP = 0.45f;
+    private static final float RUN_FOREARM_HZ = 5.0f;
+    private static final float RUN_FOREARM_DAMP = 0.3f;
+    private static final float RUN_HAND_HZ = 6.0f;
+    private static final float RUN_HAND_DAMP = 0.25f;
+    private static final float RUN_ARM_MAX_SPEED = 70.0f;
+    private static final float RUN_TARGET_MAX_SPEED = 70.0f;
+    // (4) Flings: now and then (every 10-22 ticks for each arm, the two taking turns) an arm is
+    // thrown: up in FLING_RISE ticks, held FLING_HOLD, back in FLING_FALL; raised FLING_RAISE
+    // degrees and swung out FLING_OUT (FLING_FORWARD_OUT as far when it is thrown forward rather
+    // than up and out). The forearm snaps FLING_STRAIGHTEN degrees straighter FLING_FOREARM_LAG
+    // ticks later (a whip), and the shoulders twist up to FLING_TWIST degrees toward the arm.
+    private static final float FLING_SLOT = 8.0f;
+    private static final float FLING_JITTER = 3.0f;
+    private static final float FLING_RISE = 1.5f;
+    private static final float FLING_HOLD_MIN = 1.0f;
+    private static final float FLING_HOLD_MAX = 2.0f;
+    private static final float FLING_FALL_MIN = 3.0f;
+    private static final float FLING_FALL_MAX = 4.0f;
+    private static final float FLING_RAISE_MIN = 50.0f;
+    private static final float FLING_RAISE_MAX = 80.0f;
+    private static final float FLING_OUT_MIN = 20.0f;
+    private static final float FLING_OUT_MAX = 40.0f;
+    private static final float FLING_FORWARD_OUT = 0.5f;
+    private static final float FLING_STRAIGHTEN = 30.0f;
+    private static final float FLING_FOREARM_LAG = 1.0f;
+    private static final float FLING_TWIST = 20.0f;
+    // (5) The torso never holds still: spine roll (degrees; period ticks) of a slow and a quick
+    // noise, a forward pitch, a twist, and the chest jerking sideways (px). Running, the body's
+    // springs are stiffer and looser (RUN_BODY_*), so the jolts show and ring once.
+    private static final float RUN_ROLL_SLOW = 12.0f;
+    private static final float RUN_ROLL_SLOW_TICKS = 2.0f;  // (the study's 2.5 gave under 5 sign changes a second for some ids)
+    private static final float RUN_ROLL_FAST = 4.0f;
+    private static final float RUN_ROLL_FAST_TICKS = 1.2f;
+    private static final float RUN_PITCH = 6.0f;
+    private static final float RUN_PITCH_TICKS = 4.0f;
+    private static final float RUN_TWIST = 10.0f;
+    private static final float RUN_TWIST_TICKS = 5.0f;
+    private static final float CHEST_SHIFT = 0.8f;
+    private static final float CHEST_SHIFT_TICKS = 2.0f;
+    private static final float RUN_BODY_HZ = 4.0f;
+    private static final float RUN_BODY_DAMP = 0.55f;
+    private static final float RUN_BODY_MAX_SPEED = 50.0f;
+    // (6) The head jerks against its lock: every 2-4 ticks (HEAD_SNAP_TICKS +- HEAD_SNAP_JITTER)
+    // it flicks (over HEAD_SNAP_EASE ticks) to a new roll, pitch and sideways offset (degrees,
+    // either way), with a quick tremor on the roll; the whole roll stays under HEAD_ROLL_LIMIT.
+    // Its neck springs are quick (RUN_NECK_*, RUN_HEAD_PITCH_HZ) and the lock a little softer
+    // (RUN_AIM_HZ), so a torso jolt shows in the head for a frame before it finds you again.
+    private static final float HEAD_SNAP_TICKS = 3.0f;
+    private static final float HEAD_SNAP_JITTER = 1.0f;
+    private static final float HEAD_SNAP_EASE = 1.0f;
+    private static final float HEAD_SNAP_ROLL_MIN = 15.0f;
+    private static final float HEAD_SNAP_ROLL_MAX = 35.0f;
+    private static final float HEAD_SNAP_PITCH_MIN = 5.0f;
+    private static final float HEAD_SNAP_PITCH_MAX = 20.0f;
+    private static final float HEAD_SNAP_YAW_MIN = 5.0f;
+    private static final float HEAD_SNAP_YAW_MAX = 12.0f;
+    private static final float HEAD_TREMOR = 5.0f;
+    private static final float HEAD_TREMOR_TICKS = 1.5f;
+    private static final float HEAD_ROLL_LIMIT = 60.0f;
+    private static final float RUN_NECK_HZ = 8.0f;
+    private static final float RUN_NECK_DAMP = 0.5f;
+    private static final float RUN_HEAD_PITCH_HZ = 8.0f;
+    private static final float RUN_AIM_HZ = 4.5f;
+    // (7) Stumbles and lurches (timed by BacteriaRhythm, which also breaks the stride): a stumble
+    // leans STUMBLE_LEAN forward then STUMBLE_LEAN_BACK back, rolls STUMBLE_ROLL toward its long
+    // stride, throws the free arms out STUMBLE_ARMS (min-max) to catch itself and dips the head
+    // STUMBLE_HEAD_DIP; a lurch leans LURCH_LEAN in and flings the free arms forward to LURCH_RAISE.
+    private static final float STUMBLE_LEAN = 12.0f;
+    private static final float STUMBLE_LEAN_BACK = 6.0f;
+    private static final float STUMBLE_ROLL = 20.0f;
+    private static final float STUMBLE_ARMS_MIN = 30.0f;
+    private static final float STUMBLE_ARMS_MAX = 50.0f;
+    private static final float STUMBLE_HEAD_DIP = 20.0f;
+    private static final float LURCH_LEAN = 12.0f;
+    private static final float LURCH_RAISE = 105.0f;
+    // (8) Its lean follows its speed: SURGE_LEAN more at SURGE_SPEED_UP above its usual run speed
+    // (the surge in the last blocks: about 29 degrees in all).
+    private static final float SURGE_LEAN = 14.0f;
+    private static final float SURGE_SPEED_UP = 1.2f;
+    // (9) Round a bend: the spine rolls into the turn TURN_ROLL_GAIN degrees for every degree a
+    // tick it turns (at most TURN_ROLL_MAX), through its own loose spring (so it swings back past
+    // upright as it straightens); at BEND_FULL degrees a tick the outer arm swings out
+    // BEND_ARM_OUT and the inner tucks in BEND_ARM_TUCK; the head looks HEAD_TURN_LEAD ticks ahead.
+    private static final float TURN_ROLL_GAIN = 1.2f;
+    private static final float TURN_ROLL_MAX = 25.0f;
+    private static final float TURN_ROLL_HZ = 3.0f;
+    private static final float TURN_ROLL_DAMP = 0.5f;
+    private static final float BEND_ARM_OUT = 25.0f;
+    private static final float BEND_ARM_TUCK = 15.0f;
+    private static final float BEND_FULL = 12.0f;
+    private static final float HEAD_TURN_LEAD = 1.5f;
+    // (10) Like the footage's dropped frames: running within STUTTER_RANGE blocks of you, now and
+    // then (STUTTER_CHANCE a tick) its arms and head freeze for 1-2 ticks, then catch up. Never
+    // the whole model (that reads as lag).
+    private static final float STUTTER_CHANCE = 0.12f;
+    private static final float STUTTER_RANGE = 8.0f;
+    // (11) Stopping from a run: it skids, leaning SKID_LEAN further forward (up in a tick, back by
+    // SKID_TICKS), its body loose (SKID_BODY_DAMP) for SKID_SETTLE_TICKS; for COAST_TICKS its arms
+    // swing on with their speed (pulled COAST_PULL as hard, no faster than COAST_MAX_SPEED degrees
+    // a tick, so they overshoot by at most about 25 degrees).
+    private static final float SKID_LEAN = 10.0f;
+    private static final float SKID_TICKS = 3.5f;
+    private static final float SKID_SETTLE_TICKS = 12.0f;
+    private static final float SKID_BODY_DAMP = 0.5f;
+    private static final float COAST_TICKS = 2.0f;
+    private static final float COAST_PULL = 0.2f;
+    private static final float COAST_MAX_SPEED = 12.5f;
+    // (12) Every running stride differs a little: the foot lifts 1 +- STEP_LIFT_JITTER as high,
+    // one stride in SCUFF_EVERY scuffs (lifted only SCUFF_LIFT as high), and each leg splays up to
+    // STEP_SPLAY_JITTER degrees more or less (changing only while that foot is in the air).
+    private static final float STEP_LIFT_JITTER = 0.3f;
+    private static final float SCUFF_EVERY = 6.0f;
+    private static final float SCUFF_LIFT = 0.4f;
+    private static final float STEP_SPLAY_JITTER = 4.0f;
+    // Running, an arm never goes through a ceiling: no part of it above the headroom less
+    // RUN_CEILING_MARGIN blocks (it is eased back toward its plain running pose just enough,
+    // found in CEILING_STEPS halvings, and if even that pokes up, lowered by up to CEILING_DROP
+    // degrees).
+    private static final float RUN_CEILING_MARGIN = 0.15f;
+    private static final int CEILING_STEPS = 5;
+    private static final float CEILING_DROP = 60.0f;
+    // A running claw is held to the spot it landed on once it is this far planted (0-1), settling
+    // onto the floor (PLANT_FLOOR blocks above it) over PLANT_LAND_TICKS; if the spot gets out of
+    // reach (more than PLANT_MISS_OK px off) the hold fades out over another PLANT_MISS_FADE px,
+    // but by no more than PLANT_LET_GO a tick (the claw slides off rather than jumping).
+    private static final float PLANT_LOCK_AT = 0.99f;
+    private static final float PLANT_LAND_TICKS = 3.0f;
+    private static final double PLANT_FLOOR = 0.04;
+    private static final float PLANT_MISS_OK = 1.5f;
+    private static final float PLANT_MISS_FADE = 6.0f;
+    private static final float PLANT_LET_GO = 0.3f;
     // The legs (gaitLegs): each foot is planted for part of the stride, sliding back under the
     // body exactly as fast as the body moves (so it never skates), then lifted and swung forward
     // in an arc. Walking it is planted 55 % of the stride (both feet down for a moment at each
@@ -862,7 +1041,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     // rocks toward the planted foot (degrees, a little after it), and the hips turn toward the
     // forward leg (degrees) while the shoulders turn back the other way by a share of that.
     private static final float WALK_BOB = 1.5f;
-    private static final float RUN_BOB = 0.6f;
+    private static final float RUN_BOB = 1.2f;
     private static final float WALK_ROCK = 4.0f;
     private static final float RUN_ROCK = 3.0f;
     private static final float ROCK_LAG = 0.06f;
@@ -1170,6 +1349,34 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     // The step's twist: hips (the legs) turn one way, the shoulders (the spine) the other.
     private float hipYaw;
     private float spineYaw;
+    // Running chaos (pass 8; see run() and the pass-8 constants). chaos: 0 = calm (every other
+    // pose), 1 = full running chaos; gaitSeed: this Bacteria's seed, for the per-stride legs.
+    private float chaos;
+    private int gaitSeed;
+    private float twist;          // the shoulders' own twist before the step's (radians)
+    private float chestX;         // the chest's sideways jerk (px, + = to its left)
+    private float headYawAdd;     // the head's jerk sideways on top of its lock (degrees, + = to its right)
+    private float turnRate;       // how fast it turns while running (degrees a tick, + = to its right)
+    private boolean stutter;      // this tick its arms and head hold still (the footage's dropped frames)
+    private boolean springHold;   // springs show their last value (the stutter)
+    private float skid;           // 1 just after it stops running, fading: the body is loose
+    private float coast;          // 1 in the first ticks after it stops: the arms swing on
+    private float runCeilingY;    // running, no part of an arm goes above this (model y; up is smaller)
+    // Each arm's plain running pose (radians), before the chaos: an arm that would go through the
+    // ceiling is eased back toward it.
+    private final float[] keyRaise = new float[2];
+    private final float[] keyOut = new float[2];
+    private final float[] keyBend = new float[2];
+    private final float[] keyFore = new float[2];
+    // Each running leg's extra splay this stride (radians; 0 = right).
+    private final float[] legJitter = new float[2];
+    // The latest fling's size (fling()): raise and out (degrees), and thrown up and out (or forward).
+    private float flingRaise;
+    private float flingOut;
+    private boolean flingUp;
+    // The wrist's height (model y), from clawPoint; and the forearm's swing polishArm keeps.
+    private float clawWristY;
+    private float ikFore;
     // Walking/running: how much the legs are stepping (1) rather than standing in a pose (0), how
     // far the hips are lowered while they step (px), and how far between a walk (0) and a run (1).
     private float gaitTarget;
@@ -1293,7 +1500,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         float speed = entity.gaitSpeed(partial);
         float moving = smooth((speed - 0.005f) / 0.04f);
         runness = smooth((speed - Bacteria.WALK_SPEED_PER_TICK) / (Bacteria.RUN_SPEED_PER_TICK - Bacteria.WALK_SPEED_PER_TICK));
-        float stride = entity.strideFor(speed);
+        float stride = entity.gaitStride(partial);
         float phase = entity.gaitPhase(partial);
         // A tick after each foot lands, as a share of the stride (the body's dip comes then).
         float strideTicks = Math.min(stride / Math.max(speed, 1.0e-3f), 60.0f);
@@ -1319,6 +1526,8 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         squeeze = Mth.clamp((standing - room) / (standing - 46.5f), 0.0f, 1.0f);
         // An elbow stays under the ceiling (model y: up is smaller).
         elbowCeilingY = 24.0f - Math.min(entity.headroom(partial) - ELBOW_CEILING_MARGIN, ELBOW_TOP) * 16.0f / SCALE;
+        // Running, no part of an arm goes above the ceiling (model y).
+        runCeilingY = 24.0f - (entity.headroom(partial) - RUN_CEILING_MARGIN) * 16.0f / SCALE;
 
         // --- Which pose, which one-shot move is playing (its age in ticks, -1 = none), who it
         // looks at ----------------------------------------------------------------------------
@@ -1518,7 +1727,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
 
         // --- Build the pose --------------------------------------------------------------------
         switch (state) {
-            case CHASE -> run(seed, t, moving, phase, stride, near, memory, runStamp, partial);
+            case CHASE -> run(entity, seed, t, dt, fresh, moving, phase, stride, near, speed, memory, runStamp, partial);
             case SEARCH -> {
                 calm(seed, t, moving, phase, stride, breath);
                 searchHead(seed, t);
@@ -1539,6 +1748,29 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
                 peek(age, peekSide, peekHold);
             }
             default -> calm(seed, t, moving, phase, stride, breath);
+        }
+        // (11) Stopping from a run: a skid (leaning on further forward a moment) and loose body
+        // and arms (springs()). (10) Running close to you: the footage's dropped frames.
+        boolean runningNow = state == CHASE && moving > 0.5f;
+        float stopAge = runningNow || Float.isNaN(memory.runningAt) ? Float.MAX_VALUE : t - memory.runningAt;
+        if (runningNow) {
+            memory.runningAt = t;
+        }
+        boolean stopping = state == CHASE || state == STARE;
+        skid = stopping && stopAge < SKID_SETTLE_TICKS ? 1.0f - stopAge / SKID_SETTLE_TICKS : 0.0f;
+        coast = stopping && stopAge < COAST_TICKS ? 1.0f : 0.0f;
+        if (stopping && stopAge < SKID_TICKS) {
+            lean += SKID_LEAN * DEG * (stopAge < 1.0f ? smooth(stopAge) : 1.0f - smooth((stopAge - 1.0f) / (SKID_TICKS - 1.0f)));
+        }
+        stutter = false;
+        if (runningNow && target >= 0 && !fresh) {
+            Entity seen = entity.level().getEntity(target);
+            if (seen != null && seen.distanceToSqr(entity) < STUTTER_RANGE * STUTTER_RANGE) {
+                // A freeze starts on this tick, or started last tick and lasts two.
+                int k = Mth.floor(t);
+                stutter = BacteriaRhythm.unit(seed + 740, k) < STUTTER_CHANCE
+                        || (BacteriaRhythm.unit(seed + 740, k - 1) < STUTTER_CHANCE && BacteriaRhythm.hash(seed + 741, k - 1) > 0.0f);
+            }
         }
         if (whip >= 0.0f && whip < 9.5f) {
             whip(BacteriaRhythm.hash(seed + 27, occurrence) > 0.0f ? 0 : 1, whip);
@@ -1561,11 +1793,16 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         // where they were (one-shot moves included), then the step's waves go on top.
         springs(memory, dt, fresh, hurt);
         stepWaves(phase, stepLag);
+        if (chaos > 0.0f || memory.plantLocked[0] || memory.plantLocked[1]) {
+            // Running: arms under the ceiling, planted claws held on their spots.
+            runArms(memory, t, dt);
+        }
         if (gripping) {
             // Held claws stay exactly where they took hold, whatever the body did this frame.
             holdArms(memory);
         }
-        aimHead(entity, memory, partial, dt, fresh, target);
+        // (Frozen for a moment by the stutter.)
+        aimHead(entity, memory, partial, stutter ? 0.0f : dt, fresh, target);
         noteClaws(memory);
         apply();
         organs(entity, partial, ageInTicks);
@@ -1676,57 +1913,152 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     }
 
     /**
-     * Running: upright (15 degrees, 18 in the last 3 blocks), long loping strides (a 10-tick
-     * stride at its 5 blocks/s) on bent knees, feet a little apart, the body dipping, rocking and
-     * twisting with each step (stepWaves). The arms are spider legs: each plants far out to the
-     * side (about 2 blocks) as a big angular Λ, the elbow about level with the shoulder; the claw
-     * stays where it planted while the body runs on over it, then the arm whips up over the top
-     * and out to plant again, the forearm and hand trailing behind and the fingers closing and
-     * opening; one arm cycle every 2 strides (16 ticks), the arms taking turns, the right arm
-     * planting as the left foot lands. Each run one arm is a little different. Next to a wall the
-     * claw on that side plants ahead instead of out. Stood still (m = 0) the arms come to the
-     * planted spider stance. The head stays locked on your eyes, tilted.
+     * Running: upright and hunched, long loping strides on bent knees, the arms spider legs that
+     * plant far out to the side as a big angular Λ (the claw stays exactly where it landed while
+     * the body runs on over it, see runArms) and whip up over the top to plant again. The keys
+     * (RUN_ARM_*) give each arm's shape through its swing. On top of them, after Kane Pixels'
+     * runner (the pass-8 constants, each numbered there): every stride is a different length (the
+     * entity's stride clock); each arm runs on its own clock, flails with its own noise and is
+     * now and then flung up or forward, the forearm whipping after it; the torso rolls, pitches,
+     * twists and jerks; the head jerks against its lock on your eyes; every 40-90 ticks it
+     * stumbles or lurches; it leans into bends, and further in the faster it goes. Next to a wall
+     * the claw on that side plants ahead instead of out, and each run one arm plants a little
+     * further out. Stood still (m = 0) the arms come to the planted spider stance and all the
+     * chaos fades out.
      */
-    private void run(int seed, float t, float m, float phase, float stride, float near, BacteriaPoseState memory,
-                     int runStamp, float partial) {
+    private void run(Bacteria entity, int seed, float t, float dt, boolean fresh, float m, float phase, float stride,
+                     float near, float speed, BacteriaPoseState memory, int runStamp, float partial) {
         stance(-25.0f * DEG, 50.0f * DEG);
+        chaos = m;
+        gaitSeed = seed;
         gaitLegs(phase, m, stride);
         legSplay = RUN_LEG_SPLAY * DEG;
-        lean = (RUN_LEAN + (RUN_NEAR_LEAN - RUN_LEAN) * near) * DEG;
+        // (5, 8) The torso: leaning in (more in the last blocks before the leap, and more the
+        // faster it goes), then pitching, rolling, twisting and jerking on top.
+        float surge = Mth.clamp((speed / Bacteria.RUN_SPEED_PER_TICK - 1.0f) / SURGE_SPEED_UP, 0.0f, 1.0f);
+        lean = Math.max(RUN_LEAN + (RUN_NEAR_LEAN - RUN_LEAN) * near, RUN_LEAN + SURGE_LEAN * surge) * DEG;
+        lean += m * RUN_PITCH * DEG * noise(seed + 650, t, RUN_PITCH_TICKS);
+        sway = m * DEG * (RUN_ROLL_SLOW * noise(seed + 651, t, RUN_ROLL_SLOW_TICKS)
+                + RUN_ROLL_FAST * noise(seed + 652, t, RUN_ROLL_FAST_TICKS));
+        twist = m * RUN_TWIST * DEG * noise(seed + 653, t, RUN_TWIST_TICKS);
+        chestX = m * CHEST_SHIFT * noise(seed + 654, t, CHEST_SHIFT_TICKS);
+        // (7) A stumble (leans in then back, rolls toward its long stride, the head dips) or a
+        // lurch (leans in). stumbleE / lurchE: how far into it, 0-1.
+        float sa = BacteriaRhythm.stumbleAge(seed, t);
+        float stumbleE = 0.0f;
+        float lurchE = 0.0f;
+        if (BacteriaRhythm.isLurch(seed, t)) {
+            if (sa < BacteriaRhythm.LURCH_TICKS) {
+                lurchE = Mth.sin(Mth.PI * sa / BacteriaRhythm.LURCH_TICKS);
+            }
+        } else if (sa < BacteriaRhythm.STUMBLE_TICKS) {
+            float u = sa / BacteriaRhythm.STUMBLE_TICKS;
+            stumbleE = Mth.sin(Mth.PI * u);
+            lean += m * DEG * (u < 0.5f ? STUMBLE_LEAN * Mth.sin(Mth.TWO_PI * u)
+                    : -STUMBLE_LEAN_BACK * Mth.sin(Mth.TWO_PI * (u - 0.5f)));
+            sway += m * stumbleE * STUMBLE_ROLL * DEG * BacteriaRhythm.stumbleSide(seed, t);
+            headPitchAdd += m * stumbleE * STUMBLE_HEAD_DIP;
+        }
+        lean += m * lurchE * LURCH_LEAN * DEG;
         fitLean();
+        // (9) Bending round a corner: how fast it turns (degrees a tick, + = to its right).
+        float omega = Mth.wrapDegrees(entity.yBodyRot - entity.yBodyRotO);
+        turnRate = m * omega;
+        float turn = Mth.clamp(omega / BEND_FULL, -1.0f, 1.0f);
+        // (6) The head: its own tilt and quick roll, then the jerks against the lock (roll, pitch,
+        // sideways) and a tremor; it looks a little ahead into a bend.
         neckX = NECK_TILT * DEG;
         neckForward = NECK_FORWARD;
-        headRoll = restingTilt(seed) + RUN_HEAD_ROLL * DEG * noise(seed + 23, t, RUN_HEAD_ROLL_TICKS);
-        int oddArm = BacteriaRhythm.hash(seed + 600, runStamp) > 0.0f ? 0 : 1;
-        boolean oddAhead = BacteriaRhythm.hash(seed + 601, runStamp) > 0.0f;
-        float oddDelay = ASYM_DELAY_MIN + (ASYM_DELAY_MAX - ASYM_DELAY_MIN) * BacteriaRhythm.unit(seed + 602, runStamp);
-        for (int i = 0; i < 2; i++) {
-            // The right arm plants as the left foot lands (half a stride in), the left arm one
-            // stride later; the arm cycle is two strides.
-            float armPhase = (phase - 0.5f) * 0.5f + 0.5f * i;
-            if (i == oddArm && !oddAhead) {
-                armPhase -= oddDelay;
+        headRoll = restingTilt(seed) + RUN_HEAD_ROLL * DEG * noise(seed + 23, t, RUN_HEAD_ROLL_TICKS)
+                + m * DEG * (snapTurn(seed + 660, t, HEAD_SNAP_TICKS, HEAD_SNAP_JITTER, HEAD_SNAP_ROLL_MIN, HEAD_SNAP_ROLL_MAX)
+                + HEAD_TREMOR * noise(seed + 661, t, HEAD_TREMOR_TICKS));
+        headRoll = softLimit(headRoll, HEAD_ROLL_LIMIT * DEG, 15.0f * DEG);
+        headPitchAdd += m * snapTurn(seed + 662, t, HEAD_SNAP_TICKS, HEAD_SNAP_JITTER, HEAD_SNAP_PITCH_MIN, HEAD_SNAP_PITCH_MAX);
+        headYawAdd = m * snapTurn(seed + 663, t, HEAD_SNAP_TICKS, HEAD_SNAP_JITTER, HEAD_SNAP_YAW_MIN, HEAD_SNAP_YAW_MAX)
+                + HEAD_TURN_LEAD * turnRate;
+        // (1) The arms' own clocks: started from the stride when the run (re)starts.
+        float legRate = entity.gaitRate();
+        boolean stale = Float.isNaN(memory.runningAt) || t - memory.runningAt > RUN_ARM_STALE_TICKS;
+        if (fresh || stale || !memory.runArmsReady) {
+            for (int i = 0; i < 2; i++) {
+                float p = (phase - 0.5f) * 0.5f + 0.5f * i;
+                memory.runArm[i] = p - Mth.floor(p);
             }
-            armPhase -= Mth.floor(armPhase);
-            runArm(armPhase);
+            memory.runArmsReady = true;
+        }
+        int oddArm = BacteriaRhythm.hash(seed + 600, runStamp) > 0.0f ? 0 : 1;
+        float stumbleArms = STUMBLE_ARMS_MIN + (STUMBLE_ARMS_MAX - STUMBLE_ARMS_MIN) * BacteriaRhythm.unit(seed + 664, Mth.floor(t - sa));
+        float flingTwist = 0.0f;
+        float plantRate = 0.5f * speed / entity.strideFor(Math.max(speed, 1.0e-3f));
+        for (int i = 0; i < 2; i++) {
+            float side = i == 0 ? -1.0f : 1.0f;
+            float p = memory.runArm[i];
+            if (dt > 0.0f) {
+                // Half the stride rate, drifting faster or slower; while the claw is down, at
+                // exactly the rate its plain running pose was made for at this speed (plantRate),
+                // so the claw's sweep back matches how far the body really goes, however long
+                // or short the strides are just then...
+                boolean down = p < RUN_PLANT_END + 0.07f || p > 0.90f;
+                float drift = down ? 0.0f : RUN_ARM_DRIFT * noise(seed + 670 + i, t, RUN_ARM_DRIFT_TICKS);
+                p += dt * (down ? plantRate : 0.5f * legRate * (1.0f + drift));
+                // ...and coming up to the plant, eased back to its place in the stride (the right
+                // arm plants as the left foot lands, the left arm a stride later).
+                if (p - Mth.floor(p) >= RUN_ARM_RESYNC_FROM) {
+                    float behind = (phase - 0.5f) * 0.5f + 0.5f * i - p;
+                    behind -= Math.round(behind);
+                    p += Mth.clamp(behind, -RUN_ARM_RESYNC * dt, RUN_ARM_RESYNC * dt);
+                }
+                p -= Mth.floor(p);
+                memory.runArm[i] = p;
+            }
+            runArm(p);
             // Around the plant (not mid-swing) the planted claw may go further out and ahead (the
             // odd arm) or ahead instead of out to the side (a wall on that side).
-            float plantWeight = smooth(Math.abs(armPhase - 0.55f) / 0.3f);
-            if (i == oddArm && oddAhead) {
+            float plantWeight = smooth(Math.abs(p - 0.55f) / 0.3f);
+            if (i == oddArm) {
                 armBend += ASYM_BEND * plantWeight;
             }
             float wall = Mth.lerp(partial, memory.narrowO[i], memory.narrow[i]) * plantWeight;
             armRaise += NARROW_RAISE_ADD * wall;
             armOut += NARROW_OUT_ADD * wall;
-            raise[i] = Mth.lerp(m, TRIPOD_RAISE, armRaise) * DEG;
-            out[i] = Mth.lerp(m, TRIPOD_OUT, armOut) * DEG;
-            bend[i] = Mth.lerp(m, TRIPOD_BEND, armBend) * DEG;
-            foreOut[i] = Mth.lerp(m, TRIPOD_FORE, armFore) * DEG;
+            armPlant[i] = m * (1.0f - window(p, RUN_PLANT_END, RUN_PLANT_END + 0.07f, 0.90f, 0.99f));
+            // How loose the arm is for the chaos: none of it from just before the claw lands until
+            // just after it lifts (so it lands on its plain running pose and stays planted).
+            float loose = m * window(p, RUN_LOOSE_FROM, RUN_LOOSE_FULL, RUN_LOOSE_END, RUN_LOOSE_GONE);
+            // (2) Flailing, each joint with its own noise...
+            int s = seed + 680 + 10 * i;
+            float dRaise = FLAIL_RAISE_SLOW * noise(s, t, FLAIL_RAISE_SLOW_TICKS) + FLAIL_RAISE_FAST * noise(s + 1, t, FLAIL_RAISE_FAST_TICKS);
+            float dOut = FLAIL_OUT_SLOW * noise(s + 2, t, FLAIL_OUT_SLOW_TICKS) + FLAIL_OUT_FAST * noise(s + 3, t, FLAIL_OUT_FAST_TICKS);
+            float dBend = FLAIL_BEND * noise(s + 4, t, FLAIL_BEND_TICKS);
+            float dFore = FLAIL_FORE * noise(s + 5, t, FLAIL_FORE_TICKS);
+            // (4) ...a fling, the forearm snapping straight a tick later (a whip)...
+            float late = fling(seed, t - FLING_FOREARM_LAG, i);
+            float fl = fling(seed, t, i);
+            dRaise += fl * flingRaise;
+            dOut += fl * flingOut * (flingUp ? 1.0f : FLING_FORWARD_OUT);
+            dBend -= late * FLING_STRAIGHTEN;
+            flingTwist += side * FLING_TWIST * DEG * fl * loose;
+            // (7) ...thrown out to catch a stumble, flung forward in a lurch...
+            dOut += stumbleE * stumbleArms;
+            dRaise += lurchE * (LURCH_RAISE - armRaise);
+            // (9) ...and round a bend the outer arm swings wide while the inner one tucks in.
+            float outer = side * turn;
+            dOut += outer > 0.0f ? BEND_ARM_OUT * outer : BEND_ARM_TUCK * outer;
+            // The plain running pose (kept for the ceiling check), then the chaos on top.
+            keyRaise[i] = Mth.lerp(m, TRIPOD_RAISE, armRaise) * DEG;
+            keyOut[i] = Mth.lerp(m, TRIPOD_OUT, armOut) * DEG;
+            keyBend[i] = Mth.lerp(m, TRIPOD_BEND, armBend) * DEG;
+            keyFore[i] = Mth.lerp(m, TRIPOD_FORE, armFore) * DEG;
+            raise[i] = keyRaise[i] + loose * dRaise * DEG;
+            out[i] = keyOut[i] + loose * dOut * DEG;
+            bend[i] = keyBend[i] + loose * dBend * DEG;
+            foreOut[i] = keyFore[i] + loose * dFore * DEG;
             curl[i] = Mth.lerp(m, 10.0f, armCurl) * DEG;
             spread[i] = 25.0f * DEG;
             fingerCycle[i] = m * armFinger;
-            armPlant[i] = m * (1.0f - window(armPhase, RUN_PLANT_END, RUN_PLANT_END + 0.07f, 0.90f, 0.99f));
         }
+        // (4) The shoulders twist toward a thrown arm.
+        twist += flingTwist;
         fingersCycle = true;
         aimMode = LOCK_EXACT;
     }
@@ -2351,6 +2683,126 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     }
 
     /**
+     * Running, after the springs and the step's waves: an arm thrown up (a flail, a fling, a
+     * spring's overshoot) is eased back toward its plain running pose just enough that no part of
+     * it goes through the ceiling; and a claw on the floor stays exactly where it landed, whatever
+     * the torso's roll and twist and the changing strides do. It is held from the moment it is
+     * fully planted (PLANT_LOCK_AT), settling onto the floor over PLANT_LAND_TICKS (the torso's
+     * roll may have brought it down a little high or low), and let go as it lifts. Its angles are
+     * nudged (polishArm, starting from the arm as shown, so it keeps its shape) until the claw is
+     * on that spot; if the spot gets out of reach the hold lets go over a few ticks rather than
+     * snapping. Both tell the springs, so the arm carries on smoothly from there.
+     */
+    private void runArms(BacteriaPoseState m, float t, float dt) {
+        for (int i = 0; i < 2; i++) {
+            if (chaos > 0.0f) {
+                keepUnderCeiling(m, i);
+            }
+            float e = chaos > 0.0f ? armPlant[i] : 0.0f;
+            if (e <= 0.01f) {
+                m.plantLocked[i] = false;
+                continue;
+            }
+            if (!m.plantLocked[i]) {
+                if (e >= PLANT_LOCK_AT * chaos) {
+                    // It has just landed: this is the spot.
+                    clawPoint(i, raise[i], out[i], splay[i], bend[i], foreOut[i], curl[i]);
+                    toWorld(clawMX, clawMY, clawMZ);
+                    m.plantX[i] = worldX;
+                    m.plantY[i] = worldY;
+                    m.plantZ[i] = worldZ;
+                    m.plantAt[i] = t;
+                    m.plantHold[i] = 1.0f;
+                    m.plantLocked[i] = true;
+                }
+                continue;
+            }
+            float land = smooth((t - m.plantAt[i]) / PLANT_LAND_TICKS);
+            toModel(m.plantX[i], Mth.lerp(land, m.plantY[i], bodyY + PLANT_FLOOR), m.plantZ[i]);
+            float tx = modelX;
+            float ty = modelY;
+            float tz = modelZ;
+            ikRaise = raise[i];
+            ikOut = out[i];
+            ikSplay = splay[i];
+            ikBend = bend[i];
+            ikFore = foreOut[i];
+            polishArm(i, tx, ty, tz, curl[i]);
+            clawPoint(i, ikRaise, ikOut, ikSplay, ikBend, ikFore, curl[i]);
+            float mx = tx - clawMX;
+            float my = ty - clawMY;
+            float mz = tz - clawMZ;
+            float miss = Mth.sqrt(mx * mx + my * my + mz * mz);
+            // Out of reach: let go, but never faster than PLANT_LET_GO a tick (a slide, not a jump).
+            float fit = 1.0f - smooth((miss - PLANT_MISS_OK) / PLANT_MISS_FADE);
+            m.plantHold[i] = Math.max(fit, m.plantHold[i] - PLANT_LET_GO * dt);
+            e *= m.plantHold[i];
+            raise[i] = Mth.lerp(e, raise[i], ikRaise);
+            out[i] = Mth.lerp(e, out[i], ikOut);
+            bend[i] = Mth.lerp(e, bend[i], ikBend);
+            pinSpring(m, CH_RAISE + i, raise[i], e);
+            pinSpring(m, CH_OUT + i, out[i], e);
+            pinSpring(m, CH_BEND + i, bend[i], e);
+        }
+    }
+
+    /**
+     * Running: eases arm {@code i} back toward its plain running pose (keyRaise...) just enough
+     * that no part of it is above runCeilingY. If even the plain pose pokes up (the torso rolled
+     * far over in a stumble, or a very low ceiling), the arm is lowered (less raise) as far as it
+     * must be, up to CEILING_DROP.
+     */
+    private void keepUnderCeiling(BacteriaPoseState m, int i) {
+        if (armTop(i, 0.0f, 0.0f) >= runCeilingY) {
+            return; // under it already (model y: up is smaller)
+        }
+        // How far back it must go: halve the step each time.
+        float lo = 0.0f;
+        float hi = 1.0f;
+        float drop = 0.0f;
+        if (armTop(i, 1.0f, 0.0f) >= runCeilingY) {
+            for (int k = 0; k < CEILING_STEPS; k++) {
+                float mid = 0.5f * (lo + hi);
+                if (armTop(i, mid, 0.0f) >= runCeilingY) {
+                    hi = mid;
+                } else {
+                    lo = mid;
+                }
+            }
+        } else {
+            float dropLo = 0.0f;
+            drop = CEILING_DROP * DEG;
+            for (int k = 0; k < CEILING_STEPS; k++) {
+                float mid = 0.5f * (dropLo + drop);
+                if (armTop(i, 1.0f, mid) >= runCeilingY) {
+                    drop = mid;
+                } else {
+                    dropLo = mid;
+                }
+            }
+        }
+        raise[i] = Mth.lerp(hi, raise[i], keyRaise[i]) - drop;
+        out[i] = Mth.lerp(hi, out[i], keyOut[i]);
+        bend[i] = Mth.lerp(hi, bend[i], keyBend[i]);
+        foreOut[i] = Mth.lerp(hi, foreOut[i], keyFore[i]);
+        pinSpring(m, CH_RAISE + i, raise[i], hi);
+        pinSpring(m, CH_OUT + i, out[i], hi);
+        pinSpring(m, CH_BEND + i, bend[i], hi);
+        pinSpring(m, CH_FORE + i, foreOut[i], hi);
+    }
+
+    /**
+     * The highest point (model y; up is smaller) of arm {@code i}'s elbow, wrist and claw tip,
+     * eased share {@code k} of the way back to its plain running pose and lowered by {@code drop}
+     * (radians of raise).
+     */
+    private float armTop(int i, float k, float drop) {
+        clawPoint(i, Mth.lerp(k, raise[i], keyRaise[i]) - drop, Mth.lerp(k, out[i], keyOut[i]), splay[i],
+                Mth.lerp(k, bend[i], keyBend[i]), Mth.lerp(k, foreOut[i], keyFore[i]), curl[i]);
+        return Math.min(clawMY, Math.min(clawElbowY, clawWristY));
+    }
+
+    /**
      * Feels for a hold for arm {@code i} near the place ({@code px}, {@code py}, {@code pz}): from
      * the shoulder along GRIP_ANGLES (straight ahead round to that arm's side) at GRIP_HEIGHTS
      * above its feet, out to GRIP_FAR, the first solid block each way. A hold must be on an
@@ -2520,7 +2972,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         rotation(matSpine, sway, spineYaw, lean);
         float sy = -SPINE + (i == lowArm ? LOW_SHOULDER_DROP : 0.0f);
         float sz = i == lowArm ? -LOW_SHOULDER_FORWARD : 0.0f;
-        shX = matSpine[0] * side * SHOULDER_HALF + matSpine[1] * sy + matSpine[2] * sz;
+        shX = chestX + matSpine[0] * side * SHOULDER_HALF + matSpine[1] * sy + matSpine[2] * sz;
         shY = 24.0f - HIP_HEIGHT + drop + bob + matSpine[3] * side * SHOULDER_HALF + matSpine[4] * sy + matSpine[5] * sz;
         shZ = matSpine[6] * side * SHOULDER_HALF + matSpine[7] * sy + matSpine[8] * sz;
     }
@@ -2573,18 +3025,19 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         ikOut = bestOut;
         ikSplay = bestSplay;
         ikBend = bestBend;
+        ikFore = 0.0f;
         polishArm(i, tx, ty, tz, c);
     }
 
     /**
      * Nudges ikRaise, ikOut and ikBend (damped least squares: a cautious Newton step on the three
-     * angles, measured by moving each a little) until the claw is within IK_CLOSE px of the point.
-     * A nudge that would lift the elbow over the limit is not taken (better a claw a hair off its
-     * hold than an elbow sticking up over the head).
+     * angles, measured by moving each a little; ikSplay and the forearm's swing ikFore stay put)
+     * until the claw is within IK_CLOSE px of the point. A nudge that would lift the elbow over
+     * the limit is not taken (better a claw a hair off its hold than an elbow over the head).
      */
     private void polishArm(int i, float tx, float ty, float tz, float c) {
         for (int it = 0; it < IK_POLISH; it++) {
-            clawPoint(i, ikRaise, ikOut, ikSplay, ikBend, 0.0f, c);
+            clawPoint(i, ikRaise, ikOut, ikSplay, ikBend, ikFore, c);
             float ex = tx - clawMX;
             float ey = ty - clawMY;
             float ez = tz - clawMZ;
@@ -2596,15 +3049,15 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
             float cy = clawMY;
             float cz = clawMZ;
             // How the claw moves for a small turn of each angle (columns r, o, b).
-            clawPoint(i, ikRaise + IK_NUDGE, ikOut, ikSplay, ikBend, 0.0f, c);
+            clawPoint(i, ikRaise + IK_NUDGE, ikOut, ikSplay, ikBend, ikFore, c);
             float rx = (clawMX - cx) / IK_NUDGE;
             float ry = (clawMY - cy) / IK_NUDGE;
             float rz = (clawMZ - cz) / IK_NUDGE;
-            clawPoint(i, ikRaise, ikOut + IK_NUDGE, ikSplay, ikBend, 0.0f, c);
+            clawPoint(i, ikRaise, ikOut + IK_NUDGE, ikSplay, ikBend, ikFore, c);
             float ox = (clawMX - cx) / IK_NUDGE;
             float oy = (clawMY - cy) / IK_NUDGE;
             float oz = (clawMZ - cz) / IK_NUDGE;
-            clawPoint(i, ikRaise, ikOut, ikSplay, ikBend + IK_NUDGE, 0.0f, c);
+            clawPoint(i, ikRaise, ikOut, ikSplay, ikBend + IK_NUDGE, ikFore, c);
             float bx = (clawMX - cx) / IK_NUDGE;
             float by = (clawMY - cy) / IK_NUDGE;
             float bz = (clawMZ - cz) / IK_NUDGE;
@@ -2625,7 +3078,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
             float s0 = (g0 * (a11 * a22 - a12 * a12) - a01 * (g1 * a22 - a12 * g2) + a02 * (g1 * a12 - a11 * g2)) / det;
             float s1 = (a00 * (g1 * a22 - a12 * g2) - g0 * (a01 * a22 - a12 * a02) + a02 * (a01 * g2 - g1 * a02)) / det;
             float s2 = (a00 * (a11 * g2 - g1 * a12) - a01 * (a01 * g2 - g1 * a02) + g0 * (a01 * a12 - a11 * a02)) / det;
-            clawPoint(i, ikRaise + s0, ikOut + s1, ikSplay, ikBend + s2, 0.0f, c);
+            clawPoint(i, ikRaise + s0, ikOut + s1, ikSplay, ikBend + s2, ikFore, c);
             if (clawElbowY < elbowCeilingY && clawElbowY < elbowBefore) {
                 return;
             }
@@ -2914,6 +3367,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
      * smoothly at a believable speed, keeping whatever speed the joint already had, so nothing
      * snaps and nothing starts from a standstill. The upper arm leads, the forearm swings on a
      * little after it, the hand and fingers a little more; the body is heavy and doesn't wobble.
+     * Running, everything is looser and quicker (the pass-8 RUN_* springs), so it whips and rings.
      * Planted arms, stepping legs, the leap's fling and the swipe's strike follow stiffly.
      */
     private void springs(BacteriaPoseState memory, float dt, boolean fresh, boolean hurt) {
@@ -2921,22 +3375,33 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         springDt = dt;
         springFresh = fresh || !memory.springsReady;
         memory.springsReady = true;
-        float armSpeed = ARM_MAX_SPEED * DEG;
+        // Running (chaos), the arms are looser, quicker and allowed to turn faster (RUN_*); just
+        // after stopping they coast on with the speed they had (coast).
+        float wild = chaos;
+        float armSpeed = Mth.lerp(wild, ARM_MAX_SPEED, RUN_ARM_MAX_SPEED) * DEG;
+        float pull = 1.0f;
+        if (coast > 0.0f) {
+            armSpeed = Math.min(armSpeed, COAST_MAX_SPEED * DEG);
+            pull = COAST_PULL;
+        }
         float target = TARGET_MAX_SPEED * DEG;
+        float armTarget = Mth.lerp(wild, TARGET_MAX_SPEED, RUN_TARGET_MAX_SPEED) * DEG;
+        // The stutter: arms and head hold what they show for a tick or two (springHold).
+        springHold = stutter;
         for (int i = 0; i < 2; i++) {
             boolean strike = strikeBoth || strikeArm == i;
             float stiff = 1.0f + PLANT_STIFFEN * armPlant[i];
-            float upperHz = strike ? STRIKE_HZ : UPPER_ARM_HZ * stiff;
-            float upperDamp = strike ? 1.0f : UPPER_ARM_DAMP;
-            float foreHz = strike ? STRIKE_HZ : FOREARM_HZ * stiff;
+            float upperHz = strike ? STRIKE_HZ : Mth.lerp(wild, UPPER_ARM_HZ, RUN_UPPER_ARM_HZ) * stiff * pull;
+            float upperDamp = strike ? 1.0f : Mth.lerp(wild, UPPER_ARM_DAMP, RUN_UPPER_ARM_DAMP);
+            float foreHz = strike ? STRIKE_HZ : Mth.lerp(wild, FOREARM_HZ, RUN_FOREARM_HZ) * stiff * pull;
             // A planted forearm is damped more too, so it doesn't swing the claw about.
-            float foreDamp = strike ? 1.0f : Mth.lerp(armPlant[i], FOREARM_DAMP, 0.9f);
-            float handHz = strike ? STRIKE_HZ : HAND_HZ;
-            float handDamp = strike ? 1.0f : HAND_DAMP;
+            float foreDamp = strike ? 1.0f : Mth.lerp(armPlant[i], Mth.lerp(wild, FOREARM_DAMP, RUN_FOREARM_DAMP), 0.9f);
+            float handHz = strike ? STRIKE_HZ : Mth.lerp(wild, HAND_HZ, RUN_HAND_HZ) * pull;
+            float handDamp = strike ? 1.0f : Mth.lerp(wild, HAND_DAMP, RUN_HAND_DAMP);
             float top = strike ? STRIKE_MAX_SPEED * DEG : armSpeed;
             // The fling and the strike get no lead from the pose's own speed: a lead overshoots
             // when a fast move stops (the leap's arms swung up past the T, above the head).
-            float follow = strike ? 0.0f : target;
+            float follow = strike ? 0.0f : armTarget;
             raise[i] = spring(CH_RAISE + i, raise[i], upperHz, upperDamp, top, follow);
             out[i] = spring(CH_OUT + i, out[i], upperHz, upperDamp, top, follow);
             splay[i] = spring(CH_SPLAY + i, splay[i], upperHz, upperDamp, top, follow);
@@ -2950,18 +3415,28 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
                         ARM_MAX_SPEED, TARGET_MAX_SPEED);
             }
         }
-        float bodyHz = hurt ? BODY_HZ * HURT_STIFFEN : BODY_HZ;
-        float bodySpeed = BODY_MAX_SPEED * DEG;
-        lean = spring(CH_LEAN, lean, bodyHz, BODY_DAMP, bodySpeed, target);
-        sway = spring(CH_SWAY, sway, bodyHz, BODY_DAMP, bodySpeed, target);
-        legSplay = spring(CH_LEG_SPLAY, legSplay, BODY_HZ, BODY_DAMP, bodySpeed, target);
-        neckX = spring(CH_NECK_X, neckX, NECK_HZ, NECK_DAMP, bodySpeed, target);
-        neckZ = spring(CH_NECK_Z, neckZ, NECK_HZ, NECK_DAMP, bodySpeed, target);
-        headRoll = spring(CH_HEAD_ROLL, headRoll, NECK_HZ, NECK_DAMP, bodySpeed, target);
+        springHold = false;
+        // The body: heavy and steady, except running (stiffer but looser, so the jolts show and
+        // ring once) and just after it stops (loose, so the skid sways on).
+        float bodyHz = Mth.lerp(wild, BODY_HZ, RUN_BODY_HZ) * (hurt ? HURT_STIFFEN : 1.0f);
+        float bodyDamp = Mth.lerp(wild, BODY_DAMP, RUN_BODY_DAMP);
+        bodyDamp = Mth.lerp(skid, bodyDamp, Math.min(bodyDamp, SKID_BODY_DAMP));
+        float bodySpeed = Mth.lerp(wild, BODY_MAX_SPEED, RUN_BODY_MAX_SPEED) * DEG;
+        float neckHz = Mth.lerp(wild, NECK_HZ, RUN_NECK_HZ);
+        float neckDamp = Mth.lerp(wild, NECK_DAMP, RUN_NECK_DAMP);
+        lean = spring(CH_LEAN, lean, bodyHz, bodyDamp, bodySpeed, target);
+        sway = spring(CH_SWAY, sway, bodyHz, bodyDamp, bodySpeed, target);
+        legSplay = spring(CH_LEG_SPLAY, legSplay, BODY_HZ, BODY_DAMP, BODY_MAX_SPEED * DEG, target);
+        neckX = spring(CH_NECK_X, neckX, neckHz, neckDamp, bodySpeed, target);
+        neckZ = spring(CH_NECK_Z, neckZ, neckHz, neckDamp, bodySpeed, target);
+        springHold = stutter;
+        headRoll = spring(CH_HEAD_ROLL, headRoll, neckHz, neckDamp, bodySpeed, target);
+        // (Degrees.)
+        headPitchAdd = spring(CH_HEAD_PITCH, headPitchAdd, Mth.lerp(wild, HEAD_PITCH_HZ, RUN_HEAD_PITCH_HZ), NECK_DAMP,
+                HEAD_PITCH_MAX_SPEED, TARGET_MAX_SPEED);
+        springHold = false;
         neckForward = spring(CH_NECK_FORWARD, neckForward, NECK_HZ, NECK_DAMP, PUSH_MAX_SPEED, PUSH_TARGET_MAX_SPEED);
         headForward = spring(CH_HEAD_FORWARD, headForward, NECK_HZ, NECK_DAMP, PUSH_MAX_SPEED, PUSH_TARGET_MAX_SPEED);
-        // (Degrees.)
-        headPitchAdd = spring(CH_HEAD_PITCH, headPitchAdd, HEAD_PITCH_HZ, NECK_DAMP, HEAD_PITCH_MAX_SPEED, TARGET_MAX_SPEED);
         freeWeight = spring(CH_FREE, freeWeight, NECK_HZ, 1.0f, 0.5f, 1.0f);
         // Between poses the legs move like the body (a spring); once it is stepping they follow
         // their feet exactly, so a planted foot stays put on the floor (blended in as the stride
@@ -2978,6 +3453,15 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         float standing = Math.min(legDrop(thighR, shinR), legDrop(thighL, shinL));
         drop = Mth.lerp(Mth.clamp(gait, 0.0f, 1.0f), standing, gaitCrouch);
         gaitWeight = Mth.clamp(gait, 0.0f, 1.0f);
+        // The shoulders' own twist, the chest's jerk and the legs' per-stride splay ease like the
+        // body (all three are 0 except while running); leaning into a bend has its own loose
+        // spring, so it swings back past upright as it straightens.
+        spineYaw = spring(CH_TWIST, twist, bodyHz, bodyDamp, bodySpeed, target);
+        chestX = spring(CH_CHEST, chestX, bodyHz, bodyDamp, PUSH_MAX_SPEED, PUSH_TARGET_MAX_SPEED);
+        legJitter[0] = spring(CH_SPLAY_JIT, legJitter[0], LEG_HZ, LEG_DAMP, legSpeed, target * 2.0f);
+        legJitter[1] = spring(CH_SPLAY_JIT + 1, legJitter[1], LEG_HZ, LEG_DAMP, legSpeed, target * 2.0f);
+        float bendRoll = -Mth.clamp(TURN_ROLL_GAIN * turnRate, -TURN_ROLL_MAX, TURN_ROLL_MAX) * DEG;
+        sway += spring(CH_TURN_ROLL, bendRoll, TURN_ROLL_HZ, TURN_ROLL_DAMP, bodySpeed, target);
     }
 
     /**
@@ -3013,6 +3497,12 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
             m.springVel[ch] = 0.0f;
             m.springLastTarget[ch] = target;
             return target;
+        }
+        if (springHold) {
+            // Held (the stutter): it shows the same as last frame, but keeps up with where its
+            // target went, so it doesn't take the catch-up afterwards as a fling.
+            m.springLastTarget[ch] = target;
+            return m.springPos[ch];
         }
         float dt = springDt;
         if (dt <= 0.0f) {
@@ -3056,7 +3546,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         sway -= w * Mth.lerp(g, WALK_ROCK, RUN_ROCK) * DEG * Mth.sin(Mth.TWO_PI * (phase - ROCK_LAG));
         // The right leg is forward when it lands (phase 0): hips turned right side forward (-).
         hipYaw = -w * Mth.lerp(g, WALK_HIP_YAW, RUN_HIP_YAW) * DEG * Mth.cos(Mth.TWO_PI * phase);
-        spineYaw = -SHOULDER_COUNTER * hipYaw;
+        spineYaw -= SHOULDER_COUNTER * hipYaw;
         for (int i = 0; i < 2; i++) {
             float side = i == 0 ? -1.0f : 1.0f;
             out[i] += side * spineYaw * armPlant[i];
@@ -3145,7 +3635,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         if (target != null || aimPointOn) {
             // Where its head is in model space: hips, up the spine, the neck, about 4.6 px up it.
             float hipY = 24.0f - HIP_HEIGHT + drop + bob;
-            float nx = matA[1] * -SPINE + matA[2] * -neckForward;
+            float nx = chestX + matA[1] * -SPINE + matA[2] * -neckForward;
             float ny = hipY + matA[4] * -SPINE + matA[5] * -neckForward;
             float nz = matA[7] * -SPINE + matA[8] * -neckForward;
             float hz0 = -0.4f - headForward;
@@ -3166,7 +3656,9 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
             wantYaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0f;
             wantPitch = (float) (-Mth.atan2(dy, Math.sqrt(dx * dx + dz * dz)) * Mth.RAD_TO_DEG);
             if (aimMode == LOCK_EXACT) {
-                hz = AIM_EXACT_HZ;
+                // (A little softer while running, so the torso's jolts show in the head for a
+                // frame before it finds you again.)
+                hz = Mth.lerp(chaos, AIM_EXACT_HZ, RUN_AIM_HZ);
                 damp = AIM_EXACT_DAMP;
                 topSpeed = AIM_EXACT_SPEED;
             } else if (aimMode == LOCK_FAST) {
@@ -3225,7 +3717,8 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
             memory.aimPitchSpeed = Mth.clamp(memory.aimPitchSpeed, -topSpeed, topSpeed);
             memory.aimYaw = Mth.wrapDegrees(memory.aimYaw);
         }
-        float yaw = softLimit(Mth.wrapDegrees(memory.aimYaw - bodyYaw), HEAD_YAW_LIMIT, HEAD_YAW_SOFT);
+        // (Plus the running head's jerk sideways, and its look ahead into a bend.)
+        float yaw = softLimit(Mth.wrapDegrees(memory.aimYaw - bodyYaw) + headYawAdd, HEAD_YAW_LIMIT, HEAD_YAW_SOFT);
         float pitch = Mth.clamp(memory.aimPitch, -70.0f, 85.0f);
         if (freeWeight > 0.0f) {
             yaw = Mth.lerp(freeWeight, yaw, headYawFree);
@@ -3312,6 +3805,13 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         spineYaw = 0.0f;
         gaitTarget = 0.0f;
         gaitCrouch = 0.0f;
+        chaos = 0.0f;
+        twist = 0.0f;
+        chestX = 0.0f;
+        headYawAdd = 0.0f;
+        turnRate = 0.0f;
+        legJitter[0] = 0.0f;
+        legJitter[1] = 0.0f;
         aimMode = AIM_NONE;
         fingersLive = true;
         fingersCycle = false;
@@ -3353,7 +3853,17 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         float hipHeight = HIP_HEIGHT - crouch;
         for (int leg = 0; leg < 2; leg++) {
             float p = phase + 0.5f * leg;
-            p -= Mth.floor(p);
+            int n = Mth.floor(p); // which of this foot's strides it is on
+            p -= n;
+            // Running, every stride is its own (chaos): the foot lifts higher or lower, now and
+            // then it scuffs, and the leg splays a little more or less (changing only while the
+            // foot is in the air, so a planted foot never slides sideways).
+            float liftHere = lift;
+            float jitter = 0.0f;
+            if (chaos > 0.0f) {
+                liftHere *= Mth.lerp(chaos, 1.0f, strideLift(n, leg));
+                jitter = strideSplay(n, leg);
+            }
             float z;     // where the foot is, ahead (-) or behind (+) the hip (px)
             float depth; // how far below the hip (px)
             if (p < stanceShare) {
@@ -3370,8 +3880,12 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
                 z = (2.0f * u3 - 3.0f * u2 + 1.0f) * (step / 2.0f) + (u3 - 2.0f * u2 + u) * slide
                         + (-2.0f * u3 + 3.0f * u2) * (-step / 2.0f) + (u3 - u2) * slide;
                 float arc = (1.0f - skew) * 4.0f * u * (1.0f - u) + skew * 6.75f * u * (1.0f - u) * (1.0f - u);
-                depth = hipHeight - lift * arc;
+                depth = hipHeight - liftHere * arc;
+                if (chaos > 0.0f) {
+                    jitter = Mth.lerp(smooth(u), jitter, strideSplay(n + 1, leg));
+                }
             }
+            legJitter[leg] = chaos * jitter * DEG;
             footAngles(z, depth);
             if (leg == 0) {
                 thighR = Mth.lerp(m, thighR, footThigh);
@@ -3383,6 +3897,20 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         }
         gaitTarget = m;
         gaitCrouch = crouch;
+    }
+
+    /** How high (times the usual) a running foot lifts on its stride {@code n} (leg 0 = right): a little more or less, now and then a scuff. */
+    private float strideLift(int n, int leg) {
+        int k = 2 * n + leg;
+        if (BacteriaRhythm.unit(gaitSeed + 751, k) < 1.0f / SCUFF_EVERY) {
+            return SCUFF_LIFT;
+        }
+        return 1.0f + STEP_LIFT_JITTER * BacteriaRhythm.hash(gaitSeed + 752, k);
+    }
+
+    /** How much more (or less) a running leg splays on its stride {@code n} (degrees). */
+    private float strideSplay(int n, int leg) {
+        return STEP_SPLAY_JITTER * BacteriaRhythm.hash(gaitSeed + 753, 2 * n + leg);
     }
 
     /**
@@ -3465,7 +3993,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         // The shoulder: up the spine to the shoulder bar, out to this side (and the lopsided offset).
         float sy = -SPINE + (i == lowArm ? LOW_SHOULDER_DROP : 0.0f);
         float sz = i == lowArm ? -LOW_SHOULDER_FORWARD : 0.0f;
-        float x = matSpine[0] * side * SHOULDER_HALF + matSpine[1] * sy + matSpine[2] * sz;
+        float x = chestX + matSpine[0] * side * SHOULDER_HALF + matSpine[1] * sy + matSpine[2] * sz;
         float y = 24.0f - HIP_HEIGHT + drop + bob + matSpine[3] * side * SHOULDER_HALF + matSpine[4] * sy + matSpine[5] * sz;
         float z = matSpine[6] * side * SHOULDER_HALF + matSpine[7] * sy + matSpine[8] * sz;
         // Upper arm, forearm, then the middle claw (the same points the arm parts are built from).
@@ -3476,6 +4004,7 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         x += matFore[0] * side * 1.5f + matFore[1] * FOREARM - matFore[2] * 0.5f;
         y += matFore[3] * side * 1.5f + matFore[4] * FOREARM - matFore[5] * 0.5f;
         z += matFore[6] * side * 1.5f + matFore[7] * FOREARM - matFore[8] * 0.5f;
+        clawWristY = y;
         x += matHand[0] * side * 0.9f * ARM_STRETCH + matHand[1] * CLAW_TIP;
         y += matHand[3] * side * 0.9f * ARM_STRETCH + matHand[4] * CLAW_TIP;
         z += matHand[6] * side * 0.9f * ARM_STRETCH + matHand[7] * CLAW_TIP;
@@ -3500,8 +4029,9 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         rightLeg.xRot = thighR;
         leftLeg.xRot = thighL;
         // Feet apart: each leg splays out to its own side (the right leg is on the -X side).
-        rightLeg.zRot = legSplay;
-        leftLeg.zRot = -legSplay;
+        // Running, each stride splays a little differently (legJitter).
+        rightLeg.zRot = legSplay + legJitter[0];
+        leftLeg.zRot = -legSplay - legJitter[1];
         // The step's twist: the hips (legs) turn one way, the shoulders (spine) the other.
         rightLeg.yRot = hipYaw;
         leftLeg.yRot = hipYaw;
@@ -3510,6 +4040,8 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
         leftShin.xRot = shinL;
         spine.xRot = lean;
         spine.zRot = sway;
+        // The chest's sideways jerk (running).
+        spine.x += chestX;
         neck.xRot = neckX;
         neck.zRot = neckZ;
         neck.z -= neckForward;
@@ -3575,20 +4107,39 @@ public class BacteriaModel extends HierarchicalModel<Bacteria> {
     // ------------------------------------------------------------------ timing
 
     /**
-     * Smooth noise from about -1 to 1: a new random value every {@code period} ticks, with a
-     * curve through them that keeps gliding (it never stops at one and sets off again).
+     * A jerky offset (degrees, lo to hi either way): held, then at the start of every slot
+     * (period +- jitter ticks) flicked to a new one over HEAD_SNAP_EASE ticks (eased, so it is a
+     * flick, not a jump). The running head's jerks against its lock.
      */
-    private static float noise(int seed, float t, float period) {
-        float x = t / period;
-        int b = Mth.floor(x);
-        float u = x - b;
-        float y0 = BacteriaRhythm.hash(seed, b - 1);
-        float y1 = BacteriaRhythm.hash(seed, b);
-        float y2 = BacteriaRhythm.hash(seed, b + 1);
-        float y3 = BacteriaRhythm.hash(seed, b + 2);
-        // A Catmull-Rom curve through the four nearest values.
-        return 0.5f * (2.0f * y1 + (y2 - y0) * u + (2.0f * y0 - 5.0f * y1 + 4.0f * y2 - y3) * u * u
-                + (3.0f * y1 - y0 - 3.0f * y2 + y3) * u * u * u);
+    private static float snapTurn(int seed, float t, float period, float jitter, float lo, float hi) {
+        int b = BacteriaRhythm.slot(seed, t, period, jitter);
+        float a = t - BacteriaRhythm.slotStart(seed, b, period, jitter);
+        float from = spread(BacteriaRhythm.hash(seed, b - 1), lo, hi);
+        float to = spread(BacteriaRhythm.hash(seed, b), lo, hi);
+        return from + (to - from) * smooth(a / HEAD_SNAP_EASE);
+    }
+
+    /**
+     * How far arm {@code i} is into a fling at time {@code t} (0-1: up in FLING_RISE ticks, held,
+     * back down), and how big this one is (into flingRaise/flingOut/flingUp). The two arms take
+     * turns in a single row of slots (FLING_SLOT +- FLING_JITTER ticks), so each arm is flung
+     * every 10-22 ticks and the two never start one together.
+     */
+    private float fling(int seed, float t, int i) {
+        int b = BacteriaRhythm.slot(seed + 690, t, FLING_SLOT, FLING_JITTER);
+        if ((b & 1) != i) {
+            b--; // that slot is the other arm's: this arm's latest is the one before
+        }
+        float a = t - BacteriaRhythm.slotStart(seed + 690, b, FLING_SLOT, FLING_JITTER);
+        float hold = FLING_HOLD_MIN + (FLING_HOLD_MAX - FLING_HOLD_MIN) * BacteriaRhythm.unit(seed + 691, b);
+        float fall = FLING_FALL_MIN + (FLING_FALL_MAX - FLING_FALL_MIN) * BacteriaRhythm.unit(seed + 692, b);
+        flingRaise = FLING_RAISE_MIN + (FLING_RAISE_MAX - FLING_RAISE_MIN) * BacteriaRhythm.unit(seed + 693, b);
+        flingOut = FLING_OUT_MIN + (FLING_OUT_MAX - FLING_OUT_MIN) * BacteriaRhythm.unit(seed + 694, b);
+        flingUp = BacteriaRhythm.hash(seed + 695, b) > 0.0f;
+        if (a < FLING_RISE) {
+            return smooth(a / FLING_RISE);
+        }
+        return a < FLING_RISE + hold ? 1.0f : 1.0f - smooth((a - FLING_RISE - hold) / fall);
     }
 
     /**

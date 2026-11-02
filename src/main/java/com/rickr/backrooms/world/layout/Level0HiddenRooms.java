@@ -544,8 +544,10 @@ public final class Level0HiddenRooms {
                         .setValue(HouseBedBlock.HEAD, head));
             }
             case 'X', 'L', 'C' -> {
+                // 'L' used to be a Supply Locker; lockers are saved for a future level, so it is now the
+                // filing cabinet that works the same way (same loot, same hiding spot).
                 BlockState box = c == 'X' ? ModBlocks.SUPPLY_CRATE.get().defaultBlockState()
-                        : c == 'L' ? ModBlocks.SUPPLY_LOCKER.get().defaultBlockState() : ModBlocks.SUPPLY_CABINET.get().defaultBlockState();
+                        : ModBlocks.SUPPLY_CABINET.get().defaultBlockState();
                 out.set(floor + 1, box.setValue(SupplyContainerBlock.FACING, toWorld(site, openSide(map, i, j))));
             }
             // The desk stands with its back to the wall, so whoever sat at it faced the wall.

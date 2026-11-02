@@ -157,13 +157,14 @@ public final class Level0ManilaRoom {
             return ModBlocks.WOODEN_CHAIR.get().defaultBlockState().setValue(FurnitureBlock.FACING, Direction.WEST);
         }
         if (a == 0 && b == 0) {
-            return ModBlocks.SUPPLY_LOCKER.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, Direction.SOUTH);
+            // Was a Supply Locker (saved for a future level); the supply filing cabinet works the same.
+            return ModBlocks.SUPPLY_CABINET.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, Direction.SOUTH);
         }
         if (a == 7 && b == 0) {
             return ModBlocks.SUPPLY_CABINET.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, Direction.SOUTH);
         }
         if (a == 0 && b == 7) {
-            return ModBlocks.SUPPLY_LOCKER.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, Direction.NORTH);
+            return ModBlocks.SUPPLY_CABINET.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, Direction.NORTH);
         }
         return ModBlocks.SUPPLY_CRATE.get().defaultBlockState(); // a == 7 && b == 7
     }
