@@ -3,6 +3,7 @@ package com.rickr.backrooms.world.layout;
 import com.rickr.backrooms.block.FurnitureBlock;
 import com.rickr.backrooms.block.SupplyContainerBlock;
 import com.rickr.backrooms.block.VolunteerNoteBlock;
+import com.rickr.backrooms.registry.Level39HouseBlocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import net.minecraft.core.Direction;
@@ -25,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
  * 8x8 room inside (a, b = i - 2, j - 2):
  * <pre>
  *        b=0   K . N . . . G C      K locker, C supply cabinet, X crate, N notes on the wall, G the guestbook
- *        b=1   . . . . . . . .
+ *        b=1   s . . . . . . B      s side table, B bookshelf (the volunteers' reading)
  *        b=2   . . . . . . . N
  *        b=3   . . h t t . . .      t the octagonal table (four quarters), h chairs
  *        b=4   . . . t t h . .
@@ -131,12 +132,13 @@ public final class Level0ManilaRoom {
         return r == MOAT_FLOOR || r == INNER_DOORWAY;
     }
 
-    /** True if a piece of furniture stands on interior cell (a, b): the table, the chairs, the four corners. */
+    /** True if a piece of furniture stands on interior cell (a, b): the table, the chairs, the four corners, the shelf and side table. */
     private static boolean hasFurniture(int a, int b) {
         boolean table = a >= 3 && a <= 4 && b >= 3 && b <= 4;
         boolean chair = (a == 2 && b == 3) || (a == 5 && b == 4);
         boolean corner = (a == 0 || a == 7) && (b == 0 || b == 7);
-        return table || chair || corner;
+        boolean extra = (a == 0 || a == 7) && b == 1;
+        return table || chair || corner || extra;
     }
 
     /** The piece of furniture standing on interior cell (a, b), or null for bare floor. */
@@ -162,6 +164,12 @@ public final class Level0ManilaRoom {
         }
         if (a == 7 && b == 0) {
             return ModBlocks.SUPPLY_CABINET.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, Direction.SOUTH);
+        }
+        if (a == 0 && b == 1) {
+            return Level39HouseBlocks.SIDE_TABLE.get().defaultBlockState().setValue(FurnitureBlock.FACING, Direction.EAST);
+        }
+        if (a == 7 && b == 1) {
+            return Level39HouseBlocks.BOOKSHELF.get().defaultBlockState().setValue(FurnitureBlock.FACING, Direction.WEST);
         }
         if (a == 0 && b == 7) {
             return ModBlocks.SUPPLY_CABINET.get().defaultBlockState().setValue(SupplyContainerBlock.FACING, Direction.NORTH);

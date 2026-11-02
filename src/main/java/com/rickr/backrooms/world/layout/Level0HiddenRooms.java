@@ -10,7 +10,9 @@ import com.rickr.backrooms.block.WallDoorDrawingBlock;
 import com.rickr.backrooms.registry.Level0Blocks;
 import com.rickr.backrooms.registry.Level0LightBlocks;
 import com.rickr.backrooms.registry.Level0HiddenBlocks;
+import com.rickr.backrooms.registry.Level0SetPieceBlocks;
 import com.rickr.backrooms.registry.Level39Blocks;
+import com.rickr.backrooms.registry.Level39HouseBlocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.Hash;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
@@ -85,6 +87,7 @@ public final class Level0HiddenRooms {
      *   f / e foot / head of a bed, X supply crate, L supply locker, C supply cabinet, d desk with a PC
      *   n a note on the wall next to this floor block, D a door drawn on this wall block
      *   l ladder up the wall (the crawlspace's way in) under a missing ceiling tile
+     *   r an old dresser, its back to the wall; g a ceiling tile fallen onto the carpet, its hole above
      *   S floor with a warm bare bulb above instead of a tube (the tenant's own light: on a battery,
      *     like a safe room's, so blackouts and outages never reach it)
      */
@@ -96,9 +99,9 @@ public final class Level0HiddenRooms {
             "mmWWWWsWWWWWWWWWWmm",
             "mmWWWW....neXWWWWmm",
             "mmWWWW.....f.WWWWmm",
-            "mmWWWW.......WWWWmm",
+            "mmWWWW......rWWWWmm",
             "mMWWWW...S...WWWWMm",
-            "mmWWWW.......WWWWmm",
+            "mmWWWW..g....WWWWmm",
             "mmWWWWwn.....WWWWmm",
             "mmWWWWWWWWWWWWWWWmm",
             "mmWWWWWWWWWWWWWWWmm",
@@ -116,10 +119,10 @@ public final class Level0HiddenRooms {
             "mmWWWWWBBK.WWWWWWmm",
             "mmWWWWWBK..WWWWWWmm",
             "mmWW...B..B....WWmm",
-            "mmWW...........WWmm",
+            "mmWW.....g.....WWmm",
             "mmWW..T.....T..WWmm",
             "mmWW.h.h.h.h.h.WWmm",
-            "mMWW...........WWMm",
+            "mMWWr..........WWMm",
             "mmWW.h.h.h.h.h.WWmm",
             "mmWW...........WWmm",
             "mmWW.h.h.H.h.h.WWmm",
@@ -192,11 +195,11 @@ public final class Level0HiddenRooms {
             "mmWssWWWWWWWWWWWWmm",
             "mmWWsWWWWDWWWWWWWmm",
             "mmWWs.n.......WWWmm",
-            "mmWWW.........WWWmm",
+            "mmWWW......g..WWWmm",
             "mMWWW..t.H....WWWMm",
             "mmWWWd........WWWmm",
             "mmWWW.........WWWmm",
-            "mmWWW......t..WWWmm",
+            "mmWWWr.....t..WWWmm",
             "mmWWW.........WWWmm",
             "mmWWWL...n...CWWWmm",
             "mmWWWWWWWWWWWWWWWmm",
@@ -384,7 +387,7 @@ public final class Level0HiddenRooms {
     /** Somewhere you could stand at floor level (furniture doesn't count). */
     public static boolean isWalkable(AnomalySite site, int x, int z) {
         char c = cell(site, x, z);
-        return c == 'm' || c == 'M' || c == '.' || c == 's' || c == 'T' || c == 't' || c == 'S' || c == 'n' || c == 'l';
+        return c == 'm' || c == 'M' || c == '.' || c == 's' || c == 'T' || c == 't' || c == 'S' || c == 'n' || c == 'l' || c == 'g';
     }
 
     /**
@@ -403,7 +406,7 @@ public final class Level0HiddenRooms {
             return false;
         }
         char c = at(map, i, j);
-        return c == '.' || c == 'T' || c == 't' || c == 'S' || c == 'n';
+        return c == '.' || c == 'T' || c == 't' || c == 'S' || c == 'n' || c == 'g';
     }
 
     /** Middle of the hidden room (where its sound comes from): {x, y, z}. */
@@ -553,6 +556,12 @@ public final class Level0HiddenRooms {
             // The desk stands with its back to the wall, so whoever sat at it faced the wall.
             case 'd' -> out.set(floor + 1, ModBlocks.OFFICE_DESK_PC.get().defaultBlockState()
                     .setValue(FurnitureBlock.FACING, toWorld(site, wallSide(map, i, j).getOpposite())));
+            case 'r' -> out.set(floor + 1, Level39HouseBlocks.DRESSER.get().defaultBlockState()
+                    .setValue(FurnitureBlock.FACING, toWorld(site, wallSide(map, i, j).getOpposite())));
+            case 'g' -> {
+                out.set(floor + 1, Level0SetPieceBlocks.FALLEN_TILE.get().defaultBlockState());
+                out.set(ceiling, Level0Blocks.CEILING_HOLE.get().defaultBlockState());
+            }
             case 'n' -> out.set(floor + 2, note(site, map, i, j, firstNote(site.kind())));
             case 'l' -> {
                 // A ladder up the wall and through a missing ceiling tile into the crawlspace.
