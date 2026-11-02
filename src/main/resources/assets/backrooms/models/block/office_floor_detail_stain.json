@@ -1,0 +1,35 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:translucent",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/l4_floor_details",
+    "d": "backrooms:block/l4_floor_details",
+    "a": "backrooms:block/l4_alu"
+  },
+  "elements": [
+    {
+      "from": [
+        1,
+        0.02,
+        1
+      ],
+      "to": [
+        15,
+        0.02,
+        15
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            8.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#d"
+        }
+      }
+    }
+  ]
+}

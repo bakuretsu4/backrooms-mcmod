@@ -1,12 +1,12 @@
 """Level music, group B: two ORIGINAL pieces, composed here note by note (nothing sampled or copied).
 
   music/level2   "Pressure"     Level 2, Pipe Dreams: struck pipes, a boiler heartbeat, steam.
-  music/level4   "Night Shift"  Level 4, the Abandoned Office: solo night piano in the rain.
+  music/level4   "Night Shift"  Level 4, the Abandoned Office: solo night piano in an empty office.
 
 Both use the shared music toolkit in gen_assets (G._MTrack, G._m_save): the same worn-tape
 master as the main theme (a shared pitch wobble, soft saturation, a dull top, hiss and a room),
 so they sound like part of one soundtrack. What is new here are the instruments each level needs:
-tuned pipes and a boiler for Level 2, a piano, rain, thunder and a muted horn for Level 4.
+tuned pipes and a boiler for Level 2, a piano and a muted horn for Level 4.
 
 Loudness: _m_save scales a piece to a fixed PEAK, so how loud it sounds depends on how spiky it
 is (a piano is spikier than a pad). _save_matched therefore writes the file, measures it the way a
@@ -406,46 +406,6 @@ def _horn(tr, bus: str, start: float, dur: float, note: str, vel: float, pan: fl
     tr.add(bus, start, *_panned(x * env * vel, pan))
 
 
-def _rain(tr, bus: str, level_pts) -> None:
-    """Rain on a big office window: a soft wash, plus thousands of tiny drops ticking on the glass
-    (each a few-millisecond ring at a random pitch), louder in gusts."""
-    n = tr.n
-    t = np.arange(n) / SR
-    level = np.interp(t, [p[0] for p in level_pts], [p[1] for p in level_pts])
-    gust = 1 + G.smooth_jitter(tr.rng, n, 0.12, 0.35)
-    chans = []
-    for _ in range(2):
-        rng = tr.rng
-        wash = G.fft_filter(rng.normal(size=n), lambda f: G.bp_gain(f, 300, 4000, 1))
-        ticks = np.zeros(n)
-        for fc in (1900.0, 2700.0, 3600.0, 4700.0):
-            k = int(0.05 * SR)
-            tk = np.arange(k) / SR
-            kernel = np.sin(2 * np.pi * fc * tk) * np.exp(-tk / 0.004)
-            hits = np.zeros(n)
-            idx = rng.integers(0, n, size=int(n / SR * 22))
-            hits[idx] = rng.uniform(0.1, 1.0, size=idx.size) ** 2
-            ticks += G.conv(hits, kernel)[:n]
-        ticks = G.fft_filter(ticks, lambda f: G.lp_gain(f, 5000, 2))
-        chans.append((G.norm(wash) * 0.5 + G.norm(ticks) * 0.5) * level * gust)
-    tr.add(bus, 0.0, chans[0], chans[1])
-
-
-def _thunder(tr, bus: str, start: float, vel: float, length: float = 10.0) -> None:
-    """Thunder miles away, through the windows: no crack, only a low roll that swells in, grumbles
-    unevenly and dies away."""
-    n = int(length * SR)
-    t = np.arange(n) / SR
-    rise = 1.0 + tr.rng.uniform(0, 1.2)
-    shape = np.clip(t / rise, 0, 1) ** 1.5 * np.exp(-np.maximum(t - rise, 0) / (length / 4.5))
-    out = []
-    for _ in range(2):
-        rumble = G.fft_filter(tr.rng.normal(size=n), lambda f: G.bp_gain(f, 25, 220, 2))
-        roll = np.clip(1 + G.smooth_jitter(tr.rng, n, 1.5, 0.6), 0.2, 2)
-        out.append(G.norm(rumble * roll) * shape * vel)
-    tr.add(bus, start, out[0], out[1])
-
-
 # The harmony: C minor, eight chords, one per bar, cycled. Lonely "lounge" colours: minor ninths,
 # major sevenths with a raised eleventh (the floating, unanswered sound), an altered dominant.
 # Each chord: (left hand shell, right hand voicing, bass root as MIDI, chord third/fifth steps).
@@ -489,17 +449,17 @@ def snd_music_night_shift() -> None:
     """~2.7 minutes for Level 4, the Abandoned Office: "Night Shift". C minor, about 66 bpm, played
     freely (the tempo breathes, and slows down at the end).
 
-    A sparse, melancholy solo piano in the rain, like someone alone on an office floor past
-    midnight: lounge chords (Cm9, Abmaj7#11, Fm9, an altered G7, Ebmaj7#11, Dm7b5, Dbmaj7#11, a
-    suspended G7 that never resolves), eight bars that keep coming round. Thunder far away is the
-    only percussion.
-    Structure: rain and a far roll of thunder (bars 0-2); the piano starts alone with slow rolled
-    chords (2-4), then plays the tune over held, pedalled chords (A, 4-12); the left hand starts
-    walking slowly in quarter notes under quieter chords and fragments of the tune an octave up
+    A sparse, melancholy solo piano, like someone alone on an office floor past midnight: lounge
+    chords (Cm9, Abmaj7#11, Fm9, an altered G7, Ebmaj7#11, Dm7b5, Dbmaj7#11, a suspended G7 that
+    never resolves), eight bars that keep coming round. No percussion and no weather (Level 4's
+    canon has no storm): only the empty room's faint hush under it.
+    Structure: the room's hush (bars 0-2); the piano starts alone with
+    slow rolled chords (2-4), then plays the tune over held, pedalled chords (A, 4-12); the left hand
+    starts walking slowly in quarter notes under quieter chords and fragments of the tune an octave up
     (B, 12-20); in the middle a soft muted horn sings its own lonely phrase over sustained chords
     (C, 20-28); the piano comes back alone, thinner (A', 28-36), slows down (36-39) and stops on a
-    held Abmaj7#11 over B-flat, a chord that wants to go somewhere and never does, while the rain
-    goes on.
+    held Abmaj7#11 over B-flat, a chord that wants to go somewhere and never does, while the empty
+    room hums on.
     """
     beat0 = 60.0 / 66.0
     total = 165.0
@@ -597,18 +557,12 @@ def snd_music_night_shift() -> None:
         _piano(tr, "piano", last + 0.2 * k, hold - 0.2 * k, note, 0.34 if k < 2 else 0.28, pan=-0.25 + 0.1 * k)
     _piano(tr, "piano", last + 1.6, hold - 1.6, "D5", 0.3, pan=0.2)
 
-    # Thunder far off, a handful of times (the only "drums").
-    for at, vel in ((4.5, 1.0), (56.0, 0.9), (84.0, 1.2), (118.0, 0.8), (152.0, 1.1)):
-        _thunder(tr, "thunder", at, vel, length=11.0)
-    # Rain all the way through, heavier in the middle.
-    _rain(tr, "rain", [(0, 0.0), (5, 0.25), (40, 0.22), (75, 0.3), (100, 0.3), (130, 0.22),
-                       (165, 0.25)])
     tr.noise_bed("room", 25, 140, [(0, 0.0), (6, 0.012), (165, 0.012)], drift_amt=0.2)
 
     _shape(tr, "piano", lambda f: G.lp_gain(f, 5200, 2) * G.hp_gain(f, 35, 2))
     _shape(tr, "horn", lambda f: G.bp_gain(f, 160, 3600, 2))
-    L, R = tr.master(mix={"piano": 1.0, "horn": 0.42, "thunder": 0.7, "rain": 1.0, "room": 1.0},
-                     reverb={"piano": 0.35, "horn": 0.6, "thunder": 0.2},
+    L, R = tr.master(mix={"piano": 1.0, "horn": 0.42, "room": 1.0},
+                     reverb={"piano": 0.35, "horn": 0.6},
                      room_s=4.5, room_lp=3600, lp=6500, drive=1.2, hiss=0.0025)
     _save_matched(L, R, "level4", fade_out=6.0)
 

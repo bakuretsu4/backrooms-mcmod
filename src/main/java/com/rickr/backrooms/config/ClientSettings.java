@@ -81,9 +81,9 @@ public final class ClientSettings {
     public enum Quality {
         //   lamp lights, light range, glow chain,          water reflection steps, sun beams, opening glows,
         //   Level 4 window lights, Level 4 troffer downlights
-        LOW(12, 20, "camcorder_low", 0, 6, 3, 4, 4),
-        MEDIUM(20, 24, "camcorder_medium", 10, 12, 6, 7, 8),
-        HIGH(32, 28, "camcorder", 18, 20, 12, 10, 14);
+        LOW(12, 20, "camcorder_low", 0, 6, 3, 5, 4),
+        MEDIUM(20, 24, "camcorder_medium", 10, 12, 6, 10, 8),
+        HIGH(32, 28, "camcorder", 18, 20, 12, 14, 14);
 
         /** Most Veil lamp lights at once. */
         public final int maxLights;

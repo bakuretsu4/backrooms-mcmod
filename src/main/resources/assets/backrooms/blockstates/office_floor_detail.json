@@ -1,0 +1,49 @@
+{
+  "variants": {
+    "facing=north,kind=floor_box": {
+      "model": "backrooms:block/office_floor_detail_floor_box"
+    },
+    "facing=north,kind=threshold": {
+      "model": "backrooms:block/office_floor_detail_threshold"
+    },
+    "facing=north,kind=stain": {
+      "model": "backrooms:block/office_floor_detail_stain"
+    },
+    "facing=east,kind=floor_box": {
+      "model": "backrooms:block/office_floor_detail_floor_box",
+      "y": 90
+    },
+    "facing=east,kind=threshold": {
+      "model": "backrooms:block/office_floor_detail_threshold",
+      "y": 90
+    },
+    "facing=east,kind=stain": {
+      "model": "backrooms:block/office_floor_detail_stain",
+      "y": 90
+    },
+    "facing=south,kind=floor_box": {
+      "model": "backrooms:block/office_floor_detail_floor_box",
+      "y": 180
+    },
+    "facing=south,kind=threshold": {
+      "model": "backrooms:block/office_floor_detail_threshold",
+      "y": 180
+    },
+    "facing=south,kind=stain": {
+      "model": "backrooms:block/office_floor_detail_stain",
+      "y": 180
+    },
+    "facing=west,kind=floor_box": {
+      "model": "backrooms:block/office_floor_detail_floor_box",
+      "y": 270
+    },
+    "facing=west,kind=threshold": {
+      "model": "backrooms:block/office_floor_detail_threshold",
+      "y": 270
+    },
+    "facing=west,kind=stain": {
+      "model": "backrooms:block/office_floor_detail_stain",
+      "y": 270
+    }
+  }
+}

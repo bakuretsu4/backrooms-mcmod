@@ -917,12 +917,12 @@
     ],
     "subtitle": "subtitles.backrooms.checkpoint_save"
   },
-  "ambient.level4_rain": {
+  "ambient.level4_hvac": {
     "sounds": [
       {
-        "name": "backrooms:ambient/level4_rain",
+        "name": "backrooms:ambient/level4_hvac",
         "stream": true,
-        "volume": 0.29
+        "volume": 0.32
       }
     ]
   },
@@ -933,24 +933,6 @@
       "backrooms:level4/pipes3"
     ],
     "subtitle": "subtitles.backrooms.level4_pipes"
-  },
-  "level4.thunder": {
-    "sounds": [
-      {
-        "name": "backrooms:level4/thunder1",
-        "stream": true
-      },
-      {
-        "name": "backrooms:level4/thunder2",
-        "stream": true,
-        "volume": 0.85
-      },
-      {
-        "name": "backrooms:level4/thunder3",
-        "stream": true
-      }
-    ],
-    "subtitle": "subtitles.backrooms.thunder"
   },
   "level4.door_music": {
     "sounds": [

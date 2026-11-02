@@ -20,14 +20,20 @@ import org.jetbrains.annotations.Nullable;
  *       in an open-plan floor. Its stairs lead up and down, but every flight comes back to the same
  *       landing (Fandom, Level 4). Built as a shaft that repeats every {@link #STAIR_PERIOD} blocks
  *       of height, so the server can quietly move you back one storey.</li>
- *   <li><b>{@link #WINDOW}</b> (rare): one clear window in a run of rainy windows, the panes around
- *       it covered with cardboard and tape (Wikidot, Entity 2 "Windows").</li>
+ *   <li><b>{@link #WINDOW}</b> (rare): one clear window in a run of blacked-out windows, the panes
+ *       around it covered with cardboard and tape (Wikidot, Entity 2 "Windows").</li>
  *   <li><b>{@link #VANISHING_ELEVATOR}</b> (about 1 lobby in 3): one elevator of the lobby stands
  *       open and lit. The car behind each of the eight doors is carved out of the lobby's solid
  *       elevator core here, so any of them can be the open one.</li>
- *   <li><b>{@link #CUBICLES}</b> (about 1 cubicle zone in 16): the zone's core becomes the way into
- *       Level 4.3, a dim white series of hallways that opens onto an endless cubicle field.</li>
+ *   <li><b>{@link #CUBICLES}</b> (about 1 cubicle zone in 4, 1 zone in 65 overall): the zone's core
+ *       becomes the way into Level 4.3, a dim white series of hallways that opens onto an endless
+ *       cubicle field.</li>
  * </ul>
+ * Not an anomaly but placed the same way: <b>{@link #ELEVATOR_EXIT}</b> (about 1 lobby in 3 of
+ * those left, ~1 zone in 30): canon's "occasional elevators" exit. One elevator of the lobby stands
+ * open and lit under a green EXIT sign; stand in it and the doors close, and it takes you down to
+ * the same place the stairwells do (the Poolrooms). Its server side is
+ * {@code world/anomaly/level4/ElevatorExit}.
  * And three quiet ones that do nothing at all; they are only wrong, in a place where nothing else
  * is (each in about 1 zone in 20 to 30, so together about one zone in eight has one):
  * <ul>
@@ -56,12 +62,13 @@ public final class Level4AnomalyPlan {
     public static final String OCCUPIED_FLOOR = "level_4/occupied_floor";
     public static final String INSIDE_OUT_ROOM = "level_4/inside_out_room";
     public static final String COOLER_ROW = "level_4/cooler_row";
+    public static final String ELEVATOR_EXIT = "level_4/elevator_exit";
     public static final List<String> KINDS = List.of(LOOPING_STAIRWELL, WINDOW, VANISHING_ELEVATOR, CUBICLES,
-            OCCUPIED_FLOOR, INSIDE_OUT_ROOM, COOLER_ROW);
+            OCCUPIED_FLOOR, INSIDE_OUT_ROOM, COOLER_ROW, ELEVATOR_EXIT);
 
     // Chances, per zone of the right kind.
     private static final double ELEVATOR_CHANCE = 0.35;   // of lobby zones (15% of all zones)
-    private static final double CUBICLES_CHANCE = 0.06;   // of cubicle zones (25%): ~1 zone in 65 overall
+    private static final double CUBICLES_CHANCE = 0.25;   // of cubicle zones (6%): ~1 zone in 65 overall
     private static final double STAIRWELL_CHANCE = 0.15;  // of open-plan zones (30%)
     private static final double WINDOW_CHANCE = 0.15;     // of zones with a window run looking in
     // The quiet ones, only in zones left without a site by everything above (so the four older
@@ -69,6 +76,7 @@ public final class Level4AnomalyPlan {
     private static final double OCCUPIED_CHANCE = 0.20;   // of open-plan zones left: ~1 zone in 23
     private static final double COOLER_ROW_CHANCE = 0.15; // of open-plan zones left: ~1 zone in 30
     private static final double INSIDE_OUT_CHANCE = 0.20; // of office zones left: ~1 zone in 18
+    private static final double ELEVATOR_EXIT_CHANCE = 0.35; // of lobby zones left: ~1 zone in 30
 
     private static final int CELL = Level4Plan.CELL;
     private static final int CORE_LO = Level4Plan.CORE_LO;
@@ -164,6 +172,11 @@ public final class Level4AnomalyPlan {
             case Level4Plan.OFFICES -> {
                 if (q < INSIDE_OUT_CHANCE) {
                     return insideOutSite(seed, cx, cz, salt);
+                }
+            }
+            case Level4Plan.LOBBY -> {
+                if (q < ELEVATOR_EXIT_CHANCE) {
+                    return elevatorExitSite(seed, cx, cz, salt);
                 }
             }
             default -> {
@@ -465,6 +478,32 @@ public final class Level4AnomalyPlan {
     /** The elevator that stands open when the lobby is first built. */
     public static int initialOpenElevator(AnomalySite site) {
         return Hash.range(Hash.mix(site.salt() ^ 9), ELEVATOR_DOORS);
+    }
+
+    /** The one elevator of an {@link #ELEVATOR_EXIT} lobby that is the exit (0..7). */
+    public static int exitElevatorDoor(AnomalySite site) {
+        return exitDoor(site.salt());
+    }
+
+    private static int exitDoor(long salt) {
+        return Hash.range(Hash.mix(salt ^ 21), ELEVATOR_DOORS);
+    }
+
+    /**
+     * An elevator exit in lobby zone (cx, cz). Its anchor (what {@code /backrooms anomaly locate}
+     * reports) is the hall floor right in front of the open exit car's doors, so you can walk
+     * straight to it; its facing records which way the lobby's rows run (as for the vanishing
+     * elevator).
+     */
+    private static AnomalySite elevatorExitSite(long seed, int cx, int cz, long salt) {
+        int x0 = cx * CELL;
+        int z0 = cz * CELL;
+        LobbyFrame frame = new LobbyFrame(x0, z0, Level4Plan.alongZ(seed, cx, cz));
+        int door = exitDoor(salt);
+        int u = frame.doorU(door);
+        int v = frame.doorV(door) + (door < 4 ? 1 : -1); // one step out into the hall
+        return new AnomalySite(ELEVATOR_EXIT, x0 + CORE_LO, z0 + CORE_LO, x0 + CORE_HI, z0 + CORE_HI,
+                frame.worldX(u, v), frame.worldZ(u, v), frame.plusV(), salt);
     }
 
     // ==========================================================================================
@@ -812,6 +851,15 @@ public final class Level4AnomalyPlan {
                 if (f.carWallAt(u, v) >= 0) return 0;
                 return -1;
             }
+            case ELEVATOR_EXIT -> {
+                LobbyFrame f = lobbyFrame(site);
+                int door = exitElevatorDoor(site);
+                int u = f.u(x, z);
+                int v = f.v(x, z);
+                if (f.carAt(u, v) == door || f.doorAt(u, v) == door) return 1;
+                if (f.carWallAt(u, v) == door) return 0;
+                return -1;
+            }
             case CUBICLES -> {
                 CubicleFrame f = cubicleFrame(site);
                 return cubicleWalkable(cubicleCell(f.u(x, z), f.v(x, z)) & 0xFF) ? 1 : 0;
@@ -841,6 +889,7 @@ public final class Level4AnomalyPlan {
         return switch (site.kind()) {
             case LOOPING_STAIRWELL, CUBICLES, INSIDE_OUT_ROOM -> true;
             case VANISHING_ELEVATOR -> walkable(site, x, z) >= 0;
+            case ELEVATOR_EXIT -> walkable(site, x, z) == 1;
             case OCCUPIED_FLOOR -> walkable(site, x, z) == 0;
             case COOLER_ROW -> {
                 StairFrame f = stairFrame(site);

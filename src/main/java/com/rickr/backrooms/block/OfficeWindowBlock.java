@@ -15,23 +15,24 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 /**
- * A pane of Level 4's ribbon windows: frosted "blacked-out" glass that still glows a cold grey,
- * with rain running down it. It is a solid block in the wall: only its FACING side shows glass
- * (animated rain streaks), the back and the sides are plain painted wall, so a window wall looks
- * like an outer wall from the room and like an ordinary wall from behind.
+ * A pane of Level 4's ribbon windows. Canon: most windows are blacked out, yet they still glow.
+ * Frosted glass gives off a cold, even grey light. It is a solid block in the wall: only its
+ * FACING side shows glass, and the back and the sides are plain painted wall, so a window wall
+ * looks like an outer wall from the room and like an ordinary wall from behind.
  *
  * <p>HALF picks the frame: the LOWER pane has the thin sill rail at its bottom, the UPPER pane the
  * head rail at its top, so two stacked panes make one tall window. PANE places the thin aluminium
  * mullions: real ribbon windows come in bays (here three blocks wide), with a mullion only where
- * one bay meets the next, not on every block. The block gives off block light: that is the faint
- * cold glow on the floor near the windows, and because Level 4's lighting curve turns block light
- * into brightness, it is also what flashes white when lightning strikes outside (see
- * {@code ClientLighting} and {@code Level4Atmosphere}).
+ * one bay meets the next, not on every block. COVER is what blacks the bay out: lowered venetian
+ * blinds, paper and foil taped over the glass, or nothing. The block gives off block light (less
+ * when covered): that is the cold glow on the floor near the windows (see {@code ClientLighting}
+ * and {@code Level4Atmosphere}).
  */
 public class OfficeWindowBlock extends Block {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
     public static final EnumProperty<Pane> PANE = EnumProperty.create("pane", Pane.class);
+    public static final EnumProperty<Cover> COVER = EnumProperty.create("cover", Cover.class);
 
     /**
      * Where this pane sits in its bay, seen from inside the room (standing in front of the glass,
@@ -55,16 +56,41 @@ public class OfficeWindowBlock extends Block {
         }
     }
 
+    /**
+     * What blacks the window out. Both panes of a bay get the same value. NONE: bare frosted
+     * glass. HALF: venetian blinds let down over the upper pane only. BLINDS: blinds down to the
+     * sill, the light showing between the slats. TAPED: paper and foil taped over the glass. The
+     * glass glows the same behind every cover; the cover just hides most of it. {@link #light}
+     * is the block light each one lets into the room.
+     */
+    public enum Cover implements StringRepresentable {
+        NONE(12), HALF(12), BLINDS(11), TAPED(10);
+
+        /** Block light given off by a pane with this cover (agreed with the Level 4 lighting). */
+        public final int light;
+
+        Cover(int light) {
+            this.light = light;
+        }
+
+        /** The lowercase name used in blockstate files ("cover=blinds"). */
+        @Override
+        public String getSerializedName() {
+            return name().toLowerCase(Locale.ROOT);
+        }
+    }
+
     public OfficeWindowBlock(Properties properties) {
         super(properties);
-        // MID is the default so windows saved before panes existed load without extra mullions.
+        // MID and NONE are the defaults, so windows saved before panes and covers existed load as
+        // plain frosted panes.
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(HALF, DoubleBlockHalf.LOWER)
-                .setValue(PANE, Pane.MID));
+                .setValue(PANE, Pane.MID).setValue(COVER, Cover.NONE));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, HALF, PANE);
+        builder.add(FACING, HALF, PANE, COVER);
     }
 
     /** In creative: the glass faces you; placed on top of another pane it becomes the upper half. */

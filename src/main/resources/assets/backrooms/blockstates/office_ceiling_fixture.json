@@ -8,6 +8,15 @@
     },
     "kind=speaker": {
       "model": "backrooms:block/office_ceiling_fixture_speaker"
+    },
+    "kind=projector": {
+      "model": "backrooms:block/office_ceiling_fixture_projector"
+    },
+    "kind=cable": {
+      "model": "backrooms:block/office_ceiling_fixture_cable"
+    },
+    "kind=lifted": {
+      "model": "backrooms:block/office_ceiling_fixture_lifted"
     }
   }
 }

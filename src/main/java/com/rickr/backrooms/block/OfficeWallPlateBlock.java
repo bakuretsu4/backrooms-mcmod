@@ -1,6 +1,5 @@
 package com.rickr.backrooms.block;
 
-import java.util.EnumMap;
 import java.util.Locale;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
@@ -46,18 +45,11 @@ public class OfficeWallPlateBlock extends WallMountBlock {
     }
 
     /** Outlines per kind and facing, turned once up front (getShape runs very often). */
-    private final Map<Kind, Map<Direction, VoxelShape>> shapes = new EnumMap<>(Kind.class);
+    private final Map<Kind, Map<Direction, VoxelShape>> shapes = turnAll(Kind.class, kind -> kind.shapeFacingNorth);
 
     public OfficeWallPlateBlock(Properties properties) {
         super(properties, Kind.SWITCH.shapeFacingNorth);
         registerDefaultState(defaultBlockState().setValue(KIND, Kind.SWITCH));
-        for (Kind kind : Kind.values()) {
-            Map<Direction, VoxelShape> byFacing = new EnumMap<>(Direction.class);
-            for (Direction facing : Direction.Plane.HORIZONTAL) {
-                byFacing.put(facing, turn(kind.shapeFacingNorth, facing));
-            }
-            shapes.put(kind, byFacing);
-        }
     }
 
     @Override

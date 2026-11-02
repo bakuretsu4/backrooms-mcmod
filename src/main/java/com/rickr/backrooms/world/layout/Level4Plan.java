@@ -5,27 +5,41 @@ import com.rickr.backrooms.world.Hash;
 
 /**
  * The floor plan of Level 4 ("The Abandoned Office") as plain numbers: for every column (x, z) it
- * says WHAT stands there (a wall, a desk, a window, a door, open carpet...), which way it faces,
- * what the floor and the ceiling look like. {@link Level4Layout} turns these numbers into blocks.
+ * says WHAT stands there (a wall, a table, a window, a door, open carpet...), which way it faces,
+ * what the floor and the ceiling look like and what hangs on the wall. {@link Level4Layout} turns
+ * these numbers into blocks.
  *
  * <p>This class uses no Minecraft classes at all, only {@link Hash} and {@link ExitLocator}. That
  * keeps it a pure function of (seed, x, z), and it means it could be tested without starting the
  * game (for example with a flood fill that checks every floor column can be reached).
  *
+ * <h2>The canon this follows</h2>
+ * Level 4 is an empty office building, almost completely devoid of furniture: white walls, cheap
+ * grey carpet, most lights dead, lit by blacked-out windows that still glow. Its rooms are roughly
+ * 45% empty rooms, 20% conference rooms (one identical long table, chairs at even intervals,
+ * papers, pencils, mugs of Almond Water), 30% lobbies and cafeterias (often merged: big empty
+ * spaces, rows of the same tables, the odd bottle of Almond Water) and 5% cubicle clusters. Almond
+ * Water is found here more often than anywhere else: water coolers, vending machines, fountains.
+ * Because the rooms are nearly empty, the detail lives on the building itself: door frames, room
+ * signs, the pale marks where pictures and whiteboards hung, cable trunking, floor boxes, switches,
+ * thermostats, fire equipment, signs, clocks.
+ *
  * <h2>Zones</h2>
  * The world is cut into square zones of {@link #CELL} x {@link #CELL} blocks. Each zone is one of:
  * <ul>
- *   <li>{@link #OPEN}: a huge open-plan floor with square white columns every 8 blocks. It is
- *       nearly empty, as in canon: faint dents in the carpet where rows of desks stood, now and
- *       then one desk or chair left behind, and rarely a "moving day" pile of boxes pushed against a
- *       column. Some have a row of small offices along one side.</li>
- *   <li>{@link #CUBICLES}: rows of grey fabric cubicles (1.5 blocks tall) with aisles between
- *       them, and at the far end either glass conference rooms or more open floor.</li>
- *   <li>{@link #OFFICES}: two corridors lined with wooden doors into small private offices (about
- *       half of them cleared out), and a row of bigger rooms (kitchenette, conference room, copy
- *       room, storage...).</li>
- *   <li>{@link #LOBBY}: an elevator lobby (closed elevator doors, chair-rail walls) through the
- *       middle, with big rooms on both sides.</li>
+ *   <li>{@link #OPEN} (28%): a huge empty open-plan floor with square white columns every 8
+ *       blocks: only the dents of desk rows that were carried out and their floor boxes, a water
+ *       cooler and an extinguisher on some columns, rarely a desk or a moving-day pile. Some have a
+ *       row of small rooms along one side.</li>
+ *   <li>{@link #CUBICLES} (6%): a cluster of 54 complete grey cubicles (desk, computer, chair, the
+ *       same desk set in every one), and at the far end glass conference rooms or more open floor.</li>
+ *   <li>{@link #OFFICES} (36%): two corridors lined with doors into small rooms (mostly empty, many
+ *       conference rooms) and a row of big rooms (conference rooms, cafeterias, empty lobbies).</li>
+ *   <li>{@link #LOBBY} (14%): an elevator lobby through the middle (terrazzo, lit coffers, a
+ *       directory board, fountains), big rooms on both sides.</li>
+ *   <li>{@link #CAFETERIA} (16%): a lobby that runs straight into a cafeteria: a terrazzo lobby with
+ *       columns and lit coffers, then rows of identical tables under pendant lamps, and a serving
+ *       counter with vending machines, coolers and fountains along the far wall.</li>
  * </ul>
  *
  * <p>Inside its border wall every zone has a 3-wide "ring" aisle that is always open floor; the
@@ -34,32 +48,25 @@ import com.rickr.backrooms.world.Hash;
  *
  * <h2>Zone borders</h2>
  * The line between two zones (x or z a multiple of {@link #CELL}) is one of: OPEN (no wall at all,
- * the floors run together; only between open-plan and cubicle zones), DOORS (a drywall partition
- * with two or three openings/double doors), or WINDOW (a ribbon of blacked-out rainy windows on one
- * side, no way through). A window run is 15 bays of 3 panes (mullions only between bays), with one
- * continuous perimeter casing along its foot: trunking with a slim radiator under the middle of
- * every bay, a double socket every third bay and a cap at each end, and a slot air diffuser in the
- * ceiling above it. Every zone keeps its west OR north border passable (never a window), so
+ * the floors run together; only between open-plan, cubicle and cafeteria zones), DOORS (a drywall
+ * partition with two or three framed openings/double doors), or WINDOW (a ribbon of windows on one
+ * side, no way through). A window run is 15 bays of 3 panes (mullions only between bays); most bays
+ * are blacked out (blinds down, half down, or taped over), a few just glow, and a perimeter casing
+ * runs along their foot (a slim radiator under every bay, a socket every third bay) with a slot
+ * diffuser above it. Every zone keeps its west OR north border passable (never a window), so
  * following those borders always leads on: no zone is ever sealed off.
  *
  * <h2>Ceiling</h2>
  * Light panels hang on a regular 4-block lattice, most of them dead (whole dark patches); square
  * diffusers, sprinklers, smoke detectors, return grilles and the odd speaker sit on a sparser 8-block
- * grid between them. Tiles are only missing in a few water-damaged patches (stained tiles, holes,
- * sometimes an open hatch), never one here and one there.
- *
- * <h2>Wall details</h2>
- * Everything hung on the walls stands where a real office would put it, never at random: a light
- * switch inside every room beside the door's latch side, a thermostat and a socket in every office,
- * a clock in conference rooms, kitchenettes and the lobby, a notice board in kitchenettes and some
- * corridors, an extinguisher with a fire-alarm call point beside it about every 24 blocks along the
- * corridors and ring aisles (and on every third column of an open floor), and green exit signs over
- * the border openings that lead toward the nearest exit stairwell and on corridor walls, their
- * arrows pointing the way.
+ * grid between them; corridors have access hatches. Lobbies have big lit coffers, cafeteria tables
+ * pendant lamps, conference rooms a projector mount. Tiles are only missing in a few water-damaged
+ * patches (stained tiles, holes, a lifted tile, a dangling cable, sometimes an open hatch).
  *
  * <h2>Packed columns</h2>
  * {@link #column} returns a {@code long} with several fields (read them with the getters below):
- * kind, facing, a variant, the floor, the ceiling, the wall style and an optional wall decoration.
+ * kind, facing, a variant, the floor, the ceiling, the wall style, an optional wall decoration, an
+ * optional item on a table and an optional flat floor detail (floor box, threshold strip, stain).
  * Facings are Minecraft's 2D data values: 0 south, 1 west, 2 north, 3 east.
  */
 final class Level4Plan {
@@ -87,6 +94,7 @@ final class Level4Plan {
     static final int CUBICLES = 1;
     static final int OFFICES = 2;
     static final int LOBBY = 3;
+    static final int CAFETERIA = 4;
 
     // Border types.
     private static final int B_OPEN = 0;
@@ -99,19 +107,23 @@ final class Level4Plan {
 
     /** Open floor you can walk on (it may still have a ceiling light or a wall decoration). */
     static final int FLOOR = 0;
-    /** A drywall wall from floor to ceiling ({@link #style} says how its bottom block looks). */
+    /**
+     * A drywall wall from floor to ceiling ({@link #style} says how its bottom block looks; the
+     * variant says whether it is the frame of an opening beside it, see {@link #JAMB_LEFT}).
+     */
     static final int WALL = 1;
     /** Solid filling of a locked closet or an elevator shaft: never seen, never entered. */
     static final int FILL = 2;
     /** A square white column (with a dark base). */
     static final int COLUMN = 3;
-    /** A doorway without a door: 3 blocks tall, wall above. */
+    /** A doorway without a door: 3 blocks tall, a frame head above (variant: {@link #FRAME_AXIS_Z}). */
     static final int DOORWAY = 4;
     /** A door in a wall (variant: door type, open, hinge, locked). Facing = the way the door faces. */
     static final int DOOR = 5;
     /**
      * Sill, two blocks of window glass and a head. Facing = the side the glass looks into; variant =
-     * which pane of its 3-pane bay this is ({@link #PANE_LEFT}, {@link #PANE_MID}, {@link #PANE_RIGHT}).
+     * which pane of its 3-pane bay this is (bits 0-1, {@link #PANE_LEFT}...) and how the bay is
+     * covered (bits 2-3, {@link #COVER_NONE}...).
      */
     static final int WINDOW = 6;
     /**
@@ -126,7 +138,6 @@ final class Level4Plan {
     static final int DESK_PC = 10;
     static final int CHAIR = 11;
     static final int CABINET = 12;
-    static final int COPIER = 13;
     static final int PLANT = 14;
     /** Cardboard boxes (variant 1 = stacked two high). */
     static final int BOXES = 15;
@@ -139,11 +150,12 @@ final class Level4Plan {
     static final int BACKPACK = 20;
     /** Two-tall vending machine (variant = how many items are left). */
     static final int VENDING = 21;
+    /** Water cooler (variant = cups of Almond Water left). */
     static final int COOLER = 22;
     /** Kitchen counter (variant 1 = with a microwave on top). */
     static final int COUNTER = 23;
     static final int FRIDGE = 24;
-    static final int TABLE = 25;
+    /** One block of the conference table, the same everywhere (conference rooms and cafeterias). */
     static final int CONF_TABLE = 26;
     static final int SOFA = 27;
     /** Server rack, two blocks tall. */
@@ -152,19 +164,35 @@ final class Level4Plan {
     static final int CURTAIN = 29;
     /** Cubicle partition (variant = which of the 4 sides it connects to, bit = 2D data value). */
     static final int PARTITION = 30;
+    /** Wall-mounted drinking fountain of Almond Water (variant = drinks left). Back against the wall. */
+    static final int FOUNTAIN = 31;
 
-    // Window panes (variant of WINDOW), in the same order as OfficeWindowBlock.Pane. LEFT is the
-    // pane at the bay's left end as seen from the room, looking at the glass.
+    // Window panes (bits 0-1 of a WINDOW's variant), in the same order as OfficeWindowBlock.Pane.
+    // LEFT is the pane at the bay's left end as seen from the room, looking at the glass.
     static final int PANE_SINGLE = 0;
     static final int PANE_LEFT = 1;
     static final int PANE_MID = 2;
     static final int PANE_RIGHT = 3;
+    // Window bay covers (bits 2-3 of a WINDOW's variant), as OfficeWindowBlock.Cover.
+    static final int COVER_NONE = 0;
+    /** Blinds down over the upper pane only. */
+    static final int COVER_HALF = 1;
+    static final int COVER_BLINDS = 2;
+    static final int COVER_TAPED = 3;
 
     // Perimeter parts (variant of PERIMETER), in the same order as OfficePerimeterBlock.Part.
     static final int PART_TRUNK = 0;
     static final int PART_RADIATOR = 1;
     static final int PART_SOCKET = 2;
     static final int PART_END = 3;
+
+    // Door frames. A WALL right beside an opening is its jamb (variant bits 0-1: LEFT = the wall on
+    // the lower-coordinate side of the opening, RIGHT = the higher side; bit 2: the opening is a
+    // 3-tall doorway, not a 2-tall door). Bit 3 (also used by DOORWAY) = the wall runs along Z.
+    static final int JAMB_LEFT = 1;
+    static final int JAMB_RIGHT = 2;
+    static final int JAMB_TALL = 4;
+    static final int FRAME_AXIS_Z = 8;
 
     // Door types (variant bits 0-1).
     static final int DOOR_OFFICE = 0;
@@ -176,12 +204,27 @@ final class Level4Plan {
     static final int DOOR_HINGE_RIGHT = 8;
     static final int DOOR_LOCKED = 16;
 
-    // Floors (3 bits: carpet colour + indent flag).
+    // Floors: a material (bits 0-2) and an indent flag.
     static final int CARPET_GREIGE = 0;
     static final int CARPET_BLUE = 1;
     static final int CONCRETE = 2;
+    /** Cafeteria vinyl. */
+    static final int VINYL = 3;
+    /** Lobby terrazzo. */
+    static final int TERRAZZO = 4;
+    /** Entrance matting at the ends of a lobby hall. */
+    static final int ENTRANCE_MAT = 5;
     /** Added to a carpet: the darker, unfaded patch where furniture stood for years. */
-    static final int INDENT = 4;
+    static final int INDENT = 8;
+
+    // Flat floor details lying on the floor (in the cell above it), as OfficeFloorDetailBlock.Kind.
+    static final int DETAIL_NONE = 0;
+    /** A flush power/data box in the carpet where desks once stood. */
+    static final int DETAIL_FLOOR_BOX = 1;
+    /** An aluminium strip where one floor meets another (along the detail's facing edge). */
+    static final int DETAIL_THRESHOLD = 2;
+    /** A rare old stain on the carpet. */
+    static final int DETAIL_STAIN = 3;
 
     // Ceilings.
     static final int TILE = 0;
@@ -201,6 +244,16 @@ final class Level4Plan {
     static final int SPEAKER = 11;
     /** A tile with a brown water stain (around the holes of a leak). */
     static final int STAINED = 12;
+    /** Projector mount over a conference table. */
+    static final int PROJECTOR = 13;
+    /** A missing tile with a cable stub dangling out of it (leaks). */
+    static final int CABLE = 14;
+    /** A tile pushed up out of its grid, a dark gap round it (leaks). */
+    static final int LIFTED = 15;
+    /** Big lit ceiling coffers of a lobby (laid in 3 x 3 groups). */
+    static final int COFFER_LIT = 16;
+    static final int COFFER_FLICKER = 17;
+    static final int COFFER_DEAD = 18;
 
     // Wall styles (only used by WALL; says what the bottom block looks like, or glass).
     static final int STYLE_BASE = 0;
@@ -209,15 +262,17 @@ final class Level4Plan {
     static final int STYLE_BLINDS = 3;
     /** An office front: skirting at the bottom, glass with blinds above it, drywall over that. */
     static final int STYLE_GLAZED = 4;
+    /** A cafeteria's servery wall: skirting, a shuttered serving hatch above (facing = its front). */
+    static final int STYLE_HATCH = 5;
 
-    // Wall decorations hung in the air in front of a wall (on floor columns; the clock may also
-    // hang over a kitchen counter).
+    // Wall decorations hung in the air in front of a wall (each at the height its model is made for).
     static final int DECO_NONE = 0;
     static final int DECO_WHITEBOARD = 1;
     static final int DECO_ELEVATOR_PANEL = 2;
     static final int DECO_CCTV = 3;
-    static final int DECO_PLAQUE = 4;
-    /** Green exit sign (deco variant: arrow, and whether it hangs one block higher). */
+    /** The lobby's directory board (OFFICE_PLAQUE). */
+    static final int DECO_DIRECTORY = 4;
+    /** Green exit sign on a wall (deco variant: arrow, and whether it hangs one block higher). */
     static final int DECO_EXIT = 5;
     static final int DECO_EXTINGUISHER = 6;
     static final int DECO_SWITCH = 7;
@@ -226,13 +281,56 @@ final class Level4Plan {
     static final int DECO_SOCKET = 10;
     static final int DECO_NOTICE = 11;
     static final int DECO_CLOCK = 12;
+    /** Pale unfaded mark where something hung (deco variant: MARK_PICTURE...). */
+    static final int DECO_MARK = 13;
+    /** Dado cable trunking along a wall (deco variant 1 = with outlets). */
+    static final int DECO_DADO = 14;
+    static final int DECO_DOOR_STOP = 15;
+    static final int DECO_TV_BRACKET = 16;
+    static final int DECO_COAT_HOOKS = 17;
+    static final int DECO_SANITISER = 18;
+    static final int DECO_FIRST_AID = 19;
+    /** "You are here" fire evacuation plan. */
+    static final int DECO_EVAC_PLAN = 20;
+    static final int DECO_NO_SMOKING = 21;
+    static final int DECO_FIRE_DOOR_SIGN = 22;
+    /** Room sign beside a conference room door. */
+    static final int DECO_SIGN_MEETING = 23;
+    /** Room sign beside any other room's door. */
+    static final int DECO_SIGN_OFFICE = 24;
+    /** Double-sided exit sign hanging from the ceiling in a big space (deco variant: arrow). */
+    static final int DECO_HANGING_EXIT = 25;
+    /** Pendant lamp hanging under the ceiling (deco variant: LAMP_LIT / LAMP_FLICKER / LAMP_DEAD). */
+    static final int DECO_PENDANT = 26;
 
     // Exit sign variants: the arrow in bits 0-1 (left/right as seen by someone reading the sign) ...
     static final int ARROW_NONE = 0;
     static final int ARROW_LEFT = 1;
     static final int ARROW_RIGHT = 2;
-    /** ... and this bit when the sign hangs over a 3-tall doorway (one block higher than over a door). */
+    /** ... and this bit when a wall sign hangs over a 3-tall doorway (one block higher than over a door). */
     static final int EXIT_HIGH = 4;
+    // Wall mark variants, as OfficeWallMarkBlock.Kind.
+    static final int MARK_PICTURE = 0;
+    static final int MARK_BOARD_LEFT = 1;
+    static final int MARK_BOARD_RIGHT = 2;
+    static final int MARK_HOLES = 3;
+    // Lamp states of a pendant (deco variant).
+    static final int LAMP_LIT = 0;
+    static final int LAMP_FLICKER = 1;
+    static final int LAMP_DEAD = 2;
+
+    // Things lying on a table or desk (in the block above it), as OfficeTableItemsBlock.Kind + 1.
+    static final int TOP_NONE = 0;
+    static final int TOP_PAPERS = 1;
+    static final int TOP_PENCILS = 2;
+    static final int TOP_MUG = 3;
+    static final int TOP_PAPERS_MUG = 4;
+    /** A bottle of Almond Water (right-click to take). */
+    static final int TOP_BOTTLE = 5;
+    /** Pencils, notebooks, post-its, a mug of Almond Water and the same little desk sign in every cubicle. */
+    static final int TOP_CUBICLE_SET = 6;
+    /** Extremely rare: a double cheeseburger on a tray (right-click to take). */
+    static final int TOP_BURGER = 7;
 
     // Directions as 2D data values (same numbers as Minecraft's Direction.get2DDataValue()).
     static final int SOUTH = 0;
@@ -246,38 +344,46 @@ final class Level4Plan {
     // Packing
     // ==========================================================================================
 
-    private static final int KIND_SHIFT = 0;         // 8 bits
-    private static final int FACING_SHIFT = 8;       // 2 bits
-    private static final int VARIANT_SHIFT = 10;     // 8 bits
-    private static final int FLOOR_SHIFT = 18;       // 3 bits
-    private static final int CEIL_SHIFT = 21;        // 4 bits
-    private static final int CEIL_FACING_SHIFT = 25; // 2 bits
-    private static final int STYLE_SHIFT = 27;       // 3 bits
-    private static final int DECO_SHIFT = 30;        // 4 bits
-    private static final int DECO_FACING_SHIFT = 34; // 2 bits
-    private static final int DECO_VARIANT_SHIFT = 36; // 3 bits
+    private static final int KIND_SHIFT = 0;           // 8 bits
+    private static final int FACING_SHIFT = 8;         // 2 bits
+    private static final int VARIANT_SHIFT = 10;       // 8 bits
+    private static final int FLOOR_SHIFT = 18;         // 4 bits
+    private static final int CEIL_SHIFT = 22;          // 5 bits
+    private static final int CEIL_FACING_SHIFT = 27;   // 2 bits
+    private static final int STYLE_SHIFT = 29;         // 3 bits
+    private static final int DECO_SHIFT = 32;          // 6 bits
+    private static final int DECO_FACING_SHIFT = 38;   // 2 bits
+    private static final int DECO_VARIANT_SHIFT = 40;  // 3 bits
+    private static final int TOP_SHIFT = 43;           // 3 bits
+    private static final int DETAIL_SHIFT = 46;        // 2 bits
+    private static final int DETAIL_FACING_SHIFT = 48; // 2 bits
 
     static int kind(long c) { return (int) (c >>> KIND_SHIFT) & 0xFF; }
     static int facing(long c) { return (int) (c >>> FACING_SHIFT) & 3; }
     static int variant(long c) { return (int) (c >>> VARIANT_SHIFT) & 0xFF; }
-    static int floor(long c) { return (int) (c >>> FLOOR_SHIFT) & 7; }
-    static int ceiling(long c) { return (int) (c >>> CEIL_SHIFT) & 0xF; }
+    static int floor(long c) { return (int) (c >>> FLOOR_SHIFT) & 0xF; }
+    /** The floor's material without the indent flag. */
+    static int floorMaterial(long c) { return floor(c) & 7; }
+    static int ceiling(long c) { return (int) (c >>> CEIL_SHIFT) & 0x1F; }
     static int ceilingFacing(long c) { return (int) (c >>> CEIL_FACING_SHIFT) & 3; }
     static int style(long c) { return (int) (c >>> STYLE_SHIFT) & 7; }
-    static int deco(long c) { return (int) (c >>> DECO_SHIFT) & 0xF; }
+    static int deco(long c) { return (int) (c >>> DECO_SHIFT) & 0x3F; }
     static int decoFacing(long c) { return (int) (c >>> DECO_FACING_SHIFT) & 3; }
     static int decoVariant(long c) { return (int) (c >>> DECO_VARIANT_SHIFT) & 7; }
+    static int top(long c) { return (int) (c >>> TOP_SHIFT) & 7; }
+    static int detail(long c) { return (int) (c >>> DETAIL_SHIFT) & 3; }
+    static int detailFacing(long c) { return (int) (c >>> DETAIL_FACING_SHIFT) & 3; }
 
     private static long pack(int kind, int facing, int variant) {
         return ((long) kind << KIND_SHIFT) | ((long) (facing & 3) << FACING_SHIFT) | ((long) (variant & 0xFF) << VARIANT_SHIFT);
     }
 
     private static long withFloor(long c, int floor) {
-        return (c & ~(7L << FLOOR_SHIFT)) | ((long) floor << FLOOR_SHIFT);
+        return (c & ~(0xFL << FLOOR_SHIFT)) | ((long) floor << FLOOR_SHIFT);
     }
 
     private static long withCeiling(long c, int ceiling, int facing) {
-        c &= ~((0xFL << CEIL_SHIFT) | (3L << CEIL_FACING_SHIFT));
+        c &= ~((0x1FL << CEIL_SHIFT) | (3L << CEIL_FACING_SHIFT));
         return c | ((long) ceiling << CEIL_SHIFT) | ((long) (facing & 3) << CEIL_FACING_SHIFT);
     }
 
@@ -286,12 +392,21 @@ final class Level4Plan {
     }
 
     private static long withDeco(long c, int deco, int facing, int variant) {
-        c &= ~((0xFL << DECO_SHIFT) | (3L << DECO_FACING_SHIFT) | (7L << DECO_VARIANT_SHIFT));
+        c &= ~((0x3FL << DECO_SHIFT) | (3L << DECO_FACING_SHIFT) | (7L << DECO_VARIANT_SHIFT));
         return c | ((long) deco << DECO_SHIFT) | ((long) (facing & 3) << DECO_FACING_SHIFT) | ((long) (variant & 7) << DECO_VARIANT_SHIFT);
     }
 
     private static long withDeco(long c, int deco, int facing) {
         return withDeco(c, deco, facing, 0);
+    }
+
+    private static long withTop(long c, int top) {
+        return (c & ~(7L << TOP_SHIFT)) | ((long) top << TOP_SHIFT);
+    }
+
+    private static long withDetail(long c, int detail, int facing) {
+        c &= ~((3L << DETAIL_SHIFT) | (3L << DETAIL_FACING_SHIFT));
+        return c | ((long) detail << DETAIL_SHIFT) | ((long) (facing & 3) << DETAIL_FACING_SHIFT);
     }
 
     /** True where a player can stand (and walk through): open floor, doorways, unlocked doors. */
@@ -325,10 +440,11 @@ final class Level4Plan {
             return OPEN;
         }
         double r = Hash.unit(seed, cx, cz, 7000);
-        if (r < 0.30) return OPEN;
-        if (r < 0.55) return CUBICLES;
-        if (r < 0.85) return OFFICES;
-        return LOBBY;
+        if (r < 0.28) return OPEN;
+        if (r < 0.34) return CUBICLES;
+        if (r < 0.70) return OFFICES;
+        if (r < 0.84) return LOBBY;
+        return CAFETERIA;
     }
 
     /**
@@ -359,13 +475,13 @@ final class Level4Plan {
         return Hash.unit(seed, cx, cz, 7003) < 0.5;
     }
 
-    /** Carpet colour of a zone: greige-taupe or (40%) blue-grey. */
+    /** Carpet colour of a zone: canon's cheap grey, or (20%) a muted slate blue. */
     private static int zoneCarpet(long seed, int cx, int cz) {
-        return Hash.unit(seed, cx, cz, 7004) < 0.4 ? CARPET_BLUE : CARPET_GREIGE;
+        return Hash.unit(seed, cx, cz, 7004) < 0.2 ? CARPET_BLUE : CARPET_GREIGE;
     }
 
     /**
-     * Open zones: 0 = plain open floor, 1 = with a row of small offices along the far side.
+     * Open zones: 0 = plain open floor, 1 = with a row of small rooms along the far side.
      * Cubicle zones: 0 = glass conference rooms at the far end, 1 = open floor there instead.
      * Zones next to an exit are always plain.
      */
@@ -443,9 +559,9 @@ final class Level4Plan {
         return (int) room & 3;
     }
 
-
+    /** Zones whose floors may run together with no wall between them. */
     private static boolean openKind(int kind) {
-        return kind == OPEN || kind == CUBICLES;
+        return kind == OPEN || kind == CUBICLES || kind == CAFETERIA;
     }
 
     // ==========================================================================================
@@ -532,18 +648,33 @@ final class Level4Plan {
 
     /**
      * One column of a DOORS border at position {@code along} (1..47 along the border). Returns
-     * WALL, DOORWAY, or DOOR packed with its variant (hinge/open) and the door facing.
+     * WALL (with its door-frame jamb when an opening is right beside it), DOORWAY, or DOOR packed
+     * with its variant (hinge/open) and the door facing.
      *
      * @param plusDir  direction of increasing {@code along}
      * @param crossDir direction across the border (into the higher zone)
      */
     private static long doorsBorderColumn(long seed, int cx, int cz, boolean vertical, int along, int plusDir, int crossDir) {
+        int axis = vertical ? FRAME_AXIS_Z : 0;
         int opening = borderOpening(seed, cx, cz, vertical, along);
         if (opening < 0) {
-            return withStyle(pack(WALL, 0, 0), STYLE_BASE);
+            int jamb = 0;
+            int next = borderOpening(seed, cx, cz, vertical, along + 1);
+            int prev = borderOpening(seed, cx, cz, vertical, along - 1);
+            if (next >= 0) {
+                jamb = JAMB_LEFT | ((next & 1) == 0 ? JAMB_TALL : 0);
+            } else if (prev >= 0) {
+                jamb = JAMB_RIGHT | ((prev & 1) == 0 ? JAMB_TALL : 0);
+            }
+            return withStyle(pack(WALL, 0, jamb == 0 ? 0 : jamb | axis), STYLE_BASE);
         }
         if ((opening & 1) == 0) {
-            return pack(DOORWAY, 0, 0);
+            long c = pack(DOORWAY, 0, axis);
+            // A threshold strip where one zone's carpet meets the other's.
+            if (zoneCarpet(seed, cx, cz) != (vertical ? zoneCarpet(seed, cx - 1, cz) : zoneCarpet(seed, cx, cz - 1))) {
+                c = withDetail(c, DETAIL_THRESHOLD, opposite(crossDir));
+            }
+            return c;
         }
         // Double wooden doors meeting in the middle, open or shut.
         long h = Hash.of(seed, cx, cz, vertical ? 7020 : 7021);
@@ -576,6 +707,7 @@ final class Level4Plan {
             c = borderColumn(seed, cx, cz, lx, lz);
             if (kind(c) == FLOOR) {
                 c = withCeiling(c, latticeCeiling(seed, x, z, cx, cz, true), latticeFacing(seed, cx, cz, x, z));
+                c = stain(seed, x, z, c);
             }
             return withFloor(c, carpet);
         }
@@ -592,14 +724,15 @@ final class Level4Plan {
         if (ring) {
             c = withFloor(pack(FLOOR, 0, 0), carpet);
             c = withCeiling(c, latticeCeiling(seed, x, z, cx, cz, true), latticeFacing(seed, cx, cz, x, z));
-            return ringDetail(seed, x, z, cx, cz, lx, lz, c);
+            return stain(seed, x, z, ringDetail(seed, x, z, cx, cz, lx, lz, c));
         }
         Frame f = new Frame(seed, cx, cz, u, v, plusU, plusV, carpet, x, z);
         return switch (zoneKind(seed, cx, cz)) {
             case OPEN -> openCore(f);
             case CUBICLES -> cubicleCore(f);
             case OFFICES -> officeCore(f);
-            default -> lobbyCore(f);
+            case LOBBY -> lobbyCore(f);
+            default -> cafeteriaCore(f);
         };
     }
 
@@ -615,10 +748,23 @@ final class Level4Plan {
         int minusV() {
             return opposite(plusV);
         }
+
+        /** FRAME_AXIS_Z when walls running along u run along world Z. */
+        int axisU() {
+            return plusU == SOUTH ? FRAME_AXIS_Z : 0;
+        }
+    }
+
+    /** A rare old stain on a plain carpet floor (about 1 column in 400). */
+    private static long stain(long seed, int x, int z, long c) {
+        if (kind(c) == FLOOR && deco(c) == DECO_NONE && detail(c) == DETAIL_NONE && Hash.unit(seed, x, z, 7031) < 0.0025) {
+            return withDetail(c, DETAIL_STAIN, Hash.range(Hash.of(seed, x, z, 7032), 4));
+        }
+        return c;
     }
 
     // ------------------------------------------------------------------------------------------
-    // Border columns
+    // Border columns and window runs
     // ------------------------------------------------------------------------------------------
 
     private static long borderColumn(long seed, int cx, int cz, int lx, int lz) {
@@ -643,11 +789,25 @@ final class Level4Plan {
                     return withStyle(pack(WALL, 0, 0), STYLE_BASE); // piers framing the window run
                 }
                 int facing = windowsFaceHigh(b) ? crossDir : opposite(crossDir);
-                return pack(WINDOW, facing, windowPane(along, facing, plusDir));
+                int cover = bayCover(seed, cx, cz, vertical, (along - 2) / 3);
+                return pack(WINDOW, facing, windowPane(along, facing, plusDir) | cover << 2);
             }
             default:
                 return doorsBorderColumn(seed, cx, cz, vertical, along, plusDir, crossDir);
         }
+    }
+
+    /**
+     * How bay {@code bay} (0..14) of a window run is blacked out, the same for its three panes.
+     * Canon: most windows are blacked out, yet still glow. Blinds right down 45%, taped over 30%,
+     * blinds half down 10%, and only 15% bare frosted glass.
+     */
+    private static int bayCover(long seed, int cx, int cz, boolean vertical, int bay) {
+        double r = Hash.unit(seed, cx * 32 + bay, cz * 2 + (vertical ? 1 : 0), 7015);
+        if (r < 0.45) return COVER_BLINDS;
+        if (r < 0.75) return COVER_TAPED;
+        if (r < 0.85) return COVER_HALF;
+        return COVER_NONE;
     }
 
     /**
@@ -732,8 +892,9 @@ final class Level4Plan {
     /**
      * Details on a DOORS border wall, for the ring column in front of it at {@code along}: a green
      * exit sign over each opening that leads toward the nearest exit stairwell (on the side you come
-     * from), and an extinguisher with a fire-alarm call point beside it at along 12/13 and 36/37,
-     * about every 24 blocks, wherever the wall there is solid.
+     * from), an extinguisher with a fire-alarm call point beside it at along 12/13 and 36/37 (about
+     * every 24 blocks), and an Almond Water fountain in the middle (along 24), wherever the wall
+     * there is solid.
      *
      * @param bcx    zone owning the border line (its local coordinate 0)
      * @param inward the way from the wall into this ring aisle (what hangs on the wall faces this way)
@@ -765,12 +926,14 @@ final class Level4Plan {
         if ((along == 13 || along == 37) && borderOpening(seed, bcx, bcz, vertical, along - 1) < 0) {
             return withDeco(c, DECO_CALL_POINT, inward);
         }
+        if (along == 24) {
+            return furniture(c, FOUNTAIN, inward, 3);
+        }
         return c;
     }
 
     // ------------------------------------------------------------------------------------------
-    // The ceiling: lights on the regular grid (open floors, rings, cubicles, the lobby hall),
-    // fixtures between them, water damage
+    // The ceiling: lights on the regular grid, fixtures between them, water damage
     // ------------------------------------------------------------------------------------------
 
     /**
@@ -849,9 +1012,10 @@ final class Level4Plan {
 
     /**
      * Water damage: about one 16 x 16 square in 20 has a leak somewhere in it. Around the leak a
-     * small cluster of tiles has fallen out, the tiles around those are stained brown, and sometimes
-     * the access hatch in the middle stands open where someone went looking for the leak. Returns
-     * the ceiling there (TILE_MISSING, STAINED, HATCH), or -1 when (x, z) is not in a patch.
+     * small cluster of tiles has fallen out or been pushed up, a cable stub dangles from one hole,
+     * the tiles around those are stained brown, and sometimes the access hatch in the middle stands
+     * open where someone went looking for the leak. Returns the ceiling there, or -1 when (x, z) is
+     * not in a patch.
      */
     private static int damage(long seed, int x, int z) {
         int sx = Math.floorDiv(x, 16);
@@ -871,13 +1035,19 @@ final class Level4Plan {
         if (d2 > r2) {
             return roll < 0.55 ? STAINED : -1; // the stained fringe
         }
-        if (d2 == 0 && Hash.unit(Hash.mix(h ^ 4)) < 0.4) {
-            return HATCH;
+        if (d2 == 0) {
+            return Hash.unit(Hash.mix(h ^ 4)) < 0.4 ? HATCH : CABLE;
         }
-        return roll < 0.65 ? TILE_MISSING : STAINED;
+        if (roll < 0.55) return TILE_MISSING;
+        if (roll < 0.70) return LIFTED;
+        return STAINED;
     }
 
-    /** Ceiling of a corridor: a panel pair every 6 blocks along its centre line (1 = centre). */
+    /**
+     * Ceiling of a corridor: a panel pair every 6 blocks along its centre line (1 = centre), a
+     * sprinkler or smoke detector and a diffuser or grille between the pairs, and an access hatch
+     * by the wall at u 12 and 36.
+     */
     private static long corridorCeiling(Frame f, long c, int across, double litShare) {
         int a = Math.floorMod(f.u, 6);
         if (across != 1 || (a != 1 && a != 2)) {
@@ -887,6 +1057,8 @@ final class Level4Plan {
                 fixture = (f.u / 6) % 2 == 0 ? SPRINKLER : SMOKE;
             } else if (across == 1 && a == 0) {
                 fixture = (f.u / 6) % 2 == 0 ? DIFFUSER : RETURN_GRILLE;
+            } else if (across == 0 && (f.u == 12 || f.u == 36)) {
+                fixture = HATCH;
             }
             return withCeiling(c, damage >= 0 ? damage : fixture, 0);
         }
@@ -900,6 +1072,31 @@ final class Level4Plan {
         return withCeiling(c, state, facing);
     }
 
+    /**
+     * A 3 x 3 group of lobby coffers covering zone coordinates u0..u0+2, c0..c0+2 (u0 % 4 == 0, so a
+     * lattice panel pair is always wholly inside or wholly outside it). Lit as a whole: 60% lit, 5%
+     * flickering, the rest dead. Returns the ceiling, or -1 outside the group.
+     */
+    private static int coffer(Frame f, int c, int u0, int c0) {
+        if (f.u < u0 || f.u > u0 + 2 || c < c0 || c > c0 + 2) {
+            return -1;
+        }
+        double r = Hash.unit(f.seed, f.cx * 64 + u0, f.cz * 64 + c0, 7049);
+        return r < 0.60 ? COFFER_LIT : r < 0.65 ? COFFER_FLICKER : COFFER_DEAD;
+    }
+
+    /**
+     * A double-sided exit sign hanging from the ceiling, turned to face people walking toward the
+     * nearest exit stairwell (so its front greets them; no arrow: "straight on").
+     */
+    private static long hangingExit(long seed, int x, int z, long c) {
+        int[] exit = EXITS.nearest(seed, x, z);
+        int dx = exit[0] - x;
+        int dz = exit[1] - z;
+        int toward = Math.abs(dx) >= Math.abs(dz) ? (dx >= 0 ? EAST : WEST) : (dz >= 0 ? SOUTH : NORTH);
+        return withDeco(c, DECO_HANGING_EXIT, opposite(toward), ARROW_NONE);
+    }
+
     // ------------------------------------------------------------------------------------------
     // OPEN zones
     // ------------------------------------------------------------------------------------------
@@ -907,13 +1104,16 @@ final class Level4Plan {
     private static long openCore(Frame f) {
         int c = f.v - CORE_LO;
         if (zoneVariant(f.seed, f.cx, f.cz) == 1 && c >= 34) {
-            // A row of small offices along the far side, doors facing the open floor.
+            // A row of small rooms along the far side, doors facing the open floor.
             return roomRow(f, 34, 40, false, 9, false);
         }
         return openFloor(f, true);
     }
 
-    /** Open-plan floor: square columns every 8 blocks, mostly empty carpet between them. */
+    /**
+     * Open-plan floor: square columns every 8 blocks, empty carpet between them, an exit sign
+     * hanging from the ceiling every 24 blocks each way.
+     */
     private static long openFloor(Frame f, boolean islands) {
         long seed = f.seed;
         int x = f.x;
@@ -926,15 +1126,20 @@ final class Level4Plan {
         if (kind(c) == FLOOR) {
             c = columnSide(f, c);
         }
+        if (kind(c) == FLOOR && deco(c) == DECO_NONE && Math.floorMod(x, 24) == 0 && Math.floorMod(z, 24) == 0) {
+            c = hangingExit(seed, x, z, c);
+        }
+        c = stain(seed, x, z, c);
         return withCeiling(c, latticeCeiling(seed, x, z, f.cx, f.cz, true), latticeFacing(seed, f.cx, f.cz, x, z));
     }
 
     /**
      * Things against the square columns. An extinguisher hangs on one side of every third column
-     * each way (about every 24 blocks, like a real fire plan); a CCTV camera looks out from about
-     * one column in 25; and rarely (7% of the others) one side of a column has a "moving day"
-     * pile: stacked boxes, a filing cabinet and another box or a crate, pushed against it in a
-     * neat line, waiting for a removal van that never came.
+     * each way (about every 24 blocks, like a real fire plan); a water cooler stands against one
+     * side of the columns halfway between those (Level 4 is where Almond Water is found most); a
+     * CCTV camera looks out from about one column in 25; and rarely (7% of the others) one side of
+     * a column has a "moving day" pile: stacked boxes, a filing cabinet and another box or a supply
+     * crate, pushed against it in a neat line, waiting for a removal van that never came.
      */
     private static long columnSide(Frame f, long c) {
         long seed = f.seed;
@@ -949,6 +1154,9 @@ final class Level4Plan {
                 }
                 if (k == 0 && extinguisherSide(seed, colX, colZ) == d) {
                     return withDeco(c, DECO_EXTINGUISHER, d);
+                }
+                if (k == 0 && coolerSide(seed, colX, colZ) == d) {
+                    return furniture(c, COOLER, d, 3);
                 }
                 if (movingDaySide(f, colX, colZ) == d) {
                     if (k == 0) return furniture(c, CABINET, d, 0);
@@ -971,13 +1179,21 @@ final class Level4Plan {
         return Hash.range(Hash.of(seed, colX, colZ, 7051), 4);
     }
 
+    /** The side of column (colX, colZ) with a water cooler, or -1 (the columns halfway between the extinguishers). */
+    private static int coolerSide(long seed, int colX, int colZ) {
+        if (Math.floorMod(Math.floorDiv(colX - 4, 8), 3) != 1 || Math.floorMod(Math.floorDiv(colZ - 4, 8), 3) != 1) {
+            return -1;
+        }
+        return Hash.range(Hash.of(seed, colX, colZ, 7054), 4);
+    }
+
     /**
      * The side of column (colX, colZ) with a moving-day pile, or -1. Never on a column with an
-     * extinguisher, and never in front of the doors of the row of small offices some open floors
-     * have (their doors open onto local v 37).
+     * extinguisher or a cooler, and never in front of the doors of the row of small rooms some open
+     * floors have (their doors open onto local v 37).
      */
     private static int movingDaySide(Frame f, int colX, int colZ) {
-        if (extinguisherSide(f.seed, colX, colZ) >= 0) {
+        if (extinguisherSide(f.seed, colX, colZ) >= 0 || coolerSide(f.seed, colX, colZ) >= 0) {
             return -1;
         }
         long h = Hash.of(f.seed, colX, colZ, 7052);
@@ -1010,10 +1226,10 @@ final class Level4Plan {
     /**
      * What is left in each 8x8 square between four columns (offsets 2..6 from the column lines, so
      * a free walkway always runs along the columns). Canon says these floors are nearly empty, so
-     * mostly nothing is: half the squares only show the dents of two facing rows of five desks that
-     * were carried out (a few dents faded away), some of those still have one desk and its chair,
-     * or one office chair standing alone on the dents, very rarely a forgotten backpack; the rest
-     * is bare carpet. Only squares fully inside a zone's core (not the ring) get anything.
+     * mostly nothing is: every square keeps the flush floor box the desks were plugged into; half
+     * the squares also show the dents of two facing rows of five desks that were carried out, some
+     * of those still have one desk and its chair, or one office chair standing alone, very rarely a
+     * forgotten backpack; the rest is bare carpet. Only squares fully inside a zone's core get anything.
      */
     private static long island(Frame f, long base) {
         long seed = f.seed;
@@ -1030,7 +1246,7 @@ final class Level4Plan {
         if (localX < 4 || localX > 36 || localZ < 4 || localZ > 36) {
             return base;
         }
-        // ... and inside the open part of the zone (not the office row / cubicle rows).
+        // ... and inside the open part of the zone (not the room row / cubicle rows).
         int vStart = alongZ(seed, f.cx, f.cz) ? localX : localZ;
         int kind = zoneKind(seed, f.cx, f.cz);
         if (kind == OPEN && zoneVariant(seed, f.cx, f.cz) == 1 && vStart + 7 >= 38) {
@@ -1041,9 +1257,6 @@ final class Level4Plan {
         }
         long h = Hash.of(seed, sx, sz, 7060);
         double r = Hash.unit(h);
-        if (r >= 0.645) {
-            return base; // bare carpet
-        }
         boolean flip = Hash.unit(Hash.mix(h ^ 1)) < 0.5; // which axis the desk rows line up with
         int a = flip ? oz : ox;   // along the rows
         int b = flip ? ox : oz;   // across them
@@ -1065,16 +1278,20 @@ final class Level4Plan {
             if (a == 2 + Hash.range(Hash.mix(h ^ 6), 5) && b == 2) {
                 return furniture(base, CHAIR, Hash.range(Hash.mix(h ^ 7), 4), 0);
             }
-        } else if (r >= 0.63) {
+        } else if (r >= 0.63 && r < 0.645) {
             // Someone's backpack, left on the floor.
             if (a == 4 && b == 2) {
                 return furniture(base, BACKPACK, Hash.range(Hash.mix(h ^ 8), 4), 0);
             }
         }
-        if (deskRow && Hash.unit(seed, f.x, f.z, 7061) < 0.85) {
-            return withFloor(base, f.carpet | INDENT);
+        long c = base;
+        if (r < 0.645 && deskRow && Hash.unit(seed, f.x, f.z, 7061) < 0.85) {
+            c = withFloor(c, f.carpet | INDENT);
         }
-        return base;
+        if (a == 4 && b == 3) {
+            c = withDetail(c, DETAIL_FLOOR_BOX, plusB); // between the two desk rows
+        }
+        return c;
     }
 
     /** Puts a piece of furniture on a floor column, keeping its floor and ceiling. */
@@ -1130,26 +1347,15 @@ final class Level4Plan {
         int depth = sideA ? c - b : b + 6 - c;   // 0 = front row, 2 = desk row
         int iu = (f.u - CORE_LO) % 4;    // 1..3 inside the pod
         int toFront = sideA ? f.minusV() : f.plusV;
-        long h = Hash.of(f.seed, f.cx * 16 + pod, f.cz * 16 + group * 2 + (sideA ? 0 : 1), 7070);
-        double r = Hash.unit(h);
+        // Canon: every cubicle is complete and the same: a desk with the computer in the middle, a
+        // chair, and on the left desk the same set of pencils, notebooks, post-its, a mug of Almond
+        // Water and the little "keep your workspace tidy" sign.
         if (depth == 2) {
-            if (r < 0.15) {
-                return withFloor(base, f.carpet | INDENT); // desk taken away: only the dents remain
-            }
-            boolean pc = iu == 2 && Hash.unit(Hash.mix(h ^ 1)) < 0.7;
-            return furniture(base, pc ? DESK_PC : DESK, toFront, 0);
+            long desk = furniture(base, iu == 2 ? DESK_PC : DESK, toFront, 0);
+            return iu == 1 ? withTop(desk, TOP_CUBICLE_SET) : desk;
         }
-        if (depth == 1 && iu == 2 && Hash.unit(Hash.mix(h ^ 2)) < 0.75) {
-            int facing = opposite(toFront); // looking at the desk
-            if (r < 0.15 || Hash.unit(Hash.mix(h ^ 3)) < 0.25) {
-                facing = Hash.range(Hash.mix(h ^ 4), 4);
-            }
-            return furniture(base, CHAIR, facing, 0);
-        }
-        if (depth == 1 && iu == 3) {
-            // Beside the chair, against the side partition (the front row stays free to walk in).
-            if (r >= 0.15 && r < 0.27) return furniture(base, BOXES, toFront, Hash.unit(Hash.mix(h ^ 5)) < 0.3 ? 1 : 0);
-            if (r >= 0.27 && r < 0.28) return furniture(base, BACKPACK, Hash.range(Hash.mix(h ^ 6), 4), 0);
+        if (depth == 1 && iu == 2) {
+            return furniture(base, CHAIR, opposite(toFront), 0); // looking at the desk
         }
         return base;
     }
@@ -1195,7 +1401,7 @@ final class Level4Plan {
         if ((c >= 7 && c <= 9) || (c >= 23 && c <= 25)) {
             long base = withFloor(pack(FLOOR, 0, 0), f.carpet);
             base = corridorCeiling(f, base, c == 8 || c == 24 ? 1 : 0, 0.35);
-            return corridorWall(f, base, c);
+            return stain(f.seed, f.x, f.z, corridorWall(f, base, c));
         }
         if (c <= 6) return roomRow(f, 0, 6, true, 1, false);
         if (c <= 16 && c >= 10 && c != 16) return roomRow(f, 10, 16, false, 2, false);
@@ -1205,12 +1411,13 @@ final class Level4Plan {
     }
 
     /**
-     * Details on the corridor walls, all on fixed spots so they read as planned. On the wall of
-     * rows A and C (corridor rows c 7 and 23): an exit sign near each end of the corridor, its arrow
-     * pointing along the corridor toward the nearest exit stairwell, and in half the corridors a
-     * notice board somewhere in the middle. On the wall of rows B and D (c 9 and 25): an
-     * extinguisher with a call point beside it at u 14/15 and 34/35. Each only where the wall
-     * behind it is plain drywall (not a door or an office front).
+     * Details on the corridor walls, all on fixed spots so they read as planned. Beside every door a
+     * room sign. On the wall of rows A and C (corridor rows c 7 and 23): an exit sign near each end
+     * of the corridor, its arrow pointing along the corridor toward the nearest exit stairwell, a
+     * first-aid box in the middle (u 24) and in half the corridors a notice board further on. On the
+     * wall of rows B and D (c 9 and 25): an extinguisher with a call point beside it at u 14/15 and
+     * 34/35 and an Almond Water fountain in the middle. Each only where the wall behind it is plain
+     * drywall (not a door, glass or an office front).
      */
     private static long corridorWall(Frame f, long base, int c) {
         int rowId = switch (c) {
@@ -1226,16 +1433,7 @@ final class Level4Plan {
         int u = f.u;
         boolean lowWall = c == 7 || c == 23;
         int facing = lowWall ? f.plusV : f.minusV(); // away from the wall, into the corridor
-        if (!lowWall) {
-            if ((u == 14 || u == 34) && rowWallPlain(f, rowId, u) && rowWallPlain(f, rowId, u + 1)) {
-                return withDeco(base, DECO_EXTINGUISHER, facing);
-            }
-            if ((u == 15 || u == 35) && rowWallPlain(f, rowId, u - 1) && rowWallPlain(f, rowId, u)) {
-                return withDeco(base, DECO_CALL_POINT, facing);
-            }
-            return base;
-        }
-        if (u <= 8 || u >= 40) {
+        if (lowWall && (u <= 8 || u >= 40)) {
             // The first plain spot from each end: u 6, 7, 8 and 42, 41, 40.
             int spot = -1;
             int end = u <= 8 ? 6 : 42;
@@ -1245,26 +1443,59 @@ final class Level4Plan {
                     spot = end + i * step;
                 }
             }
-            if (u != spot) {
-                return base;
+            if (u == spot) {
+                int[] exit = EXITS.nearest(f.seed, f.x, f.z);
+                int along = (exit[0] - f.x) * DX[f.plusU] + (exit[1] - f.z) * DZ[f.plusU];
+                int toward = along >= 0 ? f.plusU : f.minusU();
+                // Left as seen by someone reading the sign = clockwise of the way it faces.
+                return withDeco(base, DECO_EXIT, facing, toward == clockwise(facing) ? ARROW_LEFT : ARROW_RIGHT);
             }
-            int[] exit = EXITS.nearest(f.seed, f.x, f.z);
-            int along = (exit[0] - f.x) * DX[f.plusU] + (exit[1] - f.z) * DZ[f.plusU];
-            int toward = along >= 0 ? f.plusU : f.minusU();
-            // Left as seen by someone reading the sign = clockwise of the way it faces.
-            return withDeco(base, DECO_EXIT, facing, toward == clockwise(facing) ? ARROW_LEFT : ARROW_RIGHT);
+        }
+        if (!lowWall) {
+            if ((u == 14 || u == 34) && rowWallPlain(f, rowId, u) && rowWallPlain(f, rowId, u + 1)) {
+                return withDeco(base, DECO_EXTINGUISHER, facing);
+            }
+            if ((u == 15 || u == 35) && rowWallPlain(f, rowId, u - 1) && rowWallPlain(f, rowId, u)) {
+                return withDeco(base, DECO_CALL_POINT, facing);
+            }
+            if (u == 24 && rowWallPlain(f, rowId, u)) {
+                return furniture(base, FOUNTAIN, facing, 3);
+            }
+        }
+        // A room sign just before each door (seen from the corridor).
+        int nextKind = rowDoorKind(f, rowId, u + 1);
+        if (nextKind >= 0 && rowDoorKind(f, rowId, u) < 0) {
+            return withDeco(base, nextKind == R_CONFERENCE ? DECO_SIGN_MEETING : DECO_SIGN_OFFICE, facing);
+        }
+        if (lowWall && u == 24 && rowWallPlain(f, rowId, u)) {
+            return withDeco(base, DECO_FIRST_AID, facing);
         }
         long h = Hash.of(f.seed, f.cx, f.cz, 7090 + c);
-        if (Hash.unit(h) < 0.5 && u == 18 + Hash.range(Hash.mix(h), 12) && rowWallPlain(f, rowId, u)) {
+        if (lowWall && Hash.unit(h) < 0.5 && u == 29 + Hash.range(Hash.mix(h), 8) && rowWallPlain(f, rowId, u)) {
             return withDeco(base, DECO_NOTICE, facing);
         }
         return base;
     }
 
     /**
-     * True when the door wall of small-office row {@code rowId} (1..4) is plain drywall at u: a
-     * partition end or a stretch of wall that is neither the room's door nor a glazed office front.
-     * (Small rows only ever have single wooden doors.)
+     * The kind of the room whose door (or opening) is at u in the door wall of small-room row
+     * {@code rowId} (1..4), or -1 when u is no door.
+     */
+    private static int rowDoorKind(Frame f, int rowId, int u) {
+        if (u <= CORE_LO || u >= CORE_HI) {
+            return -1;
+        }
+        long room = roomAt(f.seed, f.cx, f.cz, rowId, u, 4, 7);
+        if (room < 0) {
+            return -1;
+        }
+        RoomKey k = roomKey(f.seed, f.cx, f.cz, rowId, false, room);
+        return k.isOpening(u) ? k.kind : -1;
+    }
+
+    /**
+     * True when the door wall of small-room row {@code rowId} (1..4) is plain drywall at u: a
+     * partition end, a jamb, or a stretch of wall that is neither a door nor glass.
      */
     private static boolean rowWallPlain(Frame f, int rowId, int u) {
         if (u <= CORE_LO || u >= CORE_HI) {
@@ -1274,14 +1505,8 @@ final class Level4Plan {
         if (room < 0) {
             return true;
         }
-        int u0 = (int) (room >>> 16) & 0xFF;
-        int w = (int) (room >>> 8) & 0xFF;
-        int index = (int) room & 0xFF;
-        long h = Hash.of(f.seed, f.cx, f.cz, 7200 + rowId * 64 + index);
-        if (glazedFront(h, roomKind(h, false, rowId))) {
-            return false;
-        }
-        return u != u0 + 1 + Hash.range(Hash.mix(h ^ 0x11), Math.max(1, w - 2));
+        RoomKey k = roomKey(f.seed, f.cx, f.cz, rowId, false, room);
+        return !k.isOpening(u) && !k.glassFront() && !glazedFront(k.h, k.kind);
     }
 
     // ------------------------------------------------------------------------------------------
@@ -1324,44 +1549,203 @@ final class Level4Plan {
     }
 
     /**
-     * The lobby hall: call buttons beside each elevator, a directory plaque, plants at the ends of
-     * the elevator core, a water cooler and a sofa, and on the core walls between the elevators an
-     * extinguisher and a call point (row A side) and a stopped clock (row B side, opposite the plaque).
+     * The lobby hall: a terrazzo floor with entrance matting at both ends, two groups of lit coffers,
+     * hanging exit signs near the ends, call buttons beside each elevator, plants at the ends of the
+     * elevator core, a water cooler and a sofa, and on the core walls between the elevators: an
+     * extinguisher, a call point, the directory board, a fire evacuation plan and a hand sanitiser
+     * (row A side); two Almond Water fountains, a first-aid box and a stopped clock (row B side).
      */
     private static long lobbyHall(Frame f, int c) {
-        long base = withFloor(pack(FLOOR, 0, 0), f.carpet);
-        base = withCeiling(base, latticeCeiling(f.seed, f.x, f.z, f.cx, f.cz, false), latticeFacing(f.seed, f.cx, f.cz, f.x, f.z));
+        boolean mat = (f.u <= CORE_LO + 1 || f.u >= CORE_HI - 1) && c >= 18 && c <= 22;
+        long base = withFloor(pack(FLOOR, 0, 0), mat ? ENTRANCE_MAT : TERRAZZO);
+        int coffer = Math.max(coffer(f, c, 12, 19), coffer(f, c, 32, 19));
+        if (coffer >= 0) {
+            base = withCeiling(base, coffer, 0);
+        } else {
+            base = withCeiling(base, latticeCeiling(f.seed, f.x, f.z, f.cx, f.cz, false), latticeFacing(f.seed, f.cx, f.cz, f.x, f.z));
+        }
+        if (c == 20 && (f.u == 7 || f.u == 41)) {
+            return hangingExit(f.seed, f.x, f.z, base);
+        }
         boolean nearA = c == 16;  // first row in front of row A's wall
         boolean nearB = c == 24;
-        if (nearA || nearB) {
-            int awayFromWall = nearA ? f.plusV : f.minusV();
-            int k = f.u - 19;
-            if (k >= 0 && k <= 12 && k % 4 == 0) {
-                return withDeco(base, DECO_ELEVATOR_PANEL, awayFromWall);
+        if (!nearA && !nearB) {
+            return base;
+        }
+        int awayFromWall = nearA ? f.plusV : f.minusV();
+        int k = f.u - 19;
+        if (k >= 0 && k <= 12 && k % 4 == 0) {
+            return withDeco(base, DECO_ELEVATOR_PANEL, awayFromWall);
+        }
+        if (nearA) {
+            switch (f.u) {
+                case 16 -> {
+                    return withDeco(base, DECO_EXTINGUISHER, awayFromWall);
+                }
+                case 20 -> {
+                    return withDeco(base, DECO_CALL_POINT, awayFromWall);
+                }
+                case 24 -> {
+                    return withDeco(base, DECO_DIRECTORY, awayFromWall);
+                }
+                case 28 -> {
+                    return withDeco(base, DECO_EVAC_PLAN, awayFromWall);
+                }
+                case 32 -> {
+                    return withDeco(base, DECO_SANITISER, awayFromWall);
+                }
+                default -> {
+                }
             }
-            if (nearA && f.u == 24) {
-                return withDeco(base, DECO_PLAQUE, awayFromWall);
-            }
-            if (nearB && f.u == 24) {
-                return withDeco(base, DECO_CLOCK, awayFromWall);
-            }
-            if (nearA && f.u == 16) {
-                return withDeco(base, DECO_EXTINGUISHER, awayFromWall);
-            }
-            if (nearA && f.u == 20) {
-                return withDeco(base, DECO_CALL_POINT, awayFromWall);
-            }
-            if (f.u == 15 || f.u == 33) {
-                return furniture(base, PLANT, awayFromWall, 0);
-            }
-            if (nearB && f.u == 14 && Hash.unit(f.seed, f.cx, f.cz, 7080) < 0.8) {
-                return furniture(base, COOLER, awayFromWall, 3);
-            }
-            if (nearA && f.u == 34 && Hash.unit(f.seed, f.cx, f.cz, 7081) < 0.6) {
-                return furniture(base, SOFA, awayFromWall, 0);
+        } else {
+            switch (f.u) {
+                case 16, 32 -> {
+                    return furniture(base, FOUNTAIN, awayFromWall, 3);
+                }
+                case 20 -> {
+                    return withDeco(base, DECO_FIRST_AID, awayFromWall);
+                }
+                case 24 -> {
+                    return withDeco(base, DECO_CLOCK, awayFromWall);
+                }
+                default -> {
+                }
             }
         }
+        if (f.u == 15 || f.u == 33) {
+            return furniture(base, PLANT, awayFromWall, 0);
+        }
+        if (nearB && f.u == 14 && Hash.unit(f.seed, f.cx, f.cz, 7080) < 0.8) {
+            return furniture(base, COOLER, awayFromWall, 3);
+        }
+        if (nearA && f.u == 34 && Hash.unit(f.seed, f.cx, f.cz, 7081) < 0.6) {
+            return furniture(base, SOFA, awayFromWall, 0);
+        }
         return base;
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // CAFETERIA zones: a lobby merged into a cafeteria
+    // ------------------------------------------------------------------------------------------
+
+    /*
+     * Rows across the core (c = v - 4, 0..40), all one big space:
+     *   c 0-13   the lobby: terrazzo, square columns on the usual 8-block grid, two groups of lit coffers
+     *   c 14     a threshold strip where the terrazzo meets the cafeteria's vinyl
+     *   c 15-33  the cafeteria, nearly empty as canon wants: two rows (at c 20, 28) or three (c 18,
+     *            24, 30) of 3 or 4 identical 3-block tables spread wide along u, about half the places
+     *            with a chair (some turned away), some tables bare, a pendant lamp over each table
+     *   c 34-39  in front of the servery: a counter run (c 39, u 9-39), vending machines, coolers and
+     *            fountains at its ends (u 5-8, 40-43)
+     *   c 40     the servery wall: skirting with shuttered serving hatches behind the counter
+     * Both ends (u 4 and 44) open onto the ring aisle, so it all joins the floors around it.
+     */
+    private static long cafeteriaCore(Frame f) {
+        int c = f.v - CORE_LO;
+        int u = f.u;
+        if (c <= 14) {
+            long base = withFloor(pack(FLOOR, 0, 0), TERRAZZO);
+            if (c <= 12 && Math.floorMod(f.x, 8) == 4 && Math.floorMod(f.z, 8) == 4) {
+                return withFloor(pack(COLUMN, 0, 0), TERRAZZO);
+            }
+            // Coffer groups between the columns (u 16-18 and 32-34; columns stand at u 4, 12, 20...).
+            int coffer = Math.max(coffer(f, c, 16, 6), coffer(f, c, 32, 6));
+            base = coffer >= 0 ? withCeiling(base, coffer, 0)
+                    : withCeiling(base, latticeCeiling(f.seed, f.x, f.z, f.cx, f.cz, true), latticeFacing(f.seed, f.cx, f.cz, f.x, f.z));
+            if (c == 14) {
+                return withDetail(base, DETAIL_THRESHOLD, f.plusV);
+            }
+            if (c <= 12) {
+                long col = columnSide(f, base);
+                if (kind(col) != FLOOR || deco(col) != DECO_NONE) {
+                    return col;
+                }
+            }
+            if (c == 10 && u == 24) {
+                return hangingExit(f.seed, f.x, f.z, base);
+            }
+            return base;
+        }
+        long base = withFloor(pack(FLOOR, 0, 0), VINYL);
+        base = withCeiling(base, latticeCeiling(f.seed, f.x, f.z, f.cx, f.cz, true), latticeFacing(f.seed, f.cx, f.cz, f.x, f.z));
+        int out = f.minusV(); // from the servery back toward the lobby
+        if (c == 40) {
+            // The servery wall: a shuttered hatch over each stretch of counter.
+            boolean hatch = u >= 9 && u <= 39 && (u - 9) % 6 >= 1 && (u - 9) % 6 <= 4;
+            return withFloor(withStyle(pack(WALL, hatch ? out : 0, 0), hatch ? STYLE_HATCH : STYLE_BASE), VINYL);
+        }
+        if (c == 39) {
+            if (u >= 9 && u <= 39) {
+                long counter = furniture(base, COUNTER, out, (u - 9) % 6 == 0 ? 1 : 0);
+                if (u == 24) return withDeco(counter, DECO_CLOCK, out);
+                return counter;
+            }
+            return switch (u) {
+                case 5, 6, 42, 43 -> furniture(base, VENDING, out, 2 + Hash.range(Hash.of(f.seed, f.x, f.z, 7083), 5));
+                case 7, 41 -> furniture(base, COOLER, out, 3);
+                case 8, 40 -> furniture(base, FOUNTAIN, out, 3);
+                default -> base;
+            };
+        }
+        if (c >= 15 && c <= 33) {
+            // A few widely spaced rows of a few tables, lots of empty floor round them.
+            int rows = Hash.unit(f.seed, f.cx, f.cz, 7088) < 0.5 ? 3 : 2;
+            for (int k = 0; k < rows; k++) {
+                int side = c - (rows == 3 ? 18 + 6 * k : 20 + 8 * k); // -1 chairs, 0 tables, +1 chairs
+                if (side < -1 || side > 1) {
+                    continue;
+                }
+                int n = Hash.unit(f.seed, f.cx * 8 + k, f.cz, 7089) < 0.5 ? 4 : 3;
+                int step = n == 4 ? 9 : 11;  // 4 tables at u 8, 17, 26, 35; 3 at u 11, 22, 33
+                int p = u - (n == 4 ? 8 : 11);
+                if (p < 0 || p % step > 2 || p / step >= n) {
+                    continue;
+                }
+                long key = Hash.of(f.seed, f.cx * 64 + k * 8 + p / step, f.cz, 7090);
+                if (side == 0) {
+                    return diningTable(f.seed, f.x, f.z, furniture(base, CONF_TABLE, f.plusU, 0), p % step);
+                }
+                return diningChair(f.seed, f.x, f.z, key, base, side < 0 ? f.plusV : f.minusV());
+            }
+        }
+        if (c == 33 && u == 24) {
+            return hangingExit(f.seed, f.x, f.z, base);
+        }
+        return base;
+    }
+
+    /**
+     * One block of a cafeteria table (the same conference table as everywhere): a pendant lamp over
+     * its middle block (about half still work), now and then a bottle of Almond Water on it, and
+     * extremely rarely a double cheeseburger on a tray.
+     */
+    private static long diningTable(long seed, int x, int z, long table, int along) {
+        if (along == 1) {
+            table = withDeco(table, DECO_PENDANT, 0, lampState(seed, x, z));
+        }
+        double r = Hash.unit(seed, x, z, 7084);
+        if (r < 0.005) return withTop(table, TOP_BURGER);
+        if (r < 0.08) return withTop(table, TOP_BOTTLE);
+        return table;
+    }
+
+    /**
+     * A place beside a cafeteria table ({@code key}: the table's hash): a quarter of the tables have
+     * no chairs at all; at the others about half the places have one, and a third of those are
+     * pushed back and turned away.
+     */
+    private static long diningChair(long seed, int x, int z, long key, long base, int towardTable) {
+        if (Hash.unit(key) < 0.25 || Hash.unit(seed, x, z, 7086) >= 0.5) {
+            return base;
+        }
+        int facing = Hash.unit(seed, x, z, 7087) < 0.3 ? Hash.range(Hash.of(seed, x, z, 7091), 4) : towardTable;
+        return furniture(base, CHAIR, facing, 0);
+    }
+
+    /** A pendant lamp's state: about half still work, a few flicker. */
+    private static int lampState(long seed, int x, int z) {
+        double r = Hash.unit(seed, x, z, 7085);
+        return r < 0.5 ? LAMP_LIT : r < 0.55 ? LAMP_FLICKER : LAMP_DEAD;
     }
 
     // ==========================================================================================
@@ -1369,24 +1753,79 @@ final class Level4Plan {
     // ==========================================================================================
 
     // Room kinds.
+    /** A former private office, cleared out: dents, a floor box, cable trunking, marks on the walls. */
     private static final int R_OFFICE = 0;
+    /** Truly empty (big ones are small lobbies: terrazzo, a fountain, two plants). */
     private static final int R_EMPTY = 1;
     private static final int R_STORAGE = 2;
-    private static final int R_COPY = 3;
-    private static final int R_SERVER = 4;
-    private static final int R_CLOSET = 5;
-    private static final int R_BREAK = 6;
-    private static final int R_CONFERENCE = 7;
-    private static final int R_CURTAIN = 8;
+    private static final int R_SERVER = 3;
+    private static final int R_CLOSET = 4;
+    /** A cafeteria: rows of the conference tables, a counter, vending machines, cooler and fountain. */
+    private static final int R_BREAK = 5;
+    private static final int R_CONFERENCE = 6;
+    private static final int R_CURTAIN = 7;
+
+    /** What a room is and where its door is (from the room's own hash). */
+    private record RoomKey(long h, int kind, int u0, int w, int doorU, boolean doubleDoor) {
+        /** True for the door (or opening) columns of this room's door wall. */
+        boolean isOpening(int u) {
+            return u == doorU || (doubleDoor && u == doorU + 1 && doorU + 1 < u0 + w);
+        }
+
+        /** Conference rooms have glass fronts. */
+        boolean glassFront() {
+            return kind == R_CONFERENCE;
+        }
+    }
+
+    /** The key of {@code room} (as returned by {@link #roomAt}) in row {@code rowId}. */
+    private static RoomKey roomKey(long seed, int cx, int cz, int rowId, boolean big, long room) {
+        int u0 = (int) (room >>> 16) & 0xFF;
+        int w = (int) (room >>> 8) & 0xFF;
+        int index = (int) room & 0xFF;
+        long h = Hash.of(seed, cx, cz, 7200 + rowId * 64 + index);
+        int kind = roomKind(h, big, w);
+        int doorU = u0 + 1 + Hash.range(Hash.mix(h ^ 0x11), Math.max(1, w - 2));
+        return new RoomKey(h, kind, u0, w, doorU, kind == R_CONFERENCE || kind == R_BREAK);
+    }
+
+    /**
+     * Canon's mix. Small rooms: 47% empty, 32% conference rooms (only 5+ wide; narrower ones stay
+     * empty), 8% cleared-out offices, 4% storerooms, 5% locked closets, 4% server rooms. Big rooms:
+     * 32% conference rooms, 30% cafeterias, 26% big empty rooms (lobbies), 5% storerooms, 4% the
+     * curtain room, 3% server rooms.
+     */
+    private static int roomKind(long h, boolean big, int w) {
+        double r = Hash.unit(Hash.mix(h ^ 0x10));
+        if (!big) {
+            if (r < 0.47) return R_EMPTY;
+            if (r < 0.79) return w >= 5 ? R_CONFERENCE : R_EMPTY;
+            if (r < 0.87) return R_OFFICE;
+            if (r < 0.91) return R_STORAGE;
+            if (r < 0.96) return R_CLOSET;
+            return R_SERVER;
+        }
+        if (r < 0.32) return R_CONFERENCE;
+        if (r < 0.62) return R_BREAK;
+        if (r < 0.88) return R_EMPTY;
+        if (r < 0.93) return R_STORAGE;
+        if (r < 0.97) return R_CURTAIN;
+        return R_SERVER;
+    }
+
+    /** Office fronts with glass and blinds instead of plain drywall: about a third of the empty rooms and offices. */
+    private static boolean glazedFront(long h, int kind) {
+        return (kind == R_OFFICE || kind == R_EMPTY) && Hash.unit(Hash.mix(h ^ 0x16)) < 0.35;
+    }
 
     /**
      * One column of a row of rooms between two walls running along u: wallLo (row c) and wallHi.
      * The rooms' doors are in wallHi ({@code doorHigh}) or wallLo. Rooms are split along u by
-     * 1-block partitions with hashed widths (4-7 for small offices, 8-12 for big rooms); the row
+     * 1-block partitions with hashed widths (4-7 for small rooms, 8-12 for big rooms); the row
      * ends with walls at u = 4 and u = 44, facing the ring aisle.
      *
      * @param rowId a number unique to this row within the zone (keys its random choices)
-     * @param big   big rooms (break rooms, conference rooms...) instead of small offices
+     * @param big   big rooms (cafeterias, conference rooms...) instead of small ones
      */
     private static long roomRow(Frame f, int wallLo, int wallHi, boolean doorHigh, int rowId, boolean big) {
         int c = f.v - CORE_LO;
@@ -1397,45 +1836,44 @@ final class Level4Plan {
             return wallBase;
         }
         long room = roomAt(f.seed, f.cx, f.cz, rowId, u, big ? 8 : 4, big ? 12 : 7);
-        if (room < 0) {
-            return wallBase; // partition between two rooms
-        }
-        int u0 = (int) (room >>> 16) & 0xFF;
-        int w = (int) (room >>> 8) & 0xFF;
-        int index = (int) room & 0xFF;
-        long h = Hash.of(f.seed, f.cx, f.cz, 7200 + rowId * 64 + index);
-        int kind = roomKind(h, big, rowId);
-        int depth = wallHi - wallLo - 1;
+        RoomKey k = room < 0 ? null : roomKey(f.seed, f.cx, f.cz, rowId, big, room);
         int in = doorHigh ? f.minusV() : f.plusV;   // from the door into the room
         int out = opposite(in);
-        int doorU = u0 + 1 + Hash.range(Hash.mix(h ^ 0x11), Math.max(1, w - 2));
-        boolean doubleDoor = kind == R_CONFERENCE || kind == R_BREAK;
-        boolean glass = kind == R_CONFERENCE;
-        boolean hingeRight = !doubleDoor && Hash.unit(Hash.mix(h ^ 0x15)) < 0.5;
+        if (c == doorWall && (k == null || !k.isOpening(u))) {
+            if (k != null && k.glassFront()) {
+                boolean blinds = Hash.unit(Hash.mix(k.h ^ 0x12)) < 0.5;
+                return withStyle(wallBase, blinds ? STYLE_BLINDS : STYLE_GLASS);
+            }
+            if (k != null && glazedFront(k.h, k.kind)) {
+                return withStyle(wallBase, STYLE_GLAZED);
+            }
+            // Plain drywall; right beside a door or opening it is the door's frame.
+            int next = rowOpening(f, rowId, big, u + 1);
+            int prev = rowOpening(f, rowId, big, u - 1);
+            int jamb = next > 0 ? JAMB_LEFT | (next == 2 ? JAMB_TALL : 0)
+                    : prev > 0 ? JAMB_RIGHT | (prev == 2 ? JAMB_TALL : 0) : 0;
+            return jamb == 0 ? wallBase : furniture(wallBase, WALL, 0, jamb | f.axisU());
+        }
+        if (k == null || c == wallLo || c == wallHi) {
+            return wallBase; // partition between two rooms, or the back wall
+        }
+        int kind = k.kind;
+        int depth = wallHi - wallLo - 1;
+        boolean hingeRight = !k.doubleDoor && Hash.unit(Hash.mix(k.h ^ 0x15)) < 0.5;
 
-        if (c == wallLo || c == wallHi) {
-            if (c != doorWall) {
-                return wallBase;
-            }
-            boolean isDoor = u == doorU || (doubleDoor && u == doorU + 1 && doorU + 1 < u0 + w);
-            if (!isDoor) {
-                if (glass) {
-                    boolean blinds = Hash.unit(Hash.mix(h ^ 0x12)) < 0.5;
-                    return withStyle(wallBase, blinds ? STYLE_BLINDS : STYLE_GLASS);
-                }
-                return glazedFront(h, kind) ? withStyle(wallBase, STYLE_GLAZED) : wallBase;
-            }
+        if (c == doorWall) {
             if (kind == R_BREAK) {
-                return withFloor(pack(DOORWAY, 0, 0), f.carpet); // break rooms: just a wide opening
+                // Cafeterias: a wide framed opening, a threshold strip where the carpet meets the vinyl.
+                return withDetail(withFloor(pack(DOORWAY, 0, f.axisU()), f.carpet), DETAIL_THRESHOLD, in);
             }
-            boolean open = Hash.unit(Hash.mix(h ^ 0x13)) < (kind == R_CLOSET ? 0.0 : 0.45);
-            int type = glass ? DOOR_GLASS : DOOR_OFFICE;
+            boolean open = Hash.unit(Hash.mix(k.h ^ 0x13)) < (kind == R_CLOSET ? 0.0 : 0.45);
+            int type = kind == R_CONFERENCE ? DOOR_GLASS : DOOR_OFFICE;
             int variant = type | (open ? DOOR_OPEN : 0);
             if (kind == R_CLOSET) {
-                variant = (Hash.unit(Hash.mix(h ^ 0x14)) < 0.12 ? DOOR_SIX : DOOR_OFFICE) | DOOR_LOCKED;
+                variant = (Hash.unit(Hash.mix(k.h ^ 0x14)) < 0.12 ? DOOR_SIX : DOOR_OFFICE) | DOOR_LOCKED;
             }
-            if (doubleDoor) {
-                boolean first = u == doorU;
+            if (k.doubleDoor) {
+                boolean first = u == k.doorU;
                 boolean partnerClockwise = first == (clockwise(out) == f.plusU);
                 variant |= partnerClockwise ? 0 : DOOR_HINGE_RIGHT;
             } else if (hingeRight) {
@@ -1445,40 +1883,50 @@ final class Level4Plan {
         }
 
         // Inside the room. iu: 0..w-1 along u; iv: 0 (by the door) .. depth-1 (back wall).
-        int iu = u - u0;
+        int iu = u - k.u0;
         int iv = doorHigh ? wallHi - 1 - c : c - wallLo - 1;
         if (kind == R_CLOSET) {
             return pack(FILL, 0, 0);
         }
-        int floor = kind == R_SERVER ? CONCRETE : f.carpet;
+        int floor = switch (kind) {
+            case R_SERVER -> CONCRETE;
+            case R_BREAK -> VINYL;
+            case R_EMPTY -> big ? TERRAZZO : f.carpet;
+            default -> f.carpet;
+        };
         long base = withFloor(pack(FLOOR, 0, 0), floor);
-        int panelFacing = roomPanelFacing(f, iu, w);
-        base = withCeiling(base, roomCeiling(f, h, kind, iu, iv, w, depth, panelFacing), panelFacing);
-        Room r = new Room(f, h, kind, iu, iv, w, depth, in, out, doorU - u0);
+        int panelFacing = roomPanelFacing(f, iu, k.w);
+        Room r = new Room(f, k.h, kind, iu, iv, k.w, depth, in, out, k.doorU - k.u0, big);
+        base = withCeiling(base, roomCeiling(r, panelFacing), panelFacing);
         long col = roomFurniture(r, base);
-        if (iv == 0 && kind(col) == FLOOR && deco(col) == DECO_NONE && iu == switchIu(r, doubleDoor, hingeRight)) {
-            return withDeco(col, DECO_SWITCH, in); // on the inside of the door wall
+        if (iv != 0 || kind(col) != FLOOR || deco(col) != DECO_NONE) {
+            return col;
         }
+        // On the inside of the door wall: the light switch on the latch side, a door stop on the
+        // hinge side; beside a double door coat hooks (conference) or a hand sanitiser (cafeteria).
+        int latch = hingeRight ? counterClockwise(out) : clockwise(out);
+        int latchIu = r.doorIu + (latch == f.plusU ? 1 : -1);
+        if (k.doubleDoor) {
+            if (iu == r.doorIu - 1) return withDeco(col, DECO_SWITCH, in);
+            if (iu == r.doorIu + 2) return withDeco(col, kind == R_CONFERENCE ? DECO_COAT_HOOKS : DECO_SANITISER, in);
+            return col;
+        }
+        if (iu == latchIu) return withDeco(col, DECO_SWITCH, in);
+        if (iu == 2 * r.doorIu - latchIu) return withDeco(col, DECO_DOOR_STOP, in);
         return col;
     }
 
-    /**
-     * Where the light switch goes: inside the room beside the door, on its latch side (the side
-     * your hand reaches as the door swings open), or beside a double door / opening.
-     */
-    private static int switchIu(Room r, boolean doubleDoor, boolean hingeRight) {
-        if (doubleDoor) {
-            return r.doorIu - 1; // doorIu is never 0, so this is always inside the room
+    /** What the door wall of row {@code rowId} has at u: 0 wall, 1 a door, 2 a 3-tall doorway. */
+    private static int rowOpening(Frame f, int rowId, boolean big, int u) {
+        if (u <= CORE_LO || u >= CORE_HI) {
+            return 0;
         }
-        // A door hinged LEFT has its hinges on the counter-clockwise side of the way it faces (out
-        // of the room), so its latch is on the clockwise side; hinged RIGHT the other way round.
-        int latch = hingeRight ? counterClockwise(r.out) : clockwise(r.out);
-        return r.doorIu + (latch == r.f.plusU ? 1 : -1);
-    }
-
-    /** Office fronts with glass and blinds instead of plain drywall: about a third of the offices. */
-    private static boolean glazedFront(long h, int kind) {
-        return (kind == R_OFFICE || kind == R_EMPTY) && Hash.unit(Hash.mix(h ^ 0x16)) < 0.35;
+        long room = roomAt(f.seed, f.cx, f.cz, rowId, u, big ? 8 : 4, big ? 12 : 7);
+        if (room < 0) {
+            return 0;
+        }
+        RoomKey k = roomKey(f.seed, f.cx, f.cz, rowId, big, room);
+        return !k.isOpening(u) ? 0 : k.kind == R_BREAK ? 2 : 1;
     }
 
     /**
@@ -1514,88 +1962,8 @@ final class Level4Plan {
         return -1;
     }
 
-    private static int roomKind(long h, boolean big, int rowId) {
-        double r = Hash.unit(Hash.mix(h ^ 0x10));
-        if (!big) {
-            if (r < 0.58) return R_OFFICE;
-            if (r < 0.70) return R_EMPTY;
-            if (r < 0.80) return R_STORAGE;
-            if (r < 0.87) return R_COPY;
-            if (r < 0.93) return R_CLOSET;
-            return R_SERVER;
-        }
-        if (r < 0.30) return R_BREAK;
-        if (r < 0.58) return R_CONFERENCE;
-        if (r < 0.70) return R_COPY;
-        if (r < 0.82) return R_STORAGE;
-        if (r < 0.90) return R_SERVER;
-        if (r < 0.94) return R_CURTAIN;
-        return R_EMPTY;
-    }
-
-    /**
-     * Small rooms: one panel pair in the middle, a diffuser and a smoke detector. Big rooms: pairs on
-     * a 4-block grid, diffusers and sprinklers between them. Whether the room's lights still work
-     * depends on what it was: cleared and storage rooms are mostly dark, kitchenettes and server
-     * rooms mostly lit.
-     *
-     * @param panelFacing the facing of a panel half here (toward its partner)
-     */
-    private static int roomCeiling(Frame f, long h, int kind, int iu, int iv, int w, int depth, int panelFacing) {
-        double litChance = switch (kind) {
-            case R_EMPTY -> 0.25;
-            case R_STORAGE -> 0.30;
-            case R_CURTAIN -> 0.35;
-            case R_OFFICE -> 0.45;
-            case R_CONFERENCE, R_COPY -> 0.50;
-            default -> 0.60;
-        };
-        boolean lit = Hash.unit(Hash.mix(h ^ 0x20)) < litChance;
-        boolean panel;
-        if (w <= 7) {
-            int mid = (w - 1) / 2;
-            panel = (iu == mid || iu == mid + 1) && iv == depth / 2;
-        } else {
-            panel = (iu % 4 == 1 || iu % 4 == 2) && iu + (iu % 4 == 1 ? 1 : 0) < w && iv % 4 == 2 && iv < depth;
-        }
-        if (!panel) {
-            int damage = damage(f.seed, f.x, f.z);
-            return damage >= 0 ? damage : roomFixture(iu, iv, w, depth);
-        }
-        if (!lit || damage(f.seed, f.x, f.z) >= 0
-                || damage(f.seed, f.x + DX[panelFacing], f.z + DZ[panelFacing]) >= 0) {
-            return PANEL_DEAD;
-        }
-        int first = w <= 7 ? (w - 1) / 2 : iu % 4 == 1 ? iu : iu - 1; // both halves of a panel roll the same
-        double roll = Hash.unit(Hash.mix(h ^ (0x300L + first * 32L + iv)));
-        return roll < 0.08 ? PANEL_DEAD : roll < 0.11 ? PANEL_FLICKER : PANEL_LIT;
-    }
-
-    /** The fixtures of a room's ceiling away from its panels. */
-    private static int roomFixture(int iu, int iv, int w, int depth) {
-        if (w <= 7) {
-            int mid = (w - 1) / 2;
-            if (iu == mid && iv == depth - 1) return DIFFUSER;
-            if (iu == mid && iv == 0) return SMOKE;
-            return TILE;
-        }
-        if (iu % 4 == 3 && iv % 4 == 0) {
-            return (iu / 4 + iv / 4) % 2 == 0 ? DIFFUSER : SPRINKLER;
-        }
-        if (iu == w / 2 && iv == depth - 1) {
-            return SMOKE;
-        }
-        return TILE;
-    }
-
-    /** Room panels lie along u; the first half points +u at its partner. */
-    private static int roomPanelFacing(Frame f, int iu, int w) {
-        boolean first = w <= 7 ? iu == (w - 1) / 2 : iu % 4 == 1;
-        return first ? f.plusU : f.minusU();
-    }
-
     /** One room column in the room's own frame (see {@link #roomRow}). */
-    private record Room(Frame f, long h, int kind, int iu, int iv, int w, int depth, int in, int out, int doorIu) {
+    private record Room(Frame f, long h, int kind, int iu, int iv, int w, int depth, int in, int out, int doorIu, boolean big) {
         int left() {
             return f.minusU();
         }
@@ -1612,6 +1980,82 @@ final class Level4Plan {
         boolean byDoor() {
             return iv == 0 && (iu == doorIu || iu == doorIu + 1);
         }
+
+        /** The conference table's row and first column (it is 3 long, centred). */
+        int tableRow() {
+            return depth / 2;
+        }
+
+        int tableU0() {
+            return (w - 3) / 2;
+        }
+    }
+
+    /**
+     * The ceiling of a room. Small rooms: one panel pair in the middle (in a small conference room
+     * at the back, the projector hangs over the table), a diffuser and a smoke detector. Big rooms:
+     * pairs on a 4-block grid, diffusers and sprinklers between them. Whether the room's lights
+     * still work depends on what it was: empty rooms and storerooms are mostly dark, cafeterias and
+     * server rooms mostly lit.
+     *
+     * @param panelFacing the facing of a panel half here (toward its partner)
+     */
+    private static int roomCeiling(Room r, int panelFacing) {
+        Frame f = r.f;
+        double litChance = switch (r.kind) {
+            case R_EMPTY -> 0.25;
+            case R_STORAGE -> 0.30;
+            case R_CURTAIN -> 0.35;
+            case R_OFFICE -> 0.35;
+            case R_CONFERENCE -> 0.50;
+            default -> 0.60;
+        };
+        boolean lit = Hash.unit(Hash.mix(r.h ^ 0x20)) < litChance;
+        boolean conference = r.kind == R_CONFERENCE;
+        boolean panel;
+        if (r.w <= 7) {
+            int mid = (r.w - 1) / 2;
+            panel = (r.iu == mid || r.iu == mid + 1) && r.iv == (conference ? r.depth - 1 : r.depth / 2);
+        } else {
+            panel = (r.iu % 4 == 1 || r.iu % 4 == 2) && r.iu + (r.iu % 4 == 1 ? 1 : 0) < r.w && r.iv % 4 == 2 && r.iv < r.depth;
+        }
+        if (!panel) {
+            if (conference && r.iv == r.tableRow() && r.iu == r.tableU0() + 1) {
+                return PROJECTOR;
+            }
+            int damage = damage(f.seed, f.x, f.z);
+            return damage >= 0 ? damage : roomFixture(r);
+        }
+        if (!lit || damage(f.seed, f.x, f.z) >= 0
+                || damage(f.seed, f.x + DX[panelFacing], f.z + DZ[panelFacing]) >= 0) {
+            return PANEL_DEAD;
+        }
+        int first = r.w <= 7 ? (r.w - 1) / 2 : r.iu % 4 == 1 ? r.iu : r.iu - 1; // both halves of a panel roll the same
+        double roll = Hash.unit(Hash.mix(r.h ^ (0x300L + first * 32L + r.iv)));
+        return roll < 0.08 ? PANEL_DEAD : roll < 0.11 ? PANEL_FLICKER : PANEL_LIT;
+    }
+
+    /** The fixtures of a room's ceiling away from its panels. */
+    private static int roomFixture(Room r) {
+        if (r.w <= 7) {
+            int mid = (r.w - 1) / 2;
+            if (r.iu == mid && r.iv == r.depth - 1 && r.kind != R_CONFERENCE) return DIFFUSER;
+            if (r.iu == mid && r.iv == 0) return SMOKE;
+            return TILE;
+        }
+        if (r.iu % 4 == 3 && r.iv % 4 == 0) {
+            return (r.iu / 4 + r.iv / 4) % 2 == 0 ? DIFFUSER : SPRINKLER;
+        }
+        if (r.iu == r.w / 2 && r.iv == r.depth - 1) {
+            return SMOKE;
+        }
+        return TILE;
+    }
+
+    /** Room panels lie along u; the first half points +u at its partner. */
+    private static int roomPanelFacing(Frame f, int iu, int w) {
+        boolean first = w <= 7 ? iu == (w - 1) / 2 : iu % 4 == 1;
+        return first ? f.plusU : f.minusU();
     }
 
     private static long roomFurniture(Room r, long base) {
@@ -1619,12 +2063,11 @@ final class Level4Plan {
             return base;
         }
         return switch (r.kind) {
-            case R_OFFICE -> officeRoom(r, base, false);
-            case R_EMPTY -> officeRoom(r, base, true);
+            case R_OFFICE -> formerOffice(r, base);
+            case R_EMPTY -> emptyRoom(r, base);
             case R_STORAGE -> storageRoom(r, base);
-            case R_COPY -> copyRoom(r, base);
             case R_SERVER -> serverRoom(r, base);
-            case R_BREAK -> breakRoom(r, base);
+            case R_BREAK -> cafeteriaRoom(r, base);
             case R_CONFERENCE -> conferenceRoom(r, base);
             case R_CURTAIN -> curtainRoom(r, base);
             default -> base;
@@ -1632,70 +2075,77 @@ final class Level4Plan {
     }
 
     /**
-     * A small private office. Furnished: a desk across the room facing the door with its chair
-     * behind it, a filing cabinet and a plant (or a supply locker) in the back corners, maybe a box
-     * or two and a whiteboard. Half of the offices (and every "empty" room) are CLEARED, as most of
-     * canon's rooms are: only the dents of the desk and cabinet in the carpet, and at most one
-     * forgotten thing (a chair, a box, a backpack, a supply cabinet nobody took). Every office keeps
-     * its thermostat on the right-hand wall and a socket on the back wall's skirting.
+     * A 2-wide pale whiteboard mark across columns {@code iuA} and {@code iuA + 1} of the back wall:
+     * BOARD_LEFT is the half on the viewer's left (clockwise of the way the mark faces).
      */
-    private static long officeRoom(Room r, long base, boolean empty) {
+    private static long boardMark(Room r, long base, int iuA) {
+        boolean higherIsLeft = clockwise(r.out) == r.f.plusU;
+        boolean left = (r.iu == iuA + 1) == higherIsLeft;
+        return withDeco(base, DECO_MARK, r.out, left ? MARK_BOARD_LEFT : MARK_BOARD_RIGHT);
+    }
+
+    /**
+     * Canon's empty room: nothing at all, only the ghosts of what was there: the pale rectangle of a
+     * whiteboard or a picture on the back wall (or just the nail holes); very rarely a supply crate
+     * left in a back corner. Big empty rooms are small lobbies: terrazzo floor, an Almond Water
+     * fountain on the right-hand wall, a plant in each back corner, picture marks along the left wall.
+     */
+    private static long emptyRoom(Room r, long base) {
         int w = r.w;
         int d = r.depth;
+        if (r.big) {
+            if (r.iu == w - 1 && r.iv == d / 2) return furniture(base, FOUNTAIN, r.left(), 3);
+            if (r.iv == d - 1 && (r.iu == 0 || r.iu == w - 1)) return furniture(base, PLANT, r.out, 0);
+            if (r.iu == 0 && r.iv % 4 == 2 && r.iv < d - 1) {
+                return withDeco(base, DECO_MARK, r.right(), r.rand(10 + r.iv) < 0.7 ? MARK_PICTURE : MARK_HOLES);
+            }
+            return base;
+        }
         int mid = w / 2;
-        int deskRow = Math.min(2, d - 3);
-        boolean cleared = empty || r.rand(9) < 0.5;
-        if (r.iv == deskRow && (r.iu == mid - 1 || r.iu == mid)) {
-            if (cleared) {
-                return withFloor(base, floor(base) | INDENT);
-            }
-            boolean pc = r.iu == mid && r.rand(1) < 0.75;
-            return furniture(base, pc ? DESK_PC : DESK, r.in, 0); // the user sits on the far side
-        }
-        if (r.iv == deskRow + 1 && r.iu == mid) {
-            if (!cleared) {
-                return furniture(base, CHAIR, r.out, 0);
-            }
-            if (r.rand(2) < 0.3) {
-                return furniture(base, CHAIR, Hash.range(Hash.mix(r.h ^ 3), 4), 0); // left behind
-            }
-        }
         if (r.iv == d - 1) {
-            if (r.iu == 0) {
-                return cleared ? withFloor(base, floor(base) | INDENT) : furniture(base, CABINET, r.out, 0);
-            }
-            if (r.iu == w - 1) {
-                double s = r.rand(4);
-                if (cleared) {
-                    if (s < 0.10) return furniture(base, SUPPLY_CABINET, r.out, 0);
-                } else {
-                    if (s < 0.14) return furniture(base, LOCKER, r.out, 0);
-                    if (s < 0.22) return furniture(base, SUPPLY_CABINET, r.out, 0);
-                    if (s < 0.55) return furniture(base, PLANT, r.out, 0);
-                }
-            }
-            if (r.iu == mid) {
-                return withDeco(base, DECO_SOCKET, r.out); // on the back wall, just above the skirting
-            }
-        }
-        // A box just inside the door, on the right; only in rooms 5+ wide, where the column
-        // beside the desk keeps the right-hand side of the room reachable.
-        if (r.iu == w - 1 && r.iv == 1 && w >= 5) {
-            double s = r.rand(5);
-            if (s < (cleared ? 0.12 : 0.20)) return furniture(base, BOXES, r.left(), s < 0.06 ? 1 : 0);
-            if (cleared && s < 0.16) return furniture(base, BACKPACK, Hash.range(Hash.mix(r.h ^ 7), 4), 0);
-        }
-        if (r.iu == 0 && r.iv == deskRow && r.rand(6) < (cleared ? 0.25 : 0.6)) {
-            return withDeco(base, DECO_WHITEBOARD, r.right()); // on the left wall, facing into the room
-        }
-        if (r.iu == w - 1 && r.iv == deskRow) {
-            return withDeco(base, DECO_THERMOSTAT, r.left()); // on the right wall
+            if (r.iu == 0 && r.rand(1) < 0.03) return furniture(base, CRATE, r.out, 0);
+            double s = r.rand(2);
+            if (s < 0.40 && w >= 5 && (r.iu == mid - 1 || r.iu == mid)) return boardMark(r, base, mid - 1);
+            if (s >= 0.40 && s < 0.60 && r.iu == mid) return withDeco(base, DECO_MARK, r.out, MARK_PICTURE);
+            if (s >= 0.60 && s < 0.80 && r.iu == mid) return withDeco(base, DECO_MARK, r.out, MARK_HOLES);
         }
         return base;
     }
 
     /**
-     * Storage: boxes and crates along the walls, a ladder, the middle kept clear. Four in ten were
+     * A former private office, cleared out: the dents of the desk and the filing cabinet in the
+     * carpet, the floor box the desk was plugged into, cable trunking with outlets along the back
+     * wall, the pale mark of a picture (or its nail holes) on the left wall, the thermostat on the
+     * right wall; now and then the chair left behind, rarely a supply cabinet nobody took.
+     */
+    private static long formerOffice(Room r, long base) {
+        int w = r.w;
+        int d = r.depth;
+        int mid = w / 2;
+        int deskRow = Math.min(2, d - 3);
+        if (r.iv == deskRow && (r.iu == mid - 1 || r.iu == mid)) {
+            long c = withFloor(base, floor(base) | INDENT);
+            return r.iu == mid ? withDetail(c, DETAIL_FLOOR_BOX, r.in) : c;
+        }
+        if (r.iv == deskRow + 1 && r.iu == mid && r.rand(2) < 0.2) {
+            return furniture(base, CHAIR, Hash.range(Hash.mix(r.h ^ 3), 4), 0);
+        }
+        if (r.iv == d - 1) {
+            if (r.iu == w - 1 && r.rand(4) < 0.08) return furniture(base, SUPPLY_CABINET, r.out, 0);
+            long c = r.iu == 0 ? withFloor(base, floor(base) | INDENT) : base;
+            return withDeco(c, DECO_DADO, r.out, r.iu % 3 == 1 ? 1 : 0);
+        }
+        if (r.iu == 0 && r.iv == deskRow) {
+            return withDeco(base, DECO_MARK, r.right(), r.rand(6) < 0.6 ? MARK_PICTURE : MARK_HOLES);
+        }
+        if (r.iu == w - 1 && r.iv == deskRow) {
+            return withDeco(base, DECO_THERMOSTAT, r.left());
+        }
+        return base;
+    }
+
+    /**
+     * Storage: boxes and crates along the walls, a ladder, the middle kept clear. Six in ten were
      * emptied: only the boxes in the back corners are left.
      */
     private static long storageRoom(Room r, long base) {
@@ -1713,7 +2163,7 @@ final class Level4Plan {
             // reach, and a crate there could never be opened.
             return furniture(base, BOXES, facing, 1);
         }
-        if (r.rand(9) < 0.4) {
+        if (r.rand(9) < 0.6) {
             return base;
         }
         double s = Hash.unit(r.f.seed, r.f.x, r.f.z, 7300);
@@ -1722,24 +2172,6 @@ final class Level4Plan {
         if (s < 0.62) return furniture(base, BOXES, Hash.range(Hash.of(r.f.seed, r.f.x, r.f.z, 7301), 4), s < 0.35 ? 1 : 0);
         if (s < 0.72) return furniture(base, CABINET, facing, 0);
         if (s < 0.75) return furniture(base, LADDER, facing, 0);
-        return base;
-    }
-
-    /** Copy room: copiers against the back wall, filing cabinets along one side, paper boxes. */
-    private static long copyRoom(Room r, long base) {
-        // Copiers along the back wall; the last two places stay free so nothing gets walled in.
-        if (r.iv == r.depth - 1 && r.iu >= 1 && r.iu <= r.w - 3) {
-            if (r.iu % 3 == 1) return furniture(base, COPIER, r.out, 0);
-            if (r.iu % 3 == 2) return furniture(base, BOXES, r.out, 0);
-            return base;
-        }
-        if (r.iu == 0 && r.iv >= 1 && r.iv <= r.depth - 1) {
-            if (r.iv == 2 && r.rand(1) < 0.35) return furniture(base, SUPPLY_CABINET, r.right(), 0);
-            return furniture(base, CABINET, r.right(), 0);
-        }
-        if (r.iu == r.w - 1 && r.iv == r.depth - 2 && r.rand(2) < 0.5) {
-            return furniture(base, BOXES, r.left(), 1);
-        }
         return base;
     }
 
@@ -1752,11 +2184,14 @@ final class Level4Plan {
     }
 
     /**
-     * Kitchenette (break room): a counter with a microwave and a fridge along the back wall and a
-     * stopped clock over the counter, vending machines and a water cooler along the side walls, a
-     * notice board on the right-hand wall, small tables with chairs in the middle.
+     * A cafeteria room: vinyl floor, a counter with a microwave and a fridge along the back wall and
+     * a stopped clock over it, vending machines on the left-hand wall, a water cooler, a notice board
+     * and an Almond Water fountain on the right-hand wall, and in the middle at most three of the
+     * identical conference tables, spread out: one or two in a row across the middle (a second row of
+     * one in deep rooms), about half the places with a chair, a pendant lamp over each table; now and
+     * then a bottle of Almond Water on a table, extremely rarely a double cheeseburger.
      */
-    private static long breakRoom(Room r, long base) {
+    private static long cafeteriaRoom(Room r, long base) {
         int w = r.w;
         int d = r.depth;
         if (r.iv == d - 1) {
@@ -1771,59 +2206,101 @@ final class Level4Plan {
             int stock = 2 + Hash.range(Hash.mix(r.h ^ (31L + r.iv)), 5);
             return furniture(base, VENDING, r.right(), stock);
         }
-        if (r.iu == w - 1 && r.iv == 1) {
-            return furniture(base, COOLER, r.left(), 3);
+        if (r.iu == w - 1) {
+            if (r.iv == 1) return furniture(base, COOLER, r.left(), 3);
+            if (r.iv == 3) return withDeco(base, DECO_NOTICE, r.left());
+            if (r.iv == d - 2 && d - 2 > 3) return furniture(base, FOUNTAIN, r.left(), 3);
+            return base;
         }
-        if (r.iu == w - 1 && r.iv == 3 && r.iv < d - 1) {
-            return withDeco(base, DECO_NOTICE, r.left());
-        }
-        // Tables: one block each, on a 3-block grid, chairs on the door side and the back side.
-        if (r.iu >= 2 && r.iu <= w - 3 && r.iv >= 2 && r.iv <= d - 3) {
-            int ti = (r.iu - 2) % 3;
-            int tj = (r.iv - 2) % 3;
-            if (ti == 1 && tj == 1) {
-                return furniture(base, TABLE, r.out, 0);
+        // Tables: a row of one or two (a 2-block gap between) across the middle, and in deep rooms
+        // one more, nearer the door: never more than three.
+        int rowA = d / 2;
+        int countA = Math.max(1, Math.min(2, (w - 2) / 5));
+        int rowB = d >= 10 ? d / 2 - 3 : -10;
+        for (int k = 0; k < 2; k++) {
+            int side = r.iv - (k == 0 ? rowA : rowB); // -1 / +1 chairs, 0 tables
+            if (side < -1 || side > 1) {
+                continue;
             }
-            if (ti == 1 && (tj == 0 || tj == 2) && Hash.unit(r.f.seed, r.f.x, r.f.z, 7310) < 0.7) {
-                int facing = tj == 0 ? r.in : r.out; // looking at the table
-                if (Hash.unit(r.f.seed, r.f.x, r.f.z, 7311) < 0.3) facing = clockwise(facing);
-                return furniture(base, CHAIR, facing, 0);
+            int count = k == 0 ? countA : 1;
+            int p = r.iu - (w - (5 * count - 2)) / 2;
+            if (p < 0 || p % 5 > 2 || p / 5 >= count) {
+                continue;
             }
+            if (side == 0) {
+                return diningTable(r.f.seed, r.f.x, r.f.z, furniture(base, CONF_TABLE, r.out, 0), p % 5);
+            }
+            long key = Hash.mix(r.h ^ (0x500L + k * 16L + p / 5));
+            return diningChair(r.f.seed, r.f.x, r.f.z, key, base, side < 0 ? r.in : r.out);
         }
         return base;
     }
 
     /**
-     * Conference room, as canon describes them: one long table centred in the room, a chair at
-     * every place along both sides (all pushed in square, evenly spaced), one at each end of a
-     * single-row table, a whiteboard on the back wall, a stopped clock on the right-hand wall.
+     * Conference room, as canon describes them: the one identical table (3 blocks long) centred in
+     * the room; from 1 to 8 chairs at even intervals round it (pushed in square), and in big rooms
+     * sometimes a row of extra chairs along the back wall (up to 20 in all); papers, pencils and mugs
+     * of Almond Water on the table, a projector mount over it, a whiteboard on the back wall, an
+     * empty TV bracket on the left-hand wall and a stopped clock on the right-hand one.
      */
     private static long conferenceRoom(Room r, long base) {
         int w = r.w;
         int d = r.depth;
-        int tableLo = d / 2 - (d >= 8 ? 1 : 0);
-        int tableHi = d / 2;
-        boolean alongTable = r.iu >= 2 && r.iu <= w - 3;
-        if (alongTable && r.iv >= tableLo && r.iv <= tableHi) {
-            return furniture(base, CONF_TABLE, r.out, 0);
+        int row = r.tableRow();
+        int t0 = r.tableU0();
+        int along = r.iu - t0;
+        if (r.iv == row && along >= 0 && along <= 2) {
+            long table = furniture(base, CONF_TABLE, r.out, 0);
+            double s = Hash.unit(r.f.seed, r.f.x, r.f.z, 7320);
+            int top = s < 0.30 ? TOP_PAPERS : s < 0.45 ? TOP_PENCILS : s < 0.60 ? TOP_MUG : s < 0.75 ? TOP_PAPERS_MUG : TOP_NONE;
+            return withTop(table, top);
         }
-        if (alongTable && (r.iv == tableLo - 1 || r.iv == tableHi + 1)) {
-            int facing = r.iv == tableLo - 1 ? r.in : r.out; // looking at the table
-            return furniture(base, CHAIR, facing, 0);
+        // How many chairs, spread evenly: up to 3 per side, then one at each end when there is
+        // room to walk round them (rooms 7+ wide).
+        boolean ends = t0 >= 2;
+        int n = 1 + Hash.range(Hash.mix(r.h ^ 0x30), ends ? 8 : 6);
+        int near = Math.min(3, (n + 1) / 2);
+        int far = Math.min(3, n / 2);
+        int endChairs = Math.max(0, n - 6);
+        if (along >= 0 && along <= 2 && (r.iv == row - 1 || r.iv == row + 1)) {
+            int count = r.iv == row - 1 ? near : far;
+            if (seat(count, along)) {
+                return furniture(base, CHAIR, r.iv == row - 1 ? r.in : r.out, 0); // looking at the table
+            }
         }
-        if (tableLo == tableHi && r.iv == tableLo && (r.iu == 1 || r.iu == w - 2)) {
-            return furniture(base, CHAIR, r.iu == 1 ? r.right() : r.left(), 0);
+        if (r.iv == row && ((along == -1 && endChairs >= 1) || (along == 3 && endChairs >= 2))) {
+            return furniture(base, CHAIR, along == -1 ? r.right() : r.left(), 0);
         }
-        if (r.iv == d - 1 && (r.iu == w / 2 || r.iu == w / 2 - 1)) {
-            return withDeco(base, DECO_WHITEBOARD, r.out); // on the back wall
+        if (r.iv == d - 1) {
+            long c = base;
+            // Big rooms: half have a row of spare chairs along the back wall (every other place).
+            if (r.big && r.rand(3) < 0.5 && r.iu % 2 == 1 && r.iu <= w - 2) {
+                c = furniture(c, CHAIR, r.out, 0);
+            } else if (r.iu == 0 && r.rand(1) < 0.6) {
+                return furniture(c, PLANT, r.out, 0);
+            }
+            if (r.iu == w / 2 || r.iu == w / 2 - 1) {
+                return withDeco(c, DECO_WHITEBOARD, r.out); // on the back wall
+            }
+            return c;
         }
-        if (r.iv == d - 1 && r.iu == 0 && r.rand(1) < 0.6) {
-            return furniture(base, PLANT, r.out, 0);
+        if (r.iu == 0 && r.iv == row) {
+            return withDeco(base, DECO_TV_BRACKET, r.right());
         }
-        if (r.iu == w - 1 && r.iv == tableHi) {
+        if (r.iu == w - 1 && r.iv == row) {
             return withDeco(base, DECO_CLOCK, r.left());
         }
         return base;
+    }
+
+    /** Whether seat {@code along} (0..2) of a table side with {@code count} chairs has one: 1 = middle, 2 = both ends, 3 = all. */
+    private static boolean seat(int count, int along) {
+        return switch (count) {
+            case 1 -> along == 1;
+            case 2 -> along != 1;
+            case 3 -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -1845,43 +2322,33 @@ final class Level4Plan {
     // For the anomalies plan
     // ==========================================================================================
 
-    /** The four rows of small offices of an OFFICES zone (rowId 1..4): {wallLo, wallHi, doorHigh}. */
+    /** The four rows of small rooms of an OFFICES zone (rowId 1..4): {wallLo, wallHi, doorHigh}. */
     private static final int[][] OFFICE_ROWS = {{0, 6, 1}, {10, 16, 0}, {16, 22, 1}, {26, 32, 0}};
 
     /**
-     * Room {@code index} of small-office row {@code rowId} (1..4) in OFFICES zone (cx, cz), when it
-     * is an ordinary office (furnished or cleared, never a closet, store or server room) at least 5
-     * wide: {minX, minZ, maxX, maxZ, doorX, doorZ, in} = its floor inside the walls (inclusive), the
-     * door column in its wall, and the way in through that door. Otherwise null.
+     * Room {@code index} of small-room row {@code rowId} (1..4) in OFFICES zone (cx, cz), when it is
+     * an empty room or a former office at least 5 wide: {minX, minZ, maxX, maxZ, doorX, doorZ, in} =
+     * its floor inside the walls (inclusive), the door column in its wall, and the way in through
+     * that door. Otherwise null.
      */
     static int[] officeRowRoom(long seed, int cx, int cz, int rowId, int index) {
-        int u0 = -1;
-        int w = 0;
+        RoomKey k = null;
         for (int u = CORE_LO + 1; u < CORE_HI; ) {
             long room = roomAt(seed, cx, cz, rowId, u, 4, 7);
             if (room < 0) {
                 break; // never happens: u always lands on the first column of a room
             }
-            int start = (int) (room >>> 16) & 0xFF;
-            int width = (int) (room >>> 8) & 0xFF;
             if (((int) room & 0xFF) == index) {
-                u0 = start;
-                w = width;
+                k = roomKey(seed, cx, cz, rowId, false, room);
                 break;
             }
-            u = start + width + 1;
+            u = ((int) (room >>> 16) & 0xFF) + ((int) (room >>> 8) & 0xFF) + 1;
         }
-        if (u0 < 0 || w < 5) {
-            return null;
-        }
-        long h = Hash.of(seed, cx, cz, 7200 + rowId * 64 + index);
-        int kind = roomKind(h, false, rowId);
-        if (kind != R_OFFICE && kind != R_EMPTY) {
+        if (k == null || k.w < 5 || (k.kind != R_OFFICE && k.kind != R_EMPTY)) {
             return null;
         }
         int[] row = OFFICE_ROWS[rowId - 1];
         boolean doorHigh = row[2] == 1;
-        int doorU = u0 + 1 + Hash.range(Hash.mix(h ^ 0x11), Math.max(1, w - 2));
         int vLo = row[0] + 1 + CORE_LO;
         int vHi = row[1] - 1 + CORE_LO;
         int doorV = (doorHigh ? row[1] : row[0]) + CORE_LO;
@@ -1890,10 +2357,12 @@ final class Level4Plan {
         int in = doorHigh ? opposite(plusV) : plusV;
         int x0 = cx * CELL;
         int z0 = cz * CELL;
+        int u0 = k.u0;
+        int u1 = k.u0 + k.w - 1;
         // Zone coordinates (u, v) -> world: rows along Z have u on z and v on x.
         return z_
-                ? new int[] {x0 + vLo, z0 + u0, x0 + vHi, z0 + u0 + w - 1, x0 + doorV, z0 + doorU, in}
-                : new int[] {x0 + u0, z0 + vLo, x0 + u0 + w - 1, z0 + vHi, x0 + doorU, z0 + doorV, in};
+                ? new int[] {x0 + vLo, z0 + u0, x0 + vHi, z0 + u1, x0 + doorV, z0 + k.doorU, in}
+                : new int[] {x0 + u0, z0 + vLo, x0 + u1, z0 + vHi, x0 + k.doorU, z0 + doorV, in};
     }
 
     // ==========================================================================================

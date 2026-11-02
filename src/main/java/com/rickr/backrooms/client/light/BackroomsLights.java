@@ -834,8 +834,8 @@ public final class BackroomsLights {
             if (blackedOut && light.level <= 0.0f) {
                 continue;
             }
-            // Level 4's troffers are soft downlights with their own budget (Level4Lights).
-            if (level4 && light.type == FixtureType.OFFICE_PANEL) {
+            // Level 4's troffers and coffers are soft downlights with their own budget (Level4Lights).
+            if (level4 && Level4Lights.isDownlight(light.type)) {
                 continue;
             }
             CANDIDATES.add(light);

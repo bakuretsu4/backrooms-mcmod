@@ -47,6 +47,7 @@ public final class Level4AnomalyBlocks {
                 insideOut(layout, seed, site, x, z, out);
                 yield true;
             }
+            case ELEVATOR_EXIT -> exitElevator(layout, seed, site, x, z, out);
             case COOLER_ROW -> {
                 coolerRow(layout, seed, site, x, z, out);
                 yield true;
@@ -69,7 +70,7 @@ public final class Level4AnomalyBlocks {
         if (cell == S_MOAT) {
             // The strip of plain carpet around the core (no column, no furniture in the way).
             long c = Level4Plan.column(seed, x, z);
-            out.set(floor, Level4Layout.floorBlock(Level4Plan.floor(c) & 3));
+            out.set(floor, Level4Layout.floorBlock(Level4Plan.floorMaterial(c)));
             out.set(ceiling, Level4Layout.ceilingBlock(Level4Plan.ceiling(c), Level4Plan.ceilingFacing(c)));
             return;
         }
@@ -182,6 +183,52 @@ public final class Level4AnomalyBlocks {
     // ==========================================================================================
     // Vanishing elevator
     // ==========================================================================================
+
+    /**
+     * The exit elevator: its car (only that one) carved out of the lobby's elevator core, lit, its
+     * doors standing open (just the header with the floor indicator above), and a green EXIT sign on
+     * the wall over it, on the hall side. Everything else is the ordinary lobby.
+     */
+    private static boolean exitElevator(Level4Layout layout, long seed, AnomalySite site, int x, int z, LevelLayout.Column out) {
+        LobbyFrame f = lobbyFrame(site);
+        int door = exitElevatorDoor(site);
+        int u = f.u(x, z);
+        int v = f.v(x, z);
+        int floor = layout.floorY();
+        int ceiling = layout.ceilingY();
+        BlockState steel = ModBlocks.L4_ELEVATOR_WALL.get().defaultBlockState();
+        if (f.carAt(u, v) == door) {
+            out.set(floor, ModBlocks.L4_ELEVATOR_FLOOR.get().defaultBlockState());
+            BlockState top = steel;
+            if (v == f.carLightV(door)) {
+                top = Level4Layout.panel(u == f.doorU(door) ? f.plusU() : opposite(f.plusU()), LampMode.LIT);
+            }
+            out.set(floor + 4, top);
+            out.set(ceiling, steel);
+            return true;
+        }
+        if (f.carWallAt(u, v) == door) {
+            out.set(floor, ModBlocks.L4_ELEVATOR_FLOOR.get().defaultBlockState());
+            Level4Layout.fill(floor + 1, ceiling, steel, out);
+            return true;
+        }
+        if (f.doorAt(u, v) == door) {
+            long c = Level4Plan.column(seed, x, z);
+            out.set(floor, Level4Layout.floorBlock(Level4Plan.floor(c)));
+            out.set(ceiling, Level4Layout.ceilingBlock(Level4Plan.ceiling(c), Level4Plan.ceilingFacing(c)));
+            out.set(floor + 3, elevatorDoor(f, door, u - f.doorU(door), ElevatorDoorBlock.Part.HEADER));
+            out.set(floor + 4, ModBlocks.OFFICE_WALL.get().defaultBlockState());
+            return true;
+        }
+        int out1 = f.out(door);
+        boolean inFront = v == f.doorV(door) + (door < 4 ? 1 : -1) && u == f.doorU(door);
+        if (inFront) {
+            layout.fillPlanColumn(seed, x, z, out);
+            out.set(floor + 4, Level4Layout.faced(ModBlocks.OFFICE_EXIT_SIGN.get(), Direction.from2DDataValue(out1)));
+            return true;
+        }
+        return false;
+    }
 
     private static boolean elevator(Level4Layout layout, long seed, AnomalySite site, int x, int z, LevelLayout.Column out) {
         LobbyFrame f = lobbyFrame(site);
@@ -328,13 +375,14 @@ public final class Level4AnomalyBlocks {
         }
         long c = Level4Plan.column(seed, x, z);
         int floor = layout.floorY();
-        out.set(floor, Level4Layout.floorBlock(Level4Plan.floor(c) & 3)); // no dents: nothing was ever moved
+        out.set(floor, Level4Layout.floorBlock(Level4Plan.floorMaterial(c))); // no dents: nothing was ever moved
         // Every light on, every tile in place.
         int ceiling = Level4Plan.ceiling(c);
         int ceilingFacing = Level4Plan.ceilingFacing(c);
         out.set(layout.ceilingY(), switch (ceiling) {
             case Level4Plan.PANEL_LIT, Level4Plan.PANEL_DEAD, Level4Plan.PANEL_FLICKER -> Level4Layout.panel(ceilingFacing, LampMode.LIT);
-            case Level4Plan.TILE_MISSING, Level4Plan.HATCH, Level4Plan.STAINED -> ModBlocks.OFFICE_CEILING.get().defaultBlockState();
+            case Level4Plan.TILE_MISSING, Level4Plan.HATCH, Level4Plan.STAINED, Level4Plan.CABLE, Level4Plan.LIFTED ->
+                    ModBlocks.OFFICE_CEILING.get().defaultBlockState();
             default -> Level4Layout.ceilingBlock(ceiling, ceilingFacing);
         });
         Direction facing = Direction.from2DDataValue(packed >> 8);
@@ -353,7 +401,7 @@ public final class Level4AnomalyBlocks {
     private static void insideOut(Level4Layout layout, long seed, AnomalySite site, int x, int z, LevelLayout.Column out) {
         int floor = layout.floorY();
         int ceiling = layout.ceilingY();
-        BlockState carpet = Level4Layout.floorBlock(Level4Plan.floor(Level4Plan.column(seed, x, z)) & 3);
+        BlockState carpet = Level4Layout.floorBlock(Level4Plan.floorMaterial(Level4Plan.column(seed, x, z)));
         out.set(ceiling, carpet); // the carpet is up there...
         if (insideOutLined(site, x, z)) {
             Level4Layout.fill(floor, ceiling - 1, carpet, out); // ...and all the way up the walls...
@@ -376,7 +424,7 @@ public final class Level4AnomalyBlocks {
         int floor = layout.floorY();
         int ceiling = layout.ceilingY();
         long c = Level4Plan.column(seed, x, z);
-        out.set(floor, Level4Layout.floorBlock(Level4Plan.floor(c) & 3));
+        out.set(floor, Level4Layout.floorBlock(Level4Plan.floorMaterial(c)));
         if (cell == CR_MOAT) {
             // The strip of plain carpet around the corridor (no column, no furniture in the way).
             out.set(ceiling, Level4Layout.ceilingBlock(Level4Plan.ceiling(c), Level4Plan.ceilingFacing(c)));

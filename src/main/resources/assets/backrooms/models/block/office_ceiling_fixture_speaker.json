@@ -4,7 +4,9 @@
   "textures": {
     "particle": "backrooms:block/office_ceiling",
     "tile": "backrooms:block/office_ceiling",
-    "fit": "backrooms:block/l4_ceiling_fittings"
+    "fit": "backrooms:block/l4_ceiling_fittings",
+    "fx": "backrooms:block/l4_wall_fixtures",
+    "hole": "backrooms:block/office_ceiling_missing"
   },
   "elements": [
     {

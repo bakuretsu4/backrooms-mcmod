@@ -174,32 +174,44 @@ going down into the dark, until the picture breaks up and you are in the next le
   blocks, a two-level stretch with a grated catwalk and railing over an open trench (a ladder
   down to the walkway at its bottom), or a section sealed by two concrete walls with locked steel
   doors and a narrow, low bypass passage round it behind the wall.
-- **Level 4 (the Abandoned Office):** you arrive here through Level 2's EXIT door. Endless empty
-  office floors on a stormy night: huge open-plan floors with square white columns, cubicle
-  fields, corridors of wooden doors into small offices, glass conference rooms, kitchenettes,
-  copy and server rooms, elevator lobbies whose elevators never come. As in canon it is almost
-  empty: the open floors are bare grey carpet with only the dents of desk rows that were carried
-  out (now and then one desk or chair left behind, and rarely a neat pile of boxes and a filing
-  cabinet pushed against a column on moving day), and about half the small offices are cleared
-  out. Conference rooms have one long table with a chair at every place, a whiteboard and a
-  clock; kitchenettes a counter, fridge, vending machines, water cooler, notice board and clock.
-  The suspended ceiling has rows of louvred light panels, most of them dead in whole dark
-  patches, with air diffusers, sprinklers and smoke detectors between them; tiles are only
-  missing where a leak has stained and brought down a patch. Long ribbons of blacked-out rainy
-  windows in bays of three still glow; along their foot runs a perimeter casing with a slim
-  radiator under every bay and a socket every few bays. Light switches beside the room doors,
-  thermostats and sockets in the offices, an extinguisher with a fire-alarm call point every 24
-  blocks or so along the aisles and on some columns, and green **exit signs** over the doorways
-  that lead toward the nearest stairwell (on corridor walls their arrows point the way). Rain
-  drums on the glass everywhere, the pipes rumble now and then, and every minute or two
-  lightning flashes through the windows before the thunder rolls in. No monsters: it is a safe
-  haven. Kitchenettes have **vending machines** (right-click: Almond Water or an Energy Bar until
-  sold out) and **water coolers** (right-click: Almond Water, three times each). Some filing
-  cabinets marked SUPPLIES are lockers, and the odd supply crate sits in a moving-day pile or a
-  storeroom. Safe rooms stand as little office boxes in the open floors. Behind one locked door
-  with a brass "6", faint music plays. The way out is an **emergency stairwell**: look for the
-  glowing EXIT sign over a grey steel fire door in a bright, cleared area (an extinguisher and a
-  call point hang beside it); go down the stairs to reach the Poolrooms.
+- **Level 4 (the Abandoned Office):** you arrive here through Level 2's EXIT door. As in canon,
+  an endless, empty office building, almost completely devoid of furniture: white walls, cheap
+  grey carpet, the low hum of air conditioning blowing through countless rooms and a cold draft
+  now and then. Most lights don't work; the level is lit by its windows, which are mostly blacked
+  out (blinds down, half down, or taped over) yet still glow. No monsters: it is a safe haven, and
+  the place where **Almond Water** is found most often.
+  - **Empty rooms and floors** (about half of it): huge open-plan floors with square white columns
+    and nothing left but the dents of desk rows and their floor boxes; rooms that are truly empty
+    except for the pale marks where a whiteboard or a picture hung, the odd cleared-out office
+    with its cable trunking and thermostat, and very rarely a supply crate someone left behind.
+  - **Conference rooms** (about a fifth): glass fronts, and always the same table, 3 blocks long,
+    centred in the room, with 1 to 8 chairs spaced evenly round it (big rooms sometimes have spare
+    chairs along the back wall: up to 20), papers, pencils and mugs of Almond Water on the table, a
+    projector over it, a whiteboard, an empty TV bracket and a clock stopped at 4:04.
+  - **Lobbies and cafeterias** (about a third, often run together): elevator lobbies with
+    terrazzo floors, lit coffers, a directory board and fountains; big empty lobby rooms; and
+    mostly empty cafeterias with a few of the same tables spread wide under pendant lamps (half the
+    chairs gone, some turned away), a serving counter with shuttered
+    hatches, vending machines (Almond Water or an Energy Bar until sold out), water coolers and
+    drinking fountains (Almond Water, three times each), now and then a bottle of Almond Water left
+    on a table (right-click to take it) and, extremely rarely, a double cheeseburger on a tray.
+  - **Cubicle clusters** (rare): 54 identical, complete cubicles: a desk with a computer, a chair,
+    pencils, notebooks, post-its, a mug of Almond Water and the same little "please keep your
+    workspace tidy" sign in every one.
+
+  Since the rooms are empty, the building itself carries the detail: framed doorways with room
+  signs beside the doors, light switches and door stops inside them, slot diffusers and a slim
+  radiator under every window bay, square diffusers, sprinklers and smoke detectors in the
+  ceiling, access hatches, water-damaged patches (stained, lifted and missing tiles, a dangling
+  cable), an extinguisher with a fire-alarm call point every 24 blocks or so, first-aid boxes,
+  hand sanitisers, evacuation plans, notice boards, water coolers on some columns, and green
+  **exit signs** over the doorways and hanging in the big spaces, pointing toward the nearest
+  stairwell. Some filing cabinets marked SUPPLIES are lockers. Safe rooms stand as little office
+  boxes in the open floors. Behind one locked door with a brass "6", faint music plays. There are
+  two ways out, both to the Poolrooms: an **emergency stairwell** (look for the glowing EXIT sign
+  over a grey steel fire door in a bright, cleared area; go down the stairs), or, now and then in
+  an elevator lobby, an **exit elevator** standing open and lit under a green EXIT sign: step in
+  and wait, and it takes you down.
 - **The Poolrooms:** dim white-tiled rooms and long water channels lit by a few tubes, glowing
   cyan pools with underwater lamps and moving light ripples, and now and then a tall atrium full
   of daylight. No monsters. The way out is the drain: a dark-tiled shaft in the middle of a deep
@@ -380,7 +392,7 @@ screen points the way, but every level's ordinary exit can be tracked down three
 ways (the sunlit archway, the clay doors, the throne light) are never hinted.
 - **Listen.** Every exit gives off a faint sound of its own that fades in within about 40 blocks
   and comes through the walls: a draft up Level 0's stairwell, the hollow drone of Level 1's,
-  Level 2's EXIT door buzzing, storm noise through Level 4's fire door, the Poolrooms' drain
+  Level 2's EXIT door buzzing, a cold draft hissing under Level 4's fire door, the Poolrooms' drain
   gurgling, water rushing down Level 37's pit, highway hum through Level 9's underpass, the dark
   breathing behind Level 94's dark doors, bubbles rising from Level 7's sunken door. Unlike the
   rest of the level's sounds, it never moves.
@@ -799,8 +811,8 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 
 **Level 4**
 - **Looping stairwells:** Grey stair cores stand in some open-plan floors. However far you climb or descend, the sign on the landing always says 4, and somewhere far away you hear footsteps that never arrive. Once in a while the stairs let you out somewhere else.
-- **The Window:** Most windows show the storm, but very rarely one is clear: a blurry, sunny place that feels like somewhere you've been. If the panes around a window are taped over with cardboard, there's a reason. Don't get close, and don't listen.
-- **Vanishing elevators:** In some lobbies one elevator stands open and lit. Look away and it may not be where you left it. Step in and it will take you somewhere that looks exactly like here.
+- **The Window:** Most windows are blacked out and only glow, but very rarely one is clear: a blurry, sunny place that feels like somewhere you've been. If the panes around a window are taped over with cardboard, there's a reason. Don't get close, and don't listen.
+- **Vanishing elevators:** In some lobbies one elevator stands open and lit. Look away and it may not be where you left it. Step in and it will take you somewhere that looks exactly like here. (The open elevator under a green EXIT sign is different: that one is a real exit.)
 - **Level 4.3, "The Cubicles":** A dim white series of hallways leads to an endless cubicle field in white fog, full of the sounds of people working whom you never see. The longer you stay, the harder it is to leave. Walk back the way you came.
 - **The Occupied Floor** (rare, open-plan floors): around one column, four neat pods of desks with a monitor on every desk and every chair pushed in, every light working, not a tile missing, not a dent in the carpet. Nobody is there. It does nothing.
 - **The Inside-Out Room** (rare, office corridors): behind an ordinary office door the carpet runs up the walls and across the ceiling, and the floor is ceiling tiles with a light panel glowing up out of it. It does nothing.
@@ -944,7 +956,7 @@ then the main theme plays instead, so it runs through the whole soundtrack:
 | `level0` | Level 0 | "Fluorescent": office muzak heard through a wall at half speed: a soft electric piano on lounge chords that never resolve, a ghost of a bossa rhythm, sitting slightly flat against the 60 Hz mains hum |
 | `level1` | Level 1 | "Concrete": cold, wide industrial ambient: a sub drone, far metallic pillar strikes, a breathing ventilation pulse, a swelling minor pad and drips |
 | `level2` | Level 2 | "Pressure": tuned struck pipes in a slow interlocking pattern, steam-hiss swells, a boiler heartbeat and a dark brassy drone; hot and claustrophobic |
-| `level4` | Level 4 | "Night Shift": sparse, lonely jazz piano over soft rain and distant thunder, one muted-horn phrase, ending on an unresolved chord |
+| `level4` | Level 4 | "Night Shift": sparse, lonely jazz piano in an empty office's faint hush, one muted-horn phrase, ending on an unresolved chord |
 | `poolrooms` | The Poolrooms | "Chlorine": slowed, chorused dream pads and a glassy arpeggio in F Lydian that dip underwater and come back; a childhood indoor pool at dusk |
 | `level37` | Level 37 | "Sublimity": airy synthesized choir and glass-harmonica shimmer, bright and almost bassless; near the end one voice drifts out of tune |
 | `level369` | Level 369 | "Comely": a music-box waltz, a lullaby in F over a soft harp and a warm pad, played three times; each time more of its notes are gone, and at the end it starts once more and stops |
@@ -1085,7 +1097,7 @@ saturation, hiss and a big, empty room.
 /backrooms anomaly here                 which anomalous area am I standing in?
 /backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... (e.g. level_0/zone/rooms, the room maze) and level_0/set/... (e.g. frame_tunnel, dead_end_cache, liar_arrows, bright_district, dim_district, abandoned_district). On Level 2 also segments (level_2/seg/..., e.g. dogleg, duct_crossing, catwalk, bypass), rooms and chambers (level_2/room/..., e.g. pump_room, valve_gallery, electrical, sump, break_room), level_2/exit and the oddities (level_2/wrong_valves, inverted_pipe, repeat_section, warm_door, heart_gauge)
 /backrooms anomaly visit <kind> <point>  Level 0 and Level 2 (ops, for testing): jump to a named spot of the nearest site of that kind (tab completes both). level_0/atrium ladder|balcony, level_0/front_office rug|hidden_room, level_0/shaft_hall lit_shaft; the hidden rooms and the older anomalies have their own points. Level 2: level_2/room/<chamber> door|story, level_2/seg/dogleg approach|around, duct_crossing approach|under, catwalk approach|catwalk|lower, bypass approach|seal|passage, level_2/wrong_valves door|inside, warm_door front, heart_gauge front, inverted_pipe between|wall_a|wall_b, repeat_section first|second|last
-/backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|rain|quake|end> [seconds]
+/backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|water|rain|quake|end> [seconds]
 /backrooms outage <cut|stutter|wave> <radius> [seconds]   Level 0: cut the power in a circle around you (no seconds = until "/backrooms outage end")
 /backrooms l0event <room|corridor|district>   Level 0: let that local light event happen to you at the next right moment (walk into a room / walk a corridor / look down a long lit view), skipping the wait
 /backrooms drift <player> [sealed|door|lights|end]   separate realities now: that player sees a sealed doorway, a door or dead lights (with the nearest friend, or alone); end = snap back
@@ -1166,7 +1178,7 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas); Level 0's versions cluster in worn patches and some keep to one wall row (`Level0SurfaceBlock`, art in `tools/anomaly_assets/level0_surfaces.py`); Level 2's wet versions gather in damp stretches (`Level2SurfaceBlock` with `world/layout/Level2Damp`, art in `tools/anomaly_assets/level2_materials.py`); Level 227's flora (`Level227*Block`: tall plants, hanging strands, the Palette, GammaPali, Lestron; registered in `registry/Level227Blocks`, art in `tools/anomaly_assets/level227_flora.py`) |
 | `network` | Packets between server and clients |
 | `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`); Level 227's splash drops, surface rings and foam, and bubbles (`WaterDropletParticle`, `WaterSurfaceParticle`, `WaterBubbleParticle`) |
-| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, Level 0's faulty tubes (stutter, lazy restart, dying pulse: `FixturePower`; the tube ages and colours themselves are block states, `block/Level0TubeGlow`, picked by `world/layout/Level0Tubes`), Level 0's own light type with wall-map shadows and the power/corner screen pass (`Level0LightRenderer`, `Level0WallGrid`, `Level0PowerMap`, shaders in `pinwheel/shaders/program/light/level0_*`), its blackout wave and local outages (`Level0Power`), flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
+| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, Level 0's faulty tubes (stutter, lazy restart, dying pulse: `FixturePower`; the tube ages and colours themselves are block states, `block/Level0TubeGlow`, picked by `world/layout/Level0Tubes`), Level 0's own light type with wall-map shadows and the power/corner screen pass (`Level0LightRenderer`, `Level0WallGrid`, `Level0PowerMap`, shaders in `pinwheel/shaders/program/light/level0_*`), its blackout wave and local outages (`Level0Power`), flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening), Level 4's window glow, troffer downlights and lobby/cafeteria feature lights (`Level4Lights`: shadowed area lights) |
 | `client/water` | Pool water (also Level 7's sea and Level 227's ponds): surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), impact rings on the surface (`WaterRipples`), underwater fog and its darkening with depth (`UnderwaterView`); Level 227's splashes (`WaterSplashes`) and underwater sound (`UnderwaterAudio`) |
 | `client/audio` | Wall muffling and room reverb through OpenAL EFX (`Acoustics`, `AcousticsEfx`); distant one-off sounds per level (`DistantAmbience`) |
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`); moves your view inside the furniture while you hide (`CameraMixin`) |

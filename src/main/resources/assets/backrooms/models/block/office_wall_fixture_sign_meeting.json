@@ -1,0 +1,69 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/l4_wall_fixtures",
+    "f": "backrooms:block/l4_wall_fixtures"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        6,
+        15.6
+      ],
+      "to": [
+        13,
+        9,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            12.0,
+            8.0,
+            14.0
+          ],
+          "texture": "#f"
+        },
+        "east": {
+          "uv": [
+            0.2,
+            12.2,
+            0.5,
+            12.5
+          ],
+          "texture": "#f"
+        },
+        "west": {
+          "uv": [
+            0.2,
+            12.2,
+            0.5,
+            12.5
+          ],
+          "texture": "#f"
+        },
+        "up": {
+          "uv": [
+            0.2,
+            12.2,
+            0.5,
+            12.5
+          ],
+          "texture": "#f"
+        },
+        "down": {
+          "uv": [
+            0.2,
+            12.2,
+            0.5,
+            12.5
+          ],
+          "texture": "#f"
+        }
+      }
+    }
+  ]
+}

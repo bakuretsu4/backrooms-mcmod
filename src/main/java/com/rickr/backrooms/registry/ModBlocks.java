@@ -41,9 +41,17 @@ import com.rickr.backrooms.block.PillarNumberBlock;
 import com.rickr.backrooms.block.MusicDoorBlock;
 import com.rickr.backrooms.block.OfficeCeilingDiffuserBlock;
 import com.rickr.backrooms.block.OfficeCeilingFixtureBlock;
+import com.rickr.backrooms.block.OfficeDoorFrameBlock;
 import com.rickr.backrooms.block.OfficeExitSignBlock;
+import com.rickr.backrooms.block.OfficeFloorDetailBlock;
+import com.rickr.backrooms.block.OfficeFountainBlock;
+import com.rickr.backrooms.block.OfficeLampBlock;
 import com.rickr.backrooms.block.OfficePanelBlock;
 import com.rickr.backrooms.block.OfficePerimeterBlock;
+import com.rickr.backrooms.block.OfficeSlabFloorBlock;
+import com.rickr.backrooms.block.OfficeTableItemsBlock;
+import com.rickr.backrooms.block.OfficeWallFixtureBlock;
+import com.rickr.backrooms.block.OfficeWallMarkBlock;
 import com.rickr.backrooms.block.OfficeWallPlateBlock;
 import com.rickr.backrooms.block.OfficeWindowBlock;
 import com.rickr.backrooms.block.PipeRackBlock;
@@ -516,7 +524,7 @@ public final class ModBlocks {
     /** Ceiling tile with an air grille: square 4-way diffuser, linear slot (along AXIS) or return grille (KIND). */
     public static final DeferredBlock<OfficeCeilingDiffuserBlock> OFFICE_CEILING_DIFFUSER = BLOCKS.registerBlock("office_ceiling_diffuser",
             OfficeCeilingDiffuserBlock::new, unbreakable(MapColor.SAND, SoundType.WOOD));
-    /** Ceiling tile with a sprinkler head, smoke detector or speaker grille (KIND). */
+    /** Ceiling tile with a fitting (KIND): sprinkler, smoke detector, speaker, projector mount, cable stub, lifted tile. */
     public static final DeferredBlock<OfficeCeilingFixtureBlock> OFFICE_CEILING_FIXTURE = BLOCKS.registerBlock("office_ceiling_fixture",
             OfficeCeilingFixtureBlock::new, unbreakable(MapColor.SAND, SoundType.WOOD));
     /**
@@ -528,12 +536,40 @@ public final class ModBlocks {
                     .lightLevel(state -> state.getValue(OfficePanelBlock.MODE) == LampMode.DEAD ? 0 : 10)
                     .emissiveRendering((state, level, pos) -> OfficePanelBlock.FULL_BRIGHT_LENS
                             && state.getValue(OfficePanelBlock.MODE) != LampMode.DEAD));
+    /** Lobby/cafeteria coffer light: a full ceiling block, one lit square of a big recessed coffer (laid in 2x2 or 3x3 groups). */
+    public static final DeferredBlock<OfficeLampBlock> OFFICE_COFFER_LIGHT = BLOCKS.registerBlock("office_coffer_light",
+            props -> new OfficeLampBlock(props, Shapes.block()),
+            unbreakable(MapColor.SNOW, SoundType.GLASS)
+                    .lightLevel(state -> state.getValue(OfficeLampBlock.MODE) == LampMode.DEAD ? 0 : 10)
+                    .emissiveRendering((state, level, pos) -> OfficePanelBlock.FULL_BRIGHT_LENS
+                            && state.getValue(OfficeLampBlock.MODE) != LampMode.DEAD));
+    /** Spun-metal dome pendant on a cord, hanging just under the ceiling of lobbies and cafeterias (shade y 5..11). */
+    public static final DeferredBlock<OfficeLampBlock> OFFICE_PENDANT_LIGHT = BLOCKS.registerBlock("office_pendant_light",
+            props -> new OfficeLampBlock(props, Block.box(3, 5, 3, 13, 16, 13)),
+            unbreakable(MapColor.SNOW, SoundType.METAL).noCollission().noOcclusion()
+                    .lightLevel(state -> state.getValue(OfficeLampBlock.MODE) == LampMode.DEAD ? 0 : 9)
+                    .emissiveRendering((state, level, pos) -> OfficePanelBlock.FULL_BRIGHT_LENS
+                            && state.getValue(OfficeLampBlock.MODE) != LampMode.DEAD));
     /**
-     * Frosted window pane; its block light is the cold glow of the windows (and the lightning flash).
-     * 12, not 15: the window faces are lit by their own light, and 15 clips to a peach band under shaders.
+     * Frosted window pane; its block light is the cold glow of the windows (less behind blinds or
+     * taped paper, see OfficeWindowBlock.Cover). At most 12, never 15: the window faces are lit by
+     * their own light, and 15 clips to a peach band under shaders.
      */
     public static final DeferredBlock<OfficeWindowBlock> OFFICE_WINDOW = BLOCKS.registerBlock("office_window", OfficeWindowBlock::new,
-            unbreakable(MapColor.COLOR_GRAY, SoundType.GLASS).lightLevel(state -> 12));
+            unbreakable(MapColor.COLOR_GRAY, SoundType.GLASS).lightLevel(state -> state.getValue(OfficeWindowBlock.COVER).light));
+    /** Cafeteria floor: speckled vinyl tiles. */
+    public static final DeferredBlock<Block> OFFICE_VINYL_FLOOR = structural("office_vinyl_floor", MapColor.QUARTZ, SoundType.STONE);
+    /** Lobby floor: polished terrazzo in two-block slabs (VARIANT = which quarter of a slab, set by position). */
+    public static final DeferredBlock<OfficeSlabFloorBlock> OFFICE_TERRAZZO = BLOCKS.registerBlock("office_terrazzo",
+            OfficeSlabFloorBlock::new, unbreakable(MapColor.TERRACOTTA_WHITE, SoundType.STONE));
+    /** Dark ribbed entrance matting, set into the lobby floor in front of the main doors. */
+    public static final DeferredBlock<Block> OFFICE_ENTRANCE_MAT = structural("office_entrance_mat", MapColor.COLOR_GRAY, SoundType.WOOL);
+    /**
+     * Wall block beside or above a doorway, with the painted door architrave on both faces of the
+     * wall (AXIS = the way the wall runs, PART left/right/head, BASE = with skirting).
+     */
+    public static final DeferredBlock<OfficeDoorFrameBlock> OFFICE_DOOR_FRAME = BLOCKS.registerBlock("office_door_frame",
+            OfficeDoorFrameBlock::new, unbreakable(MapColor.SAND, SoundType.STONE));
     /** Conference-room glass wall on thin black mullions; the second one has its blinds half down. */
     public static final DeferredBlock<TransparentBlock> OFFICE_GLASS = BLOCKS.registerBlock("office_glass", TransparentBlock::new, glass());
     public static final DeferredBlock<TransparentBlock> OFFICE_GLASS_BLINDS = BLOCKS.registerBlock("office_glass_blinds", TransparentBlock::new, glass());
@@ -626,7 +662,7 @@ public final class ModBlocks {
             WaterCoolerBlock::new, unbreakable(MapColor.SNOW, SoundType.METAL).noOcclusion());
     // Level 4 wall details: put where a real office has them, never at random (see Level4Layout).
     // All are walk-through and sit in the first air block above the floor unless noted.
-    /** Green running-man exit sign (ARROW none/left/right), above doors and at junctions. */
+    /** Green running-man exit sign (ARROW none/left/right), above doors and at junctions; HANGING = double-sided, under the ceiling. */
     public static final DeferredBlock<OfficeExitSignBlock> OFFICE_EXIT_SIGN = BLOCKS.registerBlock("office_exit_sign",
             OfficeExitSignBlock::new, unbreakable(MapColor.COLOR_GREEN, SoundType.METAL).noCollission().noOcclusion().lightLevel(state -> 4));
     /** Red fire extinguisher on its wall bracket, its little sign reaching up into the block above. */
@@ -641,6 +677,27 @@ public final class ModBlocks {
     /** Round wall clock, stopped at 4:04. */
     public static final DeferredBlock<WallMountBlock> OFFICE_CLOCK = BLOCKS.registerBlock("office_clock",
             props -> new WallMountBlock(props, 4, 4, 15, 12, 12, 16), unbreakable(MapColor.SNOW, SoundType.METAL).noCollission().noOcclusion());
+    /** Paler unfaded patch and nail holes where a picture or whiteboard used to hang (KIND). */
+    public static final DeferredBlock<OfficeWallMarkBlock> OFFICE_WALL_MARK = BLOCKS.registerBlock("office_wall_mark",
+            OfficeWallMarkBlock::new, unbreakable(MapColor.SAND, SoundType.STONE).noCollission().noOcclusion());
+    /**
+     * The small things on a real office's walls (KIND): dado trunking with outlets, door stop, TV
+     * bracket, coat hooks, hand sanitiser, first-aid box, evacuation plan, signs and room plaques.
+     */
+    public static final DeferredBlock<OfficeWallFixtureBlock> OFFICE_WALL_FIXTURE = BLOCKS.registerBlock("office_wall_fixture",
+            OfficeWallFixtureBlock::new, unbreakable(MapColor.SNOW, SoundType.METAL).noCollission().noOcclusion());
+    /** Wall-mounted drinking fountain: right-click for Almond Water, three times (like the water cooler). */
+    public static final DeferredBlock<OfficeFountainBlock> OFFICE_FOUNTAIN = BLOCKS.registerBlock("office_fountain",
+            OfficeFountainBlock::new, unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** What was left on a table or desk (KIND); placed in the cell above it. The bottle and the burger tray can be taken. */
+    public static final DeferredBlock<OfficeTableItemsBlock> OFFICE_TABLE_ITEMS = BLOCKS.registerBlock("office_table_items",
+            OfficeTableItemsBlock::new, unbreakable(MapColor.SNOW, SoundType.WOOD).noCollission().noOcclusion());
+    /** Flat details on the carpet (KIND): a flush floor power box, an aluminium threshold strip, an old stain. */
+    public static final DeferredBlock<OfficeFloorDetailBlock> OFFICE_FLOOR_DETAIL = BLOCKS.registerBlock("office_floor_detail",
+            OfficeFloorDetailBlock::new, unbreakable(MapColor.COLOR_GRAY, SoundType.WOOL).noCollission().noOcclusion().replaceable());
+    /** Cafeteria serving hatch in a wall: a closed roller shutter over a steel ledge (FACING = the cafeteria side). */
+    public static final DeferredBlock<WallMountBlock> OFFICE_SERVERY_HATCH = BLOCKS.registerBlock("office_servery_hatch",
+            props -> new WallMountBlock(props, 0, 0, 0, 16, 16, 16), unbreakable(MapColor.METAL, SoundType.METAL));
     /** A filing cabinet that is really a supply locker (filled from the locker loot table). */
     public static final DeferredBlock<SupplyContainerBlock> SUPPLY_CABINET = BLOCKS.registerBlock("supply_cabinet",
             props -> new SupplyContainerBlock(props, SupplyKind.LOCKER, Block.box(1.5, 0, 2, 14.5, 16, 16)),

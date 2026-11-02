@@ -129,7 +129,6 @@ public final class BackroomsCommand {
                         .then(eventNode("twist", LevelEventPayload.TWIST, 20))
                         .then(eventNode("fog", LevelEventPayload.FOG_ROLL, 50))
                         .then(eventNode("lampwave", LevelEventPayload.LAMP_WAVE, 25))
-                        .then(eventNode("storm", LevelEventPayload.STORM, 6))
                         .then(eventNode("water", LevelEventPayload.OBTRUSIVE_WATER, 30))
                         // Level 39: rain from the superstructure's cloud ceiling, and a boom whose echoes build into a quake.
                         .then(eventNode("rain", LevelEventPayload.INDOOR_RAIN, 180))

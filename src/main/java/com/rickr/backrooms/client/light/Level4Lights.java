@@ -3,7 +3,6 @@ package com.rickr.backrooms.client.light;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.block.OfficeWindowBlock;
 import com.rickr.backrooms.camera.CameraClientState;
-import com.rickr.backrooms.client.Level4Atmosphere;
 import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.BackroomsLevel;
@@ -40,26 +39,31 @@ import net.neoforged.neoforge.event.level.ChunkEvent;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Level 4's Veil lights: the light of the office comes from its windows, plus a few lit troffers.
+ * Level 4's Veil lights: the light of the office comes from its windows, plus a few lit troffers
+ * and, in lobbies and cafeterias, lit coffers.
  *
  * <ul>
  *   <li><b>Window light.</b> Every run of {@code office_window} panes (up to {@value #MAX_SPAN}
- *       blocks, cut at the window bays' edges when the panes say where they are) gets one soft area
- *       light the size of its glass, just in front of it, tipped a little toward the floor. It is
- *       brightest on the floor, sills and columns near the window and falls off over
- *       {@value #WINDOW_DISTANCE} blocks into the floor plate, and with shadows on, columns,
- *       partitions and desks throw soft-edged shadows away from the windows. The wall around the
- *       window lies behind the light's plane, so it never lights its own wall (no clipped band).
- *       The storm's lightning flares these lights with the lightmap flash.</li>
- *   <li><b>Troffer downlights.</b> A lit panel ({@code office_panel}, not dead) is a small area
- *       light the size of its lens, facing down: a soft pool on the carpet under it that fades
- *       out at the louvre's cut-off angle, and no hot spot on the ceiling tiles around it (a point
- *       light half a block under the ceiling used to light the tiles beside it nearly white). They
- *       follow the panel's power, flicker and blackout (BackroomsLights keeps that state), and are
- *       left out of the usual point-light set on Level 4.</li>
+ *       blocks, cut at the window bays' edges when the panes say where they are, and wherever the
+ *       bay's cover changes) gets one soft area light the size of its glass, just in front of it,
+ *       tipped a little toward the floor. It is brightest on the floor, sills and columns near the
+ *       window and falls off over {@value #WINDOW_DISTANCE} blocks into the floor plate, and with
+ *       shadows on, columns, partitions and desks throw soft-edged shadows away from the windows.
+ *       The wall around the window lies behind the light's plane, so it never lights its own wall
+ *       (no clipped band). Bays behind blinds or taped paper glow less (the {@code cover}
+ *       property: {@link #COVER_DIM}).</li>
+ *   <li><b>Downlights.</b> A lit panel ({@code office_panel}, not dead) is a small area light the
+ *       size of its lens, facing down: a soft pool on the carpet under it that fades out at the
+ *       louvre's cut-off angle, and no hot spot on the ceiling tiles around it (a point light half a
+ *       block under the ceiling used to light the tiles beside it nearly white). A group of lit
+ *       coffers ({@code office_coffer_light}, lobbies and cafeterias) is one bigger, softer,
+ *       slightly warmer one. They follow the fixture's power (BackroomsLights keeps that state),
+ *       and are left out of the usual point-light set on Level 4 ({@link #isDownlight}). (The
+ *       cafeterias' pendants are ordinary point-light fixtures, FixtureType OFFICE_PENDANT.)</li>
  * </ul>
  * How many of each come from the QUALITY setting (ClientSettings.Quality#maxL4Windows and
- * #maxL4Troffers), nearest first within the quality's light range, fading out over the last third
+ * #maxL4Troffers, the latter shared by panels and coffers), nearest first within the quality's
+ * light range, fading out over the last third
  * of it so nothing pops on at the edge. Nothing is allocated per tick: window runs are found when
  * chunks load (like SunBeams) and grouped only when you have walked a few blocks; Veil lights are
  * made only when one comes into range.
@@ -101,10 +105,16 @@ public final class Level4Lights {
     private static final int BAY = 3;
     /** Window lights reach this times the quality's light range (Veil's shadows only cover ~32 blocks). */
     private static final float WINDOW_RANGE_SCALE = 1.0f;
-    /** How much the lightning adds to a window's light at a full flash (1.5 = 2.5 times as bright). */
-    private static final float WINDOW_FLASH_BOOST = 1.5f;
+    /**
+     * Window light per bay cover (the window's {@code cover} property: none, half, blinds,
+     * taped): half-lowered blinds let most of the glow through, closed blinds well over half
+     * through the slats, paper or foil taped over the glass a dull 40%. Kept fairly high because
+     * most bays are covered (canon: "mostly blacked out"; ArchL4 places ~85% covered, an average of
+     * ~0.6), and the windows must still be what lights the level.
+     */
+    private static final float[] COVER_DIM = {1.0f, 0.8f, 0.6f, 0.4f};
 
-    // --- Troffer downlights: the knobs ----------------------------------------------------------
+    // --- Downlights: the knobs ------------------------------------------------------------------
     /** Cool office white (~4500 K), the panel's fixture colour. */
     private static final float TROFFER_R = 0.93f;
     private static final float TROFFER_G = 0.96f;
@@ -130,6 +140,17 @@ public final class Level4Lights {
     private static final float UPWARD_BRIGHTNESS = 4.0f;
     private static final float UPWARD_DISTANCE = 10.0f;
     private static final float UPWARD_ANGLE = 1.5f;
+    /**
+     * A group of lit coffers (lobbies, cafeterias): a 2x2 or 3x3 diffuser, so a larger, softer
+     * pool. A touch warmer than the troffers (~4000 K) so the public spaces read a little
+     * friendlier than the office floors. Brightness per group, not per block.
+     */
+    private static final float COFFER_R = 1.0f;
+    private static final float COFFER_G = 0.96f;
+    private static final float COFFER_B = 0.90f;
+    private static final float COFFER_BRIGHTNESS = 2.4f;
+    private static final float COFFER_DISTANCE = 13.0f;
+    private static final float COFFER_ANGLE = 1.3f;
 
     /** Lights fade out from this share of their range to the range itself. */
     private static final float FADE_FROM = 0.65f;
@@ -141,11 +162,12 @@ public final class Level4Lights {
     private static final float TILT_SIN = (float) Math.sin(Math.toRadians(WINDOW_TILT_DEG));
     private static final float TILT_COS = (float) Math.cos(Math.toRadians(WINDOW_TILT_DEG));
 
-    // Pane codes kept per window block (bits 2-3; bits 0-1 are its facing's 2D value).
+    // Codes kept per window block: bits 0-1 its facing's 2D value, bits 2-3 its pane, bits 4-5 its cover.
     private static final int PANE_MID = 0;
     private static final int PANE_LEFT = 1;
     private static final int PANE_RIGHT = 2;
     private static final int PANE_SINGLE = 3;
+    private static final int COVER_NONE = 0;
 
     /** One run (or piece of a long run) of window glass with its light. */
     private static final class WindowRun {
@@ -157,12 +179,14 @@ public final class Level4Lights {
         final Direction facing;
         final float halfAcross;
         final float halfUp;
+        /** How much of the window light gets through this bay's cover (see {@link #COVER_DIM}). */
+        final float dim;
         double distSq;
         @Nullable
         LightRenderHandle<AreaLightData> handle;
         float lastBrightness = -1.0f;
 
-        WindowRun(long key, double x, double y, double z, Direction facing, float halfAcross, float halfUp) {
+        WindowRun(long key, double x, double y, double z, Direction facing, float halfAcross, float halfUp, float dim) {
             this.key = key;
             this.x = x;
             this.y = y;
@@ -170,10 +194,12 @@ public final class Level4Lights {
             this.facing = facing;
             this.halfAcross = halfAcross;
             this.halfUp = halfUp;
+            this.dim = dim;
         }
 
         boolean samePlace(WindowRun o) {
-            return o.x == x && o.y == y && o.z == z && o.facing == facing && o.halfAcross == halfAcross && o.halfUp == halfUp;
+            return o.x == x && o.y == y && o.z == z && o.facing == facing && o.halfAcross == halfAcross && o.halfUp == halfUp
+                    && o.dim == dim;
         }
 
         void free() {
@@ -355,7 +381,8 @@ public final class Level4Lights {
                         }
                         long pos = BlockPos.asLong(baseX + x, baseY + y, baseZ + z);
                         found.add(pos);
-                        INFO.put(pos, (byte) (state.getValue(OfficeWindowBlock.FACING).get2DDataValue() | paneOf(state) << 2));
+                        INFO.put(pos, (byte) (state.getValue(OfficeWindowBlock.FACING).get2DDataValue() | paneOf(state) << 2
+                                | coverOf(state) << 4));
                     }
                 }
             }
@@ -384,6 +411,25 @@ public final class Level4Lights {
             case "right" -> PANE_RIGHT;
             case "single" -> PANE_SINGLE;
             default -> PANE_MID;
+        };
+    }
+
+    /**
+     * What covers a pane (the {@code cover} property: none/half/blinds/taped). Read by name, so
+     * windows without the property count as bare glass.
+     */
+    private static int coverOf(BlockState state) {
+        Property<?> property = state.getBlock().getStateDefinition().getProperty("cover");
+        if (property == null) {
+            return COVER_NONE;
+        }
+        Object value = state.getValue(property);
+        String name = value instanceof StringRepresentable named ? named.getSerializedName() : value.toString();
+        return switch (name) {
+            case "half" -> 1;
+            case "blinds" -> 2;
+            case "taped" -> 3;
+            default -> COVER_NONE;
         };
     }
 
@@ -473,12 +519,15 @@ public final class Level4Lights {
         while (true) {
             VISITED.add(pos);
             length++;
-            int pane = (INFO.get(pos) >> 2) & 3;
+            int code = INFO.get(pos);
+            int pane = (code >> 2) & 3;
             long next = BlockPos.offset(pos, ax, 0, az);
             boolean more = continues(next, info);
             boolean bayEnd = pane == PANE_RIGHT || pane == PANE_SINGLE;
-            if (!more || length >= MAX_SPAN || (bayEnd && length + BAY > MAX_SPAN)) {
-                out.add(makeRun(first, pos, facing, length));
+            // A bay behind blinds next to a bare one: two lights, each with its own strength.
+            boolean coverChanges = more && ((INFO.get(next) >> 4) & 3) != ((code >> 4) & 3);
+            if (!more || coverChanges || length >= MAX_SPAN || (bayEnd && length + BAY > MAX_SPAN)) {
+                out.add(makeRun(first, pos, facing, length, COVER_DIM[(code >> 4) & 3]));
                 first = next;
                 length = 0;
             }
@@ -489,7 +538,7 @@ public final class Level4Lights {
         }
     }
 
-    private static WindowRun makeRun(long first, long last, Direction facing, int length) {
+    private static WindowRun makeRun(long first, long last, Direction facing, int length, float dim) {
         int x0 = Math.min(BlockPos.getX(first), BlockPos.getX(last));
         int x1 = Math.max(BlockPos.getX(first), BlockPos.getX(last));
         int z0 = Math.min(BlockPos.getZ(first), BlockPos.getZ(last));
@@ -512,7 +561,7 @@ public final class Level4Lights {
         }
         float half = tall ? 1.0f : 0.5f;
         return new WindowRun(BlockPos.asLong(x0, y, z0), cx, y + half, cz, facing,
-                Math.max(length / 2.0f - WINDOW_INSET, 0.2f), half - WINDOW_INSET);
+                Math.max(length / 2.0f - WINDOW_INSET, 0.2f), half - WINDOW_INSET, dim);
     }
 
     // ------------------------------------------------------------------------------------------
@@ -543,7 +592,6 @@ public final class Level4Lights {
         double range = quality.lightRange * WINDOW_RANGE_SCALE;
         double rangeSq = range * range;
         int budget = quality.maxL4Windows;
-        float flash = 1.0f + WINDOW_FLASH_BOOST * Level4Atmosphere.flash(System.currentTimeMillis());
         int used = 0;
         for (int i = 0; i < n; i++) {
             WindowRun run = list[i];
@@ -552,7 +600,7 @@ public final class Level4Lights {
                 continue;
             }
             used++;
-            float brightness = WINDOW_BRIGHTNESS * scale * flash * fade(run.distSq, range);
+            float brightness = WINDOW_BRIGHTNESS * run.dim * scale * fade(run.distSq, range);
             if (run.handle != null && !run.handle.isValid()) {
                 run.handle = null; // Veil threw it away (resource reload): make it again
             }
@@ -582,7 +630,7 @@ public final class Level4Lights {
             if (light.distSq > rangeSq) {
                 break; // nearest first
             }
-            if (!isTroffer(light, blackedOut)) {
+            if (!isDownlight(light, blackedOut)) {
                 continue;
             }
             picked++;
@@ -603,7 +651,7 @@ public final class Level4Lights {
             if (light.distSq > rangeSq) {
                 break;
             }
-            if (!isTroffer(light, blackedOut)) {
+            if (!isDownlight(light, blackedOut)) {
                 continue;
             }
             picked++;
@@ -620,7 +668,7 @@ public final class Level4Lights {
                 slot.seen = true;
                 slot.upward = lensUp(light);
             }
-            float base = slot.upward ? UPWARD_BRIGHTNESS : TROFFER_BRIGHTNESS;
+            float base = slot.upward ? UPWARD_BRIGHTNESS : light.type == FixtureType.OFFICE_COFFER ? COFFER_BRIGHTNESS : TROFFER_BRIGHTNESS;
             float brightness = base * light.level * scale * fade(light.distSq, range);
             if (slot.handle != null && !slot.handle.isValid()) {
                 slot.handle = null;
@@ -635,9 +683,17 @@ public final class Level4Lights {
         }
     }
 
-    /** A lit Level 4 panel worth a light (in a full blackout a dead one would only cost GPU time). */
-    private static boolean isTroffer(FixtureLight light, boolean blackedOut) {
-        return light.type == FixtureType.OFFICE_PANEL && !(blackedOut && light.level <= 0.0f);
+    /**
+     * Level 4's ceiling lights that {@link Level4Lights} draws as area downlights (BackroomsLights
+     * leaves them out of its point lights on Level 4).
+     */
+    static boolean isDownlight(FixtureType type) {
+        return type == FixtureType.OFFICE_PANEL || type == FixtureType.OFFICE_COFFER;
+    }
+
+    /** A lit Level 4 panel or coffer worth a light (in a full blackout a dead one would only cost GPU time). */
+    private static boolean isDownlight(FixtureLight light, boolean blackedOut) {
+        return isDownlight(light.type) && !(blackedOut && light.level <= 0.0f);
     }
 
     @Nullable
@@ -729,11 +785,12 @@ public final class Level4Lights {
             halfX = (maxX - minX + 1) / 2.0f;
             halfZ = (maxZ - minZ + 1) / 2.0f;
         }
+        boolean coffer = fixture.type == FixtureType.OFFICE_COFFER;
         AreaLightData light = new AreaLightData()
                 .setSize(halfX - TROFFER_INSET, halfZ - TROFFER_INSET)
-                .setAngle(upward ? UPWARD_ANGLE : TROFFER_ANGLE)
-                .setDistance(upward ? UPWARD_DISTANCE : TROFFER_DISTANCE)
-                .setColor(TROFFER_R, TROFFER_G, TROFFER_B)
+                .setAngle(upward ? UPWARD_ANGLE : coffer ? COFFER_ANGLE : TROFFER_ANGLE)
+                .setDistance(upward ? UPWARD_DISTANCE : coffer ? COFFER_DISTANCE : TROFFER_DISTANCE)
+                .setColor(coffer ? COFFER_R : TROFFER_R, coffer ? COFFER_G : TROFFER_G, coffer ? COFFER_B : TROFFER_B)
                 .setBrightness(brightness)
                 .setOcclusionEnabled(true);
         light.getPositionMutable().set(cx, upward ? faceY + 1.0 + TROFFER_GAP : faceY - TROFFER_GAP, cz);

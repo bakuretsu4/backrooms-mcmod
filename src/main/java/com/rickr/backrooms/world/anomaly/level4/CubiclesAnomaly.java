@@ -22,7 +22,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 /**
  * Level 4.3, "The Cubicles" (https://backrooms.fandom.com/wiki/Level_4.3): reached by walking down a
  * dim white series of hallways, an endless field of cubicles in constant white fog, with the
- * sounds of shuffling paper, pencils writing, unclear voices and the muffled rain and thunder of
+ * sounds of shuffling paper, pencils writing, unclear voices and the far-off air conditioning of
  * Level 4. Its fridges hold Almond Water. The place makes people want to stay and work.
  *
  * <ul>

@@ -2,12 +2,12 @@
   "carvers": {},
   "downfall": 0.0,
   "effects": {
-    "ambient_sound": "backrooms:ambient.level4_rain",
+    "ambient_sound": "backrooms:ambient.level4_hvac",
     "additions_sound": {
       "sound": "backrooms:ambient.level4_pipes",
       "tick_chance": 0.0006
     },
-    "fog_color": 724242,
+    "fog_color": 1053464,
     "sky_color": 0,
     "water_color": 4159204,
     "water_fog_color": 329011

@@ -137,6 +137,19 @@ public enum FixtureType {
      */
     OFFICE_PANEL("office_panel", Mount.CEILING_BLOCK, 2, 0.93f, 0.96f, 1.0f, 1.0f, 10.0f, Hum.FLUORESCENT, true),
     /**
+     * Level 4 lobby/cafeteria coffer: the lit diffuser of a large recessed ceiling coffer, laid in
+     * 2x2 or 3x3 groups (maxRun 3 = one light per group). With Veil it is drawn by Level4Lights as one
+     * soft, slightly warm downward area light per group (like the troffers); these numbers only
+     * matter outside Level 4.
+     */
+    OFFICE_COFFER("office_coffer_light", Mount.CEILING_BLOCK, 3, 1.0f, 0.96f, 0.90f, 1.2f, 12.0f, Hum.FLUORESCENT, true),
+    /**
+     * Level 4 cafeteria/lobby drum pendant hanging under the ceiling: a small warm pool on the table
+     * or floor under it (the light hangs just under the shade), the one warm note in the cold office.
+     * Silent. Dead ones (mode=dead) give no light.
+     */
+    OFFICE_PENDANT("office_pendant_light", Mount.PENDANT, 1, 1.0f, 0.85f, 0.64f, 1.0f, 7.0f, Hum.NONE, true),
+    /**
      * Level 4 vending machine: the glowing front throws a small cold glow into the dark break room.
      * Only the upper half counts (see {@link #of}), so a machine is one light.
      */
@@ -270,8 +283,17 @@ public enum FixtureType {
          * under the head's bottom face (in the open air below it), so the pool spreads over the
          * road and the head itself isn't in shadow.
          */
-        LAMP_HEAD
+        LAMP_HEAD,
+        /**
+         * A shade hanging in its own air cell (Level 4's dome pendant): the light sits just under
+         * the shade's diffuser, {@link #PENDANT_LIGHT_Y} up from the bottom of the cell, so the pool
+         * spreads below and the shade isn't in its own way.
+         */
+        PENDANT
     }
+
+    /** Height of a PENDANT light above the bottom of its cell (the dome's diffuser is at 5/16). */
+    public static final double PENDANT_LIGHT_Y = 0.28;
 
     private final String id;
     public final Mount mount;

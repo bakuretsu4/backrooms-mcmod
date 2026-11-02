@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Level 4.3, "The Cubicles" (https://backrooms.fandom.com/wiki/Level_4.3), on the client: the
  * constant white fog, and the sounds of people working that you never see (shuffling paper,
- * pencils writing, unclear voices, Level 4's rain and thunder muffled far away).
+ * pencils writing, unclear voices, the air conditioning of the floors around it far away).
  *
  * <p>It creeps in along the dim white hallways: the deeper you walk, the whiter and closer the fog
  * and the louder the work, until in the field you can see about ten blocks. The fog overrides Level

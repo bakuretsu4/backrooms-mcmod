@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "facing=north,kind=picture": {
+      "model": "backrooms:block/office_wall_mark_picture"
+    },
+    "facing=north,kind=board_left": {
+      "model": "backrooms:block/office_wall_mark_board_left"
+    },
+    "facing=north,kind=board_right": {
+      "model": "backrooms:block/office_wall_mark_board_right"
+    },
+    "facing=north,kind=holes": {
+      "model": "backrooms:block/office_wall_mark_holes"
+    },
+    "facing=east,kind=picture": {
+      "model": "backrooms:block/office_wall_mark_picture",
+      "y": 90
+    },
+    "facing=east,kind=board_left": {
+      "model": "backrooms:block/office_wall_mark_board_left",
+      "y": 90
+    },
+    "facing=east,kind=board_right": {
+      "model": "backrooms:block/office_wall_mark_board_right",
+      "y": 90
+    },
+    "facing=east,kind=holes": {
+      "model": "backrooms:block/office_wall_mark_holes",
+      "y": 90
+    },
+    "facing=south,kind=picture": {
+      "model": "backrooms:block/office_wall_mark_picture",
+      "y": 180
+    },
+    "facing=south,kind=board_left": {
+      "model": "backrooms:block/office_wall_mark_board_left",
+      "y": 180
+    },
+    "facing=south,kind=board_right": {
+      "model": "backrooms:block/office_wall_mark_board_right",
+      "y": 180
+    },
+    "facing=south,kind=holes": {
+      "model": "backrooms:block/office_wall_mark_holes",
+      "y": 180
+    },
+    "facing=west,kind=picture": {
+      "model": "backrooms:block/office_wall_mark_picture",
+      "y": 270
+    },
+    "facing=west,kind=board_left": {
+      "model": "backrooms:block/office_wall_mark_board_left",
+      "y": 270
+    },
+    "facing=west,kind=board_right": {
+      "model": "backrooms:block/office_wall_mark_board_right",
+      "y": 270
+    },
+    "facing=west,kind=holes": {
+      "model": "backrooms:block/office_wall_mark_holes",
+      "y": 270
+    }
+  }
+}

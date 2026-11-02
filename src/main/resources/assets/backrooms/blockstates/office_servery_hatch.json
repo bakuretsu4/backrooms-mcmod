@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/office_servery_hatch"
+    },
+    "facing=east": {
+      "model": "backrooms:block/office_servery_hatch",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/office_servery_hatch",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/office_servery_hatch",
+      "y": 270
+    }
+  }
+}

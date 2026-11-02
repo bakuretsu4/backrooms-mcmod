@@ -31,6 +31,9 @@ public final class ModItems {
     // Supplies (v3): sprint energy, sanity and health in a pinch.
     public static final DeferredItem<EnergyBarItem> ENERGY_BAR = ITEMS.registerItem("energy_bar",
             EnergyBarItem::new, new Item.Properties().stacksTo(16).food(ModFoods.ENERGY_BAR));
+    /** Level 4's extremely rare cafeteria find (take it off its tray): a plain double cheeseburger. */
+    public static final DeferredItem<Item> DOUBLE_CHEESEBURGER = ITEMS.registerItem("double_cheeseburger",
+            Item::new, new Item.Properties().stacksTo(16).food(ModFoods.DOUBLE_CHEESEBURGER));
     public static final DeferredItem<CalmPillsItem> CALM_PILLS = ITEMS.registerItem("calm_pills",
             CalmPillsItem::new, new Item.Properties().stacksTo(8));
     public static final DeferredItem<BandageItem> BANDAGE = ITEMS.registerItem("bandage",
@@ -209,7 +212,13 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CEILING_DIFFUSER);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CEILING_FIXTURE);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_PANEL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_COFFER_LIGHT);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_PENDANT_LIGHT);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_WINDOW);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_VINYL_FLOOR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_TERRAZZO);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_ENTRANCE_MAT);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_DOOR_FRAME);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_GLASS);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_GLASS_BLINDS);
         ITEMS.registerSimpleBlockItem(ModBlocks.STAGE_CURTAIN);
@@ -243,6 +252,12 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_WALL_PLATE);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_NOTICE_BOARD);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CLOCK);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_WALL_MARK);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_WALL_FIXTURE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_FOUNTAIN);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_TABLE_ITEMS);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_FLOOR_DETAIL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_SERVERY_HATCH);
         ITEMS.registerSimpleBlockItem(ModBlocks.SUPPLY_CABINET);
         // Level 94 props (the vehicle hull has no item: it is an invisible filler placed with the vehicle).
         ITEMS.registerSimpleBlockItem(ModBlocks.L94_SIREN_POLE);

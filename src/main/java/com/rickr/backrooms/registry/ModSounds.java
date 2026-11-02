@@ -117,12 +117,11 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> BANDAGE_WRAP = register("item.bandage.wrap");
     // Safe rooms: the field radio crackling to life and chiming when you save a checkpoint.
     public static final DeferredHolder<SoundEvent, SoundEvent> CHECKPOINT_SAVE = register("block.checkpoint_radio.save");
-    // Level 4, the Abandoned Office: heavy rain on the windows (biome loop), now and then a rumble
-    // in the pipes (biome additions), thunder after the lightning, the music behind door 6, and the
-    // vending machine and water cooler.
-    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_RAIN = register("ambient.level4_rain");
+    // Level 4, the Abandoned Office: the air conditioning (biome loop), now and then a rumble in the
+    // pipes (biome additions), the music behind door 6, and the vending machine and water cooler.
+    /** Level 4's room tone: air conditioning blowing through the empty floors. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_HVAC = register("ambient.level4_hvac");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_PIPES = register("ambient.level4_pipes");
-    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_THUNDER = register("level4.thunder");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_DOOR_MUSIC = register("level4.door_music");
     public static final DeferredHolder<SoundEvent, SoundEvent> VENDING_MACHINE_VEND = register("block.vending_machine.vend");
     public static final DeferredHolder<SoundEvent, SoundEvent> WATER_COOLER_GLUG = register("block.water_cooler.glug");

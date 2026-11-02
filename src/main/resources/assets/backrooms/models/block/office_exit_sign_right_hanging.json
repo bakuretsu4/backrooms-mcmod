@@ -1,0 +1,187 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/office_exit_sign",
+    "sign": "backrooms:block/office_exit_sign",
+    "rod": "backrooms:block/l4_wall_fixtures"
+  },
+  "elements": [
+    {
+      "from": [
+        2.5,
+        4,
+        7.25
+      ],
+      "to": [
+        13.5,
+        10,
+        8.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            8.0,
+            8.0,
+            16.0
+          ],
+          "texture": "#sign",
+          "neoforge_data": {
+            "block_light": 15,
+            "sky_light": 15
+          }
+        },
+        "south": {
+          "uv": [
+            8.0,
+            0.0,
+            16.0,
+            8.0
+          ],
+          "texture": "#sign",
+          "neoforge_data": {
+            "block_light": 15,
+            "sky_light": 15
+          }
+        },
+        "east": {
+          "uv": [
+            8.5,
+            8.5,
+            9.5,
+            9.5
+          ],
+          "texture": "#sign"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            8.5,
+            9.5,
+            9.5
+          ],
+          "texture": "#sign"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            8.5,
+            9.5,
+            9.5
+          ],
+          "texture": "#sign"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            8.5,
+            9.5,
+            9.5
+          ],
+          "texture": "#sign"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        10,
+        7.8
+      ],
+      "to": [
+        4.4,
+        16,
+        8.2
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#rod"
+        },
+        "south": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#rod"
+        },
+        "east": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#rod"
+        },
+        "west": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#rod"
+        }
+      }
+    },
+    {
+      "from": [
+        11.6,
+        10,
+        7.8
+      ],
+      "to": [
+        12,
+        16,
+        8.2
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#rod"
+        },
+        "south": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#rod"
+        },
+        "east": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#rod"
+        },
+        "west": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#rod"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "mode=lit": {
+      "model": "backrooms:block/office_pendant_light"
+    },
+    "mode=flicker": {
+      "model": "backrooms:block/office_pendant_light"
+    },
+    "mode=dead": {
+      "model": "backrooms:block/office_pendant_light_off"
+    }
+  }
+}

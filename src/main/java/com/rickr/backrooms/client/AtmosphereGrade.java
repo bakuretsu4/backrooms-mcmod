@@ -103,7 +103,7 @@ public final class AtmosphereGrade {
     private static final Mood LEVEL_2 = new Mood(1.12f, 1.05f, 0.86f, 0.95f, 0.98f, 1.07f, 1.03f, 1.0f, 0.93f,
             0.005f, 0.005f, 0.009f, 0.075f, 0.080f, 0.100f, 10.0f, 0.02f, 0.28f, 0.50f, 0.18f, 0.010f);
     /**
-     * Level 4: an empty office on a rainy night, lit mostly by its glowing windows. A cool neutral
+     * Level 4: an empty office lit mostly by its blacked-out, glowing windows. A cool neutral
      * grade: blue-grey shadows, near-neutral highlights (white walls stay white, not blue), colour a
      * little under the textures (0.84). The haze is subtle (from 12 blocks, at most 26%), so a
      * big open floor recedes into dim blue-grey while the room you stand in stays clear. Contact

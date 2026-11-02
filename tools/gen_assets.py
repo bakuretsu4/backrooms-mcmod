@@ -2297,7 +2297,12 @@ def save_ogg(x: np.ndarray, path: Path, peak: float = 0.89, loop: bool = False,
         # loops get a higher Vorbis quality: the codec's low-frequency error otherwise
         # leaves a small step where the end meets the start
         extra = {"compression_level": 0.0} if loop else {}
-        sf.write(str(path), (x * gain).astype(np.float32), SR, format="OGG", subtype="VORBIS", **extra)
+        # Written in 1 s blocks: one huge write overflows the stack inside libvorbis on Windows
+        # (long loops at high quality crash Python outright).
+        data = (x * gain).astype(np.float32)
+        with sf.SoundFile(str(path), "w", SR, 1, format="OGG", subtype="VORBIS", **extra) as out:
+            for i in range(0, len(data), SR):
+                out.write(data[i:i + SR])
         decoded_peak = np.abs(sf.read(str(path))[0]).max()
         if decoded_peak <= max(peak, 0.9) + 0.02:
             break
@@ -4237,19 +4242,16 @@ def tex_l4_panel() -> None:
     save_png(_l4_panel(False), _blk("office_panel_off"))
 
 
-L4_WINDOW_FRAMES = 32
 L4_GLASS_TOP = np.array([208, 216, 228])      # frosted glass at the head (~0.85 brightness): the brightest thing on its wall
 L4_GLASS_BOTTOM = np.array([170, 179, 192])   # and at the sill (~0.70): blue-biased, so warm shader light lands on grey
 
 
-def _l4_rain_sheet(frame: int, frames: int, rng_seed=4120) -> np.ndarray:
-    """One frame of the two-block-tall window glass (128 x 256): Level 4's "blacked-out window
-    that still glows", frosted glass lit from outside by nothing in particular. A soft vertical
-    gradient (brighter at the head), a very faint diffusion mottle, a thin band of ceramic frit
-    dots fading out from the head and sill frames, and a few slow, soft rain runnels on the other
-    side of the glass (blurred by the frosting). Every runnel travels one sheet height per loop, so
-    the animation loops seamlessly; with frametime 4 a loop takes 6.4 s, slow enough not to draw
-    the eye. Its face is lit at the block's own light 12, unshaded (see _l4_window_models)."""
+def _l4_glass_sheet(rng_seed=4120) -> np.ndarray:
+    """The two-block-tall window glass (128 x 256): Level 4's "blacked-out window that still
+    glows", frosted glass lit from outside by nothing in particular. Canon has no weather here,
+    so it is still: a soft vertical gradient (brighter at the head), a very faint diffusion
+    mottle, and a thin band of ceramic frit dots fading out from the head and sill frames. Its
+    face is lit at the block's own light 12, unshaded (see _l4_window_models)."""
     rng = rng_for(rng_seed)
     H, W = 2 * S, S
     X, Y = grid((H, W))
@@ -4262,23 +4264,69 @@ def _l4_rain_sheet(frame: int, frames: int, rng_seed=4120) -> np.ndarray:
     edge = np.minimum(Y - 16, H - 16 - Y)                                 # distance from the head / sill rail
     dot_r = 2.6 * smoothstep(20, 2, edge)
     dots = np.clip(dot_r - np.hypot(wrapd(X - 4, 8.0), wrapd(Y - 4, 8.0)) + 0.5, 0, 1)
-    img = add_lum(img, 7 * blur(dots, 0.6), (0.98, 0.99, 1.0))
-    # Old dried runs: faint static vertical marks.
-    img = add_lum(img, -1.4 * smoothstep(0.8, 2.0, fnoise(rng, (H, W), beta=1.4, aniso=(1, 14))))
-    t = frame / frames
-    trail = np.zeros((H, W))
-    head = np.zeros((H, W))
-    for i in range(6):
-        x0 = rng.uniform(6, W - 6)
-        phase = rng.uniform(0, 1)
-        wig = rng.uniform(0.6, 1.8)
-        hy = ((phase + t) % 1.0) * H
-        xpath = x0 + wig * np.sin(Y / 17.0 + i * 1.7)
-        dxp = np.abs(X - xpath)
-        behind = wrapd(hy - Y, H)                    # > 0: the runnel has already passed here
-        trail = np.maximum(trail, np.exp(-(dxp / 1.6) ** 2) * np.exp(-np.clip(behind, 0, None) / 90.0) * (behind > 0))
-        head = np.maximum(head, np.exp(-(dxp / 1.8) ** 2 - (wrapd(Y - hy, H) / 3.0) ** 2))
-    return add_lum(img, -7 * trail + 7 * head, (0.97, 1.0, 1.03))
+    return add_lum(img, 7 * blur(dots, 0.6), (0.98, 0.99, 1.0))
+
+
+def _l4_blinds() -> np.ndarray:
+    """l4_blinds (64 px, one block of pane): lowered white venetian blinds with the window's glow
+    behind them. Slats 2 px apart (8 texels): each slat curves, so it is lighter at its top edge
+    and greyer below, and a thin bright line of glass glows between it and the next. Two ladder
+    cords run down. The blinds are lit like the glass (the room can't light them from behind), so
+    the slats sit a little darker than the glass and the gaps as bright as it."""
+    n = 64
+    rng = rng_for(4125)
+    X, Y = grid((n, n))
+    p = (Y % 8.0) / 8.0                                                  # 0 at a slat's top edge
+    slat = 168 - 34 * smoothstep(0.1, 0.78, p)
+    gap = p > 0.8
+    lum = np.where(gap, 214.0, slat) + blur(rng.normal(0, 1, (n, n)), 0.8) * 1.2
+    img = np.stack([lum * 0.97, lum * 0.985, lum * 1.0], axis=-1)
+    cords = np.maximum(smoothstep(1.2, 0.4, np.abs(X - 16)), smoothstep(1.2, 0.4, np.abs(X - 48)))
+    return over(img, np.array([150, 148, 142]), cords * 0.7)
+
+
+def _l4_window_paper() -> np.ndarray:
+    """l4_window_paper (64 x 128, the two panes of one window stacked): someone blacked the window
+    out with whatever was to hand. Newspaper and brown parcel paper (the glow comes through them
+    dimly), a sheet of kitchen foil (opaque), masking tape at the corners, and thin bright slits
+    of glass where the sheets don't quite meet."""
+    W, H = 64, 128
+    rng = rng_for(4126)
+    X, Y = grid((H, W))
+    img = lerp(L4_GLASS_TOP, L4_GLASS_BOTTOM, (Y / H)[..., None])          # the glass, in the slits
+    sheets = (
+        # x0, y0, x1, y1, colour (backlit), kind
+        (1.5, 1.5, 62.5, 58, (176, 172, 160), "news"),
+        (2, 57, 40, 126.5, (150, 116, 82), "kraft"),
+        (38.5, 54, 62.5, 126.5, (92, 94, 98), "foil"),
+    )
+    for x0, y0, x1, y1, col, kind in sheets:
+        m = box((H, W), x0, y0, x1, y1)
+        sheet = add_lum(fill(col, (H, W)), blur(fnoise(rng, (H, W), beta=2.6), 1.0) * 3 + rng.normal(0, 1.0, (H, W)))
+        if kind == "news":                                                 # columns of faint print
+            cols = (np.abs(wrapd(X - 3, 15.0)) > 1.5) & (np.abs(wrapd(Y, 3.0)) < 0.7) & (Y > y0 + 8)
+            sheet = add_lum(sheet, -16 * cols)
+            sheet = add_lum(sheet, -26 * box((H, W), x0 + 4, y0 + 2.5, x1 - 4, y0 + 6.5))   # the masthead
+        elif kind == "kraft":
+            sheet = add_lum(sheet, fnoise(rng, (H, W), beta=1.0, aniso=(1, 6)) * 3)
+        else:                                                              # foil: crinkled, flat grey
+            crinkle = blur(fnoise(rng, (H, W), beta=1.4, kmin=4), 0.6)
+            sheet = add_lum(sheet, crinkle * 9)
+        img = over(img, sheet, m)
+        img = add_lum(img, -10 * (m - box((H, W), x0 + 1, y0 + 1, x1 - 1, y1 - 1)))   # the sheet's edge
+    for cx, cy, ang in ((4, 4, 40), (60, 4, -40), (5, 60, -35), (37, 58, 30), (60, 124, 35), (6, 123, -30), (41, 90, 0)):
+        a = np.radians(ang)
+        u = (X - cx) * np.cos(a) + (Y - cy) * np.sin(a)
+        v = -(X - cx) * np.sin(a) + (Y - cy) * np.cos(a)
+        tape = np.clip(5.5 - np.abs(u), 0, 1) * np.clip(2.2 - np.abs(v), 0, 1)
+        img = over(img, np.array([206, 194, 152]), tape * 0.85)
+    return img
+
+
+def tex_l4_window_covers() -> None:
+    """The window covers' textures (see _l4_blinds, _l4_window_paper)."""
+    save_png(_l4_blinds(), _blk("l4_blinds"))
+    save_png(_l4_window_paper(), _blk("l4_window_paper"))
 
 
 def _l4_bar_profile(t) -> np.ndarray:
@@ -4290,8 +4338,8 @@ def _l4_bar_profile(t) -> np.ndarray:
 
 def _l4_window_frame(img, lower: bool) -> np.ndarray:
     """The aluminium head rail (upper pane) or sill rail (lower pane), 2 px tall, painted over the
-    glass after the rain (so the streaks never touch it), with the same profile as the mullions
-    (highlight on its upper side). The mullions are flat model bars (see _l4_window_models)."""
+    glass with the same profile as the mullions (highlight on its upper side). The mullions are
+    flat model bars (see _l4_window_models)."""
     X, Y = grid()
     rows = 16
     t = (Y - (S - rows if lower else 0)) / rows
@@ -4301,18 +4349,12 @@ def _l4_window_frame(img, lower: bool) -> np.ndarray:
 
 
 def tex_l4_window() -> None:
-    """Animated frosted window panes (upper and lower half of one tall window), 32 frames, and the
-    anodised aluminium of the mullions."""
-    lower_frames = []
-    upper_frames = []
-    for f in range(L4_WINDOW_FRAMES):
-        sheet = _l4_rain_sheet(f, L4_WINDOW_FRAMES)
-        upper_frames.append(_l4_window_frame(sheet[:S], lower=False))
-        lower_frames.append(_l4_window_frame(sheet[S:], lower=True))
-    for name, frames in (("office_window_upper", upper_frames), ("office_window_lower", lower_frames)):
-        save_png(np.concatenate(frames, axis=0), _blk(name))
-        _blk(name).with_suffix(".png.mcmeta").write_text(
-            '{\n  "animation": {\n    "frametime": 4,\n    "interpolate": true\n  }\n}\n')
+    """The frosted window panes (upper and lower half of one tall window; still, no animation) and
+    the anodised aluminium of the mullions."""
+    sheet = _l4_glass_sheet()
+    for name, half, lower in (("office_window_upper", sheet[:S], False), ("office_window_lower", sheet[S:], True)):
+        save_png(_l4_window_frame(half, lower), _blk(name))
+        _blk(name).with_suffix(".png.mcmeta").unlink(missing_ok=True)     # it used to be animated (rain)
     # l4_alu: one whole mullion across its width (left edge to right edge), the same down its length.
     X, _ = grid((32, 32))
     alu = np.stack([_l4_bar_profile(X / 32) * c for c in (1.0, 1.02, 1.06)], axis=-1)
@@ -4320,15 +4362,19 @@ def tex_l4_window() -> None:
 
 
 def tex_l4_glass() -> None:
-    """Conference-room glass on black mullions (translucent), and the same with venetian blinds."""
+    """Conference-room glass partitions (translucent), and the same with venetian blinds. Each
+    block edge carries half a thin light aluminium mullion (1.25 px, the window mullions' profile
+    in a lighter anodising), so two neighbouring panes meet in one crisp 2.5 px bar."""
     rng = rng_for(4122)
     X, Y = grid()
     glass = np.concatenate([fill((150, 170, 176), (S, S)), np.full((S, S, 1), 46.0)], axis=2)
     glass[..., :3] = add_lum(glass[..., :3], fnoise(rng, beta=3.0) * 5)
     streak = smoothstep(0.85, 1.0, np.sin((X + Y * 0.6) / 14.0)) * 30   # faint reflection bands
     glass[..., 3] += streak * 0.6
-    mull = np.clip(box((S, S), -1, -1, 4, S + 1) + box((S, S), S - 4, -1, S + 1, S + 1), 0, 1)
-    glass[..., :3] = over(glass[..., :3], np.array([24, 24, 26]), mull)
+    t = np.where(X < 10, 0.5 + X / 20, (X - (S - 10)) / 20)              # across the joint bar
+    mull = ((X < 10) | (X >= S - 10)).astype(float)
+    bar = np.clip(_l4_bar_profile(t) * 1.3, 0, 230)
+    glass[..., :3] = np.where(mull[..., None] > 0, np.stack([bar, bar * 1.01, bar * 1.04], axis=-1), glass[..., :3])
     glass[..., 3] = np.maximum(glass[..., 3], mull * 255)
     save_png(glass, _blk("office_glass"))
     blinds = glass.copy()
@@ -4396,9 +4442,11 @@ def tex_l4_doors() -> None:
     rng = rng_for(4131)
     shp = (2 * S, S)
     X, Y = grid(shp)
-    rgb = add_lum(fill((172, 174, 176), shp), fnoise(rng, shp, beta=1.0, aniso=(1, 10)) * 4)
+    rgb = add_lum(fill((196, 198, 202), shp), fnoise(rng, shp, beta=1.0, aniso=(1, 10)) * 3)   # light anodised frame
     alpha = np.full(shp, 255.0)
-    pane = box(shp, 12, 12, S - 12, 2 * S - 22)
+    pane = box(shp, 7, 7, S - 7, 2 * S - 16)
+    rgb = add_lum(rgb, 22 * (box(shp, 1, -1, 2.5, 2 * S + 1) + box(shp, S - 6, -1, S - 4.5, 2 * S + 1))
+                  - 26 * (box(shp, 5.5, 5.5, S - 5.5, 2 * S - 14.5) - pane))                # highlight; shadow round the glass
     rgb = over(rgb, np.array([150, 172, 178]), pane)
     alpha = alpha * (1 - pane) + pane * (52 + 30 * smoothstep(0.85, 1.0, np.sin((X + Y * 0.5) / 13.0)))
     bar = box(shp, 18, 132, S - 18, 138)
@@ -4739,6 +4787,323 @@ def tex_l4_clock() -> None:
     img = over(img, np.array([176, 34, 28]), hand(47 * 6, 11.5, 0.6, back=3))
     img = over(img, np.array([28, 28, 30]), supersample(q, lambda x, y: np.hypot(x - 16, y - 16) < 1.3))
     save_png(img, _blk("office_clock"))
+
+
+def _l4_small_text(text, cx, cy, px, shape) -> np.ndarray:
+    """Anti-aliased mask of small bold text centred at (cx, cy), px tall (fractions allowed: for
+    the tiny print on signs, below what _text will shrink to)."""
+    return pil_mask(lambda d, k: d.text((cx * k, cy * k), text, fill=255, font=font(int(round(px * k))), anchor="mm"), shape)
+
+
+def tex_l4_architrave() -> None:
+    """l4_architrave (32 px): the painted door architrave seen face on, its moulding profile running
+    across the texture (models stretch the whole width over the trim's 1.5 px and turn it for the
+    head). Symmetric, so it reads the same from both faces of the wall: a chamfer at each edge, two
+    flats, a small centre bead."""
+    n = 32
+    rng = rng_for(4197)
+    X, _ = grid((n, n))
+    d = np.minimum(X, n - X)                                              # distance from the nearer edge
+    lum = np.select([d < 2.5, d < 13.0, d < 14.5], [-26.0, 0.0, 10.0], -10.0)
+    img = add_lum(fill((226, 225, 220), (n, n)), lum + blur(rng.normal(0, 1, (n, n)), 0.8) * 0.8)
+    save_png(img, _blk("l4_architrave"))
+
+
+def tex_l4_wall_marks() -> None:
+    """l4_wall_marks (64 x 32): the ghosts of things that hung on the walls. Texels 0-16: a
+    picture's patch of unfaded paint, a shade paler than the wall with a faint grimy outline;
+    16-32 and 32-48: the left and right halves of a whiteboard's patch (outline on the outer sides
+    only, so the two halves join); 48-64 top: a nail hole and a screw, bottom: a wall plug."""
+    W, H = 64, 32
+    rng = rng_for(4198)
+    X, Y = grid((H, W))
+    pale = add_lum(fill(np.array(L4_WALL) + 9, (H, W)), blur(rng.normal(0, 1, (H, W)), 0.8) * 0.8)
+    img = pale.copy()
+    lx = X % 16
+    left_rim = (X < 32) & (lx < 1.0)                                       # picture and board-left
+    right_rim = ((X < 16) | ((X >= 32) & (X < 48))) & (lx > 15.0)          # picture and board-right
+    tb_rim = (X < 48) & ((Y < 1.0) | (Y > H - 1.0))
+    img = add_lum(img, -11 * (left_rim | right_rim | tb_rim))
+    img = add_lum(img, -4 * smoothstep(4, 0, Y) * (X < 48))                # dust settled along the top edge
+    plaster = fill(L4_WALL, (H, W))
+    img = np.where(((X >= 48) & (Y < 32))[..., None], plaster, img)
+    img = over(img, np.array([58, 54, 50]), box((H, W), 48, 0, 56, 8))     # hole
+    img = over(img, np.array([150, 150, 152]), box((H, W), 56, 0, 64, 8))  # screw head
+    img = over(img, np.array([80, 80, 82]), box((H, W), 59.3, 1, 60.7, 7))  # its slot
+    img = over(img, np.array([224, 224, 218]), box((H, W), 48, 8, 64, 16))  # white wall plug
+    save_png(img, _blk("l4_wall_marks"))
+
+
+def tex_l4_wall_fixtures() -> None:
+    """l4_wall_fixtures (128 px sheet, 32 px cells; the models map onto the cells): dado trunking
+    face, power + data outlet plate, black steel, chrome; hand sanitiser, first-aid box; the fire
+    evacuation plan (64 px); no-smoking sign, blue FIRE DOOR KEEP SHUT sign; the MEETING ROOM and
+    OFFICE door plaques (64 x 16 each); first-aid green and white plastic."""
+    n = 128
+    rng = rng_for(4199)
+    X, Y = grid((n, n))
+    q = (n, n)
+    img = add_lum(fill((228, 228, 224), q), blur(rng.normal(0, 1, q), 0.8) * 0.8)
+
+    def cell(cx, cy, w=32, h=32):
+        return box(q, cx, cy, cx + w, cy + h)
+    # Dado trunking: white, the lid seams a third and two thirds down.
+    for row in (10.5, 21.5):
+        img = add_lum(img, (-16 * box(q, 0, row - 0.6, 32, row + 0.6) + 6 * box(q, 0, row + 0.6, 32, row + 1.6)))
+    # Outlet plate: a switched power socket (left) and two data ports (right).
+    img = add_lum(img, 6 * box(q, 32, 0, 64, 1) - 10 * box(q, 32, 31, 64, 32))
+    for sx, sy, w, h in ((37, 9, 2.2, 5), (43, 9, 2.2, 5), (39.9, 16, 2.2, 5.5)):
+        img = over(img, np.array([46, 46, 48]), box(q, sx, sy, sx + w, sy + h))
+    img = over(img, np.array([200, 200, 196]), box(q, 37, 24, 46, 27))
+    for px in (50, 57):
+        img = over(img, np.array([52, 54, 58]), box(q, px, 10, px + 5, 16))
+        img = over(img, np.array([180, 150, 70]), box(q, px + 1, 10, px + 4, 11.2))
+    # Black steel and chrome.
+    img = over(img, add_lum(fill((36, 36, 38), q), blur(rng.normal(0, 1, q), 0.8) * 2), cell(64, 0))
+    chrome = add_lum(fill((150, 152, 156), q), 60 * np.exp(-((X - 106) / 4) ** 2) - 30 * np.exp(-((X - 118) / 5) ** 2))
+    img = over(img, chrome, cell(96, 0))
+    # Hand sanitiser: white body, a grey window showing the gel, a push lever at the bottom.
+    img = over(img, np.array([186, 196, 200]), box(q, 10, 40, 22, 52))
+    img = add_lum(img, -30 * box(q, 10, 40, 22, 44))                      # the gel's empty top part
+    img = over(img, np.array([200, 200, 196]), box(q, 8, 55, 24, 60))
+    img = add_lum(img, -14 * box(q, 8, 59, 24, 60))
+    # First-aid box: green with a white cross.
+    green = np.array([34, 128, 76])
+    img = over(img, green, cell(32, 32))
+    img = over(img, np.array([236, 240, 236]), box(q, 44, 38, 52, 58) + box(q, 38, 44, 58, 52))
+    img = add_lum(img, 14 * box(q, 32, 32, 64, 33.5) - 16 * box(q, 32, 62.5, 64, 64))
+    # Evacuation plan: a framed sheet, the floor plan in grey, green escape routes, a red dot.
+    plan = cell(64, 32, 64, 64)
+    img = over(img, np.array([40, 40, 42]), plan)
+    paper = box(q, 66.5, 34.5, 125.5, 93.5)
+    img = over(img, np.array([234, 232, 224]), paper)
+    img = over(img, np.array([40, 140, 84]), box(q, 66.5, 34.5, 125.5, 42))
+    img = over(img, np.array([240, 244, 240]), _l4_small_text("FIRE EVACUATION PLAN", 96, 38.5, 4.2, q))
+    walls = pil_mask(lambda d, k: [d.rectangle([x0 * k, y0 * k, x1 * k, y1 * k], outline=255, width=max(1, int(0.9 * k)))
+                                   for x0, y0, x1, y1 in ((70, 46, 122, 90), (70, 46, 92, 64), (100, 46, 122, 64),
+                                                          (70, 72, 92, 90), (100, 72, 122, 90))], q)
+    img = over(img, np.array([120, 120, 118]), walls)
+    route = pil_mask(lambda d, k: d.line([(81 * k, 68 * k), (111 * k, 68 * k), (111 * k, 88 * k)], fill=255, width=int(2 * k)), q)
+    img = over(img, np.array([40, 150, 84]), route)
+    img = over(img, np.array([200, 40, 34]), supersample(q, lambda x, y: np.hypot(x - 82, y - 68) < 2.2))
+    # No smoking: white sign, red ring and bar over a black cigarette.
+    img = over(img, np.array([240, 240, 236]), cell(0, 64))
+    ring_m = supersample(q, lambda x, y: np.abs(np.hypot(x - 16, y - 80) - 11) < 2.0)
+    img = over(img, np.array([80, 80, 82]), box(q, 7, 78, 23, 82))
+    img = over(img, np.array([200, 36, 30]), ring_m)
+    img = over(img, np.array([200, 36, 30]), pil_mask(lambda d, k: d.line([(8.5 * k, 72.5 * k), (23.5 * k, 87.5 * k)], fill=255, width=int(3.4 * k)), q))
+    # FIRE DOOR KEEP SHUT: a blue disc with white text.
+    img = over(img, np.array([240, 240, 236]), cell(32, 64))
+    img = over(img, np.array([28, 76, 160]), supersample(q, lambda x, y: np.hypot(x - 48, y - 80) < 14))
+    for i, line in enumerate(("FIRE DOOR", "KEEP SHUT")):
+        img = over(img, np.array([240, 242, 246]), _l4_small_text(line, 48, 77 + i * 6, 4.2, q))
+    # Door plaques: brushed silver with dark lettering.
+    for row, label in ((96, "MEETING ROOM"), (112, "OFFICE")):
+        plaque = add_lum(fill((184, 186, 190), q), fnoise(rng, q, beta=0.8, aniso=(10, 1)) * 3)
+        img = over(img, plaque, box(q, 0, row, 64, row + 16))
+        img = add_lum(img, 12 * box(q, 0, row, 64, row + 1) - 14 * box(q, 0, row + 15, 64, row + 16))
+        img = over(img, np.array([44, 44, 48]), _text(label, 32, row + 8.5, 10, maxw=54, shape=q))
+    img = over(img, green, cell(64, 96))
+    img = over(img, np.array([230, 230, 226]), cell(96, 96))
+    save_png(img, _blk("l4_wall_fixtures"))
+
+
+def tex_l4_fountain() -> None:
+    """office_fountain (64 px, 32 px quarters): brushed stainless steel; the basin seen from above
+    (a dished bowl, the drain, the bubbler at the back); the front panel with its push button;
+    darker steel for the inside of the bowl."""
+    n = 64
+    rng = rng_for(4181)
+    X, Y = grid((n, n))
+    q = (n, n)
+    steel = add_lum(fill((176, 178, 182), q), fnoise(rng, q, beta=0.8, aniso=(1, 10)) * 4 + rng.normal(0, 1.0, q))
+    img = steel.copy()
+    r = np.hypot((X - 48) / 13, (Y - 17) / 11)
+    img = add_lum(img, (-28 * smoothstep(1.0, 0.2, r) + 10 * smoothstep(1.15, 1.0, r) * (r > 1.0)) * box(q, 32, 0, 64, 32))
+    img = over(img, np.array([60, 60, 62]), supersample(q, lambda x, y: np.hypot(x - 48, y - 18) < 2.2))
+    img = over(img, np.array([210, 212, 216]), supersample(q, lambda x, y: np.hypot(x - 48, y - 6) < 2.0))   # bubbler
+    img = add_lum(img, (-34 * supersample(q, lambda x, y: np.abs(np.hypot(x - 16, y - 46) - 6) < 1.2)
+                        + 18 * supersample(q, lambda x, y: np.hypot(x - 15, y - 45) < 3.5)) * box(q, 0, 32, 32, 64))
+    img = over(img, add_lum(fill((96, 98, 102), q), fnoise(rng, q, beta=0.8, aniso=(1, 10)) * 3), box(q, 32, 32, 64, 64))
+    save_png(img, _blk("office_fountain"))
+
+
+def tex_l4_table_items() -> None:
+    """l4_table_items (64 px sheet, 16 px cells, 4 uv units each): row 0 a printed sheet, a yellow
+    pencil, blue and black notebook covers; row 1 three post-it colours, the mug's white side;
+    row 2 the mug's top (half full of Almond Water), the bottle's label, its cap, the tray's brown
+    plastic; row 3 the bun's top, the burger's layered side, and the standing desk sign that every
+    cubicle has (32 x 16)."""
+    n = 64
+    rng = rng_for(4182)
+    X, Y = grid((n, n))
+    q = (n, n)
+    img = fill((230, 230, 226), q)
+
+    def cell(i, col):
+        nonlocal img
+        cx, cy = (i % 4) * 16, (i // 4) * 16
+        img = over(img, add_lum(fill(col, q), blur(rng.normal(0, 1, q), 0.7) * 2), box(q, cx, cy, cx + 16, cy + 16))
+        return cx, cy
+    cx, cy = cell(0, (236, 234, 226))
+    for i in range(6):
+        img = add_lum(img, -40 * box(q, cx + 2, cy + 2.5 + i * 2.2, cx + 14 - (i % 3) * 2, cy + 3.4 + i * 2.2))
+    cx, cy = cell(1, (226, 186, 56))
+    img = add_lum(img, -16 * box(q, cx, cy + 7, cx + 16, cy + 9))
+    cell(2, (52, 76, 132))
+    cell(3, (36, 36, 40))
+    cell(4, (232, 214, 96))
+    cell(5, (226, 150, 172))
+    cell(6, (150, 206, 140))
+    cx, cy = cell(7, (236, 236, 232))
+    img = add_lum(img, -14 * smoothstep(cx + 10, cx + 16, X) * box(q, cx, cy, cx + 16, cy + 16))
+    cx, cy = cell(8, (236, 236, 232))
+    img = over(img, np.array([206, 188, 150]), supersample(q, lambda x, y: np.hypot(x - cx - 8, y - cy - 8) < 6))
+    cx, cy = cell(9, (206, 214, 208))
+    img = over(img, np.array([196, 168, 120]), box(q, cx, cy + 5, cx + 16, cy + 11))
+    img = over(img, np.array([120, 92, 60]), _text("AW", cx + 8, cy + 8, 5, maxw=10, shape=q) * 0.8)
+    cell(10, (236, 236, 232))
+    cell(11, (112, 80, 54))
+    cx, cy = cell(12, (194, 136, 66))
+    seeds = (rng.random(q) < 0.06) * box(q, cx + 1, cy + 1, cx + 15, cy + 15)
+    img = over(img, np.array([238, 226, 190]), seeds * 0.9)
+    cx, cy = cell(13, (194, 136, 66))
+    for y0, y1, col in ((5, 6.5, (236, 180, 50)), (6.5, 9, (92, 56, 36)), (9, 10.2, (236, 180, 50)), (10.2, 12.6, (88, 54, 34)),
+                        (12.6, 16, (206, 152, 84))):
+        img = over(img, np.array(col), box(q, cx, cy + y0, cx + 16, cy + y1))
+    img = over(img, np.array([240, 240, 236]), box(q, 32, 48, 64, 64))
+    img = add_lum(img, -10 * (box(q, 32, 48, 64, 49) + box(q, 32, 63, 64, 64)))
+    for i, line in enumerate(("PLEASE KEEP YOUR", "WORKSPACE TIDY")):
+        img = over(img, np.array([40, 40, 44]), _l4_small_text(line, 48, 53 + i * 6, 3.6, q))
+    save_png(img, _blk("l4_table_items"))
+
+
+def tex_l4_floor_details() -> None:
+    """l4_floor_details (64 x 32): left, a flush floor power box: a brushed steel frame round a
+    carpet-tile insert with the cable flap slot; right, an old faint stain (see-through, drawn
+    translucent over the carpet)."""
+    W, H = 64, 32
+    rng = rng_for(4183)
+    X, Y = grid((H, W))
+    q = (H, W)
+    img = np.concatenate([fill((156, 158, 162), q), np.full((H, W, 1), 255.0)], axis=2)
+    img[..., :3] = add_lum(img[..., :3], fnoise(rng, q, beta=0.8, aniso=(10, 1)) * 3)
+    insert = box(q, 3, 3, 29, 29)
+    img[..., :3] = over(img[..., :3], add_lum(fill(L4_CARPET, q), blur(rng.normal(0, 1, q), 0.6) * 3), insert)
+    img[..., :3] = add_lum(img[..., :3], -18 * box(q, 3, 3, 29, 4) + 10 * box(q, 2, 28, 30, 29))
+    img[..., :3] = over(img[..., :3], np.array([40, 40, 42]), box(q, 8, 25, 24, 27.5))
+    r = np.hypot((X - 48) / 13, (Y - 16) / 11) * (1 + 0.12 * blur(fnoise(rng, q, beta=2.5), 1.5))
+    alpha = smoothstep(1.0, 0.6, r) * 70 + smoothstep(0.08, 0.0, np.abs(r - 0.92)) * 60
+    img[..., :3] = np.where((X >= 32)[..., None], np.array([92, 70, 48]), img[..., :3])
+    img[..., 3] = np.where(X >= 32, alpha, 255)
+    save_png(img, _blk("l4_floor_details"))
+
+
+def tex_l4_floors() -> None:
+    """The non-carpet floors, mid-toned like the carpet (bright floors blow out to white under the
+    windows' and lights' fill): office_vinyl_floor (cafeterias: 2 x 2 beige-grey vinyl tiles a
+    block, each a shade different, faint flecks), office_terrazzo (lobbies: ONE two-block-square
+    slab across the whole texture, 64 px a block (OfficeSlabFloorBlock shows each block its quarter):
+    warm grey with small low-contrast aggregate chips and a faint joint round the slab) and
+    office_entrance_mat (64 px: dark ribbed entrance matting)."""
+    rng = rng_for(4184)
+    X, Y = grid()
+    vinyl = fill((140, 136, 128), (S, S))
+    tile = (X // 64 + 2 * (Y // 64)).astype(int)
+    vinyl = add_lum(vinyl, np.choose(tile, [0.0, 2.0, -1.5, 1.0]) + blur(rng.normal(0, 1, (S, S)), 0.6) * 1.2)
+    for col, p in (((118, 114, 108), 0.05), ((160, 156, 148), 0.04), ((100, 100, 104), 0.012)):
+        fleck = blur((rng.random((S, S)) < p) * 1.0, 0.45)
+        vinyl = over(vinyl, np.array(col), np.clip(fleck * 1.6, 0, 1) * 0.5)
+    seam = np.minimum(np.abs(wrapd(X, 64)), np.abs(wrapd(Y, 64)))
+    vinyl = add_lum(vinyl, -6 * smoothstep(1.2, 0.3, seam))
+    save_png(vinyl, _blk("office_vinyl_floor"))
+    terr = add_lum(fill((142, 138, 130), (S, S)), blur(fnoise(rng, beta=2.6), 1.0) * 1.5)
+    for col, count, rmin, rmax in (((168, 164, 156), 520, 0.5, 1.0), ((112, 110, 108), 420, 0.5, 0.9),
+                                   ((186, 182, 174), 200, 0.4, 0.8), ((150, 122, 104), 80, 0.4, 0.8)):
+        m = np.zeros((S, S))
+        for _ in range(count):
+            cx, cy, r = rng.uniform(0, S), rng.uniform(0, S), rng.uniform(rmin, rmax)
+            m = np.maximum(m, np.clip(r + 0.5 - np.hypot(wrapd(X - cx, S), wrapd(Y - cy, S) * rng.uniform(0.75, 1.25)), 0, 1))
+        terr = over(terr, np.array(col), m * 0.55)
+    terr = add_lum(terr, 3 * smoothstep(0.85, 1.0, np.sin((X + Y * 0.4) / 30.0)))          # polish sheen
+    d = np.minimum.reduce([X, Y, S - X, S - Y])
+    terr = add_lum(terr, -8 * smoothstep(1.0, 0.3, d))                                     # the slab joint, faint
+    save_png(terr, _blk("office_terrazzo"))
+    n = 64
+    Xm, Ym = grid((n, n))
+    rib = 0.5 + 0.5 * np.cos(2 * np.pi * Ym / 8.0)
+    mat = add_lum(fill((54, 54, 56), (n, n)), 10 * rib - 5 + blur(rng.normal(0, 1, (n, n)), 0.7) * 3)
+    save_png(mat, _blk("office_entrance_mat"))
+
+
+def tex_l4_lobby_lights() -> None:
+    """Lobby and cafeteria lights: office_coffer_light / _off (64 px: the opal lens of a big lit
+    coffer, one square of it per block, the joints between squares barely there; lit kept under
+    ~0.85 white) and l4_pendant (32 px quarters: the dome shade's dark grey spun metal, its
+    diffuser lit and dead, black cord)."""
+    n = 64
+    rng = rng_for(4185)
+    X, Y = grid((n, n))
+    d = np.minimum.reduce([X, Y, n - X, n - Y])
+    for name, base in (("office_coffer_light", (212, 214, 216)), ("office_coffer_light_off", (150, 152, 154))):
+        img = add_lum(fill(base, (n, n)), blur(rng.normal(0, 1, (n, n)), 1.0) * 1.0 - 6 * smoothstep(1.2, 0.3, d))
+        save_png(img, _blk(name))
+    m = 32
+    Xp, Yp = grid((m, m))
+    q = (m, m)
+    img = add_lum(fill((70, 72, 76), q), 4 * np.sin(Yp * 2.2) + fnoise(rng, q, beta=1.0, aniso=(8, 1)) * 2)   # spun metal rings
+    r = np.hypot(Xp - 24, Yp - 8)
+    img = over(img, np.array([238, 222, 190]) * 1.0 - 14 * smoothstep(3, 7.5, r)[..., None], box(q, 16, 0, 32, 16))
+    img = over(img, np.array([142, 140, 136]) - 8 * smoothstep(3, 7.5, np.hypot(Xp - 8, Yp - 24))[..., None], box(q, 0, 16, 16, 32))
+    img = over(img, np.array([30, 30, 32]), box(q, 16, 16, 32, 32))
+    save_png(img, _blk("l4_pendant"))
+
+
+def tex_l4_servery() -> None:
+    """office_servery (64 px): a cafeteria serving hatch, its aluminium roller shutter pulled down
+    (2 px ribs), the shutter box above it and a lock at the bottom rail."""
+    n = 64
+    rng = rng_for(4186)
+    X, Y = grid((n, n))
+    q = (n, n)
+    rib = (Y % 8.0) / 8.0
+    lum = 170 + 18 * smoothstep(0.0, 0.5, rib) - 30 * smoothstep(0.7, 1.0, rib)
+    img = np.stack([lum * 0.98, lum, lum * 1.03], axis=-1)
+    img = add_lum(img, fnoise(rng, q, beta=0.8, aniso=(10, 1)) * 3)
+    img = over(img, np.array([214, 214, 210]), box(q, -1, -1, n + 1, 10))     # shutter box
+    img = add_lum(img, -22 * box(q, -1, 10, n + 1, 11.5))
+    img = over(img, np.array([120, 122, 126]), box(q, -1, 56, n + 1, 62))     # bottom rail
+    img = over(img, np.array([60, 60, 62]), box(q, 29, 57, 35, 61))           # lock
+    img = over(img, np.array([200, 200, 196]), box(q, -1, -1, 3, n + 1) + box(q, n - 3, -1, n + 1, n + 1))   # guide rails
+    save_png(img, _blk("office_servery"))
+
+
+def tex_l4_cheeseburger() -> None:
+    """The double cheeseburger item (16 px, items share the block atlas): sesame bun, two patties,
+    two slices of cheese."""
+    rows = [
+        "................",
+        "................",
+        ".....######.....",
+        "...##########...",
+        "..###s####s###..",
+        "..#s#########s#.",
+        ".cccccccccccccc.",
+        "..pppppppppppp..",
+        ".cccccccccccccc.",
+        "..pppppppppppp..",
+        "..bbbbbbbbbbbb..",
+        "...bbbbbbbbbb...",
+        "................",
+        "................",
+        "................",
+        "................",
+    ]
+    colours = {"#": (198, 132, 58, 255), "s": (240, 228, 196, 255), "c": (244, 186, 46, 255),
+               "p": (96, 56, 34, 255), "b": (210, 150, 80, 255), ".": (0, 0, 0, 0)}
+    img = np.array([[colours[ch] for ch in row] for row in rows], float)
+    img[..., :3] *= (1.0 - 0.18 * (np.arange(16) / 15.0))[:, None, None]     # lit from above
+    save_png(img, TEX / "item" / "double_cheeseburger.png")
 
 
 def tex_l4_desk() -> None:
@@ -5156,28 +5521,67 @@ def _l4_window_models() -> None:
     edge carries half a bar, 1.25 px; two neighbouring bays' halves meet into one 2.5 px mullion,
     and the two halves map onto the two halves of l4_alu's profile (dark edge, highlight, mid
     grey, dark edge), so every mullion is the same crisp bar. Like the glass, the bars are
-    unshaded and lit at the block's own light."""
+    unshaded and lit at the block's own light.
+
+    COVER lays a second flat sheet between the mullions, just in front of them: venetian blinds
+    (BLINDS down to the sill, HALF over the upper pane only, each with its rail) or taped paper and
+    foil (TAPED; the middle pane of a bay shows the paper mirrored, so a bay doesn't repeat). It is
+    lit the same way as the glass, so the slats and paper read as backlit."""
     full = (0, 0, 16, 16)
     glow = {"north": {"neoforge_data": {"block_light": 12, "ambient_occlusion": False}}}
-    z = -0.15
+    z, zc, zr = -0.15, -0.3, -0.35
+
+    def flat(x0, y0, x1, y1, zz, tex, uv, rotation=0):
+        e = _l4_el((x0, y0, zz), (x1, y1, zz), tex, faces=("north",), uv=uv, cull=False, extra=glow)
+        if rotation:
+            e["faces"]["north"]["rotation"] = rotation
+        e["shade"] = False
+        return e
+
+    def by_pos(x0, y0, x1, y1):
+        return (16 - x1, 16 - y1, 16 - x0, 16 - y0)
+
+    def cover_parts(half, pane, cover):
+        x0 = 1.25 if pane in ("single", "right") else 0
+        x1 = 14.75 if pane in ("single", "left") else 16
+        lower = half == "lower"
+        if cover == "blinds" or (cover == "half" and not lower):
+            y0 = 2 if lower else (2.5 if cover == "half" else 0)
+            y1 = 16 if lower else 13.5
+            parts = [flat(x0, y0, x1, y1, zc, "#blinds", by_pos(x0, y0, x1, y1))]
+            if not lower:                                                     # the headrail
+                parts.append(flat(x0, 13.5, x1, 15.5, zr, "#alu", full, rotation=90))
+            if lower or cover == "half":                                      # the bottom rail
+                parts.append(flat(x0, y0 - 1, x1, y0, zr, "#alu", full, rotation=90))
+            return parts
+        if cover == "taped":
+            y0, y1 = (2, 16) if lower else (0, 14)
+            u0, u1 = (x0, x1) if pane == "mid" else (16 - x1, 16 - x0)
+            if pane == "mid":
+                u0, u1 = u1, u0                                              # mirrored
+            vt = 8 if lower else 0
+            return [flat(x0, y0, x1, y1, zc, "#paper", (u0, vt + (16 - y1) / 2, u1, vt + (16 - y0) / 2))]
+        return []
+
     states = {}
     for half in ("lower", "upper"):
         # The glass is its own element so only it is unshaded: lit exactly at the block's own light
         # (12), with no directional shading or corner darkening; Level4Atmosphere turns that light
-        # level into the bright cool "glass" glow (and the lightning flash).
-        base = [_l4_el((0, 0, 0), (16, 16, 16), "#glass", faces=("north",), uv=full, extra=glow),
-                _l4_el((0, 0, 0), (16, 16, 16), "#wall", faces=L4_FACES[1:], uv=full)]
+        # level into the bright cool "glass" glow.
+        base = [flat(0, 0, 16, 16, 0, "#glass", full), _l4_el((0, 0, 0), (16, 16, 16), "#wall", faces=L4_FACES[1:], uv=full)]
+        base[0]["faces"]["north"]["cullface"] = "north"
+        base[0]["to"][2] = 16
         # Seen from the room, the east half is the right half of the joint bar, the west half the left.
-        east = _l4_el((14.75, 0, z), (16, 16, z), "#alu", faces=("north",), uv=(8, 0, 16, 16), cull=False, extra=glow)
-        west = _l4_el((0, 0, z), (1.25, 16, z), "#alu", faces=("north",), uv=(0, 0, 8, 16), cull=False, extra=glow)
-        for e in (base[0], east, west):
-            e["shade"] = False
+        east = flat(14.75, 0, 16, 16, z, "#alu", (8, 0, 16, 16))
+        west = flat(0, 0, 1.25, 16, z, "#alu", (0, 0, 8, 16))
         for pane, mullions in (("single", [east, west]), ("left", [east]), ("mid", []), ("right", [west])):
-            name = f"office_window_{half}_{pane}"
-            _l4_model(name, {"particle": "office_wall", "glass": f"office_window_{half}", "wall": "office_wall",
-                             "alu": "l4_alu"}, base + mullions)
-            for facing, y in L4_FACING_Y.items():
-                states[f"facing={facing},half={half},pane={pane}"] = (name, y)
+            for cover in ("none", "half", "blinds", "taped"):
+                name = f"office_window_{half}_{pane}" + ("" if cover == "none" else f"_{cover}")
+                _l4_model(name, {"particle": "office_wall", "glass": f"office_window_{half}", "wall": "office_wall",
+                                 "alu": "l4_alu", "blinds": "l4_blinds", "paper": "l4_window_paper"},
+                          base + mullions + cover_parts(half, pane, cover))
+                for facing, y in L4_FACING_Y.items():
+                    states[f"cover={cover},facing={facing},half={half},pane={pane}"] = (name, y)
     _l4_state("office_window", states)
     _l4_item("office_window", "office_window_lower_mid")
 
@@ -5238,9 +5642,37 @@ def _l4_ceiling_models() -> None:
                   _l4_el((5.75, -1.1, 5), (10.25, 0, 11), "#fit", faces=nb, uv={"down": (1, 0, 7, 8), **{f: white for f in nb[1:]}}, cull=False)],
         "speaker": [_l4_el((4.5, -0.1, 4.5), (11.5, 0, 11.5), "#fit", faces=("down",), uv=(8, 0, 16, 8), cull=False)],
     }
+    # Round 2 (canon detail): a conference room's empty projector mount, a cut data cable hanging
+    # out of a hole and a tile pushed up out of its grid (water-damaged patches). Black and chrome
+    # come from the wall fixtures' sheet, the dark plenum from the missing tile.
+    black, steel = (8.2, 0.2, 11.8, 3.8), (12.2, 0.2, 15.8, 3.8)
+    fittings["projector"] = [
+        _l4_el((6, -0.3, 6), (10, 0, 10), "#fx", faces=nb, uv=black, cull=False),
+        _l4_el((7.4, -6, 7.4), (8.6, -0.3, 8.6), "#fx", faces=nb[1:], uv=steel, cull=False),
+        _l4_el((5, -6.6, 5), (11, -6, 11), "#fx", faces=nb + ("up",), uv=black, cull=False),
+        _l4_el((5.5, -7.4, 7.6), (10.5, -6.6, 8.4), "#fx", faces=nb, uv=black, cull=False)]
+    sag = _l4_el((7.6, -7, 7.6), (8.4, -4, 8.4), "#fx", faces=nb, uv=black, cull=False)
+    sag["rotation"] = {"origin": [8, -4, 8], "axis": "z", "angle": 22.5}
+    fittings["cable"] = [
+        _l4_el((6.5, -0.02, 6.5), (9.5, -0.02, 9.5), "#hole", faces=("down",), uv=(6, 6, 10, 10), cull=False),
+        _l4_el((7.6, -4, 7.6), (8.4, 0, 8.4), "#fx", faces=nb, uv=black, cull=False), sag]
+    lifted = _l4_el((0.4, 0, 0.4), (15.6, 0.6, 15.6), "#tile", faces=L4_FACES, uv={"down": (0.5, 0.5, 15.5, 15.5), "up": (0.5, 0.5, 15.5, 15.5),
+                    **{f: (0.5, 2, 15.5, 2.5) for f in ("north", "south", "east", "west")}}, cull=False)
+    lifted["rotation"] = {"origin": [8, 0, 0.4], "axis": "x", "angle": -22.5}
+    grid = (0, 0, 16, 0.3)
+    fittings["lifted"] = [
+        _l4_el((0, 0, 0), (16, 16, 16), "#tile", faces=L4_FACES[:5], uv=full),
+        _l4_el((0, 7, 0), (16, 7, 16), "#hole", faces=("down",), uv=full, cull=False),
+        _l4_el((0, 0, 0), (16, 0.4, 0.4), "#tile", faces=("down", "south"), uv=grid, cull=False),
+        _l4_el((0, 0, 15.6), (16, 0.4, 16), "#tile", faces=("down", "north"), uv=grid, cull=False),
+        _l4_el((0, 0, 0.4), (0.4, 0.4, 15.6), "#tile", faces=("down", "east"), uv=grid, cull=False),
+        _l4_el((15.6, 0, 0.4), (16, 0.4, 15.6), "#tile", faces=("down", "west"), uv=grid, cull=False),
+        lifted]
     for kind, parts in fittings.items():
-        _l4_model(f"office_ceiling_fixture_{kind}", {"particle": "office_ceiling", "tile": "office_ceiling", "fit": "l4_ceiling_fittings"},
-                  [tile] + parts, render="minecraft:cutout" if kind == "speaker" else None)
+        els = parts if kind == "lifted" else [tile] + parts
+        _l4_model(f"office_ceiling_fixture_{kind}", {"particle": "office_ceiling", "tile": "office_ceiling", "fit": "l4_ceiling_fittings",
+                                                    "fx": "l4_wall_fixtures", "hole": "office_ceiling_missing"},
+                  els, render="minecraft:cutout" if kind == "speaker" else None)
     _l4_state("office_ceiling_fixture", {f"kind={k}": (f"office_ceiling_fixture_{k}", 0) for k in fittings})
     _l4_item("office_ceiling_fixture", "office_ceiling_fixture_smoke")
 
@@ -5297,14 +5729,29 @@ def _l4_wall_detail_models() -> None:
     them in (see OfficeWallPlateBlock and ModBlocks)."""
     sides5 = ("north", "east", "west", "up", "down")
     # Exit sign: the green face is lit at full brightness (block and sky light 15 on that face only).
+    # HANGING: a double-sided box on two rods from the ceiling; its back shows the other arrow
+    # (an arrow pointing east reads "left" from the front and "right" from behind).
     house = (8.5, 8.5, 9.5, 9.5)
     faces = {"none": (0, 0, 8, 8), "left": (8, 0, 16, 8), "right": (0, 8, 8, 16)}
+    back = {"none": "none", "left": "right", "right": "left"}
+    lit = {"neoforge_data": {"block_light": 15, "sky_light": 15}}
+    rod = (12.2, 0.2, 15.8, 3.8)
+    variants = {}
     for arrow, region in faces.items():
         _l4_model(f"office_exit_sign_{arrow}", {"sign": "office_exit_sign"},
                   [_l4_el((2.5, 5, 14), (13.5, 10.5, 16), "#sign", faces=sides5,
-                          uv={"north": region, **{f: house for f in sides5[1:]}},
-                          extra={"north": {"neoforge_data": {"block_light": 15, "sky_light": 15}}})], ao=False)
-    _l4_wall_state("office_exit_sign", "arrow", faces, lambda a: f"office_exit_sign_{a}")
+                          uv={"north": region, **{f: house for f in sides5[1:]}}, extra={"north": lit})], ao=False)
+        _l4_model(f"office_exit_sign_{arrow}_hanging", {"sign": "office_exit_sign", "rod": "l4_wall_fixtures"},
+                  [_l4_el((2.5, 4, 7.25), (13.5, 10, 8.75), "#sign", faces=L4_FACES,
+                          uv={"north": region, "south": faces[back[arrow]], **{f: house for f in ("east", "west", "up", "down")}},
+                          cull=False, extra={"north": lit, "south": lit}),
+                   _l4_el((4, 10, 7.8), (4.4, 16, 8.2), "#rod", faces=("north", "south", "east", "west"), uv=rod),
+                   _l4_el((11.6, 10, 7.8), (12, 16, 8.2), "#rod", faces=("north", "south", "east", "west"), uv=rod)], ao=False)
+        for facing, y in L4_FACING_Y.items():
+            for hanging in ("false", "true"):
+                variants[f"arrow={arrow},facing={facing},hanging={hanging}"] = (
+                    f"office_exit_sign_{arrow}" + ("_hanging" if hanging == "true" else ""), y)
+    _l4_state("office_exit_sign", variants)
     _l4_item("office_exit_sign", "office_exit_sign_none")
 
     # Extinguisher: red cylinder (two crossed boxes), label, black head, handle and hose on a wall
@@ -5351,6 +5798,209 @@ def _l4_wall_detail_models() -> None:
     _l4_item("office_clock", "office_clock")
 
 
+def _l4_round2_models() -> None:
+    """Round 2 (canon: "almost no furniture", so the detail is on the building): door frames,
+    wall marks and fittings, the drinking fountain, table-top things, floor details and floors,
+    the lobby lights, the serving hatch, and the double cheeseburger's item model. Wall-mounted
+    and table things face north (wall or user on the south side), like everything above."""
+    full = (0, 0, 16, 16)
+    sides5 = ("north", "east", "west", "up", "down")
+
+    # ---- Door frame: a wall block with the architrave on both faces of the wall (wall along x;
+    # the blockstate turns AXIS z by 90). LEFT has the opening on its east (+x) side.
+    lining = (2, 0, 6, 16)
+    edge = (0, 0, 2, 16)
+    states = {}
+    for part in ("left", "right", "head"):
+        for base in ("false", "true"):
+            if part == "head" and base == "true":
+                continue
+            wall = "office_wall_base" if base == "true" else "office_wall"
+            open_face = {"left": "east", "right": "west", "head": "down"}[part]
+            cube = _l4_el((0, 0, 0), (16, 16, 16), {f: ("#lining" if f == open_face else "#wall") for f in L4_FACES},
+                          uv={f: (lining if f == open_face else full) for f in L4_FACES})
+            trims = []
+            for z0, z1, front in ((-0.5, 0, "north"), (16, 16.5, "south")):
+                if part == "head":
+                    e = _l4_el((-1.5, 0, z0), (17.5, 1.5, z1), "#trim", faces=(front, "down", "up", "east", "west"),
+                               uv={front: full, **{f: edge for f in ("down", "up", "east", "west")}}, cull=False)
+                    e["faces"][front]["rotation"] = 90
+                else:
+                    x0, x1 = (14.5, 16) if part == "left" else (0, 1.5)
+                    e = _l4_el((x0, 0, z0), (x1, 16, z1), "#trim", faces=(front, "east", "west"),
+                               uv={front: full, "east": edge, "west": edge}, cull=False)
+                trims.append(e)
+            name = f"office_door_frame_{part}" + ("_base" if base == "true" else "")
+            _l4_model(name, {"particle": wall, "wall": wall, "lining": "l4_architrave", "trim": "l4_architrave"}, [cube] + trims)
+            for axis, y in (("x", 0), ("z", 90)):
+                # The head has no skirting, so BASE doesn't change it.
+                for b in (("false", "true") if part == "head" else (base,)):
+                    states[f"axis={axis},base={b},part={part}"] = (name, y)
+    _l4_state("office_door_frame", states)
+    _l4_item("office_door_frame", "office_door_frame_left")
+
+    # ---- Wall marks: flat patches a hair in front of the wall (l4_wall_marks: 4 uv units per 16 texels across).
+    zf = 15.9
+
+    def patch(x0, y0, x1, y1, uv):
+        return _l4_el((x0, y0, zf), (x1, y1, zf), "#m", faces=("north",), uv=uv, cull=False)
+    hole, screw, plug = (12, 0, 14, 4), (14, 0, 16, 4), (12, 4, 16, 8)
+    marks = {
+        "picture": [patch(3, 3, 13, 12, (0, 0, 4, 16)), patch(7.7, 13.2, 8.3, 13.8, hole)],
+        "board_left": [patch(0, 1, 15, 14, (4, 0, 8, 16)), patch(13, 12, 13.6, 12.6, screw), patch(13, 2.4, 13.6, 3, screw)],
+        "board_right": [patch(1, 1, 16, 14, (8, 0, 12, 16)), patch(2.4, 12, 3, 12.6, screw), patch(2.4, 2.4, 3, 3, screw)],
+        "holes": [patch(6, 9, 6.6, 9.6, hole), patch(9.2, 9.4, 9.8, 10, hole), patch(7.6, 6.4, 8.4, 7.2, plug)],
+    }
+    for kind, els in marks.items():
+        _l4_model(f"office_wall_mark_{kind}", {"m": "l4_wall_marks"}, els, ao=False)
+    _l4_wall_state("office_wall_mark", "kind", marks, lambda k: f"office_wall_mark_{k}")
+    _l4_item("office_wall_mark", "office_wall_mark_picture")
+
+    # ---- Wall fixtures (l4_wall_fixtures: 8 texels per uv unit, 32 px cells = 4 units).
+    black, chrome, white, green = (8.2, 0.2, 11.8, 3.8), (12.2, 0.2, 15.8, 3.8), (12.2, 12.2, 15.8, 15.8), (8.2, 12.2, 11.8, 15.8)
+
+    def box_(f, t, front, sides, faces=sides5):
+        return _l4_el(f, t, "#f", faces=faces, uv={face: (front if face == "north" else sides) for face in faces})
+    dado = box_((0, 10, 14.5), (16, 13, 16), (0, 0, 4, 4), white, ("north", "up", "down", "east", "west"))
+    fixtures = {
+        "dado": [dado],
+        "dado_outlets": [dado, box_((4, 9.5, 14.2), (12, 13.5, 14.5), (4.1, 1.0, 8, 3.0), white)],
+        "door_stop": [box_((7, 0.5, 15), (9, 2.5, 16), chrome, chrome), box_((7.3, 0.8, 12.5), (8.7, 2.2, 15), black, black)],
+        "tv_bracket": [box_((4, 2, 15), (12, 10, 16), black, black), box_((5, 5, 12.5), (6, 6, 15), black, black),
+                       box_((10, 5, 12.5), (11, 6, 15), black, black), box_((4.5, 4.5, 12), (11.5, 6.5, 12.5), black, black)],
+        "coat_hooks": [box_((1, 7, 15), (15, 8.5, 16), white, white)]
+                      + [box_((x - 0.4, 6, 13), (x + 0.4, 8, 15), chrome, chrome) for x in (3.5, 8, 12.5)]
+                      + [box_((x - 0.4, 8, 13), (x + 0.4, 9, 13.8), chrome, chrome) for x in (3.5, 8, 12.5)],
+        "sanitiser": [box_((6, 2, 13.5), (10, 8.5, 16), (0, 4, 4, 8), white)],
+        "first_aid": [box_((4, 2, 13), (12, 10, 16), (4, 4, 8, 8), green)],
+        "evac_plan": [box_((2, 1, 15.5), (14, 12, 16), (8, 4, 16, 12), black)],
+        "no_smoking": [box_((5, 6, 15.6), (11, 12, 16), (0, 8, 4, 12), white)],
+        "fire_door_sign": [box_((5, 6, 15.6), (11, 12, 16), (4, 8, 8, 12), white)],
+        "sign_meeting": [box_((3, 6, 15.6), (13, 9, 16), (0, 12, 8, 14), (0.2, 12.2, 0.5, 12.5))],
+        "sign_office": [box_((3, 6, 15.6), (13, 9, 16), (0, 14, 8, 16), (0.2, 14.2, 0.5, 14.5))],
+    }
+    for kind, els in fixtures.items():
+        _l4_model(f"office_wall_fixture_{kind}", {"f": "l4_wall_fixtures"}, els, ao=False)
+    _l4_wall_state("office_wall_fixture", "kind", fixtures, lambda k: f"office_wall_fixture_{k}")
+    _l4_item("office_wall_fixture", "office_wall_fixture_first_aid")
+
+    # ---- Drinking fountain (office_fountain: 8 uv units per 32 px quarter). USES doesn't change the look.
+    steel, basin, front, dark = (0, 0, 8, 8), (8, 0, 16, 8), (0, 8, 8, 16), (8, 8, 16, 16)
+    fountain = [_l4_el((2.5, 4, 15), (13.5, 13.5, 16), "#s", faces=sides5, uv=steel),
+                _l4_el((3, 9, 7), (13, 13, 15), "#s", faces=sides5, uv={"up": basin, **{f: steel for f in sides5 if f != "up"}}),
+                _l4_el((5, 2, 11), (11, 9, 15), "#s", faces=sides5, uv={"north": front, **{f: steel for f in sides5[1:]}}),
+                _l4_el((7.4, 13, 7.8), (8.6, 13.8, 9), "#s", faces=sides5, uv=dark)]
+    _l4_model("office_fountain", {"s": "office_fountain"}, fountain)
+    _l4_state("office_fountain", {f"facing={fc},uses={u}": ("office_fountain", y) for fc, y in L4_FACING_Y.items() for u in range(4)})
+    _l4_item("office_fountain", "office_fountain")
+
+    # ---- Table-top things (in the block above a 13/16-high tabletop, so they sit at y = -3).
+    # l4_table_items: 16 px cells = 4 uv units.
+    def c(i, inset=0.0):
+        x, y = (i % 4) * 4, (i // 4) * 4
+        return (x + inset, y + inset, x + 4 - inset, y + 4 - inset)
+    T = -3
+
+    def thing(f, t, top, sides, faces=L4_FACES, rot=None):
+        e = _l4_el(f, t, "#t", faces=faces, uv={face: (top if face in ("up", "down") else sides) for face in faces}, cull=False)
+        if rot:
+            e["rotation"] = {"origin": rot[0], "axis": "y", "angle": rot[1]}
+        return e
+
+    def papers():
+        return [thing((2, T, 3), (10, T + 0.1, 13), c(0), c(0, 1.8)),
+                thing((5, T + 0.1, 2), (13, T + 0.2, 12), c(0), c(0, 1.8), rot=([9, T, 7], 22.5))]
+
+    def mug(x, z):
+        return [thing((x, T, z), (x + 2.4, T + 3.2, z + 2.4), c(8), c(7)),
+                thing((x + 2.4, T + 0.8, z + 0.9), (x + 3, T + 2.4, z + 1.5), c(7), c(7))]
+    pencils = [thing((3, T, 6), (11, T + 0.4, 6.4), c(1), c(1)),
+               thing((4, T, 8.5), (12, T + 0.4, 8.9), c(1), c(1), rot=([8, T, 8.7], -22.5))]
+    bottle = [thing((7, T, 7), (9.6, T + 5.5, 9.6), c(10), c(9)), thing((7.7, T + 5.5, 7.7), (8.9, T + 6.6, 8.9), c(10), c(9, 1.5)),
+              thing((7.6, T + 6.6, 7.6), (9, T + 7.3, 9), c(10), c(10))]
+    cubicle = ([thing((0.6, T, 12.4), (2.6, T + 2.4, 14.4), c(3), c(3))]                           # pencil cup
+               + [thing((x, T + 2.4, z), (x + 0.4, T + h, z + 0.4), c(1), c(1)) for x, z, h in
+                  ((0.9, 12.8, 4.6), (1.8, 12.9, 4.2), (1.1, 13.7, 4.9), (2.0, 13.8, 4.4))]
+               + [thing((0.4, T, 5.5), (2.9, T + 0.5, 11.5), c(2), c(2, 1.5)), thing((0.6, T + 0.5, 6), (2.8, T + 0.9, 11), c(3), c(3, 1.5))]
+               + [thing((13.2, T, z), (15.2, T + h, z + 2), c(i), c(i, 1.5)) for z, h, i in ((4.5, 0.5, 4), (7, 0.4, 5), (9.5, 0.3, 6))]
+               + mug(13, 12.2)
+               + [_l4_el((0.3, T, 0.4), (4.3, T + 2, 0.8), "#t", faces=("north", "south", "east", "west", "up"),
+                         uv={"north": (8, 12, 16, 16), "south": c(14, 1), "east": c(14, 1), "west": c(14, 1), "up": c(14, 1)}, cull=False)])
+    tray = [thing((3, T, 4), (13, T + 0.4, 12), c(11), c(11)),
+            thing((5.5, T + 0.4, 6), (10.5, T + 3.2, 11), c(12), c(13)),
+            thing((6, T + 3.2, 6.5), (10, T + 3.8, 10.5), c(12), c(12, 1))]
+    items = {"papers": papers(), "pencils": pencils, "mug": mug(7, 7), "papers_mug": papers() + mug(11, 10),
+             "bottle": bottle, "cubicle_set": cubicle, "burger_tray": tray}
+    for kind, els in items.items():
+        _l4_model(f"office_table_items_{kind}", {"t": "l4_table_items"}, els, ao=False)
+    _l4_wall_state("office_table_items", "kind", items, lambda k: f"office_table_items_{k}")
+    _l4_item("office_table_items", "office_table_items_bottle")
+
+    # ---- Floor details (l4_floor_details 64 x 32: 4 uv units per 16 texels across, 2 down).
+    floor = {
+        "floor_box": [_l4_el((4, 0, 4), (12, 0.15, 12), "#d", faces=("up", "north", "south", "east", "west"),
+                             uv={"up": (0, 0, 8, 16), **{f: (0.2, 0.2, 7.8, 0.5) for f in ("north", "south", "east", "west")}})],
+        "threshold": [_l4_el((0, 0, 0), (16, 0.4, 1.5), "#a", faces=("up", "north", "south"), uv=full)],
+        "stain": [_l4_el((1, 0.02, 1), (15, 0.02, 15), "#d", faces=("up",), uv=(8, 0, 16, 16), cull=False)],
+    }
+    floor["threshold"][0]["faces"]["up"]["rotation"] = 90
+    for kind, els in floor.items():
+        _l4_model(f"office_floor_detail_{kind}", {"particle": "l4_floor_details", "d": "l4_floor_details", "a": "l4_alu"}, els,
+                  render="minecraft:translucent" if kind == "stain" else None, ao=False)
+    _l4_wall_state("office_floor_detail", "kind", floor, lambda k: f"office_floor_detail_{k}")
+    _l4_item("office_floor_detail", "office_floor_detail_floor_box")
+
+    # ---- Floors, and the coffer light (a full ceiling block whose underside is the lens).
+    for name in ("office_vinyl_floor", "office_entrance_mat"):
+        _l4_json(ROOT / "models" / "block" / f"{name}.json",
+                 {"parent": "minecraft:block/cube_all", "textures": {"all": f"backrooms:block/{name}"}})
+        _l4_state(name, {"": (name, 0)})
+        _l4_item(name, name)
+    # Terrazzo: the texture is one 2 x 2 block slab; VARIANT (x odd + 2 * z odd) picks the quarter.
+    for q in range(4):
+        qx, qz = 8 * (q & 1), 8 * (q >> 1)
+        _l4_model(f"office_terrazzo_q{q}", {"t": "office_terrazzo"},
+                  [_l4_el((0, 0, 0), (16, 16, 16), "#t", uv=(qx, qz, qx + 8, qz + 8))])
+    _l4_state("office_terrazzo", {f"variant={q}": (f"office_terrazzo_q{q}", 0) for q in range(4)})
+    _l4_item("office_terrazzo", "office_terrazzo_q0")
+    (ROOT / "models" / "block" / "office_terrazzo.json").unlink(missing_ok=True)      # was a plain cube_all
+    for name, lens in (("office_coffer_light", "office_coffer_light"), ("office_coffer_light_off", "office_coffer_light_off")):
+        _l4_model(name, {"particle": lens, "tile": "office_ceiling", "lens": lens},
+                  [_l4_el((0, 0, 0), (16, 16, 16), {f: ("#lens" if f == "down" else "#tile") for f in L4_FACES}, uv=full)])
+    _l4_state("office_coffer_light", {f"mode={m}": ("office_coffer_light_off" if m == "dead" else "office_coffer_light", 0)
+                                      for m in ("lit", "flicker", "dead")})
+    _l4_item("office_coffer_light", "office_coffer_light")
+
+    # ---- Pendant (l4_pendant: 8 uv units per 16 px quarter): a slim spun-metal dome on a thin cord
+    # from the ceiling, its top at 0.7 of the block (just under the ceiling, not at eye level), the
+    # wide skirt's underside the warm diffuser (lit or dead). Crossed boxes make it round.
+    metal, cable = (0, 0, 8, 8), (8, 8, 16, 16)
+    sides4 = ("north", "south", "east", "west")
+    for name, diffuser in (("office_pendant_light", (8, 0, 16, 8)), ("office_pendant_light_off", (0, 8, 8, 16))):
+        skirt = {"down": diffuser, **{f: metal for f in sides4 + ("up",)}}
+        _l4_model(name, {"p": "l4_pendant"},
+                  [_l4_el((7.8, 11, 7.8), (8.2, 15.5, 8.2), "#p", faces=sides4, uv=cable),
+                   _l4_el((6.5, 15.5, 6.5), (9.5, 16, 9.5), "#p", faces=sides4 + ("down",), uv=metal),
+                   _l4_el((6.5, 10, 6.5), (9.5, 11, 9.5), "#p", faces=sides4 + ("up",), uv=metal),
+                   _l4_el((5, 8.5, 5.75), (11, 10, 10.25), "#p", faces=sides4 + ("up",), uv=metal),
+                   _l4_el((5.75, 8.5, 5), (10.25, 10, 11), "#p", faces=sides4 + ("up",), uv=metal),
+                   _l4_el((3, 5, 4.25), (13, 8.5, 11.75), "#p", faces=L4_FACES, uv=skirt),
+                   _l4_el((4.25, 5.05, 3), (11.75, 8.5, 13), "#p", faces=L4_FACES, uv=skirt)])
+    _l4_state("office_pendant_light", {f"mode={m}": ("office_pendant_light_off" if m == "dead" else "office_pendant_light", 0)
+                                       for m in ("lit", "flicker", "dead")})
+    _l4_item("office_pendant_light", "office_pendant_light")
+
+    # ---- Serving hatch: a wall block with the shutter on its front and a steel ledge under it.
+    _l4_model("office_servery_hatch", {"particle": "office_wall", "wall": "office_wall", "shutter": "office_servery", "s": "office_fountain"},
+              [_l4_el((0, 0, 0), (16, 16, 16), {f: ("#shutter" if f == "north" else "#wall") for f in L4_FACES}, uv=full),
+               _l4_el((0, 0, -3), (16, 1, 0), "#s", faces=("north", "up", "down", "east", "west"), uv=(0, 0, 8, 8), cull=False)])
+    _l4_wall_state("office_servery_hatch", model_fn=lambda _: "office_servery_hatch")
+    _l4_item("office_servery_hatch", "office_servery_hatch")
+
+    _l4_json(ROOT / "models" / "item" / "double_cheeseburger.json",
+             {"parent": "minecraft:item/generated", "textures": {"layer0": "backrooms:item/double_cheeseburger"}})
+
+
 def tex_l4_models() -> None:
     """All Level 4 models written by code (see the section comment)."""
     _l4_window_models()
@@ -5358,9 +6008,12 @@ def tex_l4_models() -> None:
     _l4_ceiling_models()
     _l4_perimeter_models()
     _l4_wall_detail_models()
+    _l4_round2_models()
 
 
 L4_TEXTURES = [
+    tex_l4_window_covers, tex_l4_architrave, tex_l4_wall_marks, tex_l4_wall_fixtures, tex_l4_fountain,
+    tex_l4_table_items, tex_l4_floor_details, tex_l4_floors, tex_l4_lobby_lights, tex_l4_servery, tex_l4_cheeseburger,
     tex_l4_carpet, tex_l4_surface_variants, tex_l4_walls, tex_l4_column, tex_l4_ceiling, tex_l4_panel,
     tex_l4_window, tex_l4_glass, tex_l4_curtain, tex_l4_doors, tex_l4_elevator, tex_l4_partition,
     tex_l4_radiator, tex_l4_perimeter, tex_l4_ceiling_grilles, tex_l4_ceiling_fittings, tex_l4_exit_sign,
@@ -5380,45 +6033,37 @@ def _l4_impulses(rng, n, rate, amp_lo=0.2, amp_hi=1.0, power=2.0) -> np.ndarray:
     return buf
 
 
-def snd_l4_rain() -> None:
-    """16 s seamless loop: heavy rain streaming down big office windows, heard from inside.
-
-    A dense hiss of rain on glass that swells with the gusts, thousands of tiny drop ticks, now and
-    then a fat drop smacking the pane, water gurgling down the frame, the building's low rumble,
-    and a light echo of the empty floor on all of it. Everything is periodic over the loop.
-    """
+def snd_l4_hvac() -> None:
+    """24 s seamless loop: Level 4's room tone, "the sound of air conditioning blowing through the
+    countless rooms" (Backrooms Archive tale). Soft air rushing out of the ceiling diffusers, the
+    low rumble of the ducts and the air-handling plant somewhere above, a faint fan-blade hum and
+    motor whine, a slow breathing in the airflow, and two quiet ticks of a duct expanding.
+    Everything is periodic over the loop (tones complete whole cycles in 24 s), and heard through
+    the big empty floor's light echo. It plays as the biome's ambient loop (worldgen/biome/level_4)."""
     rng = rng_for(4201)
-    T = 16.0
+    T = 24.0
     n = int(T * SR)
-    gust = drift(n, rng, 0.35, 0.06, 0.25)
-    hiss = periodic_noise(n, rng, lambda f: bp_gain(f, 500, 6500, 2) * lp_gain(f, 3500, 1))
-    hiss2 = periodic_noise(n, rng, lambda f: bp_gain(f, 1500, 9000, 2))
-    # Fine drops: an impulse train shaped by two short click kernels (bright and dull).
-    k = int(0.004 * SR)
-    kt = np.arange(k) / SR
-    bright = fft_filter(rng.normal(size=k) * np.exp(-kt / 0.0008), lambda f: bp_gain(f, 2500, 9000, 1))[:k]
-    dull = fft_filter(rng.normal(size=k) * np.exp(-kt / 0.0015), lambda f: bp_gain(f, 700, 3000, 1))[:k]
-    ticks = circ_conv(_l4_impulses(rng, n, 260), bright) + 0.8 * circ_conv(_l4_impulses(rng, n, 160), dull)
-    ticks *= gust
-    # Fat drops hitting the pane: a short glassy "tink" each, ~5 per second.
-    smacks = np.zeros(n)
-    for _ in range(int(5 * T)):
-        f0 = rng.uniform(1800, 4200)
-        d = rng.uniform(0.006, 0.02)
-        c = ring([f0, f0 * 2.31, f0 * 0.62], [d, d * 0.5, d * 1.6], [1.0, 0.35, 0.5], d * 5)
-        c[:30] += rng.normal(size=30) * 0.8
-        add_at(smacks, c * rng.uniform(0.15, 1.0) ** 2, rng.uniform(0, T), circular=True)
-    # Water running down the frame and gurgling in a downpipe somewhere.
-    trickle = periodic_noise(n, rng, lambda f: bp_gain(f, 250, 1100, 2))
-    trickle *= 0.6 + 0.4 * drift(n, rng, 0.9, 2.0, 6.0)
-    rumble = periodic_noise(n, rng, lambda f: bp_gain(f, 25, 140, 2))
-    x = (norm(hiss) * 0.55 * gust + norm(hiss2) * 0.18 * gust + norm(ticks) * 0.32 + norm(smacks) * 0.22
-         + norm(trickle) * 0.09 + norm(rumble) * 0.30)
-    # Heard through the glass from inside the room: softened highs, a light echo of the empty floor.
-    x = fft_filter(x, lambda f: lp_gain(f, 6000, 2), circular=True)
-    ir = reverb_ir(rng, 1.4, 0.32, lp=3200, predelay=0.012, early=((0.021, 0.5), (0.037, 0.35), (0.063, 0.2)))
-    x = x + 0.45 * circ_conv(x, ir)
-    save_ogg(x, SND / "ambient" / "level4_rain.ogg", peak=0.5, loop=True)
+    t = np.arange(n) / SR
+    breath = drift(n, rng, 0.12, 0.04, 0.2)                              # the airflow swells very slowly
+    air = periodic_noise(n, rng, lambda f: bp_gain(f, 90, 3200, 2) * lp_gain(f, 700, 1))
+    hiss = periodic_noise(n, rng, lambda f: bp_gain(f, 1200, 6000, 2))  # air through the grille slots
+    rumble = periodic_noise(n, rng, lambda f: bp_gain(f, 22, 120, 3))
+    # Fan blades and motor: frequencies chosen so each completes whole cycles in the loop.
+    hum = np.zeros(n)
+    for f0, a in ((58.25, 1.0), (116.5, 0.5), (174.75, 0.22), (241.0, 0.08)):
+        hum += a * np.sin(2 * np.pi * f0 * t + rng.uniform(0, 6.28))
+    hum *= drift(n, rng, 0.25, 0.08, 0.3)
+    ticks = np.zeros(n)
+    for start in (6.3, 17.8):                                           # a duct ticking as it warms
+        c = ring([1350, 2900, 640], [0.02, 0.008, 0.05], [1.0, 0.4, 0.5], 0.3)
+        c[:40] += rng.normal(size=40) * 0.6
+        add_at(ticks, c * rng.uniform(0.5, 1.0), start, circular=True)
+    x = (norm(air) * 0.62 * breath + norm(hiss) * 0.07 * breath + norm(rumble) * 0.42
+         + norm(hum) * 0.06 + norm(ticks) * 0.05)
+    x = fft_filter(x, lambda f: lp_gain(f, 5000, 2), circular=True)
+    ir = reverb_ir(rng, 1.6, 0.4, lp=2500, predelay=0.015, early=((0.023, 0.4), (0.041, 0.3), (0.07, 0.15)))
+    x = x + 0.35 * circ_conv(x, ir)
+    save_ogg(x, SND / "ambient" / "level4_hvac.ogg", peak=0.45, loop=True)
 
 
 def snd_l4_pipes() -> None:
@@ -5445,35 +6090,6 @@ def snd_l4_pipes() -> None:
         x = fft_filter(x, lambda f: lp_gain(f, 900, 2))[:n]          # it's behind the drywall
         x = x + 0.5 * conv(x, reverb_ir(rng, 2.0, 0.6, lp=900))[:n]
         save_ogg(x, SND / "level4" / f"pipes{i}.ogg", peak=0.75, fade_in=0.3, fade_out=1.2)
-
-
-def snd_l4_thunder() -> None:
-    """Three thunder claps heard from inside the office: muffled by the glass, rattling the panes."""
-    for i in range(1, 4):
-        rng = rng_for(4220 + i)
-        dur = 7.0 + i
-        n = int(dur * SR)
-        t = np.arange(n) / SR
-        env = np.zeros(n)
-        for _ in range(6 + i):
-            c = rng.uniform(0.2, dur * 0.5)
-            env += rng.uniform(0.4, 1.0) * np.exp(-0.5 * ((t - c) / rng.uniform(0.15, 0.8)) ** 2)
-        env *= np.exp(-t / (dur * 0.42)) * (1 + smooth_jitter(rng, n, 18, 0.5))
-        rumble = fft_filter(rng.normal(size=n), lambda f: lp_gain(f, 140, 3) * hp_gain(f, 22, 2))[:n]
-        mid = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 180, 700, 2))[:n]
-        x = norm(rumble) * env + 0.22 * norm(mid) * env ** 2
-        if i != 2:
-            # The first crack, softened by the windows.
-            k = int(0.5 * SR)
-            crack = rng.normal(size=k) * np.exp(-np.arange(k) / (0.07 * SR))
-            crack = fft_filter(crack, lambda f: bp_gain(f, 200, 2200, 1))[:k]
-            add_at(x, (0.55 if i == 1 else 0.35) * norm(crack), 0.05, False)
-        # Window panes buzzing in their frames with the low end.
-        rattle = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 600, 1600, 3))[:n]
-        rattle *= (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 31 * t)))      # chattering at ~31 Hz
-        x = x + 0.06 * norm(rattle) * np.clip(env, 0, None) ** 1.5
-        x = x + 0.35 * conv(x, reverb_ir(rng, 3.0, 0.9, lp=1300))[:n]
-        save_ogg(x, SND / "level4" / f"thunder{i}.ogg", peak=0.89, fade_in=0.02, fade_out=1.0)
 
 
 def _l4_piano_note(freq, dur, vel, rng) -> np.ndarray:
@@ -5577,7 +6193,7 @@ def snd_l4_cooler() -> None:
     save_ogg(x, SND / "level4" / "water_cooler_glug.ogg", peak=0.8, fade_out=0.15)
 
 
-L4_SOUNDS = [snd_l4_rain, snd_l4_pipes, snd_l4_thunder, snd_l4_door_music, snd_l4_vend, snd_l4_cooler]
+L4_SOUNDS = [snd_l4_hvac, snd_l4_pipes, snd_l4_door_music, snd_l4_vend, snd_l4_cooler]
 
 
 # =============================================================================

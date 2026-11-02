@@ -4,7 +4,9 @@
     "particle": "backrooms:block/office_wall",
     "glass": "backrooms:block/office_window_upper",
     "wall": "backrooms:block/office_wall",
-    "alu": "backrooms:block/l4_alu"
+    "alu": "backrooms:block/l4_alu",
+    "blinds": "backrooms:block/l4_blinds",
+    "paper": "backrooms:block/l4_window_paper"
   },
   "elements": [
     {
@@ -27,11 +29,11 @@
             16.0
           ],
           "texture": "#glass",
-          "cullface": "north",
           "neoforge_data": {
             "block_light": 12,
             "ambient_occlusion": false
-          }
+          },
+          "cullface": "north"
         }
       },
       "shade": false

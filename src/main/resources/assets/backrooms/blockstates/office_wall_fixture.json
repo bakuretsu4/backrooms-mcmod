@@ -1,0 +1,184 @@
+{
+  "variants": {
+    "facing=north,kind=dado": {
+      "model": "backrooms:block/office_wall_fixture_dado"
+    },
+    "facing=north,kind=dado_outlets": {
+      "model": "backrooms:block/office_wall_fixture_dado_outlets"
+    },
+    "facing=north,kind=door_stop": {
+      "model": "backrooms:block/office_wall_fixture_door_stop"
+    },
+    "facing=north,kind=tv_bracket": {
+      "model": "backrooms:block/office_wall_fixture_tv_bracket"
+    },
+    "facing=north,kind=coat_hooks": {
+      "model": "backrooms:block/office_wall_fixture_coat_hooks"
+    },
+    "facing=north,kind=sanitiser": {
+      "model": "backrooms:block/office_wall_fixture_sanitiser"
+    },
+    "facing=north,kind=first_aid": {
+      "model": "backrooms:block/office_wall_fixture_first_aid"
+    },
+    "facing=north,kind=evac_plan": {
+      "model": "backrooms:block/office_wall_fixture_evac_plan"
+    },
+    "facing=north,kind=no_smoking": {
+      "model": "backrooms:block/office_wall_fixture_no_smoking"
+    },
+    "facing=north,kind=fire_door_sign": {
+      "model": "backrooms:block/office_wall_fixture_fire_door_sign"
+    },
+    "facing=north,kind=sign_meeting": {
+      "model": "backrooms:block/office_wall_fixture_sign_meeting"
+    },
+    "facing=north,kind=sign_office": {
+      "model": "backrooms:block/office_wall_fixture_sign_office"
+    },
+    "facing=east,kind=dado": {
+      "model": "backrooms:block/office_wall_fixture_dado",
+      "y": 90
+    },
+    "facing=east,kind=dado_outlets": {
+      "model": "backrooms:block/office_wall_fixture_dado_outlets",
+      "y": 90
+    },
+    "facing=east,kind=door_stop": {
+      "model": "backrooms:block/office_wall_fixture_door_stop",
+      "y": 90
+    },
+    "facing=east,kind=tv_bracket": {
+      "model": "backrooms:block/office_wall_fixture_tv_bracket",
+      "y": 90
+    },
+    "facing=east,kind=coat_hooks": {
+      "model": "backrooms:block/office_wall_fixture_coat_hooks",
+      "y": 90
+    },
+    "facing=east,kind=sanitiser": {
+      "model": "backrooms:block/office_wall_fixture_sanitiser",
+      "y": 90
+    },
+    "facing=east,kind=first_aid": {
+      "model": "backrooms:block/office_wall_fixture_first_aid",
+      "y": 90
+    },
+    "facing=east,kind=evac_plan": {
+      "model": "backrooms:block/office_wall_fixture_evac_plan",
+      "y": 90
+    },
+    "facing=east,kind=no_smoking": {
+      "model": "backrooms:block/office_wall_fixture_no_smoking",
+      "y": 90
+    },
+    "facing=east,kind=fire_door_sign": {
+      "model": "backrooms:block/office_wall_fixture_fire_door_sign",
+      "y": 90
+    },
+    "facing=east,kind=sign_meeting": {
+      "model": "backrooms:block/office_wall_fixture_sign_meeting",
+      "y": 90
+    },
+    "facing=east,kind=sign_office": {
+      "model": "backrooms:block/office_wall_fixture_sign_office",
+      "y": 90
+    },
+    "facing=south,kind=dado": {
+      "model": "backrooms:block/office_wall_fixture_dado",
+      "y": 180
+    },
+    "facing=south,kind=dado_outlets": {
+      "model": "backrooms:block/office_wall_fixture_dado_outlets",
+      "y": 180
+    },
+    "facing=south,kind=door_stop": {
+      "model": "backrooms:block/office_wall_fixture_door_stop",
+      "y": 180
+    },
+    "facing=south,kind=tv_bracket": {
+      "model": "backrooms:block/office_wall_fixture_tv_bracket",
+      "y": 180
+    },
+    "facing=south,kind=coat_hooks": {
+      "model": "backrooms:block/office_wall_fixture_coat_hooks",
+      "y": 180
+    },
+    "facing=south,kind=sanitiser": {
+      "model": "backrooms:block/office_wall_fixture_sanitiser",
+      "y": 180
+    },
+    "facing=south,kind=first_aid": {
+      "model": "backrooms:block/office_wall_fixture_first_aid",
+      "y": 180
+    },
+    "facing=south,kind=evac_plan": {
+      "model": "backrooms:block/office_wall_fixture_evac_plan",
+      "y": 180
+    },
+    "facing=south,kind=no_smoking": {
+      "model": "backrooms:block/office_wall_fixture_no_smoking",
+      "y": 180
+    },
+    "facing=south,kind=fire_door_sign": {
+      "model": "backrooms:block/office_wall_fixture_fire_door_sign",
+      "y": 180
+    },
+    "facing=south,kind=sign_meeting": {
+      "model": "backrooms:block/office_wall_fixture_sign_meeting",
+      "y": 180
+    },
+    "facing=south,kind=sign_office": {
+      "model": "backrooms:block/office_wall_fixture_sign_office",
+      "y": 180
+    },
+    "facing=west,kind=dado": {
+      "model": "backrooms:block/office_wall_fixture_dado",
+      "y": 270
+    },
+    "facing=west,kind=dado_outlets": {
+      "model": "backrooms:block/office_wall_fixture_dado_outlets",
+      "y": 270
+    },
+    "facing=west,kind=door_stop": {
+      "model": "backrooms:block/office_wall_fixture_door_stop",
+      "y": 270
+    },
+    "facing=west,kind=tv_bracket": {
+      "model": "backrooms:block/office_wall_fixture_tv_bracket",
+      "y": 270
+    },
+    "facing=west,kind=coat_hooks": {
+      "model": "backrooms:block/office_wall_fixture_coat_hooks",
+      "y": 270
+    },
+    "facing=west,kind=sanitiser": {
+      "model": "backrooms:block/office_wall_fixture_sanitiser",
+      "y": 270
+    },
+    "facing=west,kind=first_aid": {
+      "model": "backrooms:block/office_wall_fixture_first_aid",
+      "y": 270
+    },
+    "facing=west,kind=evac_plan": {
+      "model": "backrooms:block/office_wall_fixture_evac_plan",
+      "y": 270
+    },
+    "facing=west,kind=no_smoking": {
+      "model": "backrooms:block/office_wall_fixture_no_smoking",
+      "y": 270
+    },
+    "facing=west,kind=fire_door_sign": {
+      "model": "backrooms:block/office_wall_fixture_fire_door_sign",
+      "y": 270
+    },
+    "facing=west,kind=sign_meeting": {
+      "model": "backrooms:block/office_wall_fixture_sign_meeting",
+      "y": 270
+    },
+    "facing=west,kind=sign_office": {
+      "model": "backrooms:block/office_wall_fixture_sign_office",
+      "y": 270
+    }
+  }
+}
