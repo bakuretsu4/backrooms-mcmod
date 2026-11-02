@@ -213,7 +213,8 @@ public final class Level4Layout extends LevelLayout {
             case Level4Plan.BOXES -> stack(faced(ModBlocks.CARDBOARD_BOXES.get(), facing), variant == 1 ? 2 : 1, out);
             case Level4Plan.LADDER -> out.set(floor + 1, faced(ModBlocks.STEP_LADDER.get(), facing));
             case Level4Plan.CRATE -> stack(faced(ModBlocks.SUPPLY_CRATE.get(), facing), variant == 1 ? 2 : 1, out);
-            case Level4Plan.LOCKER -> out.set(floor + 1, faced(ModBlocks.SUPPLY_LOCKER.get(), facing));
+            // Was a Supply Locker (saved for a future level); the supply filing cabinet works the same.
+            case Level4Plan.LOCKER -> out.set(floor + 1, faced(ModBlocks.SUPPLY_CABINET.get(), facing));
             case Level4Plan.SUPPLY_CABINET -> out.set(floor + 1, faced(ModBlocks.SUPPLY_CABINET.get(), facing));
             case Level4Plan.BACKPACK -> out.set(floor + 1, faced(ModBlocks.BACKPACK.get(), facing));
             case Level4Plan.VENDING -> {

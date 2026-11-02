@@ -357,8 +357,6 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     /** Its walk and run speeds in blocks per tick (4.15 x 0.69^2 and 4.15 x 1.10^2 blocks/s, / 20). */
     public static final float WALK_SPEED_PER_TICK = 0.0988f;
     public static final float RUN_SPEED_PER_TICK = 0.2511f;
-    /** Running, each step is up to this much longer or shorter (a fraction), so it isn't a metronome. */
-    private static final float RUN_STEP_JITTER = 0.05f;
     /**
      * The client's speed reading is eased by this much of the difference each tick, so the
      * stride doesn't wobble with the position updates that come from the server in steps.
@@ -399,6 +397,20 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     // and your sprint 5.6. Its run sits in between on purpose: it catches you if you walk, freeze
     // or hesitate, but if you sprint the moment it sees you, you slowly pull away from it.
     private static final double CHASE_SPEED = 1.10;   // 5.0 blocks/s
+    // Its chase pace is never steady (Kane Pixels' runner surges and eases off): its speed in
+    // blocks/s drifts between PACE_MIN and PACE_MAX times the 5 blocks/s (a smooth swell, period
+    // PACE_TICKS; on average it is still 5, so a sprinting player still slowly pulls away). In the
+    // last BURST_RANGE blocks, seeing you, it surges: the speed multiplier times BURST_MIN to
+    // BURST_MAX (about 11 blocks/s, the reference's final charge).
+    private static final float PACE_SWING = 0.2f;
+    private static final float PACE_MIN = 0.85f;
+    private static final float PACE_MAX = 1.25f;
+    private static final float PACE_TICKS = 30.0f;
+    private static final double BURST_RANGE = 4.5;
+    private static final double BURST_MIN = 1.4;
+    private static final double BURST_MAX = 1.6;
+    /** The surge's size changes every this many ticks. */
+    private static final int BURST_SLOT_TICKS = 100;
     private static final double SEARCH_SPEED = 0.75;  // 2.3 blocks/s
     private static final double DRIFT_SPEED = 0.69;   // 2.0 blocks/s, the reference's walk
     private static final double WANDER_SPEED = 0.69;  // 2.0 blocks/s
@@ -456,11 +468,14 @@ public class Bacteria extends Monster implements HidingService.Seeker {
     private float breathPhase;
     private float breathPhaseO;
     // Client-only, purely visual: the stride, counted in strides so far (same idea as the heart),
-    // and the eased speed (blocks per tick) that drives it.
+    // the eased speed (blocks per tick) that drives it, and how far the feet travel per stride
+    // right now (blocks: shorter for a quick stride, longer for a slow one).
     private float gaitPhase;
     private float gaitPhaseO;
     private float gaitSpeed;
     private float gaitSpeedO;
+    private float gaitStride = RUN_STRIDE_BLOCKS;
+    private float gaitStrideO = RUN_STRIDE_BLOCKS;
     // Client-only: when (in this client's ticks) the latest move, mode and forced pose arrived,
     // so the model can time them.
     private Action shownAction = Action.NONE;
@@ -697,6 +712,16 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         return Mth.lerp(partialTick, gaitSpeedO, gaitSpeed);
     }
 
+    /** Client: how far its feet travel per full stride right now (blocks), for this frame. */
+    public float gaitStride(float partialTick) {
+        return Mth.lerp(partialTick, gaitStrideO, gaitStride);
+    }
+
+    /** Client: how many strides it takes per tick right now (the stride clock's rate). */
+    public float gaitRate() {
+        return gaitPhase - gaitPhaseO;
+    }
+
     /**
      * How far its feet travel per full stride (blocks) at {@code speed} blocks per tick: 2.0 at
      * its walk and below, 2.6 at its run and above, and in between in proportion, so the cadence
@@ -818,11 +843,12 @@ public class Bacteria extends Monster implements HidingService.Seeker {
      * The stride clock. The client's reading of how fast it moves is eased (GAIT_SPEED_EASE), so
      * the stride doesn't wobble with the position updates that come from the server in steps, and
      * its feet travel {@link #strideBlocks} per stride, so the stride runs as fast as it really
-     * moves: a 20-tick stride at its 2 blocks/s walk, a 10-tick one at its 5 blocks/s run (every
-     * step a little longer or shorter, so it isn't a metronome). Stopping, the eased speed dies
-     * away over a few ticks, so the legs finish their step and settle instead of freezing in the
-     * air (the model fades them out with the same eased speed). On the test command's forced walk
-     * and run it plays on the spot at those two speeds.
+     * moves: a 20-tick stride at its 2 blocks/s walk, a 10-tick one at its 5 blocks/s run.
+     * Running, the clock wanders (BacteriaRhythm.runRate: quicker, slower, a stumble, a lurch)
+     * and each stride is shortened by as much as it is quickened, so the feet never skate.
+     * Stopping, the eased speed dies away over a few ticks, so the legs finish their step and
+     * settle instead of freezing in the air (the model fades them out with the same eased speed).
+     * On the test command's forced walk and run it plays on the spot at those two speeds.
      */
     private void tickGait() {
         AnimPose forced = forcedPose();
@@ -831,6 +857,7 @@ public class Bacteria extends Monster implements HidingService.Seeker {
                 || (forced == AnimPose.AUTO && current == Mode.CHASE);
         gaitPhaseO = gaitPhase;
         gaitSpeedO = gaitSpeed;
+        gaitStrideO = gaitStride;
         float measured;
         if (forced == AnimPose.WALK) {
             measured = WALK_SPEED_PER_TICK;
@@ -844,11 +871,12 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             measured = (float) Math.sqrt(dx * dx + dz * dz);
         }
         gaitSpeed += (measured - gaitSpeed) * GAIT_SPEED_EASE;
-        float rate = gaitSpeed / strideFor(gaitSpeed);
+        float stride = strideFor(gaitSpeed);
         if (running) {
-            int step = Mth.floor(gaitPhase * 2.0f);
-            rate *= 1.0f + RUN_STEP_JITTER * BacteriaRhythm.hash(BacteriaRhythm.seed(getId()) + 301, step);
+            stride /= BacteriaRhythm.runRate(BacteriaRhythm.seed(getId()), tickCount);
         }
+        gaitStride = stride;
+        float rate = gaitSpeed / stride;
         gaitPhase += rate;
         if (gaitPhase > 1000.0f) {
             gaitPhase -= 1000.0f;
@@ -1178,12 +1206,17 @@ public class Bacteria extends Monster implements HidingService.Seeker {
             if (lungeTicks >= 0 || stareTicks >= 0 || isCaging() || distanceToSqr(prey) < LUNGE_RANGE * LUNGE_RANGE) {
                 // Close and in plain view: no more paths (they stop a block short), it goes for you.
                 closeIn();
-            } else if (--repathIn <= 0) {
-                // Re-path at most twice a second, and only if you actually moved.
-                repathIn = CHASE_REPATH_TICKS;
-                if (pathGoal == null || pathGoal.distanceToSqr(lastSeen) > 2.25 || getNavigation().isDone()) {
-                    getNavigation().moveTo(prey, CHASE_SPEED);
-                    pathGoal = lastSeen;
+            } else {
+                // Its pace drifts and surges every tick (chaseSpeed), on whatever path it follows.
+                double pace = chaseSpeed(Math.sqrt(distanceToSqr(prey)));
+                getNavigation().setSpeedModifier(pace);
+                if (--repathIn <= 0) {
+                    // Re-path at most twice a second, and only if you actually moved.
+                    repathIn = CHASE_REPATH_TICKS;
+                    if (pathGoal == null || pathGoal.distanceToSqr(lastSeen) > 2.25 || getNavigation().isDone()) {
+                        getNavigation().moveTo(prey, pace);
+                        pathGoal = lastSeen;
+                    }
                 }
             }
             return;
@@ -1196,10 +1229,28 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         if (unseenTicks++ == 0) {
             getNavigation().moveTo(lastSeen.x, lastSeen.y, lastSeen.z, CHASE_SPEED);
             pathGoal = lastSeen;
+        } else {
+            getNavigation().setSpeedModifier(chaseSpeed(Double.MAX_VALUE));
         }
         if (unseenTicks >= LOST_SIGHT_TICKS) {
             startSearch();
         }
+    }
+
+    /**
+     * Its running speed multiplier right now: CHASE_SPEED with the pace's drift (PACE_*), and
+     * the surge (BURST_*) when it is within BURST_RANGE of you ({@code distance}, blocks). The
+     * multiplier goes by the square root of the pace because a mob's speed grows with the square
+     * of its multiplier (see the speeds above).
+     */
+    private double chaseSpeed(double distance) {
+        int seed = BacteriaRhythm.seed(getId());
+        float pace = Mth.clamp(1.0f + PACE_SWING * BacteriaRhythm.noise(seed + 730, tickCount, PACE_TICKS), PACE_MIN, PACE_MAX);
+        double speed = CHASE_SPEED * Math.sqrt(pace);
+        if (distance < BURST_RANGE) {
+            speed *= BURST_MIN + (BURST_MAX - BURST_MIN) * BacteriaRhythm.unit(seed + 731, tickCount / BURST_SLOT_TICKS);
+        }
+        return speed;
     }
 
     /**
@@ -1266,9 +1317,10 @@ public class Bacteria extends Monster implements HidingService.Seeker {
         }
 
         if (d > STANDOFF_MAX) {
-            // Not there: head for the spot STANDOFF short of you.
+            // Not there: head for the spot STANDOFF short of you (at its drifting pace, but no
+            // surge this close: it would carry it straight into you).
             double k = (d - STANDOFF) / d;
-            getMoveControl().setWantedPosition(getX() + dx * k, prey.getY(), getZ() + dz * k, CHASE_SPEED);
+            getMoveControl().setWantedPosition(getX() + dx * k, prey.getY(), getZ() + dz * k, chaseSpeed(Double.MAX_VALUE));
         } else {
             // There: stand and face you with the whole body, so the arms close around you.
             faceToward(prey, 30.0f);

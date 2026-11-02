@@ -78,6 +78,25 @@ public final class BacteriaPoseState {
     /** Counts the claws taking hold (the entity plays a quiet scrape for each). */
     public int gripLanded;
 
+    // Running (the model's run): each arm keeps its own clock (where it is in its swing, 0-1), so
+    // the two arms drift in and out of step instead of mirroring each other.
+    public final float[] runArm = new float[2];
+    public boolean runArmsReady;
+    /**
+     * A running claw on the floor stays exactly where it landed (world), while it is planted;
+     * plantY is how high it was when it landed (it settles onto the floor from there) and
+     * plantAt when (ageInTicks).
+     */
+    public final boolean[] plantLocked = new boolean[2];
+    public final double[] plantX = new double[2];
+    public final double[] plantY = new double[2];
+    public final double[] plantZ = new double[2];
+    public final float[] plantAt = new float[2];
+    /** How firmly each planted claw is still held (1, falling if its spot gets out of reach). */
+    public final float[] plantHold = new float[2];
+    /** When (ageInTicks) it was last running, or NaN: stopping, it skids and its arms swing on. */
+    public float runningAt = Float.NaN;
+
     /** How close a wall is to its right (0) and left (1) side: 0 = none, 1 = within Bacteria's NARROW_CHECK (2.4 blocks). */
     public final float[] narrow = new float[2];
     /** The same a tick earlier, so the model can ease between the two within a tick. */
