@@ -39,6 +39,17 @@ public final class ClientSettings {
             .comment("Widen the field of view by 20% in the Backrooms, like a camcorder lens.")
             .define("wideLens", true);
 
+    /** The picture looks like home-video footage (shaders/program/camcorder.fsh, the footage stage). */
+    public static final ModConfigSpec.BooleanValue FOOTAGE_LOOK = BUILDER
+            .comment("Make the picture look like footage from a cheap old camera: warm, soft, colour bleeding,",
+                    "over-sharpened edges, blown-out whites, noise in the dark and an exposure that hunts.")
+            .define("footageLook", true);
+
+    public static final ModConfigSpec.BooleanValue FRAME_4_3 = BUILDER
+            .comment("Show the footage in a 4:3 frame with black bars at the sides, like the old camera's picture.",
+                    "Only with the footage look on.")
+            .define("frame43", true);
+
     static {
         BUILDER.pop();
         BUILDER.push("hud");

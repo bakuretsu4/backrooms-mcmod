@@ -59,6 +59,10 @@
         { "name": "Glow", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Breath", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Near", "type": "float", "count": 1, "values": [ 0.05 ] },
-        { "name": "Far", "type": "float", "count": 1, "values": [ 256.0 ] }
+        { "name": "Far", "type": "float", "count": 1, "values": [ 256.0 ] },
+        { "name": "Footage", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Bars", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "AutoExposure", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "Gain", "type": "float", "count": 1, "values": [ 0.0 ] }
     ]
 }

@@ -78,8 +78,8 @@ public final class PitfallsBehavior implements AnomalyBehavior {
         lifts.remove(player.getUUID());
     }
 
-    /** The end of the fall: somewhere dark and far away, a hard landing. */
-    private static void land(ServerPlayer player, long seed) {
+    /** The end of the fall: somewhere dark and far away, a hard landing (also the stack's void, StackBehavior). */
+    static void land(ServerPlayer player, long seed) {
         ServerLevel level = player.serverLevel();
         Level0Layout layout = (Level0Layout) BackroomsLevel.LEVEL_0.layout();
         BlockPos spot = landingSpot(level, layout, seed, player);

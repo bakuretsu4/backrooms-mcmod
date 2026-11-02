@@ -80,6 +80,8 @@ public class SettingsScreen extends Screen {
         y = this.slider(rowX, y, rowW, sliderH, "tilt", ClientSettings.VIEW_TILT, 0, 200, 10);
         y = this.slider(rowX, y, rowW, sliderH, "motion_blur", ClientSettings.MOTION_BLUR, 0, 200, 10);
         y = this.toggle(rowX, y, rowW, toggleH, "wide_lens", ClientSettings.WIDE_LENS);
+        y = this.toggle(rowX, y, rowW, toggleH, "footage_look", ClientSettings.FOOTAGE_LOOK);
+        y = this.toggle(rowX, y, rowW, toggleH, "frame_4_3", ClientSettings.FRAME_4_3);
 
         // --- Screen: graphics quality and HUD ------------------------------------------------
         y += compact ? 2 : 4;
@@ -132,6 +134,8 @@ public class SettingsScreen extends Screen {
         ClientSettings.VIEW_TILT.set(ClientSettings.VIEW_TILT.getDefault());
         ClientSettings.MOTION_BLUR.set(ClientSettings.MOTION_BLUR.getDefault());
         ClientSettings.WIDE_LENS.set(ClientSettings.WIDE_LENS.getDefault());
+        ClientSettings.FOOTAGE_LOOK.set(ClientSettings.FOOTAGE_LOOK.getDefault());
+        ClientSettings.FRAME_4_3.set(ClientSettings.FRAME_4_3.getDefault());
         ClientSettings.STAMINA_BAR.set(ClientSettings.STAMINA_BAR.getDefault());
         this.rebuildWidgets(); // the sliders read their position when they are made
     }

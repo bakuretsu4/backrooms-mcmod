@@ -1,6 +1,8 @@
 package com.rickr.backrooms.client.hud;
 
 import com.rickr.backrooms.Backrooms;
+import com.rickr.backrooms.client.CamcorderEffect;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -34,6 +36,8 @@ public final class OsdStyle {
     public static final int CALM = 0xB4C4A8;
     /** The REC lamp: a real camcorder's dull red LED. */
     public static final int REC = 0xC8382C;
+    /** The date stamp burnt into the corner of a cheap camera's footage: orange amber. */
+    public static final int STAMP = 0xF2A03C;
     /**
      * Near-black, a touch warm: the edge round the arrival card's letters (and its faint backing),
      * like the black outline a camcorder's title generator puts round its text. It keeps the text
@@ -66,10 +70,21 @@ public final class OsdStyle {
     /**
      * Distance from the screen edge to every readout, like the "title safe" area on a TV: 4% of the
      * width at the sides, 5% of the height at the top and bottom. Scales with the window, so the
-     * readouts never crowd the corners on a wide screen or drift to the middle on a small one.
+     * readouts never crowd the corners on a wide screen or drift to the middle on a small one. With
+     * the footage in its 4:3 frame ({@link CamcorderEffect#framed}) the sides are measured from the
+     * frame, so nothing is drawn on the black bars.
      */
     public static int marginX(GuiGraphics g) {
-        return Math.max(10, Math.round(g.guiWidth() * 0.04f));
+        int inset = frameInset(g);
+        return inset + Math.max(10, Math.round((g.guiWidth() - 2 * inset) * 0.04f));
+    }
+
+    /** Width of each black bar beside the 4:3 frame (GUI pixels), or 0 when there is none. */
+    public static int frameInset(GuiGraphics g) {
+        if (!CamcorderEffect.framed(Minecraft.getInstance())) {
+            return 0;
+        }
+        return Math.max(0, (g.guiWidth() - Math.round(g.guiHeight() * 4.0f / 3.0f)) / 2);
     }
 
     public static int marginY(GuiGraphics g) {

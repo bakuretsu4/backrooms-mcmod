@@ -1,15 +1,19 @@
 package com.rickr.backrooms.client.anomaly.level0;
 
 import com.rickr.backrooms.client.AtmosphereGrade;
+import com.rickr.backrooms.client.Level0StackRenderer;
 import com.rickr.backrooms.client.anomaly.AnomalyClientEffect;
 import com.rickr.backrooms.client.audio.Level0Soundscape;
 import com.rickr.backrooms.registry.Level0LightBlocks;
+import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.layout.Level0Atrium;
 import com.rickr.backrooms.world.layout.Level0FrontOffice;
 import com.rickr.backrooms.world.layout.Level0SetPieces;
 import com.rickr.backrooms.world.layout.Level0ShaftHall;
+import com.rickr.backrooms.world.layout.Level0Stack;
+import com.rickr.backrooms.world.layout.Level0Street;
 import com.rickr.backrooms.world.layout.LevelLayout;
 import java.util.HashMap;
 import java.util.List;
@@ -51,9 +55,56 @@ final class SetPieceEffects {
     private static final AtmosphereGrade.Mood RECEPTION = new AtmosphereGrade.Mood(1.20f, 1.0f, 1.0f,
             1.02f, 0.98f, 0.80f, 1.05f, 1.0f, 0.88f,
             0.010f, 0.008f, 0.004f, 0.40f, 0.34f, 0.20f, 30.0f, 0.010f, 0.10f, 0.26f, 0.20f, 0.006f);
+    /**
+     * The street hall: a huge bright space. Hazy far down the street (warm yellow air thickening
+     * over 100 blocks, like the film's shot), a soft glow so the far panels bloom.
+     */
+    private static final AtmosphereGrade.Mood STREET = new AtmosphereGrade.Mood(1.08f, 1.0f, 0.96f,
+            1.0f, 0.99f, 0.94f, 1.02f, 1.0f, 0.92f,
+            0.006f, 0.006f, 0.004f, 0.62f, 0.58f, 0.40f, 24.0f, 0.012f, 0.30f, 0.40f, 0.22f, 0.010f);
+    /**
+     * The stack: the void's depth. A faint warm haze that starts some way off, so the floors far
+     * below and above fade into it, a little more contrast and contact shadow.
+     */
+    private static final AtmosphereGrade.Mood STACK = new AtmosphereGrade.Mood(1.10f, 1.06f, 0.92f,
+            0.98f, 0.98f, 0.96f, 1.02f, 1.0f, 0.94f,
+            0.004f, 0.004f, 0.003f, 0.16f, 0.14f, 0.08f, 22.0f, 0.016f, 0.55f, 0.55f, 0.16f, 0.012f);
 
     private static LevelLayout layout() {
         return BackroomsLevel.LEVEL_0.layout();
+    }
+
+    /** The stack: the renderer draws its fake floors while it is near; the void's mood inside. */
+    static final class Stack implements AnomalyClientEffect {
+        @Override
+        public void tick(Minecraft mc, AnomalySite site, boolean inside, float secondsInside) {
+            Level0StackRenderer.near(site);
+            if (inside && mc.player != null && Level0Stack.inBox(site, mc.player.getBlockX(), mc.player.getBlockZ())) {
+                AtmosphereGrade.setAnomalyMood(STACK, 0.8f);
+            }
+        }
+    }
+
+    /** The street: each fan's slow whoosh from high overhead, and the hall's hazy mood inside. */
+    static final class Street implements AnomalyClientEffect {
+        @Override
+        public void tick(Minecraft mc, AnomalySite site, boolean inside, float secondsInside) {
+            LocalPlayer player = mc.player;
+            if (player == null) {
+                return;
+            }
+            for (int[] fan : Level0Street.fans(site)) {
+                double dx = player.getX() - fan[0];
+                double dz = player.getZ() - fan[1];
+                if (dx * dx + dz * dz < 48.0 * 48.0) {
+                    Level0Soundscape.loop(BlockPos.asLong(fan[0], Level0Street.FAN_Y, fan[1]), ModSounds.L0_CEILING_FAN.get(),
+                            fan[0] + 0.5, Level0Street.FAN_Y + 0.5, fan[1] + 0.5, 1.0f);
+                }
+            }
+            if (inside && Level0Street.inside(site, player.getBlockX(), player.getBlockZ())) {
+                AtmosphereGrade.setAnomalyMood(STREET, 0.8f);
+            }
+        }
     }
 
     /** The atrium: its cold air high in the void, and its mood under the void and upstairs. */

@@ -1,7 +1,12 @@
 package com.rickr.backrooms.world.layout;
 
+import com.rickr.backrooms.block.FurnitureBlock;
+import com.rickr.backrooms.block.Level39FurnitureBlock;
 import com.rickr.backrooms.block.WallDecalBlock;
 import com.rickr.backrooms.block.WallMountBlock;
+import com.rickr.backrooms.registry.Level0Blocks;
+import com.rickr.backrooms.registry.Level0SetPieceBlocks;
+import com.rickr.backrooms.registry.Level39HouseBlocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.Hash;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
@@ -51,7 +56,9 @@ public final class Level0RedRooms {
      *       {@code P} a doorway between room and hall;</li>
      *   <li>{@code T} wall with tally marks (facing into the tally room), {@code F} the stretch of
      *       tally-room wall that starts to flicker when it's time to let you go;</li>
-     *   <li>{@code h} a ragged hole in a wall, {@code c} the low crawlway between the holes.</li>
+     *   <li>{@code h} a ragged hole in a wall, {@code c} the low crawlway between the holes;</li>
+     *   <li>{@code x} a chair lying on its back, {@code k} a ceiling tile fallen onto the carpet, its
+     *       hole above (both in the rooms, never by a crawlway, so its two copies still match).</li>
      * </ul>
      */
     private static final String[] TEMPLATE = {
@@ -64,7 +71,7 @@ public final class Level0RedRooms {
             "YRRRRRRRRRccch.....RRRRY",
             "YRRRRRRRRRcRRR..L..RRRRY",
             "YRRRRRRRRRcRRR.....P..RY",
-            "YRRRRRRRRRcRRRm....P..RY",
+            "YRRRRRRRRRcRRRmx...P..RY",
             "YRRRRRRRRRcRRRRRRRRR..RY",
             "YRRRRRRRRRcRRRRRRRRR..RY",
             "YRRRRRRRcccRRRRRRRRRL.RY",
@@ -72,13 +79,13 @@ public final class Level0RedRooms {
             "YRRRRRRRRRcccRRRRRRR..RY",
             "YRRRRRRRRRcRRRRRRRRRPPRY",
             "YRRRRRRRRRcRRRRRT.....RY",
-            "YRm....RRRcRRRRRT.....RY",
+            "YRm....RRRcRRRRRT..k..RY",
             "YR.....RRRcRRRRRF..L..RY",
             "YR..L..RRRcRRRRRT.....RY",
             "YR.....hcccRRRRRTm....RY",
             "YR....mRRRRRRRRRRRPPRRRY",
             "YRRRPPRRRRRRRRRRRR..RRRY",
-            "YRRR.......L........RRRY",
+            "YRRR....k..L........RRRY",
             "YRRR...............mRRRY",
             "YRRRRRRRRRRRRRRRRRRRRRRY",
             "YYYYYYYYYYYYYYYYYYYYYYYY",
@@ -228,7 +235,7 @@ public final class Level0RedRooms {
     /** True for the crimson part (rooms, halls, holes, crawlways): where the place has you. */
     public static boolean isInterior(AnomalySite site, int x, int z) {
         char c = cell(site, x, z);
-        return c == '.' || c == 'L' || c == 'm' || c == 'P' || c == 'h' || c == 'c';
+        return c == '.' || c == 'L' || c == 'm' || c == 'P' || c == 'h' || c == 'c' || c == 'x' || c == 'k';
     }
 
     /** True for the yellow corridor and the doorways into the start room (nobody gets sealed in a doorway). */
@@ -389,10 +396,14 @@ public final class Level0RedRooms {
         switch (c) {
             case 0 -> out.set(floor, sticky); // the moat
             case 'Y' -> {
+                // Yellow paper, torn to crimson in one block of about one column in four.
                 out.set(floor, ModBlocks.LOBBY_CARPET.get().defaultBlockState());
                 out.set(floor + 1, ModBlocks.YELLOW_WALLPAPER_BASEBOARD.get().defaultBlockState());
                 for (int y = floor + 2; y < ceiling; y++) {
-                    out.set(y, peeling);
+                    out.set(y, ModBlocks.YELLOW_WALLPAPER.get().defaultBlockState());
+                }
+                if (Hash.unit(site.salt(), u, v, 11) < 0.25) {
+                    out.set(floor + 2 + (Hash.unit(site.salt(), u, v, 12) < 0.5 ? 0 : 1), peeling);
                 }
             }
             case 'R', 'F' -> {
@@ -434,6 +445,17 @@ public final class Level0RedRooms {
                 out.set(floor, redCarpet);
                 Direction turn = Direction.from2DDataValue(Hash.range(Hash.mix(site.salt() ^ (u * 31L + v)), 4));
                 out.set(floor + 1, ModBlocks.RED_MUSHROOMS.get().defaultBlockState().setValue(WallMountBlock.FACING, turn));
+            }
+            case 'x' -> {
+                out.set(floor, redCarpet);
+                out.set(floor + 1, Level39HouseBlocks.DINING_CHAIR.get().defaultBlockState()
+                        .setValue(FurnitureBlock.FACING, toWorld(site, Direction.SOUTH))
+                        .setValue(Level39FurnitureBlock.INVERTED, true));
+            }
+            case 'k' -> {
+                out.set(floor, redCarpet);
+                out.set(floor + 1, Level0SetPieceBlocks.FALLEN_TILE.get().defaultBlockState());
+                out.set(ceiling, Level0Blocks.CEILING_HOLE.get().defaultBlockState());
             }
             default -> out.set(floor, redCarpet); // '.'
         }

@@ -4689,5 +4689,15 @@
         "volume": 0.55
       }
     ]
+  },
+  "level0.ceiling_fan": {
+    "sounds": [
+      {
+        "name": "backrooms:level0/ceiling_fan",
+        "stream": true,
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level0.ceiling_fan"
   }
 }

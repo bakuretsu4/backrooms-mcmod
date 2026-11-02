@@ -237,6 +237,8 @@ public final class Level0PillarHall {
                 // A regular grid of lit panels: the hall is bright, so there's nothing to hide behind.
                 if (p % 4 == 0 && (q % 8 == 1 || q % 8 == 2)) {
                     out.set(ceiling, ModBlocks.FLUORESCENT_LIGHT.get().defaultBlockState());
+                } else {
+                    Level0Clutter.wear(site.salt(), x, z, floor, ceiling, 0.015, out);
                 }
             }
             default -> {

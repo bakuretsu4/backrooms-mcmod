@@ -32,6 +32,12 @@ import net.minecraft.util.Mth;
  * <p>The fallback flashlight needs to know how far away each pixel is. Vanilla wipes the depth
  * buffer before drawing your hand, so right after the world finishes we copy the world's depth into
  * the effect's "scenedepth" buffer ({@link #captureDepth}).
+ *
+ * <p>The FOOTAGE LOOK setting makes it look like a cheap old camera's footage (the shader's footage
+ * stage), and the 4:3 FRAME setting puts it between black bars ({@link #framed}). The camera's
+ * auto-exposure is worked out here: it chases how bright it is around you on a spring that
+ * overshoots, so walking from a dark corridor into a lit room the picture flares, dips and settles
+ * (it "hunts"); in the dark it turns its gain up, and the shader's noise with it.
  */
 public final class CamcorderEffect {
     /** All our chains live here: camcorder.json (HIGH), camcorder_medium.json, camcorder_low.json. */
@@ -54,6 +60,17 @@ public final class CamcorderEffect {
     /** The chain that failed to load (bad shader edit): not retried every tick until resources reload. */
     private static String failedChain;
 
+    // ---- The footage look's auto-exposure ---------------------------------------------------------
+    /** Exposure the camera wants in full light, and in the dark (it opens up, never quite enough). */
+    private static final float EXPOSURE_BRIGHT = 1.0f;
+    private static final float EXPOSURE_DARK = 1.5f;
+    /** The spring (per second squared) and its damping (per second): under-damped, so it hunts. */
+    private static final float EXPOSURE_SPRING = 7.0f;
+    private static final float EXPOSURE_DAMPING = 2.4f;
+    private static float exposure = EXPOSURE_BRIGHT;
+    private static float exposureSpeed;
+    private static long exposureNanos;
+
     public static float danger() {
         return danger;
     }
@@ -62,6 +79,11 @@ public final class CamcorderEffect {
     public static boolean wanted(Minecraft mc) {
         return mc.level != null && mc.player != null
                 && (Travel.inBackrooms(mc.level) || NoclipTransition.active() || CameraClientState.realRecording);
+    }
+
+    /** True when the picture is in the 4:3 frame right now: the HUD then keeps inside it (OsdStyle). */
+    public static boolean framed(Minecraft mc) {
+        return ClientSettings.FOOTAGE_LOOK.get() && ClientSettings.FRAME_4_3.get() && wanted(mc);
     }
 
     /** The post chain for the QUALITY setting; they differ only in how many glow (blur) passes they run. */
@@ -178,6 +200,13 @@ public final class CamcorderEffect {
         chain.setUniform("Chroma", chroma);
         // The level's mood: grade, haze, contact shadows, glow and breath (see AtmosphereGrade).
         AtmosphereGrade.apply(mc, chain);
+        // The footage look (a setting): on/off, the 4:3 frame, and the camera's hunting auto-exposure.
+        boolean footage = ClientSettings.FOOTAGE_LOOK.get();
+        float autoExposure = footage && !CameraClientState.nightShot ? autoExposure(mc) : 1.0f;
+        chain.setUniform("Footage", footage ? 1.0f : 0.0f);
+        chain.setUniform("Bars", ClientSettings.FRAME_4_3.get() ? 1.0f : 0.0f);
+        chain.setUniform("AutoExposure", autoExposure);
+        chain.setUniform("Gain", Mth.clamp((autoExposure - EXPOSURE_BRIGHT) / (EXPOSURE_DARK - EXPOSURE_BRIGHT), 0.0f, 1.0f));
         chain.setUniform("Near", GameRenderer.PROJECTION_Z_NEAR);
         chain.setUniform("Far", mc.gameRenderer.getDepthFar());
     }
@@ -225,6 +254,25 @@ public final class CamcorderEffect {
             return 0.15f; // the brief dark gap between the two pops
         }
         return 0.8f * (1.0f - (since - 170) / (LIGHTNING_MS - 170.0f));
+    }
+
+    /**
+     * The camera's auto-exposure this frame: it wants to open up in the dark and close down in
+     * the light (how bright it is at your eyes), and chases that on an under-damped spring, so it
+     * overshoots and settles a moment later.
+     */
+    private static float autoExposure(Minecraft mc) {
+        long now = System.nanoTime();
+        float dt = exposureNanos == 0L ? 0.0f : Math.min((now - exposureNanos) / 1.0e9f, 0.1f);
+        exposureNanos = now;
+        net.minecraft.core.BlockPos eyes = net.minecraft.core.BlockPos.containing(mc.player.getEyePosition());
+        int light = Math.max(mc.level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, eyes),
+                mc.level.getBrightness(net.minecraft.world.level.LightLayer.SKY, eyes));
+        float bright = Mth.clamp((light - 2.0f) / 9.0f, 0.0f, 1.0f);
+        float target = Mth.lerp(bright * bright * (3.0f - 2.0f * bright), EXPOSURE_DARK, EXPOSURE_BRIGHT);
+        exposureSpeed += (EXPOSURE_SPRING * (target - exposure) - EXPOSURE_DAMPING * exposureSpeed) * dt;
+        exposure = Mth.clamp(exposure + exposureSpeed * dt, 0.75f, 1.8f);
+        return exposure;
     }
 
     /** A cheap flashlight: it browns out for an instant now and then, more when the battery is low. */
