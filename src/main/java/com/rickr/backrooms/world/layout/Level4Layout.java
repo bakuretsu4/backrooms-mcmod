@@ -4,7 +4,12 @@ import com.rickr.backrooms.block.CubiclePartitionBlock;
 import com.rickr.backrooms.block.ElevatorDoorBlock;
 import com.rickr.backrooms.block.HouseDoorBlock;
 import com.rickr.backrooms.block.LampMode;
+import com.rickr.backrooms.block.OfficeCeilingDiffuserBlock;
+import com.rickr.backrooms.block.OfficeCeilingFixtureBlock;
+import com.rickr.backrooms.block.OfficeExitSignBlock;
 import com.rickr.backrooms.block.OfficePanelBlock;
+import com.rickr.backrooms.block.OfficePerimeterBlock;
+import com.rickr.backrooms.block.OfficeWallPlateBlock;
 import com.rickr.backrooms.block.OfficeWindowBlock;
 import com.rickr.backrooms.block.VendingMachineBlock;
 import com.rickr.backrooms.block.WaterCoolerBlock;
@@ -22,12 +27,15 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Level 4, "The Abandoned Office": endless, empty office floors on a stormy night. Grey-taupe or
- * blue-grey carpet, off-white drywall, a suspended ceiling with 1x2 fluorescent panels (most of
- * them dead in the big open areas), long walls of dark rainy windows with radiators under the
- * sills, cubicle fields, corridors of wooden doors, break rooms with vending machines and water
- * coolers, glass conference rooms and elevator lobbies whose elevators never come. No monsters:
- * it's a safe haven, if a lonely one.
+ * Level 4, "The Abandoned Office": endless, empty office floors on a stormy night. Grey or
+ * slate-blue carpet tiles, off-white drywall, a suspended ceiling with 1x2 louvre troffers (most of
+ * them dead, as in canon) and air diffusers, sprinklers and smoke detectors between them, long
+ * ribbons of blacked-out rainy windows in 3-pane bays with a continuous perimeter casing (a slim
+ * radiator under each bay) along their foot, cubicle fields, corridors of wooden doors, kitchenettes
+ * with vending machines and water coolers, glass conference rooms and elevator lobbies whose
+ * elevators never come. Switches, thermostats, extinguishers, call points, clocks, notice boards
+ * and exit signs hang where a real office would have them. No monsters: it's a safe haven, if a
+ * lonely one.
  *
  * <p>The floor plan itself (zones, rooms, furniture) lives in {@link Level4Plan}, which describes
  * every column with plain numbers; this class turns those numbers into blocks and adds the parts
@@ -39,8 +47,10 @@ import org.jetbrains.annotations.Nullable;
  *       (below y30) takes you on to the Poolrooms.</li>
  *   <li><b>Safe rooms:</b> a small office box standing in the middle of an open-plan floor
  *       ({@link SafeRoomPlan}), with the checkpoint radio, a cot and a crate.</li>
- *   <li><b>Anomalies:</b> looping stairwells, the Window, vanishing elevators and the way into
- *       Level 4.3 "The Cubicles" ({@link Level4AnomalyPlan}, blocks in {@link Level4AnomalyBlocks}).</li>
+ *   <li><b>Anomalies:</b> looping stairwells, the Window, vanishing elevators, the way into
+ *       Level 4.3 "The Cubicles", and three quiet ones that only look wrong: the Occupied Floor,
+ *       the Inside-Out Room and the Cooler Row ({@link Level4AnomalyPlan}, blocks in
+ *       {@link Level4AnomalyBlocks}).</li>
  * </ul>
  *
  * <p>Heights: floor y40, four blocks of air, the drop ceiling at y45 (like the Lobby).
@@ -158,7 +168,7 @@ public final class Level4Layout extends LevelLayout {
             return;
         }
         if (Math.max(Math.abs(dx), Math.abs(dz)) <= Level4Plan.CLEARING_RADIUS) {
-            fillClearing(dx, dz, out);
+            fillClearing(seed, x - dx, z - dz, dx, dz, out);
             return;
         }
         SafeRoomPlan safe = safeRoomNear(seed, x, z);
@@ -178,7 +188,6 @@ public final class Level4Layout extends LevelLayout {
         Direction facing = Direction.from2DDataValue(Level4Plan.facing(c));
         int variant = Level4Plan.variant(c);
         switch (Level4Plan.kind(c)) {
-            case Level4Plan.FLOOR -> placeDeco(c, out);
             case Level4Plan.WALL -> fillWall(Level4Plan.style(c), out);
             case Level4Plan.FILL -> fill(floor + 1, ceiling - 1, wall, out);
             case Level4Plan.COLUMN -> {
@@ -188,13 +197,17 @@ public final class Level4Layout extends LevelLayout {
             case Level4Plan.DOORWAY -> out.set(ceiling - 1, wall); // 3 tall, lintel above
             case Level4Plan.DOOR -> fillDoor(facing, variant, out);
             case Level4Plan.WINDOW -> {
-                BlockState pane = ModBlocks.OFFICE_WINDOW.get().defaultBlockState().setValue(OfficeWindowBlock.FACING, facing);
+                BlockState pane = ModBlocks.OFFICE_WINDOW.get().defaultBlockState()
+                        .setValue(OfficeWindowBlock.FACING, facing)
+                        .setValue(OfficeWindowBlock.PANE, pane(variant));
                 out.set(floor + 1, wallBase); // the sill wall
                 out.set(floor + 2, pane.setValue(OfficeWindowBlock.HALF, DoubleBlockHalf.LOWER));
                 out.set(floor + 3, pane.setValue(OfficeWindowBlock.HALF, DoubleBlockHalf.UPPER));
                 out.set(floor + 4, wall);
             }
-            case Level4Plan.RADIATOR -> out.set(floor + 1, faced(ModBlocks.RADIATOR.get(), facing));
+            case Level4Plan.PERIMETER -> out.set(floor + 1, ModBlocks.OFFICE_PERIMETER.get().defaultBlockState()
+                    .setValue(OfficePerimeterBlock.FACING, facing)
+                    .setValue(OfficePerimeterBlock.PART, part(variant)));
             case Level4Plan.ELEVATOR -> {
                 BlockState door = ModBlocks.ELEVATOR_DOOR.get().defaultBlockState()
                         .setValue(ElevatorDoorBlock.FACING, facing)
@@ -241,6 +254,27 @@ public final class Level4Layout extends LevelLayout {
             default -> {
             }
         }
+        placeDeco(c, out);
+    }
+
+    /** The window block's PANE for a plan window variant (Level4Plan.PANE_*). */
+    private static OfficeWindowBlock.Pane pane(int variant) {
+        return switch (variant) {
+            case Level4Plan.PANE_SINGLE -> OfficeWindowBlock.Pane.SINGLE;
+            case Level4Plan.PANE_LEFT -> OfficeWindowBlock.Pane.LEFT;
+            case Level4Plan.PANE_RIGHT -> OfficeWindowBlock.Pane.RIGHT;
+            default -> OfficeWindowBlock.Pane.MID;
+        };
+    }
+
+    /** The perimeter block's PART for a plan perimeter variant (Level4Plan.PART_*). */
+    private static OfficePerimeterBlock.Part part(int variant) {
+        return switch (variant) {
+            case Level4Plan.PART_RADIATOR -> OfficePerimeterBlock.Part.RADIATOR;
+            case Level4Plan.PART_SOCKET -> OfficePerimeterBlock.Part.SOCKET;
+            case Level4Plan.PART_END -> OfficePerimeterBlock.Part.END;
+            default -> OfficePerimeterBlock.Part.TRUNK;
+        };
     }
 
     static BlockState floorBlock(int floor) {
@@ -256,11 +290,30 @@ public final class Level4Layout extends LevelLayout {
         return switch (ceiling) {
             case Level4Plan.TILE_MISSING -> ModBlocks.OFFICE_CEILING_MISSING.get().defaultBlockState();
             case Level4Plan.HATCH -> ModBlocks.OFFICE_CEILING_HATCH.get().defaultBlockState();
+            case Level4Plan.STAINED -> ModBlocks.OFFICE_CEILING_STAINED.get().defaultBlockState();
             case Level4Plan.PANEL_LIT -> panel(facing, LampMode.LIT);
             case Level4Plan.PANEL_FLICKER -> panel(facing, LampMode.FLICKER);
             case Level4Plan.PANEL_DEAD -> panel(facing, LampMode.DEAD);
+            case Level4Plan.DIFFUSER -> diffuser(OfficeCeilingDiffuserBlock.Kind.SQUARE, Direction.Axis.X);
+            case Level4Plan.SLOT -> diffuser(OfficeCeilingDiffuserBlock.Kind.SLOT, Direction.from2DDataValue(facing).getAxis());
+            case Level4Plan.RETURN_GRILLE -> diffuser(OfficeCeilingDiffuserBlock.Kind.RETURN, Direction.Axis.X);
+            case Level4Plan.SPRINKLER -> fixture(OfficeCeilingFixtureBlock.Kind.SPRINKLER);
+            case Level4Plan.SMOKE -> fixture(OfficeCeilingFixtureBlock.Kind.SMOKE);
+            case Level4Plan.SPEAKER -> fixture(OfficeCeilingFixtureBlock.Kind.SPEAKER);
             default -> ModBlocks.OFFICE_CEILING.get().defaultBlockState();
         };
+    }
+
+    /** A ceiling tile with an air diffuser or grille ({@code axis}: the way a slot diffuser's slots run). */
+    private static BlockState diffuser(OfficeCeilingDiffuserBlock.Kind kind, Direction.Axis axis) {
+        return ModBlocks.OFFICE_CEILING_DIFFUSER.get().defaultBlockState()
+                .setValue(OfficeCeilingDiffuserBlock.KIND, kind)
+                .setValue(OfficeCeilingDiffuserBlock.AXIS, axis);
+    }
+
+    /** A ceiling tile with a sprinkler head, smoke detector or speaker grille. */
+    private static BlockState fixture(OfficeCeilingFixtureBlock.Kind kind) {
+        return ModBlocks.OFFICE_CEILING_FIXTURE.get().defaultBlockState().setValue(OfficeCeilingFixtureBlock.KIND, kind);
     }
 
     static BlockState panel(int facing, LampMode mode) {
@@ -280,10 +333,15 @@ public final class Level4Layout extends LevelLayout {
                 out.set(floor + 1, ModBlocks.OFFICE_GLASS.get().defaultBlockState());
                 fill(floor + 2, floor + 3, ModBlocks.OFFICE_GLASS_BLINDS.get().defaultBlockState(), out);
             }
+            case Level4Plan.STYLE_GLAZED -> {
+                out.set(floor + 1, ModBlocks.OFFICE_WALL_BASE.get().defaultBlockState());
+                fill(floor + 2, floor + 3, ModBlocks.OFFICE_GLASS_BLINDS.get().defaultBlockState(), out);
+            }
             default -> out.set(floor + 1, ModBlocks.OFFICE_WALL_BASE.get().defaultBlockState());
         }
         // Glass walls stop under a strip of drywall (the bulkhead the glass hangs from).
-        int from = style == Level4Plan.STYLE_GLASS || style == Level4Plan.STYLE_BLINDS ? floor + 4 : floor + 2;
+        boolean glass = style == Level4Plan.STYLE_GLASS || style == Level4Plan.STYLE_BLINDS || style == Level4Plan.STYLE_GLAZED;
+        int from = glass ? floor + 4 : floor + 2;
         fill(from, ceilingY() - 1, wall, out);
     }
 
@@ -308,7 +366,13 @@ public final class Level4Layout extends LevelLayout {
         fill(floor + 3, ceilingY() - 1, ModBlocks.OFFICE_WALL.get().defaultBlockState(), out);
     }
 
-    /** Things hung in the air in front of a wall: whiteboards, call buttons, cameras, plaques. */
+    /**
+     * Things hung on the wall (in the air of this column, against the wall beside it), each at the
+     * height its model is made for: switches, sockets and extinguishers in the first block above the
+     * floor (an extinguisher's sign reaches into the block above), thermostats, call points,
+     * whiteboards, notice boards and call buttons at eye height, clocks and exit signs higher up,
+     * cameras just under the ceiling.
+     */
     private void placeDeco(long c, Column out) {
         int deco = Level4Plan.deco(c);
         if (deco == Level4Plan.DECO_NONE) {
@@ -321,9 +385,32 @@ public final class Level4Layout extends LevelLayout {
             case Level4Plan.DECO_ELEVATOR_PANEL -> out.set(floor + 2, faced(ModBlocks.ELEVATOR_PANEL.get(), facing));
             case Level4Plan.DECO_CCTV -> out.set(floor + 4, faced(ModBlocks.CCTV_CAMERA.get(), facing));
             case Level4Plan.DECO_PLAQUE -> out.set(floor + 2, faced(ModBlocks.OFFICE_PLAQUE.get(), facing));
+            case Level4Plan.DECO_EXIT -> {
+                int v = Level4Plan.decoVariant(c);
+                OfficeExitSignBlock.Arrow arrow = switch (v & 3) {
+                    case Level4Plan.ARROW_LEFT -> OfficeExitSignBlock.Arrow.LEFT;
+                    case Level4Plan.ARROW_RIGHT -> OfficeExitSignBlock.Arrow.RIGHT;
+                    default -> OfficeExitSignBlock.Arrow.NONE;
+                };
+                // Just over a door (2 tall), or one higher over a 3-tall doorway.
+                int y = (v & Level4Plan.EXIT_HIGH) != 0 ? floor + 4 : floor + 3;
+                out.set(y, faced(ModBlocks.OFFICE_EXIT_SIGN.get(), facing).setValue(OfficeExitSignBlock.ARROW, arrow));
+            }
+            case Level4Plan.DECO_EXTINGUISHER -> out.set(floor + 1, faced(ModBlocks.OFFICE_EXTINGUISHER.get(), facing));
+            case Level4Plan.DECO_SWITCH -> out.set(floor + 1, plate(OfficeWallPlateBlock.Kind.SWITCH, facing));
+            case Level4Plan.DECO_SOCKET -> out.set(floor + 1, plate(OfficeWallPlateBlock.Kind.SOCKET, facing));
+            case Level4Plan.DECO_THERMOSTAT -> out.set(floor + 2, plate(OfficeWallPlateBlock.Kind.THERMOSTAT, facing));
+            case Level4Plan.DECO_CALL_POINT -> out.set(floor + 2, plate(OfficeWallPlateBlock.Kind.CALL_POINT, facing));
+            case Level4Plan.DECO_NOTICE -> out.set(floor + 2, faced(ModBlocks.OFFICE_NOTICE_BOARD.get(), facing));
+            case Level4Plan.DECO_CLOCK -> out.set(floor + 3, faced(ModBlocks.OFFICE_CLOCK.get(), facing));
             default -> {
             }
         }
+    }
+
+    /** A small plate on the wall: light switch, thermostat, fire-alarm call point or socket. */
+    static BlockState plate(OfficeWallPlateBlock.Kind kind, Direction facing) {
+        return faced(ModBlocks.OFFICE_WALL_PLATE.get(), facing).setValue(OfficeWallPlateBlock.KIND, kind);
     }
 
     /** A cubicle partition joined to the sides set in {@code bits} (bit = 2D data value). */
@@ -335,9 +422,21 @@ public final class Level4Layout extends LevelLayout {
                 .setValue(CubiclePartitionBlock.EAST, (bits & 8) != 0);
     }
 
-    /** The open, bright floor around an exit stairwell (outside its 11x11 tower). */
-    private void fillClearing(int dx, int dz, Column out) {
+    /**
+     * The open, bright floor around an exit stairwell (outside its 11x11 tower), with an
+     * extinguisher and a fire-alarm call point on the tower wall, two blocks either side of its door.
+     */
+    private void fillClearing(long seed, int exitX, int exitZ, int dx, int dz, Column out) {
         out.set(floorY(), ModBlocks.OFFICE_CARPET.get().defaultBlockState());
+        Direction door = stairwellDoorSide(seed, exitX, exitZ);
+        Direction side = door.getClockWise();
+        int outward = dx * door.getStepX() + dz * door.getStepZ();
+        int lateral = dx * side.getStepX() + dz * side.getStepZ();
+        if (outward == STAIRWELL_RADIUS + 1 && lateral == -2) {
+            out.set(floorY() + 1, faced(ModBlocks.OFFICE_EXTINGUISHER.get(), door));
+        } else if (outward == STAIRWELL_RADIUS + 1 && lateral == 2) {
+            out.set(floorY() + 2, plate(OfficeWallPlateBlock.Kind.CALL_POINT, door));
+        }
         int ax = Math.abs(dx);
         int az = Math.abs(dz);
         // A ring of lit panels two blocks out from the stairwell walls, two pairs per side.

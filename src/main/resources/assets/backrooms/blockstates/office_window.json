@@ -1,33 +1,123 @@
 {
   "variants": {
-    "facing=north,half=lower": {
-      "model": "backrooms:block/office_window_lower"
+    "facing=north,half=lower,pane=single": {
+      "model": "backrooms:block/office_window_lower_single"
     },
-    "facing=east,half=lower": {
-      "model": "backrooms:block/office_window_lower",
+    "facing=east,half=lower,pane=single": {
+      "model": "backrooms:block/office_window_lower_single",
       "y": 90
     },
-    "facing=south,half=lower": {
-      "model": "backrooms:block/office_window_lower",
+    "facing=south,half=lower,pane=single": {
+      "model": "backrooms:block/office_window_lower_single",
       "y": 180
     },
-    "facing=west,half=lower": {
-      "model": "backrooms:block/office_window_lower",
+    "facing=west,half=lower,pane=single": {
+      "model": "backrooms:block/office_window_lower_single",
       "y": 270
     },
-    "facing=north,half=upper": {
-      "model": "backrooms:block/office_window_upper"
+    "facing=north,half=lower,pane=left": {
+      "model": "backrooms:block/office_window_lower_left"
     },
-    "facing=east,half=upper": {
-      "model": "backrooms:block/office_window_upper",
+    "facing=east,half=lower,pane=left": {
+      "model": "backrooms:block/office_window_lower_left",
       "y": 90
     },
-    "facing=south,half=upper": {
-      "model": "backrooms:block/office_window_upper",
+    "facing=south,half=lower,pane=left": {
+      "model": "backrooms:block/office_window_lower_left",
       "y": 180
     },
-    "facing=west,half=upper": {
-      "model": "backrooms:block/office_window_upper",
+    "facing=west,half=lower,pane=left": {
+      "model": "backrooms:block/office_window_lower_left",
+      "y": 270
+    },
+    "facing=north,half=lower,pane=mid": {
+      "model": "backrooms:block/office_window_lower_mid"
+    },
+    "facing=east,half=lower,pane=mid": {
+      "model": "backrooms:block/office_window_lower_mid",
+      "y": 90
+    },
+    "facing=south,half=lower,pane=mid": {
+      "model": "backrooms:block/office_window_lower_mid",
+      "y": 180
+    },
+    "facing=west,half=lower,pane=mid": {
+      "model": "backrooms:block/office_window_lower_mid",
+      "y": 270
+    },
+    "facing=north,half=lower,pane=right": {
+      "model": "backrooms:block/office_window_lower_right"
+    },
+    "facing=east,half=lower,pane=right": {
+      "model": "backrooms:block/office_window_lower_right",
+      "y": 90
+    },
+    "facing=south,half=lower,pane=right": {
+      "model": "backrooms:block/office_window_lower_right",
+      "y": 180
+    },
+    "facing=west,half=lower,pane=right": {
+      "model": "backrooms:block/office_window_lower_right",
+      "y": 270
+    },
+    "facing=north,half=upper,pane=single": {
+      "model": "backrooms:block/office_window_upper_single"
+    },
+    "facing=east,half=upper,pane=single": {
+      "model": "backrooms:block/office_window_upper_single",
+      "y": 90
+    },
+    "facing=south,half=upper,pane=single": {
+      "model": "backrooms:block/office_window_upper_single",
+      "y": 180
+    },
+    "facing=west,half=upper,pane=single": {
+      "model": "backrooms:block/office_window_upper_single",
+      "y": 270
+    },
+    "facing=north,half=upper,pane=left": {
+      "model": "backrooms:block/office_window_upper_left"
+    },
+    "facing=east,half=upper,pane=left": {
+      "model": "backrooms:block/office_window_upper_left",
+      "y": 90
+    },
+    "facing=south,half=upper,pane=left": {
+      "model": "backrooms:block/office_window_upper_left",
+      "y": 180
+    },
+    "facing=west,half=upper,pane=left": {
+      "model": "backrooms:block/office_window_upper_left",
+      "y": 270
+    },
+    "facing=north,half=upper,pane=mid": {
+      "model": "backrooms:block/office_window_upper_mid"
+    },
+    "facing=east,half=upper,pane=mid": {
+      "model": "backrooms:block/office_window_upper_mid",
+      "y": 90
+    },
+    "facing=south,half=upper,pane=mid": {
+      "model": "backrooms:block/office_window_upper_mid",
+      "y": 180
+    },
+    "facing=west,half=upper,pane=mid": {
+      "model": "backrooms:block/office_window_upper_mid",
+      "y": 270
+    },
+    "facing=north,half=upper,pane=right": {
+      "model": "backrooms:block/office_window_upper_right"
+    },
+    "facing=east,half=upper,pane=right": {
+      "model": "backrooms:block/office_window_upper_right",
+      "y": 90
+    },
+    "facing=south,half=upper,pane=right": {
+      "model": "backrooms:block/office_window_upper_right",
+      "y": 180
+    },
+    "facing=west,half=upper,pane=right": {
+      "model": "backrooms:block/office_window_upper_right",
       "y": 270
     }
   }

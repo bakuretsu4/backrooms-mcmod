@@ -1,0 +1,143 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "backrooms:block/office_ceiling",
+    "tile": "backrooms:block/office_ceiling",
+    "grille": "backrooms:block/l4_return_grille"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#tile",
+          "cullface": "north"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#tile",
+          "cullface": "south"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#tile",
+          "cullface": "east"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#tile",
+          "cullface": "west"
+        },
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#tile",
+          "cullface": "up"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#tile",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        2.5,
+        -0.25,
+        2.5
+      ],
+      "to": [
+        13.5,
+        0,
+        13.5
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#grille"
+        },
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            0.5
+          ],
+          "texture": "#grille"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            0.5
+          ],
+          "texture": "#grille"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            0.5
+          ],
+          "texture": "#grille"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            0.5
+          ],
+          "texture": "#grille"
+        }
+      }
+    }
+  ]
+}

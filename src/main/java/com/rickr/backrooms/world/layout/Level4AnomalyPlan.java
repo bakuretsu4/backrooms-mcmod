@@ -28,6 +28,20 @@ import org.jetbrains.annotations.Nullable;
  *   <li><b>{@link #CUBICLES}</b> (about 1 cubicle zone in 16): the zone's core becomes the way into
  *       Level 4.3, a dim white series of hallways that opens onto an endless cubicle field.</li>
  * </ul>
+ * And three quiet ones that do nothing at all; they are only wrong, in a place where nothing else
+ * is (each in about 1 zone in 20 to 30, so together about one zone in eight has one):
+ * <ul>
+ *   <li><b>{@link #OCCUPIED_FLOOR}</b> (open-plan zones): a 16 x 16 block of floor around one
+ *       column that was never abandoned. Four neat pods of desks, every one with its monitor and
+ *       its chair pushed in, every light working, not a tile missing, not a dent in the carpet.
+ *       Nobody there.</li>
+ *   <li><b>{@link #INSIDE_OUT_ROOM}</b> (office zones): one small office behind an ordinary door
+ *       whose carpet runs up the walls and across the ceiling, while the floor is ceiling tiles with
+ *       a light panel glowing up out of it.</li>
+ *   <li><b>{@link #COOLER_ROW}</b> (open-plan zones): a short drywall corridor standing on its own in
+ *       the open floor, every light in it on, lined with identical water coolers at perfectly even
+ *       spacing, all of them empty, to a dead end where one last cooler is full under an EXIT sign.</li>
+ * </ul>
  * Zones with a safe room or near an exit stairwell never get one (they stay plain open floor), and
  * every site stays inside its own zone, so the zone's ring aisle and borders (and with them every
  * way through the level) are never touched.
@@ -39,13 +53,22 @@ public final class Level4AnomalyPlan {
     public static final String WINDOW = "level_4/window";
     public static final String VANISHING_ELEVATOR = "level_4/vanishing_elevator";
     public static final String CUBICLES = "level_4/cubicles";
-    public static final List<String> KINDS = List.of(LOOPING_STAIRWELL, WINDOW, VANISHING_ELEVATOR, CUBICLES);
+    public static final String OCCUPIED_FLOOR = "level_4/occupied_floor";
+    public static final String INSIDE_OUT_ROOM = "level_4/inside_out_room";
+    public static final String COOLER_ROW = "level_4/cooler_row";
+    public static final List<String> KINDS = List.of(LOOPING_STAIRWELL, WINDOW, VANISHING_ELEVATOR, CUBICLES,
+            OCCUPIED_FLOOR, INSIDE_OUT_ROOM, COOLER_ROW);
 
     // Chances, per zone of the right kind.
     private static final double ELEVATOR_CHANCE = 0.35;   // of lobby zones (15% of all zones)
     private static final double CUBICLES_CHANCE = 0.06;   // of cubicle zones (25%): ~1 zone in 65 overall
     private static final double STAIRWELL_CHANCE = 0.15;  // of open-plan zones (30%)
     private static final double WINDOW_CHANCE = 0.15;     // of zones with a window run looking in
+    // The quiet ones, only in zones left without a site by everything above (so the four older
+    // kinds stay exactly where they were in existing worlds).
+    private static final double OCCUPIED_CHANCE = 0.20;   // of open-plan zones left: ~1 zone in 23
+    private static final double COOLER_ROW_CHANCE = 0.15; // of open-plan zones left: ~1 zone in 30
+    private static final double INSIDE_OUT_CHANCE = 0.20; // of office zones left: ~1 zone in 18
 
     private static final int CELL = Level4Plan.CELL;
     private static final int CORE_LO = Level4Plan.CORE_LO;
@@ -125,6 +148,25 @@ public final class Level4AnomalyPlan {
             }
             if (west || north) {
                 return windowSite(x0, z0, west, salt);
+            }
+        }
+        // The quiet ones, where nothing else is.
+        double q = Hash.unit(Hash.mix(h ^ 0x99));
+        switch (Level4Plan.zoneKind(seed, cx, cz)) {
+            case Level4Plan.OPEN -> {
+                if (q < OCCUPIED_CHANCE) {
+                    return occupiedSite(x0, z0, salt);
+                }
+                if (q < OCCUPIED_CHANCE + COOLER_ROW_CHANCE) {
+                    return coolerRowSite(x0, z0, salt);
+                }
+            }
+            case Level4Plan.OFFICES -> {
+                if (q < INSIDE_OUT_CHANCE) {
+                    return insideOutSite(seed, cx, cz, salt);
+                }
+            }
+            default -> {
             }
         }
         return null;
@@ -268,8 +310,9 @@ public final class Level4AnomalyPlan {
     private static final int WINDOW_DEPTH = 10;
 
     private static AnomalySite windowSite(int x0, int z0, boolean west, long salt) {
-        // A multiple of 4 along the run: the radiators leave a gap there (Level4Plan#radiator), so
-        // nothing stands between you and the glass.
+        // A multiple of 4 along the run (where the old radiator groups left a gap). The perimeter
+        // casing now runs in front of every pane, but it is low enough to lean over: you can still
+        // get within the Window's reach.
         int along = 12 + 4 * Hash.range(Hash.mix(salt ^ 4), 7);
         if (west) {
             return new AnomalySite(WINDOW, x0, z0 + along - WINDOW_HALF_WIDTH, x0 + WINDOW_DEPTH, z0 + along + WINDOW_HALF_WIDTH,
@@ -602,6 +645,153 @@ public final class Level4AnomalyPlan {
     }
 
     // ==========================================================================================
+    // The Occupied Floor
+    // ==========================================================================================
+
+    /*
+     * Four 8 x 8 squares of open floor between columns, around the column in the middle: the site is
+     * local 1..15 of a 16 x 16 square whose corners are columns (the middle one at 8, 8). In each
+     * square two facing rows of five desks (offsets 2..6 along the rows, rows 3 and 4 across), a
+     * chair pushed in at every desk (rows 2 and 5); the walkways along the columns stay free. The
+     * site's facing says which way the rows run: EAST = along x, SOUTH = along z.
+     */
+
+    // Occupied-floor cells.
+    public static final int O_FLOOR = 0;
+    public static final int O_DESK = 1;
+    public static final int O_CHAIR = 2;
+    /** The square column in the middle (the plan builds it). */
+    public static final int O_COLUMN = 3;
+
+    private static AnomalySite occupiedSite(int x0, int z0, long salt) {
+        boolean alongX = Hash.unit(Hash.mix(salt ^ 10)) < 0.5;
+        // Column lines at local 4, 12 or 20 (columns stand at local % 8 == 4): the whole square stays
+        // within local 5..35, clear of the ring and of the row of small offices some open floors have.
+        int bx = x0 + 4 + 8 * Hash.range(Hash.mix(salt ^ 11), 3);
+        int bz = z0 + 4 + 8 * Hash.range(Hash.mix(salt ^ 12), 3);
+        return new AnomalySite(OCCUPIED_FLOOR, bx + 1, bz + 1, bx + 15, bz + 15, bx + 8, bz + 8,
+                alongX ? EAST : SOUTH, salt);
+    }
+
+    /** What stands at (x, z) of an Occupied Floor site, packed: cell in bits 0-7, world facing in bits 8-9. */
+    public static int occupiedCell(AnomalySite site, int x, int z) {
+        int ox = x - site.minX() + 1; // 1..15
+        int oz = z - site.minZ() + 1;
+        if (ox == 8 && oz == 8) {
+            return O_COLUMN;
+        }
+        boolean alongX = site.facing() == EAST;
+        int a = (alongX ? ox : oz) % 8;   // along the desk rows
+        int b = (alongX ? oz : ox) % 8;   // across them
+        if (a < 2 || a > 6) {
+            return O_FLOOR;
+        }
+        int plusB = alongX ? SOUTH : EAST;
+        return switch (b) {
+            case 2 -> O_CHAIR | plusB << 8;             // looking at the desk
+            case 3 -> O_DESK | opposite(plusB) << 8;    // its front toward the chair
+            case 4 -> O_DESK | plusB << 8;
+            case 5 -> O_CHAIR | opposite(plusB) << 8;
+            default -> O_FLOOR;
+        };
+    }
+
+    // ==========================================================================================
+    // The Inside-Out Room
+    // ==========================================================================================
+
+    /*
+     * The site is the floor of one small office inside its walls (Level4Plan#officeRowRoom); the
+     * anchor is its door (in the wall, outside the site) and facing the way in. The columns along
+     * the room's walls are lined with carpet from floor to ceiling, except the one just inside the
+     * door, so you step in onto ceiling tiles and see carpet all round and overhead.
+     */
+
+    private static AnomalySite insideOutSite(long seed, int cx, int cz, long salt) {
+        int rowId = 1 + Hash.range(Hash.mix(salt ^ 15), 4);
+        int first = Hash.range(Hash.mix(salt ^ 16), 3);
+        for (int i = 0; i < 3; i++) {
+            int[] room = Level4Plan.officeRowRoom(seed, cx, cz, rowId, first + i);
+            if (room != null) {
+                return new AnomalySite(INSIDE_OUT_ROOM, room[0], room[1], room[2], room[3], room[4], room[5], room[6], salt);
+            }
+        }
+        return null;
+    }
+
+    /** True for the columns of an Inside-Out Room lined with carpet: along its walls, except just inside the door. */
+    public static boolean insideOutLined(AnomalySite site, int x, int z) {
+        if (x == site.anchorX() + stepX(site.facing()) && z == site.anchorZ() + stepZ(site.facing())) {
+            return false;
+        }
+        return x == site.minX() || x == site.maxX() || z == site.minZ() || z == site.maxZ();
+    }
+
+    /**
+     * The light panel lying in the floor of an Inside-Out Room: a pair across the middle of the room
+     * (side by side as you look in). Returns the facing of the panel half at (x, z) (toward its
+     * partner), or -1 when (x, z) has none.
+     */
+    public static int insideOutLight(AnomalySite site, int x, int z) {
+        boolean inAlongZ = site.facing() == NORTH || site.facing() == SOUTH;
+        int lo = inAlongZ ? site.minX() : site.minZ();
+        int hi = inAlongZ ? site.maxX() : site.maxZ();
+        int first = lo + (hi - lo) / 2;
+        int row = inAlongZ ? (site.minZ() + site.maxZ()) / 2 : (site.minX() + site.maxX()) / 2;
+        int along = inAlongZ ? x : z;
+        int across = inAlongZ ? z : x;
+        if (across != row || (along != first && along != first + 1)) {
+            return -1;
+        }
+        int plus = inAlongZ ? EAST : SOUTH;
+        return along == first ? plus : opposite(plus);
+    }
+
+    // ==========================================================================================
+    // The Cooler Row
+    // ==========================================================================================
+
+    /*
+     * A corridor stub in the stair core's kind of frame (StairFrame): lx 0..4 across, lz 0..15 from
+     * the open end to the back wall; the site adds a 1-block strip of plain floor around it.
+     *   lx 0, 4 and lz 15   drywall
+     *   lx 1, 3             a water cooler at every even lz from 2 to 12, facing the middle (empty)
+     *   lx 2                the walkway; at lz 14 the last cooler (full), facing back, an EXIT sign
+     *                       on the wall above it
+     * A lit panel pair over the walkway every 4 blocks (lz 1-2, 5-6, 9-10, 13-14).
+     */
+
+    public static final int ROW_W = 5;
+    public static final int ROW_D = 16;
+
+    // Cooler-row cells.
+    public static final int CR_MOAT = 0;
+    public static final int CR_WALL = 1;
+    public static final int CR_FLOOR = 2;
+    public static final int CR_COOLER = 3;
+    public static final int CR_LAST_COOLER = 4;
+
+    private static AnomalySite coolerRowSite(int x0, int z0, long salt) {
+        int facing = Hash.range(Hash.mix(salt ^ 13), 4); // the way the open end looks out
+        boolean northSouth = facing == NORTH || facing == SOUTH;
+        int w = northSouth ? ROW_W : ROW_D;   // size along x
+        int d = northSouth ? ROW_D : ROW_W;   // size along z
+        // Corridor plus its strip of floor within local 6..34, like the stair core.
+        int bx = x0 + 7 + Hash.range(Hash.mix(salt ^ 14), 34 - w - 7 + 1);
+        int bz = z0 + 7 + Hash.range(Hash.mix(salt ^ 17), 34 - d - 7 + 1);
+        StairFrame frame = StairFrame.of(bx, bz, bx + w - 1, bz + d - 1, facing);
+        return new AnomalySite(COOLER_ROW, bx - 1, bz - 1, bx + w, bz + d, frame.worldX(2, 0), frame.worldZ(2, 0), facing, salt);
+    }
+
+    /** What local column (lx, lz) of a cooler row (frame: {@link #stairFrame}) is. */
+    public static int coolerCell(int lx, int lz) {
+        if (lx < 0 || lx >= ROW_W || lz < 0 || lz >= ROW_D) return CR_MOAT;
+        if (lx == 0 || lx == ROW_W - 1 || lz == ROW_D - 1) return CR_WALL;
+        if (lx == 2) return lz == ROW_D - 2 ? CR_LAST_COOLER : CR_FLOOR;
+        return lz >= 2 && lz <= ROW_D - 4 && lz % 2 == 0 ? CR_COOLER : CR_FLOOR;
+    }
+
+    // ==========================================================================================
     // Walking
     // ==========================================================================================
 
@@ -626,17 +816,36 @@ public final class Level4AnomalyPlan {
                 CubicleFrame f = cubicleFrame(site);
                 return cubicleWalkable(cubicleCell(f.u(x, z), f.v(x, z)) & 0xFF) ? 1 : 0;
             }
+            case OCCUPIED_FLOOR -> {
+                return (occupiedCell(site, x, z) & 0xFF) == O_FLOOR ? 1 : 0;
+            }
+            case INSIDE_OUT_ROOM -> {
+                return insideOutLined(site, x, z) ? 0 : 1;
+            }
+            case COOLER_ROW -> {
+                StairFrame f = stairFrame(site);
+                int cell = coolerCell(f.lx(x, z), f.lz(x, z));
+                return cell == CR_MOAT || cell == CR_FLOOR ? 1 : 0;
+            }
             default -> {
                 return -1;
             }
         }
     }
 
-    /** Arrivals (level changes, respawns) never land inside a stairwell, elevator car or Level 4.3. */
+    /**
+     * Arrivals (level changes, respawns) never land inside a stairwell, elevator car, Level 4.3, an
+     * Inside-Out Room, a cooler row or on the Occupied Floor's furniture.
+     */
     static boolean blocksArrival(AnomalySite site, int x, int z) {
         return switch (site.kind()) {
-            case LOOPING_STAIRWELL, CUBICLES -> true;
+            case LOOPING_STAIRWELL, CUBICLES, INSIDE_OUT_ROOM -> true;
             case VANISHING_ELEVATOR -> walkable(site, x, z) >= 0;
+            case OCCUPIED_FLOOR -> walkable(site, x, z) == 0;
+            case COOLER_ROW -> {
+                StairFrame f = stairFrame(site);
+                yield coolerCell(f.lx(x, z), f.lz(x, z)) != CR_MOAT;
+            }
             default -> false;
         };
     }

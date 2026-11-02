@@ -102,9 +102,16 @@ public final class AtmosphereGrade {
      */
     private static final Mood LEVEL_2 = new Mood(1.12f, 1.05f, 0.86f, 0.95f, 0.98f, 1.07f, 1.03f, 1.0f, 0.93f,
             0.005f, 0.005f, 0.009f, 0.075f, 0.080f, 0.100f, 10.0f, 0.02f, 0.28f, 0.50f, 0.18f, 0.010f);
-    /** Level 4: an empty office on a rainy night. Cold fluorescent blue-grey, quiet, faint blue air. */
-    private static final Mood LEVEL_4 = new Mood(1.0f, 1.05f, 0.80f, 0.90f, 0.95f, 1.08f, 0.99f, 1.0f, 1.04f,
-            0.012f, 0.014f, 0.022f, 0.11f, 0.12f, 0.16f, 9.0f, 0.028f, 0.36f, 0.36f, 0.14f, 0.008f);
+    /**
+     * Level 4: an empty office on a rainy night, lit mostly by its glowing windows. A cool neutral
+     * grade: blue-grey shadows, near-neutral highlights (white walls stay white, not blue), colour a
+     * little under the textures (0.84). The haze is subtle (from 12 blocks, at most 26%), so a
+     * big open floor recedes into dim blue-grey while the room you stand in stays clear. Contact
+     * shadows a bit stronger (0.42) to seat columns, partitions and the window perimeter on the
+     * carpet; the highlights roll off softly ({@link #ROLLOFF_4}).
+     */
+    private static final Mood LEVEL_4 = new Mood(1.0f, 1.04f, 0.84f, 0.93f, 0.97f, 1.06f, 0.99f, 1.0f, 1.02f,
+            0.014f, 0.016f, 0.022f, 0.10f, 0.11f, 0.14f, 12.0f, 0.020f, 0.26f, 0.42f, 0.12f, 0.008f);
     /**
      * The Poolrooms: chlorine and echoes. Teal shadows, cool soft highlights, a gentle wet glow.
      * Contrast a touch above neutral (1.04) and a lower black lift, so dim rooms read deep instead
@@ -210,6 +217,12 @@ public final class AtmosphereGrade {
     private static final Highlights ROLLOFF_37 = new Highlights(1.0f, 0.62f, 0.97f, 0.80f, 0.5f);
     /** The Poolrooms: skylights and the tiles right under the tubes roll off the same way, the bloom at half strength. */
     private static final Highlights ROLLOFF_POOLROOMS = new Highlights(1.0f, 0.62f, 0.96f, 0.84f, 0.5f);
+    /**
+     * Level 4: the window glass, lit troffer lenses and the wall right beside a window ease along
+     * the shoulder instead of clipping to flat white (the "washed out" look); the bloom starts at
+     * 0.86 and is a little softer, so the windows glow faintly through the camcorder optics.
+     */
+    private static final Highlights ROLLOFF_4 = new Highlights(1.0f, 0.62f, 0.96f, 0.86f, 0.6f);
 
     /** Fraction of the way to the target mood per frame at 60 fps (about two seconds to settle). */
     private static final float BLEND_PER_FRAME = 0.035f;
@@ -287,6 +300,9 @@ public final class AtmosphereGrade {
         BackroomsLevel floor = mc.level == null ? null : BackroomsLevel.fromDimension(mc.level.dimension());
         if (floor == BackroomsLevel.LEVEL_37) {
             return ROLLOFF_37;
+        }
+        if (floor == BackroomsLevel.LEVEL_4) {
+            return ROLLOFF_4;
         }
         return floor == BackroomsLevel.POOLROOMS ? ROLLOFF_POOLROOMS : CLIPPED;
     }

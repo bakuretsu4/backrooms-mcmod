@@ -1,6 +1,8 @@
 package com.rickr.backrooms.block;
 
+import java.util.Locale;
 import net.minecraft.core.Direction;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
@@ -13,29 +15,56 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 /**
- * A pane of Level 4's ribbon windows: dark rainy glass in an aluminium frame, with nothing
- * outside but night and rain. It is a solid block in the wall: only its FACING side shows glass
- * (rain running down it, animated), the back and the sides are plain painted wall, so a window wall
- * looks like an outer wall from the room and like an ordinary wall from behind.
+ * A pane of Level 4's ribbon windows: frosted "blacked-out" glass that still glows a cold grey,
+ * with rain running down it. It is a solid block in the wall: only its FACING side shows glass
+ * (animated rain streaks), the back and the sides are plain painted wall, so a window wall looks
+ * like an outer wall from the room and like an ordinary wall from behind.
  *
- * <p>HALF picks the frame: the LOWER pane has the sill rail at its bottom, the UPPER pane the head
- * rail at its top, so two stacked panes make one tall window. The block gives off block light:
- * that is the faint cold night glow on the floor and radiators near the windows, and because Level
- * 4's lighting curve turns block light into brightness, it is also what flashes white when
- * lightning strikes outside (see {@code ClientLighting} and {@code Level4Atmosphere}).
+ * <p>HALF picks the frame: the LOWER pane has the thin sill rail at its bottom, the UPPER pane the
+ * head rail at its top, so two stacked panes make one tall window. PANE places the thin aluminium
+ * mullions: real ribbon windows come in bays (here three blocks wide), with a mullion only where
+ * one bay meets the next, not on every block. The block gives off block light: that is the faint
+ * cold glow on the floor near the windows, and because Level 4's lighting curve turns block light
+ * into brightness, it is also what flashes white when lightning strikes outside (see
+ * {@code ClientLighting} and {@code Level4Atmosphere}).
  */
 public class OfficeWindowBlock extends Block {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
+    public static final EnumProperty<Pane> PANE = EnumProperty.create("pane", Pane.class);
+
+    /**
+     * Where this pane sits in its bay, seen from inside the room (standing in front of the glass,
+     * looking at it). "Left" is the viewer's left, which is the world direction
+     * {@code FACING.getClockWise()}. LEFT has a mullion on its left edge, RIGHT on its right edge,
+     * SINGLE (a one-block window) on both, MID on neither. A run of panes should start with LEFT
+     * (or SINGLE) and end with RIGHT (or SINGLE), so its ends are always framed.
+     */
+    public enum Pane implements StringRepresentable {
+        SINGLE, LEFT, MID, RIGHT;
+
+        /** The lowercase name used in blockstate files ("pane=mid"). */
+        @Override
+        public String getSerializedName() {
+            return name().toLowerCase(Locale.ROOT);
+        }
+
+        /** The same pane seen in a mirror (left and right swap). */
+        public Pane mirrored() {
+            return this == LEFT ? RIGHT : this == RIGHT ? LEFT : this;
+        }
+    }
 
     public OfficeWindowBlock(Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(HALF, DoubleBlockHalf.LOWER));
+        // MID is the default so windows saved before panes existed load without extra mullions.
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(HALF, DoubleBlockHalf.LOWER)
+                .setValue(PANE, Pane.MID));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, HALF);
+        builder.add(FACING, HALF, PANE);
     }
 
     /** In creative: the glass faces you; placed on top of another pane it becomes the upper half. */
@@ -52,8 +81,12 @@ public class OfficeWindowBlock extends Block {
         return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
     }
 
+    /** A mirror turns the pane round and swaps its left and right mullions. */
     @Override
     protected BlockState mirror(BlockState state, Mirror mirror) {
-        return state.rotate(mirror.getRotation(state.getValue(FACING)));
+        if (mirror == Mirror.NONE) {
+            return state;
+        }
+        return state.rotate(mirror.getRotation(state.getValue(FACING))).setValue(PANE, state.getValue(PANE).mirrored());
     }
 }

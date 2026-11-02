@@ -1,0 +1,128 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/office_wall_plates",
+    "p": "backrooms:block/office_wall_plates"
+  },
+  "elements": [
+    {
+      "from": [
+        6,
+        11,
+        15.5
+      ],
+      "to": [
+        10,
+        15,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            8.0,
+            8.0
+          ],
+          "texture": "#p"
+        },
+        "east": {
+          "uv": [
+            0.3,
+            0.3,
+            0.6,
+            0.6
+          ],
+          "texture": "#p"
+        },
+        "west": {
+          "uv": [
+            0.3,
+            0.3,
+            0.6,
+            0.6
+          ],
+          "texture": "#p"
+        },
+        "up": {
+          "uv": [
+            0.3,
+            0.3,
+            0.6,
+            0.6
+          ],
+          "texture": "#p"
+        },
+        "down": {
+          "uv": [
+            0.3,
+            0.3,
+            0.6,
+            0.6
+          ],
+          "texture": "#p"
+        }
+      }
+    },
+    {
+      "from": [
+        7.375,
+        11.875,
+        15.3
+      ],
+      "to": [
+        8.625,
+        14.125,
+        15.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.75,
+            1.75,
+            5.25,
+            6.25
+          ],
+          "texture": "#p"
+        },
+        "east": {
+          "uv": [
+            2.75,
+            1.75,
+            5.25,
+            6.25
+          ],
+          "texture": "#p"
+        },
+        "west": {
+          "uv": [
+            2.75,
+            1.75,
+            5.25,
+            6.25
+          ],
+          "texture": "#p"
+        },
+        "up": {
+          "uv": [
+            2.75,
+            1.75,
+            5.25,
+            6.25
+          ],
+          "texture": "#p"
+        },
+        "down": {
+          "uv": [
+            2.75,
+            1.75,
+            5.25,
+            6.25
+          ],
+          "texture": "#p"
+        }
+      }
+    }
+  ]
+}

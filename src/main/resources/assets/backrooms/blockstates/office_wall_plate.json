@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "facing=north,kind=switch": {
+      "model": "backrooms:block/office_wall_plate_switch"
+    },
+    "facing=north,kind=thermostat": {
+      "model": "backrooms:block/office_wall_plate_thermostat"
+    },
+    "facing=north,kind=call_point": {
+      "model": "backrooms:block/office_wall_plate_call_point"
+    },
+    "facing=north,kind=socket": {
+      "model": "backrooms:block/office_wall_plate_socket"
+    },
+    "facing=east,kind=switch": {
+      "model": "backrooms:block/office_wall_plate_switch",
+      "y": 90
+    },
+    "facing=east,kind=thermostat": {
+      "model": "backrooms:block/office_wall_plate_thermostat",
+      "y": 90
+    },
+    "facing=east,kind=call_point": {
+      "model": "backrooms:block/office_wall_plate_call_point",
+      "y": 90
+    },
+    "facing=east,kind=socket": {
+      "model": "backrooms:block/office_wall_plate_socket",
+      "y": 90
+    },
+    "facing=south,kind=switch": {
+      "model": "backrooms:block/office_wall_plate_switch",
+      "y": 180
+    },
+    "facing=south,kind=thermostat": {
+      "model": "backrooms:block/office_wall_plate_thermostat",
+      "y": 180
+    },
+    "facing=south,kind=call_point": {
+      "model": "backrooms:block/office_wall_plate_call_point",
+      "y": 180
+    },
+    "facing=south,kind=socket": {
+      "model": "backrooms:block/office_wall_plate_socket",
+      "y": 180
+    },
+    "facing=west,kind=switch": {
+      "model": "backrooms:block/office_wall_plate_switch",
+      "y": 270
+    },
+    "facing=west,kind=thermostat": {
+      "model": "backrooms:block/office_wall_plate_thermostat",
+      "y": 270
+    },
+    "facing=west,kind=call_point": {
+      "model": "backrooms:block/office_wall_plate_call_point",
+      "y": 270
+    },
+    "facing=west,kind=socket": {
+      "model": "backrooms:block/office_wall_plate_socket",
+      "y": 270
+    }
+  }
+}

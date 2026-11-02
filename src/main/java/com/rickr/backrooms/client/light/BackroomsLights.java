@@ -177,6 +177,15 @@ public final class BackroomsLights {
         return veilActive;
     }
 
+    /**
+     * Every fixture light around you, nearest first (re-sorted and power-updated each tick). Level
+     * 4's troffers are read from here by {@link Level4Lights}, which lights them as downward area
+     * lights instead of the usual point lights. Do not modify.
+     */
+    static List<FixtureLight> fixtures() {
+        return lights;
+    }
+
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
@@ -816,12 +825,17 @@ public final class BackroomsLights {
         double range = level0 ? quality.lightRange * LEVEL0_RANGE_SCALE : lightRange(floor);
         double maxSq = range * range;
         boolean blackedOut = FixturePower.mainsPower() <= 0.0f;
+        boolean level4 = floor == BackroomsLevel.LEVEL_4;
         for (FixtureLight light : lights) {
             if (light.distSq > maxSq) {
                 break; // sorted nearest first
             }
             // In a full blackout a dead lamp would only cost GPU time: leave it out.
             if (blackedOut && light.level <= 0.0f) {
+                continue;
+            }
+            // Level 4's troffers are soft downlights with their own budget (Level4Lights).
+            if (level4 && light.type == FixtureType.OFFICE_PANEL) {
                 continue;
             }
             CANDIDATES.add(light);

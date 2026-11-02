@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "kind=sprinkler": {
+      "model": "backrooms:block/office_ceiling_fixture_sprinkler"
+    },
+    "kind=smoke": {
+      "model": "backrooms:block/office_ceiling_fixture_smoke"
+    },
+    "kind=speaker": {
+      "model": "backrooms:block/office_ceiling_fixture_speaker"
+    }
+  }
+}

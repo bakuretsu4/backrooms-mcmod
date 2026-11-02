@@ -79,10 +79,11 @@ public final class ClientSettings {
      * the pool water traces a reflection for every water pixel.
      */
     public enum Quality {
-        //   lamp lights, light range, glow chain,          water reflection steps, sun beams, opening glows
-        LOW(12, 20, "camcorder_low", 0, 6, 3),
-        MEDIUM(20, 24, "camcorder_medium", 10, 12, 6),
-        HIGH(32, 28, "camcorder", 18, 20, 12);
+        //   lamp lights, light range, glow chain,          water reflection steps, sun beams, opening glows,
+        //   Level 4 window lights, Level 4 troffer downlights
+        LOW(12, 20, "camcorder_low", 0, 6, 3, 4, 4),
+        MEDIUM(20, 24, "camcorder_medium", 10, 12, 6, 7, 8),
+        HIGH(32, 28, "camcorder", 18, 20, 12, 10, 14);
 
         /** Most Veil lamp lights at once. */
         public final int maxLights;
@@ -99,14 +100,24 @@ public final class ClientSettings {
          * the niche and the soft bounce in front of it, client/light/SunBeams): two more lights each.
          */
         public final int maxSunGlows;
+        /**
+         * Most Level 4 window-run lights at once (shadowed area lights: the soft daylight falling
+         * in from the ribbon windows, client/light/Level4Lights).
+         */
+        public final int maxL4Windows;
+        /** Most Level 4 lit-troffer downlights at once (small shadowed area lights under the lit panels). */
+        public final int maxL4Troffers;
 
-        Quality(int maxLights, int lightRange, String postChain, int reflectionSteps, int maxSunBeams, int maxSunGlows) {
+        Quality(int maxLights, int lightRange, String postChain, int reflectionSteps, int maxSunBeams, int maxSunGlows,
+                int maxL4Windows, int maxL4Troffers) {
             this.maxLights = maxLights;
             this.lightRange = lightRange;
             this.postChain = postChain;
             this.reflectionSteps = reflectionSteps;
             this.maxSunBeams = maxSunBeams;
             this.maxSunGlows = maxSunGlows;
+            this.maxL4Windows = maxL4Windows;
+            this.maxL4Troffers = maxL4Troffers;
         }
     }
 

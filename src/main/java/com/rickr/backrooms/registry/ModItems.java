@@ -205,6 +205,9 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CEILING);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CEILING_MISSING);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CEILING_HATCH);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CEILING_STAINED);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CEILING_DIFFUSER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CEILING_FIXTURE);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_PANEL);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_WINDOW);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_GLASS);
@@ -217,6 +220,7 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.ELEVATOR_DOOR);
         ITEMS.registerSimpleBlockItem(ModBlocks.CUBICLE_PARTITION);
         ITEMS.registerSimpleBlockItem(ModBlocks.RADIATOR);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_PERIMETER);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_DESK);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_DESK_PC);
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CHAIR);
@@ -234,6 +238,11 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_PLAQUE);
         ITEMS.registerSimpleBlockItem(ModBlocks.VENDING_MACHINE);
         ITEMS.registerSimpleBlockItem(ModBlocks.WATER_COOLER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_EXIT_SIGN);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_EXTINGUISHER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_WALL_PLATE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_NOTICE_BOARD);
+        ITEMS.registerSimpleBlockItem(ModBlocks.OFFICE_CLOCK);
         ITEMS.registerSimpleBlockItem(ModBlocks.SUPPLY_CABINET);
         // Level 94 props (the vehicle hull has no item: it is an invisible filler placed with the vehicle).
         ITEMS.registerSimpleBlockItem(ModBlocks.L94_SIREN_POLE);

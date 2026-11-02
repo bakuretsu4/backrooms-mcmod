@@ -42,7 +42,8 @@ import org.jetbrains.annotations.Nullable;
  * streetlamps (cold green-white near mercury ones); see {@link #applyLevel9Fill}.
  *
  * <p>Level 4 (the Abandoned Office) has its own cold fill, which also carries the lightning flash
- * of its storm; see {@link Level4Atmosphere}.
+ * of its storm; see {@link Level4Atmosphere}. With Veil the windows and the lit troffers are
+ * shadowed area lights (client/light/Level4Lights); its lit troffer lenses are capped below white.
  *
  * <p>Level 39 (Megalophobia) is a blue-grey night that turns cool and bright near the glowing
  * facades, with bright even tunnels below; see {@link Level39Atmosphere#applyFill}.
@@ -65,6 +66,12 @@ public final class ClientLighting {
 
     /** Poolrooms: full-bright fixture faces stop here (bloom starts around 0.92; a little glow on the skylights is wanted). */
     private static final float POOLROOMS_EMISSIVE_MAX = 0.96f;
+    /**
+     * Level 4: the lit troffer lenses (full-bright) stop here, so a lit panel reads as a bright lens
+     * with its louvre still showing instead of a clipped white slab (the highlight shoulder in
+     * AtmosphereGrade then eases it further).
+     */
+    private static final float LEVEL4_EMISSIVE_MAX = 0.90f;
     /** Poolrooms fill: stronger and softer than the other levels (light level 12 ~ 22%, 9 ~ 9%). */
     private static final float POOLROOMS_MAX_FILL = 0.45f;
     private static final float POOLROOMS_FILL_FALLOFF = 3.0f;
@@ -287,6 +294,8 @@ public final class ClientLighting {
                     // Level 39's gallery lights and lit glass: kept under the bloom threshold, so
                     // up close the facade shows its muntins, brick and stone instead of a white-out.
                     v = Math.min(v, LEVEL39_EMISSIVE_MAX);
+                } else if (floor == BackroomsLevel.LEVEL_4) {
+                    v = Math.min(v, LEVEL4_EMISSIVE_MAX);
                 }
                 colors.set(v, v, v);
             } else {
@@ -326,7 +335,7 @@ public final class ClientLighting {
                     : floor == BackroomsLevel.POOLROOMS ? 1.25f
                     // Level 9: tall lamps put little block light on the ground, so a gentler curve.
                     : floor == BackroomsLevel.LEVEL_9 ? 1.3f
-                    // Level 4: dim windows and panel islands; a softer curve keeps both readable.
+                    // Level 4: window glow and panel islands; a softer curve keeps both readable.
                     : floor == BackroomsLevel.LEVEL_4 ? 1.5f
                     // Level 37: daylight bounced around white tile; soft and bright.
                     : floor == BackroomsLevel.LEVEL_37 ? 1.1f

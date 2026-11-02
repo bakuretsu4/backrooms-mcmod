@@ -176,17 +176,30 @@ going down into the dark, until the picture breaks up and you are in the next le
   doors and a narrow, low bypass passage round it behind the wall.
 - **Level 4 (the Abandoned Office):** you arrive here through Level 2's EXIT door. Endless empty
   office floors on a stormy night: huge open-plan floors with square white columns, cubicle
-  fields, corridors of wooden doors into small offices, glass conference rooms, break rooms,
-  copy and server rooms, elevator lobbies whose elevators never come. A drop ceiling with
-  fluorescent panels, most of them dead in the big open areas; long walls of dark rainy windows
-  with radiators under the sills. Rain drums on the glass everywhere, the pipes rumble now and
-  then, and every minute or two lightning flashes through the windows before the thunder rolls
-  in. No monsters: it is a safe haven. Break rooms have **vending machines** (right-click: Almond
-  Water or an Energy Bar until sold out) and **water coolers** (right-click: Almond Water, three
-  times each). Some filing cabinets marked SUPPLIES are lockers. Safe rooms stand as little
-  office boxes in the open floors. Behind one locked door with a brass "6", faint music plays.
-  The way out is an **emergency stairwell**: look for the glowing EXIT sign over a grey steel fire
-  door in a bright, cleared area; go down the stairs to reach the Poolrooms.
+  fields, corridors of wooden doors into small offices, glass conference rooms, kitchenettes,
+  copy and server rooms, elevator lobbies whose elevators never come. As in canon it is almost
+  empty: the open floors are bare grey carpet with only the dents of desk rows that were carried
+  out (now and then one desk or chair left behind, and rarely a neat pile of boxes and a filing
+  cabinet pushed against a column on moving day), and about half the small offices are cleared
+  out. Conference rooms have one long table with a chair at every place, a whiteboard and a
+  clock; kitchenettes a counter, fridge, vending machines, water cooler, notice board and clock.
+  The suspended ceiling has rows of louvred light panels, most of them dead in whole dark
+  patches, with air diffusers, sprinklers and smoke detectors between them; tiles are only
+  missing where a leak has stained and brought down a patch. Long ribbons of blacked-out rainy
+  windows in bays of three still glow; along their foot runs a perimeter casing with a slim
+  radiator under every bay and a socket every few bays. Light switches beside the room doors,
+  thermostats and sockets in the offices, an extinguisher with a fire-alarm call point every 24
+  blocks or so along the aisles and on some columns, and green **exit signs** over the doorways
+  that lead toward the nearest stairwell (on corridor walls their arrows point the way). Rain
+  drums on the glass everywhere, the pipes rumble now and then, and every minute or two
+  lightning flashes through the windows before the thunder rolls in. No monsters: it is a safe
+  haven. Kitchenettes have **vending machines** (right-click: Almond Water or an Energy Bar until
+  sold out) and **water coolers** (right-click: Almond Water, three times each). Some filing
+  cabinets marked SUPPLIES are lockers, and the odd supply crate sits in a moving-day pile or a
+  storeroom. Safe rooms stand as little office boxes in the open floors. Behind one locked door
+  with a brass "6", faint music plays. The way out is an **emergency stairwell**: look for the
+  glowing EXIT sign over a grey steel fire door in a bright, cleared area (an extinguisher and a
+  call point hang beside it); go down the stairs to reach the Poolrooms.
 - **The Poolrooms:** dim white-tiled rooms and long water channels lit by a few tubes, glowing
   cyan pools with underwater lamps and moving light ripples, and now and then a tall atrium full
   of daylight. No monsters. The way out is the drain: a dark-tiled shaft in the middle of a deep
@@ -789,6 +802,9 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **The Window:** Most windows show the storm, but very rarely one is clear: a blurry, sunny place that feels like somewhere you've been. If the panes around a window are taped over with cardboard, there's a reason. Don't get close, and don't listen.
 - **Vanishing elevators:** In some lobbies one elevator stands open and lit. Look away and it may not be where you left it. Step in and it will take you somewhere that looks exactly like here.
 - **Level 4.3, "The Cubicles":** A dim white series of hallways leads to an endless cubicle field in white fog, full of the sounds of people working whom you never see. The longer you stay, the harder it is to leave. Walk back the way you came.
+- **The Occupied Floor** (rare, open-plan floors): around one column, four neat pods of desks with a monitor on every desk and every chair pushed in, every light working, not a tile missing, not a dent in the carpet. Nobody is there. It does nothing.
+- **The Inside-Out Room** (rare, office corridors): behind an ordinary office door the carpet runs up the walls and across the ceiling, and the floor is ceiling tiles with a light panel glowing up out of it. It does nothing.
+- **The Cooler Row** (rare, open-plan floors): a short drywall corridor standing on its own, every light in it on, lined with identical water coolers at perfectly even spacing. All of them are empty, except the last one at the dead end, under an EXIT sign that leads nowhere.
 
 **The Poolrooms (and Level 37's water)**
 - **Sound in the pools:** In the Poolrooms and Level 37, footsteps and voices die out a few blocks away and everything sounds muffled; only the water stays clear. Every so often the water grows loud and close, drowning out everything else for half a minute.

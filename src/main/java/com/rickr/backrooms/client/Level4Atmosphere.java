@@ -18,59 +18,82 @@ import org.joml.Vector3f;
  * The air and light of Level 4 (the Abandoned Office) on a stormy night.
  *
  * <ul>
- *   <li><b>Window glow.</b> The rainy windows give off block light, and Level 4's lightmap fill
- *       turns that into a faint cold blue-grey glow that reaches 3-5 blocks into the room: the
- *       floor and radiators by the windows stay dimly visible while the middle of a big dark floor
- *       is near black. The same fill gives a soft bounce under the lit ceiling panels (Veil makes
- *       the actual pools of light).</li>
+ *   <li><b>Window glow.</b> The ribbon windows are "blacked out, yet still glow" (canon): their
+ *       blocks give light {@value #WINDOW_LIGHT}. With Veil the real light comes from them as soft,
+ *       shadowed area lights (client/light/Level4Lights): a cool gradient that is bright at the
+ *       window wall and falls off into the floor plate, with the columns and partitions shading
+ *       it. This lightmap fill only adds a low cool bounce on top (kept low so white walls and
+ *       columns no longer clip) and a faint cool "nothing is lit" floor so the deep interior stays
+ *       readable rather than black.</li>
  *   <li><b>Lightning</b> (the STORM event): two quick white pops and a fade, sometimes a weaker
  *       second strike. The flash is added to the lightmap in proportion to block light, so the
  *       window glass and everything near the windows flashes cold white while windowless corners
- *       barely change. The thunder is sent by the server a second or two later.</li>
- *   <li><b>Haze.</b> A slight cool indoor haze: distant parts of the open floors fade into a
- *       near-black blue-grey, which lifts a little with each flash.</li>
+ *       barely change (Level4Lights flares the window lights with it). The thunder is sent by the
+ *       server a second or two later.</li>
+ *   <li><b>Haze.</b> A slight cool indoor haze: the far end of a big open floor fades into a dark
+ *       blue-grey, which lifts a little with each flash.</li>
  * </ul>
+ *
+ * <p>Under Iris/shader packs none of this runs (the pack lights by block light itself): there the
+ * window's emission ({@value #WINDOW_LIGHT}, not 15) and the troffers' (10) carry the look.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Level4Atmosphere {
-    // --- Lightmap (Veil mode) -------------------------------------------------------------------
-    /** "No light at all": near black with a cold cast. */
-    private static final float UNLIT_R = 0.008f;
-    private static final float UNLIT_G = 0.009f;
-    private static final float UNLIT_B = 0.017f;
     /**
-     * Fill curve: windows give light 15, so the air right in front of them has 14 (~0.29 fill), the
-     * floor 3 blocks in ~level 11 (~0.16), 7 blocks in ~0.06. Under a lit panel (light 11) the
-     * ceiling around it gets ~0.17 and the floor ~0.05: a soft bounce, Veil does the rest.
+     * Block light of the office windows (registry/ModBlocks OFFICE_WINDOW). Only the windows' own
+     * faces see this much: the air in front of them has one less, the lit troffers give 10. So
+     * "block light {@value} or more" is the glass itself. Must match ModBlocks.
      */
-    private static final float MAX_FILL = 0.34f;
-    private static final float FILL_FALLOFF = 2.4f;
-    /** Cold overcast blue-grey for the window glow (fluorescent white is cool too). */
-    private static final float TINT_R = 0.78f;
-    private static final float TINT_G = 0.86f;
+    public static final int WINDOW_LIGHT = 12;
+
+    // --- Lightmap (Veil mode) -------------------------------------------------------------------
+    /**
+     * "No light at all": a dim cool grey, not black. The deep interior of a big floor gets no
+     * block light, and canon Level 4 is dim there but never pitch dark (the glow from the windows
+     * fills the building), so this keeps carpet and columns readable far from any window.
+     */
+    private static final float UNLIT_R = 0.040f;
+    private static final float UNLIT_G = 0.045f;
+    private static final float UNLIT_B = 0.058f;
+    /**
+     * Fill curve over block light (0 .. {@link #WINDOW_LIGHT}): MAX_FILL * (light / 12)^FILL_FALLOFF.
+     * The air right in front of a window (11) gets ~0.17, 3 blocks in (9) ~0.11, 7 blocks in ~0.03.
+     * Around a lit troffer (10) the ceiling gets ~0.13 and the floor (~6) ~0.04. Low on purpose: the
+     * Veil window and troffer lights make the gradient and the pools; this is only their bounce
+     * (it was 0.34 at 2.4 over light 15, which with the old lights clipped every white surface).
+     */
+    private static final float MAX_FILL = 0.20f;
+    private static final float FILL_FALLOFF = 2.2f;
+    /** Cool overcast blue-grey for the window glow (fluorescent white is cool too). */
+    private static final float TINT_R = 0.80f;
+    private static final float TINT_G = 0.87f;
     private static final float TINT_B = 1.0f;
     /**
-     * The window glass itself: its model marks the glass face with block light 15 (neoforge_data),
-     * and no other surface on Level 4 sees light 15 (the window blocks give 15, so the air around
-     * them has at most 14). That lightmap cell is the glass's own dim cold glow.
+     * The window glass itself: its own cold glow, the brightest surface on its wall (the walls
+     * around a window get only the low fill: the window lights shine away from their own wall).
+     * The glass face is marked block light {@value #WINDOW_LIGHT} in its model (neoforge_data, no
+     * ambient occlusion): an opaque cube's faces otherwise take the darker light of the air in front
+     * (first test: the glass read as dull slate, darker than the wall). The highlight shoulder
+     * (AtmosphereGrade ROLLOFF_4) keeps its gradient and rain streaks from clipping.
      */
-    private static final float GLASS_FILL = 0.48f;
-    /** How much a full flash adds at block light 15, and how fast it falls off with less light. */
+    private static final float GLASS_FILL = 0.85f;
+    /** How much a full flash adds at the window's light, and how fast it falls off with less light. */
     private static final float FLASH_FILL = 0.95f;
     private static final float FLASH_FALLOFF = 2.2f;
     private static final float FLASH_R = 0.86f;
     private static final float FLASH_G = 0.92f;
     private static final float FLASH_B = 1.0f;
-    /** Without Veil, the vanilla light near windows is far too bright for a night office. */
-    private static final float FALLBACK_DIM = 0.7f;
+    /** Without Veil (and without Iris), vanilla light near the windows is a little too bright for a night office. */
+    private static final float FALLBACK_DIM = 0.8f;
 
     // --- Fog --------------------------------------------------------------------------------------
-    private static final float FOG_START = 8.0f;
-    private static final float FOG_END = 80.0f;
-    /** #0B0D12: near-black with a cold tint. */
-    private static final float FOG_R = 11 / 255.0f;
-    private static final float FOG_G = 13 / 255.0f;
-    private static final float FOG_B = 18 / 255.0f;
+    /** Subtle: the far end of a big floor fades, the room you stand in stays clear. */
+    private static final float FOG_START = 12.0f;
+    private static final float FOG_END = 96.0f;
+    /** #101318: a dark, cool blue-grey (not black: the building's interior is dim, not void). */
+    private static final float FOG_R = 16 / 255.0f;
+    private static final float FOG_G = 19 / 255.0f;
+    private static final float FOG_B = 24 / 255.0f;
     /** What the fog brightens toward during a flash (scaled by the flash). */
     private static final float FOG_FLASH_R = 0.30f;
     private static final float FOG_FLASH_G = 0.33f;
@@ -118,8 +141,8 @@ public final class Level4Atmosphere {
 
     /** Level 4's lightmap cell for {@code blockLight} when Veil lights the scene (see ClientLighting). */
     static void applyFill(Vector3f colors, int blockLight) {
-        float b = Mth.clamp(blockLight / 15.0f, 0.0f, 1.0f);
-        float fill = blockLight >= 15 ? GLASS_FILL : MAX_FILL * (float) Math.pow(b, FILL_FALLOFF);
+        float b = Mth.clamp(blockLight / (float) WINDOW_LIGHT, 0.0f, 1.0f);
+        float fill = blockLight >= WINDOW_LIGHT ? GLASS_FILL : MAX_FILL * (float) Math.pow(b, FILL_FALLOFF);
         float flash = flash(System.currentTimeMillis()) * FLASH_FILL * (float) Math.pow(b, FLASH_FALLOFF);
         colors.set(UNLIT_R + fill * TINT_R + flash * FLASH_R,
                 UNLIT_G + fill * TINT_G + flash * FLASH_G,
@@ -128,7 +151,7 @@ public final class Level4Atmosphere {
 
     /** Without Veil: dim the vanilla light a little, and add the flash the same way. */
     static void adjustFallback(Vector3f colors, int blockLight) {
-        float b = Mth.clamp(blockLight / 15.0f, 0.0f, 1.0f);
+        float b = Mth.clamp(blockLight / (float) WINDOW_LIGHT, 0.0f, 1.0f);
         float flash = flash(System.currentTimeMillis()) * 0.8f * b * b;
         colors.set(colors.x * FALLBACK_DIM * 0.95f + flash * FLASH_R,
                 colors.y * FALLBACK_DIM * 0.98f + flash * FLASH_G,

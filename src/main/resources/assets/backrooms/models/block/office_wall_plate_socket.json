@@ -1,0 +1,69 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/office_wall_plates",
+    "p": "backrooms:block/office_wall_plates"
+  },
+  "elements": [
+    {
+      "from": [
+        4.5,
+        2,
+        15.5
+      ],
+      "to": [
+        11.5,
+        5,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.0,
+            8.0,
+            16.0,
+            11.5
+          ],
+          "texture": "#p"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            12.0,
+            8.8,
+            12.3
+          ],
+          "texture": "#p"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            12.0,
+            8.8,
+            12.3
+          ],
+          "texture": "#p"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            12.0,
+            8.8,
+            12.3
+          ],
+          "texture": "#p"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            12.0,
+            8.8,
+            12.3
+          ],
+          "texture": "#p"
+        }
+      }
+    }
+  ]
+}

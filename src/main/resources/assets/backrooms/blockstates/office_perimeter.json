@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "facing=north,part=trunk": {
+      "model": "backrooms:block/office_perimeter_trunk"
+    },
+    "facing=north,part=end": {
+      "model": "backrooms:block/office_perimeter_end"
+    },
+    "facing=north,part=socket": {
+      "model": "backrooms:block/office_perimeter_socket"
+    },
+    "facing=north,part=radiator": {
+      "model": "backrooms:block/office_perimeter_radiator"
+    },
+    "facing=east,part=trunk": {
+      "model": "backrooms:block/office_perimeter_trunk",
+      "y": 90
+    },
+    "facing=east,part=end": {
+      "model": "backrooms:block/office_perimeter_end",
+      "y": 90
+    },
+    "facing=east,part=socket": {
+      "model": "backrooms:block/office_perimeter_socket",
+      "y": 90
+    },
+    "facing=east,part=radiator": {
+      "model": "backrooms:block/office_perimeter_radiator",
+      "y": 90
+    },
+    "facing=south,part=trunk": {
+      "model": "backrooms:block/office_perimeter_trunk",
+      "y": 180
+    },
+    "facing=south,part=end": {
+      "model": "backrooms:block/office_perimeter_end",
+      "y": 180
+    },
+    "facing=south,part=socket": {
+      "model": "backrooms:block/office_perimeter_socket",
+      "y": 180
+    },
+    "facing=south,part=radiator": {
+      "model": "backrooms:block/office_perimeter_radiator",
+      "y": 180
+    },
+    "facing=west,part=trunk": {
+      "model": "backrooms:block/office_perimeter_trunk",
+      "y": 270
+    },
+    "facing=west,part=end": {
+      "model": "backrooms:block/office_perimeter_end",
+      "y": 270
+    },
+    "facing=west,part=socket": {
+      "model": "backrooms:block/office_perimeter_socket",
+      "y": 270
+    },
+    "facing=west,part=radiator": {
+      "model": "backrooms:block/office_perimeter_radiator",
+      "y": 270
+    }
+  }
+}

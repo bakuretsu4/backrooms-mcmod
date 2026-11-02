@@ -130,9 +130,10 @@ public enum FixtureType {
     SAFE_LAMP("safe_room_lamp", Mount.CEILING_BLOCK, 1, 1.0f, 0.82f, 0.60f, 2.4f, 11.0f, Hum.NONE, false),
     /**
      * Level 4 ceiling troffer (two blocks make one 1x2 panel, so maxRun 2 = one light per panel):
-     * cool office white (~4500 K fluorescent) in a pool about 10 blocks across, so lit islands
-     * stand out against the dark open floors. Buzzes like every tube; panels in mode=flicker are
-     * failing tubes that stutter now and then.
+     * cool office white (~4500 K fluorescent). Buzzes like every tube; panels in mode=flicker are
+     * failing tubes that stutter now and then. With Veil it is not drawn as a point light: Level4Lights
+     * turns each lit panel into a soft downward area light (its own budget); these numbers only matter
+     * where a panel turns up outside Level 4.
      */
     OFFICE_PANEL("office_panel", Mount.CEILING_BLOCK, 2, 0.93f, 0.96f, 1.0f, 1.0f, 10.0f, Hum.FLUORESCENT, true),
     /**
@@ -140,6 +141,11 @@ public enum FixtureType {
      * Only the upper half counts (see {@link #of}), so a machine is one light.
      */
     VENDING_MACHINE("vending_machine", Mount.INSET, 1, 0.80f, 0.90f, 1.0f, 0.45f, 6.0f, Hum.NONE, false),
+    /**
+     * Level 4 green running-man exit sign over stairwell doors and along the routes to them: only a
+     * faint green glow on the wall and door frame around it (a sign, not a lamp), silent and steady.
+     */
+    OFFICE_EXIT_SIGN("office_exit_sign", Mount.WALL, 1, 0.30f, 1.0f, 0.45f, 0.30f, 3.5f, Hum.NONE, false),
     /** Level 94 odd floor lamp in the toy houses: a small warm pool, steady and silent. */
     L94_LAMP("l94_lamp", Mount.WALL, 1, 1.0f, 0.86f, 0.62f, 1.2f, 9.0f, Hum.NONE, false),
     // Poolrooms anomalies: the Sanguine Reservoir's only lights. A red underwater lamp (the red
