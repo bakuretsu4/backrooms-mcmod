@@ -65,6 +65,14 @@ HALF_RES = frozenset({
     "l39_gondola_lattice_top",
     "l94_lamp_bulb", "l94_lamp_base", "l94_milk_caps", "l94_milk_bottles", "l94_siren_bracket",
     "l94_tower_tap", "l94_tower_tap_wheel", "l94_play_pipe_end",
+    # Level 9 story and yard props (tools/level9_assets): small decals and prop sheets. The posters,
+    # flyers and drawings are read close up on their own full-size GUI textures, so the wall copy
+    # can be coarser.
+    "answering_machine_front", "answering_machine_side", "answering_machine_top",
+    "kids_drawing_0", "kids_drawing_1", "kids_drawing_2", "kids_drawing_3",
+    "missing_poster_0", "missing_poster_1", "missing_poster_2", "missing_poster_3",
+    "missing_poster_4", "missing_poster_5", "missing_poster_6", "missing_poster_7",
+    "l9_car", "l9_paper_back", "l9_yard_props", "watch_flyer_paper",
 })
 
 
