@@ -311,6 +311,14 @@ public final class ClientLighting {
                 applyLevel2Fill(colors, blockLight, LEVEL2_FALLBACK_MAX_FILL, LEVEL2_FALLBACK_FALLOFF,
                         LEVEL2_FALLBACK_DEAD_FILL, true);
             }
+        } else if (floor == BackroomsLevel.LEVEL_369) {
+            // Level 369 without Veil: its own fill is all the light, a little stronger.
+            if (fullBright) {
+                float v = emissivePower();
+                colors.set(v, v, v);
+            } else {
+                Level369Atmosphere.applyFill(colors, blockLight, true);
+            }
         } else {
             // Garage and Poolrooms are lit by long strips: gentler falloff than the
             // Lobby's pools. The Poolrooms may be a touch brighter, but unlit rooms stay dark.
@@ -358,6 +366,10 @@ public final class ClientLighting {
         }
         if (floor == BackroomsLevel.LEVEL_37) {
             Level37Atmosphere.applyFill(colors, blockLight); // warm daylight bounce off white tile
+            return;
+        }
+        if (floor == BackroomsLevel.LEVEL_369) {
+            Level369Atmosphere.applyFill(colors, blockLight, false); // warm garden light, cool glow in the dark rooms
             return;
         }
         if (floor == BackroomsLevel.LEVEL_39) {

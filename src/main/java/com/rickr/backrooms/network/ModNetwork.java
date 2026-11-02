@@ -165,6 +165,9 @@ public final class ModNetwork {
             com.rickr.backrooms.world.Level490Hung.CLIENT.clear();
             com.rickr.backrooms.client.Level490ClientState.receiveSeed(payload.layoutSeed());
         });
+        // Level 369: its layout seed (for the drifting light) and how much you have forgotten.
+        registrar.playToClient(Level369StatePayload.TYPE, Level369StatePayload.STREAM_CODEC,
+                (payload, context) -> com.rickr.backrooms.client.Level369ClientState.receive(payload));
         // Level 490's creature: where it is, its hands coming for you, and the chains it leaves you in.
         registrar.playToClient(Level490HuntPayload.TYPE, Level490HuntPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.Level490Creature.receive(payload)));

@@ -138,6 +138,9 @@ public final class Acoustics {
     // less than in a town (the trunks all round still answer), and the far echo comes back a
     // little late off the giant branches and the trunk.
     private static final Material FOREST = new Material(0.55f, 0.95f, 0.45f, 0.5f, 1.0f, 0.55f, 1.3f);
+    // Level 369's rooms: plaster walls, but a lawn and flowers wall to wall and soft acoustic
+    // ceilings. A short, soft, very diffuse room sound with the highs swallowed: close and calm.
+    private static final Material GARDEN = new Material(0.5f, 0.6f, 0.45f, 0.45f, 1.0f);
 
     /** Level 39: the tunnels (and the holes/shafts leading down to them) lie below this height. */
     private static final double LEVEL39_TUNNEL_TOP = 60.0;
@@ -156,6 +159,7 @@ public final class Acoustics {
             case LEVEL_39 -> ear.y < LEVEL39_TUNNEL_TOP ? MARBLE_TUNNEL : MEGALOPHOBIA;
             case LEVEL_7 -> SEA;
             case LEVEL_227 -> FOREST;
+            case LEVEL_369 -> GARDEN;
             case POOLROOMS, LEVEL_37 -> null; // nothing reverberates there (canon), muffling only
         };
     }

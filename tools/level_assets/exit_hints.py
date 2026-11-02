@@ -14,6 +14,7 @@ placement), quiet and low so it reads as part of the level until you notice it s
   level_7     bubbles rising from the sunken door, a low hum
   level_39    the sweet electric hum of a lit mill window with something living in it
   level_490   wind keening past the structure's chains, and once a loop a deep groan of iron
+  level_369   leaves stirring in the arch of vines, water lapping far behind it, a faint warm chord
 
 Run only these with:  python tools/gen_assets.py exit_hint
 """
@@ -168,6 +169,21 @@ def snd_exit_hint_level_490() -> None:
     _save(x, "level_490", peak=0.42)
 
 
+def snd_exit_hint_level_369() -> None:
+    # The arch of vines: its leaves stirring in a draft from somewhere else (a dry, fine rustle in
+    # little gusts), water lapping slowly far behind it (it leads to the sea), and a faint warm
+    # chord, the lure, swelling and fading as the draft comes and goes.
+    rng = G.rng_for(7413)
+    rustle = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 1800, 7000, 2))
+    flutter = np.clip(G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 3, 14, 1)), 0, None)
+    gust = _swell(4.0, 0.7) * _swell(8.0 / 3, 0.35, 1.3)
+    lap = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 60, 380, 2)) * _swell(2.0, 0.8, 0.4)
+    chord = 0.5 * _tone(220) + 0.35 * _tone(277.5) + 0.3 * _tone(330) + 0.12 * _tone(440.5)
+    x = (G.norm(rustle) * (0.25 + G.norm(flutter)) * gust * 0.45 + G.norm(lap) * 0.5
+         + chord * gust * 0.22)
+    _save(x, "level_369", peak=0.42)
+
+
 def tex_exit_hint_ir_arrow() -> None:
     """A spray-painted arrow pointing right (+u), white on transparent (tinted when drawn), with
     ragged edges and runs. Drawn dark, in NightShot only: the paint swallows the infrared lamp."""
@@ -209,4 +225,4 @@ def tex_exit_hint_wanderer_note() -> None:
 TEXTURES = [tex_exit_hint_ir_arrow, tex_exit_hint_wanderer_note]
 SOUNDS = [snd_exit_hint_level_0, snd_exit_hint_level_1, snd_exit_hint_level_2, snd_exit_hint_level_4,
           snd_exit_hint_poolrooms, snd_exit_hint_level_37, snd_exit_hint_level_9, snd_exit_hint_level_94,
-          snd_exit_hint_level_7, snd_exit_hint_level_39, snd_exit_hint_level_490]
+          snd_exit_hint_level_7, snd_exit_hint_level_39, snd_exit_hint_level_490, snd_exit_hint_level_369]

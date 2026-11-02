@@ -212,7 +212,17 @@ public enum FixtureType {
     L227_RESIN("l227_resin", Mount.CUBE, 3, 1.0f, 0.67f, 0.24f, 0.4f, 5.0f, Hum.NONE, false),
     // GammaPali: the little plants glowing on the branches, a sickly yellow-green (their glow is the
     // toxic gas). The plant faces away from the bark (all six ways); a cluster merges into one light.
-    L227_GAMMAPALI("l227_gammapali", Mount.WALL, 3, 0.75f, 1.0f, 0.47f, 0.7f, 6.0f, Hum.NONE, false);
+    L227_GAMMAPALI("l227_gammapali", Mount.WALL, 3, 0.75f, 1.0f, 0.47f, 0.7f, 6.0f, Hum.NONE, false),
+    // Level 369. The frosted skylights at the top of their shafts: warm daylight pouring down into
+    // the flowers, strong and far-reaching (the glass is 4 blocks above the ceiling, 11 above the
+    // lawn: at radius 30 the lawn under it gets ~0.9 and the room's corners ~0.4). Silent and
+    // steady: daylight doesn't buzz. A 5 x 5 skylight merges into a few lights.
+    L369_SKYLIGHT("l369_skylight", Mount.CEILING_BLOCK, 5, 1.0f, 0.95f, 0.84f, 3.0f, 30.0f, Hum.NONE, false),
+    // The light panels of the hallways and the pillar halls' salmon ceilings: a warm white pool
+    // under each, quiet (no tube hum here: nothing in this level wants to disturb you).
+    L369_PANEL("l369_panel", Mount.CEILING_BLOCK, 2, 1.0f, 0.93f, 0.80f, 1.3f, 11.0f, Hum.NONE, false),
+    // The hallways' tall bright windows: pale blue-white light laid across the grass in stripes.
+    L369_WINDOW("l369_window", Mount.CUBE, 3, 0.88f, 0.94f, 1.0f, 1.1f, 9.0f, Hum.NONE, false);
 
     /** Which looping buzz a fixture makes (positional, the nearest few lit ones play). */
     public enum Hum {

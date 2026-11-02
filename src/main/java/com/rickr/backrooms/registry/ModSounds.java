@@ -24,6 +24,7 @@ public final class ModSounds {
 
     // Level 37, Sublimity: the calm tiled-pool ambience, and the soft swell as you walk into the light.
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL37_AMBIENCE = register("ambient.level37_ambience");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL369_AMBIENCE = register("ambient.level369_ambience");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL37_ARRIVE = register("level37.arrive");
 
     // Level 9, the Suburbs: buzzing sodium streetlamps, lamps stuttering, The Mangled moving far off.
@@ -145,6 +146,7 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_7 = register("exit_hint.level_7");
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_39 = register("exit_hint.level_39");
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_490 = register("exit_hint.level_490");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_369 = register("exit_hint.level_369");
     // Level 490: the storm's thunder at three distances, and the air (client/Level490Lightning, Level490Ambience).
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_THUNDER_CLOSE = register("level490.thunder_close");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_THUNDER_ROLL = register("level490.thunder_roll");
@@ -175,6 +177,7 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL7 = register("music.level7");
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL39 = register("music.level39");
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL490 = register("music.level490");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL369 = register("music.level369");
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL9 = register("music.level9");
     // Level 94 anomalies: the high, glassy hum of the blinding hall's light (looped by the client
     // while you are in it) and the coin rattling in a furniture-pile sink.

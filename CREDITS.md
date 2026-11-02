@@ -63,3 +63,15 @@ All other textures and sounds are generated procedurally by `tools/gen_assets.py
 - The checkpoint contact sheets in `tools/smoke/level94/` are screenshots of this mod's test run,
   not downloaded reference images. The Level 94 setting adaptation above is shared under
   CC BY-SA 3.0; this attribution does not relicense unrelated mod code or third-party assets.
+
+## Level 369 references
+
+- Level 369's setting is adapted from ["Level 369 — Comely"](https://backrooms-wiki.wikidot.com/level-369)
+  by BoringTalking, The Backrooms Wiki, licensed [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
+  Changes include a Minecraft room-grid adaptation (window hallways, pillar halls, skylit rooms,
+  dark rooms with glowing plants), a skylight fall in from Level 37, an arch of vines out to
+  Level 7, and a twist of our own: the level slowly makes you forget. No text or images from the
+  page are used; every texture, sound and the music ("Comely", `tools/anomaly_assets/music_f.py`)
+  are generated in code (`tools/anomaly_assets/level369.py`).
+- Two pictures of overgrown hallways (one from a TikTok post by @you2013141) were used as visual
+  reference only; nothing from them is in the mod.

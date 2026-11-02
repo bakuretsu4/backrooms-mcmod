@@ -26,7 +26,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  *   <li><b>Out:</b> the round pits of deep, dark water. Once you have dived a few blocks down
  *       one, a gentle current draws you down the shaft. Below
  *       {@link Level37Layout#TRANSFER_BELOW_Y} the usual exit check ({@code ServerEvents}) sends
- *       you on to Level 7.</li>
+ *       you on to Level 369 (you fall out of a skylight there).</li>
  * </ul>
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)

@@ -69,7 +69,7 @@ Backrooms. About three seconds, no cut.
 One path runs through every level, each exit leading naturally into the next place:
 
 ```
-Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Poolrooms --drain--> Level 37 --deep pit--> Level 7 --sunken door--> Level 39 --mill window--> Level 94 --dark doorway--> Level 490 --the leap--> Level 9 --underpass--> Overworld
+Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Poolrooms --drain--> Level 37 --deep pit--> Level 369 --arch of vines--> Level 7 --sunken door--> Level 39 --mill window--> Level 94 --dark doorway--> Level 490 --the leap--> Level 9 --underpass--> Overworld
 ```
 
 Every exit looks different, but every move from one level to the next is filmed the same way:
@@ -205,8 +205,19 @@ going down into the dark, until the picture breaks up and you are in the next le
   the spiral stairs hold almond water and calm pills. The way on is down: a round rotunda with a
   **pit of deep, dark water** in its middle (one every ~170 blocks; `/backrooms locate` points to
   it). Walk down the floating treads into the water and dive; a gentle current draws you down
-  the shaft and out into Level 7.
-- **Level 7 ("Thalassophobia"):** reached by diving down Level 37's pit (or, as a shortcut, down
+  the shaft and out into Level 369.
+- **Level 369 ("Comely"):** reached by diving down Level 37's pit: you fall out of a skylight into
+  soft flowers (no landing ever hurts here). An endless indoor garden: rooms of pastel-painted
+  plaster, every floor a lawn carpeted wall to wall with grass and flowers. Long white hallways
+  with tall windows full of pale blue light down one side, closed doors down the other and blue
+  forget-me-nots in the grass; low, wide peach halls of cream pillars under salmon ceiling tiles,
+  red daisies and winding brick paths; tall mint, lavender, cream and rose rooms under skylight
+  shafts, bushes along the walls and young trees under the light; and, now and then, a dark sage
+  room with a single doorway, glowing flowers in the grass and glowing vines hanging from the
+  ceiling. Nothing lives here and nothing happens. The way on is a great **arch of vines** filled
+  with a curtain of hanging flowers (one every ~140 blocks; `/backrooms locate` points to it): walk
+  into the flowers and you come out in Level 7. See `docs/level-369-comely.md`.
+- **Level 7 ("Thalassophobia"):** reached through Level 369's arch of vines (or, as a shortcut, down
   the stairs of a flooded house in Level 94, about one exit house in three). You come up in a
   small flooded sitting room (bookcase, coffee
   table, armchair, a radio and a crate on the dry landing) hanging from a concrete ceiling over an
@@ -745,6 +756,11 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **Looping tunnels:** Some of the long dark round tunnels don't end. Keep walking and you keep passing the same stretch, the same drip, while the light fades a little each time. Turn around and you walk straight out; persist and it eventually lets you through.
 - **Healing water:** Level 37's warm water soothes. Standing or swimming in it slowly heals you and brings your sanity back, fastest in the deep pools; dry tile only calms you a little.
 
+**Level 369**
+- **The drifting light:** Every few minutes a band of warm light drifts through the rooms like a slow wave. While it passes over you the room turns gold, your sanity comes back and you slowly heal. Then it moves on and the room falls back to its usual light. Nothing here ever wears your nerves down.
+- **It makes you forget:** After about five minutes the level starts taking things, and by twenty-five it has taken everything it can. The camcorder's readouts fade one by one (battery, then the tape counter and clock, then your heart rate, then REC). Doorways you came through are walled over once they're behind you, and a new doorway opens somewhere else in the same wall. Now and then something slips out of your inventory and lies in the grass a few blocks behind you; you can find it if you look (never the camcorder, or what's in your hand).
+- **Leaving brings it back:** The moment you leave, by the arch of vines or any other way, everything comes back: what you lost returns to your inventory, the doorways are where they were, and the next visit starts fresh.
+
 **Level 9**
 - **The Mangled's fog:** Sometimes the air turns ice cold before the fog rolls in, and the streetlamps go silent. Somewhere down the street a black pillar rises into the sky, and booms roll out of the fog. When the fog lifts the pillar is gone, and the road where it stood has a crater in it.
 - **Clipped houses:** Now and then two houses have grown into each other. Walls run through the middle of rooms, furniture sticks out of walls, and there are two front doors. Some of the walls in there aren't quite solid.
@@ -844,6 +860,7 @@ then the main theme plays instead, so it runs through the whole soundtrack:
 | `level4` | Level 4 | "Night Shift": sparse, lonely jazz piano over soft rain and distant thunder, one muted-horn phrase, ending on an unresolved chord |
 | `poolrooms` | The Poolrooms | "Chlorine": slowed, chorused dream pads and a glassy arpeggio in F Lydian that dip underwater and come back; a childhood indoor pool at dusk |
 | `level37` | Level 37 | "Sublimity": airy synthesized choir and glass-harmonica shimmer, bright and almost bassless; near the end one voice drifts out of tune |
+| `level369` | Level 369 | "Comely": a music-box waltz, a lullaby in F over a soft harp and a warm pad, played three times; each time more of its notes are gone, and at the end it starts once more and stops |
 | `level7` | Level 7 | "Thalassophobia": huge, very low drones swelling like waves, far whale-like glides, sonar pings, and once a low brass cluster rising from the deep |
 | `level39` | Level 39, every 10 to 25 minutes | "Megalophobia": a small-town waltz on a music box or piano from impossibly far away in a gigantic echo, interrupted by enormous metallic groans |
 | `level490` | Level 490 | "Penance": a slow processional on a synthesized pipe organ, a low male-choir drone, a tolling bell, thunder, chain rattles and a bowed lament |

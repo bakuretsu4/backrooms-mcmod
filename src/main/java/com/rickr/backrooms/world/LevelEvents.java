@@ -98,10 +98,11 @@ public final class LevelEvents {
         // cuts, alarms or footsteps-in-the-dark there. (Level 4's only events are its storms.)
         // Level 94 has its own day and night instead (Level94Clock), Level 7 its Thing (Level7Client)
         // and Level 490 its own storm (Level490Storm). Level 227 is a forest: its own sounds and the
-        // tree's lurches belong to its atmosphere code.
+        // tree's lurches belong to its atmosphere code. Level 369 is a garden where nothing happens
+        // (what it does to you is quieter than any event).
         boolean calm = floor == BackroomsLevel.POOLROOMS || floor == BackroomsLevel.LEVEL_4 || floor == BackroomsLevel.LEVEL_37
                 || floor == BackroomsLevel.LEVEL_94 || floor == BackroomsLevel.LEVEL_7 || floor == BackroomsLevel.LEVEL_39
-                || floor == BackroomsLevel.LEVEL_490 || floor == BackroomsLevel.LEVEL_227;
+                || floor == BackroomsLevel.LEVEL_490 || floor == BackroomsLevel.LEVEL_227 || floor == BackroomsLevel.LEVEL_369;
         // Knocks and creaks are indoor sounds; the Suburbs stay silent between their own events.
         if (!calm && floor != BackroomsLevel.LEVEL_9) {
             tickAmbience(level, random);
@@ -280,7 +281,7 @@ public final class LevelEvents {
             // The pool levels: the water grows loud only rarely, every 6-12 minutes.
             case POOLROOMS, LEVEL_37 -> (360 + random.nextInt(361)) * 20;
             // Never start events by themselves; this only matters after an operator forced one.
-            case LEVEL_94, LEVEL_7, LEVEL_490, LEVEL_227 -> (60 + random.nextInt(30)) * 20;
+            case LEVEL_94, LEVEL_7, LEVEL_490, LEVEL_227, LEVEL_369 -> (60 + random.nextInt(30)) * 20;
             // Level 4: a lightning strike outside every 1-3 minutes.
             case LEVEL_4 -> (60 + random.nextInt(121)) * 20;
             case LEVEL_9 -> (40 + random.nextInt(31)) * 20;

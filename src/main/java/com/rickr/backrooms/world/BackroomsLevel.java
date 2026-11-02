@@ -5,6 +5,7 @@ import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.world.layout.Level0Layout;
 import com.rickr.backrooms.world.layout.Level1Layout;
 import com.rickr.backrooms.world.layout.Level2Layout;
+import com.rickr.backrooms.world.layout.Level369Layout;
 import com.rickr.backrooms.world.layout.Level37Layout;
 import com.rickr.backrooms.world.layout.Level4Layout;
 import com.rickr.backrooms.world.layout.Level39Layout;
@@ -27,10 +28,10 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>One path through every floor ({@link #next()}): Overworld --noclip--> Level 0 --stairwell-->
  * Level 1 --stairwell--> Level 2 --exit door--> Level 4 --emergency stairwell--> Poolrooms --the
- * drain--> Level 37 --a deep pool--> Level 7 --the door on the sea floor--> Level 39's flooded
- * tunnels --a superstructure window--> Level 94 --a dark-doored house--> Level 490 --the leap from
- * the structure--> Level 9 --the underpass--> Overworld. Every move between floors datamoshes
- * ({@link Travel}).
+ * drain--> Level 37 --a deep pool--> Level 369 --the arch of vines--> Level 7 --the door on the
+ * sea floor--> Level 39's flooded tunnels --a superstructure window--> Level 94 --a dark-doored
+ * house--> Level 490 --the leap from the structure--> Level 9 --the underpass--> Overworld. Every
+ * move between floors datamoshes ({@link Travel}).
  *
  * <p>Rare shortcuts stay as extra ways in and out: the Poolrooms' sunlit archway skips ahead to
  * Level 39's tunnels; a clay door on a Level 9 house opens onto Level 94; Level 94's flooded houses
@@ -59,7 +60,7 @@ public enum BackroomsLevel implements StringRepresentable {
     LEVEL_4("level_4", new Level4Layout(), 30, 0, 1),
     /**
      * "Sublimity": bright, pristine, calm. No monsters. Diving down a deep pool shaft (below
-     * {@link Level37Layout#TRANSFER_BELOW_Y}) takes you on to Level 7.
+     * {@link Level37Layout#TRANSFER_BELOW_Y}) takes you on to Level 369.
      */
     LEVEL_37("level_37", new Level37Layout(), Level37Layout.TRANSFER_BELOW_Y, 0, 1),
     /**
@@ -96,7 +97,14 @@ public enum BackroomsLevel implements StringRepresentable {
      * branch is death (Level227Rules, below Level227Tree.VOID_DEATH_Y, so transferBelowY is never
      * reached), and the only way out is the tree's motion noclipping you to a random level.
      */
-    LEVEL_227("level_227", new Level227Layout(), Integer.MIN_VALUE, 0, 1);
+    LEVEL_227("level_227", new Level227Layout(), Integer.MIN_VALUE, 0, 1),
+    /**
+     * "Comely": an endless indoor garden of pastel rooms with flowers for floors. No monsters (cap
+     * 0): the level itself makes you forget. You fall in through a skylight from Level 37's pits and
+     * leave through an arch of vines to Level 7 ({@code Level369Rules}); never by falling. See
+     * {@code docs/level-369-comely.md}.
+     */
+    LEVEL_369("level_369", new Level369Layout(), Integer.MIN_VALUE, 0, 1);
 
     public static final Codec<BackroomsLevel> CODEC = StringRepresentable.fromEnum(BackroomsLevel::values);
 
@@ -157,7 +165,8 @@ public enum BackroomsLevel implements StringRepresentable {
             case LEVEL_2 -> LEVEL_4;
             case LEVEL_4 -> POOLROOMS;
             case POOLROOMS -> LEVEL_37;
-            case LEVEL_37 -> LEVEL_7;
+            case LEVEL_37 -> LEVEL_369;
+            case LEVEL_369 -> LEVEL_7;
             case LEVEL_7 -> LEVEL_39;
             case LEVEL_39 -> LEVEL_94;
             case LEVEL_94 -> LEVEL_490;

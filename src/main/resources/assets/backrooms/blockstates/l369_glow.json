@@ -1,0 +1,72 @@
+{
+  "variants": {
+    "kind=0": [
+      {
+        "model": "backrooms:block/l369_glow_0"
+      },
+      {
+        "model": "backrooms:block/l369_glow_0",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l369_glow_0",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l369_glow_0",
+        "y": 270
+      }
+    ],
+    "kind=1": [
+      {
+        "model": "backrooms:block/l369_glow_1"
+      },
+      {
+        "model": "backrooms:block/l369_glow_1",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l369_glow_1",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l369_glow_1",
+        "y": 270
+      }
+    ],
+    "kind=2": [
+      {
+        "model": "backrooms:block/l369_glow_2"
+      },
+      {
+        "model": "backrooms:block/l369_glow_2",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l369_glow_2",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l369_glow_2",
+        "y": 270
+      }
+    ],
+    "kind=3": [
+      {
+        "model": "backrooms:block/l369_glow_3"
+      },
+      {
+        "model": "backrooms:block/l369_glow_3",
+        "y": 90
+      },
+      {
+        "model": "backrooms:block/l369_glow_3",
+        "y": 180
+      },
+      {
+        "model": "backrooms:block/l369_glow_3",
+        "y": 270
+      }
+    ]
+  }
+}

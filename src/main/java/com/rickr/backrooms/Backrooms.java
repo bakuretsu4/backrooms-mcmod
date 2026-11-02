@@ -53,6 +53,8 @@ public final class Backrooms {
         com.rickr.backrooms.registry.Level490Blocks.bootstrap();
         // Level 490: the Penitents and the pilgrim.
         com.rickr.backrooms.registry.Level490Mobs.bootstrap();
+        // Level 369 "Comely": plaster, lawn, flowers, skylights and the arch of vines.
+        com.rickr.backrooms.registry.Level369Blocks.bootstrap();
         // Level 39: the town/tunnel ambience, the indoor storm, echo quakes and far-off sounds.
         com.rickr.backrooms.registry.Level39Sounds.bootstrap();
         // Level 2: the pipe corridor's knocks, clanks, creaks, steam leaks, pump hum and drips.
