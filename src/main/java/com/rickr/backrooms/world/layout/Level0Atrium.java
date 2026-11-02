@@ -33,7 +33,7 @@ import net.minecraft.core.Direction;
  *
  * <p><b>On the balcony</b>: a supply crate, a row of scuffed carpet arrows pointing the true way
  * to the nearest exit (someone climbed up here to look), an office chair at the parapet facing
- * the void, and a mannequin standing at the edge, looking down. From the floor below it is a
+ * the void, and a cardboard cutout of a person standing at the edge, looking down. From the floor below it is a
  * figure watching you. The server (AtriumBehavior) turns it to face whoever is nearest, but only
  * while nobody is looking at it.
  *

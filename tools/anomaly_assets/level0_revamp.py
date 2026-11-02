@@ -71,16 +71,12 @@ def tex_level0_revamp_materials() -> None:
     zinc = _paint(rng, (168, 170, 166), mottle=2.0, fine=0.8)
     zinc = G.add_lum(zinc, 4 * G.blur(G.fnoise(rng, beta=0.6, kmin=10), 1.2))
     G.save_png(zinc, _blk("l0_conduit"))
-    # Mannequin plastic: matte warm grey, very smooth, with faint handling marks.
-    plastic = _paint(rng, (166, 158, 156), mottle=2.2, fine=0.4)
-    G.save_png(G.add_lum(plastic, -4 * G.smoothstep(1.0, 2.2, G.fnoise(rng, beta=2.0))), _blk("l0_mannequin"))
-    # Its round display base: pale blue-green glass, darker towards the edge.
-    glass = _paint(rng, (150, 172, 172), mottle=1.5, fine=0.3)
-    G.save_png(G.add_lum(glass, 14 * np.exp(-((X - 40) / 30) ** 2 - ((Y - 40) / 30) ** 2)), _blk("l0_mannequin_glass"))
-    # Red price/size sticker with a white mark.
-    tag = _fill((196, 36, 32))
-    mark = G.pil_mask(lambda d, k: d.line([(40 * k, 34 * k), (86 * k, 34 * k), (58 * k, 98 * k)], fill=255, width=int(14 * k)))
-    G.save_png(G.over(G.add_lum(tag, rng.normal(0, 2, (S, S))), np.array([240, 236, 230]), mark), _blk("l0_red_tag"))
+    # Mannequin cardboard: kraft-brown corrugated board, the flutes showing faintly through the
+    # liner as fine vertical ribs, a few dents and darker handling marks.
+    board = _paint(rng, (170, 130, 86), mottle=2.0, fine=0.6)
+    board = G.add_lum(board, 2.5 * np.cos(2 * np.pi * X / 4.0), (1.0, 0.95, 0.85))
+    dents = G.smoothstep(1.2, 2.4, G.fnoise(rng, beta=1.8, kmin=4))
+    G.save_png(G.add_lum(board, -14 * dents - 5 * G.smoothstep(0.8, 2.0, G.fnoise(rng, beta=2.4))), _blk("l0_mannequin"))
     # Black rubber cable and bare copper.
     rubber = _paint(rng, (30, 30, 32), mottle=2.0, fine=0.8)
     G.save_png(G.add_lum(rubber, 10 * np.exp(-((X % 32 - 12) / 4) ** 2)), _blk("l0_cable"))
@@ -703,43 +699,31 @@ def _tape_models() -> None:
 
 
 def _mannequin_models() -> None:
-    """A slim featureless shop mannequin (the film's grey female mannequins) on a round glass
-    base with a thin rod up into one calf; red stickers on the hip and shoulder. Lower half: base,
-    legs, hips (y 0-16). Upper half: waist, torso, arms, neck and head (y 16-32, drawn 0-16).
-    Faces north."""
-    tex = {"particle": _ref("l0_mannequin"), "skin": _ref("l0_mannequin"), "glass": _ref("l0_mannequin_glass"),
-           "tag": _ref("l0_red_tag"), "rod": _ref("l0_conduit")}
+    """A life-size cardboard cutout of a person: a flat, blank silhouette 1 px thick (head, neck,
+    shoulders, arms a little apart from the body, legs), kraft-brown corrugated board, held up by
+    a folded cardboard strut behind it. Lower half: legs, hips and the strut (y 0-16). Upper half:
+    torso, arms, neck and head (y 16-32, drawn 0-16). Faces north (the strut is on the south side)."""
+    tex = {"particle": _ref("l0_mannequin"), "board": _ref("l0_mannequin")}
+    z0, z1 = 7.5, 8.5
     lower = [
-        _el((3.5, 0, 3.5), (12.5, 0.5, 12.5), "#glass"),
-        _el((3.5, 0.02, 3.5), (12.5, 0.48, 12.5), "#glass", rot=((8, 0.25, 8), "y", 45)),
-        _el((9.2, 0.5, 8.6), (9.7, 5, 9.1), "#rod"),
-        # feet (on tiptoe, heels up), shins, knees, thighs
-        _el((6.1, 0.5, 6.6), (7.5, 1.4, 9.0), "#skin"),
-        _el((8.5, 0.6, 6.4), (9.9, 1.5, 8.8), "#skin"),
-        _el((6.2, 1.4, 7.4), (7.5, 8.2, 8.9), "#skin"),
-        _el((8.6, 1.5, 7.0), (9.9, 8.2, 8.5), "#skin"),     # (Minecraft only turns boxes by 22.5-degree steps, so the pose is built straight)
-        _el((5.9, 8, 7.1), (7.7, 14, 9.2), "#skin"),
-        _el((8.3, 8, 7.0), (10.1, 14, 9.1), "#skin"),
-        # hips
-        _el((5.5, 12.8, 6.8), (10.5, 16, 9.6), "#skin"),
-        _el((9.0, 13.6, 6.74), (10.0, 15.2, 6.8), "#tag", faces=("north",)),
+        _el((5.4, 0, z0), (7.6, 13, z1), "#board"),                    # legs
+        _el((8.4, 0, z0), (10.6, 13, z1), "#board"),
+        _el((5.2, 12, z0), (10.8, 16, z1), "#board"),                  # hips
+        # The strut: a strip folded out from the back, stepped down to the floor.
+        _el((7.5, 0, z1), (8.5, 12, 9.5), "#board"),
+        _el((7.5, 0, 9.5), (8.5, 8, 10.5), "#board"),
+        _el((7.5, 0, 10.5), (8.5, 4, 11.5), "#board"),
     ]
     upper = [
-        _el((6.0, 0, 7.0), (10.0, 3, 9.3), "#skin"),                    # waist
-        _el((5.4, 3, 6.6), (10.6, 9.2, 9.6), "#skin"),                  # ribcage and chest
-        _el((5.8, 5.6, 6.2), (10.2, 8.2, 6.6), "#skin"),                # bust
-        _el((4.6, 8.6, 7.0), (11.4, 10.2, 9.3), "#skin"),               # shoulders
-        _el((7.3, 10.2, 7.4), (8.7, 11.8, 8.8), "#skin"),               # neck
-        _el((6.7, 11.6, 6.6), (9.3, 15.2, 9.6), "#skin"),               # head
-        _el((7.0, 11.9, 6.3), (9.0, 14.6, 6.6), "#skin"),               # face
-        # arms hanging down past the hips (the lower arms reach into the block below)
-        _el((3.8, 2.6, 7.3), (5.0, 9.6, 8.7), "#skin"),
-        _el((11.0, 2.6, 7.3), (12.2, 9.6, 8.7), "#skin"),
-        _el((3.6, -3.8, 7.4), (4.6, 2.8, 8.6), "#skin"),
-        _el((11.4, -3.8, 7.4), (12.4, 2.8, 8.6), "#skin"),
-        _el((3.7, -5.6, 7.3), (4.5, -3.8, 8.9), "#skin"),
-        _el((11.5, -5.6, 7.3), (12.3, -3.8, 8.9), "#skin"),
-        _el((5.6, 7.0, 9.6), (6.6, 8.4, 9.66), "#tag", faces=("south",)),
+        _el((5.4, 0, z0), (10.6, 3, z1), "#board"),                    # waist
+        _el((4.9, 3, z0), (11.1, 9, z1), "#board"),                    # chest
+        _el((4.4, 8.5, z0), (11.6, 10.2, z1), "#board"),               # shoulders
+        _el((7.2, 10.2, z0), (8.8, 11.6, z1), "#board"),               # neck
+        _el((6.4, 11.6, z0), (9.6, 15.0, z1), "#board"),               # head
+        _el((6.9, 15.0, z0), (9.1, 15.6, z1), "#board"),
+        # arms, hanging a hand's width from the body, down into the block below
+        _el((3.0, -4.5, z0), (4.4, 9.4, z1), "#board"),
+        _el((11.6, -4.5, z0), (13.0, 9.4, z1), "#board"),
     ]
     _bm("l0_mannequin_lower", _model(tex, lower, render=None))
     _bm("l0_mannequin_upper", _model(tex, upper, render=None))

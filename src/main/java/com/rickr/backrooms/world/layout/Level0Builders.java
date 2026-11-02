@@ -25,7 +25,7 @@ import net.minecraft.core.Direction;
  *   <li>runs: a long straight partition 3-4 blocks out from a long wall (both long walls in wide
  *       rooms), stopping 2-3 blocks short of the end walls, with a 3-wide gap in long ones;</li>
  *   <li>cubicles: a row of partitions sticking out 3 blocks from a long wall, every 4 blocks (or
- *       every 5 with an L-shaped foot), so they make bays, sometimes with mannequins in them;</li>
+ *       every 5 with an L-shaped foot), so they make bays, now and then with a cardboard cutout in one;</li>
  *   <li>split: a partition straight across the middle from wall to wall, with a 4-wide gap in the
  *       centre;</li>
  *   <li>passage: a carpeted step at one end of a long wall leads down into a sunken passage (floor
@@ -283,9 +283,9 @@ final class Level0Builders {
                         return Level0Layout.HALF | partitionAcrossB;
                     }
                 }
-                // Mannequins stand in the bays, looking out into the room (a few have turned).
+                // Cardboard cutouts stand in a few bays, looking out into the room (a few have turned).
                 if (inRow && !byDoor && fromWall <= 1 && a > divider
-                        && hasMannequins(seed, bx, bz) && Hash.unit(seed, x, z, 715) < 0.3) {
+                        && hasMannequins(seed, bx, bz) && Hash.unit(seed, x, z, 715) < 0.1) {
                     Direction look = Hash.unit(seed, x, z, 716) < 0.25
                             ? Direction.from2DDataValue(Hash.range(Hash.of(seed, x, z, 717), 4)) : outOfWall;
                     return Level0Layout.OPEN | look.get2DDataValue() << 8 | (MANNEQUIN << 12);

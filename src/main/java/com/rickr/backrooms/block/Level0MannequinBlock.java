@@ -18,17 +18,17 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A featureless grey shop mannequin on a round stand, two blocks tall (the film's mannequin
- * clusters among the half-walls). It is two blocks like a door: HALF = LOWER (stand, legs and hips)
- * and HALF = UPPER (chest, arms and head) directly above it, both with the same FACING (the way
- * the mannequin looks). The world generator places both halves itself.
+ * A life-size cardboard cutout of a person, blank kraft-brown board held up by a folded strut,
+ * two blocks tall (the film's figures among the half-walls). It is two blocks like a door: HALF =
+ * LOWER (legs, hips and the strut) and HALF = UPPER (body, arms and head) directly above it, both
+ * with the same FACING (the way the figure faces). The world generator places both halves itself.
  */
 public class Level0MannequinBlock extends FurnitureBlock {
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
 
-    // Roughly the body's outline; the same in every direction, so no turning is needed.
-    private static final VoxelShape LOWER = Shapes.or(Block.box(3, 0, 3, 13, 1, 13), Block.box(4.5, 1, 5.5, 11.5, 16, 10.5));
-    private static final VoxelShape UPPER = Block.box(3.5, 0, 5, 12.5, 14.5, 11);
+    // Roughly the figure and its strut, the same in every direction, so no turning is needed.
+    private static final VoxelShape LOWER = Block.box(5, 0, 5, 11, 16, 11);
+    private static final VoxelShape UPPER = Block.box(4, 0, 4, 12, 15.6, 12);
 
     public Level0MannequinBlock(Properties properties) {
         super(properties, Shapes.block());
