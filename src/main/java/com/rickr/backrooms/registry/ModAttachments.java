@@ -6,6 +6,7 @@ import com.rickr.backrooms.player.CheckpointData;
 import com.rickr.backrooms.player.EnergyData;
 import com.rickr.backrooms.player.HallucinationData;
 import com.rickr.backrooms.player.SanityData;
+import com.mojang.serialization.Codec;
 import java.util.function.Supplier;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -36,6 +37,13 @@ public final class ModAttachments {
     /** The last checkpoint radio you used: saved, and copied on death (that's how you respawn there). */
     public static final Supplier<AttachmentType<CheckpointData>> CHECKPOINT = ATTACHMENTS.register("checkpoint",
             () -> AttachmentType.builder(() -> new CheckpointData()).serialize(CheckpointData.CODEC).copyOnDeath().build());
+
+    /**
+     * On Level 4 chunks: the version of the one-time door repair (world/layout/Level4DoorRepair)
+     * already done (0 = never checked). Saved with the chunk, so each chunk is checked only once.
+     */
+    public static final Supplier<AttachmentType<Integer>> L4_DOOR_FIX = ATTACHMENTS.register("l4_door_fix",
+            () -> AttachmentType.builder(() -> 0).serialize(Codec.INT).build());
 
     private ModAttachments() {}
 }

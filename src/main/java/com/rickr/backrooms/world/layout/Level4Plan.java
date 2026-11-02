@@ -1155,7 +1155,7 @@ final class Level4Plan {
                 if (k == 0 && extinguisherSide(seed, colX, colZ) == d) {
                     return withDeco(c, DECO_EXTINGUISHER, d);
                 }
-                if (k == 0 && coolerSide(seed, colX, colZ) == d) {
+                if (k == 0 && coolerSide(seed, colX, colZ) == d && !besideRoomDoors(f, colX, colZ)) {
                     return furniture(c, COOLER, d, 3);
                 }
                 if (movingDaySide(f, colX, colZ) == d) {
@@ -1189,22 +1189,27 @@ final class Level4Plan {
 
     /**
      * The side of column (colX, colZ) with a moving-day pile, or -1. Never on a column with an
-     * extinguisher or a cooler, and never in front of the doors of the row of small rooms some open
-     * floors have (their doors open onto local v 37).
+     * extinguisher or a cooler, and never in front of the doors of a room row ({@link #besideRoomDoors}).
      */
     private static int movingDaySide(Frame f, int colX, int colZ) {
         if (extinguisherSide(f.seed, colX, colZ) >= 0 || coolerSide(f.seed, colX, colZ) >= 0) {
             return -1;
         }
         long h = Hash.of(f.seed, colX, colZ, 7052);
-        if (Hash.unit(h) >= 0.07) {
-            return -1;
-        }
-        int colV = f.plusV == EAST ? colX - f.cx * CELL : colZ - f.cz * CELL;
-        if (colV >= 36 && zoneKind(f.seed, f.cx, f.cz) == OPEN && zoneVariant(f.seed, f.cx, f.cz) == 1) {
+        if (Hash.unit(h) >= 0.07 || besideRoomDoors(f, colX, colZ)) {
             return -1;
         }
         return Hash.range(Hash.mix(h), 4);
+    }
+
+    /**
+     * True for the columns of the last column row (local v 36) of an open floor that has a row of
+     * small rooms along its far side: their doors open onto local v 37, right beside these columns,
+     * so nothing may stand against them (it could block a room's only door).
+     */
+    private static boolean besideRoomDoors(Frame f, int colX, int colZ) {
+        int colV = f.plusV == EAST ? colX - f.cx * CELL : colZ - f.cz * CELL;
+        return colV >= 36 && zoneKind(f.seed, f.cx, f.cz) == OPEN && zoneVariant(f.seed, f.cx, f.cz) == 1;
     }
 
     /** A CCTV camera high on a column, looking out over the floor (about 1 column in 25). */
@@ -1854,8 +1859,10 @@ final class Level4Plan {
                     : prev > 0 ? JAMB_RIGHT | (prev == 2 ? JAMB_TALL : 0) : 0;
             return jamb == 0 ? wallBase : furniture(wallBase, WALL, 0, jamb | f.axisU());
         }
-        if (k == null || c == wallLo || c == wallHi) {
-            return wallBase; // partition between two rooms, or the back wall
+        // Partition between two rooms, or the back wall. (The door wall's own openings must get past
+        // this: they are built just below. Testing c == wallLo/wallHi alone walled every door up.)
+        if (k == null || (c != doorWall && (c == wallLo || c == wallHi))) {
+            return wallBase;
         }
         int kind = k.kind;
         int depth = wallHi - wallLo - 1;
@@ -2216,7 +2223,9 @@ final class Level4Plan {
         // one more, nearer the door: never more than three.
         int rowA = d / 2;
         int countA = Math.max(1, Math.min(2, (w - 2) / 5));
-        int rowB = d >= 10 ? d / 2 - 3 : -10;
+        // The second row keeps a free row between its chairs and the first row's: chairs back to
+        // back would box in the places between them.
+        int rowB = d >= 12 ? rowA - 4 : -10;
         for (int k = 0; k < 2; k++) {
             int side = r.iv - (k == 0 ? rowA : rowB); // -1 / +1 chairs, 0 tables
             if (side < -1 || side > 1) {

@@ -190,6 +190,25 @@ public final class Level4Layout extends LevelLayout {
         fillPlanColumn(seed, x, z, out);
     }
 
+    /** A column builder that keeps nothing (for asking {@link Level4AnomalyBlocks#fill} whether it would build a column). */
+    private static final Column NOWHERE = (y, state) -> {
+    };
+
+    /**
+     * True when {@link #fillColumn} builds column (x, z) from the plan alone: not the exit stairwell
+     * or its clearing, not a safe room or its strip, not a column an anomalous area builds itself.
+     * (Checked in the same order as fillColumn.)
+     */
+    boolean buildsFromPlan(long seed, int x, int z) {
+        int dx = exits().dx(seed, x, z);
+        int dz = exits().dz(seed, x, z);
+        if (Math.max(Math.abs(dx), Math.abs(dz)) <= Level4Plan.CLEARING_RADIUS || safeRoomNear(seed, x, z) != null) {
+            return false;
+        }
+        AnomalySite site = Level4AnomalyPlan.GRID.at(seed, x, z);
+        return site == null || !Level4AnomalyBlocks.fill(this, seed, site, x, z, NOWHERE);
+    }
+
     /**
      * Builds column (x, z) from {@link Level4Plan} alone (no stairwell, safe room or anomaly): the
      * anomaly builders call it too when they only add something to an ordinary column.
