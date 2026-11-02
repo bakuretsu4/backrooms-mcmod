@@ -1,23 +1,12 @@
 {
-  "parent": "minecraft:block/block",
-  "ambientocclusion": false,
+  "parent": "minecraft:block/cube",
   "textures": {
-    "all": "backrooms:block/l37_sunlit_void",
-    "particle": "backrooms:block/l37_sunlit_void"
-  },
-  "elements": [
-    {
-      "from": [0, 0, 0],
-      "to": [16, 16, 16],
-      "shade": false,
-      "faces": {
-        "down": {"texture": "#all", "cullface": "down"},
-        "up": {"texture": "#all", "cullface": "up"},
-        "north": {"texture": "#all", "cullface": "north"},
-        "south": {"texture": "#all", "cullface": "south"},
-        "west": {"texture": "#all", "cullface": "west"},
-        "east": {"texture": "#all", "cullface": "east"}
-      }
-    }
-  ]
+    "down": "backrooms:block/l37_tile_ceiling",
+    "up": "backrooms:block/l37_tile_floor",
+    "north": "backrooms:block/l37_tile_wall",
+    "south": "backrooms:block/l37_tile_wall",
+    "west": "backrooms:block/l37_tile_wall",
+    "east": "backrooms:block/l37_tile_wall",
+    "particle": "backrooms:block/l37_tile_wall"
+  }
 }

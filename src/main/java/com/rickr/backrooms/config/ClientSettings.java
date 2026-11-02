@@ -79,10 +79,10 @@ public final class ClientSettings {
      * the pool water traces a reflection for every water pixel.
      */
     public enum Quality {
-        //   lamp lights, light range, glow chain,          water reflection steps, sun beams
-        LOW(12, 20, "camcorder_low", 0, 6),
-        MEDIUM(20, 24, "camcorder_medium", 10, 12),
-        HIGH(32, 28, "camcorder", 18, 20);
+        //   lamp lights, light range, glow chain,          water reflection steps, sun beams, opening glows
+        LOW(12, 20, "camcorder_low", 0, 6, 3),
+        MEDIUM(20, 24, "camcorder_medium", 10, 12, 6),
+        HIGH(32, 28, "camcorder", 18, 20, 12);
 
         /** Most Veil lamp lights at once. */
         public final int maxLights;
@@ -94,13 +94,19 @@ public final class ClientSettings {
         public final int reflectionSteps;
         /** Most Level 37 / Poolrooms sun beams (shadowed area lights) at once. */
         public final int maxSunBeams;
+        /**
+         * How many of the nearest openings also get their two small hidden glows (the wash inside
+         * the niche and the soft bounce in front of it, client/light/SunBeams): two more lights each.
+         */
+        public final int maxSunGlows;
 
-        Quality(int maxLights, int lightRange, String postChain, int reflectionSteps, int maxSunBeams) {
+        Quality(int maxLights, int lightRange, String postChain, int reflectionSteps, int maxSunBeams, int maxSunGlows) {
             this.maxLights = maxLights;
             this.lightRange = lightRange;
             this.postChain = postChain;
             this.reflectionSteps = reflectionSteps;
             this.maxSunBeams = maxSunBeams;
+            this.maxSunGlows = maxSunGlows;
         }
     }
 

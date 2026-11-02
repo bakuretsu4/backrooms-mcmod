@@ -4963,8 +4963,8 @@ L4_SOUNDS = [snd_l4_rain, snd_l4_pipes, snd_l4_thunder, snd_l4_door_music, snd_l
 
 # =============================================================================
 # Level 37 "Sublimity": fine cream-white mosaic (8 x 8 small tiles per block),
-# the overexposed "sunlit void", chrome for the ladders and rails, the curved
-# tile models, and the calm ambience. Run: python tools/gen_assets.py tex_l37_ snd_l37_
+# chrome for the ladders and rails, the curved tile models, and the calm
+# ambience. Run: python tools/gen_assets.py tex_l37_ snd_l37_
 # =============================================================================
 
 L37_TILE = 16                    # 8 x 8 small tiles per 128 px face
@@ -5007,14 +5007,6 @@ def tex_l37_tiles() -> None:
     save_png(_l37_tiles(3703, (236, 234, 220), (148, 146, 130), var=1.4), _blk("l37_tile_ceiling"))
     # Deep pit lining: dark sea-green glazed tile.
     save_png(_l37_tiles(3704, (46, 96, 80), (22, 46, 38), var=2.5, glaze=2.4), _blk("l37_tile_deep"))
-
-
-def tex_l37_sunlit_void() -> None:
-    """Overexposed warm daylight seen through an opening: almost flat warm white with a whisper
-    of haze, so a wall of it tiles without seams (drawn full-bright)."""
-    rng = rng_for(3705)
-    img = add_lum(fill((255, 248, 228), (S, S)), fnoise(rng, beta=3.5) * 1.2)
-    save_png(flat16(np.clip(img, 0, 255)), _blk("l37_sunlit_void"))
 
 
 def tex_l37_chrome() -> None:
@@ -5316,7 +5308,7 @@ def snd_l37_arrive() -> None:
     save_ogg(x, SND / "level37" / "arrive.ogg", peak=0.6, fade_out=0.6)
 
 
-L37_TEXTURES = [tex_l37_tiles, tex_l37_sunlit_void, tex_l37_chrome, tex_l37_curve_models]
+L37_TEXTURES = [tex_l37_tiles, tex_l37_chrome, tex_l37_curve_models]
 L37_SOUNDS = [snd_l37_ambience, snd_l37_arrive]
 
 

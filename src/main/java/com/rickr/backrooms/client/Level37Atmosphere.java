@@ -53,11 +53,15 @@ public final class Level37Atmosphere implements LayeredDraw.Layer {
      * The bounce in a lit room. It is the SAME for every light level from {@link #FULL_FROM} up:
      * the level's hidden lights are placed only to say "this room is lit", so the light level
      * inside a lit room means nothing and the room reads evenly bright (the camera meters it the
-     * same way, {@link #litShare}). The brightness differences inside a room come from the sun beams
-     * and the face shading instead. (Curves are now lit smoothly per vertex, client/CurveTileRenderer,
-     * so this is a look choice, no longer a workaround for per-block steps on round pillars.)
+     * same way, {@link #litShare}). The brightness differences inside a room come from the hidden
+     * daylight of the openings (client/light/SunBeams: shafts, niche washes, bounce) and the face
+     * shading instead, so the fill is kept moderate (0.38, ~0.63 after vanilla's brightness slider
+     * at 50%; it was 0.52 / ~0.74): on a brighter fill the camcorder's highlight shoulder squeezed
+     * the sun patches into the tile around them and the light seemed to come from nowhere.
+     * (Curves are now lit smoothly per vertex, client/CurveTileRenderer, so the flat fill is a look
+     * choice, no longer a workaround for per-block steps on round pillars.)
      */
-    private static final float MAX_FILL = 0.52f;
+    private static final float MAX_FILL = 0.38f;
     /** Light level from which a place counts as fully lit (rooms keep their hidden lights dense). */
     private static final float FULL_FROM = 6.0f;
     /** Below this it is pitch dark (the far end of a tunnel); in between the fill fades in. */

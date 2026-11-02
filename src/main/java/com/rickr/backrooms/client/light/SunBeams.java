@@ -10,6 +10,7 @@ import com.rickr.backrooms.world.BackroomsLevel;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.VeilRenderer;
 import foundry.veil.api.client.render.light.data.AreaLightData;
+import foundry.veil.api.client.render.light.data.PointLightData;
 import foundry.veil.api.client.render.light.renderer.LightRenderHandle;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
@@ -37,21 +38,32 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 /**
- * Shafts of daylight through Level 37's skylights, slit windows and alcoves (and out of the
- * Poolrooms' sunlit archway).
+ * The hidden daylight of Level 37's skylights, slit windows, alcoves, light well and oculus (and
+ * of the Poolrooms' sunlit archway).
  *
- * <p>Every opening ends in a group of {@code l37_sunlit_void} blocks. Each group becomes one Veil
- * <b>area light</b>: a glowing rectangle the size of the opening that shines along a slanted
- * "sun" direction, with a narrow beam angle. With Veil's shadows on, the solid wall or ceiling
- * around the opening crops the beam, so it lands as a sharp bright rectangle (or a stripe per
- * slit) on the walls, floors and pillars it reaches, like sun through a window. The sunlit void
- * block doesn't block light, so it never shadows its own opening.
+ * <p>Every opening ends in a group of {@code l37_sunlit_void} blocks, which look like the tile
+ * around them: the source is never seen, only its light. Each group gets up to three Veil lights:
+ * <ul>
+ *   <li><b>The shaft</b> (every opening in range): an area light the size of the opening, just in
+ *       front of its back face, shining along a slanted "sun" direction. With Veil's shadows on,
+ *       the walls around the opening crop it, so it lands as a bright stripe or patch on the
+ *       walls, floor, pillars and water it reaches. Its edge angle gives the patches a soft rim
+ *       and it fades out over {@value #DISTANCE} blocks, so stripes die away into dim corners.</li>
+ *   <li><b>The wash</b> (the nearest few openings): a small area light inside the niche, facing
+ *       its back, so the back of the niche is the brightest tile in it and the reveals fade from
+ *       bright at the back to the plain room light at the front, as if the source were just out
+ *       of sight inside.</li>
+ *   <li><b>The bounce</b> (the same openings): a faint, wide point light just outside the
+ *       niche's mouth, so the tile and water around the opening pick up a soft glow.</li>
+ * </ul>
+ * The niche's depth (how far the wall runs on in front of the back face) is measured once when
+ * the opening is found ({@link #recessDepth}), not every frame.
  *
  * <p>No in-air scattering ("god rays") on these lights: Veil's area-light scattering marches a
  * 1-block sphere around the nearest point of the rectangle, and on any surface within a block of
- * it (the glowing void face itself, the jambs of the opening) it goes negative or explodes. That
- * drew flat grey patches over the archway's light, rings around it and coloured speckle on the
- * walls beside it. The haze comes from the fog ({@code Level37Atmosphere}) instead.
+ * it (the back face, the jambs of the opening) it goes negative or explodes. That drew flat grey
+ * patches over the archway's light, rings around it and coloured speckle on the walls beside it.
+ * The haze comes from the fog ({@code Level37Atmosphere}) instead.
  *
  * <p>The light leaves at irregular angles on purpose ("strict but senseless" architecture, sun
  * from nowhere): skylights shine down tilted around the level's mean sun direction
@@ -59,11 +71,12 @@ import org.joml.Vector3f;
  * (fixed per opening, so it is the same every visit).
  *
  * <p>Only active while Veil's lights are ({@link BackroomsLights#isVeilLightingActive()}).
+ * Without them the block's vanilla light 14 is the light, falling off block by block.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class SunBeams {
-    // How many beams at once (each is a shadowed area light) comes from the QUALITY setting:
-    // ClientSettings.Quality#maxSunBeams (20 on HIGH).
+    // How many shafts and glows at once comes from the QUALITY setting: ClientSettings.Quality
+    // #maxSunBeams (20 on HIGH) and #maxSunGlows (12 on HIGH; each is two more lights).
     /** Beams whose opening is further than this aren't drawn. */
     private static final double BEAM_RANGE = 44.0;
     /** Rebuild the beam list after walking this far, or when openings appeared or vanished. */
@@ -74,35 +87,89 @@ public final class SunBeams {
     private static final int MERGE_GAP = 2;
     /** An opening is never wider than this (keeps one beam from spanning a whole wall). */
     private static final int MAX_SPAN = 16;
+    /** Glows only for openings this close (blocks); they are small and soft, so further off they don't show. */
+    private static final double GLOW_RANGE = 28.0;
+    /** A niche deeper than this is measured as this deep (the archway passage is 5). */
+    private static final int MAX_RECESS = 8;
 
     /** Sun colour: #F1E9BF warm daylight. */
     private static final float SUN_R = 0xF1 / 255.0f;
     private static final float SUN_G = 0xE9 / 255.0f;
     private static final float SUN_B = 0xBF / 255.0f;
     /**
-     * Level 37: a lit patch of white tile lands just under white on top of the room fill. The fill
-     * already puts lit tile at ~0.54-0.65 in the picture (vanilla's brightness slider lifts it), and
-     * everything is drawn into an 8-bit picture before the camcorder grades it, so whatever passes
-     * 1.0 there is lost for good: at 1.25 every sun patch, sill and window reveal was a flat
-     * clipped white (~1.2-1.5) with no grout left. At 0.65 a patch peaks around 0.9-1.0 with its
-     * grout visible, and the camcorder's highlight shoulder (AtmosphereGrade) does the rest.
+     * Level 37 shafts. Everything is drawn into an 8-bit picture before the camcorder grades it,
+     * so a patch plus the room fill under it must stay under 1.0, yet stand well clear of the
+     * fill (the camcorder's highlight shoulder squeezes everything above ~0.6). Calibrated in game
+     * (2026-11, sun-light brightness tests): Veil's light lands at about a third of
+     * the textbook estimate on our tile, so the niche wash needed 3x and the bounce 2x their first
+     * values; the shaft follows the same factor. With the long reach below, a patch 4-14 blocks
+     * out (floor, pillars, the far wall, the water) gains roughly 0.3-0.5 over ~0.45-0.55 of fill.
      */
-    private static final float BRIGHTNESS_37 = 0.65f;
-    /** The Poolrooms archway: warm light spilling into a dim room. */
-    private static final float BRIGHTNESS_ARCHWAY = 1.2f;
-    /** How far a beam reaches (it fades out smoothly by this distance). */
-    private static final float DISTANCE = 30.0f;
-    /** Soft edge of the beam, radians: small = crisp rectangles of light. */
-    private static final float EDGE_ANGLE = 0.14f;
+    private static final float BRIGHTNESS_37 = 2.6f;
+    /** The Poolrooms archway: warm light spilling into a dim room (same calibration). */
+    private static final float BRIGHTNESS_ARCHWAY = 2.0f;
+    /**
+     * How far a shaft reaches (it fades out smoothly by this distance, as (1 - d/reach)^3). Long, so
+     * sunlight crosses a room at nearly full strength (0.8 at 4 blocks, 0.4 at 14) and lands as
+     * stripes on the far wall and pillars, not only as a patch at the window's foot (at 24 a patch
+     * 12 blocks out kept an eighth of its light).
+     */
+    private static final float DISTANCE = 56.0f;
+    /**
+     * How far a shaft's rectangle may lean behind the back face (blocks): see {@link #limitSlant}.
+     * The sideways lean gets at most {@link #MAX_LEAN}, the downward lean what is left of
+     * {@link #LEAN_TOTAL}; together they stay under the void's one-block thickness.
+     */
+    private static final float MAX_LEAN = 0.45f;
+    private static final float LEAN_TOTAL = 0.9f;
+    /**
+     * Soft rim of a shaft, radians. Veil's shadows are block-sharp, so the patch keeps the window's
+     * outline; this angle adds a soft falloff around it (about 0.2 block per block of distance)
+     * instead of the old hard-cut rectangles (0.14). Not wider: with the long reach every 0.1 rad
+     * adds ~5.6 blocks to each side of the volume Veil shades.
+     */
+    private static final float EDGE_ANGLE = 0.2f;
     // (No setInscatteringStrength: see the class comment. Veil's default is 0 = off.)
     /** The rectangle reaches this far beyond the opening on each side; the walls around crop it. */
-    private static final float SIZE_MARGIN = 0.35f;
+    private static final float SIZE_MARGIN = 0.2f;
     /** The archway's light rectangle is exactly the size of its opening (see {@link #cluster}). */
     private static final float ARCHWAY_INSET = 0.0f;
+    /**
+     * The shaft's rectangle sits this far in front of the back face. Exactly on it, the face (now
+     * lit tile, no longer full-bright) would be lit from a zero distance: noisy speckle.
+     */
+    private static final float FACE_GAP = 0.05f;
 
-    /** One opening's beam (plain data, no Veil types). */
+    /**
+     * The wash inside the niche: a rectangle a little smaller than the opening, 0.8 of the way to
+     * the niche's mouth (at most 0.8 blocks out), shining back onto the back face. It lights the
+     * back evenly and the reveals behind it with a gradient: full near the back, fading to nothing
+     * at its own plane over the wide edge angle. Brightness calibrated in game: at 3.3 the backs
+     * glow warm and read as lit niches (the reference's alcoves) without going white.
+     */
+    private static final float COVE_GAP_SHARE = 0.8f;
+    private static final float COVE_GAP_MIN = 0.4f;
+    private static final float COVE_GAP_MAX = 0.8f;
+    private static final float COVE_INSET = 0.1f;
+    private static final float COVE_DISTANCE = 2.8f;
+    private static final float COVE_ANGLE = 1.25f;
+    private static final float COVE_BRIGHTNESS = 3.3f;
+    /**
+     * The bounce: a point light this far out of the niche's mouth, reaching {@link #BOUNCE_REACH}
+     * plus the opening's half size: a soft glow on the tile and water around the opening.
+     * Brightness calibrated in game (0.8).
+     */
+    private static final float BOUNCE_OUT = 0.7f;
+    private static final float BOUNCE_REACH = 6.0f;
+    private static final float BOUNCE_BRIGHTNESS = 0.8f;
+
+    /**
+     * One opening (plain data, no Veil types). (x, y, z) is the middle of its back face; facing
+     * points out of it into the room; halfX/halfY are the shaft's rectangle, faceHalfX/faceHalfY
+     * the opening itself; depth is how many blocks of niche lie in front of the back face.
+     */
     public record Beam(long key, double x, double y, double z, float dx, float dy, float dz, float halfX, float halfY,
-                       boolean upZ, boolean archway) {
+                       boolean upZ, boolean archway, Direction facing, float faceHalfX, float faceHalfY, int depth) {
         public double distSq(Vec3 p) {
             double ax = x - p.x;
             double ay = y - p.y;
@@ -115,6 +182,12 @@ public final class SunBeams {
     private static final Long2ObjectOpenHashMap<long[]> BY_CHUNK = new Long2ObjectOpenHashMap<>();
     private static final Long2ObjectOpenHashMap<Direction> FACING = new Long2ObjectOpenHashMap<>();
     private static final Long2ObjectOpenHashMap<LightRenderHandle<AreaLightData>> ACTIVE = new Long2ObjectOpenHashMap<>();
+    private static final Long2ObjectOpenHashMap<LightRenderHandle<AreaLightData>> COVES = new Long2ObjectOpenHashMap<>();
+    private static final Long2ObjectOpenHashMap<LightRenderHandle<PointLightData>> BOUNCES = new Long2ObjectOpenHashMap<>();
+    /** Reused every tick (no allocation): the openings that want a shaft / glows this tick. */
+    private static final LongOpenHashSet WANTED = new LongOpenHashSet();
+    private static final LongOpenHashSet WANTED_GLOWS = new LongOpenHashSet();
+    private static final BlockPos.MutableBlockPos CURSOR = new BlockPos.MutableBlockPos();
 
     @Nullable
     private static ClientLevel boundLevel;
@@ -347,10 +420,10 @@ public final class SunBeams {
                 }
             }
         }
-        // The rectangle sits on the glowing void's face, centred on the opening. (Half a block back
-        // inside the void lit the void face evenly, but then the passage walls beside it were lit at
-        // a grazing angle and Veil's area-light shadows turned them into flickering speckle. The
-        // void face is evenly bright anyway: its model draws unshaded at full emissive brightness.)
+        // (cx, cy, cz): the middle of the back face of the opening. The shaft's rectangle sits just
+        // in front of it (FACE_GAP). (Half a block back inside the void lit the back evenly, but then
+        // the passage walls beside it were lit at a grazing angle and Veil's area-light shadows
+        // turned them into flickering speckle.)
         double cx = (minX + maxX + 1) / 2.0;
         double cy = (minY + maxY + 1) / 2.0;
         double cz = (minZ + maxZ + 1) / 2.0;
@@ -375,12 +448,98 @@ public final class SunBeams {
             halfX = (facing.getAxis() == Direction.Axis.X ? maxZ - minZ + 1 : maxX - minX + 1) / 2.0f;
             halfY = (maxY - minY + 1) / 2.0f;
         }
+        limitSlant(dir, facing, halfX, halfY);
         // Level 37's openings: the rectangle overhangs the opening and the walls around crop it. The
         // Poolrooms archway's light wall fills a passage whose side walls run along the beam, so an
         // overhang would put the light's edge inside those walls and Veil's area-light shading turns
         // the wall surface into flickering speckle: there the rectangle stays a little inside.
         float margin = archway ? -ARCHWAY_INSET : SIZE_MARGIN;
-        return new Beam(start, cx, cy, cz, dir.x, dir.y, dir.z, halfX + margin, halfY + margin, vertical, archway);
+        int depth = recessDepth(facing, minX, minY, minZ, maxX, maxY, maxZ);
+        return new Beam(start, cx, cy, cz, dir.x, dir.y, dir.z, halfX + margin, halfY + margin, vertical, archway,
+                facing, halfX, halfY, depth);
+    }
+
+    /**
+     * Keeps a shaft's slant small enough for Veil's shadow test to work across the whole opening.
+     *
+     * <p>Veil lights a surface point from the nearest point of the light's rectangle and checks
+     * the straight line between the two for blocks. The rectangle stands square to the (slanted)
+     * beam, through the middle of the opening, so across a wide or tall opening one end of it
+     * leans back behind the back face. A point lit through that end of the opening then tests its
+     * line against a spot up to ~1.5-2.6 blocks behind the face: past the one-block-thick void,
+     * inside the solid wall, so every such patch came out black (the 15-wide window grid of the
+     * pool rooms and the 5-tall slits lost all their light this way). Limiting the in-plane
+     * components of the beam keeps that spot inside the void: the lean along the opening's first
+     * axis (across a wall, X for a skylight) at most {@value #MAX_LEAN} block, along the second
+     * (up a wall) at most what is left of {@value #LEAN_TOTAL}. The test then only asks the real
+     * question: is the path from the opening to the point clear. Narrow openings keep their full
+     * slant; a wide window grid shines nearly straight out sideways, a 5-tall slit (which leans
+     * little sideways) down at up to ~17 degrees: long stripes across the room onto the pillars,
+     * the far wall and the water, like the references.
+     */
+    private static void limitSlant(Vector3f dir, Direction facing, float halfX, float halfY) {
+        float nx = facing.getStepX();
+        float ny = facing.getStepY();
+        float nz = facing.getStepZ();
+        // The two directions within the face, with the opening's half-size along each.
+        float ax;
+        float ay;
+        float az;
+        float bx;
+        float by;
+        float bz;
+        if (facing.getAxis() == Direction.Axis.Y) {
+            ax = 1.0f; ay = 0.0f; az = 0.0f;   // halfX runs along X
+            bx = 0.0f; by = 0.0f; bz = 1.0f;   // halfY along Z
+        } else {
+            Direction across = facing.getClockWise();
+            ax = across.getStepX(); ay = 0.0f; az = across.getStepZ();   // halfX across the wall
+            bx = 0.0f; by = 1.0f; bz = 0.0f;                             // halfY up
+        }
+        float ca = dir.x * ax + dir.y * ay + dir.z * az;
+        float cb = dir.x * bx + dir.y * by + dir.z * bz;
+        ca = Math.copySign(Math.min(Math.abs(ca), MAX_LEAN / Math.max(halfX, MAX_LEAN)), ca);
+        float left = LEAN_TOTAL - halfX * Math.abs(ca);
+        cb = Math.copySign(Math.min(Math.abs(cb), left / Math.max(halfY, left)), cb);
+        float cn = (float) Math.sqrt(Math.max(1.0f - ca * ca - cb * cb, 0.0f));
+        dir.set(nx * cn + ax * ca + bx * cb, ny * cn + ay * ca + by * cb, nz * cn + az * ca + bz * cb).normalize();
+    }
+
+    /**
+     * How many blocks of niche lie in front of an opening's back face: step out of the face one
+     * block at a time while the wall still closes in on all four sides just beyond the opening's
+     * edges. A slit window gives 1, the rotunda alcoves and the archway passage several, a
+     * skylight the height of its shaft. Measured once per opening when the list is rebuilt.
+     */
+    private static int recessDepth(Direction facing, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+        ClientLevel level = boundLevel;
+        if (level == null) {
+            return 0;
+        }
+        int[] lo = {minX, minY, minZ};
+        int[] hi = {maxX, maxY, maxZ};
+        int axis = facing.getAxis().ordinal(); // X 0, Y 1, Z 2
+        int a = (axis + 1) % 3;
+        int b = (axis + 2) % 3;
+        int[] p = new int[3];
+        int depth = 0;
+        for (int k = 1; k <= MAX_RECESS; k++) {
+            p[axis] = facing.getAxisDirection() == Direction.AxisDirection.POSITIVE ? hi[axis] + k : lo[axis] - k;
+            boolean closed = true;
+            for (int side = 0; side < 4 && closed; side++) {
+                int across = side < 2 ? a : b;
+                int along = side < 2 ? b : a;
+                p[across] = (side & 1) == 0 ? lo[across] - 1 : hi[across] + 1;
+                p[along] = (lo[along] + hi[along]) >> 1;
+                CURSOR.set(p[0], p[1], p[2]);
+                closed = !level.getBlockState(CURSOR).getCollisionShape(level, CURSOR).isEmpty();
+            }
+            if (!closed) {
+                break;
+            }
+            depth = k;
+        }
+        return depth;
     }
 
     /**
@@ -427,31 +586,76 @@ public final class SunBeams {
         float scale = CameraClientState.battery <= 0.0f ? 0.25f : 1.0f;
         boolean rescale = scale != appliedScale;
         appliedScale = scale;
-        LongOpenHashSet wanted = new LongOpenHashSet();
+        WANTED.clear();
+        WANTED_GLOWS.clear();
         double maxSq = BEAM_RANGE * BEAM_RANGE;
+        double glowSq = GLOW_RANGE * GLOW_RANGE;
         int maxBeams = ClientSettings.quality().maxSunBeams;
+        int maxGlows = ClientSettings.quality().maxSunGlows;
         for (Beam beam : beams) {
-            if (wanted.size() >= maxBeams || beam.distSq(eye) > maxSq) {
+            double distSq = beam.distSq(eye);
+            if (WANTED.size() >= maxBeams || distSq > maxSq) {
                 break; // nearest first
             }
-            wanted.add(beam.key());
-            LightRenderHandle<AreaLightData> handle = ACTIVE.get(beam.key());
+            long key = beam.key();
+            WANTED.add(key);
+            LightRenderHandle<AreaLightData> handle = ACTIVE.get(key);
             if (handle != null && !handle.isValid()) {
-                ACTIVE.remove(beam.key()); // Veil threw it away (resource reload): make it again
+                ACTIVE.remove(key); // Veil threw it away (resource reload): make it again
                 handle = null;
             }
             if (handle == null) {
-                ACTIVE.put(beam.key(), renderer.getLightRenderer().addLight(newLight(beam, scale)));
+                ACTIVE.put(key, renderer.getLightRenderer().addLight(newShaft(beam, scale)));
             } else if (rescale) {
                 handle.getLightData().setBrightness(brightnessOf(beam) * scale);
             }
+            if (WANTED_GLOWS.size() >= maxGlows || distSq > glowSq) {
+                continue;
+            }
+            WANTED_GLOWS.add(key);
+            LightRenderHandle<AreaLightData> cove = COVES.get(key);
+            if (cove != null && !cove.isValid()) {
+                COVES.remove(key);
+                cove = null;
+            }
+            if (cove == null) {
+                COVES.put(key, renderer.getLightRenderer().addLight(newCove(beam, scale)));
+            } else if (rescale) {
+                cove.getLightData().setBrightness(COVE_BRIGHTNESS * scale);
+            }
+            LightRenderHandle<PointLightData> bounce = BOUNCES.get(key);
+            if (bounce != null && !bounce.isValid()) {
+                BOUNCES.remove(key);
+                bounce = null;
+            }
+            if (bounce == null) {
+                BOUNCES.put(key, renderer.getLightRenderer().addLight(newBounce(beam, scale)));
+            } else if (rescale) {
+                bounce.getLightData().setBrightness(BOUNCE_BRIGHTNESS * scale);
+            }
         }
-        var it = ACTIVE.long2ObjectEntrySet().iterator();
-        while (it.hasNext()) {
-            var entry = it.next();
-            if (!wanted.contains(entry.getLongKey())) {
+        var shafts = ACTIVE.long2ObjectEntrySet().iterator();
+        while (shafts.hasNext()) {
+            var entry = shafts.next();
+            if (!WANTED.contains(entry.getLongKey())) {
                 entry.getValue().free();
-                it.remove();
+                shafts.remove();
+            }
+        }
+        var coves = COVES.long2ObjectEntrySet().iterator();
+        while (coves.hasNext()) {
+            var entry = coves.next();
+            if (!WANTED_GLOWS.contains(entry.getLongKey())) {
+                entry.getValue().free();
+                coves.remove();
+            }
+        }
+        var bounces = BOUNCES.long2ObjectEntrySet().iterator();
+        while (bounces.hasNext()) {
+            var entry = bounces.next();
+            if (!WANTED_GLOWS.contains(entry.getLongKey())) {
+                entry.getValue().free();
+                bounces.remove();
             }
         }
     }
@@ -460,7 +664,8 @@ public final class SunBeams {
         return beam.archway() ? BRIGHTNESS_ARCHWAY : BRIGHTNESS_37;
     }
 
-    private static AreaLightData newLight(Beam beam, float scale) {
+    /** The shaft of sun: out of the back face along the opening's slanted sun direction. */
+    private static AreaLightData newShaft(Beam beam, float scale) {
         AreaLightData light = new AreaLightData()
                 .setSize(beam.halfX(), beam.halfY())
                 .setAngle(EDGE_ANGLE)
@@ -468,25 +673,68 @@ public final class SunBeams {
                 .setColor(SUN_R, SUN_G, SUN_B)
                 .setBrightness(brightnessOf(beam) * scale)
                 .setOcclusionEnabled(true);
-        light.getPositionMutable().set(beam.x(), beam.y(), beam.z());
+        Direction out = beam.facing();
+        light.getPositionMutable().set(beam.x() + out.getStepX() * FACE_GAP, beam.y() + out.getStepY() * FACE_GAP,
+                beam.z() + out.getStepZ() * FACE_GAP);
         // Area lights shine along their local +Z. lookAlong turns the given direction to -Z, so
-        // pass the reverse (same trick as the spot lights in VeilFixtures). "Up" picks how the
-        // rectangle lies: along Z for skylights, upright for windows.
-        float upX = 0.0f;
-        float upY = beam.upZ() ? 0.0f : 1.0f;
-        float upZ = beam.upZ() ? 1.0f : 0.0f;
-        light.getOrientationMutable().identity().lookAlong(-beam.dx(), -beam.dy(), -beam.dz(), upX, upY, upZ);
+        // pass the reverse (same trick as the spot lights in VeilFixtures).
+        orient(light, beam, -beam.dx(), -beam.dy(), -beam.dz());
         return light;
     }
 
+    /** The wash: inside the niche, a little smaller than the opening, shining back onto its back face. */
+    private static AreaLightData newCove(Beam beam, float scale) {
+        AreaLightData light = new AreaLightData()
+                .setSize(Math.max(beam.faceHalfX() - COVE_INSET, 0.2f), Math.max(beam.faceHalfY() - COVE_INSET, 0.2f))
+                .setAngle(COVE_ANGLE)
+                .setDistance(COVE_DISTANCE)
+                .setColor(SUN_R, SUN_G, SUN_B)
+                .setBrightness(COVE_BRIGHTNESS * scale)
+                .setOcclusionEnabled(true);
+        Direction out = beam.facing();
+        float gap = Math.min(Math.max(beam.depth() * COVE_GAP_SHARE, COVE_GAP_MIN), COVE_GAP_MAX);
+        light.getPositionMutable().set(beam.x() + out.getStepX() * gap, beam.y() + out.getStepY() * gap,
+                beam.z() + out.getStepZ() * gap);
+        // It shines back into the niche (along -facing), so lookAlong gets +facing.
+        orient(light, beam, out.getStepX(), out.getStepY(), out.getStepZ());
+        return light;
+    }
+
+    /** The bounce: a faint wide glow just outside the niche's mouth. */
+    private static PointLightData newBounce(Beam beam, float scale) {
+        Direction out = beam.facing();
+        double reach = beam.depth() + BOUNCE_OUT;
+        return new PointLightData()
+                .setPosition(beam.x() + out.getStepX() * reach, beam.y() + out.getStepY() * reach, beam.z() + out.getStepZ() * reach)
+                .setRadius(BOUNCE_REACH + Math.max(beam.faceHalfX(), beam.faceHalfY()))
+                .setColor(SUN_R, SUN_G, SUN_B)
+                .setBrightness(BOUNCE_BRIGHTNESS * scale)
+                .setOcclusionEnabled(true); // stays in the room it lights
+    }
+
+    /** Turns an area light to face along -look; "up" lays the rectangle along Z for skylights, upright for windows. */
+    private static void orient(AreaLightData light, Beam beam, float lookX, float lookY, float lookZ) {
+        float upY = beam.upZ() ? 0.0f : 1.0f;
+        float upZ = beam.upZ() ? 1.0f : 0.0f;
+        light.getOrientationMutable().identity().lookAlong(lookX, lookY, lookZ, 0.0f, upY, upZ);
+    }
+
     private static void freeLights() {
-        if (ACTIVE.isEmpty()) {
+        if (ACTIVE.isEmpty() && COVES.isEmpty() && BOUNCES.isEmpty()) {
             return;
         }
         for (LightRenderHandle<AreaLightData> handle : ACTIVE.values()) {
             handle.free();
         }
+        for (LightRenderHandle<AreaLightData> handle : COVES.values()) {
+            handle.free();
+        }
+        for (LightRenderHandle<PointLightData> handle : BOUNCES.values()) {
+            handle.free();
+        }
         ACTIVE.clear();
+        COVES.clear();
+        BOUNCES.clear();
         appliedScale = -1.0f;
     }
 

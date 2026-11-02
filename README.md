@@ -37,6 +37,7 @@ time. HIGH is the full look; try MEDIUM or LOW if the game stutters.
 | Glow around lamps (blur passes) | 6 | 4 | none |
 | Pool water reflections | full | shorter | none (plain mirror colour) |
 | Sun beams (Level 37, Poolrooms) | 20 | 12 | 6 |
+| Opening glows (niche wash + bounce, 2 lights each) | 12 | 6 | 3 |
 
 Measured at 1920x1080 on a fast graphics card, LOW takes about 15% less time per frame than HIGH
 in Level 0 and about 40% less in Level 37; slower cards gain more.
@@ -191,15 +192,16 @@ going down into the dark, until the picture breaks up and you are in the next le
   of daylight. No monsters. The way out is the drain: a dark-tiled shaft in the middle of a deep
   pool, lit by lamps around its edge. Swim into it and it pulls you down into Level 37.
   Somewhere (about once every 300 x 300 blocks) a dim, dry room has a **sunlit archway** in its
-  north wall: a round arch lined with fine white mosaic, warm daylight pouring out of it. Walk
+  north wall: a round arch lined with fine white mosaic, warm daylight pouring out of it from somewhere deep inside. Walk
   into the light: a shortcut that skips ahead to Level 39's flooded tunnels.
 - **Level 37 ("Sublimity"):** reached down the Poolrooms' drain. Pristine cream-white mosaic on
   every surface, floors flooded ankle-deep in clear sea-green water, deep pools with no ledge and
   chrome ladders, forests of round pillars standing in the water, wavy walls and rounded corners, round arches
-  and circular tunnels fading into darkness, domed rotundas with an oculus and glowing arched
+  and circular tunnels fading into darkness, domed rotundas with an oculus and softly lit arched
   alcoves, a spiral stair of floating treads climbing a light well toward the sun. Warm daylight
-  comes from nowhere: skylights and tall slit windows open onto a dazzling white void and throw
-  sharp bright rectangles and stripes across the tile and water, while the long tunnels stay dark.
+  comes from nowhere: skylights and tall slit windows are tiled niches lit by a source you never
+  see (brightest at the back, fading toward the room), and throw soft-edged stripes and patches of
+  sun across the tile and water, with a faint glow around each opening, while the long tunnels stay dark.
   Calm and quiet: gentle lapping, distant drips, no monsters, no events, and your **sanity slowly
   comes back** (+0.6/s) anywhere on the level. Backpacks on the dry pool decks and at the top of
   the spiral stairs hold almond water and calm pills. The way on is down: a round rotunda with a
@@ -794,7 +796,7 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **Stair pits:** Some rooms are one deep, dark flooded shaft, with a staircase running straight down into the water. Down there your breath runs out fast and currents drag you around. The stairs are always the way back up.
 
 **Level 37**
-- **Void openings:** In a few slit-window walls two slits have merged into one wider gap above a knee-high ledge, with dazzling white right behind it. The closer you get, the brighter and louder it grows, and the worse you feel. Those who climb in and stand in the white wake somewhere dark in the Lobby, shaken.
+- **Void openings:** In a few slit-window walls two slits have merged into one wider, deeper lit niche above a knee-high ledge. The closer you get, the more the light swallows the picture, and the louder and worse it grows. Those who climb in and stand in the white wake somewhere dark in the Lobby, shaken.
 - **Dark openings:** Rarely, a dim corner of a pool deck holds a round arch framed in dark tile and filled with absolute darkness, breathing cold air. Walk into it and the world fades to black; you come back out in the Poolrooms.
 - **Looping tunnels:** Some of the long dark round tunnels don't end. Keep walking and you keep passing the same stretch, the same drip, while the light fades a little each time. Turn around and you walk straight out; persist and it eventually lets you through.
 - **Healing water:** Level 37's warm water soothes. Standing or swimming in it slowly heals you and brings your sanity back, fastest in the deep pools; dry tile only calms you a little.
@@ -868,7 +870,7 @@ left). Turn the footage look off for a clean picture.
 | Level 2 | Warm amber pools from the caged lamps receding down the line, cold blue-grey darkness between and beyond them, pipe chases sunk in shadow, a thin cold haze far off. With Veil the lamps take block-exact shadows from the same wall map as Level 0 (48 lamps within 39 blocks on HIGH) and wet floors, puddles, sweating pipes and bare metal get a small highlight of the nearby lamps (`client/light/Level2Gloss` says which blocks are damp, wet or metal). F3 shows the Level 2 lights' GPU time |
 | Level 4 | Cold fluorescent blue-grey, quiet |
 | Poolrooms | Teal shadows, soft cool highlights, a gentle wet glow; skylights and the tiles under the tubes roll off softly instead of clipping |
-| Level 37 | Dreamlike: warm overexposed highlights, warm air and a soft glow, with natural contrast (tunnels fade into real darkness). The sunlit openings stay a soft cream-white with a gentle halo over the tile around them instead of a flat clipped white: the camcorder rolls the highlights off along a soft shoulder, the bloom is half as strong, and the shafts of sun land just under white with their grout still showing |
+| Level 37 | Dreamlike: warm overexposed highlights, warm air and a soft glow, with natural contrast (tunnels fade into real darkness). The camcorder rolls the highlights off along a soft shoulder and the bloom is half as strong, so the lit niches and the shafts of sun land just under white with their grout still showing |
 | Level 9 | Deep blue shadows, sodium-orange highlights, cold dark air |
 | Level 94 | A touch over-saturated and soft by day, pale blue distance; colour drains away at night |
 | Level 7 | Colour almost gone: pale grey bone-dust fog above the water, murky dark teal under it, near-black in the deep |

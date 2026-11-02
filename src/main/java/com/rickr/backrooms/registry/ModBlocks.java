@@ -236,8 +236,8 @@ public final class ModBlocks {
 
     // Level 37 "Sublimity": fine cream-white mosaic tile on every surface (wall, floor, ceiling
     // and a dark sea-green tile for the deep pit shafts), smooth curved tile pieces for pillars,
-    // round rooms and arches, floating stair treads, chrome ladders and rails, and the glowing
-    // "sunlit void" seen through every skylight and window.
+    // round rooms and arches, floating stair treads, chrome ladders and rails, and the hidden
+    // daylight at the back of every skylight and window.
     public static final DeferredBlock<Block> L37_TILE_WALL = structural("l37_tile_wall", MapColor.QUARTZ, SoundType.STONE);
     public static final DeferredBlock<Block> L37_TILE_FLOOR = structural("l37_tile_floor", MapColor.QUARTZ, SoundType.STONE);
     public static final DeferredBlock<Block> L37_TILE_CEILING = structural("l37_tile_ceiling", MapColor.QUARTZ, SoundType.STONE);
@@ -248,9 +248,20 @@ public final class ModBlocks {
     /** Tile slab; the floating treads of the spiral stairs. Can stand in the shallows (FLOODED). */
     public static final DeferredBlock<FloodableSlabBlock> L37_TILE_SLAB = BLOCKS.registerBlock("l37_tile_slab",
             FloodableSlabBlock::new, unbreakable(MapColor.QUARTZ, SoundType.STONE));
-    /** Overexposed warm-white daylight behind every opening: full-bright, light 15, never casts a shadow. */
+    /**
+     * The back of every opening: looks like the fine tile around it, but gives vanilla light 14 (the
+     * fill around the opening, and the whole light without Veil). Not full-bright: it is lit like
+     * any tile, by the hidden lights of client/light/SunBeams. Never casts a shadow.
+     *
+     * <p>14, not 15: Minecraft lights a block's own faces with at least the block's own light
+     * level (LevelRenderer#getLightColor), so at 15 the back face of every niche got block light 15
+     * while the tiles around it got 14. Shader packs (Complementary under Iris) light by that level
+     * and make 15 far brighter than 14 (about 1.5x), so each niche back clipped to a flat cream
+     * panel with no grout. At 14 the back gets 14 and the reveals beside it 13: still the
+     * brightest tile in the niche, but lit tile.
+     */
     public static final DeferredBlock<SunlitVoidBlock> L37_SUNLIT_VOID = BLOCKS.registerBlock("l37_sunlit_void",
-            SunlitVoidBlock::new, fixture(MapColor.SNOW, SoundType.GLASS, 15).noOcclusion());
+            SunlitVoidBlock::new, unbreakable(MapColor.QUARTZ, SoundType.STONE).lightLevel(state -> 14).noOcclusion());
     /** Chrome pool ladder at a pool's edge, in the water; FACING points toward the deck. */
     public static final DeferredBlock<PoolLadderBlock> L37_POOL_LADDER = BLOCKS.registerBlock("l37_pool_ladder",
             PoolLadderBlock::new, unbreakable(MapColor.METAL, SoundType.METAL).noCollission().noOcclusion());

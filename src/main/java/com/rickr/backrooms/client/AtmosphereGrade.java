@@ -200,13 +200,12 @@ public final class AtmosphereGrade {
     /** Every other level: exactly as before (clipping, bloom from 0.92 at full strength). */
     private static final Highlights CLIPPED = new Highlights(0.0f, 0.62f, 0.97f, 0.92f, 1.0f);
     /**
-     * Level 37: the sunlit void behind every opening is about as bright as the picture can hold even
-     * before any effect, and the lit tile beside it is not far below, so clipping turned each opening
-     * and its sunlit reveal into one flat white shape (bloom alone added ~+0.8 inside it). With the
-     * shoulder the void lands around 0.96 (cream white), a sun patch around 0.90 with its grout
-     * still showing, and lit tile (~0.7) is barely touched. The bloom starts lower (0.80, so the void and
-     * the sun patches feed it) but half as strong: a soft halo (about +20/255 right at the edge of
-     * an opening, gone a few dozen pixels out) instead of a white-out.
+     * Level 37: the brightest things are the lit backs of the window niches and the shafts of sun
+     * on the tile (client/light/SunBeams), which sit just under white before any effect; clipping
+     * flattened them (and the lit tile beside them) into white shapes. With the shoulder a lit niche
+     * or sun patch lands around 0.88-0.92 with its grout still showing, and lit tile (~0.7) is barely
+     * touched. The bloom starts lower (0.80, so the niches and the sun patches feed it) but half as
+     * strong: a soft halo (about +20/255 right at their edge, gone a few dozen pixels out).
      */
     private static final Highlights ROLLOFF_37 = new Highlights(1.0f, 0.62f, 0.97f, 0.80f, 0.5f);
     /** The Poolrooms: skylights and the tiles right under the tubes roll off the same way, the bloom at half strength. */
