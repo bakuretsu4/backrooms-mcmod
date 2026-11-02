@@ -8,6 +8,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -26,8 +27,12 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * for which way round). The layout builds every curve in the level out of these, so walls and
  * pillars are really round instead of stepped.
  *
- * <p>The models are OBJ files with smooth normals, so the dynamic lights shade them like real
- * cylinders. The block doesn't block light (it's not a full cube), and it can stand in pool water
+ * <p>The shapes are OBJ models (written by {@code tools/gen_assets.py}) with smooth normals, but
+ * Minecraft's block lighting can't light a curved surface evenly (one light value per block, or
+ * corner values meant for cube faces), so the normal chunk mesher skips this block
+ * ({@link #getRenderShape}) and {@code client/CurveTileRenderer} draws the pieces into the chunk
+ * instead, with light and shading that run smoothly round the curve and match the flat walls.
+ * The block doesn't block light (it's not a full cube), and it can stand in pool water
  * ({@link #WATERLOGGED}, pool and pit walls) or in the ankle-deep shallows ({@link Flooding#FLOODED},
  * the foot of a pillar on a flooded floor).
  */
@@ -86,18 +91,58 @@ public class TileCurveBlock extends Block implements SimpleWaterloggedBlock {
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }
 
+    /** Drawn by client/CurveTileRenderer while the chunk is built, not by the normal block mesher. */
+    @Override
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.INVISIBLE;
+    }
+
     /**
-     * Two identical pieces stacked along their axis (a pillar, a tunnel vault) hide the end faces
-     * they press together, like full blocks do. (Faces against solid tile are hidden anyway.)
+     * Faces on the block's boundary are hidden where the piece next door is solid wherever this one
+     * is: a piece of the same circle (two pieces of a ring, a pillar or a vault stacked along its
+     * axis), or of a circle on the same centre line that is solid over more (a radius-3 tunnel ring
+     * against a radius-4 one: concave = solid outside the circle, so the smaller radius covers the
+     * bigger one; convex the other way round). Without this both pieces drew their face there, back
+     * to back inside the tile. (Faces against solid tile are hidden anyway, like any block's.)
      */
     @Override
     protected boolean skipRendering(BlockState state, BlockState adjacent, Direction direction) {
-        if (adjacent.is(this) && adjacent.getValue(SHAPE) == state.getValue(SHAPE)
-                && adjacent.getValue(ORIENTATION) == state.getValue(ORIENTATION)
-                && direction.getAxis() == axisOf(state.getValue(ORIENTATION))) {
+        if (adjacent.is(this) && covers(state, adjacent, direction)) {
             return true;
         }
         return super.skipRendering(state, adjacent, direction);
+    }
+
+    /** True when {@code next} (the piece one step {@code direction} from {@code piece}) is solid everywhere {@code piece} is. */
+    private static boolean covers(BlockState piece, BlockState next, Direction direction) {
+        CurveShape a = piece.getValue(SHAPE);
+        CurveShape b = next.getValue(SHAPE);
+        CurveOrientation oa = piece.getValue(ORIENTATION);
+        CurveOrientation ob = next.getValue(ORIENTATION);
+        Direction.Axis axis = axisOf(oa);
+        if (axis != axisOf(ob) || a.convex != b.convex || (a.convex ? b.radius < a.radius : b.radius > a.radius)) {
+            return false;
+        }
+        // Both circles' centre lines, relative to this piece's cell; equal (across the axis) = same line.
+        double[] ca = centreLine(a, oa);
+        double[] cb = centreLine(b, ob);
+        cb[0] += direction.getStepX();
+        cb[1] += direction.getStepY();
+        cb[2] += direction.getStepZ();
+        for (Direction.Axis other : Direction.Axis.values()) {
+            if (other != axis && Math.abs(other.choose(ca[0], ca[1], ca[2]) - other.choose(cb[0], cb[1], cb[2])) > 1.0e-6) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Where the piece's circle centre line passes, relative to the piece's own cell corner (block units). */
+    private static double[] centreLine(CurveShape shape, CurveOrientation orientation) {
+        // In the drawn (SE) piece the centre sits i blocks west and j blocks north of the cell.
+        double[] p = {-shape.i, 0.0, -shape.j};
+        orientation.apply(p);
+        return p;
     }
 
     /** The axis a piece's circle runs along: up for upright pieces, along the tunnel for arches. */

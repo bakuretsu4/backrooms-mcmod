@@ -6,7 +6,7 @@ placement), quiet and low so it reads as part of the level until you notice it s
   level_0     a draft whistling up the stairwell
   level_1     the hollow drone of a concrete stairwell, a drip far down
   level_2     the emergency EXIT door's alarm buzz, heard through the door
-  level_4     storm and rain coming in through the open fire door
+  level_4     cold air drawn up the office stairwell, hissing under the fire door, a deep hollow drone
   poolrooms   the drain gurgling
   level_37    water rushing down the pit
   level_9     highway traffic humming through the underpass
@@ -90,11 +90,15 @@ def snd_exit_hint_level_2() -> None:
 
 
 def snd_exit_hint_level_4() -> None:
+    # The stairwell's cold draft hissing through the gap under the fire door (it swells as air is
+    # pulled up the shaft), and the shaft's own hollow drone with a faint ring of its concrete.
     rng = G.rng_for(7404)
-    rain = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 800, 7000, 2))
-    wind = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 80, 500, 2)) * G.drift(N, rng, 0.5, 0.12, 0.4)
-    patter = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 2000, 5000, 2)) * (rng.random(N) < 0.002)
-    x = 0.6 * G.norm(rain) + G.norm(wind) * _swell(4.0, 0.5) + 0.3 * G.norm(G.fft_filter(patter, lambda f: G.lp_gain(f, 6000, 1), circular=True))
+    draft = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 500, 4000, 2) / np.sqrt(np.maximum(f, 20)))
+    gap = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 1150, 1300, 6))       # the narrow slot under the door
+    drone = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 35, 160, 3))
+    hollow = sum(_tone(f) * a for f, a in ((71, 0.5), (142, 0.2)))
+    x = (G.norm(draft) * _swell(4.0, 0.55) + 0.3 * G.norm(gap) * _swell(8.0, 0.7, 2.0)
+         + 0.55 * G.norm(drone) + 0.15 * hollow)
     _save(x, "level_4")
 
 

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l9_tv_on"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l9_tv_on",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l9_tv_on",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l9_tv_on",
+      "y": 270
+    }
+  }
+}

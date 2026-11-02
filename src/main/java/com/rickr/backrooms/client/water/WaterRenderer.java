@@ -37,9 +37,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Draws the pool water of the Poolrooms and Level 37, and Level 39's tunnel water and town puddles
- * (vanilla's water faces are switched off there, see {@link VanillaWaterHider}). The look comes
- * from {@link WaterStyle#at}, chosen where the camera is.
+ * Draws the pool water of the Poolrooms and Level 37, Level 39's tunnel water and town puddles,
+ * Level 7's sea and Level 227's forest ponds (vanilla's water faces are switched off there, see
+ * {@link VanillaWaterHider}). The look comes from {@link WaterStyle#at}, chosen where the camera
+ * is; rings spread on the surface where something fell in ({@link WaterRipples}).
  *
  * <p><b>When:</b> right after the whole level has been drawn AND lit. Veil adds its dynamic lights
  * onto the picture at the very end of {@code LevelRenderer.renderLevel}, and NeoForge's
@@ -134,6 +135,15 @@ public final class WaterRenderer {
                 && (levelStyle == null || !VanillaWaterHider.shaderPackInUse());
         VanillaWaterHider.setRendererAvailable(available);
         style = available ? levelStyle : null;
+        if (levelStyle == WaterStyle.LEVEL_227 && mc.level != null) {
+            // Level 227's sun is a point in the sky: its light reaches each pond from a slightly
+            // different direction. Aimed from the camera (one vector, changed in place).
+            Vec3 eye = mc.gameRenderer.getMainCamera().getPosition();
+            WaterStyle.aimLevel227Sun(eye.x, eye.y, eye.z);
+        }
+        if (style == null) {
+            WaterRipples.clear();
+        }
         WaterSurfaces.tick(mc, style != null);
         if (style == null && scene != null) {
             freeGpu(); // left the pool levels: give the screen-sized copy back
@@ -218,6 +228,7 @@ public final class WaterRenderer {
             set(surface, "TintStrength").set(look.tintStrength());
             set(surface, "WaterBrightness").set(look.brightness());
             setFog(surface);
+            WaterRipples.apply(surface, eye);
 
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);

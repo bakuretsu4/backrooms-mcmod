@@ -7,6 +7,7 @@ import com.rickr.backrooms.block.OfficeFridgeBlock;
 import com.rickr.backrooms.block.OfficeWindowBlock;
 import com.rickr.backrooms.block.WallLampBlock;
 import com.rickr.backrooms.block.WallMountBlock;
+import com.rickr.backrooms.block.WaterCoolerBlock;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.Hash;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
@@ -41,6 +42,16 @@ public final class Level4AnomalyBlocks {
                 cubicles(layout, site, x, z, out);
                 yield true;
             }
+            case OCCUPIED_FLOOR -> occupied(layout, seed, site, x, z, out);
+            case INSIDE_OUT_ROOM -> {
+                insideOut(layout, seed, site, x, z, out);
+                yield true;
+            }
+            case ELEVATOR_EXIT -> exitElevator(layout, seed, site, x, z, out);
+            case COOLER_ROW -> {
+                coolerRow(layout, seed, site, x, z, out);
+                yield true;
+            }
             default -> false;
         };
     }
@@ -59,7 +70,7 @@ public final class Level4AnomalyBlocks {
         if (cell == S_MOAT) {
             // The strip of plain carpet around the core (no column, no furniture in the way).
             long c = Level4Plan.column(seed, x, z);
-            out.set(floor, Level4Layout.floorBlock(Level4Plan.floor(c) & 3));
+            out.set(floor, Level4Layout.floorBlock(Level4Plan.floorMaterial(c)));
             out.set(ceiling, Level4Layout.ceilingBlock(Level4Plan.ceiling(c), Level4Plan.ceilingFacing(c)));
             return;
         }
@@ -172,6 +183,52 @@ public final class Level4AnomalyBlocks {
     // ==========================================================================================
     // Vanishing elevator
     // ==========================================================================================
+
+    /**
+     * The exit elevator: its car (only that one) carved out of the lobby's elevator core, lit, its
+     * doors standing open (just the header with the floor indicator above), and a green EXIT sign on
+     * the wall over it, on the hall side. Everything else is the ordinary lobby.
+     */
+    private static boolean exitElevator(Level4Layout layout, long seed, AnomalySite site, int x, int z, LevelLayout.Column out) {
+        LobbyFrame f = lobbyFrame(site);
+        int door = exitElevatorDoor(site);
+        int u = f.u(x, z);
+        int v = f.v(x, z);
+        int floor = layout.floorY();
+        int ceiling = layout.ceilingY();
+        BlockState steel = ModBlocks.L4_ELEVATOR_WALL.get().defaultBlockState();
+        if (f.carAt(u, v) == door) {
+            out.set(floor, ModBlocks.L4_ELEVATOR_FLOOR.get().defaultBlockState());
+            BlockState top = steel;
+            if (v == f.carLightV(door)) {
+                top = Level4Layout.panel(u == f.doorU(door) ? f.plusU() : opposite(f.plusU()), LampMode.LIT);
+            }
+            out.set(floor + 4, top);
+            out.set(ceiling, steel);
+            return true;
+        }
+        if (f.carWallAt(u, v) == door) {
+            out.set(floor, ModBlocks.L4_ELEVATOR_FLOOR.get().defaultBlockState());
+            Level4Layout.fill(floor + 1, ceiling, steel, out);
+            return true;
+        }
+        if (f.doorAt(u, v) == door) {
+            long c = Level4Plan.column(seed, x, z);
+            out.set(floor, Level4Layout.floorBlock(Level4Plan.floor(c)));
+            out.set(ceiling, Level4Layout.ceilingBlock(Level4Plan.ceiling(c), Level4Plan.ceilingFacing(c)));
+            out.set(floor + 3, elevatorDoor(f, door, u - f.doorU(door), ElevatorDoorBlock.Part.HEADER));
+            out.set(floor + 4, ModBlocks.OFFICE_WALL.get().defaultBlockState());
+            return true;
+        }
+        int out1 = f.out(door);
+        boolean inFront = v == f.doorV(door) + (door < 4 ? 1 : -1) && u == f.doorU(door);
+        if (inFront) {
+            layout.fillPlanColumn(seed, x, z, out);
+            out.set(floor + 4, Level4Layout.faced(ModBlocks.OFFICE_EXIT_SIGN.get(), Direction.from2DDataValue(out1)));
+            return true;
+        }
+        return false;
+    }
 
     private static boolean elevator(Level4Layout layout, long seed, AnomalySite site, int x, int z, LevelLayout.Column out) {
         LobbyFrame f = lobbyFrame(site);
@@ -303,6 +360,106 @@ public final class Level4AnomalyBlocks {
             return Level4Layout.panel(b == 4 ? f.plusV() : opposite(f.plusV()), LampMode.LIT);
         }
         return tile;
+    }
+
+    // ==========================================================================================
+    // The Occupied Floor
+    // ==========================================================================================
+
+    /** Builds a column of the Occupied Floor (false for its middle column, which the plan builds). */
+    private static boolean occupied(Level4Layout layout, long seed, AnomalySite site, int x, int z, LevelLayout.Column out) {
+        int packed = occupiedCell(site, x, z);
+        int cell = packed & 0xFF;
+        if (cell == O_COLUMN) {
+            return false;
+        }
+        long c = Level4Plan.column(seed, x, z);
+        int floor = layout.floorY();
+        out.set(floor, Level4Layout.floorBlock(Level4Plan.floorMaterial(c))); // no dents: nothing was ever moved
+        // Every light on, every tile in place.
+        int ceiling = Level4Plan.ceiling(c);
+        int ceilingFacing = Level4Plan.ceilingFacing(c);
+        out.set(layout.ceilingY(), switch (ceiling) {
+            case Level4Plan.PANEL_LIT, Level4Plan.PANEL_DEAD, Level4Plan.PANEL_FLICKER -> Level4Layout.panel(ceilingFacing, LampMode.LIT);
+            case Level4Plan.TILE_MISSING, Level4Plan.HATCH, Level4Plan.STAINED, Level4Plan.CABLE, Level4Plan.LIFTED ->
+                    ModBlocks.OFFICE_CEILING.get().defaultBlockState();
+            default -> Level4Layout.ceilingBlock(ceiling, ceilingFacing);
+        });
+        Direction facing = Direction.from2DDataValue(packed >> 8);
+        if (cell == O_DESK) {
+            out.set(floor + 1, Level4Layout.faced(ModBlocks.OFFICE_DESK_PC.get(), facing));
+        } else if (cell == O_CHAIR) {
+            out.set(floor + 1, Level4Layout.faced(ModBlocks.OFFICE_CHAIR.get(), facing));
+        }
+        return true;
+    }
+
+    // ==========================================================================================
+    // The Inside-Out Room
+    // ==========================================================================================
+
+    private static void insideOut(Level4Layout layout, long seed, AnomalySite site, int x, int z, LevelLayout.Column out) {
+        int floor = layout.floorY();
+        int ceiling = layout.ceilingY();
+        BlockState carpet = Level4Layout.floorBlock(Level4Plan.floorMaterial(Level4Plan.column(seed, x, z)));
+        out.set(ceiling, carpet); // the carpet is up there...
+        if (insideOutLined(site, x, z)) {
+            Level4Layout.fill(floor, ceiling - 1, carpet, out); // ...and all the way up the walls...
+            return;
+        }
+        // ...and the ceiling is down here, its light shining up out of the floor.
+        int light = insideOutLight(site, x, z);
+        out.set(floor, light >= 0 ? Level4Layout.panel(light, LampMode.LIT) : ModBlocks.OFFICE_CEILING.get().defaultBlockState());
+    }
+
+    // ==========================================================================================
+    // The Cooler Row
+    // ==========================================================================================
+
+    private static void coolerRow(Level4Layout layout, long seed, AnomalySite site, int x, int z, LevelLayout.Column out) {
+        StairFrame f = stairFrame(site);
+        int lx = f.lx(x, z);
+        int lz = f.lz(x, z);
+        int cell = coolerCell(lx, lz);
+        int floor = layout.floorY();
+        int ceiling = layout.ceilingY();
+        long c = Level4Plan.column(seed, x, z);
+        out.set(floor, Level4Layout.floorBlock(Level4Plan.floorMaterial(c)));
+        if (cell == CR_MOAT) {
+            // The strip of plain carpet around the corridor (no column, no furniture in the way).
+            out.set(ceiling, Level4Layout.ceilingBlock(Level4Plan.ceiling(c), Level4Plan.ceilingFacing(c)));
+            return;
+        }
+        BlockState tile = ModBlocks.OFFICE_CEILING.get().defaultBlockState();
+        Direction outward = Direction.from2DDataValue(f.out());
+        switch (cell) {
+            case CR_WALL -> {
+                out.set(floor + 1, ModBlocks.OFFICE_WALL_BASE.get().defaultBlockState());
+                Level4Layout.fill(floor + 2, ceiling - 1, ModBlocks.OFFICE_WALL.get().defaultBlockState(), out);
+                out.set(ceiling, tile);
+                return;
+            }
+            case CR_COOLER -> {
+                // All the same, all facing the walkway, all empty.
+                Direction facing = Direction.from2DDataValue(lx == 1 ? f.side() : opposite(f.side()));
+                out.set(floor + 1, Level4Layout.faced(ModBlocks.WATER_COOLER.get(), facing).setValue(WaterCoolerBlock.USES, 0));
+            }
+            case CR_LAST_COOLER -> {
+                // The last one, at the dead end, is full. Over it, an EXIT sign that leads nowhere.
+                out.set(floor + 1, Level4Layout.faced(ModBlocks.WATER_COOLER.get(), outward)
+                        .setValue(WaterCoolerBlock.USES, WaterCoolerBlock.MAX_USES));
+                out.set(floor + 3, Level4Layout.faced(ModBlocks.OFFICE_EXIT_SIGN.get(), outward));
+            }
+            default -> {
+            }
+        }
+        // A lit panel pair over the walkway every 4 blocks; plain tiles everywhere else.
+        int a = lz % 4;
+        if (lx == 2 && (a == 1 || a == 2)) {
+            out.set(ceiling, Level4Layout.panel(a == 1 ? f.in() : f.out(), LampMode.LIT));
+        } else {
+            out.set(ceiling, tile);
+        }
     }
 
     private Level4AnomalyBlocks() {}

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/office_clock"
+    },
+    "facing=east": {
+      "model": "backrooms:block/office_clock",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/office_clock",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/office_clock",
+      "y": 270
+    }
+  }
+}

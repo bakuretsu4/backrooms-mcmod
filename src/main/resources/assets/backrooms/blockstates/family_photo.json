@@ -1,0 +1,94 @@
+{
+  "variants": {
+    "facing=north,photo=0,scratched=false": {
+      "model": "backrooms:block/family_photo_0"
+    },
+    "facing=east,photo=0,scratched=false": {
+      "model": "backrooms:block/family_photo_0",
+      "y": 90
+    },
+    "facing=south,photo=0,scratched=false": {
+      "model": "backrooms:block/family_photo_0",
+      "y": 180
+    },
+    "facing=west,photo=0,scratched=false": {
+      "model": "backrooms:block/family_photo_0",
+      "y": 270
+    },
+    "facing=north,photo=0,scratched=true": {
+      "model": "backrooms:block/family_photo_0_scratched"
+    },
+    "facing=east,photo=0,scratched=true": {
+      "model": "backrooms:block/family_photo_0_scratched",
+      "y": 90
+    },
+    "facing=south,photo=0,scratched=true": {
+      "model": "backrooms:block/family_photo_0_scratched",
+      "y": 180
+    },
+    "facing=west,photo=0,scratched=true": {
+      "model": "backrooms:block/family_photo_0_scratched",
+      "y": 270
+    },
+    "facing=north,photo=1,scratched=false": {
+      "model": "backrooms:block/family_photo_1"
+    },
+    "facing=east,photo=1,scratched=false": {
+      "model": "backrooms:block/family_photo_1",
+      "y": 90
+    },
+    "facing=south,photo=1,scratched=false": {
+      "model": "backrooms:block/family_photo_1",
+      "y": 180
+    },
+    "facing=west,photo=1,scratched=false": {
+      "model": "backrooms:block/family_photo_1",
+      "y": 270
+    },
+    "facing=north,photo=1,scratched=true": {
+      "model": "backrooms:block/family_photo_1_scratched"
+    },
+    "facing=east,photo=1,scratched=true": {
+      "model": "backrooms:block/family_photo_1_scratched",
+      "y": 90
+    },
+    "facing=south,photo=1,scratched=true": {
+      "model": "backrooms:block/family_photo_1_scratched",
+      "y": 180
+    },
+    "facing=west,photo=1,scratched=true": {
+      "model": "backrooms:block/family_photo_1_scratched",
+      "y": 270
+    },
+    "facing=north,photo=2,scratched=false": {
+      "model": "backrooms:block/family_photo_2"
+    },
+    "facing=east,photo=2,scratched=false": {
+      "model": "backrooms:block/family_photo_2",
+      "y": 90
+    },
+    "facing=south,photo=2,scratched=false": {
+      "model": "backrooms:block/family_photo_2",
+      "y": 180
+    },
+    "facing=west,photo=2,scratched=false": {
+      "model": "backrooms:block/family_photo_2",
+      "y": 270
+    },
+    "facing=north,photo=2,scratched=true": {
+      "model": "backrooms:block/family_photo_2_scratched"
+    },
+    "facing=east,photo=2,scratched=true": {
+      "model": "backrooms:block/family_photo_2_scratched",
+      "y": 90
+    },
+    "facing=south,photo=2,scratched=true": {
+      "model": "backrooms:block/family_photo_2_scratched",
+      "y": 180
+    },
+    "facing=west,photo=2,scratched=true": {
+      "model": "backrooms:block/family_photo_2_scratched",
+      "y": 270
+    }
+  }
+}

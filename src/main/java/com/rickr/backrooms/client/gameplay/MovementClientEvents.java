@@ -12,8 +12,11 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 
 /**
- * Client half of the Backrooms movement rules. The server enforces them too; doing them here as
- * well keeps your own movement prediction in line with the server, so you don't snap back.
+ * Client half of the Backrooms movement rules. The no-jumping rule lives only here: players move
+ * themselves in Minecraft (the server takes the client's position), so switching the jump key off
+ * on the client is the whole rule, and the server never undoes a jump. The sprint rule's other
+ * half is the server's (player/PlayerGameplay: out of breath means no running there either);
+ * doing it here as well keeps your own movement prediction in line, so you don't snap back.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class MovementClientEvents {
@@ -30,10 +33,12 @@ public final class MovementClientEvents {
         // No jumping in the Backrooms: you are a tired person with a camcorder, not a parkour pro.
         // Except in water (the jump key is how you swim up, and how you climb out of a pool onto
         // the raised tile walkways of the Poolrooms), on anything you climb (ropes, frames):
-        // holding jump is how you go up them, and in Level 490, a level of broken stairs and
-        // bridges over a void (after the play-test: "too many parts of the level where it's needed").
-        boolean level490 = BackroomsLevel.fromDimension(player.level().dimension()) == BackroomsLevel.LEVEL_490;
-        if (!player.isInWater() && !player.onClimbable() && !level490) {
+        // holding jump is how you go up them, in Level 490, a level of broken stairs and bridges
+        // over a void (after the play-test: "too many parts of the level where it's needed"), and
+        // in Level 227, a forest of giant branches and roots, where you hop into pools and over roots.
+        BackroomsLevel floor = BackroomsLevel.fromDimension(player.level().dimension());
+        boolean jumpLevel = floor == BackroomsLevel.LEVEL_490 || floor == BackroomsLevel.LEVEL_227;
+        if (!player.isInWater() && !player.onClimbable() && !jumpLevel) {
             input.jumping = false;
         }
 

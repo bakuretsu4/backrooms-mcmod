@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "backrooms:block/l9_lumber",
+    "top": "backrooms:block/l9_lumber",
+    "side": "backrooms:block/l9_lumber"
+  }
+}

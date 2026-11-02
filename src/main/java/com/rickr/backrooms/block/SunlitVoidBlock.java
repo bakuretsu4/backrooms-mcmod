@@ -13,15 +13,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 
 /**
- * "Sunlit void": what Level 37's skylights, slit windows and alcoves open onto. There is never
- * anything to see out there, just a dazzling, overexposed warm white, as if the sun were right
- * behind a wall of mist.
+ * "Sunlit void": the hidden source of daylight at the back of Level 37's skylights, slit windows,
+ * alcoves, light well and oculus (and the Poolrooms' sunlit archway). You never see the source
+ * itself: the block looks like the fine tile around it (wall tile on its sides, ceiling tile
+ * underneath, floor tile on top) and is lit like tile, so each opening reads as a tiled niche
+ * with light coming from somewhere inside it.
  *
- * <p>It glows full-bright and gives vanilla light 15 (the soft fill around every opening). The
- * sharp shafts of sunlight are dynamic lights made on the client ({@code client/light/SunBeams})
- * from groups of these blocks; {@link #FACING} is the way the light travels out of the opening
- * (DOWN for a skylight, into the room for a window). The block doesn't block light, so it also
- * never casts a dynamic shadow over its own opening.
+ * <p>It gives vanilla light 14 (14, not 15, see ModBlocks#L37_SUNLIT_VOID): the soft fill around every opening, and without Veil (or with
+ * Iris) the whole light, falling off block by block. With Veil the client turns each group of
+ * these blocks into hidden lights ({@code client/light/SunBeams}): a shaft of sun out of the
+ * opening, a soft glow washing the niche's back, and a faint wide bounce on the tile and water
+ * around it. {@link #FACING} is the way the light travels out of the opening (DOWN for a
+ * skylight, into the room for a window). The block doesn't block light, so it also never casts
+ * a dynamic shadow over its own opening.
  */
 public class SunlitVoidBlock extends DirectionalBlock {
     public static final MapCodec<SunlitVoidBlock> CODEC = simpleCodec(SunlitVoidBlock::new);

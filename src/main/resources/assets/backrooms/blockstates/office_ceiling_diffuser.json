@@ -1,0 +1,23 @@
+{
+  "variants": {
+    "axis=x,kind=square": {
+      "model": "backrooms:block/office_ceiling_diffuser_square"
+    },
+    "axis=z,kind=square": {
+      "model": "backrooms:block/office_ceiling_diffuser_square"
+    },
+    "axis=x,kind=slot": {
+      "model": "backrooms:block/office_ceiling_diffuser_slot"
+    },
+    "axis=z,kind=slot": {
+      "model": "backrooms:block/office_ceiling_diffuser_slot",
+      "y": 90
+    },
+    "axis=x,kind=return": {
+      "model": "backrooms:block/office_ceiling_diffuser_return"
+    },
+    "axis=z,kind=return": {
+      "model": "backrooms:block/office_ceiling_diffuser_return"
+    }
+  }
+}

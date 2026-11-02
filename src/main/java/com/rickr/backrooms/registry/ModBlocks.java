@@ -39,7 +39,20 @@ import com.rickr.backrooms.block.LampMode;
 import com.rickr.backrooms.block.MarkingBlock;
 import com.rickr.backrooms.block.PillarNumberBlock;
 import com.rickr.backrooms.block.MusicDoorBlock;
+import com.rickr.backrooms.block.OfficeCeilingDiffuserBlock;
+import com.rickr.backrooms.block.OfficeCeilingFixtureBlock;
+import com.rickr.backrooms.block.OfficeDoorFrameBlock;
+import com.rickr.backrooms.block.OfficeExitSignBlock;
+import com.rickr.backrooms.block.OfficeFloorDetailBlock;
+import com.rickr.backrooms.block.OfficeFountainBlock;
+import com.rickr.backrooms.block.OfficeLampBlock;
 import com.rickr.backrooms.block.OfficePanelBlock;
+import com.rickr.backrooms.block.OfficePerimeterBlock;
+import com.rickr.backrooms.block.OfficeSlabFloorBlock;
+import com.rickr.backrooms.block.OfficeTableItemsBlock;
+import com.rickr.backrooms.block.OfficeWallFixtureBlock;
+import com.rickr.backrooms.block.OfficeWallMarkBlock;
+import com.rickr.backrooms.block.OfficeWallPlateBlock;
 import com.rickr.backrooms.block.OfficeWindowBlock;
 import com.rickr.backrooms.block.PipeRackBlock;
 import com.rickr.backrooms.block.PoleBlock;
@@ -236,21 +249,32 @@ public final class ModBlocks {
 
     // Level 37 "Sublimity": fine cream-white mosaic tile on every surface (wall, floor, ceiling
     // and a dark sea-green tile for the deep pit shafts), smooth curved tile pieces for pillars,
-    // round rooms and arches, floating stair treads, chrome ladders and rails, and the glowing
-    // "sunlit void" seen through every skylight and window.
+    // round rooms and arches, floating stair treads, chrome ladders and rails, and the hidden
+    // daylight at the back of every skylight and window.
     public static final DeferredBlock<Block> L37_TILE_WALL = structural("l37_tile_wall", MapColor.QUARTZ, SoundType.STONE);
     public static final DeferredBlock<Block> L37_TILE_FLOOR = structural("l37_tile_floor", MapColor.QUARTZ, SoundType.STONE);
     public static final DeferredBlock<Block> L37_TILE_CEILING = structural("l37_tile_ceiling", MapColor.QUARTZ, SoundType.STONE);
     public static final DeferredBlock<Block> L37_TILE_DEEP = structural("l37_tile_deep", MapColor.COLOR_GREEN, SoundType.STONE);
-    /** Curved tile: one piece of a circle (see block/CurveShape). OBJ models; lets light through. */
+    /** Curved tile: one piece of a circle (see block/CurveShape). OBJ models drawn by client/CurveTileRenderer; lets light through. */
     public static final DeferredBlock<TileCurveBlock> L37_TILE_CURVE = BLOCKS.registerBlock("l37_tile_curve",
             TileCurveBlock::new, unbreakable(MapColor.QUARTZ, SoundType.STONE).noOcclusion());
     /** Tile slab; the floating treads of the spiral stairs. Can stand in the shallows (FLOODED). */
     public static final DeferredBlock<FloodableSlabBlock> L37_TILE_SLAB = BLOCKS.registerBlock("l37_tile_slab",
             FloodableSlabBlock::new, unbreakable(MapColor.QUARTZ, SoundType.STONE));
-    /** Overexposed warm-white daylight behind every opening: full-bright, light 15, never casts a shadow. */
+    /**
+     * The back of every opening: looks like the fine tile around it, but gives vanilla light 14 (the
+     * fill around the opening, and the whole light without Veil). Not full-bright: it is lit like
+     * any tile, by the hidden lights of client/light/SunBeams. Never casts a shadow.
+     *
+     * <p>14, not 15: Minecraft lights a block's own faces with at least the block's own light
+     * level (LevelRenderer#getLightColor), so at 15 the back face of every niche got block light 15
+     * while the tiles around it got 14. Shader packs (Complementary under Iris) light by that level
+     * and make 15 far brighter than 14 (about 1.5x), so each niche back clipped to a flat cream
+     * panel with no grout. At 14 the back gets 14 and the reveals beside it 13: still the
+     * brightest tile in the niche, but lit tile.
+     */
     public static final DeferredBlock<SunlitVoidBlock> L37_SUNLIT_VOID = BLOCKS.registerBlock("l37_sunlit_void",
-            SunlitVoidBlock::new, fixture(MapColor.SNOW, SoundType.GLASS, 15).noOcclusion());
+            SunlitVoidBlock::new, unbreakable(MapColor.QUARTZ, SoundType.STONE).lightLevel(state -> 14).noOcclusion());
     /** Chrome pool ladder at a pool's edge, in the water; FACING points toward the deck. */
     public static final DeferredBlock<PoolLadderBlock> L37_POOL_LADDER = BLOCKS.registerBlock("l37_pool_ladder",
             PoolLadderBlock::new, unbreakable(MapColor.METAL, SoundType.METAL).noCollission().noOcclusion());
@@ -357,13 +381,85 @@ public final class ModBlocks {
     public static final DeferredBlock<HouseBedBlock> BED = BLOCKS.registerBlock("bed", HouseBedBlock::new,
             unbreakable(MapColor.COLOR_BROWN, SoundType.WOOL).noOcclusion());
 
+    // Level 9 houses (world/layout/Level9Houses): lived-in and abandoned interiors, the half-built
+    // house, the basement and attic, and the upside-down room. Unbreakable like all house furniture.
+    /** Framed family photo on a wall (PHOTO = which picture, SCRATCHED = the faces gouged out). */
+    public static final DeferredBlock<com.rickr.backrooms.block.FamilyPhotoBlock> FAMILY_PHOTO = BLOCKS.registerBlock("family_photo",
+            com.rickr.backrooms.block.FamilyPhotoBlock::new, unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD).noCollission().noOcclusion());
+    /** The same CRT as the TV, left on: soft grey static and a faint glow (light 4). */
+    public static final DeferredBlock<FurnitureBlock> L9_TV_ON = BLOCKS.registerBlock("l9_tv_on",
+            props -> new FurnitureBlock(props, Shapes.or(
+                    Block.box(1, 0, 3, 15, 6, 15),
+                    Block.box(3, 6, 3.5, 13, 16, 10.5),
+                    Block.box(4.5, 7.5, 10.5, 11.5, 14.5, 14))),
+            unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD).noOcclusion().lightLevel(state -> 4));
+    /** The dining table with dinner still on it: two plates of food, a glass, cutlery. */
+    public static final DeferredBlock<FurnitureBlock> L9_DINNER_TABLE = furniture("l9_dinner_table", MapColor.WOOD, SoundType.WOOD, Shapes.or(
+            Block.box(0, 12.5, 0, 16, 16, 16),
+            Block.box(1, 0, 1, 2.5, 12.5, 2.5),
+            Block.box(13.5, 0, 1, 15, 12.5, 2.5),
+            Block.box(1, 0, 13.5, 2.5, 12.5, 15),
+            Block.box(13.5, 0, 13.5, 15, 12.5, 15)));
+    /** A child's low single bed, one block long; the headboard is on the back (south when facing north). */
+    public static final DeferredBlock<FurnitureBlock> L9_KIDS_BED = furniture("l9_kids_bed", MapColor.COLOR_LIGHT_BLUE, SoundType.WOOL, Shapes.or(
+            Block.box(1, 0, 0, 15, 7, 16),
+            Block.box(1, 0, 14.5, 15, 12, 16)));
+    /** Toys left on the floor: a teddy bear, wooden blocks, a rubber ball. */
+    public static final DeferredBlock<FurnitureBlock> L9_TOYS = furniture("l9_toys", MapColor.COLOR_RED, SoundType.WOOL,
+            Block.box(2, 0, 2, 14, 7, 14));
+    /** A house window with planks nailed over it (FACING = outside). */
+    public static final DeferredBlock<WallDecalBlock> L9_BOARDED_WINDOW = BLOCKS.registerBlock("l9_boarded_window", WallDecalBlock::new,
+            unbreakable(MapColor.WOOD, SoundType.WOOD));
+    /** Grey dust and fluff on the floor of abandoned rooms, attics and basements; you walk through it. */
+    public static final DeferredBlock<ThinLayerBlock> L9_HOUSE_DUST = BLOCKS.registerBlock("l9_house_dust", ThinLayerBlock::new,
+            unbreakable(MapColor.COLOR_LIGHT_GRAY, SoundType.SAND).noCollission().noOcclusion());
+    /** A dust sheet thrown over a piece of furniture nobody uses any more. */
+    public static final DeferredBlock<FurnitureBlock> L9_DUST_SHEET = furniture("l9_dust_sheet", MapColor.TERRACOTTA_WHITE, SoundType.WOOL,
+            Block.box(0, 0, 1, 16, 14, 16));
+    /** Basement water heater: a tall white enamel tank with a pipe out of the top. */
+    public static final DeferredBlock<FurnitureBlock> L9_WATER_HEATER = furniture("l9_water_heater", MapColor.QUARTZ, SoundType.METAL, Shapes.or(
+            Block.box(2, 0, 2, 14, 15, 14),
+            Block.box(7, 15, 7, 9, 16, 9)));
+    /** Basement top-loading washing machine, its dials on a back panel. */
+    public static final DeferredBlock<FurnitureBlock> L9_WASHER = furniture("l9_washer", MapColor.QUARTZ, SoundType.METAL, Shapes.or(
+            Block.box(1, 0, 1, 15, 14, 15),
+            Block.box(1, 14, 12, 15, 16, 15)));
+    /** Half-built house: a bare 2x4 wall stud. */
+    public static final DeferredBlock<PoleBlock> L9_STUD = BLOCKS.registerBlock("l9_stud",
+            props -> new PoleBlock(props, 1.5), unbreakable(MapColor.WOOD, SoundType.WOOD).noOcclusion());
+    /** Half-built house: raw pine lumber (stacked boards, plates, rafters). */
+    public static final DeferredBlock<Block> L9_LUMBER = structural("l9_lumber", MapColor.WOOD, SoundType.WOOD);
+    public static final DeferredBlock<SlabBlock> L9_LUMBER_SLAB = BLOCKS.registerBlock("l9_lumber_slab", SlabBlock::new,
+            unbreakable(MapColor.WOOD, SoundType.WOOD));
+    public static final DeferredBlock<StairBlock> L9_LUMBER_STAIRS = BLOCKS.registerBlock("l9_lumber_stairs",
+            props -> new StairBlock(L9_LUMBER.get().defaultBlockState(), props), unbreakable(MapColor.WOOD, SoundType.WOOD));
+    /** Half-built house: the plywood subfloor. */
+    public static final DeferredBlock<Block> L9_PLYWOOD = structural("l9_plywood", MapColor.SAND, SoundType.WOOD);
+    /** Half-built house: a carpenter's sawhorse (FACING = across its beam). */
+    public static final DeferredBlock<FurnitureBlock> L9_SAWHORSE = furniture("l9_sawhorse", MapColor.WOOD, SoundType.WOOD, Shapes.or(
+            Block.box(0, 10, 6.5, 16, 12, 9.5),
+            Block.box(1, 0, 4, 3, 10, 12),
+            Block.box(13, 0, 4, 15, 10, 12)));
+    /** Half-built house: a blue tarp pulled over a pile of building materials. */
+    public static final DeferredBlock<FurnitureBlock> L9_TARP = furniture("l9_tarp", MapColor.COLOR_BLUE, SoundType.WOOL,
+            Block.box(0, 0, 0, 16, 10, 16));
+    /** The upside-down room: ordinary furniture stuck to the ceiling (PIECE picks which). */
+    public static final DeferredBlock<com.rickr.backrooms.block.CeilingFurnitureBlock> L9_CEILING_FURNITURE = BLOCKS.registerBlock(
+            "l9_ceiling_furniture", com.rickr.backrooms.block.CeilingFurnitureBlock::new,
+            unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD).noOcclusion());
+
     // Yards & nature
     public static final DeferredBlock<FenceBlock> PICKET_FENCE = BLOCKS.registerBlock("picket_fence", FenceBlock::new,
             unbreakable(MapColor.SNOW, SoundType.WOOD).forceSolidOn());
-    /** Mailbox on a post at the edge of the lawn; FACING = the lid side, towards the street. */
-    public static final DeferredBlock<FurnitureBlock> MAILBOX = furniture("mailbox", MapColor.COLOR_GRAY, SoundType.METAL, Shapes.or(
-            Block.box(7, 0, 7, 9, 10, 9),
-            Block.box(5.5, 10, 2, 10.5, 15, 14)));
+    /**
+     * Mailbox on a post at the edge of the lawn; FACING = the lid side, towards the street. FLAG up
+     * on some; right-click opens it (sometimes a Neighborhood Watch flyer inside, see MailboxBlock).
+     */
+    public static final DeferredBlock<FurnitureBlock> MAILBOX = BLOCKS.registerBlock("mailbox",
+            props -> new com.rickr.backrooms.block.level9.MailboxBlock(props, Shapes.or(
+                    Block.box(7, 0, 7, 9, 10, 9),
+                    Block.box(5.5, 10, 2, 10.5, 15, 14))),
+            unbreakable(MapColor.COLOR_GRAY, SoundType.METAL).noOcclusion());
     public static final DeferredBlock<RotatedPillarBlock> NIGHT_LOG = BLOCKS.registerBlock("night_log", RotatedPillarBlock::new,
             unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD));
     /** Dark conifer needles. You can see through the gaps, so neighbours must still be drawn. */
@@ -411,7 +507,8 @@ public final class ModBlocks {
     /** Darker, unfaded carpet where furniture stood for years: the "dents" left behind. */
     public static final DeferredBlock<Block> OFFICE_CARPET_INDENT = structural("office_carpet_indent", MapColor.COLOR_GRAY, SoundType.WOOL);
     public static final DeferredBlock<Block> OFFICE_CARPET_BLUE_INDENT = structural("office_carpet_blue_indent", MapColor.COLOR_BLUE, SoundType.WOOL);
-    public static final DeferredBlock<SurfaceBlock> OFFICE_WALL = surface("office_wall", MapColor.SAND, SoundType.STONE, 5, 1, 1);
+    /** Plain drywall; 1 in 16 blocks gets one of the two faintly marked versions (scuffs, an old water mark). */
+    public static final DeferredBlock<SurfaceBlock> OFFICE_WALL = surface("office_wall", MapColor.SAND, SoundType.STONE, 30, 1, 1);
     /** Bottom wall block with the dark vinyl base strip. */
     public static final DeferredBlock<Block> OFFICE_WALL_BASE = structural("office_wall_base", MapColor.SAND, SoundType.STONE);
     /** Bottom wall block of the lobbies: base strip, darker paint and a wooden chair rail on top. */
@@ -422,14 +519,57 @@ public final class ModBlocks {
     /** A ceiling tile that fell out: a dark hole into the plenum (ducts, cables). */
     public static final DeferredBlock<Block> OFFICE_CEILING_MISSING = structural("office_ceiling_missing", MapColor.COLOR_BLACK, SoundType.WOOD);
     public static final DeferredBlock<Block> OFFICE_CEILING_HATCH = structural("office_ceiling_hatch", MapColor.SAND, SoundType.METAL);
-    /** Half of a 1x2 fluorescent troffer; MODE dead = tubes out (no light, grey lens). */
+    /** A ceiling tile with a brown water stain: the edge of a leak, round the missing tiles and the hatch. */
+    public static final DeferredBlock<Block> OFFICE_CEILING_STAINED = structural("office_ceiling_stained", MapColor.SAND, SoundType.WOOD);
+    /** Ceiling tile with an air grille: square 4-way diffuser, linear slot (along AXIS) or return grille (KIND). */
+    public static final DeferredBlock<OfficeCeilingDiffuserBlock> OFFICE_CEILING_DIFFUSER = BLOCKS.registerBlock("office_ceiling_diffuser",
+            OfficeCeilingDiffuserBlock::new, unbreakable(MapColor.SAND, SoundType.WOOD));
+    /** Ceiling tile with a fitting (KIND): sprinkler, smoke detector, speaker, projector mount, cable stub, lifted tile. */
+    public static final DeferredBlock<OfficeCeilingFixtureBlock> OFFICE_CEILING_FIXTURE = BLOCKS.registerBlock("office_ceiling_fixture",
+            OfficeCeilingFixtureBlock::new, unbreakable(MapColor.SAND, SoundType.WOOD));
+    /**
+     * Half of a 1x2 recessed louvre troffer; MODE dead = tubes out (no light, grey louvre). Light 10, not
+     * more: brighter panels blow out to flat white (and, under shader packs, to a warm slab).
+     */
     public static final DeferredBlock<OfficePanelBlock> OFFICE_PANEL = BLOCKS.registerBlock("office_panel", OfficePanelBlock::new,
             unbreakable(MapColor.SNOW, SoundType.GLASS)
-                    .lightLevel(state -> state.getValue(OfficePanelBlock.MODE) == LampMode.DEAD ? 0 : 11)
-                    .emissiveRendering((state, level, pos) -> state.getValue(OfficePanelBlock.MODE) != LampMode.DEAD));
-    /** Rainy window pane; its block light is the cold night glow (and the lightning flash). */
+                    .lightLevel(state -> state.getValue(OfficePanelBlock.MODE) == LampMode.DEAD ? 0 : 10)
+                    .emissiveRendering((state, level, pos) -> OfficePanelBlock.FULL_BRIGHT_LENS
+                            && state.getValue(OfficePanelBlock.MODE) != LampMode.DEAD));
+    /** Lobby/cafeteria coffer light: a full ceiling block, one lit square of a big recessed coffer (laid in 2x2 or 3x3 groups). */
+    public static final DeferredBlock<OfficeLampBlock> OFFICE_COFFER_LIGHT = BLOCKS.registerBlock("office_coffer_light",
+            props -> new OfficeLampBlock(props, Shapes.block()),
+            unbreakable(MapColor.SNOW, SoundType.GLASS)
+                    .lightLevel(state -> state.getValue(OfficeLampBlock.MODE) == LampMode.DEAD ? 0 : 10)
+                    .emissiveRendering((state, level, pos) -> OfficePanelBlock.FULL_BRIGHT_LENS
+                            && state.getValue(OfficeLampBlock.MODE) != LampMode.DEAD));
+    /** Spun-metal dome pendant on a cord, hanging just under the ceiling of lobbies and cafeterias (shade y 5..11). */
+    public static final DeferredBlock<OfficeLampBlock> OFFICE_PENDANT_LIGHT = BLOCKS.registerBlock("office_pendant_light",
+            props -> new OfficeLampBlock(props, Block.box(3, 5, 3, 13, 16, 13)),
+            unbreakable(MapColor.SNOW, SoundType.METAL).noCollission().noOcclusion()
+                    .lightLevel(state -> state.getValue(OfficeLampBlock.MODE) == LampMode.DEAD ? 0 : 9)
+                    .emissiveRendering((state, level, pos) -> OfficePanelBlock.FULL_BRIGHT_LENS
+                            && state.getValue(OfficeLampBlock.MODE) != LampMode.DEAD));
+    /**
+     * Frosted window pane; its block light is the cold glow of the windows (less behind blinds or
+     * taped paper, see OfficeWindowBlock.Cover). At most 12, never 15: the window faces are lit by
+     * their own light, and 15 clips to a peach band under shaders.
+     */
     public static final DeferredBlock<OfficeWindowBlock> OFFICE_WINDOW = BLOCKS.registerBlock("office_window", OfficeWindowBlock::new,
-            unbreakable(MapColor.COLOR_GRAY, SoundType.GLASS).lightLevel(state -> 15));
+            unbreakable(MapColor.COLOR_GRAY, SoundType.GLASS).lightLevel(state -> state.getValue(OfficeWindowBlock.COVER).light));
+    /** Cafeteria floor: speckled vinyl tiles. */
+    public static final DeferredBlock<Block> OFFICE_VINYL_FLOOR = structural("office_vinyl_floor", MapColor.QUARTZ, SoundType.STONE);
+    /** Lobby floor: polished terrazzo in two-block slabs (VARIANT = which quarter of a slab, set by position). */
+    public static final DeferredBlock<OfficeSlabFloorBlock> OFFICE_TERRAZZO = BLOCKS.registerBlock("office_terrazzo",
+            OfficeSlabFloorBlock::new, unbreakable(MapColor.TERRACOTTA_WHITE, SoundType.STONE));
+    /** Dark ribbed entrance matting, set into the lobby floor in front of the main doors. */
+    public static final DeferredBlock<Block> OFFICE_ENTRANCE_MAT = structural("office_entrance_mat", MapColor.COLOR_GRAY, SoundType.WOOL);
+    /**
+     * Wall block beside or above a doorway, with the painted door architrave on both faces of the
+     * wall (AXIS = the way the wall runs, PART left/right/head, BASE = with skirting).
+     */
+    public static final DeferredBlock<OfficeDoorFrameBlock> OFFICE_DOOR_FRAME = BLOCKS.registerBlock("office_door_frame",
+            OfficeDoorFrameBlock::new, unbreakable(MapColor.SAND, SoundType.STONE));
     /** Conference-room glass wall on thin black mullions; the second one has its blinds half down. */
     public static final DeferredBlock<TransparentBlock> OFFICE_GLASS = BLOCKS.registerBlock("office_glass", TransparentBlock::new, glass());
     public static final DeferredBlock<TransparentBlock> OFFICE_GLASS_BLINDS = BLOCKS.registerBlock("office_glass_blinds", TransparentBlock::new, glass());
@@ -452,9 +592,12 @@ public final class ModBlocks {
     /** Grey cubicle partition, 1.5 blocks tall, joining its neighbours like a pane. */
     public static final DeferredBlock<CubiclePartitionBlock> CUBICLE_PARTITION = BLOCKS.registerBlock("cubicle_partition",
             CubiclePartitionBlock::new, unbreakable(MapColor.COLOR_GRAY, SoundType.WOOL).noOcclusion());
-    /** Cast-iron radiator under the window sill, its back against the wall. */
+    /** Slim white double-panel radiator against a wall (FACING = its front). */
     public static final DeferredBlock<FurnitureBlock> RADIATOR = furniture("radiator", MapColor.QUARTZ, SoundType.METAL,
-            Block.box(0.5, 0, 10.5, 15.5, 11, 16));
+            Block.box(0.5, 0, 11, 15.5, 11, 16));
+    /** Perimeter trunking and window board under the window walls (PART: trunk, radiator, socket, end). */
+    public static final DeferredBlock<OfficePerimeterBlock> OFFICE_PERIMETER = BLOCKS.registerBlock("office_perimeter",
+            OfficePerimeterBlock::new, unbreakable(MapColor.QUARTZ, SoundType.METAL).noOcclusion());
     /** Grey laminate office desk; FACING = the side you sit at. */
     public static final DeferredBlock<FurnitureBlock> OFFICE_DESK = furniture("office_desk", MapColor.COLOR_LIGHT_GRAY, SoundType.WOOD, Shapes.or(
             Block.box(0, 11.5, 0, 16, 13, 16),
@@ -517,6 +660,44 @@ public final class ModBlocks {
     /** Water cooler: right-click for Almond Water, three times. */
     public static final DeferredBlock<WaterCoolerBlock> WATER_COOLER = BLOCKS.registerBlock("water_cooler",
             WaterCoolerBlock::new, unbreakable(MapColor.SNOW, SoundType.METAL).noOcclusion());
+    // Level 4 wall details: put where a real office has them, never at random (see Level4Layout).
+    // All are walk-through and sit in the first air block above the floor unless noted.
+    /** Green running-man exit sign (ARROW none/left/right), above doors and at junctions; HANGING = double-sided, under the ceiling. */
+    public static final DeferredBlock<OfficeExitSignBlock> OFFICE_EXIT_SIGN = BLOCKS.registerBlock("office_exit_sign",
+            OfficeExitSignBlock::new, unbreakable(MapColor.COLOR_GREEN, SoundType.METAL).noCollission().noOcclusion().lightLevel(state -> 4));
+    /** Red fire extinguisher on its wall bracket, its little sign reaching up into the block above. */
+    public static final DeferredBlock<WallMountBlock> OFFICE_EXTINGUISHER = BLOCKS.registerBlock("office_extinguisher",
+            props -> new WallMountBlock(props, 5.5, 1, 11, 10.5, 15, 16), unbreakable(MapColor.COLOR_RED, SoundType.METAL).noCollission().noOcclusion());
+    /** Light switch, thermostat, fire-alarm call point or double socket (KIND). */
+    public static final DeferredBlock<OfficeWallPlateBlock> OFFICE_WALL_PLATE = BLOCKS.registerBlock("office_wall_plate",
+            OfficeWallPlateBlock::new, unbreakable(MapColor.SNOW, SoundType.STONE).noCollission().noOcclusion());
+    /** Cork notice board with a few faded papers still pinned to it. */
+    public static final DeferredBlock<WallMountBlock> OFFICE_NOTICE_BOARD = BLOCKS.registerBlock("office_notice_board",
+            props -> new WallMountBlock(props, 1, 2, 15, 15, 13, 16), unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD).noCollission().noOcclusion());
+    /** Round wall clock, stopped at 4:04. */
+    public static final DeferredBlock<WallMountBlock> OFFICE_CLOCK = BLOCKS.registerBlock("office_clock",
+            props -> new WallMountBlock(props, 4, 4, 15, 12, 12, 16), unbreakable(MapColor.SNOW, SoundType.METAL).noCollission().noOcclusion());
+    /** Paler unfaded patch and nail holes where a picture or whiteboard used to hang (KIND). */
+    public static final DeferredBlock<OfficeWallMarkBlock> OFFICE_WALL_MARK = BLOCKS.registerBlock("office_wall_mark",
+            OfficeWallMarkBlock::new, unbreakable(MapColor.SAND, SoundType.STONE).noCollission().noOcclusion());
+    /**
+     * The small things on a real office's walls (KIND): dado trunking with outlets, door stop, TV
+     * bracket, coat hooks, hand sanitiser, first-aid box, evacuation plan, signs and room plaques.
+     */
+    public static final DeferredBlock<OfficeWallFixtureBlock> OFFICE_WALL_FIXTURE = BLOCKS.registerBlock("office_wall_fixture",
+            OfficeWallFixtureBlock::new, unbreakable(MapColor.SNOW, SoundType.METAL).noCollission().noOcclusion());
+    /** Wall-mounted drinking fountain: right-click for Almond Water, three times (like the water cooler). */
+    public static final DeferredBlock<OfficeFountainBlock> OFFICE_FOUNTAIN = BLOCKS.registerBlock("office_fountain",
+            OfficeFountainBlock::new, unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** What was left on a table or desk (KIND); placed in the cell above it. The bottle and the burger tray can be taken. */
+    public static final DeferredBlock<OfficeTableItemsBlock> OFFICE_TABLE_ITEMS = BLOCKS.registerBlock("office_table_items",
+            OfficeTableItemsBlock::new, unbreakable(MapColor.SNOW, SoundType.WOOD).noCollission().noOcclusion());
+    /** Flat details on the carpet (KIND): a flush floor power box, an aluminium threshold strip, an old stain. */
+    public static final DeferredBlock<OfficeFloorDetailBlock> OFFICE_FLOOR_DETAIL = BLOCKS.registerBlock("office_floor_detail",
+            OfficeFloorDetailBlock::new, unbreakable(MapColor.COLOR_GRAY, SoundType.WOOL).noCollission().noOcclusion().replaceable());
+    /** Cafeteria serving hatch in a wall: a closed roller shutter over a steel ledge (FACING = the cafeteria side). */
+    public static final DeferredBlock<WallMountBlock> OFFICE_SERVERY_HATCH = BLOCKS.registerBlock("office_servery_hatch",
+            props -> new WallMountBlock(props, 0, 0, 0, 16, 16, 16), unbreakable(MapColor.METAL, SoundType.METAL));
     /** A filing cabinet that is really a supply locker (filled from the locker loot table). */
     public static final DeferredBlock<SupplyContainerBlock> SUPPLY_CABINET = BLOCKS.registerBlock("supply_cabinet",
             props -> new SupplyContainerBlock(props, SupplyKind.LOCKER, Block.box(1.5, 0, 2, 14.5, 16, 16)),
@@ -563,6 +744,52 @@ public final class ModBlocks {
     public static final DeferredBlock<WallMountBlock> SAFE_ROOM_SIGN = BLOCKS.registerBlock("safe_room_sign",
             props -> new WallMountBlock(props, 0, 2, 15, 16, 14, 16),
             unbreakable(MapColor.COLOR_GREEN, SoundType.METAL).noCollission().noOcclusion());
+
+    // Level 9 Story: things people left behind on the street and in the houses (block/level9,
+    // placed by world/layout/Level9Story outdoors and by the house interiors indoors).
+    /** "MISSING" poster; FACING away from what it is stapled to, MOUNT = wall / lamp pole / fence post, PERSON = who. */
+    public static final DeferredBlock<com.rickr.backrooms.block.level9.MissingPosterBlock> MISSING_POSTER = BLOCKS.registerBlock(
+            "missing_poster", com.rickr.backrooms.block.level9.MissingPosterBlock::new,
+            unbreakable(MapColor.SNOW, SoundType.WOOD).noCollission().noOcclusion());
+    /** Neighborhood Watch flyer pinned to a porch post or wall; FLYER = which text. Sneak-click to take it. */
+    public static final DeferredBlock<com.rickr.backrooms.block.level9.WatchFlyerBlock> WATCH_FLYER_PINNED = BLOCKS.registerBlock(
+            "watch_flyer_pinned", com.rickr.backrooms.block.level9.WatchFlyerBlock::new,
+            unbreakable(MapColor.SNOW, SoundType.WOOD).noCollission().noOcclusion());
+    /** A child's crayon drawing taped to a bedroom wall; FACING away from the wall, DRAWING = which picture. */
+    public static final DeferredBlock<com.rickr.backrooms.block.level9.KidsDrawingBlock> KIDS_DRAWING = BLOCKS.registerBlock(
+            "kids_drawing", com.rickr.backrooms.block.level9.KidsDrawingBlock::new,
+            unbreakable(MapColor.SNOW, SoundType.WOOD).noCollission().noOcclusion());
+    /** Answering machine on top of a kitchen counter; FACING = its front. Right-click plays its message. */
+    public static final DeferredBlock<com.rickr.backrooms.block.level9.AnsweringMachineBlock> ANSWERING_MACHINE = BLOCKS.registerBlock(
+            "answering_machine", com.rickr.backrooms.block.level9.AnsweringMachineBlock::new,
+            unbreakable(MapColor.COLOR_BLACK, SoundType.METAL).noOcclusion());
+
+    // Level 9 Street: what is left in the yards and on the street (block/yard, placed by
+    // world/layout/Level9Yards; the swing seats, sprinkler water and car colours are client side).
+    /** One cell of a parked car (2 x 4 blocks); PIECE = which cell, PAINT = its colour (block tint). */
+    public static final DeferredBlock<com.rickr.backrooms.block.yard.ParkedCarBlock> L9_PARKED_CAR = BLOCKS.registerBlock(
+            "l9_parked_car", com.rickr.backrooms.block.yard.ParkedCarBlock::new,
+            unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** A two-seat swing set, three blocks long; the middle cell draws the frame and its seats sway. */
+    public static final DeferredBlock<com.rickr.backrooms.block.yard.SwingSetBlock> L9_SWING_SET = BLOCKS.registerBlock(
+            "l9_swing_set", com.rickr.backrooms.block.yard.SwingSetBlock::new,
+            unbreakable(MapColor.COLOR_BLUE, SoundType.METAL).noOcclusion());
+    /** A lawn sprinkler still running on its timer: water drops and a tick-tick-hiss (client side). */
+    public static final DeferredBlock<com.rickr.backrooms.block.yard.SprinklerBlock> L9_SPRINKLER = BLOCKS.registerBlock(
+            "l9_sprinkler", com.rickr.backrooms.block.yard.SprinklerBlock::new,
+            unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion().noCollission());
+    /** A kid's tricycle tipped over on the lawn, one back wheel in the air. Low enough to step over. */
+    public static final DeferredBlock<FurnitureBlock> L9_TRICYCLE = furniture("l9_tricycle", MapColor.COLOR_RED, SoundType.METAL,
+            Block.box(3, 0, 0, 13, 3, 16));
+    /** A red-and-white rubber ball left in the grass. */
+    public static final DeferredBlock<FurnitureBlock> L9_TOY_BALL = furniture("l9_toy_ball", MapColor.COLOR_RED, SoundType.WOOL,
+            Block.box(4.5, 0, 4.5, 11.5, 7.5, 11.5));
+    /** A kid's bike dropped flat in the grass (its wheels reach a little past the block). */
+    public static final DeferredBlock<FurnitureBlock> L9_BIKE = furniture("l9_bike", MapColor.COLOR_BLUE, SoundType.METAL,
+            Block.box(0, 0, 0, 16, 2.5, 16));
+    /** A green wheelie bin put out at the curb; FACING = its front (toward the street). */
+    public static final DeferredBlock<FurnitureBlock> L9_TRASH_BIN = furniture("l9_trash_bin", MapColor.COLOR_GREEN, SoundType.WOOD,
+            Block.box(2, 0, 1.5, 14, 15.5, 15.5));
 
     // Level 94 "Motion" props (Props slice): siren poles that play cartoon music all day, parked
     // 1930s cars and milk vans, and the CRT TV full of static in the house interiors.

@@ -14,6 +14,10 @@ public final class ParticleSetup {
     public static void registerProviders(RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(ModParticles.STEAM.get(), SteamParticle.Provider::new);
         event.registerSpriteSet(ModParticles.DUST_MOTE.get(), DustMoteParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.L227_WATER_DROPLET.get(), WaterDropletParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.L227_WATER_RING.get(), WaterSurfaceParticle.RingProvider::new);
+        event.registerSpriteSet(ModParticles.L227_WATER_FOAM.get(), WaterSurfaceParticle.FoamProvider::new);
+        event.registerSpriteSet(ModParticles.L227_WATER_BUBBLE.get(), WaterBubbleParticle.Provider::new);
     }
 
     private ParticleSetup() {}

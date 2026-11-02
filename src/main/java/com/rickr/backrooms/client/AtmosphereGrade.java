@@ -102,18 +102,34 @@ public final class AtmosphereGrade {
      */
     private static final Mood LEVEL_2 = new Mood(1.12f, 1.05f, 0.86f, 0.95f, 0.98f, 1.07f, 1.03f, 1.0f, 0.93f,
             0.005f, 0.005f, 0.009f, 0.075f, 0.080f, 0.100f, 10.0f, 0.02f, 0.28f, 0.50f, 0.18f, 0.010f);
-    /** Level 4: an empty office on a rainy night. Cold fluorescent blue-grey, quiet, faint blue air. */
-    private static final Mood LEVEL_4 = new Mood(1.0f, 1.05f, 0.80f, 0.90f, 0.95f, 1.08f, 0.99f, 1.0f, 1.04f,
-            0.012f, 0.014f, 0.022f, 0.11f, 0.12f, 0.16f, 9.0f, 0.028f, 0.36f, 0.36f, 0.14f, 0.008f);
-    /** The Poolrooms: chlorine and echoes. Teal shadows, cool soft highlights, a gentle wet glow. */
-    private static final Mood POOLROOMS = new Mood(1.0f, 0.98f, 0.92f, 0.88f, 0.98f, 1.06f, 0.98f, 1.02f, 1.04f,
-            0.012f, 0.017f, 0.022f, 0.15f, 0.21f, 0.23f, 7.0f, 0.030f, 0.36f, 0.32f, 0.22f, 0.010f);
     /**
-     * Level 37: a dream. Low contrast, milky shadows, warm overexposed highlights, warm white air
-     * and the strongest glow: bright but strangely soft, like a memory of a place.
+     * Level 4: an empty office lit mostly by its blacked-out, glowing windows. A cool neutral
+     * grade: blue-grey shadows, near-neutral highlights (white walls stay white, not blue), colour a
+     * little under the textures (0.84). The haze is subtle (from 12 blocks, at most 26%), so a
+     * big open floor recedes into dim blue-grey while the room you stand in stays clear. Contact
+     * shadows a bit stronger (0.42) to seat columns, partitions and the window perimeter on the
+     * carpet; the highlights roll off softly ({@link #ROLLOFF_4}).
      */
-    private static final Mood LEVEL_37 = new Mood(1.0f, 0.90f, 0.86f, 0.97f, 1.0f, 0.95f, 1.05f, 1.01f, 0.92f,
-            0.032f, 0.032f, 0.026f, 0.86f, 0.83f, 0.74f, 12.0f, 0.020f, 0.28f, 0.26f, 0.30f, 0.014f);
+    private static final Mood LEVEL_4 = new Mood(1.0f, 1.04f, 0.84f, 0.93f, 0.97f, 1.06f, 0.99f, 1.0f, 1.02f,
+            0.014f, 0.016f, 0.022f, 0.10f, 0.11f, 0.14f, 12.0f, 0.020f, 0.26f, 0.42f, 0.12f, 0.008f);
+    /**
+     * The Poolrooms: chlorine and echoes. Teal shadows, cool soft highlights, a gentle wet glow.
+     * Contrast a touch above neutral (1.04) and a lower black lift, so dim rooms read deep instead
+     * of milky; the skylights and the tiles under the tubes roll off softly ({@link #ROLLOFF_POOLROOMS}).
+     */
+    private static final Mood POOLROOMS = new Mood(1.0f, 1.04f, 0.92f, 0.88f, 0.98f, 1.06f, 0.98f, 1.02f, 1.04f,
+            0.008f, 0.011f, 0.015f, 0.15f, 0.21f, 0.23f, 7.0f, 0.030f, 0.36f, 0.32f, 0.18f, 0.010f);
+    /**
+     * Level 37: a dream. Warm overexposed highlights, warm air and a soft glow: bright but strangely
+     * soft, like a memory of a place. It used to be low contrast (0.90) with a lifted black (0.032)
+     * and the strongest glow (0.30), which with the bright haze turned the whole picture milky (the
+     * far end of a dark tunnel landed around 0.57 on camera). Now: natural contrast (1.10 around the
+     * dark mid-grey), a near-black lift (0.010), half the glow (0.16) and a thinner, dimmer haze
+     * from 20 blocks (at most 12%), so tunnels fade into real darkness and lit tile keeps its depth.
+     * The highlights roll off softly instead of clipping ({@link #ROLLOFF_37}).
+     */
+    private static final Mood LEVEL_37 = new Mood(1.0f, 1.10f, 0.90f, 0.97f, 1.0f, 0.95f, 1.05f, 1.01f, 0.92f,
+            0.010f, 0.010f, 0.007f, 0.70f, 0.67f, 0.58f, 20.0f, 0.020f, 0.12f, 0.32f, 0.16f, 0.014f);
     /** Level 9: midnight suburb. Deep blue shadows, sodium-orange highlights, cold dark air. */
     private static final Mood LEVEL_9 = new Mood(1.0f, 1.07f, 0.86f, 0.86f, 0.92f, 1.12f, 1.06f, 0.98f, 0.84f,
             0.008f, 0.010f, 0.020f, 0.06f, 0.07f, 0.09f, 9.0f, 0.030f, 0.40f, 0.34f, 0.20f, 0.010f);
@@ -179,6 +195,35 @@ public final class AtmosphereGrade {
     private static final Mood LEVEL_7_DEEP = new Mood(1.0f, 1.04f, 0.55f, 0.85f, 0.95f, 1.04f, 0.92f, 0.98f, 1.0f,
             0.002f, 0.003f, 0.004f, 0.004f, 0.007f, 0.009f, 2.0f, 0.065f, 0.95f, 0.30f, 0.08f, 0.008f);
 
+    /**
+     * How a level treats the brightest parts of the picture: the camcorder's highlight shoulder and
+     * its bloom. Kept apart from {@link Mood} because it belongs to the level's light, not to an
+     * anomaly's look. {@code rolloff} 0 = bright parts clip to white (and the footage look blows them
+     * out), 1 = they ease along a soft shoulder from {@code knee} toward {@code peak} (never white);
+     * bloom starts at luminance {@code bloomThreshold} and is scaled by {@code bloomGain}.
+     */
+    private record Highlights(float rolloff, float knee, float peak, float bloomThreshold, float bloomGain) {}
+
+    /** Every other level: exactly as before (clipping, bloom from 0.92 at full strength). */
+    private static final Highlights CLIPPED = new Highlights(0.0f, 0.62f, 0.97f, 0.92f, 1.0f);
+    /**
+     * Level 37: the brightest things are the lit backs of the window niches and the shafts of sun
+     * on the tile (client/light/SunBeams), which sit just under white before any effect; clipping
+     * flattened them (and the lit tile beside them) into white shapes. With the shoulder a lit niche
+     * or sun patch lands around 0.88-0.92 with its grout still showing, and lit tile (~0.7) is barely
+     * touched. The bloom starts lower (0.80, so the niches and the sun patches feed it) but half as
+     * strong: a soft halo (about +20/255 right at their edge, gone a few dozen pixels out).
+     */
+    private static final Highlights ROLLOFF_37 = new Highlights(1.0f, 0.62f, 0.97f, 0.80f, 0.5f);
+    /** The Poolrooms: skylights and the tiles right under the tubes roll off the same way, the bloom at half strength. */
+    private static final Highlights ROLLOFF_POOLROOMS = new Highlights(1.0f, 0.62f, 0.96f, 0.84f, 0.5f);
+    /**
+     * Level 4: the window glass, lit troffer lenses and the wall right beside a window ease along
+     * the shoulder instead of clipping to flat white (the "washed out" look); the bloom starts at
+     * 0.86 and is a little softer, so the windows glow faintly through the camcorder optics.
+     */
+    private static final Highlights ROLLOFF_4 = new Highlights(1.0f, 0.62f, 0.96f, 0.86f, 0.6f);
+
     /** Fraction of the way to the target mood per frame at 60 fps (about two seconds to settle). */
     private static final float BLEND_PER_FRAME = 0.035f;
 
@@ -188,6 +233,13 @@ public final class AtmosphereGrade {
     @Nullable
     private static Mood anomalyMood;
     private static float anomalyWeight;
+    /** The highlight handling being sent (blended like the mood; plain floats, nothing allocated per frame). */
+    private static boolean highlightsSet;
+    private static float rolloff;
+    private static float shoulderKnee;
+    private static float shoulderPeak;
+    private static float bloomThreshold;
+    private static float bloomGain;
 
     private AtmosphereGrade() {}
 
@@ -244,6 +296,17 @@ public final class AtmosphereGrade {
         return anomalyMood == null ? mood : mood.lerp(anomalyMood, anomalyWeight);
     }
 
+    private static Highlights highlightsFor(Minecraft mc) {
+        BackroomsLevel floor = mc.level == null ? null : BackroomsLevel.fromDimension(mc.level.dimension());
+        if (floor == BackroomsLevel.LEVEL_37) {
+            return ROLLOFF_37;
+        }
+        if (floor == BackroomsLevel.LEVEL_4) {
+            return ROLLOFF_4;
+        }
+        return floor == BackroomsLevel.POOLROOMS ? ROLLOFF_POOLROOMS : CLIPPED;
+    }
+
     // The grade last sent to the camcorder. Level 0's light pass (client/light/Level0LightRenderer)
     // runs before the camcorder each frame and shapes its highlights and shadows for where they
     // will end up after this grade.
@@ -279,13 +342,24 @@ public final class AtmosphereGrade {
         long now = System.nanoTime();
         float frames = lastNanos == 0L ? 1000.0f : Math.min((now - lastNanos) / 16_666_667.0f, 1000.0f);
         lastNanos = now;
+        float t = 1.0f;
         if (current == null) {
             current = want;
         } else {
-            float t = 1.0f - (float) Math.pow(1.0f - BLEND_PER_FRAME, frames);
+            t = 1.0f - (float) Math.pow(1.0f - BLEND_PER_FRAME, frames);
             current = current.lerp(want, t);
         }
         Mood m = current;
+        Highlights h = highlightsFor(mc);
+        if (!highlightsSet) {
+            highlightsSet = true;
+            t = 1.0f;
+        }
+        rolloff += (h.rolloff() - rolloff) * t;
+        shoulderKnee += (h.knee() - shoulderKnee) * t;
+        shoulderPeak += (h.peak() - shoulderPeak) * t;
+        bloomThreshold += (h.bloomThreshold() - bloomThreshold) * t;
+        bloomGain += (h.bloomGain() - bloomGain) * t;
         // In a blackout the air stops glowing: a lit haze colour in the pitch dark would give the
         // walls away. The haze darkens with the lights (the exit signs and flashlights still show).
         float power = FixturePower.mainsPower();
@@ -319,5 +393,10 @@ public final class AtmosphereGrade {
         chain.setUniform("ContactShadow", m.ao());
         chain.setUniform("Glow", m.glow());
         chain.setUniform("Breath", m.breath());
+        chain.setUniform("Rolloff", rolloff);
+        chain.setUniform("ShoulderKnee", shoulderKnee);
+        chain.setUniform("ShoulderPeak", shoulderPeak);
+        chain.setUniform("BloomGain", bloomGain);
+        chain.setUniform("Threshold", bloomThreshold); // the bloom_extract pass (absent on LOW quality)
     }
 }

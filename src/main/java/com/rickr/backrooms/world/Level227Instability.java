@@ -13,12 +13,16 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -143,7 +147,7 @@ public final class Level227Instability {
         WARNED.remove(event.getEntity().getUUID());
     }
 
-    // ---- /backrooms l227 lurch|unstable|drag|bubble|beam ------------------------------------------
+    // ---- /backrooms l227 lurch|unstable|drag|bubble|beam|pond -------------------------------------
 
     /** Brigadier merges this into the existing /backrooms command (same trick as Level39Spawner). */
     @SubscribeEvent
@@ -158,7 +162,77 @@ public final class Level227Instability {
                                         .executes(ctx -> unstableCommand(ctx, IntegerArgumentType.getInteger(ctx, "seconds")))))
                         .then(Commands.literal("drag").executes(Level227Instability::dragCommand))
                         .then(Commands.literal("bubble").executes(Level227Instability::bubbleCommand))
-                        .then(Commands.literal("beam").executes(Level227Instability::beamCommand))));
+                        .then(Commands.literal("beam").executes(Level227Instability::beamCommand))
+                        .then(Commands.literal("pond")
+                                .executes(ctx -> pondCommand(ctx, 0))
+                                .then(Commands.argument("height", IntegerArgumentType.integer(1, 60))
+                                        .executes(ctx -> pondCommand(ctx, IntegerArgumentType.getInteger(ctx, "height")))))));
+    }
+
+    /** Test pond: this far ahead of you (blocks), this wide (radius) and this deep in the middle. */
+    private static final int POND_AHEAD = 7;
+    private static final int POND_RADIUS = 4;
+    private static final int POND_DEEP = 4;
+    /** Clear air above the test pond (logs and plants removed). */
+    private static final int POND_AIR = 8;
+
+    /**
+     * Digs a test pond {@value #POND_AHEAD} blocks ahead of you, for trying out the water (splashes,
+     * swimming, diving): {@value #POND_RADIUS} blocks round, {@value #POND_DEEP} deep in the middle,
+     * 2 deep around that and 1 deep at the rim, with its surface where the ground was, a mud bottom
+     * and banks, and clear air above. Handy because chunks made before the ponds were deepened only
+     * have 1-deep puddles. With a height, it also puts you that many blocks over its middle, looking
+     * down, to fall in (1-2 a small plop, 3-5 a splash, 7 and up a belly-flop).
+     */
+    private static int pondCommand(CommandContext<CommandSourceStack> ctx, int height) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        if (!inLevel227(player)) {
+            ctx.getSource().sendFailure(Component.literal("Run this in Level 227."));
+            return 0;
+        }
+        ServerLevel level = player.serverLevel();
+        double yaw = Math.toRadians(player.getYRot());
+        int cx = Mth.floor(player.getX() - Math.sin(yaw) * POND_AHEAD);
+        int cz = Mth.floor(player.getZ() + Math.cos(yaw) * POND_AHEAD);
+        int surface = Mth.floor(player.getY()) - 1; // the ground block under your feet becomes the top water block
+        BlockState mud = Blocks.MUD.defaultBlockState();
+        BlockState water = Blocks.WATER.defaultBlockState();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int dx = -POND_RADIUS - 1; dx <= POND_RADIUS + 1; dx++) {
+            for (int dz = -POND_RADIUS - 1; dz <= POND_RADIUS + 1; dz++) {
+                double r = Math.sqrt(dx * dx + dz * dz);
+                if (r > POND_RADIUS + 0.5) {
+                    // The bank: solid where the water would otherwise leak out.
+                    if (r <= POND_RADIUS + 1.5) {
+                        for (int y = surface - POND_DEEP - 1; y <= surface; y++) {
+                            if (level.getBlockState(pos.set(cx + dx, y, cz + dz)).canBeReplaced()) {
+                                level.setBlock(pos, mud, Block.UPDATE_ALL);
+                            }
+                        }
+                    }
+                    continue;
+                }
+                int depth = r < 1.8 ? POND_DEEP : r < 3.0 ? 2 : 1;
+                for (int y = surface + 1; y <= surface + POND_AIR; y++) {
+                    level.setBlock(pos.set(cx + dx, y, cz + dz), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                }
+                for (int y = surface - POND_DEEP - 1; y <= surface - depth; y++) {
+                    level.setBlock(pos.set(cx + dx, y, cz + dz), mud, Block.UPDATE_ALL);
+                }
+                for (int y = surface - depth + 1; y <= surface; y++) {
+                    level.setBlock(pos.set(cx + dx, y, cz + dz), water, Block.UPDATE_ALL);
+                }
+            }
+        }
+        if (height > 0) {
+            player.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            player.teleportTo(level, cx + 0.5, surface + 1 + height, cz + 0.5, player.getYRot(), 75.0f);
+        }
+        ctx.getSource().sendSuccess(() -> Component.literal(String.format(
+                "Test pond at %d, %d, %d (%d deep in the middle).%s", cx, surface, cz, POND_DEEP,
+                height > 0 ? " Falling in from " + height + " blocks up." : " Add a height (e.g. 2, 5, 10) to drop in from above.")),
+                true);
+        return 1;
     }
 
     /** How far outside the beam's edge the test command puts you (blocks). */

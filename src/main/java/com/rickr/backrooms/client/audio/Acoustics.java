@@ -53,6 +53,10 @@ import org.jetbrains.annotations.Nullable;
  *   <li>The two pool levels (the Poolrooms and Level 37) get <b>no reverb</b>: in canon nothing
  *       reverberates properly there (see client/anomaly/poolrooms/PoolAcoustics, which also
  *       makes their sounds die out). They do get muffling.</li>
+ *   <li><b>Under water</b> (Level 227's ponds, {@code client/water/UnderwaterAudio} sets
+ *       {@link #setSubmerged}): every sound, the in-your-head ambience loops included, goes
+ *       through the same filter much harder (highs mostly gone, half as loud), eased in as your
+ *       head goes under. The underwater bed itself ({@code level227.water.under*}) stays clear.</li>
  * </ul>
  * Only in the Backrooms; the overworld sounds like vanilla. Music, UI and the camcorder's own
  * beeps (not placed in the world) are never touched. The OpenAL work is in {@link AcousticsEfx}.
@@ -183,6 +187,14 @@ public final class Acoustics {
     private static final float OCCLUSION_EASE = 0.5f;
     /** At most this many sounds followed at once (the rest keep their muffling from the start). */
     private static final int MAX_TRACKED = 128;
+    /** Head fully under water: every sound keeps this much of its volume ... */
+    private static final float SUBMERGED_GAIN = 0.5f;
+    /** ... and this much of its highs (on top of any walls). */
+    private static final float SUBMERGED_HF = 0.1f;
+    /** Our own underwater sounds (their path starts with this) are what you hear under water: never muffled. */
+    private static final String UNDERWATER_OWN = "level227.water.under";
+    /** 0..1 how far the listener's head is under water (client thread). */
+    private static float submerged;
 
     // --- Room probe ----------------------------------------------------------------------------
     /** The room is felt out every this many ticks, with rays this long. */
@@ -198,6 +210,16 @@ public final class Acoustics {
         volatile float gain = 1.0f;
         volatile float gainHf = 1.0f;
         volatile boolean reverb;
+        /** Played "in your head" (ambience): no walls, no room echo, only the underwater muffle. */
+        boolean inHead;
+    }
+
+    /**
+     * How far the listener's head is under water, 0..1 (from client/water/UnderwaterAudio, once
+     * per tick). Playing sounds pick up the change within a few ticks.
+     */
+    public static void setSubmerged(float amount) {
+        submerged = Mth.clamp(amount, 0.0f, 1.0f);
     }
 
     private static final Map<SoundInstance, Tracked> TRACKED = new ConcurrentHashMap<>();
@@ -224,20 +246,32 @@ public final class Acoustics {
             return;
         }
         Tracked t = new Tracked();
-        float walls = walls(mc.level, mc.gameRenderer.getMainCamera(), sound);
+        t.inHead = inYourHead(sound);
+        float walls = t.inHead ? 0.0f : walls(mc.level, mc.gameRenderer.getMainCamera(), sound);
         t.gain = gainFor(walls);
         t.gainHf = hfFor(walls);
-        t.reverb = material(level, mc.gameRenderer.getMainCamera().getPosition()) != null;
+        t.reverb = !t.inHead && material(level, mc.gameRenderer.getMainCamera().getPosition()) != null;
         TRACKED.put(sound, t);
     }
 
-    /** World sounds only: placed somewhere, fading with distance, and not music/UI/camcorder. */
+    /**
+     * World sounds (placed somewhere, fading with distance), and the in-your-head ambience loops
+     * (only for the underwater muffle); never music, UI or the camcorder, nor our underwater bed.
+     */
     private static boolean affects(SoundInstance sound) {
-        if (sound.isRelative() || sound.getAttenuation() == SoundInstance.Attenuation.NONE) {
+        SoundSource source = sound.getSource();
+        if (source == SoundSource.MUSIC || source == SoundSource.MASTER || source == SoundSource.VOICE) {
             return false;
         }
-        SoundSource source = sound.getSource();
-        return source != SoundSource.MUSIC && source != SoundSource.MASTER && source != SoundSource.VOICE;
+        if (inYourHead(sound)) {
+            return (source == SoundSource.AMBIENT || source == SoundSource.WEATHER)
+                    && !sound.getLocation().getPath().startsWith(UNDERWATER_OWN);
+        }
+        return true;
+    }
+
+    private static boolean inYourHead(SoundInstance sound) {
+        return sound.isRelative() || sound.getAttenuation() == SoundInstance.Attenuation.NONE;
     }
 
     @SubscribeEvent
@@ -286,7 +320,7 @@ public final class Acoustics {
                 continue;
             }
             Tracked t = entry.getValue();
-            float walls = walls(world, camera, sound);
+            float walls = t.inHead ? 0.0f : walls(world, camera, sound);
             float gain = Mth.lerp(OCCLUSION_EASE, t.gain, gainFor(walls));
             float gainHf = Mth.lerp(OCCLUSION_EASE, t.gainHf, hfFor(walls));
             if (Math.abs(gain - t.gain) < 0.01f && Math.abs(gainHf - t.gainHf) < 0.01f) {
@@ -305,11 +339,11 @@ public final class Acoustics {
     }
 
     private static float gainFor(float walls) {
-        return Math.max(MIN_GAIN, (float) Math.pow(GAIN_PER_WALL, walls));
+        return Math.max(MIN_GAIN, (float) Math.pow(GAIN_PER_WALL, walls)) * Mth.lerp(submerged, 1.0f, SUBMERGED_GAIN);
     }
 
     private static float hfFor(float walls) {
-        return Math.max(MIN_HF, (float) Math.pow(HF_PER_WALL, walls));
+        return Math.max(MIN_HF, (float) Math.pow(HF_PER_WALL, walls)) * Mth.lerp(submerged, 1.0f, SUBMERGED_HF);
     }
 
     /**

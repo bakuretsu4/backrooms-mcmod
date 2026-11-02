@@ -1,0 +1,49 @@
+{
+  "variants": {
+    "facing=north,part=left": {
+      "model": "backrooms:block/l9_swing_set_leg"
+    },
+    "facing=north,part=middle": {
+      "model": "backrooms:block/l9_swing_set"
+    },
+    "facing=north,part=right": {
+      "model": "backrooms:block/l9_swing_set_leg"
+    },
+    "facing=east,part=left": {
+      "model": "backrooms:block/l9_swing_set_leg",
+      "y": 90
+    },
+    "facing=east,part=middle": {
+      "model": "backrooms:block/l9_swing_set",
+      "y": 90
+    },
+    "facing=east,part=right": {
+      "model": "backrooms:block/l9_swing_set_leg",
+      "y": 90
+    },
+    "facing=south,part=left": {
+      "model": "backrooms:block/l9_swing_set_leg",
+      "y": 180
+    },
+    "facing=south,part=middle": {
+      "model": "backrooms:block/l9_swing_set",
+      "y": 180
+    },
+    "facing=south,part=right": {
+      "model": "backrooms:block/l9_swing_set_leg",
+      "y": 180
+    },
+    "facing=west,part=left": {
+      "model": "backrooms:block/l9_swing_set_leg",
+      "y": 270
+    },
+    "facing=west,part=middle": {
+      "model": "backrooms:block/l9_swing_set",
+      "y": 270
+    },
+    "facing=west,part=right": {
+      "model": "backrooms:block/l9_swing_set_leg",
+      "y": 270
+    }
+  }
+}

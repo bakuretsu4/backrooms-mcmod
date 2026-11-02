@@ -1,0 +1,109 @@
+{
+  "variants": {
+    "facing=north,kind=papers": {
+      "model": "backrooms:block/office_table_items_papers"
+    },
+    "facing=north,kind=pencils": {
+      "model": "backrooms:block/office_table_items_pencils"
+    },
+    "facing=north,kind=mug": {
+      "model": "backrooms:block/office_table_items_mug"
+    },
+    "facing=north,kind=papers_mug": {
+      "model": "backrooms:block/office_table_items_papers_mug"
+    },
+    "facing=north,kind=bottle": {
+      "model": "backrooms:block/office_table_items_bottle"
+    },
+    "facing=north,kind=cubicle_set": {
+      "model": "backrooms:block/office_table_items_cubicle_set"
+    },
+    "facing=north,kind=burger_tray": {
+      "model": "backrooms:block/office_table_items_burger_tray"
+    },
+    "facing=east,kind=papers": {
+      "model": "backrooms:block/office_table_items_papers",
+      "y": 90
+    },
+    "facing=east,kind=pencils": {
+      "model": "backrooms:block/office_table_items_pencils",
+      "y": 90
+    },
+    "facing=east,kind=mug": {
+      "model": "backrooms:block/office_table_items_mug",
+      "y": 90
+    },
+    "facing=east,kind=papers_mug": {
+      "model": "backrooms:block/office_table_items_papers_mug",
+      "y": 90
+    },
+    "facing=east,kind=bottle": {
+      "model": "backrooms:block/office_table_items_bottle",
+      "y": 90
+    },
+    "facing=east,kind=cubicle_set": {
+      "model": "backrooms:block/office_table_items_cubicle_set",
+      "y": 90
+    },
+    "facing=east,kind=burger_tray": {
+      "model": "backrooms:block/office_table_items_burger_tray",
+      "y": 90
+    },
+    "facing=south,kind=papers": {
+      "model": "backrooms:block/office_table_items_papers",
+      "y": 180
+    },
+    "facing=south,kind=pencils": {
+      "model": "backrooms:block/office_table_items_pencils",
+      "y": 180
+    },
+    "facing=south,kind=mug": {
+      "model": "backrooms:block/office_table_items_mug",
+      "y": 180
+    },
+    "facing=south,kind=papers_mug": {
+      "model": "backrooms:block/office_table_items_papers_mug",
+      "y": 180
+    },
+    "facing=south,kind=bottle": {
+      "model": "backrooms:block/office_table_items_bottle",
+      "y": 180
+    },
+    "facing=south,kind=cubicle_set": {
+      "model": "backrooms:block/office_table_items_cubicle_set",
+      "y": 180
+    },
+    "facing=south,kind=burger_tray": {
+      "model": "backrooms:block/office_table_items_burger_tray",
+      "y": 180
+    },
+    "facing=west,kind=papers": {
+      "model": "backrooms:block/office_table_items_papers",
+      "y": 270
+    },
+    "facing=west,kind=pencils": {
+      "model": "backrooms:block/office_table_items_pencils",
+      "y": 270
+    },
+    "facing=west,kind=mug": {
+      "model": "backrooms:block/office_table_items_mug",
+      "y": 270
+    },
+    "facing=west,kind=papers_mug": {
+      "model": "backrooms:block/office_table_items_papers_mug",
+      "y": 270
+    },
+    "facing=west,kind=bottle": {
+      "model": "backrooms:block/office_table_items_bottle",
+      "y": 270
+    },
+    "facing=west,kind=cubicle_set": {
+      "model": "backrooms:block/office_table_items_cubicle_set",
+      "y": 270
+    },
+    "facing=west,kind=burger_tray": {
+      "model": "backrooms:block/office_table_items_burger_tray",
+      "y": 270
+    }
+  }
+}

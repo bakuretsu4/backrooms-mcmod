@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l9_toy_ball"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l9_toy_ball",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l9_toy_ball",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l9_toy_ball",
+      "y": 270
+    }
+  }
+}

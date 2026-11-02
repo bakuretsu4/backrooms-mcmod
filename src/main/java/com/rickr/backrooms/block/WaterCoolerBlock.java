@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * An office water cooler: a white cabinet with an upturned blue bottle on top. The water in it
@@ -30,10 +31,20 @@ public class WaterCoolerBlock extends FurnitureBlock {
 
     public WaterCoolerBlock(Properties properties) {
         // Cabinet, plus the bottle sticking up into the block above (collision 1.5 high, like a fence).
-        super(properties, Shapes.or(
+        this(properties, Shapes.or(
                 Block.box(3, 0, 4, 13, 16, 14),
                 Block.box(4.5, 16, 5.5, 11.5, 24, 12.5)));
+    }
+
+    /** Another Almond Water dispenser with the same three fills (the Level 4 drinking fountain). */
+    protected WaterCoolerBlock(Properties properties, VoxelShape shapeFacingNorth) {
+        super(properties, shapeFacingNorth);
         registerDefaultState(defaultBlockState().setValue(USES, MAX_USES));
+    }
+
+    /** The message shown when it has run dry. */
+    protected String emptyMessageKey() {
+        return "message.backrooms.water_cooler.empty";
     }
 
     @Override
@@ -50,7 +61,7 @@ public class WaterCoolerBlock extends FurnitureBlock {
         int uses = state.getValue(USES);
         if (uses <= 0) {
             level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 0.4f, 0.6f);
-            player.displayClientMessage(Component.translatable("message.backrooms.water_cooler.empty"), true);
+            player.displayClientMessage(Component.translatable(emptyMessageKey()), true);
             return InteractionResult.CONSUME;
         }
         level.setBlock(pos, state.setValue(USES, uses - 1), Block.UPDATE_ALL);

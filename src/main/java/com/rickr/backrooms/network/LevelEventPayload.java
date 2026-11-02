@@ -40,11 +40,6 @@ public record LevelEventPayload(int kind, int remainingTicks, int elapsedTicks) 
      */
     public static final int LAMP_WAVE = 8;
     /**
-     * Level 4 only: lightning outside the office windows. The windows (and everything near them)
-     * flash cold white a couple of times, and the thunder rolls in a second or two later.
-     */
-    public static final int STORM = 9;
-    /**
      * The Poolrooms and Level 37 only: the water turns "obtrusive" (both wikis, Level 37) and
      * drowns out every other sound for a while (client/anomaly/poolrooms/PoolAcoustics). Numbered
      * apart from the others so new events added for other levels never clash with it.

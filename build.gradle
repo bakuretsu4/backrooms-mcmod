@@ -163,6 +163,15 @@ dependencies {
     }
     // Dev only: ImGui editor (F6 -> Renderer -> Lights). Uncomment together with the RyanHCode repo above.
     // localRuntime "foundry.imguimc:imguimc-neoforge-1.21.1:2.0.5"
+
+    // Plain JUnit 5 tests for the pure, Minecraft-free parts (world plans): `gradlew test`.
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    maxHeapSize = '1g'
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

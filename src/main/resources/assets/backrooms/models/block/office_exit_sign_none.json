@@ -1,0 +1,73 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/office_exit_sign",
+    "sign": "backrooms:block/office_exit_sign"
+  },
+  "elements": [
+    {
+      "from": [
+        2.5,
+        5,
+        14
+      ],
+      "to": [
+        13.5,
+        10.5,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            8.0,
+            8.0
+          ],
+          "texture": "#sign",
+          "neoforge_data": {
+            "block_light": 15,
+            "sky_light": 15
+          }
+        },
+        "east": {
+          "uv": [
+            8.5,
+            8.5,
+            9.5,
+            9.5
+          ],
+          "texture": "#sign"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            8.5,
+            9.5,
+            9.5
+          ],
+          "texture": "#sign"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            8.5,
+            9.5,
+            9.5
+          ],
+          "texture": "#sign"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            8.5,
+            9.5,
+            9.5
+          ],
+          "texture": "#sign"
+        }
+      }
+    }
+  ]
+}

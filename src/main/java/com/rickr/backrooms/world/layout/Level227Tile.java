@@ -319,6 +319,13 @@ final class Level227Tile {
         if (nearBeam(x, z, crown + 3) || nearArrival(x, z, ARRIVAL_CLEAR + radius + finLen) || nearCave(x, z, radius + finLen)) {
             return null;
         }
+        // Never in a forest pool (Level227Ponds) or on its shore: no trunk or stump (its flared foot
+        // reaches ~2.4 radii) within ~2.5 blocks of the water, and no shrub's low leaves over the
+        // water or its shore. Checked against the puddle dips, which hold every pool. (Buttress
+        // roots stop short of the water by themselves, see Level227Layout.roots.)
+        if (Level227Ponds.dipWithin(bx, bz, kind == SHRUB ? crown + 2 : radius * 2.4 + 3)) {
+            return null;
+        }
         return new Tree(bx, bz, ground, height, radius, kind, fins, Hash.unit(Hash.mix(h + 9)) * Math.PI * 2,
                 finLen, finH, ly, lr, lt, Math.min(REACH, reach), h);
     }
@@ -346,10 +353,32 @@ final class Level227Tile {
         if (nearBeam(x, z, len / 2 + 8) || nearArrival(x, z, ARRIVAL_CLEAR + len / 2) || nearCave(x, z, len / 2 + 2)) {
             return null;
         }
+        // Never across a forest pool or along its edge (see logClearOfPools).
+        if (!logClearOfPools(x - hx, z - hz, x + hx, z + hz, r, len)) {
+            return null;
+        }
         // It lies along the ground, half sunk in, each end on the ground under it, slightly bowed.
         double bend = (Hash.unit(Hash.mix(h + 5)) - 0.5) * len * 0.16;
         return new Log(x - hx, z - hz, x + hx, z + hz, g0 + r * 0.55 - 1, g1 + r * 0.45 - 1, r, bend,
                 Hash.unit(Hash.mix(h + 4)) < 0.6);
+    }
+
+    /**
+     * True when no puddle dip (where a forest pool can be, see Level227Ponds) lies under a log from
+     * (x0, z0) to (x1, z1) of radius {@code r}, or within 3 blocks of it. The log bows sideways by
+     * up to 8% of its length, so that is added to the reach too.
+     */
+    private static boolean logClearOfPools(double x0, double z0, double x1, double z1, double r, double len) {
+        double reach = r + len * 0.08 + 3;
+        for (int x = (int) Math.floor(Math.min(x0, x1) - reach); x <= (int) Math.ceil(Math.max(x0, x1) + reach); x++) {
+            for (int z = (int) Math.floor(Math.min(z0, z1) - reach); z <= (int) Math.ceil(Math.max(z0, z1) + reach); z++) {
+                if (Level227Layout.distToSegment(x + 0.5, z + 0.5, x0, z0, x1, z1) <= reach
+                        && Level227Tree.puddleStrength(x + 0.5, z + 0.5) > 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static final ConcurrentHashMap<Long, Object> CAVES = new ConcurrentHashMap<>();
@@ -450,7 +479,8 @@ final class Level227Tile {
         int x = cx * FLY_CELL + 6 + (int) (Hash.unit(Hash.mix(h + 1)) * (FLY_CELL - 12));
         int z = cz * FLY_CELL + 6 + (int) (Hash.unit(Hash.mix(h + 2)) * (FLY_CELL - 12));
         int g = ground(x + 0.5, z + 0.5, span);
-        if (g == Integer.MIN_VALUE || span.nd > 0.5 || Level227Tree.isPuddle(x + 0.5, z + 0.5)) {
+        // Its dish and the tall grass round it on dry ground, never over a forest pool.
+        if (g == Integer.MIN_VALUE || span.nd > 0.5 || Level227Ponds.dipWithin(x, z, FLY_PATCH)) {
             return null;
         }
         if (nearBeam(x, z, 20) || nearArrival(x, z, 48)) {

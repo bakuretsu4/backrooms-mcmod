@@ -38,9 +38,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * when it goes. The clients render the lamps, fog, frost, pillar and shaking from the event
  * payload (and {@code Level9PillarPayload}).
  *
- * <p>Level 4 (the Abandoned Office) has no scares, only its storm: every 1-3 minutes lightning
- * strikes outside (STORM). The clients flash the windows ({@code Level4Atmosphere}); the server
- * sends the thunder a second or two later.
+ * <p>Level 4 (the Abandoned Office) has no events at all: canon Level 4 is a safe, unchanging
+ * office lit by its blacked-out windows, with only the air conditioning to hear.
  *
  * <p>Level 39 (Megalophobia) has no knocks either, only its superstructure's moods: INDOOR_RAIN,
  * 2-5 minutes of rain falling from the cloud ceiling ({@code client/Level39Weather}), and
@@ -55,8 +54,6 @@ public final class LevelEvents {
     private static final int TWIST_TICKS = 20 * 20;
     /** The PA line repeats as a fainter echo this many ticks later, from a different direction. */
     private static final int INTERCOM_ECHO_DELAY = 7;
-    /** Level 4 storm: the flashes take ~2 s, the thunder comes 1-3.5 s after the first one. */
-    private static final int STORM_TICKS = 6 * 20;
     /** Pool levels: the first obtrusive-water spell comes 4-5 minutes after someone arrives. */
     private static final int POOL_FIRST_DELAY = 4 * 60 * 20;
     /** Level 39: the echo quake event covers the boom, its echoes and the quake (the client's show). */
@@ -73,8 +70,6 @@ public final class LevelEvents {
         long echoTick = -1;
         /** The worst (third) announcement is followed straight away by flickering lights. */
         boolean flickerAfter;
-        /** Level 4: when the thunder of the current lightning strike arrives. */
-        long thunderTick = -1;
     }
 
     private static final Map<BackroomsLevel, State> STATES = new EnumMap<>(BackroomsLevel.class);
@@ -89,13 +84,12 @@ public final class LevelEvents {
             return;
         }
         if (state.nextTick < 0) {
-            // Level 4's storm starts soon after you arrive: the rain should not keep you waiting.
-            int first = floor == BackroomsLevel.LEVEL_4 ? 25 * 20 : isPoolLevel(floor) ? POOL_FIRST_DELAY + random.nextInt(60 * 20) : FIRST_DELAY;
+            int first = isPoolLevel(floor) ? POOL_FIRST_DELAY + random.nextInt(60 * 20) : FIRST_DELAY;
             state.nextTick = now + first + random.nextInt(20 * 20) - 10 * 20;
         }
 
         // The Poolrooms are a quiet dream, Level 4 a safe haven and Level 37 pure calm: no power
-        // cuts, alarms or footsteps-in-the-dark there. (Level 4's only events are its storms.)
+        // cuts, alarms or footsteps-in-the-dark there (Level 4 has no events at all).
         // Level 94 has its own day and night instead (Level94Clock), Level 7 its Thing (Level7Client)
         // and Level 490 its own storm (Level490Storm). Level 227 is a forest: its own sounds and the
         // tree's lurches belong to its atmosphere code. Level 369 is a garden where nothing happens
@@ -116,7 +110,7 @@ public final class LevelEvents {
             return;
         }
 
-        if ((!calm || floor == BackroomsLevel.LEVEL_4 || floor == BackroomsLevel.LEVEL_39 || isPoolLevel(floor))
+        if ((!calm || floor == BackroomsLevel.LEVEL_39 || isPoolLevel(floor))
                 && now >= state.nextTick) {
             startRandom(level, floor, state, random);
         }
@@ -138,12 +132,6 @@ public final class LevelEvents {
             for (ServerPlayer player : level.players()) {
                 playDistant(player, com.rickr.backrooms.world.anomaly.level0.FrontOfficeBehavior.echoLine(player), 34, 2.0f,
                         state.intercomPitch, level.getRandom());
-            }
-        }
-        if (state.kind == LevelEventPayload.STORM && now == state.thunderTick) {
-            // Thunder after the flash: light is faster than sound. Far off, from a random side.
-            for (ServerPlayer player : level.players()) {
-                playDistant(player, ModSounds.LEVEL4_THUNDER, 30, 4.0f, 0.85f + level.getRandom().nextFloat() * 0.25f, level.getRandom());
             }
         }
         if (state.kind == LevelEventPayload.FOG_ROLL && isSuburb(level)) {
@@ -176,10 +164,6 @@ public final class LevelEvents {
             case LEVEL_9 -> {
                 if (roll < 55) { kind = LevelEventPayload.LAMP_WAVE; duration = (20 + random.nextInt(15)) * 20; }
                 else { kind = LevelEventPayload.FOG_ROLL; duration = (40 + random.nextInt(31)) * 20; }
-            }
-            case LEVEL_4 -> {
-                kind = LevelEventPayload.STORM;
-                duration = STORM_TICKS;
             }
             // The pool levels: only ever the water growing loud, for 20-40 s.
             case POOLROOMS, LEVEL_37 -> {
@@ -237,7 +221,6 @@ public final class LevelEvents {
                     playDistant(player, ModSounds.THUNDER, 28, 4.0f, 0.8f + random.nextFloat() * 0.3f, random);
                 }
             }
-            case LevelEventPayload.STORM -> state.thunderTick = now + 20 + random.nextInt(50);
             case LevelEventPayload.TWIST ->
                     level.players().forEach(p -> p.playNotifySound(ModSounds.RADIO_STATIC.get(), SoundSource.AMBIENT, 0.6f, 1.0f));
             case LevelEventPayload.FOG_ROLL -> {
@@ -281,9 +264,7 @@ public final class LevelEvents {
             // The pool levels: the water grows loud only rarely, every 6-12 minutes.
             case POOLROOMS, LEVEL_37 -> (360 + random.nextInt(361)) * 20;
             // Never start events by themselves; this only matters after an operator forced one.
-            case LEVEL_94, LEVEL_7, LEVEL_490, LEVEL_227, LEVEL_369 -> (60 + random.nextInt(30)) * 20;
-            // Level 4: a lightning strike outside every 1-3 minutes.
-            case LEVEL_4 -> (60 + random.nextInt(121)) * 20;
+            case LEVEL_4, LEVEL_94, LEVEL_7, LEVEL_490, LEVEL_227, LEVEL_369 -> (60 + random.nextInt(30)) * 20;
             case LEVEL_9 -> (40 + random.nextInt(31)) * 20;
             // Level 39: 4-8 quiet minutes, so with the rain's own 2-5 minutes and 60% of events
             // being rain, it rains roughly every 10-20 minutes and a quake comes in between.

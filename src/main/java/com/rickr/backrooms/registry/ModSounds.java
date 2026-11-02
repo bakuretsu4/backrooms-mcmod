@@ -89,6 +89,18 @@ public final class ModSounds {
     /** Soft splash that replaces vanilla's loud one when you drop into the pools of the Poolrooms / Level 37. */
     public static final DeferredHolder<SoundEvent, SoundEvent> WATER_SPLASH = register("water.splash");
 
+    // Level 227's ponds (client/water/WaterSplashes and UnderwaterAudio, made by
+    // tools/level227_water/gen_water.py): a splash in three sizes picked by how fast something hits
+    // the water, a soft stroke for wading and swimming at the surface, and under the water a quiet
+    // muffled bed with a soft sound for ducking under and for coming up.
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_SPLASH_SMALL = register("level227.water.splash_small");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_SPLASH_MEDIUM = register("level227.water.splash_medium");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_SPLASH_BIG = register("level227.water.splash_big");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_WATER_PADDLE = register("level227.water.paddle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_UNDER_BED = register("level227.water.under_bed");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_UNDER_ENTER = register("level227.water.under_enter");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L227_UNDER_EXIT = register("level227.water.under_exit");
+
     // Noclip intro: reality glitching apart, the rush of falling, crashing through the ceiling.
     public static final DeferredHolder<SoundEvent, SoundEvent> INTRO_GLITCH = register("intro.glitch");
     public static final DeferredHolder<SoundEvent, SoundEvent> INTRO_WIND = register("intro.wind");
@@ -105,12 +117,11 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> BANDAGE_WRAP = register("item.bandage.wrap");
     // Safe rooms: the field radio crackling to life and chiming when you save a checkpoint.
     public static final DeferredHolder<SoundEvent, SoundEvent> CHECKPOINT_SAVE = register("block.checkpoint_radio.save");
-    // Level 4, the Abandoned Office: heavy rain on the windows (biome loop), now and then a rumble
-    // in the pipes (biome additions), thunder after the lightning, the music behind door 6, and the
-    // vending machine and water cooler.
-    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_RAIN = register("ambient.level4_rain");
+    // Level 4, the Abandoned Office: the air conditioning (biome loop), now and then a rumble in the
+    // pipes (biome additions), the music behind door 6, and the vending machine and water cooler.
+    /** Level 4's room tone: air conditioning blowing through the empty floors. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_HVAC = register("ambient.level4_hvac");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_PIPES = register("ambient.level4_pipes");
-    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_THUNDER = register("level4.thunder");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL4_DOOR_MUSIC = register("level4.door_music");
     public static final DeferredHolder<SoundEvent, SoundEvent> VENDING_MACHINE_VEND = register("block.vending_machine.vend");
     public static final DeferredHolder<SoundEvent, SoundEvent> WATER_COOLER_GLUG = register("block.water_cooler.glug");
@@ -338,6 +349,19 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L94_WATER_TOWER_CREAK = register("distant.level94.water_tower_creak");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L94_RAT_SKITTER = register("distant.level94.rat_skitter");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L94_CARTOON_TIPTOE = register("distant.level94.cartoon_tiptoe");
+
+    // Level 9 Story: the answering machines' recorded messages (block/level9/AnsweringMachineBlock),
+    // level9.machine_message_0 .. _7, made by tools/level9_assets/story.py.
+    public static final java.util.List<DeferredHolder<SoundEvent, SoundEvent>> L9_MACHINE_MESSAGES =
+            java.util.stream.IntStream.range(0, com.rickr.backrooms.block.level9.AnsweringMachineBlock.MESSAGES)
+                    .mapToObj(i -> register("level9.machine_message_" + i)).toList();
+
+    // Level 9 Street (tools/level9_assets/street.py): a dog chorus that the client cuts off
+    // mid-bark (client/level9/DogsGoQuiet), a swing set's rusty creak and a lawn sprinkler's
+    // tick-tick-hiss (block/yard).
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_DOG_CHORUS = register("level9.dog_chorus");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_SWING_CREAK = register("level9.swing_creak");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_SPRINKLER = register("level9.sprinkler");
 
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name) {
         return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(Backrooms.id(name)));

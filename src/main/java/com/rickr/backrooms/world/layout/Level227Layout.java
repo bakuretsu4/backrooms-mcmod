@@ -28,6 +28,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
@@ -46,8 +47,9 @@ import org.jetbrains.annotations.Nullable;
  *       sealed air. Nobody can see into a branch, and the hollow cores make chunks far cheaper to
  *       generate, light and save. Broken tips end in a ragged face of growth rings.</li>
  *   <li><b>The forest floor</b> on top: grass and moss over 4-8 blocks of root soil, with rolling
- *       ground, exposed roots, puddles, thinning out at the edges to moss-streaked bark where the
- *       Lestron grows.</li>
+ *       ground, exposed roots, forest pools in the dips ({@link Level227Ponds}: still water up to 4
+ *       deep, kept clear of roots, logs and trunks), thinning out at the edges to moss-streaked
+ *       bark where the Lestron grows.</li>
  *   <li><b>The forest:</b> giant trees 25-70 tall with buttress roots and layered crowns, broken
  *       stumps showing their rings, fallen logs, lianas, epiphytes and dense undergrowth (from
  *       {@link Level227Tile}).</li>
@@ -64,9 +66,12 @@ public final class Level227Layout extends LevelLayout {
     /** Never used for travel (Level 227 has no exit); only so the base class has a locator. */
     private static final ExitLocator EXITS = new ExitLocator(4096, 64, 2271);
     private static final int HEIGHT = Level227Tree.WORLD_HEIGHT;
-    private static final int MAX_SPANS = 16;
+    /** At most this many pieces of the tree are read per column (Level227Ponds checks against it too). */
+    static final int MAX_SPANS = 16;
     private static final int MAX_CAVES = 6;
     private static final int MAX_RUNS = 12;
+    /** No exposed root, buttress root, log or splinter this close (blocks) to pool water. */
+    private static final int RIM_CLEAR = 2;
 
     /**
      * A spot for a spawner: block column (x, z), y = the feet height (first air block above the
@@ -409,6 +414,15 @@ public final class Level227Layout extends LevelLayout {
         int n;
         int caves;
         int minY, maxY;
+        // The forest pool here (Level227Ponds): blocks of water (0 = none), the Y of its surface,
+        // the Y of the forest floor it lies in (the surface or one block higher: that block is dug
+        // out), and whether any pool water is within RIM_CLEAR blocks (no roots, logs or splinters then).
+        int pondDepth, pondTop, pondFloor;
+        boolean pondNear;
+        // On a pool's shore (a dry column beside the water, Level227Ponds.shore): the Y of the
+        // forest floor's top block as the branch has it, and the Y it is dug down to (level with
+        // the water). Integer.MIN_VALUE when this is no shore.
+        int shoreFloor, shoreTop;
 
         Work() {
             for (int i = 0; i < MAX_SPANS; i++) {
@@ -466,14 +480,34 @@ public final class Level227Layout extends LevelLayout {
         }
         w.n = n;
         prepareCaves(w, tile, px, pz);
+        w.pondDepth = Level227Ponds.depth(x, z);
+        w.pondTop = w.pondDepth > 0 ? Level227Ponds.surface(x, z) : Integer.MIN_VALUE;
+        w.pondFloor = w.pondDepth > 0 ? Level227Ponds.floor(x, z) : Integer.MIN_VALUE;
+        w.pondNear = Level227Ponds.near(x, z, RIM_CLEAR);
+        w.shoreTop = w.pondNear ? Level227Ponds.shore(x, z) : Integer.MIN_VALUE;
+        w.shoreFloor = w.shoreTop != Integer.MIN_VALUE ? Level227Ponds.floor(x, z) : Integer.MIN_VALUE;
 
         buildWood(w, x, z, px, pz, trunkSide, trunkD);
+        if (w.shoreTop != Integer.MIN_VALUE) {
+            // The shore's forest floor now starts at the dug-down height: plants grow from there.
+            for (int r = 0; r < w.runs; r++) {
+                if (w.runTop[r] == w.shoreFloor) {
+                    w.runTop[r] = w.shoreTop;
+                }
+            }
+        }
         if (w.maxY >= 0) {
             dressSurfaces(w, tile, x, z, px, pz);
             forest(w, tile, x, z, px, pz);
             undergrowth(w, tile, x, z, px, pz);
             hangings(w, x, z, px, pz);
             caveFloors(w, x, z);
+            if (w.pondDepth > 0) {
+                clearOverWater(w);
+            }
+            if (w.shoreTop != Integer.MIN_VALUE) {
+                clearShore(w);
+            }
         }
 
         for (int y = Math.max(0, w.minY); y <= w.maxY; y++) {
@@ -522,7 +556,6 @@ public final class Level227Layout extends LevelLayout {
         double soilNoise = 0.5 + 0.5 * Level227Tree.noise(px * 0.05, pz * 0.05, 61);
         double grassNoise = Level227Tree.noise(px * 0.06, pz * 0.06, 62);
         double ridge = 1 - Math.abs(Level227Tree.noise(px * 0.043, pz * 0.043, 33)) * 9;
-        boolean puddle = Level227Tree.isPuddle(px, pz);
 
         boolean inRun = false;
         int runs = 0;
@@ -634,12 +667,24 @@ public final class Level227Layout extends LevelLayout {
             if (depth > HOLLOW_DEPTH && !lined) {
                 continue; // sealed hollow core
             }
-            int below = runTopY - y;
+            // A pool's shore dug down level with the water: its top block goes, and the forest
+            // floor (grass or moss on top) starts one block lower.
+            if (runTopY == w.shoreFloor && w.shoreTop < runTopY && y > w.shoreTop) {
+                continue;
+            }
+            int below = runTopY == w.shoreFloor ? w.shoreTop - y : runTopY - y;
             BlockState state;
-            if (cutSpan >= 0 && cut < 1.0) {
+            if (runTopY == w.pondFloor && y > w.pondTop - w.pondDepth - Level227Ponds.FLOOR_UNDER) {
+                // The forest pool (Level227Ponds): the floor's top block dug out where it lies one
+                // above the pool's surface, then the water, then the pool's dark, silty bottom.
+                if (y > w.pondTop) {
+                    continue;
+                }
+                state = y > w.pondTop - w.pondDepth ? S.WATER : S.ROOT_SOIL;
+            } else if (cutSpan >= 0 && cut < 1.0) {
                 state = rings(w, cutSpan, x, y, z);
             } else if (topNd < Level227Tree.WALKABLE_ND && below < 12) {
-                state = groundBlock(w, topSpan, topNd, below, depth, deepest, x, y, z, px, pz, soilNoise, grassNoise, ridge, puddle);
+                state = groundBlock(w, topSpan, topNd, below, depth, deepest, x, y, z, px, pz, soilNoise, grassNoise, ridge);
             } else {
                 state = wood(w, deepest, depth, y, x, z, px, pz, trunkHere && deepest < 0, below);
             }
@@ -657,16 +702,14 @@ public final class Level227Layout extends LevelLayout {
     /** The forest floor (or the bark under it) at {@code below} blocks under the top of a walkable branch top. */
     private static BlockState groundBlock(Work w, int topSpan, double nd, int below, double depth, int deepest,
                                           int x, int y, int z, double px, double pz,
-                                          double soilNoise, double grassNoise, double ridge, boolean puddle) {
+                                          double soilNoise, double grassNoise, double ridge) {
         // How much forest floor there is: full in the middle, thinning to nothing at the edge.
         double forest = nd < 0.55 ? 1 : nd > 0.85 ? 0 : 1 - (nd - 0.55) / 0.3;
         int soil = (int) Math.round((4 + 4 * soilNoise) * forest);
         if (below == 0) {
-            if (puddle && nd < 0.45) {
-                return S.WATER;
-            }
-            if (forest > 0.5 && ridge > 0.55) {
-                // An exposed root of the forest, snaking over the ground.
+            // An exposed root of the forest, snaking over the ground (but never round a pool's
+            // edge, where it would be a wall between the water and the bank).
+            if (forest > 0.5 && ridge > 0.55 && !w.pondNear) {
                 return S.LOG_MOSSY[rootAxis(px, pz)];
             }
             if (soil >= 3) {
@@ -851,6 +894,37 @@ public final class Level227Layout extends LevelLayout {
         return result;
     }
 
+    /**
+     * Over a pool: nothing you could bump into within AIR_ABOVE blocks of the water. Level227Ponds
+     * already keeps every piece of the tree that far off, and the forest's trees and logs are
+     * planned away from the puddle dips (Level227Tile), so this should never find anything; it
+     * makes sure (a shrub's leaf, a moss carpet...) so swimmers can always surface and climb out.
+     * Plants you walk through (hanging moss, a liana's tip) may stay.
+     */
+    private static void clearOverWater(Work w) {
+        for (int y = w.pondTop + 1; y <= w.pondTop + Level227Ponds.AIR_ABOVE && y < HEIGHT; y++) {
+            BlockState s = w.col[y];
+            if (s != null && !s.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).isEmpty()) {
+                w.col[y] = null;
+            }
+        }
+    }
+
+    /**
+     * A pool's shore: nothing you could bump into within SHORE_AIR blocks over its floor, so you
+     * walk (or swim) straight out of the water onto it. Roots, logs and trunks are already kept
+     * away; this takes anything else with a collision box (a shrub's leaf...). Plants you walk
+     * through stay.
+     */
+    private static void clearShore(Work w) {
+        for (int y = w.shoreTop + 1; y <= w.shoreTop + Level227Ponds.SHORE_AIR && y < HEIGHT; y++) {
+            BlockState s = w.col[y];
+            if (s != null && !s.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).isEmpty()) {
+                w.col[y] = null;
+            }
+        }
+    }
+
     /** Moss carpets on cave floors and the Palette waiting in a tunnel's ceiling. */
     private static void caveFloors(Work w, int x, int z) {
         for (int i = 0; i < w.caves; i++) {
@@ -984,7 +1058,8 @@ public final class Level227Layout extends LevelLayout {
      * them reads as a straight wall.
      */
     private static void roots(Work w, Tree t, int x, int z, double rho, double theta) {
-        if (t.fins() == 0 || rho > t.radius() + t.finLen() + 2) {
+        // Not over a pool or round its edge: a buttress root there would be a wall in the water.
+        if (t.fins() == 0 || rho > t.radius() + t.finLen() + 2 || w.pondNear) {
             return;
         }
         long h = t.hash();
@@ -1101,7 +1176,7 @@ public final class Level227Layout extends LevelLayout {
             double len = 2 + Hash.unit(Hash.mix(h + 90 + k)) * 2.5;
             double sx = Math.cos(a) * d0, sz = Math.sin(a) * d0;
             double ex = sx + Math.cos(dir) * len, ez = sz + Math.sin(dir) * len;
-            if (distToSegment(dx, dz, sx, sz, ex, ez) > 0.55 || !w.free(g)) {
+            if (distToSegment(dx, dz, sx, sz, ex, ez) > 0.55 || !w.free(g) || w.pondNear) {
                 continue;
             }
             boolean alongX = Math.abs(Math.cos(dir)) >= Math.abs(Math.sin(dir));
@@ -1197,7 +1272,8 @@ public final class Level227Layout extends LevelLayout {
         double tx = l.x1() - l.x0(), tz = l.z1() - l.z0();
         double len = Math.sqrt(tx * tx + tz * tz);
         double t = ((px - l.x0()) * tx + (pz - l.z0()) * tz) / (len * len);
-        if (t < 0 || t > 1) {
+        // Logs are planned away from the pools (Level227Tile.logAt); never a piece of one by the water.
+        if (t < 0 || t > 1 || w.pondNear) {
             return;
         }
         // Sideways offset from the straight line, minus the bow: how far off the log's axis we are.

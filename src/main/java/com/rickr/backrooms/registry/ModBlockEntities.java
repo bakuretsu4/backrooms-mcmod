@@ -36,5 +36,14 @@ public final class ModBlockEntities {
     public static final Supplier<BlockEntityType<VehicleBlockEntity>> L94_VEHICLE = BLOCK_ENTITIES.register("l94_vehicle",
             () -> BlockEntityType.Builder.of(VehicleBlockEntity::new, ModBlocks.L94_VEHICLE.get()).build(null));
 
+    // Level 9 Street: the swing set's middle (its seats are drawn swaying, and it creaks) and the
+    // lawn sprinkler (water and sound). Both only do things on the client.
+    @SuppressWarnings("DataFlowIssue")
+    public static final Supplier<BlockEntityType<com.rickr.backrooms.block.yard.SwingSetBlockEntity>> L9_SWING_SET = BLOCK_ENTITIES.register("l9_swing_set",
+            () -> BlockEntityType.Builder.of(com.rickr.backrooms.block.yard.SwingSetBlockEntity::new, ModBlocks.L9_SWING_SET.get()).build(null));
+    @SuppressWarnings("DataFlowIssue")
+    public static final Supplier<BlockEntityType<com.rickr.backrooms.block.yard.SprinklerBlockEntity>> L9_SPRINKLER = BLOCK_ENTITIES.register("l9_sprinkler",
+            () -> BlockEntityType.Builder.of(com.rickr.backrooms.block.yard.SprinklerBlockEntity::new, ModBlocks.L9_SPRINKLER.get()).build(null));
+
     private ModBlockEntities() {}
 }

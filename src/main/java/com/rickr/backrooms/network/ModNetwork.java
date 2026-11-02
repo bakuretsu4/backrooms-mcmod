@@ -152,6 +152,10 @@ public final class ModNetwork {
         registrar.playToClient(Level9PillarPayload.TYPE, Level9PillarPayload.STREAM_CODEC,
                 (payload, context) -> com.rickr.backrooms.client.anomaly.level9.MangledPillar.receive(payload.phase(), payload.x(), payload.z()));
 
+        // Level 9 Street (testing): start the lamps going out behind you, or the dog chorus, now.
+        registrar.playToClient(Level9StreetPayload.TYPE, Level9StreetPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.level9.Level9StreetEffects.receive(payload.kind())));
+
         // Level 39: the layout seed (so the client can work out tunnels, facade and holes itself),
         // and echo quakes (the client plays the echoes, rumble, shaking and dust).
         registrar.playToClient(Level39StatePayload.TYPE, Level39StatePayload.STREAM_CODEC,

@@ -205,6 +205,21 @@
           "weight": 80
         }
       ]
+    },
+    {
+      "rolls": 1.0,
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "backrooms:watch_flyer",
+          "weight": 25
+        },
+        {
+          "type": "minecraft:empty",
+          "weight": 75
+        }
+      ]
     }
   ],
   "random_sequence": "backrooms:supplies/crate/level_9"

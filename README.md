@@ -21,7 +21,7 @@ Lithium, FerriteCore, ModernFix, Entity Culling, ImmediatelyFast and Dynamic FPS
 | NightShot (infrared) | `N` (drains the battery 3x faster) |
 | Camcorder REC overlay | `H` (off by default). Switching it on shows REC, battery, clock and exit signal clearly for a few seconds; then they sink to a faint ghost until one of them changes. A low battery (15% or less) pulses soft red at the top right even with the overlay off. |
 | Sprint | Limited by energy: a short, thin faint line above your hearts shows it while you run (turns soft red when you're out of breath). Rest to refill it. |
-| Jump | Not possible in the Backrooms (except in water, to swim and climb out) |
+| Jump | Not possible in the Backrooms (except in water, to swim and climb out; on ropes and other climbables; and in Level 490 and Level 227, where the levels need it) |
 | Loot | Right-click Wooden Crates, Backpacks and Supply Cabinets (see Supplies below) |
 | New battery | Right-click a Camcorder Battery |
 | Settings | **SETTINGS** on the main menu, **Backrooms Settings...** in the pause menu, or Config in the Mods list: camera smoothing (default 35%; the original feel was 88%), handheld shake, view tilt, motion blur, wide lens, **footage look** and **4:3 frame** (see The camcorder picture below), stamina line, and **QUALITY** for weaker computers (see Performance below). Changes apply immediately and are saved per player in `config/backrooms-client.toml`. |
@@ -37,6 +37,7 @@ time. HIGH is the full look; try MEDIUM or LOW if the game stutters.
 | Glow around lamps (blur passes) | 6 | 4 | none |
 | Pool water reflections | full | shorter | none (plain mirror colour) |
 | Sun beams (Level 37, Poolrooms) | 20 | 12 | 6 |
+| Opening glows (niche wash + bounce, 2 lights each) | 12 | 6 | 3 |
 
 Measured at 1920x1080 on a fast graphics card, LOW takes about 15% less time per frame than HIGH
 in Level 0 and about 40% less in Level 37; slower cards gain more.
@@ -173,33 +174,59 @@ going down into the dark, until the picture breaks up and you are in the next le
   blocks, a two-level stretch with a grated catwalk and railing over an open trench (a ladder
   down to the walkway at its bottom), or a section sealed by two concrete walls with locked steel
   doors and a narrow, low bypass passage round it behind the wall.
-- **Level 4 (the Abandoned Office):** you arrive here through Level 2's EXIT door. Endless empty
-  office floors on a stormy night: huge open-plan floors with square white columns, cubicle
-  fields, corridors of wooden doors into small offices, glass conference rooms, break rooms,
-  copy and server rooms, elevator lobbies whose elevators never come. A drop ceiling with
-  fluorescent panels, most of them dead in the big open areas; long walls of dark rainy windows
-  with radiators under the sills. Rain drums on the glass everywhere, the pipes rumble now and
-  then, and every minute or two lightning flashes through the windows before the thunder rolls
-  in. No monsters: it is a safe haven. Break rooms have **vending machines** (right-click: Almond
-  Water or an Energy Bar until sold out) and **water coolers** (right-click: Almond Water, three
-  times each). Some filing cabinets marked SUPPLIES are lockers. Safe rooms stand as little
-  office boxes in the open floors. Behind one locked door with a brass "6", faint music plays.
-  The way out is an **emergency stairwell**: look for the glowing EXIT sign over a grey steel fire
-  door in a bright, cleared area; go down the stairs to reach the Poolrooms.
+- **Level 4 (the Abandoned Office):** you arrive here through Level 2's EXIT door. As in canon,
+  an endless, empty office building, almost completely devoid of furniture: white walls, cheap
+  grey carpet, the low hum of air conditioning blowing through countless rooms and a cold draft
+  now and then. Most lights don't work; the level is lit by its windows, which are mostly blacked
+  out (blinds down, half down, or taped over) yet still glow. No monsters: it is a safe haven, and
+  the place where **Almond Water** is found most often.
+  - **Empty rooms and floors** (about half of it): huge open-plan floors with square white columns
+    and nothing left but the dents of desk rows and their floor boxes; rooms that are truly empty
+    except for the pale marks where a whiteboard or a picture hung, the odd cleared-out office
+    with its cable trunking and thermostat, and very rarely a supply crate someone left behind.
+  - **Conference rooms** (about a fifth): glass fronts, and always the same table, 3 blocks long,
+    centred in the room, with 1 to 8 chairs spaced evenly round it (big rooms sometimes have spare
+    chairs along the back wall: up to 20), papers, pencils and mugs of Almond Water on the table, a
+    projector over it, a whiteboard, an empty TV bracket and a clock stopped at 4:04.
+  - **Lobbies and cafeterias** (about a third, often run together): elevator lobbies with
+    terrazzo floors, lit coffers, a directory board and fountains; big empty lobby rooms; and
+    mostly empty cafeterias with a few of the same tables spread wide under pendant lamps (half the
+    chairs gone, some turned away), a serving counter with shuttered
+    hatches, vending machines (Almond Water or an Energy Bar until sold out), water coolers and
+    drinking fountains (Almond Water, three times each), now and then a bottle of Almond Water left
+    on a table (right-click to take it) and, extremely rarely, a double cheeseburger on a tray.
+  - **Cubicle clusters** (rare): 54 identical, complete cubicles: a desk with a computer, a chair,
+    pencils, notebooks, post-its, a mug of Almond Water and the same little "please keep your
+    workspace tidy" sign in every one.
+
+  Since the rooms are empty, the building itself carries the detail: framed doorways with room
+  signs beside the doors, light switches and door stops inside them, slot diffusers and a slim
+  radiator under every window bay, square diffusers, sprinklers and smoke detectors in the
+  ceiling, access hatches, water-damaged patches (stained, lifted and missing tiles, a dangling
+  cable), an extinguisher with a fire-alarm call point every 24 blocks or so, first-aid boxes,
+  hand sanitisers, evacuation plans, notice boards, water coolers on some columns, and green
+  **exit signs** over the doorways and hanging in the big spaces, pointing toward the nearest
+  stairwell. Some filing cabinets marked SUPPLIES are lockers. Safe rooms stand as little office
+  boxes in the open floors. Behind one locked door with a brass "6", faint music plays. There are
+  two ways out, both to the Poolrooms: an **emergency stairwell** (look for the glowing EXIT sign
+  over a grey steel fire door in a bright, cleared area; go down the stairs), or, now and then in
+  an elevator lobby, an **exit elevator** standing open and lit under a green EXIT sign: step in
+  and wait, and it takes you down.
 - **The Poolrooms:** dim white-tiled rooms and long water channels lit by a few tubes, glowing
   cyan pools with underwater lamps and moving light ripples, and now and then a tall atrium full
   of daylight. No monsters. The way out is the drain: a dark-tiled shaft in the middle of a deep
   pool, lit by lamps around its edge. Swim into it and it pulls you down into Level 37.
   Somewhere (about once every 300 x 300 blocks) a dim, dry room has a **sunlit archway** in its
-  north wall: a round arch lined with fine white mosaic, warm daylight pouring out of it. Walk
+  north wall: a round arch lined with fine white mosaic, warm daylight pouring out of it from somewhere deep inside. Walk
   into the light: a shortcut that skips ahead to Level 39's flooded tunnels.
 - **Level 37 ("Sublimity"):** reached down the Poolrooms' drain. Pristine cream-white mosaic on
   every surface, floors flooded ankle-deep in clear sea-green water, deep pools with no ledge and
   chrome ladders, forests of round pillars standing in the water, wavy walls and rounded corners, round arches
-  and circular tunnels fading into darkness, domed rotundas with an oculus and glowing arched
+  and circular tunnels fading into darkness, domed rotundas with an oculus and softly lit arched
   alcoves, a spiral stair of floating treads climbing a light well toward the sun. Warm daylight
-  comes from nowhere: skylights and tall slit windows open onto a dazzling white void and throw
-  sharp bright rectangles and stripes across the tile and water, while the long tunnels stay dark.
+  comes from nowhere: skylights and tall slit windows are tiled niches lit by a source you never
+  see (brightest at the back, fading toward the room), and throw soft-edged stripes and patches of
+  sun across the tile and water, with a faint glow around each opening, while the long tunnels stay dark.
   Calm and quiet: gentle lapping, distant drips, no monsters, no events, and your **sanity slowly
   comes back** (+0.6/s) anywhere on the level. Backpacks on the dry pool decks and at the top of
   the spiral stairs hold almond water and calm pills. The way on is down: a round rotunda with a
@@ -305,6 +332,13 @@ going down into the dark, until the picture breaks up and you are in the next le
   flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark
   forest behind the yards. Follow the green EXIT arrow signs (a few lie) to a highway underpass
   and walk into the dark, back to reality.
+  - **Houses:** not every house is the same plan any more: wide one-storey ranch houses, houses with
+    a ladder up to a dusty attic, houses with stairs down to a dark cellar (water heater, washer,
+    boxes), boarded-up houses full of dust sheets and cobwebs, and now and then a half-built house
+    of bare studs, rafters, sawhorses and a tarp.
+  - **Lived in:** the TV is sometimes still on (soft static), dinner is left on the table, beds are
+    unmade, some houses have a kid's room with toys and drawings, family photos hang on the walls
+    (some with the faces scratched out), and a few kitchens have an answering machine on the counter.
 - **Level 227 ("Megaflora"):** reached only by being dragged in out of the Backrooms' own nature
   (see above) or with `/backrooms enter level_227`. A tree the size of a planet hangs upside down
   over a black void, its roots reaching up out of the sky. You arrive in a misty rainforest that
@@ -313,10 +347,27 @@ going down into the dark, until the picture breaks up and you are in the next le
   (walk outward and you slowly descend), splitting into sub-branches and limbs that end in tapered
   tips or broken stumps showing their growth rings. Here and there two branch systems have grown
   into each other or are joined by a thin bridging limb: the only ways across, so look for them.
-  On top: 4-8 blocks of rooted soil, moss and grass with roots snaking over it and puddles in the
-  dips, under a forest of giant trees 25-70 blocks tall (buttress roots, layered crowns, lianas
+  On top: 4-8 blocks of rooted soil, moss and grass with roots snaking over it and forest pools in
+  the dips, under a forest of giant trees 25-70 blocks tall (buttress roots, layered crowns, lianas
   you can climb, epiphytes, bracket fungi), shrubs, tall grass, giant ferns, fallen logs and snapped
-  stumps. At the edges the soil thins to moss-streaked bark curving away into nothing, where purple
+  stumps. The pools (`world/layout/Level227Ponds`) are real, still water you can jump, fall and dive
+  into and swim in: one flat surface each, a dark silty bottom that shelves down a block at a time
+  (1 deep at the rim, 2-4 in the middle of the bigger ones), banks at most a block above the water
+  so you can always climb out, and open sky over them (no roots, logs or trunks in or over the
+  water, nothing solid within 3 blocks above it). Jumping works everywhere in Level 227: you hop
+  over roots and into the pools. Pools only appear in newly generated chunks; where you have
+  already been, the old one-block puddles stay.
+  The water is a tea-coloured forest pool (`client/water/WaterStyle.LEVEL_227`): clear amber-green
+  in the shallows, peaty green-black where it is deep, mirroring the canopy, with soft ripples,
+  light patterns on the bottom where light reaches and sun glints from the real sun overhead; under
+  it a murky green haze. With a shader pack (Iris, e.g. Complementary) the pack draws the water
+  instead, tinted the same amber-green by the biome's water colour. Anything falling in splashes
+  by how fast it hits (a plop, a splash, a belly-flop from six blocks up): drops, rings, foam,
+  bubbles dragged down, and rings rippling across the surface (`client/water/WaterSplashes`);
+  wading and swimming leave small rings and soft water sounds. With your head under, a quiet
+  muffled hush replaces vanilla's ocean sounds and everything else goes dull and quiet
+  (`client/water/UnderwaterAudio`). Test it with `/backrooms l227 pond [height]`.
+  At the edges the soil thins to moss-streaked bark curving away into nothing, where purple
   Lestron grows; moss curtains, fern fronds and lianas hang off the undersides into the void. Bear
   caves open as mossy holes in the forest floor; hollow knots gape at the branch edges. Rare
   clearings of white ash mark the deadly sunbeams of the Sun over the Void. Mind the glowing
@@ -341,7 +392,7 @@ screen points the way, but every level's ordinary exit can be tracked down three
 ways (the sunlit archway, the clay doors, the throne light) are never hinted.
 - **Listen.** Every exit gives off a faint sound of its own that fades in within about 40 blocks
   and comes through the walls: a draft up Level 0's stairwell, the hollow drone of Level 1's,
-  Level 2's EXIT door buzzing, storm noise through Level 4's fire door, the Poolrooms' drain
+  Level 2's EXIT door buzzing, a cold draft hissing under Level 4's fire door, the Poolrooms' drain
   gurgling, water rushing down Level 37's pit, highway hum through Level 9's underpass, the dark
   breathing behind Level 94's dark doors, bubbles rising from Level 7's sunken door. Unlike the
   rest of the level's sounds, it never moves.
@@ -367,6 +418,17 @@ shallows too, which vanilla wouldn't allow): your steps become splashy wading so
 bubbles, sloshing and spray, and the water slows you down a little. Only deep pools make you swim.
 With an Iris shader pack active, vanilla water is kept (the pack draws its own).
 Sodium/Embeddium-style renderers that skip vanilla's fluid renderer are not covered.
+
+**Curved tile (Level 37's pillars, rounded corners, arches, tunnels and rotundas; the Poolrooms'
+sunlit archway)** is lit by the mod while each chunk is built (`client/CurveTileRenderer`), not by
+vanilla's block lighting, which can only light a curve one block at a time (dark blocks and
+triangles on curved ceilings). Light and ambient occlusion are sampled per vertex half a block in
+front of the surface, so they run smoothly round the curve and match vanilla smooth lighting where
+a curve meets a flat wall; the face shading follows the way the surface faces (the same shades
+the flat walls get for north/south, east/west, up and down). The flat Level 37 tile walls now use
+vanilla's normal face shading. With smooth lighting off the curves are flat-lit like every other
+block. It works the same under Sodium/Iris (shader packs do their own face shading from the
+normals); it does not need NeoForge's experimental light pipeline.
 
 ### Supplies
 
@@ -749,9 +811,12 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 
 **Level 4**
 - **Looping stairwells:** Grey stair cores stand in some open-plan floors. However far you climb or descend, the sign on the landing always says 4, and somewhere far away you hear footsteps that never arrive. Once in a while the stairs let you out somewhere else.
-- **The Window:** Most windows show the storm, but very rarely one is clear: a blurry, sunny place that feels like somewhere you've been. If the panes around a window are taped over with cardboard, there's a reason. Don't get close, and don't listen.
-- **Vanishing elevators:** In some lobbies one elevator stands open and lit. Look away and it may not be where you left it. Step in and it will take you somewhere that looks exactly like here.
+- **The Window:** Most windows are blacked out and only glow, but very rarely one is clear: a blurry, sunny place that feels like somewhere you've been. If the panes around a window are taped over with cardboard, there's a reason. Don't get close, and don't listen.
+- **Vanishing elevators:** In some lobbies one elevator stands open and lit. Look away and it may not be where you left it. Step in and it will take you somewhere that looks exactly like here. (The open elevator under a green EXIT sign is different: that one is a real exit.)
 - **Level 4.3, "The Cubicles":** A dim white series of hallways leads to an endless cubicle field in white fog, full of the sounds of people working whom you never see. The longer you stay, the harder it is to leave. Walk back the way you came.
+- **The Occupied Floor** (rare, open-plan floors): around one column, four neat pods of desks with a monitor on every desk and every chair pushed in, every light working, not a tile missing, not a dent in the carpet. Nobody is there. It does nothing.
+- **The Inside-Out Room** (rare, office corridors): behind an ordinary office door the carpet runs up the walls and across the ceiling, and the floor is ceiling tiles with a light panel glowing up out of it. It does nothing.
+- **The Cooler Row** (rare, open-plan floors): a short drywall corridor standing on its own, every light in it on, lined with identical water coolers at perfectly even spacing. All of them are empty, except the last one at the dead end, under an EXIT sign that leads nowhere.
 
 **The Poolrooms (and Level 37's water)**
 - **Sound in the pools:** In the Poolrooms and Level 37, footsteps and voices die out a few blocks away and everything sounds muffled; only the water stays clear. Every so often the water grows loud and close, drowning out everything else for half a minute.
@@ -759,7 +824,7 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **Stair pits:** Some rooms are one deep, dark flooded shaft, with a staircase running straight down into the water. Down there your breath runs out fast and currents drag you around. The stairs are always the way back up.
 
 **Level 37**
-- **Void openings:** In a few slit-window walls two slits have merged into one wider gap above a knee-high ledge, with dazzling white right behind it. The closer you get, the brighter and louder it grows, and the worse you feel. Those who climb in and stand in the white wake somewhere dark in the Lobby, shaken.
+- **Void openings:** In a few slit-window walls two slits have merged into one wider, deeper lit niche above a knee-high ledge. The closer you get, the more the light swallows the picture, and the louder and worse it grows. Those who climb in and stand in the white wake somewhere dark in the Lobby, shaken.
 - **Dark openings:** Rarely, a dim corner of a pool deck holds a round arch framed in dark tile and filled with absolute darkness, breathing cold air. Walk into it and the world fades to black; you come back out in the Poolrooms.
 - **Looping tunnels:** Some of the long dark round tunnels don't end. Keep walking and you keep passing the same stretch, the same drip, while the light fades a little each time. Turn around and you walk straight out; persist and it eventually lets you through.
 - **Healing water:** Level 37's warm water soothes. Standing or swimming in it slowly heals you and brings your sanity back, fastest in the deep pools; dry tile only calms you a little.
@@ -775,6 +840,15 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **Twin houses:** Two identical houses stand side by side. Leave one by its back door and you may find you aren't where you think you are. The front door always leads out.
 - **Grass walkways and Level 9.1:** Rarely, a paved path runs between two houses and on into the woods, getting colder as it goes, to a clearing of tall grass. Stand in the middle of the clearing and you are in the Crimson Field: endless grass at night under a red glow that pulses on the horizon. Don't walk toward the glow. To get home, follow the path back to where it started; the rare foxhole hatches in the ground lead elsewhere, one way only.
 - **The chairlift (side entrance to Level 39):** Very rarely, somewhere in the Crimson Field, you hear a cable creaking before you see it: a small frozen lift station and steel towers marching off into the fog, each taller than the last, with empty frosted chairs creeping along the line. Sit in the chair waiting at the station and it carries you up into a white-out; you can still hop off in the first second, after that the bar stays locked. Where it lets you go, you fall through the clouds into Level 39.
+- **Missing posters:** Photocopied MISSING posters are stapled to streetlamp poles, front fences, garage doors and house corners. Right-click one to read it close up. Every so often the name and the face on it are your own.
+- **Neighborhood Watch flyers:** The Watch's rules for staying alive on the street (the streetlights, the tall ones with a light for a face, the fog, porch lights, the signs that lie, not answering the door). Found pinned to porch posts (sneak + right-click to take one), in some mailboxes (right-click a mailbox to open it, once), and in Level 9's supply crates, lockers and backpacks. Right-click a flyer to read it; the Watch notice boards in front of empty lots can be read the same way.
+- **Answering machines:** Some kitchens have an answering machine with its red light blinking: a message nobody heard. Right-click it to play the tape. The voicemails start out ordinary.
+- **Kids' drawings:** Crayon drawings taped up in the children's rooms. Right-click to look closer.
+- **Wrong houses:** About one house in thirty is wrong inside. In some, the living room's furniture is stuck to the ceiling. In others you walk through a door into the room you just left, the same down to the photo on the wall. And very rarely a house's front door opens onto a narrow hall with a door every few steps: it goes on much further than the house does.
+- **Yards and street:** People left things behind. Some driveways and curbs have parked cars in faded colours. Some backyards have a rusty swing set whose seats sway gently with no wind and creak now and then. Lawn sprinklers still tick and hiss on their timers. You'll find a tipped-over tricycle, a ball or a bike lying in the grass, wheelie bins put out by the sidewalk, and some mailboxes with the red flag up.
+- **Streetlights behind you:** Now and then, while you walk down a street, the lamps you've just passed go out one by one behind your back. Turn round and look at them for a few seconds, or walk far enough away, and they quietly come back on.
+- **The dogs go quiet:** Every so often a few dogs start barking somewhere down the streets. Then they all stop at once, in the middle of a bark, and for a few seconds even the crickets are silent.
+- **The night:** Outdoors you hear crickets, traffic far off that never gets any closer, and now and then a wind chime. It goes muffled when you're inside a house or under the underpass.
 
 **Level 94**
 - **Furniture drift:** The closer you get to the castle, the less of the houses is left: whole houses on the far hills, single rooms nearer in, and closest of all only heaps of furniture, which turn towards the castle when nobody is looking. Check the sinks.
@@ -806,7 +880,9 @@ evenly over the whole picture and blended over about two seconds when you change
 old camera recorded, after the found footage in the Backrooms film: a mix of tape and early
 digital. The picture is read at about 480 lines, soft and then over-sharpened (pale halos round
 dark edges), its colour bleeds sideways and sits in 8x8 compression blocks, and a faint ghost
-echoes each edge. A cheap white balance turns the Lobby buttery yellow and the whites blow out.
+echoes each edge. A cheap white balance turns the Lobby buttery yellow and the whites blow out
+(except in the Poolrooms and Level 37, where the brightest parts roll off softly so skylights and
+sunlit openings keep their shape).
 Digital noise grows in the dark as the camera turns its gain up, and its auto-exposure hunts:
 step from a dark corridor into a lit room and the picture flares, dips and settles. **4:3 FRAME**
 (also on by default) puts it between black bars like the old camera's picture, with the HUD kept
@@ -821,8 +897,8 @@ left). Turn the footage look off for a clean picture.
 | Level 1 | Cold, damp concrete: blue shadows, little colour, grey-blue air |
 | Level 2 | Warm amber pools from the caged lamps receding down the line, cold blue-grey darkness between and beyond them, pipe chases sunk in shadow, a thin cold haze far off. With Veil the lamps take block-exact shadows from the same wall map as Level 0 (48 lamps within 39 blocks on HIGH) and wet floors, puddles, sweating pipes and bare metal get a small highlight of the nearby lamps (`client/light/Level2Gloss` says which blocks are damp, wet or metal). F3 shows the Level 2 lights' GPU time |
 | Level 4 | Cold fluorescent blue-grey, quiet |
-| Poolrooms | Teal shadows, soft cool highlights, a gentle wet glow |
-| Level 37 | Dreamlike: low contrast, milky shadows, warm overexposed highlights, the strongest glow |
+| Poolrooms | Teal shadows, soft cool highlights, a gentle wet glow; skylights and the tiles under the tubes roll off softly instead of clipping |
+| Level 37 | Dreamlike: warm overexposed highlights, warm air and a soft glow, with natural contrast (tunnels fade into real darkness). The camcorder rolls the highlights off along a soft shoulder and the bloom is half as strong, so the lit niches and the shafts of sun land just under white with their grout still showing |
 | Level 9 | Deep blue shadows, sodium-orange highlights, cold dark air |
 | Level 94 | A touch over-saturated and soft by day, pale blue distance; colour drains away at night |
 | Level 7 | Colour almost gone: pale grey bone-dust fog above the water, murky dark teal under it, near-black in the deep |
@@ -837,7 +913,9 @@ The camera also reacts like a real one:
 
 - **Eyes adjusting** (`client/EyeAdaptation`): the auto-exposure follows how bright it is where you
   look, slowly. Step from the dark into a lit hall and the picture is blown out for a moment
-  before it settles; step into the dark and it stays too dark for a couple of seconds.
+  before it settles; step into the dark and it stays too dark for a couple of seconds. In Level 37
+  it (and the footage look's auto-exposure) meters the room light rather than the raw light level,
+  since its rooms are evenly lit: turning toward a sunlit opening no longer flares the picture.
 - **Dust in the light** (`client/particle/DustMotes`): fine specks drift in the air near the lamps
   and in your flashlight beam (only where there is light to see them by). In Level 0 they are
   rare, small and faint: the odd speck in your beam or right under a tube.
@@ -878,7 +956,7 @@ then the main theme plays instead, so it runs through the whole soundtrack:
 | `level0` | Level 0 | "Fluorescent": office muzak heard through a wall at half speed: a soft electric piano on lounge chords that never resolve, a ghost of a bossa rhythm, sitting slightly flat against the 60 Hz mains hum |
 | `level1` | Level 1 | "Concrete": cold, wide industrial ambient: a sub drone, far metallic pillar strikes, a breathing ventilation pulse, a swelling minor pad and drips |
 | `level2` | Level 2 | "Pressure": tuned struck pipes in a slow interlocking pattern, steam-hiss swells, a boiler heartbeat and a dark brassy drone; hot and claustrophobic |
-| `level4` | Level 4 | "Night Shift": sparse, lonely jazz piano over soft rain and distant thunder, one muted-horn phrase, ending on an unresolved chord |
+| `level4` | Level 4 | "Night Shift": sparse, lonely jazz piano in an empty office's faint hush, one muted-horn phrase, ending on an unresolved chord |
 | `poolrooms` | The Poolrooms | "Chlorine": slowed, chorused dream pads and a glassy arpeggio in F Lydian that dip underwater and come back; a childhood indoor pool at dusk |
 | `level37` | Level 37 | "Sublimity": airy synthesized choir and glass-harmonica shimmer, bright and almost bassless; near the end one voice drifts out of tune |
 | `level369` | Level 369 | "Comely": a music-box waltz, a lullaby in F over a soft harp and a warm pad, played three times; each time more of its notes are gone, and at the end it starts once more and stops |
@@ -1003,6 +1081,9 @@ saturation, hiss and a big, empty room.
   bubbles shimmer. Far off, branches groan as the tree moves, limbs crack in the canopy, something
   big calls and the void howls from below. The forest's echo is soft and diffuse (thousands of
   trunks scatter it). Loops at -30 LUFS (the void wind and the beam hum -27), the lurch -20.
+  Its ponds (`client/water/WaterSplashes`, `UnderwaterAudio`, `tools/level227_water/gen_water.py`):
+  splashes in three sizes (-27 / -23 / -20 LUFS), soft strokes -31, the underwater hush -33; with
+  your head under, every other sound is muffled through the same filter as the walls.
 
 ## Operator commands
 
@@ -1016,7 +1097,7 @@ saturation, hiss and a big, empty room.
 /backrooms anomaly here                 which anomalous area am I standing in?
 /backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... (e.g. level_0/zone/rooms, the room maze) and level_0/set/... (e.g. frame_tunnel, dead_end_cache, liar_arrows, bright_district, dim_district, abandoned_district). On Level 2 also segments (level_2/seg/..., e.g. dogleg, duct_crossing, catwalk, bypass), rooms and chambers (level_2/room/..., e.g. pump_room, valve_gallery, electrical, sump, break_room), level_2/exit and the oddities (level_2/wrong_valves, inverted_pipe, repeat_section, warm_door, heart_gauge)
 /backrooms anomaly visit <kind> <point>  Level 0 and Level 2 (ops, for testing): jump to a named spot of the nearest site of that kind (tab completes both). level_0/atrium ladder|balcony, level_0/front_office rug|hidden_room, level_0/shaft_hall lit_shaft; the hidden rooms and the older anomalies have their own points. Level 2: level_2/room/<chamber> door|story, level_2/seg/dogleg approach|around, duct_crossing approach|under, catwalk approach|catwalk|lower, bypass approach|seal|passage, level_2/wrong_valves door|inside, warm_door front, heart_gauge front, inverted_pipe between|wall_a|wall_b, repeat_section first|second|last
-/backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|rain|quake|end> [seconds]
+/backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|water|rain|quake|end> [seconds]
 /backrooms outage <cut|stutter|wave> <radius> [seconds]   Level 0: cut the power in a circle around you (no seconds = until "/backrooms outage end")
 /backrooms l0event <room|corridor|district>   Level 0: let that local light event happen to you at the next right moment (walk into a room / walk a corridor / look down a long lit view), skipping the wait
 /backrooms drift <player> [sealed|door|lights|end]   separate realities now: that player sees a sealed doorway, a door or dead lights (with the nearest friend, or alone); end = snap back
@@ -1026,6 +1107,8 @@ saturation, hiss and a big, empty room.
 /backrooms bacteria pose <idle|walk|chase|spotted|lunge|cage|feed|peek|creep|auto> [loop]   film the Bacteria's animations: forces that pose on the nearest living one within 32 blocks and freezes it there (walk and chase run on the spot; its head locks on the nearest player); loop = replay: chase = a swipe every 2 s, spotted = the turn then the run every 2 s, lunge = stop-stare, leap and cage every 2 s, cage = a whip every 2.5 s, feed every 4 s, peek = a normal peek then a long one, creep = the 15 s prowl round whatever stands 1.3 blocks in front of it (hands on it, re-gripping, a long freeze, a reach across, then it opens it and cranes in; face it to a wall or a locker); auto = back to normal. Works with NoAI too
 /backrooms spawn smiler [count|bold]    spawn Smilers ~16 blocks in front of you (start a blackout first)
 /backrooms spawn <watcher|observer> [players]   Level 9 test spawns
+/backrooms house9 <plan>                Level 9: jump to the nearest house of a plan (classic, ranch, attic, basement, boarded, half_built, upside_down, repeated, safe, clay_door, long_hall)
+/backrooms event <lampsbehind|dogs>    Level 9: start the lamps going out behind you (walk past a few) / the dog chorus that stops dead, now
 /backrooms spawn hound [count]          Level 39: Hounds ~14 blocks in front of you (they only hunt survival players)
 /backrooms spawn faceling [hostile] [count]   Level 39: Stranger Facelings, or a hostile pack (default 5)
 /backrooms spawn clump [ceiling|alcove] Level 39: a Clump in the nearest drain or alcove
@@ -1040,6 +1123,7 @@ saturation, hiss and a big, empty room.
 /backrooms l227 drag                    in another level: get dragged into Level 227 now
 /backrooms l227 bubble                  Level 227: a fallen bubble drifts by the nearest branch edge
 /backrooms l227 beam                    Level 227: stand on the forest floor 6 blocks outside the nearest sunbeam, facing it
+/backrooms l227 pond [height]           Level 227: dig a test pond 7 blocks ahead (4 deep in the middle); with a height, drop into it from that high
 /backrooms spawn l227_bear [awake]      Level 227: a bear ~10 blocks ahead, asleep facing you (or waking)
 /backrooms spawn l227_doe               Level 227: a doe ~12 blocks ahead (walk within 4 blocks and you fall)
 /backrooms spawn l227_boar [standing]   Level 227: a boar ~10 blocks ahead, lounging on its back (or up)
@@ -1093,15 +1177,15 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | `player` | Energy (stamina), movement limits, footsteps (incl. wading, `PoolWaterSounds`), checkpoints and respawning (`Checkpoints`; team-shared ones in `SharedCheckpoints`, game rule in `registry/ModGameRules`, death-screen buttons in `client/CheckpointChoiceButtons`), hiding in furniture (`HidingService`, which furniture and where the view sits: `HidingSpots`), friends hearing a panicking player's heartbeat (`SharedHeartbeat`) |
 | `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas); Level 0's versions cluster in worn patches and some keep to one wall row (`Level0SurfaceBlock`, art in `tools/anomaly_assets/level0_surfaces.py`); Level 2's wet versions gather in damp stretches (`Level2SurfaceBlock` with `world/layout/Level2Damp`, art in `tools/anomaly_assets/level2_materials.py`); Level 227's flora (`Level227*Block`: tall plants, hanging strands, the Palette, GammaPali, Lestron; registered in `registry/Level227Blocks`, art in `tools/anomaly_assets/level227_flora.py`) |
 | `network` | Packets between server and clients |
-| `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`) |
-| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, Level 0's faulty tubes (stutter, lazy restart, dying pulse: `FixturePower`; the tube ages and colours themselves are block states, `block/Level0TubeGlow`, picked by `world/layout/Level0Tubes`), Level 0's own light type with wall-map shadows and the power/corner screen pass (`Level0LightRenderer`, `Level0WallGrid`, `Level0PowerMap`, shaders in `pinwheel/shaders/program/light/level0_*`), its blackout wave and local outages (`Level0Power`), flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening) |
-| `client/water` | Pool water (also Level 7's sea): surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), underwater fog and its darkening with depth (`UnderwaterView`) |
+| `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`); Level 227's splash drops, surface rings and foam, and bubbles (`WaterDropletParticle`, `WaterSurfaceParticle`, `WaterBubbleParticle`) |
+| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, Level 0's faulty tubes (stutter, lazy restart, dying pulse: `FixturePower`; the tube ages and colours themselves are block states, `block/Level0TubeGlow`, picked by `world/layout/Level0Tubes`), Level 0's own light type with wall-map shadows and the power/corner screen pass (`Level0LightRenderer`, `Level0WallGrid`, `Level0PowerMap`, shaders in `pinwheel/shaders/program/light/level0_*`), its blackout wave and local outages (`Level0Power`), flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening), Level 4's window glow, troffer downlights and lobby/cafeteria feature lights (`Level4Lights`: shadowed area lights) |
+| `client/water` | Pool water (also Level 7's sea and Level 227's ponds): surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), impact rings on the surface (`WaterRipples`), underwater fog and its darkening with depth (`UnderwaterView`); Level 227's splashes (`WaterSplashes`) and underwater sound (`UnderwaterAudio`) |
 | `client/audio` | Wall muffling and room reverb through OpenAL EFX (`Acoustics`, `AcousticsEfx`); distant one-off sounds per level (`DistantAmbience`) |
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`); moves your view inside the furniture while you hide (`CameraMixin`) |
 | `mixin` | Keeps gravity on while you run through shallow pool water (`LivingEntityMixin`); lets anomaly teleports update the server's movement check, and keeps players held in the air (Level 39's sky arrival, window grabs, the chairlift) from being kicked for "flying" (`ServerGamePacketListenerAccessor`) |
 | `client/camera` | Handheld camera shake, roll, smoothing |
 | `client/hud` | Minimal HUD, stamina line, the arrival card (`ArrivalCard`), and the shared camcorder OSD look (`OsdStyle`: font, colours, margins, fades) used by `CamcorderHud`, `SafeRoomOsd`, `HidingOsd` and `ArrivalCard` |
 | `client/trailer` | Dev-only trailer camera and frame recorder (`TrailerRecorder`, off unless started with `-Dbackrooms.trailerDir`) |
-| `client` | Camcorder post-shader control, per-level picture mood (`AtmosphereGrade`), overlay, Bacteria model/renderer, keys |
+| `client` | Camcorder post-shader control, per-level picture mood (`AtmosphereGrade`), overlay, Bacteria model/renderer, keys; Level 37's curved tile drawn into the chunk meshes with smooth per-vertex lighting (`CurveTileRenderer`) |
 | `assets/backrooms/shaders` | Lens, bloom, motion blur, contact shadows, distance haze, glow and grade post-processing |
 | `tools/gen_assets.py`, `tools/anomaly_assets` | Every texture and sound, generated in code; the anomalous areas' assets live in one module per level, loaded by `gen_assets.py` |

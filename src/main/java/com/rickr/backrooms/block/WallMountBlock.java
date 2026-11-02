@@ -2,6 +2,7 @@ package com.rickr.backrooms.block;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.function.Function;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -60,6 +61,22 @@ public class WallMountBlock extends Block {
             default -> Shapes.box(x0, y0, z0, x1, y1, z1);
         }));
         return turned[0].optimize();
+    }
+
+    /**
+     * For wall mounts whose shape depends on a KIND property: every kind's north-facing shape
+     * turned to all four facings once, up front (getShape runs very often).
+     */
+    public static <K extends Enum<K>> Map<K, Map<Direction, VoxelShape>> turnAll(Class<K> kinds, Function<K, VoxelShape> shapeFacingNorth) {
+        Map<K, Map<Direction, VoxelShape>> out = new EnumMap<>(kinds);
+        for (K kind : kinds.getEnumConstants()) {
+            Map<Direction, VoxelShape> byFacing = new EnumMap<>(Direction.class);
+            for (Direction facing : Direction.Plane.HORIZONTAL) {
+                byFacing.put(facing, turn(shapeFacingNorth.apply(kind), facing));
+            }
+            out.put(kind, byFacing);
+        }
+        return out;
     }
 
     @Override

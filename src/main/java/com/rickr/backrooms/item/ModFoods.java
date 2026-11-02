@@ -39,5 +39,13 @@ public final class ModFoods {
             .nutrition(9).saturationModifier(0.85f)
             .build();
 
+    /**
+     * Level 4's double cheeseburger on a cafeteria tray (canon: extremely rare, from the Frontrooms):
+     * a proper meal, 8 hunger, and still warm somehow.
+     */
+    public static final FoodProperties DOUBLE_CHEESEBURGER = new FoodProperties.Builder()
+            .nutrition(8).saturationModifier(0.8f)
+            .build();
+
     private ModFoods() {}
 }

@@ -38,6 +38,10 @@
 //  balance warms it and the whites blow out; AutoExposure (Java, CamcorderEffect) hunts like an
 //  auto-iris. In step 7 digital noise grows in the dark and with the camera's Gain. Bars puts it in
 //  a 4:3 frame with black bars at the sides. Footage = 0 changes nothing at all.
+//  Rolloff (uniform 0..1, per level from AtmosphereGrade; Level 37 and the Poolrooms) keeps light
+//  past white through steps 5 and 6 and ends step 6 with a soft highlight shoulder instead of
+//  clipping (and instead of the footage look's blow-out), so sunlit openings and skylights keep a
+//  gradient. Rolloff = 0 changes nothing at all.
 
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;
@@ -69,6 +73,14 @@ uniform float SanityPulse;  // 0..1 heartbeat pulse for the edge darkening (only
 uniform float SanityGlitch; // 0..1 a tiny tape glitch when a hallucination vanishes (0 = no change)
 uniform float Chroma;       // 0..1 a Smiler close by: strong colour fringing (0 = no change at all)
 uniform float BloomStrength; // 1 = glow on; 0 on LOW quality, whose post chain skips the blur passes
+// Per-level highlight handling (AtmosphereGrade): Rolloff 0 = the old look exactly (bright parts clip
+// to white, the footage look blows them out); 1 = bright parts ease toward ShoulderPeak along a soft
+// shoulder starting at ShoulderKnee, so a sunlit opening keeps its shape and the tile around it its
+// grout. BloomGain scales the bloom (1 = unchanged).
+uniform float Rolloff;
+uniform float ShoulderKnee;
+uniform float ShoulderPeak;
+uniform float BloomGain;
 // The level's mood (AtmosphereGrade). Defaults leave the picture as it was.
 uniform float Exposure;     // overall brightness multiplier
 uniform float Contrast;     // around mid-grey
@@ -222,12 +234,30 @@ vec3 footageSample(vec2 uv, vec2 caOffset, float aspect) {
 // that turns warm light yellow rather than orange, an auto-exposure that leans bright (mids lifted),
 // a little more colour, and whites that blow out (above ~0.78 each channel climbs steeply to
 // clipping, so yellow walls go buttery and the light panels burn white).
-vec3 footageTone(vec3 c) {
+vec3 footageColour(vec3 c) {
     c *= vec3(1.0, 1.0, 0.82) * 1.1;
     c = pow(max(c, 0.0), vec3(0.88));
-    c = mix(vec3(luma(c)), c, 1.06);
+    return mix(vec3(luma(c)), c, 1.06);
+}
+
+vec3 footageTone(vec3 c) {
+    c = footageColour(c);
     c += max(c - 0.78, 0.0) * 1.2;
     return clamp(c, 0.0, 1.0);
+}
+
+// Soft highlight shoulder (Rolloff levels): up to the knee nothing changes; above it the brightest
+// channel eases toward the peak and the other two are scaled with it, so warm light stays warm
+// instead of clipping one channel after another. Light far past the knee (the sunlit void with its
+// bloom) also bleaches toward white, the way overexposed film and tape do, but never reaches it.
+vec3 rollOff(vec3 c) {
+    float top = max(c.r, max(c.g, c.b));
+    if (top <= ShoulderKnee) {
+        return c;
+    }
+    float room = max(ShoulderPeak - ShoulderKnee, 0.01);
+    float eased = ShoulderKnee + room * (1.0 - exp(-(top - ShoulderKnee) / room));
+    return mix(c * (eased / top), vec3(eased), 0.5 * smoothstep(ShoulderKnee, ShoulderKnee + 2.0 * room, top));
 }
 
 void main() {
@@ -400,8 +430,10 @@ void main() {
     }
 
     // 5. Bloom from the three blur sizes. Only light fixtures made it into these buffers.
-    col += (texture(Bloom1Sampler, uv).rgb + texture(Bloom2Sampler, uv).rgb + texture(Bloom3Sampler, uv).rgb) * BLOOM_STRENGTH * BloomStrength;
-    col = clamp(col, 0.0, 1.0);
+    //    Rolloff levels keep what goes past white (up to 4x) for the shoulder in 6d; others clip here.
+    float ceiling = mix(1.0, 4.0, clamp(Rolloff, 0.0, 1.0));
+    col += (texture(Bloom1Sampler, uv).rgb + texture(Bloom2Sampler, uv).rgb + texture(Bloom3Sampler, uv).rgb) * BLOOM_STRENGTH * BloomStrength * BloomGain;
+    col = clamp(col, 0.0, ceiling);
 
     // 6b. Glow: bright areas bleed softly into their neighbourhood (old, slightly hazy optics), and
     //     the whole picture is a touch softer. Two rings of samples around every pixel, so it is the
@@ -418,7 +450,7 @@ void main() {
         vec3 soft = acc / 16.0;
         col += max(soft - 0.32, 0.0) * (Glow * 0.9);
         col = mix(col, max(col, soft), Glow * 0.25);
-        col = clamp(col, 0.0, 1.0);
+        col = clamp(col, 0.0, ceiling);
     }
 
     // 6c. Haze: the air between you and what you see has a colour, and the further away a surface
@@ -435,9 +467,19 @@ void main() {
     float gradeLuma = luma(col);
     col *= mix(vec3(ShadowR, ShadowG, ShadowB), vec3(HighlightR, HighlightG, HighlightB), smoothstep(0.04, 0.55, gradeLuma));
     col = mix(vec3(luma(col)), col, Saturation);
-    col = clamp((col - 0.18) * Contrast + 0.18, 0.0, 1.0);
+    vec3 graded = (col - 0.18) * Contrast + 0.18;
+    col = clamp(graded, 0.0, 1.0);
     if (footage) {
         col = footageTone(col); // the cheap camera's warm colour and blown whites
+    }
+    if (Rolloff > 0.0) {
+        // The same grade without the clipping: the camera's colour (if the footage look is on), then
+        // the soft shoulder instead of the blow-out. Rolloff blends the two while the mood fades.
+        vec3 soft = max(graded, 0.0);
+        if (footage) {
+            soft = footageColour(soft);
+        }
+        col = mix(col, rollOff(soft), clamp(Rolloff, 0.0, 1.0));
     }
 
     // 6e. Event overlays on top of the level's grade, so their colours stay true.

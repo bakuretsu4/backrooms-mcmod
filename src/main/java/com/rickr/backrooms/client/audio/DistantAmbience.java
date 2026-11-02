@@ -1,6 +1,7 @@
 package com.rickr.backrooms.client.audio;
 
 import com.rickr.backrooms.Backrooms;
+import com.rickr.backrooms.client.level9.DogsGoQuiet;
 import com.rickr.backrooms.client.Level39ClientState;
 import com.rickr.backrooms.registry.Level227Atmos;
 import com.rickr.backrooms.registry.Level39Sounds;
@@ -57,8 +58,17 @@ public final class DistantAmbience {
      */
     private enum When { ANY, DAY, NIGHT, TOWN, TUNNEL }
 
-    /** One sound in a level's list: how often it is picked compared with the others, and how loud. */
-    private record Entry(DeferredHolder<SoundEvent, SoundEvent> sound, int weight, float volume, When when) {}
+    /**
+     * One sound in a level's list: how often it is picked compared with the others, and how loud.
+     * An entry with an {@code action} starts that instead of playing its sound (Level 9's dog
+     * chorus, which is several sounds and a silence, see client/level9/DogsGoQuiet).
+     */
+    private record Entry(DeferredHolder<SoundEvent, SoundEvent> sound, int weight, float volume, When when,
+                         @Nullable Runnable action) {
+        Entry(DeferredHolder<SoundEvent, SoundEvent> sound, int weight, float volume, When when) {
+            this(sound, weight, volume, when, null);
+        }
+    }
 
     /** A level's list and how many seconds pass between two sounds (picked at random in between). */
     private record Schedule(int minSeconds, int maxSeconds, List<Entry> entries) {}
@@ -122,12 +132,16 @@ public final class DistantAmbience {
                 new Entry(ModSounds.DISTANT_L37_TRICKLE, 3, 0.6f, When.ANY),
                 new Entry(ModSounds.DISTANT_L37_SOFT_BREEZE, 2, 0.6f, When.ANY),
                 new Entry(ModSounds.DISTANT_L37_WARM_HUM, 2, 0.8f, When.ANY))));
+        // Level 9: porch and yard sounds, and now and then the dog chorus that stops dead (about
+        // one pick in eight, never twice within 3 minutes: DogsGoQuiet.ready()). While it barks
+        // and in the silence after it the timer holds, so nothing else breaks that silence.
         SCHEDULES.put(BackroomsLevel.LEVEL_9, new Schedule(24, 50, List.of(
                 new Entry(ModSounds.DISTANT_L9_WIND_CHIME, 4, 1.0f, When.ANY),
                 new Entry(ModSounds.DISTANT_L9_GUTTER_DRIP, 3, 0.8f, When.ANY),
                 new Entry(ModSounds.DISTANT_L9_SCREEN_DOOR, 3, 1.4f, When.ANY),
                 new Entry(ModSounds.DISTANT_L9_BIN_RATTLE, 2, 1.4f, When.ANY),
-                new Entry(ModSounds.DISTANT_L9_DOG_BARK, 2, 1.4f, When.ANY))));
+                new Entry(ModSounds.DISTANT_L9_DOG_BARK, 2, 1.4f, When.ANY),
+                new Entry(ModSounds.L9_DOG_CHORUS, 2, 1.0f, When.ANY, DogsGoQuiet::start))));
         // Level 7: the sea under the ceiling. Waves slapping against rock and concrete, drips from
         // the ceiling, the giant pipes thumping and groaning, now and then bubbles rising from below.
         // (Shared with the pool levels and Level 2, whose sounds fit here too.) Spaced out like the
@@ -195,8 +209,9 @@ public final class DistantAmbience {
             last = null;
             ticksToNext = schedule == null ? 0 : nextDelay(schedule);
         }
-        // Paused or dead: hold the timer where it is.
-        if (schedule == null || mc.isPaused() || !mc.player.isAlive()) {
+        // Paused or dead: hold the timer where it is. Level 9's dogs: hold it while they bark and
+        // through the silence after them.
+        if (schedule == null || mc.isPaused() || !mc.player.isAlive() || (now == BackroomsLevel.LEVEL_9 && DogsGoQuiet.active())) {
             return;
         }
         if (--ticksToNext > 0) {
@@ -239,7 +254,7 @@ public final class DistantAmbience {
     }
 
     private static boolean allowed(Entry e, ClientLevel level) {
-        if (e == last) {
+        if (e == last || (e.action() != null && !DogsGoQuiet.ready())) {
             return false;
         }
         return switch (e.when()) {
@@ -262,6 +277,10 @@ public final class DistantAmbience {
      * down that line (where they'd really be heard from), the tram still rumbles behind the walls.
      */
     private static void play(Minecraft mc, Entry entry) {
+        if (entry.action() != null) {
+            entry.action().run();
+            return;
+        }
         Vec3 eye = mc.player.getEyePosition();
         float angle = RANDOM.nextFloat() * Mth.TWO_PI;
         if (floor == BackroomsLevel.LEVEL_2 && entry.sound() != ModSounds.DISTANT_L2_TRAM_RUMBLE && RANDOM.nextFloat() < 0.75f) {

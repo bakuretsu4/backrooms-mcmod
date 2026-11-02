@@ -17,7 +17,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The Window (Entity 2): one clear pane in a run of rainy office windows, and through it a blurry,
+ * The Window (Entity 2): one clear pane in a run of blacked-out office windows, and through it a blurry,
  * sunny, familiar place. It is not a window. Canon (https://backrooms-wiki.wikidot.com/entity-2):
  * windows that aren't blacked out are to be avoided at all costs; each shows its viewer a familiar
  * landscape, sends comforting whispers to draw them closer, and grabs anyone who comes within a

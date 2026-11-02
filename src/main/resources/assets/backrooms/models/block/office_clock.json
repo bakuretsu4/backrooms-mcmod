@@ -1,0 +1,128 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/office_clock",
+    "c": "backrooms:block/office_clock"
+  },
+  "elements": [
+    {
+      "from": [
+        4.5,
+        4,
+        15
+      ],
+      "to": [
+        11.5,
+        12,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.0,
+            0.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#c"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            7.5,
+            0.4,
+            8.5
+          ],
+          "texture": "#c"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            7.5,
+            0.4,
+            8.5
+          ],
+          "texture": "#c"
+        },
+        "up": {
+          "uv": [
+            7.5,
+            0.0,
+            8.5,
+            0.4
+          ],
+          "texture": "#c"
+        },
+        "down": {
+          "uv": [
+            7.5,
+            0.0,
+            8.5,
+            0.4
+          ],
+          "texture": "#c"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        4.5,
+        15.1
+      ],
+      "to": [
+        12,
+        11.5,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            1.0,
+            16.0,
+            15.0
+          ],
+          "texture": "#c"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            7.5,
+            0.4,
+            8.5
+          ],
+          "texture": "#c"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            7.5,
+            0.4,
+            8.5
+          ],
+          "texture": "#c"
+        },
+        "up": {
+          "uv": [
+            7.5,
+            0.0,
+            8.5,
+            0.4
+          ],
+          "texture": "#c"
+        },
+        "down": {
+          "uv": [
+            7.5,
+            0.0,
+            8.5,
+            0.4
+          ],
+          "texture": "#c"
+        }
+      }
+    }
+  ]
+}

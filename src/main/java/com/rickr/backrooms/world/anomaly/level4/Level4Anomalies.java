@@ -30,6 +30,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  *   <li>{@link VanishingElevator}: an open elevator that moves when unseen and takes you elsewhere
  *       (Wikidot, Level 4; Fandom, Level 4; Wikidot, Desolation Level 4).</li>
  *   <li>{@link CubiclesAnomaly}: Level 4.3 "The Cubicles", which makes you want to stay (Fandom, Level 4.3).</li>
+ *   <li>{@link ElevatorExit}: not an anomaly but an exit placed the same way: canon's "occasional
+ *       elevators" out of Level 4, going where the stairwells go (Wikidot, Level 4).</li>
  * </ul>
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
@@ -45,6 +47,7 @@ public final class Level4Anomalies {
         Anomalies.register(Level4AnomalyPlan.WINDOW, new WindowAnomaly());
         Anomalies.register(Level4AnomalyPlan.VANISHING_ELEVATOR, new VanishingElevator());
         Anomalies.register(Level4AnomalyPlan.CUBICLES, new CubiclesAnomaly());
+        Anomalies.register(Level4AnomalyPlan.ELEVATOR_EXIT, new ElevatorExit());
     }
 
     /** Runs {@code action} for this player in {@code ticks} ticks (skipped if they left Level 4 or logged out). */
@@ -92,6 +95,7 @@ public final class Level4Anomalies {
         TASKS.removeIf(task -> task.player().equals(id));
         VanishingElevator.forget(id);
         WindowAnomaly.forget(id);
+        ElevatorExit.forget(id);
         CubiclesAnomaly.forget(id);
     }
 

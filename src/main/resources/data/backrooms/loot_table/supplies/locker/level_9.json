@@ -205,6 +205,21 @@
           "weight": 65
         }
       ]
+    },
+    {
+      "rolls": 1.0,
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "backrooms:watch_flyer",
+          "weight": 20
+        },
+        {
+          "type": "minecraft:empty",
+          "weight": 80
+        }
+      ]
     }
   ],
   "random_sequence": "backrooms:supplies/locker/level_9"

@@ -25,7 +25,8 @@ import net.minecraft.world.phys.Vec3;
  * </ul>
  *
  * <p>Separately, Level 9 lamps whose block is in mode=flicker are "broken": they stutter on
- * their own irregular rhythm all the time ({@link #brokenLampOn}).
+ * their own irregular rhythm all the time ({@link #brokenLampOn}); and a few lamps you walk past
+ * go out behind your back now and then ({@link #behindLampOn}, chosen by client/level9/LampsBehind).
  *
  * <p>On Level 0 a few tubes are faulty all the time, chosen by position ({@link #level0Fault}):
  * most stutter in a short burst now and then ({@link #faultyTubeOn}), some have a lazy starter
@@ -234,6 +235,37 @@ public final class FixturePower {
             return stutter(seed, nowMs); // trying to strike again
         }
         return false;
+    }
+
+    /** A lamp going out behind you stutters this long first, and again as it comes back. */
+    private static final long BEHIND_OUT_STUTTER_MS = 700L;
+    private static final long BEHIND_BACK_STUTTER_MS = 900L;
+
+    /**
+     * Level 9, a streetlamp you walked past going out behind your back (client/level9/LampsBehind
+     * picks which and when): on until {@code outAtMs}, then a short stutter like a lamp at the
+     * LAMP_WAVE front, dark until {@code backAtMs} (Long.MAX_VALUE = not yet), then a stutter as
+     * it strikes again, then steady. Silent: the caller does not click for these.
+     */
+    public static boolean behindLampOn(long key, long outAtMs, long backAtMs, long nowMs) {
+        if (nowMs < outAtMs) {
+            return true;
+        }
+        if (nowMs < outAtMs + BEHIND_OUT_STUTTER_MS) {
+            return stutter(key ^ outAtMs, nowMs);
+        }
+        if (nowMs < backAtMs) {
+            return false;
+        }
+        if (nowMs < backAtMs + BEHIND_BACK_STUTTER_MS) {
+            return stutter(key ^ backAtMs, nowMs);
+        }
+        return true;
+    }
+
+    /** How long after {@code backAtMs} a lamp from {@link #behindLampOn} is steady again. */
+    public static long behindLampSettleMs() {
+        return BEHIND_BACK_STUTTER_MS;
     }
 
     /**

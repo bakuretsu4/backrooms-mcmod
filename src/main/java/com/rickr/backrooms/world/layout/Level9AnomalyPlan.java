@@ -58,6 +58,10 @@ import static com.rickr.backrooms.world.layout.Level9Layout.LW;
  *       path running from the sidewalk to the back of the lot and on through the woods, ending in
  *       a round clearing of tall grass. Stand in the middle of the clearing and you are in the
  *       Crimson Field. Only lots with houses on both sides and enough woods behind them qualify.</li>
+ *   <li>{@code long_hall} (~8%): one house whose front door opens onto a narrow hallway with a
+ *       door every three blocks. Go through the second door and you are back just past the first
+ *       one, with the same door shut ahead of you: the hall never ends (the server moves you and
+ *       swaps the two doors' open/shut states, so the view ahead stays the same).</li>
  * </ul>
  *
  * <p><b>The Crimson Field</b> (x &gt;= {@link Level9Sites#FIELD_MIN_X}) is ground-level grass
@@ -75,7 +79,7 @@ import static com.rickr.backrooms.world.layout.Level9Layout.LW;
 final class Level9AnomalyPlan {
     static final List<String> KINDS = List.of(Level9Sites.CLIPPED_HOUSES, Level9Sites.TWIN_HOUSES,
             Level9Sites.GRASS_WALKWAY, Level9Sites.FIELD_WALKWAY, Level9Sites.FOXHOLE, Level9Sites.GONDOLA,
-            Level9Sites.CRIMSON_FIELD);
+            Level9Sites.CRIMSON_FIELD, Level9Sites.LONG_HALL);
 
     private static final int SUBURB_CELL = 176;
     private static final int FOXHOLE_CELL = 144;
@@ -173,7 +177,7 @@ final class Level9AnomalyPlan {
                 AnomalySite walk = suburb.nearest(seed, suburbX, z, site -> site.kind().equals(Level9Sites.GRASS_WALKWAY), LOCATE_RINGS);
                 yield walk == null ? null : Level9Sites.toField(walk);
             }
-            case Level9Sites.GRASS_WALKWAY, Level9Sites.TWIN_HOUSES, Level9Sites.CLIPPED_HOUSES ->
+            case Level9Sites.GRASS_WALKWAY, Level9Sites.TWIN_HOUSES, Level9Sites.CLIPPED_HOUSES, Level9Sites.LONG_HALL ->
                     suburb.nearest(seed, suburbX, z, site -> site.kind().equals(kind), LOCATE_RINGS);
             default -> null;
         };
@@ -239,6 +243,8 @@ final class Level9AnomalyPlan {
             kind = Level9Sites.TWIN_HOUSES;
         } else if (roll < 0.80) {
             kind = Level9Sites.CLIPPED_HOUSES;
+        } else if (roll < 0.88) {
+            kind = Level9Sites.LONG_HALL;
         } else {
             return null;
         }
@@ -260,6 +266,7 @@ final class Level9AnomalyPlan {
             AnomalySite site = switch (kind) {
                 case Level9Sites.GRASS_WALKWAY -> planWalkway(seed, r, side, idx, ha);
                 case Level9Sites.TWIN_HOUSES -> planTwins(seed, r, side, idx, ha);
+                case Level9Sites.LONG_HALL -> planLongHall(seed, r, side, idx, ha);
                 default -> planClipped(seed, r, side, idx, ha);
             };
             if (site != null && site.minX() >= x0 && site.maxX() <= x1 && site.minZ() >= z0 && site.maxZ() <= z1) {
@@ -327,6 +334,19 @@ final class Level9AnomalyPlan {
         // Salt bit 0: mirrored (B grows into A from the other side); the rest: colours and fences.
         return new AnomalySite(Level9Sites.CLIPPED_HOUSES, x0, z[0], x0 + LW - 1, z[1],
                 x0, front, inwardOf(side).get2DDataValue(), Hash.mix(h ^ 0xC11BL) & 0xFFFFL);
+    }
+
+    @Nullable
+    private AnomalySite planLongHall(long seed, int r, int side, int idx, long h) {
+        if (!layout.lotValidBase(seed, r, side, idx) || layout.safeHousePicked(seed, r, side, idx)) {
+            return null;
+        }
+        int x0 = layout.lotX0(seed, r, side, idx);
+        int front = layout.lotFrontZ(seed, r, side, x0);
+        int[] z = zRange(front, side, LD);
+        // Salt: the house's colour and fences.
+        return new AnomalySite(Level9Sites.LONG_HALL, x0, z[0], x0 + LW - 1, z[1],
+                x0, front, inwardOf(side).get2DDataValue(), Hash.mix(h ^ 0x4A11L) & 0xFFFFL);
     }
 
     @Nullable
@@ -467,7 +487,7 @@ final class Level9AnomalyPlan {
     }
 
     /**
-     * Configures the house of lot (r, side, idx) if it belongs to twin or clipped houses; returns
+     * Configures the house of lot (r, side, idx) if it belongs to twin, clipped or long-hall houses; returns
      * true if it did (the layout then never makes it a safe house).
      */
     boolean dressHouse(long seed, int r, int side, int idx, Level9Layout.House h) {
@@ -484,6 +504,10 @@ final class Level9AnomalyPlan {
         }
         if (site.kind().equals(Level9Sites.CLIPPED_HOUSES) && site.anchorX() == x0) {
             dressClipped(h, site.salt());
+            return true;
+        }
+        if (site.kind().equals(Level9Sites.LONG_HALL) && site.anchorX() == x0) {
+            dressLongHall(h, site.salt());
             return true;
         }
         return false;
@@ -515,6 +539,25 @@ final class Level9AnomalyPlan {
         h.hu1 = h.hu0 + h.width - 1;
         h.setback = Level9Sites.TWIN_SETBACK;
         h.doorU = Level9Sites.TWIN_DOOR_U;
+        h.porchU0 = h.doorU - 1;
+        h.porchU1 = h.doorU + 1;
+        h.ridgeAlongU = true;
+        h.colour = (int) (salt % 5);
+        h.frontFence = ((salt >> 4) & 1) == 0;
+        h.sideFence = (int) ((salt >> 5) % 3);
+        h.backFence = ((salt >> 7) & 1) == 0 ? 2 : 1;
+    }
+
+    /** The long-hall house: fixed numbers (Level9Sites.HALL_*) so the server's shift matches the blocks. */
+    private static void dressLongHall(Level9Layout.House h, long salt) {
+        plain(h);
+        h.longHall = true;
+        h.width = Level9Sites.HALL_WIDTH;
+        h.depth = Level9Sites.HALL_DEPTH;
+        h.hu0 = Level9Sites.HALL_HU0;
+        h.hu1 = h.hu0 + h.width - 1;
+        h.setback = Level9Sites.HALL_SETBACK;
+        h.doorU = Level9Sites.HALL_DOOR_U;
         h.porchU0 = h.doorU - 1;
         h.porchU1 = h.doorU + 1;
         h.ridgeAlongU = true;
@@ -621,6 +664,40 @@ final class Level9AnomalyPlan {
         }
         if (piece != null) {
             out.set(42, piece);
+        }
+    }
+
+    // ==========================================================================================
+    // Blocks: the long hall
+    // ==========================================================================================
+
+    /**
+     * Inside the long-hall house: a 1-wide hall straight back from the front door between two
+     * papered walls, an inner door every HALL_PERIOD rows and the same scratched-out family photo
+     * on the wall in the same place between each pair of doors. The rooms either side of the
+     * hall are shut off and stay empty.
+     */
+    static void longHallInterior(Level9Layout.House h, int u, int v, Column out) {
+        int door = h.doorU;
+        if (u == door - 1 || u == door + 1) {
+            BlockState paper = ModBlocks.DIM_WALLPAPER.get().defaultBlockState();
+            for (int y = 42; y <= 45; y++) out.set(y, paper);
+            return;
+        }
+        if (u != door) return;
+        int k = v - Level9Sites.HALL_FIRST_DOOR_V;
+        if (k < 0) return; // the bit of hall just inside the front door
+        if (k % Level9Sites.HALL_PERIOD == 0) {
+            BlockState inner = ModBlocks.HOUSE_DOOR.get().defaultBlockState()
+                    .setValue(DoorBlock.FACING, h.inward)
+                    .setValue(HouseDoorBlock.LOCKED, false);
+            out.set(42, inner.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+            out.set(43, inner.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+        } else if (k % Level9Sites.HALL_PERIOD == 1) {
+            out.set(43, ModBlocks.FAMILY_PHOTO.get().defaultBlockState()
+                    .setValue(BlockStateProperties.HORIZONTAL_FACING, Level9Layout.House.alongU(true))
+                    .setValue(com.rickr.backrooms.block.FamilyPhotoBlock.PHOTO, h.colour % 3)
+                    .setValue(com.rickr.backrooms.block.FamilyPhotoBlock.SCRATCHED, true));
         }
     }
 

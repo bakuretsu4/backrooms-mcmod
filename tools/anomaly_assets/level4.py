@@ -473,23 +473,18 @@ def snd_level4_elevator_ding() -> None:
 def snd_level4_cubicles_ambience() -> None:
     """20 s seamless loop: a floor full of people working that you never see, in a white fog.
 
-    Shuffling paper, pencils, keys, unclear voices from a few cubicles over, the air handling,
-    and Level 4's rain and thunder heard muffled through many walls. Everything is placed
-    circularly (and the room is added circularly), so the loop has no seam.
+    Shuffling paper, pencils, keys, unclear voices from a few cubicles over, and the air
+    conditioning breathing through the floor (the same room tone as the rest of Level 4).
+    Everything is placed circularly (and the room is added circularly), so the loop has no seam.
     """
     rng = G.rng_for(9850)
     T = 20.0
     n = int(T * G.SR)
     x = np.zeros(n)
-    # Muffled rain and the air handling.
-    rain = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 150, 1200, 2)) * G.drift(n, rng, 0.25, 0.05, 0.2)
+    # The air conditioning: soft air from the diffusers and the ducts' low rumble.
+    air = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 120, 2400, 2) * G.lp_gain(f, 700, 1)) * G.drift(n, rng, 0.15, 0.05, 0.2)
     hvac = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 40, 160, 2))
-    x += 0.10 * G.norm(rain) + 0.06 * G.norm(hvac)
-    # One roll of thunder, far away.
-    m = int(5.0 * G.SR)
-    tm = np.arange(m) / G.SR
-    roll = G.fft_filter(rng.normal(size=m), lambda f: G.lp_gain(f, 110, 3)) * G.smoothstep(0, 0.6, tm) * np.exp(-tm / 1.6)
-    G.add_at(x, 0.30 * G.norm(roll), rng.uniform(0, T), True)
+    x += 0.10 * G.norm(air) + 0.07 * G.norm(hvac)
     # People at work.
     events = []
     for _ in range(14):

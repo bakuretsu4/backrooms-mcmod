@@ -1,0 +1,46 @@
+{
+  "variants": {
+    "axis=x,base=false,part=left": {
+      "model": "backrooms:block/office_door_frame_left"
+    },
+    "axis=z,base=false,part=left": {
+      "model": "backrooms:block/office_door_frame_left",
+      "y": 90
+    },
+    "axis=x,base=true,part=left": {
+      "model": "backrooms:block/office_door_frame_left_base"
+    },
+    "axis=z,base=true,part=left": {
+      "model": "backrooms:block/office_door_frame_left_base",
+      "y": 90
+    },
+    "axis=x,base=false,part=right": {
+      "model": "backrooms:block/office_door_frame_right"
+    },
+    "axis=z,base=false,part=right": {
+      "model": "backrooms:block/office_door_frame_right",
+      "y": 90
+    },
+    "axis=x,base=true,part=right": {
+      "model": "backrooms:block/office_door_frame_right_base"
+    },
+    "axis=z,base=true,part=right": {
+      "model": "backrooms:block/office_door_frame_right_base",
+      "y": 90
+    },
+    "axis=x,base=false,part=head": {
+      "model": "backrooms:block/office_door_frame_head"
+    },
+    "axis=x,base=true,part=head": {
+      "model": "backrooms:block/office_door_frame_head"
+    },
+    "axis=z,base=false,part=head": {
+      "model": "backrooms:block/office_door_frame_head",
+      "y": 90
+    },
+    "axis=z,base=true,part=head": {
+      "model": "backrooms:block/office_door_frame_head",
+      "y": 90
+    }
+  }
+}

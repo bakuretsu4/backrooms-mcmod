@@ -126,8 +126,8 @@ final class FixtureClusters {
                 yield new Direction[] {Direction.UP, Direction.DOWN, facing.getClockWise(), facing.getCounterClockWise()};
             }
             case CUBE -> Direction.values();
-            // Pool lamps and streetlamp heads sit alone (maxRun 1), so this is never reached in practice.
-            case INSET, LAMP_HEAD -> new Direction[0];
+            // Pool lamps, streetlamp heads and pendants sit alone (maxRun 1), so this is never reached in practice.
+            case INSET, LAMP_HEAD, PENDANT -> new Direction[0];
         };
     }
 
@@ -227,6 +227,9 @@ final class FixtureClusters {
             // Streetlamp head: a quarter block under its bottom face, in the open air below it.
             // (cy is the middle of the head block, so its bottom face is at cy - 0.5.)
             case LAMP_HEAD -> ly = cy - 0.75;
+            // Hanging shade in its own cell (Level 4's dome pendant, diffuser at 5/16 of the cell):
+            // just under the diffuser, so the shade itself never sits between the light and the room.
+            case PENDANT -> ly = cy - 0.5 + FixtureType.PENDANT_LIGHT_Y;
         }
         FixtureLight light = new FixtureLight(key, type, lx, ly, lz, cx, cy, cz, facing, broken);
         light.blocks = blocks.toLongArray();

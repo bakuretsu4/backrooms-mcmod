@@ -1,0 +1,128 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/l4_wall_fixtures",
+    "f": "backrooms:block/l4_wall_fixtures"
+  },
+  "elements": [
+    {
+      "from": [
+        7,
+        0.5,
+        15
+      ],
+      "to": [
+        9,
+        2.5,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#f"
+        },
+        "east": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#f"
+        },
+        "west": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#f"
+        },
+        "up": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#f"
+        },
+        "down": {
+          "uv": [
+            12.2,
+            0.2,
+            15.8,
+            3.8
+          ],
+          "texture": "#f"
+        }
+      }
+    },
+    {
+      "from": [
+        7.3,
+        0.8,
+        12.5
+      ],
+      "to": [
+        8.7,
+        2.2,
+        15
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.2,
+            0.2,
+            11.8,
+            3.8
+          ],
+          "texture": "#f"
+        },
+        "east": {
+          "uv": [
+            8.2,
+            0.2,
+            11.8,
+            3.8
+          ],
+          "texture": "#f"
+        },
+        "west": {
+          "uv": [
+            8.2,
+            0.2,
+            11.8,
+            3.8
+          ],
+          "texture": "#f"
+        },
+        "up": {
+          "uv": [
+            8.2,
+            0.2,
+            11.8,
+            3.8
+          ],
+          "texture": "#f"
+        },
+        "down": {
+          "uv": [
+            8.2,
+            0.2,
+            11.8,
+            3.8
+          ],
+          "texture": "#f"
+        }
+      }
+    }
+  ]
+}

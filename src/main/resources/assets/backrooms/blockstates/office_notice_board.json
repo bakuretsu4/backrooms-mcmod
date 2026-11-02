@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/office_notice_board"
+    },
+    "facing=east": {
+      "model": "backrooms:block/office_notice_board",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/office_notice_board",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/office_notice_board",
+      "y": 270
+    }
+  }
+}

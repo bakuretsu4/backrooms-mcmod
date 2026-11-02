@@ -3,6 +3,7 @@ package com.rickr.backrooms.client.water;
 import com.rickr.backrooms.client.Level39ClientState;
 import com.rickr.backrooms.client.Level39Weather;
 import com.rickr.backrooms.world.BackroomsLevel;
+import com.rickr.backrooms.world.layout.Level227Tree;
 import com.rickr.backrooms.world.layout.PoolroomsLayout;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -56,6 +57,16 @@ public record WaterStyle(int shallowColor, float shallowAlpha, int deepColor, fl
 
     /** Light straight from above (the Poolrooms' skylights and ceiling tubes). */
     private static final Vector3f STRAIGHT_DOWN = new Vector3f(0.0f, -1.0f, 0.0f);
+
+    /**
+     * Level 227's sun: the Sun over the Void hangs 9000 blocks above the trunk ({@link Level227Tree#SUN_X}
+     * ...), so its light comes almost straight down, leaning slightly outward the further you are
+     * from the trunk (the sunbeams fall straight down too). Re-aimed at the camera once per tick
+     * by {@link #aimLevel227Sun} (this one vector is changed in place: no garbage).
+     */
+    private static final Vector3f SUN_DIR_227 = new Vector3f(0.0f, -1.0f, 0.0f);
+    /** The sunbeams' white with the faintest warmth (client/Level227Sunbeams). */
+    private static final int SUN_COLOR_227 = 0xFFFCF0;
 
     /**
      * The Poolrooms keep their established vivid cyan: shallow #45c8d8, deep #0b4f6e, fog #2a7f8f
@@ -155,6 +166,32 @@ public record WaterStyle(int shallowColor, float shallowAlpha, int deepColor, fl
             1.5f, 0.8f, 0.9f,
             0.55f, 110.0f, 22.0f);
 
+    /**
+     * Level 227's ponds: forest pools under a giant canopy, tea-coloured by tannins from the leaves
+     * and roots. In the shallows the water is clear amber-green (#8a8638) and the mossy bottom shows
+     * through, warmed; it turns peaty, near-black green (#0e1a0c) within two or three blocks of
+     * water (deepDistance 2.6), so a 4-deep middle is dark while a 1-deep rim stays see-through.
+     * Where nothing is found to mirror, it mirrors the canopy: deep green (#34502a), never white.
+     * A sheltered pool: subtle ripples (0.35), soft refraction (0.55), dappled caustics (0.55; they
+     * brighten the lit bottom, so they show where light reaches and vanish in the shade), and
+     * sparse glints of the real sun (0.6), which stands almost overhead: you catch them looking
+     * down at the water near you, only where the scene is lit (the shader dims glints in shade).
+     * Slightly darker than the scene (0.85: the forest floor is dim). Under the water a murky
+     * green fog (#2e3b1c) closes in at 7 blocks; in a dark spot it keeps a quarter of its colour.
+     */
+    public static final WaterStyle LEVEL_227 = new WaterStyle(
+            0x8A8638, 0.20f, 0x0E1A0C, 0.96f, 2.6f,
+            0x2E3B1C, 7.0f, 0x34502A, 0.55f,
+            0.35f, 0.55f, SUN_DIR_227, SUN_COLOR_227, 0.6f,
+            0.9f, 0.75f, 0.85f,
+            0.25f, 0.0f, 7.0f);
+
+    /** Points {@link #LEVEL_227}'s sun direction from the Sun over the Void to (x, y, z). Client thread. */
+    static void aimLevel227Sun(double x, double y, double z) {
+        SUN_DIR_227.set((float) (x - Level227Tree.SUN_X), (float) (y - Level227Tree.SUN_Y), (float) (z - Level227Tree.SUN_Z))
+                .normalize();
+    }
+
     /** The water look of a level, or null when that level keeps plain vanilla water. */
     @Nullable
     public static WaterStyle forLevel(@Nullable BackroomsLevel level) {
@@ -166,6 +203,7 @@ public record WaterStyle(int shallowColor, float shallowAlpha, int deepColor, fl
             case LEVEL_37 -> LEVEL_37;
             case LEVEL_39 -> LEVEL_39;
             case LEVEL_7 -> LEVEL_7;
+            case LEVEL_227 -> LEVEL_227;
             default -> null;
         };
     }
