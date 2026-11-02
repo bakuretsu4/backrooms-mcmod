@@ -7356,12 +7356,6 @@ def mark_paper_scuff(img, rng, y_range=(0.45, 0.85)) -> np.ndarray:
     return add_lum(img, -10 * np.roll(edge, 1, axis=0))              # and casts a hairline shadow under it
 
 
-def _l0w():
-    """The film's chevron paper lives in anomaly_assets/level0_revamp.py (imported lazily: it imports this file)."""
-    import anomaly_assets.level0_revamp as m
-    return m
-
-
 def _l39w():
     """Level 39 world textures live in anomaly_assets/level39.py (imported lazily: it imports this file)."""
     import anomaly_assets.level39 as m
@@ -7376,8 +7370,6 @@ SURFACE_VARIANTS = {
     "yellow_wallpaper_baseboard": (lambda: _baseboard(_wallpaper(stains=False)), lambda i, rng, img: _l0s().baseboard_marks(i, rng, img), 4),
     "lobby_carpet": (_carpet, lambda i, rng, img: _l0s().carpet_marks(i, rng, img), 4),
     "ceiling_tile": (lambda: _ceiling_tile(stain=False), lambda i, rng, img: _l0s().ceiling_marks(i, rng, img), 4),
-    "l0_wallpaper_chevron": (lambda: _l0w().chevron_base(), lambda i, rng, img: _l0w().chevron_marks(i, rng, img), 3),
-    "l0_wallpaper_chevron_baseboard": (lambda: _baseboard(_l0w().chevron_base()), lambda i, rng, img: _l0s().baseboard_marks(i, rng, img), 3),
     "concrete_wall": (_concrete_wall, lambda i, rng, img: (
         mark_drip(mark_damp(img, rng, (20, 26), 0.12), rng, (84, 80, 88), 0.25) if i == 1 else
         mark_crack(img, rng, 26)), 3),

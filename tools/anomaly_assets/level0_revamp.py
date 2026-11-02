@@ -1,14 +1,13 @@
 """Level 0 revamp (Kane Pixels' series + the A24 film "Backrooms"): textures, block models,
 blockstates and item models of the blocks in registry/Level0Blocks.java.
 
-The film's chevron wallpaper, the chest-high partitions with their wooden cap rail, the corridor
+The chest-high partitions with their wooden cap rail, the corridor
 light strip, missing ceiling tiles, the green exit sign and hazard stripes of the exit alcove,
 wall switch boxes with conduit, scrawled words on the walls, teal tape lines, mannequins, the
 gold-and-purple throne, an Async equipment case, a cable hanging out of the ceiling, a dark hole
 high in a wall and the metal ladder up to it.
 
-Run with `python tools/gen_assets.py level0_revamp` from the project root (the chevron paper's
-versions come from `python tools/gen_assets.py surface_variants variant_models`). Every texture
+Run with `python tools/gen_assets.py level0_revamp` from the project root. Every texture
 uses its own fixed random seed (60100-60199), so re-running gives identical files. Models reuse
 the box helpers of level39_props.py (`P._el` etc.): every box is listed in block pixels (0..16,
 allowed -16..32) for the block facing north; the blockstates turn it for the other directions.
@@ -33,46 +32,6 @@ def _ref(name: str) -> str:
 
 def _fill(color) -> np.ndarray:
     return G.fill(color, (S, S))
-
-
-# =============================================================================
-# The film's chevron wallpaper ("Classic" areas, the half-wall rooms)
-# =============================================================================
-
-CHEVRON = (190, 178, 116)     # a touch paler and creamier than Kane's paper, still the same family
-
-
-def chevron_base() -> np.ndarray:
-    """Tone-on-tone vertical columns (two per block, half a block wide) of small, shallow stacked
-    chevrons, printed a shade lighter than the paper, with a faint darker line between the
-    columns, on plain matte paper (not the lobby's printed design). Kept fine and faint: from a
-    few blocks away it should read as a texture, not as a zigzag."""
-    rng = G.rng_for(60100)
-    img = G._paper(G.rng_for(60101), CHEVRON)
-    X, Y = G.grid()
-    col = 64.0
-    u = G.wrapd(X - col / 2, col)                                    # -32..32 across a column
-    pitch = S / 20                                                   # 20 chevrons per block height
-    t = G.wrapd(Y + np.abs(u) * 0.12, pitch)                         # shallow ^-shaped rows
-    arms = G.smoothstep(30.0, 26.0, np.abs(u))
-    line = np.exp(-(t / 0.8) ** 2) * arms
-    under = np.exp(-((t - 1.4) / 0.7) ** 2) * arms
-    gutter = np.exp(-((np.abs(u) - 32) / 0.8) ** 2)
-    sheen = 1 + 0.25 * G.fnoise(rng, beta=2.5)                       # the print isn't perfectly even
-    img = G.add_lum(img, (4.0 * line - 1.5 * under) * sheen - 2.5 * gutter, (1.0, 0.97, 0.85))
-    return img
-
-
-def chevron_marks(i, rng, img):
-    if i == 1:
-        return G.mark_damp(img, rng, (36, 32), 0.05, (1.0, 0.97, 0.85))
-    return G.mark_paper_scuff(img, rng)
-
-
-def tex_level0_revamp_chevron() -> None:
-    base = chevron_base()
-    G.save_png(base, _blk("l0_wallpaper_chevron"))
-    G.save_png(G._baseboard(base), _blk("l0_wallpaper_chevron_baseboard"))
 
 
 # =============================================================================
@@ -508,7 +467,7 @@ def tex_level0_revamp_mattress() -> None:
     G.save_png(G.over(side, np.array([176, 156, 110]), stain * 0.25), _blk("l0_mattress_side"))
 
 
-TEXTURE_GENS = [tex_level0_revamp_chevron, tex_level0_revamp_materials, tex_level0_revamp_throne,
+TEXTURE_GENS = [tex_level0_revamp_materials, tex_level0_revamp_throne,
                 tex_level0_revamp_case, tex_level0_revamp_strip, tex_level0_revamp_plenum,
                 tex_level0_revamp_exit_sign, tex_level0_revamp_hazard, tex_level0_revamp_switch_box,
                 tex_level0_revamp_graffiti, tex_level0_revamp_tape, tex_level0_revamp_hole,
@@ -539,14 +498,10 @@ def _facing_variants(models: dict, extra_props: dict | None = None) -> dict:
 
 
 def _wall_models() -> None:
-    # Chevron paper: plain models (the variant models and blockstates come from gen_assets
-    # variant_models, which copies these).
-    _bm("l0_wallpaper_chevron", {"parent": "minecraft:block/cube_all", "textures": {"all": _ref("l0_wallpaper_chevron")}})
-    _bm("l0_wallpaper_chevron_baseboard", {"parent": "minecraft:block/cube_bottom_top", "textures": {
-        "side": _ref("l0_wallpaper_chevron_baseboard"), "top": _ref("l0_wallpaper_chevron"),
-        "bottom": _ref("l0_wallpaper_chevron")}})
-    _im("l0_wallpaper_chevron")
-    _im("l0_wallpaper_chevron_baseboard")
+    # The builders' rooms' old "chevron" paper (registry/Level0Blocks.CHEVRON_WALLPAPER) is only
+    # in worlds generated before it was dropped: it now shows the lobby paper's own models.
+    for old, new in (("l0_wallpaper_chevron", "yellow_wallpaper"), ("l0_wallpaper_chevron_baseboard", "yellow_wallpaper_baseboard")):
+        _bs(old, {"variants": {f"variant={i}": {"model": _ref(new if i == 0 else f"{new}_v{i}")} for i in range(4)}})
 
     # Half-wall cap: paper to 8 px, the dark wood rail 8-10 px overhanging both faces by 3/4 px,
     # with a thin lighter top bevel strip.

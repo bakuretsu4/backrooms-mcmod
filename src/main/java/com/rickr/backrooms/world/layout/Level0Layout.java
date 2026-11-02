@@ -77,7 +77,7 @@ import org.jetbrains.annotations.Nullable;
  *       a troffer every 3 blocks down the middle, the film's one continuous light strip.</li>
  *   <li>{@link Level0Zones#BUILDERS} the film's builders' rooms (~8%): rooms 7-17 across on their
  *       own coarser grid, each with a few deliberate half-walls, window or niche series, or a
- *       step down into a sunken passage, in the chevron "Classic" paper. See
+ *       step down into a sunken passage, in the same paper as everywhere else. See
  *       {@link Level0Builders}; the ordinary skeleton never builds them itself.</li>
  *   <li>{@link Level0Zones#DARK} dark wings (~10%): an enclosed maze where every troffer is dead.
  *       Rooms just outside a wing switch off their panels near it, so the dark starts at the
@@ -1914,9 +1914,8 @@ public final class Level0Layout extends LevelLayout {
         double red = blackout ? -1 : redRoomsDistance(seed, x, z);
         BlockState rough = ModBlocks.BLACKOUT_WALLPAPER.get().defaultBlockState();
         BlockState fluid = ModBlocks.CARPET_FLUID.get().defaultBlockState();
-        // The film's builders' rooms have the chevron "Classic" paper; everywhere else Kane's.
-        BlockState paper = blackout ? rough : kind == BUILDERS ? Level0Blocks.CHEVRON_WALLPAPER.get().defaultBlockState() : wallpaper;
-        BlockState base = blackout ? rough : kind == BUILDERS ? Level0Blocks.CHEVRON_WALLPAPER_BASEBOARD.get().defaultBlockState() : baseboard;
+        BlockState paper = blackout ? rough : wallpaper;
+        BlockState base = blackout ? rough : baseboard;
         out.set(ceiling, tile);
         out.set(floor, carpet);
         switch (code) {
