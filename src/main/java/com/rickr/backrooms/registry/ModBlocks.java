@@ -357,13 +357,85 @@ public final class ModBlocks {
     public static final DeferredBlock<HouseBedBlock> BED = BLOCKS.registerBlock("bed", HouseBedBlock::new,
             unbreakable(MapColor.COLOR_BROWN, SoundType.WOOL).noOcclusion());
 
+    // Level 9 houses (world/layout/Level9Houses): lived-in and abandoned interiors, the half-built
+    // house, the basement and attic, and the upside-down room. Unbreakable like all house furniture.
+    /** Framed family photo on a wall (PHOTO = which picture, SCRATCHED = the faces gouged out). */
+    public static final DeferredBlock<com.rickr.backrooms.block.FamilyPhotoBlock> FAMILY_PHOTO = BLOCKS.registerBlock("family_photo",
+            com.rickr.backrooms.block.FamilyPhotoBlock::new, unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD).noCollission().noOcclusion());
+    /** The same CRT as the TV, left on: soft grey static and a faint glow (light 4). */
+    public static final DeferredBlock<FurnitureBlock> L9_TV_ON = BLOCKS.registerBlock("l9_tv_on",
+            props -> new FurnitureBlock(props, Shapes.or(
+                    Block.box(1, 0, 3, 15, 6, 15),
+                    Block.box(3, 6, 3.5, 13, 16, 10.5),
+                    Block.box(4.5, 7.5, 10.5, 11.5, 14.5, 14))),
+            unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD).noOcclusion().lightLevel(state -> 4));
+    /** The dining table with dinner still on it: two plates of food, a glass, cutlery. */
+    public static final DeferredBlock<FurnitureBlock> L9_DINNER_TABLE = furniture("l9_dinner_table", MapColor.WOOD, SoundType.WOOD, Shapes.or(
+            Block.box(0, 12.5, 0, 16, 16, 16),
+            Block.box(1, 0, 1, 2.5, 12.5, 2.5),
+            Block.box(13.5, 0, 1, 15, 12.5, 2.5),
+            Block.box(1, 0, 13.5, 2.5, 12.5, 15),
+            Block.box(13.5, 0, 13.5, 15, 12.5, 15)));
+    /** A child's low single bed, one block long; the headboard is on the back (south when facing north). */
+    public static final DeferredBlock<FurnitureBlock> L9_KIDS_BED = furniture("l9_kids_bed", MapColor.COLOR_LIGHT_BLUE, SoundType.WOOL, Shapes.or(
+            Block.box(1, 0, 0, 15, 7, 16),
+            Block.box(1, 0, 14.5, 15, 12, 16)));
+    /** Toys left on the floor: a teddy bear, wooden blocks, a rubber ball. */
+    public static final DeferredBlock<FurnitureBlock> L9_TOYS = furniture("l9_toys", MapColor.COLOR_RED, SoundType.WOOL,
+            Block.box(2, 0, 2, 14, 7, 14));
+    /** A house window with planks nailed over it (FACING = outside). */
+    public static final DeferredBlock<WallDecalBlock> L9_BOARDED_WINDOW = BLOCKS.registerBlock("l9_boarded_window", WallDecalBlock::new,
+            unbreakable(MapColor.WOOD, SoundType.WOOD));
+    /** Grey dust and fluff on the floor of abandoned rooms, attics and basements; you walk through it. */
+    public static final DeferredBlock<ThinLayerBlock> L9_HOUSE_DUST = BLOCKS.registerBlock("l9_house_dust", ThinLayerBlock::new,
+            unbreakable(MapColor.COLOR_LIGHT_GRAY, SoundType.SAND).noCollission().noOcclusion());
+    /** A dust sheet thrown over a piece of furniture nobody uses any more. */
+    public static final DeferredBlock<FurnitureBlock> L9_DUST_SHEET = furniture("l9_dust_sheet", MapColor.TERRACOTTA_WHITE, SoundType.WOOL,
+            Block.box(0, 0, 1, 16, 14, 16));
+    /** Basement water heater: a tall white enamel tank with a pipe out of the top. */
+    public static final DeferredBlock<FurnitureBlock> L9_WATER_HEATER = furniture("l9_water_heater", MapColor.QUARTZ, SoundType.METAL, Shapes.or(
+            Block.box(2, 0, 2, 14, 15, 14),
+            Block.box(7, 15, 7, 9, 16, 9)));
+    /** Basement top-loading washing machine, its dials on a back panel. */
+    public static final DeferredBlock<FurnitureBlock> L9_WASHER = furniture("l9_washer", MapColor.QUARTZ, SoundType.METAL, Shapes.or(
+            Block.box(1, 0, 1, 15, 14, 15),
+            Block.box(1, 14, 12, 15, 16, 15)));
+    /** Half-built house: a bare 2x4 wall stud. */
+    public static final DeferredBlock<PoleBlock> L9_STUD = BLOCKS.registerBlock("l9_stud",
+            props -> new PoleBlock(props, 1.5), unbreakable(MapColor.WOOD, SoundType.WOOD).noOcclusion());
+    /** Half-built house: raw pine lumber (stacked boards, plates, rafters). */
+    public static final DeferredBlock<Block> L9_LUMBER = structural("l9_lumber", MapColor.WOOD, SoundType.WOOD);
+    public static final DeferredBlock<SlabBlock> L9_LUMBER_SLAB = BLOCKS.registerBlock("l9_lumber_slab", SlabBlock::new,
+            unbreakable(MapColor.WOOD, SoundType.WOOD));
+    public static final DeferredBlock<StairBlock> L9_LUMBER_STAIRS = BLOCKS.registerBlock("l9_lumber_stairs",
+            props -> new StairBlock(L9_LUMBER.get().defaultBlockState(), props), unbreakable(MapColor.WOOD, SoundType.WOOD));
+    /** Half-built house: the plywood subfloor. */
+    public static final DeferredBlock<Block> L9_PLYWOOD = structural("l9_plywood", MapColor.SAND, SoundType.WOOD);
+    /** Half-built house: a carpenter's sawhorse (FACING = across its beam). */
+    public static final DeferredBlock<FurnitureBlock> L9_SAWHORSE = furniture("l9_sawhorse", MapColor.WOOD, SoundType.WOOD, Shapes.or(
+            Block.box(0, 10, 6.5, 16, 12, 9.5),
+            Block.box(1, 0, 4, 3, 10, 12),
+            Block.box(13, 0, 4, 15, 10, 12)));
+    /** Half-built house: a blue tarp pulled over a pile of building materials. */
+    public static final DeferredBlock<FurnitureBlock> L9_TARP = furniture("l9_tarp", MapColor.COLOR_BLUE, SoundType.WOOL,
+            Block.box(0, 0, 0, 16, 10, 16));
+    /** The upside-down room: ordinary furniture stuck to the ceiling (PIECE picks which). */
+    public static final DeferredBlock<com.rickr.backrooms.block.CeilingFurnitureBlock> L9_CEILING_FURNITURE = BLOCKS.registerBlock(
+            "l9_ceiling_furniture", com.rickr.backrooms.block.CeilingFurnitureBlock::new,
+            unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD).noOcclusion());
+
     // Yards & nature
     public static final DeferredBlock<FenceBlock> PICKET_FENCE = BLOCKS.registerBlock("picket_fence", FenceBlock::new,
             unbreakable(MapColor.SNOW, SoundType.WOOD).forceSolidOn());
-    /** Mailbox on a post at the edge of the lawn; FACING = the lid side, towards the street. */
-    public static final DeferredBlock<FurnitureBlock> MAILBOX = furniture("mailbox", MapColor.COLOR_GRAY, SoundType.METAL, Shapes.or(
-            Block.box(7, 0, 7, 9, 10, 9),
-            Block.box(5.5, 10, 2, 10.5, 15, 14)));
+    /**
+     * Mailbox on a post at the edge of the lawn; FACING = the lid side, towards the street. FLAG up
+     * on some; right-click opens it (sometimes a Neighborhood Watch flyer inside, see MailboxBlock).
+     */
+    public static final DeferredBlock<FurnitureBlock> MAILBOX = BLOCKS.registerBlock("mailbox",
+            props -> new com.rickr.backrooms.block.level9.MailboxBlock(props, Shapes.or(
+                    Block.box(7, 0, 7, 9, 10, 9),
+                    Block.box(5.5, 10, 2, 10.5, 15, 14))),
+            unbreakable(MapColor.COLOR_GRAY, SoundType.METAL).noOcclusion());
     public static final DeferredBlock<RotatedPillarBlock> NIGHT_LOG = BLOCKS.registerBlock("night_log", RotatedPillarBlock::new,
             unbreakable(MapColor.COLOR_BROWN, SoundType.WOOD));
     /** Dark conifer needles. You can see through the gaps, so neighbours must still be drawn. */
@@ -563,6 +635,52 @@ public final class ModBlocks {
     public static final DeferredBlock<WallMountBlock> SAFE_ROOM_SIGN = BLOCKS.registerBlock("safe_room_sign",
             props -> new WallMountBlock(props, 0, 2, 15, 16, 14, 16),
             unbreakable(MapColor.COLOR_GREEN, SoundType.METAL).noCollission().noOcclusion());
+
+    // Level 9 Story: things people left behind on the street and in the houses (block/level9,
+    // placed by world/layout/Level9Story outdoors and by the house interiors indoors).
+    /** "MISSING" poster; FACING away from what it is stapled to, MOUNT = wall / lamp pole / fence post, PERSON = who. */
+    public static final DeferredBlock<com.rickr.backrooms.block.level9.MissingPosterBlock> MISSING_POSTER = BLOCKS.registerBlock(
+            "missing_poster", com.rickr.backrooms.block.level9.MissingPosterBlock::new,
+            unbreakable(MapColor.SNOW, SoundType.WOOD).noCollission().noOcclusion());
+    /** Neighborhood Watch flyer pinned to a porch post or wall; FLYER = which text. Sneak-click to take it. */
+    public static final DeferredBlock<com.rickr.backrooms.block.level9.WatchFlyerBlock> WATCH_FLYER_PINNED = BLOCKS.registerBlock(
+            "watch_flyer_pinned", com.rickr.backrooms.block.level9.WatchFlyerBlock::new,
+            unbreakable(MapColor.SNOW, SoundType.WOOD).noCollission().noOcclusion());
+    /** A child's crayon drawing taped to a bedroom wall; FACING away from the wall, DRAWING = which picture. */
+    public static final DeferredBlock<com.rickr.backrooms.block.level9.KidsDrawingBlock> KIDS_DRAWING = BLOCKS.registerBlock(
+            "kids_drawing", com.rickr.backrooms.block.level9.KidsDrawingBlock::new,
+            unbreakable(MapColor.SNOW, SoundType.WOOD).noCollission().noOcclusion());
+    /** Answering machine on top of a kitchen counter; FACING = its front. Right-click plays its message. */
+    public static final DeferredBlock<com.rickr.backrooms.block.level9.AnsweringMachineBlock> ANSWERING_MACHINE = BLOCKS.registerBlock(
+            "answering_machine", com.rickr.backrooms.block.level9.AnsweringMachineBlock::new,
+            unbreakable(MapColor.COLOR_BLACK, SoundType.METAL).noOcclusion());
+
+    // Level 9 Street: what is left in the yards and on the street (block/yard, placed by
+    // world/layout/Level9Yards; the swing seats, sprinkler water and car colours are client side).
+    /** One cell of a parked car (2 x 4 blocks); PIECE = which cell, PAINT = its colour (block tint). */
+    public static final DeferredBlock<com.rickr.backrooms.block.yard.ParkedCarBlock> L9_PARKED_CAR = BLOCKS.registerBlock(
+            "l9_parked_car", com.rickr.backrooms.block.yard.ParkedCarBlock::new,
+            unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion());
+    /** A two-seat swing set, three blocks long; the middle cell draws the frame and its seats sway. */
+    public static final DeferredBlock<com.rickr.backrooms.block.yard.SwingSetBlock> L9_SWING_SET = BLOCKS.registerBlock(
+            "l9_swing_set", com.rickr.backrooms.block.yard.SwingSetBlock::new,
+            unbreakable(MapColor.COLOR_BLUE, SoundType.METAL).noOcclusion());
+    /** A lawn sprinkler still running on its timer: water drops and a tick-tick-hiss (client side). */
+    public static final DeferredBlock<com.rickr.backrooms.block.yard.SprinklerBlock> L9_SPRINKLER = BLOCKS.registerBlock(
+            "l9_sprinkler", com.rickr.backrooms.block.yard.SprinklerBlock::new,
+            unbreakable(MapColor.METAL, SoundType.METAL).noOcclusion().noCollission());
+    /** A kid's tricycle tipped over on the lawn, one back wheel in the air. Low enough to step over. */
+    public static final DeferredBlock<FurnitureBlock> L9_TRICYCLE = furniture("l9_tricycle", MapColor.COLOR_RED, SoundType.METAL,
+            Block.box(3, 0, 0, 13, 3, 16));
+    /** A red-and-white rubber ball left in the grass. */
+    public static final DeferredBlock<FurnitureBlock> L9_TOY_BALL = furniture("l9_toy_ball", MapColor.COLOR_RED, SoundType.WOOL,
+            Block.box(4.5, 0, 4.5, 11.5, 7.5, 11.5));
+    /** A kid's bike dropped flat in the grass (its wheels reach a little past the block). */
+    public static final DeferredBlock<FurnitureBlock> L9_BIKE = furniture("l9_bike", MapColor.COLOR_BLUE, SoundType.METAL,
+            Block.box(0, 0, 0, 16, 2.5, 16));
+    /** A green wheelie bin put out at the curb; FACING = its front (toward the street). */
+    public static final DeferredBlock<FurnitureBlock> L9_TRASH_BIN = furniture("l9_trash_bin", MapColor.COLOR_GREEN, SoundType.WOOD,
+            Block.box(2, 0, 1.5, 14, 15.5, 15.5));
 
     // Level 94 "Motion" props (Props slice): siren poles that play cartoon music all day, parked
     // 1930s cars and milk vans, and the CRT TV full of static in the house interiors.

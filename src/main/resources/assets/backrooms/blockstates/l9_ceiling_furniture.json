@@ -1,0 +1,137 @@
+{
+  "variants": {
+    "facing=south,piece=0": {
+      "model": "backrooms:block/sofa",
+      "x": 180
+    },
+    "facing=west,piece=0": {
+      "model": "backrooms:block/sofa",
+      "x": 180,
+      "y": 90
+    },
+    "facing=north,piece=0": {
+      "model": "backrooms:block/sofa",
+      "x": 180,
+      "y": 180
+    },
+    "facing=east,piece=0": {
+      "model": "backrooms:block/sofa",
+      "x": 180,
+      "y": 270
+    },
+    "facing=south,piece=1": {
+      "model": "backrooms:block/tv",
+      "x": 180
+    },
+    "facing=west,piece=1": {
+      "model": "backrooms:block/tv",
+      "x": 180,
+      "y": 90
+    },
+    "facing=north,piece=1": {
+      "model": "backrooms:block/tv",
+      "x": 180,
+      "y": 180
+    },
+    "facing=east,piece=1": {
+      "model": "backrooms:block/tv",
+      "x": 180,
+      "y": 270
+    },
+    "facing=south,piece=2": {
+      "model": "backrooms:block/dining_table",
+      "x": 180
+    },
+    "facing=west,piece=2": {
+      "model": "backrooms:block/dining_table",
+      "x": 180,
+      "y": 90
+    },
+    "facing=north,piece=2": {
+      "model": "backrooms:block/dining_table",
+      "x": 180,
+      "y": 180
+    },
+    "facing=east,piece=2": {
+      "model": "backrooms:block/dining_table",
+      "x": 180,
+      "y": 270
+    },
+    "facing=south,piece=3": {
+      "model": "backrooms:block/wooden_chair",
+      "x": 180
+    },
+    "facing=west,piece=3": {
+      "model": "backrooms:block/wooden_chair",
+      "x": 180,
+      "y": 90
+    },
+    "facing=north,piece=3": {
+      "model": "backrooms:block/wooden_chair",
+      "x": 180,
+      "y": 180
+    },
+    "facing=east,piece=3": {
+      "model": "backrooms:block/wooden_chair",
+      "x": 180,
+      "y": 270
+    },
+    "facing=south,piece=4": {
+      "model": "backrooms:block/kitchen_counter",
+      "x": 180
+    },
+    "facing=west,piece=4": {
+      "model": "backrooms:block/kitchen_counter",
+      "x": 180,
+      "y": 90
+    },
+    "facing=north,piece=4": {
+      "model": "backrooms:block/kitchen_counter",
+      "x": 180,
+      "y": 180
+    },
+    "facing=east,piece=4": {
+      "model": "backrooms:block/kitchen_counter",
+      "x": 180,
+      "y": 270
+    },
+    "facing=south,piece=5": {
+      "model": "backrooms:block/fridge",
+      "x": 180
+    },
+    "facing=west,piece=5": {
+      "model": "backrooms:block/fridge",
+      "x": 180,
+      "y": 90
+    },
+    "facing=north,piece=5": {
+      "model": "backrooms:block/fridge",
+      "x": 180,
+      "y": 180
+    },
+    "facing=east,piece=5": {
+      "model": "backrooms:block/fridge",
+      "x": 180,
+      "y": 270
+    },
+    "facing=south,piece=6": {
+      "model": "backrooms:block/cardboard_boxes",
+      "x": 180
+    },
+    "facing=west,piece=6": {
+      "model": "backrooms:block/cardboard_boxes",
+      "x": 180,
+      "y": 90
+    },
+    "facing=north,piece=6": {
+      "model": "backrooms:block/cardboard_boxes",
+      "x": 180,
+      "y": 180
+    },
+    "facing=east,piece=6": {
+      "model": "backrooms:block/cardboard_boxes",
+      "x": 180,
+      "y": 270
+    }
+  }
+}

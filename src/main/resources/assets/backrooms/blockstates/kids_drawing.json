@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "drawing=0,facing=north": {
+      "model": "backrooms:block/kids_drawing_0"
+    },
+    "drawing=0,facing=east": {
+      "model": "backrooms:block/kids_drawing_0",
+      "y": 90
+    },
+    "drawing=0,facing=south": {
+      "model": "backrooms:block/kids_drawing_0",
+      "y": 180
+    },
+    "drawing=0,facing=west": {
+      "model": "backrooms:block/kids_drawing_0",
+      "y": 270
+    },
+    "drawing=1,facing=north": {
+      "model": "backrooms:block/kids_drawing_1"
+    },
+    "drawing=1,facing=east": {
+      "model": "backrooms:block/kids_drawing_1",
+      "y": 90
+    },
+    "drawing=1,facing=south": {
+      "model": "backrooms:block/kids_drawing_1",
+      "y": 180
+    },
+    "drawing=1,facing=west": {
+      "model": "backrooms:block/kids_drawing_1",
+      "y": 270
+    },
+    "drawing=2,facing=north": {
+      "model": "backrooms:block/kids_drawing_2"
+    },
+    "drawing=2,facing=east": {
+      "model": "backrooms:block/kids_drawing_2",
+      "y": 90
+    },
+    "drawing=2,facing=south": {
+      "model": "backrooms:block/kids_drawing_2",
+      "y": 180
+    },
+    "drawing=2,facing=west": {
+      "model": "backrooms:block/kids_drawing_2",
+      "y": 270
+    },
+    "drawing=3,facing=north": {
+      "model": "backrooms:block/kids_drawing_3"
+    },
+    "drawing=3,facing=east": {
+      "model": "backrooms:block/kids_drawing_3",
+      "y": 90
+    },
+    "drawing=3,facing=south": {
+      "model": "backrooms:block/kids_drawing_3",
+      "y": 180
+    },
+    "drawing=3,facing=west": {
+      "model": "backrooms:block/kids_drawing_3",
+      "y": 270
+    }
+  }
+}

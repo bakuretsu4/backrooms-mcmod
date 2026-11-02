@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l9_sprinkler"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l9_sprinkler",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l9_sprinkler",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l9_sprinkler",
+      "y": 270
+    }
+  }
+}

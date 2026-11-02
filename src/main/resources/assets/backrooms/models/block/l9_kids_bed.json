@@ -1,0 +1,352 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/l9_kids_quilt",
+    "frame": "backrooms:block/tv_cabinet",
+    "quilt": "backrooms:block/l9_kids_quilt",
+    "pillow": "backrooms:block/bed_pillow"
+  },
+  "elements": [
+    {
+      "from": [
+        1.0,
+        0.0,
+        0.5
+      ],
+      "to": [
+        15.0,
+        4.0,
+        15.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.0,
+            12.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "south": {
+          "uv": [
+            1.0,
+            12.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "east": {
+          "uv": [
+            1.0,
+            12.0,
+            15.5,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            12.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            1.0,
+            0.5,
+            15.0,
+            15.0
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            1.0,
+            1.0,
+            15.0,
+            15.5
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "from": [
+        1.5,
+        4.0,
+        0.5
+      ],
+      "to": [
+        14.5,
+        7.0,
+        14.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.5,
+            9.0,
+            14.5,
+            12.0
+          ],
+          "texture": "#quilt"
+        },
+        "south": {
+          "uv": [
+            1.5,
+            9.0,
+            14.5,
+            12.0
+          ],
+          "texture": "#quilt"
+        },
+        "east": {
+          "uv": [
+            1.5,
+            9.0,
+            15.5,
+            12.0
+          ],
+          "texture": "#quilt"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            9.0,
+            14.5,
+            12.0
+          ],
+          "texture": "#quilt"
+        },
+        "up": {
+          "uv": [
+            1.5,
+            0.5,
+            14.5,
+            14.5
+          ],
+          "texture": "#quilt"
+        },
+        "down": {
+          "uv": [
+            1.5,
+            1.5,
+            14.5,
+            15.5
+          ],
+          "texture": "#quilt"
+        }
+      }
+    },
+    {
+      "from": [
+        3.0,
+        7.0,
+        11.0
+      ],
+      "to": [
+        13.0,
+        8.5,
+        14.3
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.0,
+            7.5,
+            13.0,
+            9.0
+          ],
+          "texture": "#pillow"
+        },
+        "south": {
+          "uv": [
+            3.0,
+            7.5,
+            13.0,
+            9.0
+          ],
+          "texture": "#pillow"
+        },
+        "east": {
+          "uv": [
+            1.7,
+            7.5,
+            5.0,
+            9.0
+          ],
+          "texture": "#pillow"
+        },
+        "west": {
+          "uv": [
+            11.0,
+            7.5,
+            14.3,
+            9.0
+          ],
+          "texture": "#pillow"
+        },
+        "up": {
+          "uv": [
+            3.0,
+            11.0,
+            13.0,
+            14.3
+          ],
+          "texture": "#pillow"
+        },
+        "down": {
+          "uv": [
+            3.0,
+            1.7,
+            13.0,
+            5.0
+          ],
+          "texture": "#pillow"
+        }
+      }
+    },
+    {
+      "from": [
+        1.0,
+        0.0,
+        14.5
+      ],
+      "to": [
+        15.0,
+        12.0,
+        16.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.0,
+            4.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "south": {
+          "uv": [
+            1.0,
+            4.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            4.0,
+            1.5,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            4.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            1.0,
+            14.5,
+            15.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            1.0,
+            0.0,
+            15.0,
+            1.5
+          ],
+          "texture": "#frame"
+        }
+      }
+    },
+    {
+      "from": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "to": [
+        15.0,
+        6.0,
+        1.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            1.0,
+            10.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "south": {
+          "uv": [
+            1.0,
+            10.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "east": {
+          "uv": [
+            15.0,
+            10.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "west": {
+          "uv": [
+            0.0,
+            10.0,
+            1.0,
+            16.0
+          ],
+          "texture": "#frame"
+        },
+        "up": {
+          "uv": [
+            1.0,
+            0.0,
+            15.0,
+            1.0
+          ],
+          "texture": "#frame"
+        },
+        "down": {
+          "uv": [
+            1.0,
+            15.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#frame"
+        }
+      }
+    }
+  ]
+}

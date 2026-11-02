@@ -46,6 +46,9 @@ public final class ModItems {
     /** A torn note from a supply container: a rough (sometimes wrong) direction to the exit. */
     public static final DeferredItem<com.rickr.backrooms.item.WandererNoteItem> WANDERER_NOTE = ITEMS.registerItem("wanderer_note",
             com.rickr.backrooms.item.WandererNoteItem::new, new Item.Properties().stacksTo(1));
+    // Level 9 Story: the Neighborhood Watch flyer (mailboxes, porches, supply crates). Right-click to read.
+    public static final DeferredItem<com.rickr.backrooms.item.WatchFlyerItem> WATCH_FLYER = ITEMS.registerItem("watch_flyer",
+            com.rickr.backrooms.item.WatchFlyerItem::new, new Item.Properties().stacksTo(1));
 
     static {
         // Block items so builders can use every Backrooms block in creative.
@@ -141,6 +144,32 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.KITCHEN_COUNTER);
         ITEMS.registerSimpleBlockItem(ModBlocks.DINING_TABLE);
         ITEMS.registerSimpleBlockItem(ModBlocks.BED);
+        // Level 9 houses (world/layout/Level9Houses).
+        ITEMS.registerSimpleBlockItem(ModBlocks.FAMILY_PHOTO);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_TV_ON);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_DINNER_TABLE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_KIDS_BED);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_TOYS);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_BOARDED_WINDOW);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_HOUSE_DUST);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_DUST_SHEET);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_WATER_HEATER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_WASHER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_STUD);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_LUMBER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_LUMBER_SLAB);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_LUMBER_STAIRS);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_PLYWOOD);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_SAWHORSE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_TARP);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_CEILING_FURNITURE);
+        // Level 9 Street (world/layout/Level9Yards). The car and the swing set have no item: they
+        // are several blocks each and only the world generator puts them together.
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_SPRINKLER);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_TRICYCLE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_TOY_BALL);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_BIKE);
+        ITEMS.registerSimpleBlockItem(ModBlocks.L9_TRASH_BIN);
         ITEMS.registerSimpleBlockItem(ModBlocks.PICKET_FENCE);
         ITEMS.registerSimpleBlockItem(ModBlocks.MAILBOX);
         ITEMS.registerSimpleBlockItem(ModBlocks.NIGHT_LOG);
@@ -371,6 +400,11 @@ public final class ModItems {
                 ModBlocks.L7_SCRAP, ModBlocks.L7_PIPE, ModBlocks.L7_PILLAR, ModBlocks.L7_PLATFORM, ModBlocks.L7_EXIT_DOOR,
                 ModBlocks.L7_ROPE, ModBlocks.L7_HATCH, ModBlocks.L7_BOOKCASE, ModBlocks.L7_COFFEE_TABLE,
                 ModBlocks.L7_ARMCHAIR, ModBlocks.L94_FLOOD_DARK)) {
+            ITEMS.registerSimpleBlockItem(block);
+        }
+        // Level 9 Story: posters, pinned flyers, kids' drawings, answering machines.
+        for (var block : java.util.List.of(ModBlocks.MISSING_POSTER, ModBlocks.WATCH_FLYER_PINNED, ModBlocks.KIDS_DRAWING,
+                ModBlocks.ANSWERING_MACHINE)) {
             ITEMS.registerSimpleBlockItem(block);
         }
     }

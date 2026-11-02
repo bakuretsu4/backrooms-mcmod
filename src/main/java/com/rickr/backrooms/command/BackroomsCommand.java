@@ -53,6 +53,7 @@ import java.util.Locale;
  * /backrooms sanity [targets] <0-100>   set sanity (for testing the low-sanity effects)
  * /backrooms locate                    distance/direction to the nearest exit (for testing)
  * /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|storm|water|end> [seconds]   start/stop an event on this floor
+ * /backrooms event <lampsbehind|dogs>   Level 9: lamps going out behind you / the dog chorus that stops dead, right now (Level9StreetCommand)
  * /backrooms drift <player> [sealed|door|lights|end]   separate realities: that player sees the room differently from the nearest friend (end = snap back)
  * /backrooms spawn bacteria [count]   spawn Bacteria about 12 blocks in front of you (for testing)
  * /backrooms bacteria pose <idle|walk|chase|spotted|lunge|cage|feed|peek|creep|auto> [loop]   force the nearest Bacteria (32 blocks) into a pose and freeze it, to film it; auto = back to normal (creep: it prowls round whatever is 1.3 blocks in front of it, then opens it)
@@ -62,6 +63,7 @@ import java.util.Locale;
  * /backrooms anomaly locate <kind>     where the nearest anomalous area of that kind is on this floor (for testing)
  * /backrooms anomaly here              which anomalous area you are standing in
  * /backrooms anomaly visit <kind> <point>   Level 0 / Level 2: jump to a named spot of the nearest site of that kind (for testing)
+ * /backrooms house9 <plan|safe|clay_door|long_hall>   Level 9: jump to the front path of the nearest house of that plan (Level9HouseCommand)
  * </pre>
  */
 public final class BackroomsCommand {
@@ -94,6 +96,8 @@ public final class BackroomsCommand {
                                         .executes(ctx -> sanity(ctx, EntityArgument.getPlayers(ctx, "targets"), IntegerArgumentType.getInteger(ctx, "value"))))))
                 .then(Commands.literal("locate").executes(BackroomsCommand::locate)
                         .then(Commands.literal("saferoom").executes(BackroomsCommand::locateSafeRoom)))
+                // Level 9 houses: jump to the nearest house of a plan (Level9HouseCommand).
+                .then(Level9HouseCommand.node())
                 // Anomalous areas: where is the nearest one of a kind / what am I standing in?
                 .then(Commands.literal("anomaly")
                         .then(Commands.literal("here").executes(BackroomsCommand::anomalyHere))
@@ -130,6 +134,9 @@ public final class BackroomsCommand {
                         // Level 39: rain from the superstructure's cloud ceiling, and a boom whose echoes build into a quake.
                         .then(eventNode("rain", LevelEventPayload.INDOOR_RAIN, 180))
                         .then(eventNode("quake", LevelEventPayload.ECHO_QUAKE, 12))
+                        // Level 9 street (client-side effects, started now for testing).
+                        .then(Level9StreetCommand.lampsBehind())
+                        .then(Level9StreetCommand.dogs())
                         .then(Commands.literal("end").executes(ctx -> event(ctx, LevelEventPayload.NONE, 0))))
                 // Level 0 local power outages around you (world/FixtureOutages), for testing.
                 .then(Commands.literal("outage")

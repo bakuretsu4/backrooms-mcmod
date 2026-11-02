@@ -305,6 +305,13 @@ going down into the dark, until the picture breaks up and you are in the next le
   flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark
   forest behind the yards. Follow the green EXIT arrow signs (a few lie) to a highway underpass
   and walk into the dark, back to reality.
+  - **Houses:** not every house is the same plan any more: wide one-storey ranch houses, houses with
+    a ladder up to a dusty attic, houses with stairs down to a dark cellar (water heater, washer,
+    boxes), boarded-up houses full of dust sheets and cobwebs, and now and then a half-built house
+    of bare studs, rafters, sawhorses and a tarp.
+  - **Lived in:** the TV is sometimes still on (soft static), dinner is left on the table, beds are
+    unmade, some houses have a kid's room with toys and drawings, family photos hang on the walls
+    (some with the faces scratched out), and a few kitchens have an answering machine on the counter.
 - **Level 227 ("Megaflora"):** reached only by being dragged in out of the Backrooms' own nature
   (see above) or with `/backrooms enter level_227`. A tree the size of a planet hangs upside down
   over a black void, its roots reaching up out of the sky. You arrive in a misty rainforest that
@@ -772,6 +779,15 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **Twin houses:** Two identical houses stand side by side. Leave one by its back door and you may find you aren't where you think you are. The front door always leads out.
 - **Grass walkways and Level 9.1:** Rarely, a paved path runs between two houses and on into the woods, getting colder as it goes, to a clearing of tall grass. Stand in the middle of the clearing and you are in the Crimson Field: endless grass at night under a red glow that pulses on the horizon. Don't walk toward the glow. To get home, follow the path back to where it started; the rare foxhole hatches in the ground lead elsewhere, one way only.
 - **The chairlift (side entrance to Level 39):** Very rarely, somewhere in the Crimson Field, you hear a cable creaking before you see it: a small frozen lift station and steel towers marching off into the fog, each taller than the last, with empty frosted chairs creeping along the line. Sit in the chair waiting at the station and it carries you up into a white-out; you can still hop off in the first second, after that the bar stays locked. Where it lets you go, you fall through the clouds into Level 39.
+- **Missing posters:** Photocopied MISSING posters are stapled to streetlamp poles, front fences, garage doors and house corners. Right-click one to read it close up. Every so often the name and the face on it are your own.
+- **Neighborhood Watch flyers:** The Watch's rules for staying alive on the street (the streetlights, the tall ones with a light for a face, the fog, porch lights, the signs that lie, not answering the door). Found pinned to porch posts (sneak + right-click to take one), in some mailboxes (right-click a mailbox to open it, once), and in Level 9's supply crates, lockers and backpacks. Right-click a flyer to read it; the Watch notice boards in front of empty lots can be read the same way.
+- **Answering machines:** Some kitchens have an answering machine with its red light blinking: a message nobody heard. Right-click it to play the tape. The voicemails start out ordinary.
+- **Kids' drawings:** Crayon drawings taped up in the children's rooms. Right-click to look closer.
+- **Wrong houses:** About one house in thirty is wrong inside. In some, the living room's furniture is stuck to the ceiling. In others you walk through a door into the room you just left, the same down to the photo on the wall. And very rarely a house's front door opens onto a narrow hall with a door every few steps: it goes on much further than the house does.
+- **Yards and street:** People left things behind. Some driveways and curbs have parked cars in faded colours. Some backyards have a rusty swing set whose seats sway gently with no wind and creak now and then. Lawn sprinklers still tick and hiss on their timers. You'll find a tipped-over tricycle, a ball or a bike lying in the grass, wheelie bins put out by the sidewalk, and some mailboxes with the red flag up.
+- **Streetlights behind you:** Now and then, while you walk down a street, the lamps you've just passed go out one by one behind your back. Turn round and look at them for a few seconds, or walk far enough away, and they quietly come back on.
+- **The dogs go quiet:** Every so often a few dogs start barking somewhere down the streets. Then they all stop at once, in the middle of a bark, and for a few seconds even the crickets are silent.
+- **The night:** Outdoors you hear crickets, traffic far off that never gets any closer, and now and then a wind chime. It goes muffled when you're inside a house or under the underpass.
 
 **Level 94**
 - **Furniture drift:** The closer you get to the castle, the less of the houses is left: whole houses on the far hills, single rooms nearer in, and closest of all only heaps of furniture, which turn towards the castle when nobody is looking. Check the sinks.
@@ -1010,6 +1026,8 @@ saturation, hiss and a big, empty room.
 /backrooms bacteria pose <idle|walk|chase|spotted|lunge|cage|feed|peek|creep|auto> [loop]   film the Bacteria's animations: forces that pose on the nearest living one within 32 blocks and freezes it there (walk and chase run on the spot; its head locks on the nearest player); loop = replay: chase = a swipe every 2 s, spotted = the turn then the run every 2 s, lunge = stop-stare, leap and cage every 2 s, cage = a whip every 2.5 s, feed every 4 s, peek = a normal peek then a long one, creep = the 15 s prowl round whatever stands 1.3 blocks in front of it (hands on it, re-gripping, a long freeze, a reach across, then it opens it and cranes in; face it to a wall or a locker); auto = back to normal. Works with NoAI too
 /backrooms spawn smiler [count|bold]    spawn Smilers ~16 blocks in front of you (start a blackout first)
 /backrooms spawn <watcher|observer> [players]   Level 9 test spawns
+/backrooms house9 <plan>                Level 9: jump to the nearest house of a plan (classic, ranch, attic, basement, boarded, half_built, upside_down, repeated, safe, clay_door, long_hall)
+/backrooms event <lampsbehind|dogs>    Level 9: start the lamps going out behind you (walk past a few) / the dog chorus that stops dead, now
 /backrooms spawn hound [count]          Level 39: Hounds ~14 blocks in front of you (they only hunt survival players)
 /backrooms spawn faceling [hostile] [count]   Level 39: Stranger Facelings, or a hostile pack (default 5)
 /backrooms spawn clump [ceiling|alcove] Level 39: a Clump in the nearest drain or alcove

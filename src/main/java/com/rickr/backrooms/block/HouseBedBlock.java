@@ -26,9 +26,13 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * <p>Unlike other furniture, FACING here is the direction from the FOOT block to the HEAD block:
  * the foot is at P and the head at P + FACING, with the headboard on the far (FACING) end, so
  * a bed facing north has its headboard against a wall on the north side.
+ *
+ * <p>UNMADE beds (Level 9 houses) have the quilt thrown back and the pillow knocked askew, as if
+ * someone got up in the night and never came back. Both halves carry the same UNMADE value.
  */
 public class HouseBedBlock extends FurnitureBlock {
     public static final BooleanProperty HEAD = BooleanProperty.create("head");
+    public static final BooleanProperty UNMADE = BooleanProperty.create("unmade");
 
     // Shapes for FACING = NORTH (head end towards z = 0), in pixels.
     /** Foot half: frame + mattress, footboard across the south end. */
@@ -45,7 +49,7 @@ public class HouseBedBlock extends FurnitureBlock {
 
     public HouseBedBlock(Properties properties) {
         super(properties, FOOT_NORTH);
-        registerDefaultState(defaultBlockState().setValue(HEAD, false));
+        registerDefaultState(defaultBlockState().setValue(HEAD, false).setValue(UNMADE, false));
         for (Direction facing : Direction.Plane.HORIZONTAL) {
             headShapes.put(facing, turn(HEAD_NORTH, facing));
         }
@@ -54,7 +58,7 @@ public class HouseBedBlock extends FurnitureBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(HEAD);
+        builder.add(HEAD, UNMADE);
     }
 
     @Override

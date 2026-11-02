@@ -338,6 +338,19 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L94_RAT_SKITTER = register("distant.level94.rat_skitter");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L94_CARTOON_TIPTOE = register("distant.level94.cartoon_tiptoe");
 
+    // Level 9 Story: the answering machines' recorded messages (block/level9/AnsweringMachineBlock),
+    // level9.machine_message_0 .. _7, made by tools/level9_assets/story.py.
+    public static final java.util.List<DeferredHolder<SoundEvent, SoundEvent>> L9_MACHINE_MESSAGES =
+            java.util.stream.IntStream.range(0, com.rickr.backrooms.block.level9.AnsweringMachineBlock.MESSAGES)
+                    .mapToObj(i -> register("level9.machine_message_" + i)).toList();
+
+    // Level 9 Street (tools/level9_assets/street.py): a dog chorus that the client cuts off
+    // mid-bark (client/level9/DogsGoQuiet), a swing set's rusty creak and a lawn sprinkler's
+    // tick-tick-hiss (block/yard).
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_DOG_CHORUS = register("level9.dog_chorus");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_SWING_CREAK = register("level9.swing_creak");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L9_SPRINKLER = register("level9.sprinkler");
+
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name) {
         return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(Backrooms.id(name)));
     }

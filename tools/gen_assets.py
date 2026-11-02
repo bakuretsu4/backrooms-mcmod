@@ -2954,20 +2954,9 @@ def snd_drain_pull() -> None:
 # =============================================================================
 
 def snd_level9_ambience() -> None:
-    """12 s loop: oppressive near-silence. Very faint cold air bed + barely-there far buzz."""
-    rng = rng_for(2401)
-    T = 12.0
-    n = int(T * SR)
-    t = np.arange(n) / SR
-    air = periodic_noise(n, rng, lambda f: hp_gain(f, 30, 2) * lp_gain(f, 500, 2) / np.maximum(f, 30) ** 0.5)
-    air *= drift(n, rng, 0.25, 0.05, 0.2)
-    room = periodic_noise(n, rng, lambda f: bp_gain(f, 25, 90, 3))                     # distant city-less rumble
-    buzz = mains_hum(t, levels_db=(0, -14, -26, -36)) * drift(n, rng, 0.3, 0.06, 0.2)
-    buzz = fft_filter(buzz, lambda f: lp_gain(f, 400, 2), circular=True)              # far away = dull
-    air, room, buzz = norm(air), norm(room), norm(buzz)
-    rms = np.sqrt(np.mean(air ** 2))
-    x = air + 0.5 * room + buzz / np.sqrt(np.mean(buzz ** 2)) * rms * 10 ** (-24 / 20)
-    save_ogg(x, SND / "ambient" / "level9_ambience.ogg", peak=0.35, loop=True)
+    """Level 9's night bed lives in level9_assets/street.py (imported lazily: it imports this file)."""
+    import level9_assets.street as m
+    m.run_threaded([m.snd_level9_ambience])
 
 
 def snd_sodium_hum() -> None:

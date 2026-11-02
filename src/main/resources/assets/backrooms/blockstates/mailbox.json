@@ -1,18 +1,33 @@
 {
   "variants": {
-    "facing=north": {
+    "facing=north,flag=false": {
       "model": "backrooms:block/mailbox"
     },
-    "facing=east": {
+    "facing=north,flag=true": {
+      "model": "backrooms:block/mailbox_flag_up"
+    },
+    "facing=east,flag=false": {
       "model": "backrooms:block/mailbox",
       "y": 90
     },
-    "facing=south": {
+    "facing=east,flag=true": {
+      "model": "backrooms:block/mailbox_flag_up",
+      "y": 90
+    },
+    "facing=south,flag=false": {
       "model": "backrooms:block/mailbox",
       "y": 180
     },
-    "facing=west": {
+    "facing=south,flag=true": {
+      "model": "backrooms:block/mailbox_flag_up",
+      "y": 180
+    },
+    "facing=west,flag=false": {
       "model": "backrooms:block/mailbox",
+      "y": 270
+    },
+    "facing=west,flag=true": {
+      "model": "backrooms:block/mailbox_flag_up",
       "y": 270
     }
   }

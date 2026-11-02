@@ -241,6 +241,12 @@ public final class BackroomsLights {
                 // A broken Level 9 lamp stutters on top of whatever the event does.
                 on = on && FixturePower.brokenLampOn(light.key, now);
             }
+            if (light.type.isStreetlamp()) {
+                // Level 9: a few lamps you walk past go out behind your back (silently: no blink
+                // click below), see client/level9/LampsBehind.
+                com.rickr.backrooms.client.level9.LampsBehind.offer(light);
+                on = on && com.rickr.backrooms.client.level9.LampsBehind.lampOn(light.key, now);
+            }
             // A faulty Level 0 tube: a stuttering one goes dark in short bursts on its own rhythm,
             // one with a lazy starter cuts out and re-strikes now and then (both on top of any
             // event), a dying one only glows dimly. Only Level 0 lights are in FAULTY_TUBES, so

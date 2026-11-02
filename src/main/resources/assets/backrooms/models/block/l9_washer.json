@@ -1,0 +1,149 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "backrooms:block/l9_washer_front",
+    "front": "backrooms:block/l9_washer_front",
+    "top": "backrooms:block/l9_washer_top",
+    "side": "backrooms:block/fridge_side",
+    "panel": "backrooms:block/l9_washer_panel"
+  },
+  "elements": [
+    {
+      "from": [
+        1.0,
+        0.0,
+        1.0
+      ],
+      "to": [
+        15.0,
+        14.0,
+        15.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#front"
+        },
+        "south": {
+          "uv": [
+            1.0,
+            2.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            1.0,
+            2.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            1.0,
+            2.0,
+            15.0,
+            16.0
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#top"
+        },
+        "down": {
+          "uv": [
+            1.0,
+            1.0,
+            15.0,
+            15.0
+          ],
+          "texture": "#side"
+        }
+      }
+    },
+    {
+      "from": [
+        1.0,
+        14.0,
+        12.0
+      ],
+      "to": [
+        15.0,
+        16.0,
+        15.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            4.0
+          ],
+          "texture": "#panel"
+        },
+        "south": {
+          "uv": [
+            1.0,
+            0.0,
+            15.0,
+            2.0
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            1.0,
+            0.0,
+            4.0,
+            2.0
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            12.0,
+            0.0,
+            15.0,
+            2.0
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            1.0,
+            12.0,
+            15.0,
+            15.0
+          ],
+          "texture": "#side"
+        },
+        "down": {
+          "uv": [
+            1.0,
+            1.0,
+            15.0,
+            4.0
+          ],
+          "texture": "#side"
+        }
+      }
+    }
+  ]
+}

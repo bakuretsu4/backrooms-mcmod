@@ -18,6 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -36,6 +37,7 @@ public final class Level9Anomalies {
         Anomalies.register(Level9Sites.GONDOLA, new Gondola());
         Anomalies.register(Level9Sites.TWIN_HOUSES, new TwinHouses());
         Anomalies.register(Level9Sites.CLIPPED_HOUSES, new ClippedHouses());
+        Anomalies.register(Level9Sites.LONG_HALL, new LongHall());
     }
 
     /** Only things happening at ground level count (not someone on a roof). */
@@ -165,6 +167,57 @@ public final class Level9Anomalies {
         @Override
         public void leave(ServerPlayer player, AnomalySite site, long seed) {
             lastV.remove(player.getUUID());
+        }
+    }
+
+    /**
+     * The long hall: walk on through its second inner door and, a step past it, you are moved
+     * back one stretch of hall (three blocks), to just past the first door. Before the move that
+     * door is set open (you came through it) and the second one shut again, so the hall looks the
+     * same as a moment ago: one more stretch of hall and a shut door ahead. Only walking away
+     * from the street does it; turn round and the front door is always there.
+     */
+    private static final class LongHall implements AnomalyBehavior {
+        private final Map<UUID, Double> lastV = new HashMap<>();
+
+        @Override
+        public void enter(ServerPlayer player, AnomalySite site, long seed) {
+            lastV.put(player.getUUID(), Level9Sites.lotV(site, player.getZ()));
+        }
+
+        @Override
+        public void tick(ServerPlayer player, AnomalySite site, long seed, int ticksInside) {
+            double v = Level9Sites.lotV(site, player.getZ());
+            Double before = lastV.put(player.getUUID(), v);
+            double u = player.getX() - site.anchorX();
+            if (before == null || !onGround(player) || u < Level9Sites.HALL_DOOR_U || u >= Level9Sites.HALL_DOOR_U + 1) {
+                return;
+            }
+            double line = Level9Sites.HALL_SHIFT_LINE;
+            if (before < line && v >= line && v < line + 1) {
+                ServerLevel level = player.serverLevel();
+                setDoor(level, site, Level9Sites.HALL_FIRST_DOOR_V + Level9Sites.HALL_PERIOD, false);
+                setDoor(level, site, Level9Sites.HALL_FIRST_DOOR_V, true);
+                int period = Level9Sites.HALL_PERIOD;
+                Teleports.shift(player, 0.0, 0.0, -period * Level9Sites.inward(site).getStepZ());
+                lastV.put(player.getUUID(), v - period);
+            }
+        }
+
+        @Override
+        public void leave(ServerPlayer player, AnomalySite site, long seed) {
+            lastV.remove(player.getUUID());
+        }
+
+        /** Opens or shuts both halves of the inner door in row v, silently. */
+        private static void setDoor(ServerLevel level, AnomalySite site, int v, boolean open) {
+            BlockPos lower = new BlockPos(site.anchorX() + Level9Sites.HALL_DOOR_U, LevelLayout.FLOOR_Y + 2, Level9Sites.lotZ(site, v));
+            for (BlockPos pos : new BlockPos[] {lower, lower.above()}) {
+                BlockState state = level.getBlockState(pos);
+                if (state.getBlock() instanceof DoorBlock && state.getValue(DoorBlock.OPEN) != open) {
+                    level.setBlock(pos, state.setValue(DoorBlock.OPEN, open), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+                }
+            }
         }
     }
 

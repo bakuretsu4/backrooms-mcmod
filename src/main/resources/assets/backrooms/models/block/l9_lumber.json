@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "backrooms:block/l9_lumber_end",
+    "side": "backrooms:block/l9_lumber"
+  }
+}

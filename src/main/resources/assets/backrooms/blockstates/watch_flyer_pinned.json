@@ -1,0 +1,49 @@
+{
+  "variants": {
+    "facing=north,mount=wall": {
+      "model": "backrooms:block/watch_flyer_pinned_wall"
+    },
+    "facing=east,mount=wall": {
+      "model": "backrooms:block/watch_flyer_pinned_wall",
+      "y": 90
+    },
+    "facing=south,mount=wall": {
+      "model": "backrooms:block/watch_flyer_pinned_wall",
+      "y": 180
+    },
+    "facing=west,mount=wall": {
+      "model": "backrooms:block/watch_flyer_pinned_wall",
+      "y": 270
+    },
+    "facing=north,mount=lamp": {
+      "model": "backrooms:block/watch_flyer_pinned_lamp"
+    },
+    "facing=east,mount=lamp": {
+      "model": "backrooms:block/watch_flyer_pinned_lamp",
+      "y": 90
+    },
+    "facing=south,mount=lamp": {
+      "model": "backrooms:block/watch_flyer_pinned_lamp",
+      "y": 180
+    },
+    "facing=west,mount=lamp": {
+      "model": "backrooms:block/watch_flyer_pinned_lamp",
+      "y": 270
+    },
+    "facing=north,mount=post": {
+      "model": "backrooms:block/watch_flyer_pinned_post"
+    },
+    "facing=east,mount=post": {
+      "model": "backrooms:block/watch_flyer_pinned_post",
+      "y": 90
+    },
+    "facing=south,mount=post": {
+      "model": "backrooms:block/watch_flyer_pinned_post",
+      "y": 180
+    },
+    "facing=west,mount=post": {
+      "model": "backrooms:block/watch_flyer_pinned_post",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "backrooms:block/l9_water_heater"
+    },
+    "facing=east": {
+      "model": "backrooms:block/l9_water_heater",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l9_water_heater",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l9_water_heater",
+      "y": 270
+    }
+  }
+}

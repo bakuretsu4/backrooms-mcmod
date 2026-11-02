@@ -1,0 +1,124 @@
+{
+  "variants": {
+    "facing=north,piece=nose_l": {
+      "model": "backrooms:block/l9_car_hull"
+    },
+    "facing=north,piece=nose_r": {
+      "model": "backrooms:block/l9_car_hull"
+    },
+    "facing=north,piece=front_l": {
+      "model": "backrooms:block/l9_car_front"
+    },
+    "facing=north,piece=front_r": {
+      "model": "backrooms:block/l9_car_hull"
+    },
+    "facing=north,piece=back_l": {
+      "model": "backrooms:block/l9_car_back"
+    },
+    "facing=north,piece=back_r": {
+      "model": "backrooms:block/l9_car_hull"
+    },
+    "facing=north,piece=rear_l": {
+      "model": "backrooms:block/l9_car_hull"
+    },
+    "facing=north,piece=rear_r": {
+      "model": "backrooms:block/l9_car_hull"
+    },
+    "facing=east,piece=nose_l": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 90
+    },
+    "facing=east,piece=nose_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 90
+    },
+    "facing=east,piece=front_l": {
+      "model": "backrooms:block/l9_car_front",
+      "y": 90
+    },
+    "facing=east,piece=front_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 90
+    },
+    "facing=east,piece=back_l": {
+      "model": "backrooms:block/l9_car_back",
+      "y": 90
+    },
+    "facing=east,piece=back_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 90
+    },
+    "facing=east,piece=rear_l": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 90
+    },
+    "facing=east,piece=rear_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 90
+    },
+    "facing=south,piece=nose_l": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 180
+    },
+    "facing=south,piece=nose_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 180
+    },
+    "facing=south,piece=front_l": {
+      "model": "backrooms:block/l9_car_front",
+      "y": 180
+    },
+    "facing=south,piece=front_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 180
+    },
+    "facing=south,piece=back_l": {
+      "model": "backrooms:block/l9_car_back",
+      "y": 180
+    },
+    "facing=south,piece=back_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 180
+    },
+    "facing=south,piece=rear_l": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 180
+    },
+    "facing=south,piece=rear_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 180
+    },
+    "facing=west,piece=nose_l": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 270
+    },
+    "facing=west,piece=nose_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 270
+    },
+    "facing=west,piece=front_l": {
+      "model": "backrooms:block/l9_car_front",
+      "y": 270
+    },
+    "facing=west,piece=front_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 270
+    },
+    "facing=west,piece=back_l": {
+      "model": "backrooms:block/l9_car_back",
+      "y": 270
+    },
+    "facing=west,piece=back_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 270
+    },
+    "facing=west,piece=rear_l": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 270
+    },
+    "facing=west,piece=rear_r": {
+      "model": "backrooms:block/l9_car_hull",
+      "y": 270
+    }
+  }
+}

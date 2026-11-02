@@ -35,6 +35,11 @@ public final class Level9Sites {
      * towers, cable) is worked out by {@code world/anomaly/level39/gondola/GondolaLine}.
      */
     public static final String GONDOLA = "level_9/gondola";
+    /**
+     * A house whose hallway goes on further than the house does: every time you go through its
+     * second inner door you are back at the first one, with the hall ahead exactly as it was.
+     */
+    public static final String LONG_HALL = "level_9/long_hall";
 
     // ---- The Crimson Field region -------------------------------------------------------------------
     /**
@@ -78,6 +83,27 @@ public final class Level9Sites {
      * enough that your whole body is past the door frame, on both sides of the jump.
      */
     public static final double TWIN_SHIFT_LINE = 0.35;
+
+    // ---- The long hall (lot coordinates) ------------------------------------------------------
+    /** The house: walls u 3..13, v 5..15, front door at u 8, a 1-wide hall straight back from it. */
+    public static final int HALL_HU0 = 3;
+    public static final int HALL_WIDTH = 11;
+    public static final int HALL_DOOR_U = 8;
+    public static final int HALL_SETBACK = 5;
+    public static final int HALL_DEPTH = 11;
+    /** Row of the first inner door; every HALL_PERIOD rows after it there is another one. */
+    public static final int HALL_FIRST_DOOR_V = HALL_SETBACK + 2;
+    public static final int HALL_PERIOD = 3;
+    /**
+     * Crossing this far into the row after the second inner door (walking away from the street)
+     * puts you HALL_PERIOD rows back, just past the first one: the same spot one door earlier.
+     */
+    public static final double HALL_SHIFT_LINE = HALL_FIRST_DOOR_V + HALL_PERIOD + 1 + 0.35;
+
+    /** World z of lot row v of a site anchored at its lot's v = 0 row (long hall, clipped houses). */
+    public static int lotZ(AnomalySite site, int v) {
+        return southward(site) ? site.anchorZ() + v : site.anchorZ() - v;
+    }
 
     // ---- Clipped houses (canonical lot coordinates; mirrored per site) ----------------------------
     /** House A: walls u 1..10, v 5..13; front door at (4, 5). */
