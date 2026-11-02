@@ -129,20 +129,85 @@ def tex_level0_a_red_mushrooms() -> None:
 # Warning signs around the Red Rooms
 # =============================================================================
 
-def tex_level0_a_peeling_wallpaper() -> None:
-    """Yellow wallpaper coming away in strips and flaps, crimson paper showing underneath."""
-    rng = G.rng_for(5010)
-    yellow = G._wallpaper()
+def _ragged(points, rng, amp, step=2.5, straight=()):
+    """A closed polygon through `points` with its edges torn: every edge is cut into ~step px
+    pieces whose inner points wander up to `amp` px across it (a smoothed random walk). Edges
+    whose index is in `straight` stay straight (a seam or a fold)."""
+    out = []
+    n = len(points)
+    for e in range(n):
+        (x0, y0), (x1, y1) = points[e], points[(e + 1) % n]
+        length = float(np.hypot(x1 - x0, y1 - y0))
+        pieces = max(1, int(length / step))
+        nx, ny = -(y1 - y0) / max(length, 1e-6), (x1 - x0) / max(length, 1e-6)
+        walk = np.cumsum(rng.normal(0, 1, pieces + 1))
+        walk -= np.linspace(walk[0], walk[-1], pieces + 1)          # pinned at both corners
+        walk = walk / (np.abs(walk).max() + 1e-6) * amp
+        walk += rng.normal(0, amp * 0.25, pieces + 1)                # fibre-scale jaggedness
+        walk[0] = walk[-1] = 0.0
+        if e in straight:
+            walk[:] = 0.0
+        for k in range(pieces):
+            t = k / pieces
+            out.append((x0 + (x1 - x0) * t + nx * walk[k], y0 + (y1 - y0) * t + ny * walk[k]))
+    return out
+
+
+def _poly_mask(poly):
+    return G.pil_mask(lambda d, k: d.polygon([(x * k, y * k) for x, y in poly], fill=255))
+
+
+def _peel(gone: np.ndarray, rng, flap: np.ndarray | None = None, fold_dist: np.ndarray | None = None) -> np.ndarray:
+    """Plain Lobby paper with the `gone` area torn away: dull oxblood paper underneath, darker
+    in the recess under the torn lip, a pale broken fibre edge where the paper tore, and (if
+    given) a flap of it folded down over the wall, showing its pale back."""
+    yellow = G._wallpaper(stains=False)
     red = _red_wallpaper()
-    tear = G.fnoise(rng, beta=2.2, aniso=(1, 3)) + 0.5 * G.fnoise(rng, beta=1.2, kmin=6)
-    gone = G.smoothstep(0.55, 0.75, tear)                   # where the yellow layer has peeled away
-    edge = G.smoothstep(0.42, 0.55, tear) - G.smoothstep(0.55, 0.68, tear)
-    img = yellow * (1 - gone[..., None]) + red * gone[..., None]
-    # the torn edge: the paper curls up (lighter), with a shadow on the crimson just beside it
-    shadow = np.roll(G.smoothstep(0.55, 0.62, tear), 2, axis=0) * (1 - G.smoothstep(0.62, 0.7, tear))
-    img = G.add_lum(img, 22 * np.clip(edge, 0, 1), (1.0, 0.98, 0.9))
-    img = G.add_lum(img, -30 * np.clip(shadow, 0, 1))
-    G.save_png(img, _blk("peeling_wallpaper"))
+    grey = red.mean(axis=2, keepdims=True)
+    under = (0.72 * red + 0.28 * grey) * 0.68                       # old, dull oxblood, not blood red
+    inner = G.blur(gone, 1.6)
+    recess = gone * np.clip((1.0 - inner) * 2.2, 0, 1)              # dark just inside the torn edge
+    under = G.add_lum(under, -26 * recess)
+    img = yellow * (1 - gone[..., None]) + under * gone[..., None]
+    # The torn edge: a thin pale band of paper fibre, broken in places.
+    ring = np.clip(G.blur(gone, 0.9) * 2.4, 0, 1) * (1 - gone)
+    broken = G.smoothstep(-0.6, 0.4, G.fnoise(rng, beta=0.8, kmin=10))
+    img = G.over(img, np.array([214.0, 202.0, 170.0]), np.clip(ring * broken, 0, 1) * 0.6)
+    if flap is not None:
+        # Drop shadow of the flap on the wall, then the flap: the paper's back, darker where it
+        # curls over at the fold, with faint glue streaks.
+        shadow = np.clip(np.roll(np.roll(G.blur(flap, 1.6), 3, axis=0), 2, axis=1) - flap, 0, 1)
+        img = G.add_lum(img, -38 * shadow)
+        back = np.full_like(img, 0.0) + np.array([192.0, 178.0, 142.0])
+        curl = np.clip(1.0 - fold_dist / 12.0, 0, 1) if fold_dist is not None else 0.0
+        back = G.add_lum(back, -40 * curl + 4 * G.fnoise(rng, beta=1.6) + 5 * G.fnoise(rng, beta=1.0, aniso=(1, 6)))
+        img = img * (1 - flap[..., None]) + back * flap[..., None]
+        edge = np.clip(flap - G.blur(flap, 0.8), 0, 1)
+        img = G.add_lum(img, -30 * edge)
+    return img
+
+
+def tex_level0_a_peeling_wallpaper() -> None:
+    """Lobby paper with a panel come loose from its seam (straight, on the left) and folded down
+    along a slanting line, hanging over the paper below, dull oxblood paper showing where it was.
+    The tear stays inside the block, so no seam shows where blocks meet. One texture only (the
+    block atlas is full): the blockstate also uses it mirrored, so the flap hangs either way."""
+    rng = G.rng_for(5012)
+    f1, f2 = np.array([40.0, 74.0]), np.array([90.0, 56.0])
+    torn = _ragged([(40, 20), tuple(f1), tuple(f2), (84, 34), (66, 22)], rng, 4.0, step=4.0, straight=(0, 1))
+    d = (f2 - f1) / np.linalg.norm(f2 - f1)
+    n = np.array([-d[1], d[0]])
+    def reflect(p):
+        v = np.array(p) - f1
+        return tuple(f1 + v - 2 * np.dot(v, n) * n)
+    # The flap is the torn piece mirrored over the fold, a little shorter (it sags and curls).
+    flap_poly = [reflect(p) for p in torn]
+    flap_poly = [tuple(f1 + (np.array(p) - f1) * np.array([1.0, 0.92])) for p in flap_poly]
+    gone = _poly_mask(torn)
+    flap = _poly_mask(flap_poly)
+    X, Y = G.grid()
+    fold_dist = np.abs((X - f1[0]) * n[0] + (Y - f1[1]) * n[1])
+    G.save_png(_peel(gone, rng, flap, fold_dist), _blk("peeling_wallpaper"))
 
 
 def tex_level0_a_sticky_carpet() -> None:

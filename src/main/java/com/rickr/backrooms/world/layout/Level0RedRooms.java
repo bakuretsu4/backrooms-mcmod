@@ -396,10 +396,14 @@ public final class Level0RedRooms {
         switch (c) {
             case 0 -> out.set(floor, sticky); // the moat
             case 'Y' -> {
+                // Yellow paper, torn to crimson in one block of about one column in four.
                 out.set(floor, ModBlocks.LOBBY_CARPET.get().defaultBlockState());
                 out.set(floor + 1, ModBlocks.YELLOW_WALLPAPER_BASEBOARD.get().defaultBlockState());
                 for (int y = floor + 2; y < ceiling; y++) {
-                    out.set(y, peeling);
+                    out.set(y, ModBlocks.YELLOW_WALLPAPER.get().defaultBlockState());
+                }
+                if (Hash.unit(site.salt(), u, v, 11) < 0.25) {
+                    out.set(floor + 2 + (Hash.unit(site.salt(), u, v, 12) < 0.5 ? 0 : 1), peeling);
                 }
             }
             case 'R', 'F' -> {

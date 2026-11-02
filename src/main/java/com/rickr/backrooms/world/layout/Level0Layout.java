@@ -2050,10 +2050,13 @@ public final class Level0Layout extends LevelLayout {
             fillUp(floor + 1, ceiling, paper, out);
             return;
         }
-        boolean peeling = red >= 0 && Hash.unit(seed, x, z, 3290) < 1.0 - red / (Level0AnomalyPlan.RED_RING + 1);
+        // Near the Red Rooms a block of the paper here and there has torn away to crimson; the
+        // closer, the more often (one block of the column, never the whole wall).
+        boolean peeling = red >= 0 && Hash.unit(seed, x, z, 3290) < 0.35 * (1.0 - red / (Level0AnomalyPlan.RED_RING + 1));
         out.set(floor + 1, base);
-        fillUp(floor + 2, ceiling, peeling ? ModBlocks.PEELING_WALLPAPER.get().defaultBlockState() : paper, out);
+        fillUp(floor + 2, ceiling, paper, out);
         if (peeling) {
+            out.set(floor + 2 + (Hash.unit(seed, x, z, 3292) < 0.5 ? 0 : 1), ModBlocks.PEELING_WALLPAPER.get().defaultBlockState());
             return;
         }
         if (code == GRAFFITI) {

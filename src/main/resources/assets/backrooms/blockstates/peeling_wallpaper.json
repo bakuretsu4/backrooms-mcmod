@@ -1,7 +1,12 @@
 {
   "variants": {
-    "": {
-      "model": "backrooms:block/peeling_wallpaper"
-    }
+    "": [
+      {
+        "model": "backrooms:block/peeling_wallpaper"
+      },
+      {
+        "model": "backrooms:block/peeling_wallpaper_mirrored"
+      }
+    ]
   }
 }
