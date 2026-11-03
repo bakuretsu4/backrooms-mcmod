@@ -45,5 +45,12 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Integer>> L4_DOOR_FIX = ATTACHMENTS.register("l4_door_fix",
             () -> AttachmentType.builder(() -> 0).serialize(Codec.INT).build());
 
+    /**
+     * On Level 1 chunks next to an exit: the version of the one-time stairwell clearing repair
+     * (world/layout/Level1ClearingRepair) already done (0 = never checked). Saved with the chunk.
+     */
+    public static final Supplier<AttachmentType<Integer>> L1_CLEARING_FIX = ATTACHMENTS.register("l1_clearing_fix",
+            () -> AttachmentType.builder(() -> 0).serialize(Codec.INT).build());
+
     private ModAttachments() {}
 }

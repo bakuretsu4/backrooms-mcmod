@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Where Level 39's Clumps, Skin-stealers and Wretches turn up. Called once a second per player
  * from {@link Level39Spawner#onLevelTick} (which already skips Peaceful, spectators and players in
- * safe rooms), and only does anything while the player is down in the tunnels (feet between
+ * safe rooms and anyone still in their {@link Level39Arrival} grace), and only does anything while the player is down in the tunnels (feet between
  * y {@value #ZONE_BOTTOM} and {@value #ZONE_TOP}).
  * <ul>
  *   <li><b>Clumps</b>: up to {@value #CLUMPS_PER_PLAYER} within {@value #COUNT_RANGE} blocks;

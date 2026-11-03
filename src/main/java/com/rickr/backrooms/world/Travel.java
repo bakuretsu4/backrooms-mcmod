@@ -166,7 +166,7 @@ public final class Travel {
         // always separated); every other level picks the spot from the floor plan.
         BlockPos separated = target == BackroomsLevel.LEVEL_227 ? Level227Layout.separatedArrival(level, player) : null;
         Arrival arrival = separated != null
-                ? new Arrival(separated, true)
+                ? new Arrival(separated, true, false)
                 : arrival(target.layout(), seed, x, z, from, from != target);
         BlockPos spot = arrival.spot();
         // Feet exactly on the surface: Level 9's sidewalks are half slabs (feet at y + 0.5).
@@ -177,10 +177,11 @@ public final class Travel {
     }
 
     /**
-     * Where an arrival lands: the block the feet are in, and whether its y is exactly the feet (a
-     * level's own preferred spot) rather than a column to stand in.
+     * Where an arrival lands: the block the feet are in; whether its y is exactly the feet (a
+     * level's own preferred spot) rather than a column to stand in; and whether no safe column was
+     * found, so the spot is the level's arrival hint, unchecked.
      */
-    record Arrival(BlockPos spot, boolean exact) {}
+    public record Arrival(BlockPos spot, boolean exact, boolean fallback) {}
 
     /** Extra blocks beyond the clearance when pushing an arrival away, for the walkable-spot search. */
     private static final int CLEARANCE_SLACK = 24;
@@ -199,7 +200,7 @@ public final class Travel {
      * is pushed again, a little further each time. Depends only on (x, z), so friends using the
      * same exit land together.
      */
-    static Arrival arrival(LevelLayout layout, long seed, int x, int z, @Nullable BackroomsLevel from, boolean keepClear) {
+    public static Arrival arrival(LevelLayout layout, long seed, int x, int z, @Nullable BackroomsLevel from, boolean keepClear) {
         int min = layout.arrivalExitClearance();
         boolean clear = keepClear && min > 0 && layout.hasExits();
         Arrival best = null;
@@ -213,7 +214,7 @@ public final class Travel {
                 sz = start[1];
             }
             BlockPos preferred = layout.preferredArrival(seed, sx, sz, from);
-            Arrival a = preferred != null ? new Arrival(preferred, true) : new Arrival(safeSpot(layout, seed, sx, sz), false);
+            Arrival a = preferred != null ? new Arrival(preferred, true, false) : safeArrival(layout, seed, sx, sz);
             if (!clear) {
                 return a;
             }
@@ -360,13 +361,15 @@ public final class Travel {
 
     /** Nearest safe column to (x, z) (or to the level's hint for it), searched in growing squares. */
     public static BlockPos findSafeSpot(ServerLevel level, BackroomsLevel target, int x, int z) {
-        return safeSpot(target.layout(), BackroomsSeeds.layoutSeed(level, target), x, z);
+        return safeArrival(target.layout(), BackroomsSeeds.layoutSeed(level, target), x, z).spot();
     }
 
-    private static BlockPos safeSpot(LevelLayout layout, long seed, int x, int z) {
+    private static Arrival safeArrival(LevelLayout layout, long seed, int x, int z) {
         int[] hint = layout.arrivalHint(seed, x, z);
         BlockPos found = searchWalkable(layout, seed, hint[0], hint[1], SEARCH_RADIUS);
-        return found != null ? found : new BlockPos(hint[0], layout.standY(seed, hint[0], hint[1]), hint[1]);
+        return found != null
+                ? new Arrival(found, false, false)
+                : new Arrival(new BlockPos(hint[0], layout.standY(seed, hint[0], hint[1]), hint[1]), false, true);
     }
 
     /**

@@ -4,7 +4,6 @@ import com.rickr.backrooms.world.anomaly.AnomalyBehavior;
 import com.rickr.backrooms.player.HidingService;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.layout.Level39AnomalyPlan;
-import com.rickr.backrooms.world.layout.Level39Layout;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,7 +22,10 @@ import net.minecraft.world.phys.Vec3;
 final class HostileWindows implements AnomalyBehavior {
     /** A window wakes when someone's eyes come this close to the middle of its glass. */
     static final double WAKE_RANGE = 10.0;
-    /** No more than this many awake windows around one person at a time. */
+    /**
+     * No more than this many awake windows around one person at a time, except the ground-storey
+     * window they stand right in front of: that one always wakes (it is the way out).
+     */
     private static final int MAX_AWAKE_NEAR = 3;
 
     @Override
@@ -44,7 +46,8 @@ final class HostileWindows implements AnomalyBehavior {
     static int wakeAround(ServerLevel level, AnomalySite site, long seed, ServerPlayer player, boolean force) {
         Vec3 eye = player.getEyePosition();
         int awake = level.getEntitiesOfClass(WindowShadow.class, player.getBoundingBox().inflate(16.0)).size();
-        if (awake >= MAX_AWAKE_NEAR && !force) {
+        boolean atGlass = Level39Sites.inFront(site, player.getX(), player.getZ()) < WindowShadow.AT_WINDOW;
+        if (awake >= MAX_AWAKE_NEAR && !force && !atGlass) {
             return 0;
         }
         int centre = Level39Sites.bayAt(site, Level39Sites.along(site, eye.x, eye.z));
@@ -74,11 +77,13 @@ final class HostileWindows implements AnomalyBehavior {
                 if (!Level39AnomalyPlan.windowInhabited(seed, site, bay, storey) || occupied(level, glass)) {
                     continue;
                 }
+                // Past the cap only the ground window you stand right at still wakes: it is the way
+                // out, and the Windows already awake up the wall must not keep it asleep.
+                if (awake + woken >= MAX_AWAKE_NEAR && !(storey == 0 && atWindow(site, bay, player))) {
+                    continue;
+                }
                 WindowShadow.spawn(level, site, bay, storey);
                 woken++;
-                if (awake + woken >= MAX_AWAKE_NEAR) {
-                    return woken;
-                }
             }
         }
         if (force && bestBay != Integer.MIN_VALUE) {
@@ -93,15 +98,20 @@ final class HostileWindows implements AnomalyBehavior {
         return woken;
     }
 
+    /** True within grab reach in front of bay {@code bay}'s window (same box as WindowShadow uses). */
+    private static boolean atWindow(AnomalySite site, int bay, ServerPlayer player) {
+        double front = Level39Sites.inFront(site, player.getX(), player.getZ());
+        double side = Level39Sites.along(site, player.getX(), player.getZ()) - Level39Sites.bayCentre(site, bay);
+        return front >= -0.5 && front < WindowShadow.AT_WINDOW && Math.abs(side) < WindowShadow.GRAB_SIDEWAYS;
+    }
+
     /** True for a lit window (not boarded, not bricked, not a stair tower) whose chunk is loaded. */
     private static boolean lit(ServerLevel level, AnomalySite site, long seed, int bay, int storey) {
         int column = Level39Sites.glassColumn(site);
         int along = Level39Sites.bayColumn(site, bay);
         boolean xSide = Level39Sites.xSide(site);
-        int x = xSide ? column : along;
-        int z = xSide ? along : column;
-        int y = Level39Sites.glassBottom(storey) + 2;
-        return level.isLoaded(new BlockPos(x, y, z)) && Level39Layout.facadeWindowAt(seed, x, y, z);
+        BlockPos glass = new BlockPos(xSide ? column : along, Level39Sites.glassBottom(storey) + 2, xSide ? along : column);
+        return level.isLoaded(glass) && Level39AnomalyPlan.windowLit(seed, site, bay, storey);
     }
 
     private static boolean occupied(ServerLevel level, Vec3 glass) {

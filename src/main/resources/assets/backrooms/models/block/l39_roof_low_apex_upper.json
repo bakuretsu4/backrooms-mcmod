@@ -4,14 +4,14 @@
   "textures": {
     "particle": "backrooms:block/l39_roof_shingles",
     "edge": "backrooms:block/l39_roof_shingles",
-    "sN": "backrooms:block/l39_roof_shingles_apex_n",
-    "uN": "backrooms:block/l39_roof_underside_apex_n",
-    "sS": "backrooms:block/l39_roof_shingles_apex_s",
-    "uS": "backrooms:block/l39_roof_underside_apex_s",
-    "sE": "backrooms:block/l39_roof_shingles_apex_e",
-    "uE": "backrooms:block/l39_roof_underside_apex_e",
-    "sW": "backrooms:block/l39_roof_shingles_apex_w",
-    "uW": "backrooms:block/l39_roof_underside_apex_w"
+    "sN": "backrooms:block/l39_roof_shingles_apex_north",
+    "uN": "backrooms:block/l39_roof_underside_apex_north",
+    "sS": "backrooms:block/l39_roof_shingles_apex_south",
+    "uS": "backrooms:block/l39_roof_underside_apex_south",
+    "sE": "backrooms:block/l39_roof_shingles_apex_east",
+    "uE": "backrooms:block/l39_roof_underside_apex_east",
+    "sW": "backrooms:block/l39_roof_shingles_apex_west",
+    "uW": "backrooms:block/l39_roof_underside_apex_west"
   },
   "elements": [
     {

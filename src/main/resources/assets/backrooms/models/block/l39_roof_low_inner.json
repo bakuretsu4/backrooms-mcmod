@@ -4,10 +4,10 @@
   "textures": {
     "particle": "backrooms:block/l39_roof_shingles",
     "edge": "backrooms:block/l39_roof_shingles",
-    "sN": "backrooms:block/l39_roof_shingles_inner_n",
-    "uN": "backrooms:block/l39_roof_underside_inner_n",
-    "sW": "backrooms:block/l39_roof_shingles_inner_w",
-    "uW": "backrooms:block/l39_roof_underside_inner_w"
+    "sN": "backrooms:block/l39_roof_shingles_inner_north",
+    "uN": "backrooms:block/l39_roof_underside_inner_north",
+    "sW": "backrooms:block/l39_roof_shingles_inner_west",
+    "uW": "backrooms:block/l39_roof_underside_inner_west"
   },
   "elements": [
     {

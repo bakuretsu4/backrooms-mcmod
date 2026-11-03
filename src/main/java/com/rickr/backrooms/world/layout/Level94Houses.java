@@ -319,7 +319,7 @@ final class Level94Houses {
         int g = h.g;
         out.set(g + 8, trim()); // ceiling under the attic
         if (h.kind == DARK) {
-            // Nothing inside but the dark. Stepping into it is the way back to Level 9.
+            // Nothing inside but the dark. Stepping into it is the way on, to Level 490.
             out.set(g, ModBlocks.L94_FLOOR.get().defaultBlockState());
             BlockState dark = ModBlocks.L94_DARK_VOID.get().defaultBlockState();
             for (int y = g + 1; y <= g + 7; y++) out.set(y, dark);

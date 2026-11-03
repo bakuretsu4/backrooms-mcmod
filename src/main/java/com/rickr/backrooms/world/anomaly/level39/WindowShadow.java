@@ -46,7 +46,8 @@ import org.jetbrains.annotations.Nullable;
  *       {@value #NOTICE_RANGE} blocks makes it angrier, faster the closer you are.</li>
  *   <li><b>Hunting</b>: it shrieks, then throws glass shards at you every couple of seconds,
  *       breathes paralysing fumes when you are close (Slowness, Nausea), and if you come within
- *       {@value #GRAB_RANGE} blocks of a ground-floor window it grabs you.</li>
+ *       {@value #GRAB_RANGE} blocks of a ground-floor window it grabs you. A Window up the wall
+ *       goes back to lurking while you stand at an awake ground-floor one ({@link #AT_WINDOW}).</li>
  *   <li><b>Grabbing</b>: you are dragged toward the glass and hurt. Pull free (get more than
  *       {@value #BREAK_FREE} blocks away) or hold on: survive {@value #NOCLIP_TICKS} ticks pressed
  *       against the glass and you noclip through it, out of Level 39 and on to Level 94.</li>
@@ -85,6 +86,8 @@ public class WindowShadow extends Entity {
     private static final int FUME_EVERY = 160;
     /** Grab: within this many blocks in front of the glass (ground storey only)... */
     public static final double GRAB_RANGE = 3.2;
+    /** ...and within this many blocks sideways of the middle of the window... */
+    public static final double GRAB_SIDEWAYS = 2.6;
     /** ...dragged toward it this hard (blocks per tick added to your motion)... */
     private static final double PULL = 0.16;
     /** ...hurt this much every {@value #GRAB_HURT_EVERY} ticks... */
@@ -98,6 +101,13 @@ public class WindowShadow extends Entity {
     private static final int GRAB_COOLDOWN = 80;
     public static final int PASSIVE_GROUP = 4;
     public static final double GROUP_RANGE = 16.0;
+    /**
+     * Standing within this far in front of a ground-storey Window (and within its grab width), you
+     * are at the way out. The Windows up the wall can't grab, only throw glass, so while a ground
+     * Window is awake there they hold their shards and lurk: otherwise they could kill you in the
+     * three seconds you must hold on to be pulled through, and the exit would be a trap.
+     */
+    public static final double AT_WINDOW = GRAB_RANGE + 1.0;
     /** With nobody within this range for {@value #IDLE_TICKS} ticks it sinks back into the glass. */
     private static final double KEEP_RANGE = 24.0;
     private static final int IDLE_TICKS = 200;
@@ -340,6 +350,9 @@ public class WindowShadow extends Entity {
             anger = Math.max(0.0f, anger - CALM);
             return;
         }
+        if (heldBack(level, target)) {
+            return; // keeps its anger: step away from the ground window and it comes for you
+        }
         double d = target.getEyePosition().distanceTo(centre);
         boolean staring = tickCount % 20 == 0 && Observation.sees(target, centre, NOTICE_RANGE * 1.6, 22.0);
         if (staring) {
@@ -368,7 +381,7 @@ public class WindowShadow extends Entity {
             return false;
         }
         double front = inFront(p.position());
-        return front >= -0.5 && front < GRAB_RANGE && Math.abs(sideways(p.position())) < 2.6
+        return front >= -0.5 && front < GRAB_RANGE && Math.abs(sideways(p.position())) < GRAB_SIDEWAYS
                 && p.getY() < getY() + Level39Sites.GLASS_HEIGHT;
     }
 
@@ -381,6 +394,10 @@ public class WindowShadow extends Entity {
             if (anger <= 0.0f) {
                 setState(LURKING);
             }
+            return;
+        }
+        if (heldBack(level, target)) {
+            setState(LURKING);
             return;
         }
         anger = 1.0f;
@@ -397,6 +414,27 @@ public class WindowShadow extends Entity {
             fumeCooldown = FUME_EVERY;
             breatheFumes(level, centre);
         }
+    }
+
+    /**
+     * True for a Window up the wall whose prey stands at a ground-storey Window that is awake (see
+     * {@link #AT_WINDOW}): it lets the ground one have them. Ground Windows never hold back.
+     */
+    private boolean heldBack(ServerLevel level, ServerPlayer target) {
+        if (storey() == 0) {
+            return false;
+        }
+        Vec3 at = target.position();
+        for (WindowShadow w : level.getEntitiesOfClass(WindowShadow.class, target.getBoundingBox().inflate(AT_WINDOW + 2.0, 4.0, AT_WINDOW + 2.0))) {
+            byte s = w.state();
+            if (w.storey() == 0 && s != FADING && s != PASSIVE) {
+                double front = w.inFront(at);
+                if (front >= -0.5 && front < AT_WINDOW && Math.abs(w.sideways(at)) < GRAB_SIDEWAYS) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** A burst of glass shards out of the window at you (they hit if nothing is in the way). */

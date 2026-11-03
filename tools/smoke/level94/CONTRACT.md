@@ -29,7 +29,7 @@ View these images. Do not copy assets from any game or mod: textures and sounds 
 - The castle is REACHABLE and has the funhouse inside.
 - Way in: a rare CLAY DOOR on Level 9 houses leads to Level 94.
 - Ways out:
-  - Rare "dark-door" houses in Level 94 lead to Level 9.
+  - Rare "dark-door" houses in Level 94 lead on to Level 490 (`BackroomsLevel.next`); flooded exit houses lead down to Level 7.
   - The castle throne room's light leads to Level 1.
 - Cycle: 8 min day (last 30 s = dusk) and 3 min night (last 20 s = dawn). Already written: `world/Level94Clock.java`.
 
@@ -90,7 +90,7 @@ public static final int REACH = 3;   // footprint never extends more than 3 bloc
 ### World slice
 - `Level94Layout` must provide `isSafeRoom`, `isWalkable`, `standY`, `feetY`, `isSafeArrival`, `exitPosition` (nearest dark-door house).
 - `world/Level94Rules.java` (server, called from ServerEvents player tick):
-  - Stepping into a dark-door house leads to Level 9 (`Travel.useExit(player, LEVEL_94)`).
+  - Stepping into a dark-door house leads on to Level 490 (`Travel.useExit(player, LEVEL_94)`).
   - `Level94Castle.isThroneLight` leads to Level 1.
 - Clay door entry from Level 9.
 
