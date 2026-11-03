@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=up": {
+      "model": "backrooms:block/l2_wall_fan"
+    },
+    "facing=down": {
+      "model": "backrooms:block/l2_wall_fan",
+      "x": 180
+    },
+    "facing=north": {
+      "model": "backrooms:block/l2_wall_fan",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "backrooms:block/l2_wall_fan",
+      "x": 90,
+      "y": 90
+    },
+    "facing=south": {
+      "model": "backrooms:block/l2_wall_fan",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west": {
+      "model": "backrooms:block/l2_wall_fan",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

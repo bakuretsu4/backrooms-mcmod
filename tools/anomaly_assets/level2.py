@@ -2,11 +2,10 @@
 
 The brownout (a battery emergency light with a violet lens, caged lamps whose bulbs burst, thick
 black ooze from burst pipes and its drips), the series circuits (the pop and fizz of a circuit
-failing), the hot zones (faulty machine cabinets, their loud whirring, steam hissing out of the
-pipes) and the void doors (a steel door with a pitch-black window, and the matte black of the
-void itself).
+failing), the hot zones (faulty machine cabinets, steam hissing out of the pipes) and the void
+doors (a steel door with a pitch-black window, and the matte black of the void itself).
 
-Run only these with:  python tools/gen_assets.py tex_level2_ snd_level2_circuit snd_level2_machine snd_level2_steam snd_level2_ooze
+Run only these with:  python tools/gen_assets.py tex_level2_ snd_level2_circuit snd_level2_steam snd_level2_ooze
 (plain "level2_" would also re-run gen_assets.py's own snd_level2_ambience).
 """
 from __future__ import annotations
@@ -243,39 +242,6 @@ def snd_level2_circuit_pop() -> None:
         G.save_ogg(x + G.norm(wet) * 0.25, _snd(f"circuit_pop{i}"), peak=0.85)
 
 
-def snd_level2_machine_loop() -> None:
-    """6 s seamless loop: a big, tired machine. A low rotary drone with a lumpy harmonic, a
-    bearing whine wavering in pitch, a loose part knocking out of time, and a ragged belt slap.
-    Everything is periodic over the loop length (whole cycles, circular noise and placement)."""
-    rng = G.rng_for(2230)
-    T = 6.0
-    n = int(T * SR)
-    t = np.arange(n) / SR
-    drone = np.zeros(n)
-    for h, db in ((1, 0), (2, -4), (3, -9), (4, -10), (5, -16), (6, -20), (8, -26)):
-        f = 48.0 * h
-        drone += 10 ** (db / 20) * np.sin(2 * np.pi * f * t + rng.uniform(0, 6.28))
-    lump = 1 + 0.35 * np.sin(2 * np.pi * (8.0 / T * 6) * t)                     # rotation unevenness, 8 Hz
-    rumble = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 30, 160, 2))
-    wobble = 1 + 0.015 * np.sin(2 * np.pi * (1 / T) * t) + 0.008 * np.sin(2 * np.pi * (3 / T) * t + 1.0)
-    whine = np.sin(2 * np.pi * np.cumsum(1180.0 * wobble) / SR)
-    whine *= G.drift(n, rng, 0.6, 0.2, 1.0)
-    knocks = np.zeros(n)
-    times = np.cumsum(rng.uniform(0.55, 1.1, 12))
-    times = times[times < T]
-    for tt in times:
-        k = G.ring([180, 410, 950], [0.03, 0.02, 0.008], [1, 0.6, 0.3], 0.2)
-        k[:40] += rng.normal(size=40) * 0.5
-        G.add_at(knocks, k * rng.uniform(0.5, 1.0), tt, circular=True)
-    slap = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 300, 2500, 2))
-    slap *= (np.sin(2 * np.pi * (24 / T) * t) > 0.92).astype(float)
-    slap = G.fft_filter(slap, lambda f: G.lp_gain(f, 3000, 2), circular=True)
-    x = (G.norm(drone * lump) * 0.8 + G.norm(rumble) * 0.45 + G.norm(whine) * 0.07
-         + G.norm(knocks) * 0.35 + G.norm(slap) * 0.12)
-    wet = G.circ_conv(x, G.reverb_ir(rng, 1.0, 0.25, lp=3000, predelay=0.01))
-    G.save_ogg(x + G.norm(wet) * 0.2, _snd("machine_loop"), peak=0.8, loop=True)
-
-
 def snd_level2_steam_hiss() -> None:
     """Three bursts of steam escaping a leaky pipe (~1.6-2.4 s): a sharp onset, a broad hiss that
     sputters as the pressure surges, tailing off."""
@@ -320,5 +286,5 @@ TEXTURES = [
     tex_level2_void_door, tex_level2_void_black,
 ]
 SOUNDS = [
-    snd_level2_circuit_pop, snd_level2_machine_loop, snd_level2_steam_hiss, snd_level2_ooze_drip,
+    snd_level2_circuit_pop, snd_level2_steam_hiss, snd_level2_ooze_drip,
 ]

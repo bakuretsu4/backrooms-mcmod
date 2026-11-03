@@ -18,38 +18,36 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 public final class Level2Audio {
     // Pressure in the pipes, heard up and down the corridor: a water-hammer knock (several in a
     // row, running along the pipes), a heavy ringing clank, a long creak of hot metal stretching,
-    // and water rushing through the overhead bundle past you.
+    // and water rushing through the bundle past you.
     public static final DeferredHolder<SoundEvent, SoundEvent> PIPE_KNOCK = register("level2.pipe_knock");
     public static final DeferredHolder<SoundEvent, SoundEvent> PIPE_CLANK = register("level2.pipe_clank");
     public static final DeferredHolder<SoundEvent, SoundEvent> PIPE_CREAK = register("level2.pipe_creak");
     public static final DeferredHolder<SoundEvent, SoundEvent> PIPE_RUSH = register("level2.pipe_rush");
-    // Loops placed on things in the corridor: the steady hiss of a leaking steam valve, the hum
-    // and slow thump of a pump in a pump bay, the deep bed of heavy machinery (fans, machines and
-    // the plant behind the walls) and the buzz of a live breaker panel.
+    // Loops placed on things in the corridor: the steady hiss of a leaking steam valve, and the
+    // deep machine drone of the wall fans.
     public static final DeferredHolder<SoundEvent, SoundEvent> STEAM_LEAK = register("level2.steam_leak");
-    public static final DeferredHolder<SoundEvent, SoundEvent> PUMP_HUM = register("level2.pump_hum");
     public static final DeferredHolder<SoundEvent, SoundEvent> PLANT_HUM = register("level2.plant_hum");
-    public static final DeferredHolder<SoundEvent, SoundEvent> PANEL_BUZZ = register("level2.panel_buzz");
     // Far metal and vibration: a pipe struck with a tool somewhere down the line (a few at a
     // time, creeping closer along the pipes), and a shudder running along a pipe run past you.
     public static final DeferredHolder<SoundEvent, SoundEvent> PIPE_TAP = register("level2.pipe_tap");
     public static final DeferredHolder<SoundEvent, SoundEvent> PIPE_SHUDDER = register("level2.pipe_shudder");
     // A relief valve lifting now and then: a clunk and a burst of steam.
     public static final DeferredHolder<SoundEvent, SoundEvent> PRESSURE_RELEASE = register("level2.pressure_release");
-    // A drop of water from a leak landing: in a puddle or the wet gutter, on steel (a grating, a
-    // pipe), or on bare wet concrete. (In black ooze it is ModSounds.L2_OOZE_DRIP.)
+    // A drop of water from a leak landing: in a puddle, on steel (a grating, a pipe), or on bare
+    // wet concrete. (In black ooze it is ModSounds.L2_OOZE_DRIP.)
     public static final DeferredHolder<SoundEvent, SoundEvent> DRIP_PUDDLE = register("level2.drip_puddle");
     public static final DeferredHolder<SoundEvent, SoundEvent> DRIP_METAL = register("level2.drip_metal");
     public static final DeferredHolder<SoundEvent, SoundEvent> DRIP_CONCRETE = register("level2.drip_concrete");
-    // The chambers' oddities (played by client/anomaly/level2/Level2OddityEffects): the dry tick of
-    // a gauge needle that keeps time with your heart, and the warm breath behind a door to nowhere.
+    // The oddities (played by client/anomaly/level2/Level2OddityEffects): the dry tick of a gauge
+    // needle that keeps time with your heart.
     public static final DeferredHolder<SoundEvent, SoundEvent> GAUGE_TICK = register("level2.gauge_tick");
-    public static final DeferredHolder<SoundEvent, SoundEvent> WARM_DOOR = register("level2.warm_door");
     // The level slowly turning around you (played by client/anomaly/level2/Level2Orbit, which
-    // carries them around your head): the whole structure groaning under a slow twist and its
-    // brackets chattering faintly (two loops), and a long heavy creak as if the corridor rolled over.
+    // carries them around your head): the whole structure groaning under a slow twist, its brackets
+    // chattering, a deep pressure heaving through the mains (three loops), and a long heavy creak as
+    // if the corridor rolled over.
     public static final DeferredHolder<SoundEvent, SoundEvent> SPIN_GROAN = register("level2.spin_groan");
     public static final DeferredHolder<SoundEvent, SoundEvent> SPIN_RATTLE = register("level2.spin_rattle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPIN_PRESSURE = register("level2.spin_pressure");
     public static final DeferredHolder<SoundEvent, SoundEvent> ROLL_CREAK = register("level2.roll_creak");
 
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name) {

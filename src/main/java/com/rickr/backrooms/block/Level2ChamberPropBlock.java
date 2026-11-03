@@ -20,8 +20,8 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * The small things the maintenance crews left behind in Level 2's chambers (world/layout/
- * Level2Chambers): the shift logbook lying open on a bench, an enamel kettle, a chipped mug, a
+ * The small things maintenance crews leave behind (once placed in Level 2's side chambers; now only
+ * for builders): the shift logbook lying open on a bench, an enamel kettle, a chipped mug, a
  * work jacket on a hook. They stand on top of the furniture below them (their models start a
  * pixel low, so they rest on a workbench or table top), or hang on the wall (the jacket).
  * FACING points away from the wall / towards whoever reads it, like every wall-mounted block.

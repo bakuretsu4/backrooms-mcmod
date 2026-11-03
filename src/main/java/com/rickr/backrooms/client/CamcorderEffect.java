@@ -54,10 +54,22 @@ public final class CamcorderEffect {
     private static final float LIGHTNING_MS = 900.0f;
     /**
      * Level 2's peripheral swirl: how far the picture's corners turn (radians) at full spin
-     * strength and comfort scale. ~0.8 degrees anywhere in Level 2 (strength 0.6), ~1.3 deep in a
-     * twist stretch, ~0.45 in a safe room; the middle of the picture never turns.
+     * strength and comfort scale, back and forth with the spin; the middle never turns.
      */
-    private static final float SPIN_CORNER_RAD = (float) Math.toRadians(1.3);
+    private static final float SPIN_CORNER_RAD = (float) Math.toRadians(7.0);
+    /**
+     * Level 2's "walls closing in": at each heartbeat (SanityClientEffects, 70 BPM when calm, up to
+     * 160 in a panic) the edges of the picture are drawn this much further in (4% at the corners,
+     * nothing in the middle), softened so the beat swells instead of snapping.
+     */
+    private static final float SPIN_SQUEEZE = 0.04f;
+    /** How fast the squeeze follows the heartbeat (per second): ~0.1 s, a swell, not a jolt. */
+    private static final float SPIN_SQUEEZE_FOLLOW = 10.0f;
+    /** The tunnel vignette's slow pulse: +/-12% of its strength over ~7 s. */
+    private static final float SPIN_VIGNETTE_PULSE = 0.12f;
+    private static final float SPIN_VIGNETTE_PULSE_SECONDS = 7.0f;
+    private static float squeeze;
+    private static long squeezeNanos;
 
     /** Smoothed 0..1 "something is near" value; also read by the HUD and camera shake. */
     private static float danger;
@@ -220,26 +232,40 @@ public final class CamcorderEffect {
     }
 
     /**
-     * Level 2's spin in the picture (0 everywhere else): the corners turn back and forth with the
-     * shared spin phase, leaning back further while the turning lurches backwards, so the walls at
-     * the edges of the screen seem to slide round you; and the edges close in with the spin
-     * strength. The swirl is motion, so it takes the comfort scale; the closing edges don't move.
+     * Level 2's spin in the picture (0 everywhere else):
+     * <ul>
+     *   <li>SpinTwist: the corners turn back and forth with the shared spin phase (two harmonics)
+     *       and lean further while the turning surges or lurches back (its rate), so the walls at
+     *       the edges of the screen visibly slide round you; the middle stays put.</li>
+     *   <li>SpinSqueeze: the edges are drawn in with every heartbeat.</li>
+     *   <li>SpinVignette: tunnel vision, the edges near black, pulsing slowly.</li>
+     * </ul>
+     * The swirl, the squeeze and the vignette's pulse are motion, so they take the comfort scale;
+     * the vignette itself doesn't move and stays at tilt 0.
      */
     private static void updateSpinUniforms(Minecraft mc, PostChain chain) {
+        long now = System.nanoTime();
+        float dt = squeezeNanos == 0L ? 0.0f : Math.min((now - squeezeNanos) / 1.0e9f, 0.1f);
+        squeezeNanos = now;
         float twist = 0.0f;
-        float reach = 0.0f;
+        float squeezeGoal = 0.0f;
         float vignette = 0.0f;
         if (Level2Spin.active()) {
             float strength = Level2Spin.strength();
+            float tilt = ClientSettings.tilt();
             float partialTick = mc.getTimer().getGameTimeDeltaPartialTick(false);
-            reach = SPIN_CORNER_RAD * strength * ClientSettings.tilt();
             double phase = Level2Spin.phase(partialTick);
             double lurch = Level2Spin.spinRate(partialTick) / Level2Spin.baseRate() - 1.0;
-            twist = reach * (float) Mth.clamp(0.75 * Math.sin(phase + 0.6) + 0.25 * lurch, -1.0, 1.0);
-            vignette = strength;
+            double swirl = 0.55 * Math.sin(2.0 * phase + 0.6) + 0.30 * Math.sin(3.236 * phase + 2.0) + 0.35 * lurch;
+            twist = SPIN_CORNER_RAD * strength * tilt * (float) Mth.clamp(swirl, -1.0, 1.0);
+            squeezeGoal = SPIN_SQUEEZE * strength * tilt * SanityClientEffects.heartbeatPulse();
+            double seconds = (mc.level.getGameTime() + partialTick) / 20.0;
+            vignette = strength * (1.0f + SPIN_VIGNETTE_PULSE * tilt
+                    * (float) Math.sin(seconds * Math.PI * 2.0 / SPIN_VIGNETTE_PULSE_SECONDS));
         }
+        squeeze += (squeezeGoal - squeeze) * Math.min(1.0f, SPIN_SQUEEZE_FOLLOW * dt);
         chain.setUniform("SpinTwist", twist);
-        chain.setUniform("SpinReach", reach);
+        chain.setUniform("SpinSqueeze", squeeze);
         chain.setUniform("SpinVignette", vignette);
     }
 

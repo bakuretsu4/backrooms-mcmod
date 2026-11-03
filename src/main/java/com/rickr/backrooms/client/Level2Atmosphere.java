@@ -16,9 +16,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 
 /**
- * The air of Level 2: a close, near-black fog that swallows the far end of the corridor, so you
- * only ever see a short length of it and never what is coming. It closes in further inside the
- * corridor's twist stretches (Level2Spin#twistShare), where the walls already seem to turn.
+ * The air of Level 2: a close, near-black fog that swallows the corridor about 18 blocks ahead, so
+ * you only ever see a short length of it and never what is coming. Only at the exit recess and its
+ * approach (where Level2Spin eases off) does it open up a little, so the way out can be seen.
  *
  * <p>The camcorder's haze (AtmosphereGrade LEVEL_2, from the depth buffer) darkens the distance
  * too; this vanilla fog is what makes the far end disappear for good. A shader pack (Iris) may
@@ -28,10 +28,10 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 public final class Level2Atmosphere {
     /** The first few blocks round you stay clear: you can always see the wall you're touching. */
     private static final float FOG_START = 4.0f;
-    /** Where the corridor is fully swallowed: in a plain stretch (and safe rooms)... */
-    private static final float FOG_END = 26.0f;
-    /** ...and deep inside a twist stretch. */
-    private static final float FOG_END_TWIST = 18.0f;
+    /** Where the corridor is fully swallowed: everywhere in the corridor... */
+    private static final float FOG_END = 18.0f;
+    /** ...and at the exit and its approach (Level2Spin at its EXIT_CALM). */
+    private static final float FOG_END_EXIT = 26.0f;
     /** #07080B: almost black, a hint of the cold blue-grey of the level's dark. */
     private static final float FOG_R = 7 / 255.0f;
     private static final float FOG_G = 8 / 255.0f;
@@ -45,7 +45,8 @@ public final class Level2Atmosphere {
 
     /** Where the fog swallows everything right now (blocks): Level 2's lamps fade out by then (VeilFixtures). */
     public static float fogEnd() {
-        return Mth.lerp(Level2Spin.twistShare(), FOG_END, FOG_END_TWIST);
+        float corridor = Mth.clamp((Level2Spin.strength() - Level2Spin.EXIT_CALM) / (1.0f - Level2Spin.EXIT_CALM), 0.0f, 1.0f);
+        return Mth.lerp(corridor, FOG_END_EXIT, FOG_END);
     }
 
     @SubscribeEvent

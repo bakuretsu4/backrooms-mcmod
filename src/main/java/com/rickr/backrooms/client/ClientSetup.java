@@ -67,6 +67,11 @@ public final class ClientSetup {
         // Level 0's street hall: the big ceiling fans, drawn turning by their hub block's renderer.
         event.registerBlockEntityRenderer(com.rickr.backrooms.registry.Level0StreetBlocks.CEILING_FAN_ENTITY.get(),
                 CeilingFanRenderer::new);
+        // Level 2's spin props: the wall fans' blades and the warning beacons' lens, hot spots and beams.
+        event.registerBlockEntityRenderer(com.rickr.backrooms.registry.Level2SpinBlocks.WALL_FAN_ENTITY.get(),
+                com.rickr.backrooms.client.anomaly.level2.WallFanRenderer::new);
+        event.registerBlockEntityRenderer(com.rickr.backrooms.registry.Level2SpinBlocks.SPIN_BEACON_ENTITY.get(),
+                com.rickr.backrooms.client.anomaly.level2.SpinBeaconRenderer::new);
         // Thrown flares and glowsticks: small code-built sticks with a full-bright tip/tube.
         event.registerEntityRenderer(com.rickr.backrooms.registry.LightSupplies.FLARE_ENTITY.get(), ThrownLightRenderer::new);
         event.registerEntityRenderer(com.rickr.backrooms.registry.LightSupplies.GLOWSTICK_ENTITY.get(), ThrownLightRenderer::new);

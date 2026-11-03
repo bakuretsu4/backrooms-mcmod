@@ -234,10 +234,8 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> L4_CUBICLES_AMBIENCE = register("level4.cubicles_ambience");
     public static final DeferredHolder<SoundEvent, SoundEvent> L4_CUBICLES_WORK = register("level4.cubicles_work");
     // Level 2 anomalies (world/anomaly/level2, client/anomaly/level2): the pop and fizz of a series
-    // circuit failing, the faulty whirring machinery of a hot zone (looped by the client), steam
-    // venting from its pipes, and black ooze dripping from burst pipes in a brownout.
+    // circuit failing, a leak's jet of steam, and black ooze dripping from burst pipes in a brownout.
     public static final DeferredHolder<SoundEvent, SoundEvent> L2_CIRCUIT_POP = register("level2.circuit_pop");
-    public static final DeferredHolder<SoundEvent, SoundEvent> L2_MACHINE_LOOP = register("level2.machine_loop");
     public static final DeferredHolder<SoundEvent, SoundEvent> L2_STEAM_HISS = register("level2.steam_hiss");
     public static final DeferredHolder<SoundEvent, SoundEvent> L2_OOZE_DRIP = register("level2.ooze_drip");
     // Level 9 anomalies (world/anomaly/level9, client/anomaly/level9): the Mangled fog's sudden

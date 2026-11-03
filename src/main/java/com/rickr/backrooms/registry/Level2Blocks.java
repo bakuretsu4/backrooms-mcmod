@@ -29,7 +29,6 @@ import java.util.function.Function;
 import net.minecraft.world.item.DoubleHighBlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
@@ -166,11 +165,12 @@ public final class Level2Blocks {
                     Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW, Level2SurfaceBlock.ANY_ROW),
             unbreakable(MapColor.STONE, SoundType.STONE));
 
-    // ================================================================== The cramped corridor and its twists
+    // ================================================================== The corkscrewing corridor
     /**
-     * The corridor's light: a square panel recessed into the lowered ceiling or, in a twist
-     * stretch, into the inner wall; FACING out of the surface, LIT = false a dead tube. The light
-     * itself is client/light (FixtureType L2_LIGHT_PANEL); textures are reused (no atlas cost).
+     * The corridor's light: a square panel recessed into the ceiling or a wall beside the lane,
+     * FACING out of the surface, LIT = false a dead tube. It turns round the lane with the rest of
+     * the dressing. The light itself is client/light (FixtureType L2_LIGHT_PANEL); textures are
+     * reused (no atlas cost).
      */
     public static final DeferredBlock<Level2LightPanelBlock> LIGHT_PANEL = block("l2_light_panel", Level2LightPanelBlock::new,
             unbreakable(MapColor.SNOW, SoundType.GLASS).lightLevel(Level2LightPanelBlock::lightLevel)
@@ -178,19 +178,13 @@ public final class Level2Blocks {
     /** Corridor concrete with a worn yellow band painted along it on its FACING face (walls and ceiling). */
     public static final DeferredBlock<Level2FaceBlock> PAINTED_BAND = block("l2_painted_band", Level2FaceBlock::new,
             unbreakable(MapColor.STONE, SoundType.STONE));
-    /** Half a block of corridor floor: a banked stretch's floor rises in these half steps (never a jump). */
-    public static final DeferredBlock<SlabBlock> FLOOR_SLAB = block("l2_floor_slab", SlabBlock::new,
-            unbreakable(MapColor.COLOR_LIGHT_GRAY, SoundType.STONE));
-    /** Half a block of ceiling slab: where a banked stretch's ceiling drops on the low side (TYPE = top). */
-    public static final DeferredBlock<SlabBlock> CEILING_SLAB = block("l2_ceiling_slab", SlabBlock::new,
-            unbreakable(MapColor.COLOR_GRAY, SoundType.STONE));
 
     static {
         // Block items so builders can use every Level 2 block in creative (the tall ones need the tall item).
         for (DeferredBlock<?> block : new DeferredBlock<?>[] {
                 PIPE, FLANGE, PIPE_ELBOW, PIPE_TEE, PIPE_END, FEED_PIPE, VALVE_WHEEL, VALVE_LEVER, GAUGE, CABLE_TRAY,
                 JUNCTION_BOX, WORKBENCH, PUMP, FAN_HOUSING, BULKHEAD_FRAME, EXIT_BULKHEAD, STENCIL, BEAM, GRATING, GUTTER,
-                FLOOR_LINE, DRIP, LEAK_PUDDLE, WALL_BASE, LIGHT_PANEL, PAINTED_BAND, FLOOR_SLAB, CEILING_SLAB}) {
+                FLOOR_LINE, DRIP, LEAK_PUDDLE, WALL_BASE, LIGHT_PANEL, PAINTED_BAND}) {
             ModItems.ITEMS.registerSimpleBlockItem(block);
         }
         ModItems.ITEMS.registerItem("l2_breaker_panel", props -> new DoubleHighBlockItem(BREAKER_PANEL.get(), props), new Item.Properties());

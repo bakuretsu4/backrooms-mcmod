@@ -1,179 +1,113 @@
 package com.rickr.backrooms.world.layout;
 
 import com.rickr.backrooms.world.Hash;
-import com.rickr.backrooms.world.anomaly.AnomalySite;
-import com.rickr.backrooms.world.anomaly.level2.Level2Sites;
 import net.minecraft.core.Direction;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * The floor plan of Level 2 "Pipe Dreams": where the corridors, their segments, the side rooms
- * and the exits are. No blocks here, only numbers: {@link Level2Layout} turns them into blocks,
- * {@link Level2Rooms} builds the side rooms, {@link Level2AnomalyPlan} adds the anomalies and
- * {@link Level2Finder} finds things for {@code /backrooms anomaly locate}.
+ * The floor plan of Level 2 "Pipe Dreams": where the corridors, their segments, their props and
+ * the exits are. No blocks here, only numbers: {@link Level2Layout} turns them into blocks,
+ * {@link Level2AnomalyPlan} and {@link Level2Oddities} add the anomalies and {@link Level2Finder}
+ * finds things for {@code /backrooms anomaly locate}.
  *
  * <p><b>Bands.</b> The world is cut into strips 48 blocks deep along Z ("bands"). Every band holds
  * ONE straight corridor running along X forever, its centre line a couple of blocks off the band's
- * middle (the same offset all along it). Everything between two corridors is solid concrete, so
- * corridors never meet: a player can only walk forwards, backwards, or into a dead-end side room.
- * Everything that belongs to a band stays within {@link #REACH} blocks of its middle.
+ * middle. Everything else is solid concrete: the corridor never branches, no door or opening leads
+ * off it, and the only way out is the EXIT bulkhead at the back of a tiny recess, one per
+ * 1300-1600 blocks.
  *
- * <p><b>Across the corridor</b> (dz = distance from the centre line), barely wide enough to walk:
+ * <p><b>Across the corridor</b> (dz = distance from the centre line) it is one block wide:
  * <pre>
- *   dz  -4  -3  -2  -1   0  +1  +2  +3  +4
- *        #   #   W   .   .   f   R   #   #      # wall   W/R inner wall: bare concrete or the pipe rack
- *                                                f the rack's front pipes   . lane
+ *   dz   -2  -1   0  +1  +2
+ *         #   W   .   W   #      . the lane (y41-42 clear, ceiling at y43)
+ *                                W the walls round it: bare concrete, or the pipe bundle, a light
+ *                                  panel, a fan, a supply crate... (see {@link Level2Section})
  * </pre>
- * The inner walls stand at |dz| = 2; one of them carries the dense pipe rack, whose front pipes
- * stick out into the lane column beside it, so you walk in two clear blocks between bare concrete
- * and pipes. Which wall has the rack, where the light panels and the painted band are, and whether
- * the floor is rolled, all follow {@link Level2Twist} (built by {@link Level2Section}). Doorways,
- * bays and alcoves cut short passages through the inner wall and the concrete behind it.
  *
  * <p><b>Along the corridor</b> it is cut into segments 24 to 48 blocks long, each with its own
- * character (see the SEG_ constants), never the same kind twice in a row; about one in ten is an
- * odd but grounded detour (a dog-leg round a column, a duct crossing, a catwalk over a trench, a
- * sealed section with a bypass: {@link Level2Detours}). Side rooms open off the chase walls about
- * every 60-120 blocks, alternating sides (about one in six a bigger maintenance chamber,
- * {@link Level2Chambers}), and an exit bay comes every 320-420 blocks.
+ * character (see the SEG_ constants), never the same kind twice in a row. Light panels, fans,
+ * beacons, supplies and checkpoint radios come at their own rhythms.
+ *
+ * <p><b>Arrivals</b> are put halfway between two exits ({@link #arrivalX}), so wherever you land
+ * the nearest exit is at least 500 blocks away along the corridor, either way.
  *
  * <p>Everything is a pure function of (seed, x, z) built from cheap hashes. The few answers that
- * take a bit of work (a segment's type, a room's type) are remembered per thread in small tables,
- * so building a column allocates nothing.
+ * take a bit of work (a segment's type) are remembered per thread in a small table, so building a
+ * column allocates nothing.
  */
 final class Level2Line {
     // ---- Bands ---------------------------------------------------------------------------------
     /** One corridor per this many blocks of Z. */
     static final int BAND = 48;
-    /** Everything of a band (rooms, anomaly doors) stays within this distance of the band's middle. */
+    /** Everything of a band stays within this distance of the band's middle. */
     static final int REACH = 20;
     /** The centre line sits up to this far off the band's middle (fixed per band). */
     private static final int MAX_OFFSET = 2;
-    /** |dz| up to this is the lane: the clear walkway, never blocked. */
-    static final int LANE = 1;
-    /** |dz| = this is the inner wall: bare concrete, or the pipe rack (a passage at doorways and bays). */
-    static final int SHOULDER = 2;
-    /** |dz| = this is solid concrete behind the inner wall (the buried old chase; a passage at doorways). */
-    static final int CHASE = 3;
-    /** |dz| = this is the corridor wall. */
-    static final int WALL = 4;
+    /** |dz| up to this is the lane: the clear walkway, one block wide. */
+    static final int LANE = 0;
+    /** |dz| = this is the corridor wall right beside the lane (the ring of dressing round it). */
+    static final int WALL = 1;
 
     // ---- Segments ------------------------------------------------------------------------------
     static final int SEG_STANDARD = 0;
+    /** A valve manifold set into one wall. */
     static final int SEG_VALVES = 1;
-    static final int SEG_PUMP = 2;
-    static final int SEG_SQUEEZE = 3;
-    static final int SEG_TRENCH = 4;
-    static final int SEG_BULKHEAD = 5;
-    static final int SEG_LEAK = 6;
-    static final int SEG_DARK = 7;
-    /** The segment holding an exit bay (always a plain run with the bay on one side). */
-    static final int SEG_EXIT = 8;
-    // The unusual-but-grounded layouts (built by Level2Detours). Occasional: about 1 segment in 10.
-    /** The corridor steps sideways around a massive structural column (the wall pushed back on one side). */
-    static final int SEG_DOGLEG = 9;
-    /** The ceiling drops for a big duct crossing the corridor (2 blocks of headroom under it, no crouching). */
-    static final int SEG_DUCT = 10;
-    /** Two levels: a grated catwalk along one side over an open trench with a lower walkway in it. */
-    static final int SEG_CATWALK = 11;
-    /** The corridor is sealed by two locked bulkhead walls; a narrow bypass runs round them through the rock. */
-    static final int SEG_BYPASS = 12;
+    /** A steel bulkhead ring round the lane. */
+    static final int SEG_BULKHEAD = 2;
+    /** A leak: drips and black ooze on the floor. */
+    static final int SEG_LEAK = 3;
+    /** A dark stretch: the panels dead but one. */
+    static final int SEG_DARK = 4;
+    /** The segment holding an exit recess (placed, never rolled). */
+    static final int SEG_EXIT = 5;
     /** Names for /backrooms anomaly locate level_2/seg/NAME (indexed by SEG_ code). */
-    static final String[] SEG_NAMES = {"standard", "valves", "pump", "squeeze", "trench", "bulkhead", "leak", "dark", "exit",
-            "dogleg", "duct_crossing", "catwalk", "bypass"};
-    /**
-     * How common each segment type is (indexed by SEG_ code; EXIT is placed, never rolled). Dark
-     * segments only kill up to {@link #DARK_RUN} blocks of lamps, so with this weight they cover
-     * well under 12% of the route. The four detours get 3 each: together one segment in ten, so
-     * the corridor stays the long straight corridor and the odd stretch is a surprise.
-     */
-    private static final int[] SEG_WEIGHTS = {24, 13, 11, 11, 11, 11, 11, 8, 0, 3, 3, 3, 3};
+    static final String[] SEG_NAMES = {"standard", "valves", "bulkhead", "leak", "dark", "exit"};
+    /** How common each segment type is (indexed by SEG_ code; EXIT is placed, never rolled). */
+    private static final int[] SEG_WEIGHTS = {30, 16, 12, 14, 10, 0};
     /** Segments come in pairs of this length, split somewhere between 24 and 48 blocks. */
     static final int PAIR = 72;
     static final int MIN_SEG = 24;
     static final int MAX_SEG = 48;
     /** A dark segment's lamps are dead for at most this many blocks (one flickering survivor). */
     static final int DARK_RUN = 28;
-    /** A pump bay's alcove reaches this far each way from the middle of its segment. */
-    static final int ALCOVE_HALF = 6;
 
     // ---- Exits ---------------------------------------------------------------------------------
     /** One exit per this many blocks of each corridor ... */
-    static final int EXIT_CELL = 370;
-    /** ... at a random spot this wide inside the stretch, then moved to the middle of its segment. */
-    private static final int EXIT_JITTER = 31;
-    /**
-     * The exit bay reaches this far each way from the exit door along the corridor at its mouth
-     * (the inner wall: 5 wide); deeper in it narrows to the door's own 3 columns, pipes crowding
-     * in either side.
-     */
-    static final int BAY_HALF = 2;
-    /** The exit door stands in the bay's back wall, this far from the centre line (the recess is |dz| 2-4). */
-    static final int BAY_BACK = 5;
-
-    // ---- Side rooms ----------------------------------------------------------------------------
-    /** One side room slot per this many blocks of corridor (rooms alternate sides). */
-    static final int ROOM_CELL = 90;
-    /** Rooms keep this far (along the corridor) from an exit door (its bay reaches 2 each way). */
-    private static final int ROOM_EXIT_GAP = 14;
-    /** Rooms keep this far from a void or loop door on their side of the corridor (its hall and passage). */
-    static final int ROOM_DOOR_GAP = 12;
-    static final int ROOM_NONE = -1;
-    static final int ROOM_MAINTENANCE = 0;
-    static final int ROOM_VENTILATION = 1;
-    static final int ROOM_BOILER = 2;
-    static final int ROOM_CLOSET = 3;
-    static final int ROOM_SAFE = 4;
-    /** The slot holds the hot zone's machinery room (an anomaly site, see Level2AnomalyPlan). */
-    static final int ROOM_HOT = 5;
-    // Maintenance chambers (built by Level2Chambers from their drawn plans): bigger, rarer rooms
-    // where the crews worked, each telling a little of their story.
-    static final int ROOM_PUMP_ROOM = 6;
-    static final int ROOM_VALVE_GALLERY = 7;
-    static final int ROOM_ELECTRICAL = 8;
-    /** A flooded sump: a pit one block deep, full of black water, with a grated walkway. */
-    static final int ROOM_SUMP = 9;
-    /** The crew's break room: a table with the shift logbook, a kettle, a jacket left on its hook. */
-    static final int ROOM_BREAK = 10;
-    /** A valve gallery whose valves are all turned the same wrong way (the wrong_valves oddity's slot). */
-    static final int ROOM_GALLERY_ODD = 11;
-    /** Only a steel door in the wall, bare concrete behind it (the warm_door oddity's slot). */
-    static final int ROOM_WARM_DOOR = 12;
-    /**
-     * Names for /backrooms anomaly locate level_2/room/NAME (indexed by ROOM_ code; null = no
-     * key: the hot room and the oddities' rooms are found through their anomaly kinds).
-     */
-    static final String[] ROOM_NAMES = {"maintenance", "ventilation", "boiler", "closet", "safe", null,
-            "pump_room", "valve_gallery", "electrical", "sump", "break_room", null, null};
-    /**
-     * How common each room type is (indexed by ROOM_ code; the site-made ones are never rolled).
-     * Chambers get 30 of 130: with the slots lost to exits, safe rooms and anomalies, about one
-     * room slot in six is a chamber.
-     */
-    private static final int[] ROOM_WEIGHTS = {28, 20, 16, 20, 16, 0, 6, 6, 6, 5, 7};
+    static final int EXIT_CELL = 1450;
+    /** ... at a random spot this wide inside the stretch (so 1300-1600 apart), then moved to the middle of its segment. */
+    private static final int EXIT_JITTER = 151;
+    /** The exit recess is this wide each way of the door (0: one block, as wide as the lane). */
+    static final int BAY_HALF = 0;
+    /** The exit door stands at the back of its recess, this far from the centre line (the recess is |dz| 1-2). */
+    static final int BAY_BACK = 3;
+    /** Arrivals land within this far of the point halfway between two exits. */
+    static final int ARRIVAL_SPREAD = 80;
 
     // ---- What sits in a corridor wall at some x (see feature) -----------------------------------
     static final int F_NONE = 0;
-    /** The doorway of an ordinary side room (chase cleared, door in the wall). */
-    static final int F_DOOR = 1;
-    /** The doorway of a safe room (its own plan builds the wall part). */
-    static final int F_SAFE_DOOR = 2;
-    /** The wide opening of the hot zone's machinery room (built by the anomaly plan). */
-    static final int F_HOT = 3;
-    /** The way into the little hall in front of a void or loop door. */
-    static final int F_MOUTH = 4;
-    /** The exit bay. */
+    /** The exit recess. */
     static final int F_BAY = 5;
-    /** A pump bay's alcove. */
-    static final int F_ALCOVE = 6;
 
-    // ---- Lamps and brackets ----------------------------------------------------------------------
-    /** A recessed light panel every this many blocks (in a twist stretch also halfway between). */
-    static final int LAMP_SPACING = 12;
+    // ---- Rhythms -------------------------------------------------------------------------------
+    /** A recessed light panel every this many blocks. */
+    static final int LAMP_SPACING = 10;
     /** The pipe bundle is clamped to a steel channel bracket every this many blocks. */
     static final int BRACKET_SPACING = 4;
     /** A segment's section number is stencilled this many blocks after its start. */
     static final int MARKER_IN = 3;
+    /** A wall fan about every this many blocks ... */
+    private static final int FAN_CELL = 17;
+    /** ... a spinning warning beacon about every this many ... */
+    private static final int BEACON_CELL = 28;
+    /** ... each moved up to this many blocks less one along its stretch (fans 13-21 apart, beacons 24-32). */
+    private static final int PROP_JITTER = 5;
+    /** A supply spot (a backpack or crate at the foot of the wall) per this many blocks ... */
+    private static final int SUPPLY_CELL = 70;
+    /** ... taken this often. */
+    private static final double SUPPLY_CHANCE = 0.55;
+    /** A checkpoint radio set into the wall once per this many blocks ... */
+    private static final int RADIO_CELL = 250;
+    /** ... somewhere in its first this-many blocks (so 250-350 apart). */
+    private static final int RADIO_JITTER = 101;
 
     private Level2Line() {}
 
@@ -201,36 +135,55 @@ final class Level2Line {
         return side < 0 ? Direction.NORTH : Direction.SOUTH;
     }
 
-    /** The way things hung on a side's wall face: into the corridor. */
+    /** The way things fixed to a side's wall face: into the corridor. */
     static Direction inwardOf(int side) {
         return side < 0 ? Direction.SOUTH : Direction.NORTH;
     }
 
-    /** The side of the corridor the drainage gutter runs along (fixed per band). */
-    static int gutterSide(long seed, int band) {
-        return Hash.unit(seed, band, 4, 508) < 0.5 ? -1 : 1;
-    }
-
     // ==========================================================================================
-    // Lamps
+    // Rhythms: lamps, brackets, fans, beacons, supplies, radios
     // ==========================================================================================
 
     private static int lampPhase(long seed, int band) {
         return Hash.range(Hash.of(seed, band, 3, 507), LAMP_SPACING);
     }
 
-    /**
-     * True if a light panel belongs at x: every 12 blocks, and inside a twist stretch also halfway
-     * between, so the panels turning round the corridor read as one motion.
-     */
+    /** True if a light panel belongs at x. */
     static boolean lampAt(long seed, int band, int x) {
-        int r = Math.floorMod(x - lampPhase(seed, band), LAMP_SPACING);
-        return r == 0 || r == LAMP_SPACING / 2 && Level2Twist.inStretch(seed, band, x);
+        return Math.floorMod(x - lampPhase(seed, band), LAMP_SPACING) == 0;
     }
 
     /** True if the pipe bundle has a steel channel bracket at x. */
     static boolean bracketAt(long seed, int band, int x) {
         return Math.floorMod(x - lampPhase(seed, band) - 1, BRACKET_SPACING) == 0;
+    }
+
+    /** True if x is the one spot of its {@code cell}-long stretch for a prop (salt: which prop). */
+    private static boolean rhythm(long seed, int band, int x, int cell, int jitter, int salt) {
+        int phase = Hash.range(Hash.of(seed, band, salt, 546), cell);
+        int k = Math.floorDiv(x - phase, cell);
+        return x == k * cell + phase + Hash.range(Hash.of(seed, band, k, salt), jitter);
+    }
+
+    /** True if a wall fan belongs at x. */
+    static boolean fanAt(long seed, int band, int x) {
+        return rhythm(seed, band, x, FAN_CELL, PROP_JITTER, 547);
+    }
+
+    /** True if a spinning beacon belongs at x. */
+    static boolean beaconAt(long seed, int band, int x) {
+        return rhythm(seed, band, x, BEACON_CELL, PROP_JITTER, 548);
+    }
+
+    /** True if a supply container (backpack or crate) belongs at x. */
+    static boolean supplyAt(long seed, int band, int x) {
+        return rhythm(seed, band, x, SUPPLY_CELL, SUPPLY_CELL - 10, 549)
+                && Hash.unit(seed, band, Math.floorDiv(x, SUPPLY_CELL), 550) < SUPPLY_CHANCE;
+    }
+
+    /** True if a checkpoint radio belongs at x. */
+    static boolean radioAt(long seed, int band, int x) {
+        return rhythm(seed, band, x, RADIO_CELL, RADIO_JITTER, 551);
     }
 
     /** X of segment n's section marker (and, in a repeat_section oddity, its dead lamp and chalk cross). */
@@ -269,6 +222,11 @@ final class Level2Line {
     /** Last x of segment n. */
     static int segEnd(long seed, int band, int n) {
         return segStart(seed, band, n + 1) - 1;
+    }
+
+    /** Middle x of segment n. */
+    static int segMid(long seed, int band, int n) {
+        return (segStart(seed, band, n) + segEnd(seed, band, n)) >> 1;
     }
 
     /** The type the hash wants for segment n, before the no-repeat rule. */
@@ -341,47 +299,14 @@ final class Level2Line {
         return seg(seed, band, n).survivor;
     }
 
-    /** Which side a pump bay's alcove is on (0: the walls are taken, no alcove). */
-    static int alcoveSide(long seed, int band, int n) {
-        return seg(seed, band, n).alcove;
-    }
-
-    /** X of the middle of a pump bay's alcove (the pump stands at this x and the next). */
-    static int alcoveMid(long seed, int band, int n) {
-        return seg(seed, band, n).alcoveMid;
-    }
-
     /** X of a bulkhead segment's steel ring (MIN_VALUE: no spot was free). */
     static int frameX(long seed, int band, int n) {
         return seg(seed, band, n).frame;
     }
 
-    /**
-     * True if a trench segment really has its trench: not where a void door's square reaches over
-     * the corridor (the void's black sky lies right under the floor there, where the trench would be).
-     */
-    static boolean hasTrench(long seed, int band, int n) {
-        return seg(seed, band, n).trench;
-    }
-
-    /** The side the valve manifold / steam jet of this segment is on. */
+    /** The side the valve manifold of this segment is on. */
     static int featureSide(long seed, int band, int n) {
         return seg(seed, band, n).side;
-    }
-
-    /**
-     * The side a detour segment (SEG_DOGLEG, SEG_BYPASS, SEG_CATWALK) bends towards: the wall pushed
-     * back round the column, the wall the bypass runs behind, the side the catwalk runs along (the
-     * trench is on the other side). 0 for every other segment.
-     */
-    static int detourSide(long seed, int band, int n) {
-        return seg(seed, band, n).detour;
-    }
-
-    /** Middle x of segment n. */
-    static int segMid(long seed, int band, int n) {
-        Seg s = seg(seed, band, n);
-        return (s.start + s.end) >> 1;
     }
 
     /** One remembered segment. */
@@ -390,18 +315,12 @@ final class Level2Line {
         int band;
         int n;
         boolean filled;
-        int start;
-        int end;
         int type;
         int side;
-        int alcove;
-        int alcoveMid;
         int frame;
         int darkFrom;
         int darkTo;
         int survivor;
-        boolean trench;
-        int detour;
     }
 
     private static final int SEG_MEMO = 32;
@@ -429,150 +348,49 @@ final class Level2Line {
         if (s.filled && s.seed == seed && s.band == band && s.n == n) {
             return s;
         }
-        // Work everything out first (that may look up other segments), then store it.
         int start = segStart(seed, band, n);
         int end = segEnd(seed, band, n);
         int type = computeType(seed, band, n);
         int mid = (start + end) >> 1;
-        long h = Hash.of(seed, band, n, 509);
-        int side = Hash.unit(h) < 0.5 ? -1 : 1;
-        int alcove = 0;
-        int alcoveMid = Integer.MIN_VALUE;
+        int side = Hash.unit(Hash.of(seed, band, n, 509)) < 0.5 ? -1 : 1;
         int frame = Integer.MIN_VALUE;
         int darkFrom = Integer.MIN_VALUE;
         int darkTo = Integer.MIN_VALUE;
         int survivor = Integer.MIN_VALUE;
-        boolean trench = false;
-        if (type == SEG_PUMP) {
-            // The alcove goes in the middle of the segment, or a little to one side, on the preferred
-            // wall or else the other one, wherever it is clear of doorways, rooms and the exit bay.
-            for (int k = 0; k < 5 && alcove == 0; k++) {
-                int m = mid + (k == 0 ? 0 : (k & 1) == 1 ? 4 * ((k + 1) / 2) : -4 * (k / 2));
-                if (m - ALCOVE_HALF <= start || m + ALCOVE_HALF + 1 >= end) {
-                    continue; // the alcove (and the pump's second column) must stay inside the segment
-                }
-                alcove = freeAlcoveSide(seed, band, m, side);
-                alcoveMid = m;
-            }
-            if (alcove == 0) {
-                // Nowhere for the alcove (rare: doorways all round): a plain kind of segment instead,
-                // still different from both neighbours (they are never pumps, so their types stand).
-                int before = computeType(seed, band, n - 1);
-                int after = computeType(seed, band, n + 1);
-                type = before != SEG_STANDARD && after != SEG_STANDARD ? SEG_STANDARD
-                        : before != SEG_VALVES && after != SEG_VALVES ? SEG_VALVES : SEG_LEAK;
-            }
-        } else if (type == SEG_BULKHEAD) {
+        if (type == SEG_BULKHEAD) {
             frame = freeFrameX(seed, band, mid);
         } else if (type == SEG_DARK) {
             darkFrom = Math.max(start, mid - DARK_RUN / 2);
             darkTo = Math.min(end, darkFrom + DARK_RUN - 1);
             survivor = nearestLampSpot(seed, band, (darkFrom + darkTo) >> 1);
-        } else if (type == SEG_TRENCH) {
-            trench = !Level2AnomalyPlan.voidOver(seed, band, start, end);
-        }
-        int detour = 0;
-        if (type == SEG_DOGLEG || type == SEG_BYPASS || type == SEG_CATWALK) {
-            // The preferred side, else the other one, wherever the walls involved are free of doorways,
-            // rooms, bays and door halls (and a catwalk's trench clear of the void).
-            detour = detourFits(seed, band, type, start, end, mid, side) ? side
-                    : detourFits(seed, band, type, start, end, mid, -side) ? -side : 0;
-            if (detour == 0) {
-                // No room for it here: a plain kind of segment instead, as for a pump bay without an alcove.
-                int before = computeType(seed, band, n - 1);
-                int after = computeType(seed, band, n + 1);
-                type = before != SEG_STANDARD && after != SEG_STANDARD ? SEG_STANDARD
-                        : before != SEG_VALVES && after != SEG_VALVES ? SEG_VALVES : SEG_LEAK;
-            }
         }
         s = slots[i];
         s.seed = seed;
         s.band = band;
         s.n = n;
-        s.start = start;
-        s.end = end;
         s.type = type;
         s.side = side;
-        s.alcove = alcove;
-        s.alcoveMid = alcoveMid;
         s.frame = frame;
         s.darkFrom = darkFrom;
         s.darkTo = darkTo;
         s.survivor = survivor;
-        s.trench = trench;
-        s.detour = detour;
         s.filled = true;
         return s;
     }
 
-    /**
-     * True if a detour of {@code type} fits around {@code mid} bending to {@code side}: every wall it
-     * digs into is free of doorways, rooms (they reach 5 blocks each way of their door), bays and
-     * door halls, with a margin, and a catwalk's trench doesn't lie over a void square.
-     */
-    private static boolean detourFits(long seed, int band, int type, int start, int end, int mid, int side) {
-        int reach;
-        int farReach;
-        if (type == SEG_DOGLEG) {
-            reach = Level2Detours.DOG_HALF + 8;
-            farReach = 2;
-        } else if (type == SEG_BYPASS) {
-            reach = Level2Detours.BYPASS_HALF + 8;
-            farReach = Level2Detours.SEAL_HALF + 1;
-        } else {
-            // The catwalk side stays a normal corridor wall; the trench side may not have a doorway.
-            if (Level2AnomalyPlan.voidOver(seed, band, start, end)) {
-                return false;
-            }
-            reach = 0;
-            farReach = Level2Detours.CAT_HALF + 1;
-        }
-        for (int x = mid - reach; x <= mid + reach && reach > 0; x++) {
-            if (fixedFeature(seed, band, x, side) != F_NONE) {
-                return false;
-            }
-        }
-        for (int x = mid - farReach; x <= mid + farReach; x++) {
-            if (fixedFeature(seed, band, x, -side) != F_NONE) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /** The lamp spot closest to x (any side). */
+    /** The lamp spot closest to x. */
     private static int nearestLampSpot(long seed, int band, int x) {
         int rel = Math.floorMod(x - lampPhase(seed, band), LAMP_SPACING);
         return rel <= LAMP_SPACING / 2 ? x - rel : x + LAMP_SPACING - rel;
     }
 
-    /**
-     * The side for a pump alcove around {@code mid}: the preferred side unless a doorway, a room, a
-     * door hall or the exit bay is in that wall nearby (near enough for their rooms to reach behind
-     * the alcove); then the other side; 0 if both are taken.
-     */
-    private static int freeAlcoveSide(long seed, int band, int mid, int preferred) {
-        int clear = ALCOVE_HALF + 6;
-        for (int k = 0; k < 2; k++) {
-            int side = k == 0 ? preferred : -preferred;
-            boolean free = true;
-            for (int x = mid - clear; x <= mid + clear && free; x++) {
-                free = fixedFeature(seed, band, x, side) == F_NONE;
-            }
-            if (free) {
-                return side;
-            }
-        }
-        return 0;
-    }
-
-    /** A spot near the middle where the bulkhead ring has no doorway beside it on either side. */
+    /** A spot near the middle where the bulkhead ring has no exit recess beside it. */
     private static int freeFrameX(long seed, int band, int mid) {
         for (int k = 0; k < 5; k++) {
             int x = mid + (k == 0 ? 0 : (k & 1) == 1 ? 3 * ((k + 1) / 2) : -3 * (k / 2));
             boolean free = true;
             for (int dx = -1; dx <= 1 && free; dx++) {
-                free = fixedFeature(seed, band, x + dx, -1) == F_NONE && fixedFeature(seed, band, x + dx, 1) == F_NONE;
+                free = feature(seed, band, x + dx, -1) == F_NONE && feature(seed, band, x + dx, 1) == F_NONE;
             }
             if (free) {
                 return x;
@@ -582,7 +400,7 @@ final class Level2Line {
     }
 
     // ==========================================================================================
-    // Exits
+    // Exits and arrivals
     // ==========================================================================================
 
     private static int exitPhase(long seed, int band) {
@@ -600,7 +418,7 @@ final class Level2Line {
         return (segStart(seed, band, n) + segEnd(seed, band, n)) >> 1;
     }
 
-    /** The wall exit j's bay opens into (-1 north, +1 south). */
+    /** The wall exit j's recess opens into (-1 north, +1 south). */
     static int exitSide(long seed, int band, int j) {
         return Hash.unit(seed, band, j, 513) < 0.5 ? -1 : 1;
     }
@@ -636,7 +454,7 @@ final class Level2Line {
         return false;
     }
 
-    /** True if segment n holds an exit (exits are at least 300 blocks apart, segments 48 at most). */
+    /** True if segment n holds an exit (exits are over 1200 blocks apart, segments 48 at most). */
     private static boolean holdsExit(long seed, int band, int n) {
         int start = segStart(seed, band, n);
         int j0 = exitCell(seed, band, start);
@@ -648,183 +466,39 @@ final class Level2Line {
         return false;
     }
 
-    // ==========================================================================================
-    // Side rooms
-    // ==========================================================================================
-
-    /** X of the doorway of room slot k (the middle of the room). */
-    static int slotX(long seed, int band, int k) {
-        return k * ROOM_CELL + 30 + Hash.range(Hash.of(seed, band, k, 510), 31);
-    }
-
-    /** The wall room slot k opens off: sides alternate from one slot to the next. */
-    static int slotSide(long seed, int band, int k) {
-        int flip = Hash.range(Hash.of(seed, band, 5, 511), 2);
-        return ((k + flip) & 1) == 0 ? -1 : 1;
-    }
-
-    /** The room slot whose room could reach column x (rooms stay well inside their 90 blocks). */
-    static int roomCell(int x) {
-        return Math.floorDiv(x, ROOM_CELL);
-    }
-
-    /** What room slot k of this band holds (ROOM_ constant). */
-    static int roomType(long seed, int band, int k) {
-        return room(seed, band, k).type;
-    }
-
-    /** The safe room of slot k (only when its type is ROOM_SAFE), else null. */
-    @Nullable
-    static SafeRoomPlan safePlan(long seed, int band, int k) {
-        return room(seed, band, k).safe;
-    }
-
-    /** Half the width of a room's floor (its walls are one further). */
-    static int roomHalfWidth(int type) {
-        if (Level2Chambers.isChamber(type)) {
-            return Level2Chambers.halfWidth(type);
-        }
-        return type == ROOM_CLOSET ? 1 : type == ROOM_WARM_DOOR ? 0 : 3;
-    }
-
-    /** How many rows deep a room's floor goes into the rock, from |dz| = 5 (0: only a door, rock behind it). */
-    static int roomDepth(int type) {
-        if (Level2Chambers.isChamber(type)) {
-            return Level2Chambers.depth(type);
-        }
-        return switch (type) {
-            case ROOM_MAINTENANCE -> 5;
-            case ROOM_CLOSET -> 3;
-            case ROOM_WARM_DOOR -> 0;
-            default -> 6;
-        };
-    }
-
-    private static final class Room {
-        long seed;
-        int band;
-        int k;
-        boolean filled;
-        int type;
-        @Nullable
-        SafeRoomPlan safe;
-    }
-
-    private static final int ROOM_MEMO = 16;
-
-    private static final class RoomMemo {
-        final Room[] slots = new Room[ROOM_MEMO];
-
-        RoomMemo() {
-            for (int i = 0; i < ROOM_MEMO; i++) {
-                slots[i] = new Room();
+    /**
+     * Where along this band someone sent to x lands: the point halfway between the two exits
+     * around the nearest such halfway point to x, moved up to {@link #ARRIVAL_SPREAD} blocks either
+     * way (by a hash of x, so different arrivals spread out). Exits are at least ~1250 blocks apart
+     * once moved to their segments' middles, so the nearest exit is at least ~545 blocks away
+     * either way.
+     */
+    static int arrivalX(long seed, int band, int x) {
+        int j0 = exitCell(seed, band, x);
+        int best = 0;
+        long bestD = Long.MAX_VALUE;
+        for (int j = j0 - 2; j <= j0 + 1; j++) {
+            int mid = (int) (((long) exitX(seed, band, j) + exitX(seed, band, j + 1)) >> 1);
+            long d = Math.abs((long) mid - x);
+            if (d < bestD) {
+                bestD = d;
+                best = mid;
             }
         }
-    }
-
-    private static final ThreadLocal<RoomMemo> ROOMS = ThreadLocal.withInitial(RoomMemo::new);
-
-    private static Room room(long seed, int band, int k) {
-        Room[] slots = ROOMS.get().slots;
-        int i = (int) (Hash.mix(band * 0xC2B2AE3D27D4EB4FL + k) & (ROOM_MEMO - 1));
-        Room r = slots[i];
-        if (r.filled && r.seed == seed && r.band == band && r.k == k) {
-            return r;
-        }
-        int type = computeRoomType(seed, band, k);
-        SafeRoomPlan safe = null;
-        if (type == ROOM_SAFE) {
-            int slot = slotX(seed, band, k);
-            int side = slotSide(seed, band, k);
-            int c = centre(seed, band);
-            // 9 wide, 11 deep with walls; its two-thick door wall IS the corridor wall (|dz| 4-5).
-            safe = new SafeRoomPlan(slot - 4, side < 0 ? c - 14 : c + WALL, 9, 11, inwardOf(side), 1);
-        }
-        r = slots[i];
-        r.seed = seed;
-        r.band = band;
-        r.k = k;
-        r.type = type;
-        r.safe = safe;
-        r.filled = true;
-        return r;
-    }
-
-    private static int computeRoomType(long seed, int band, int k) {
-        int slot = slotX(seed, band, k);
-        int side = slotSide(seed, band, k);
-        if (exitNear(seed, band, slot, ROOM_EXIT_GAP)) {
-            return ROOM_NONE;
-        }
-        AnomalySite site = Level2AnomalyPlan.cellSite(seed, band, Math.floorDiv(k, 2));
-        if (site != null) {
-            if (site.kind().equals(Level2Sites.HOT_ZONE)) {
-                if (site.anchorX() == slot) {
-                    return ROOM_HOT;
-                }
-            } else if (Level2AnomalyPlan.isDoor(site)
-                    && Level2AnomalyPlan.doorSide(site) == side
-                    && Math.abs(site.anchorX() - slot) <= ROOM_DOOR_GAP) {
-                return ROOM_NONE; // the void/loop door has this bit of wall
-            }
-        }
-        // An oddity may claim the slot (the valve gallery turned the wrong way, the warm door).
-        int odd = Level2Oddities.roomOverride(seed, band, k);
-        if (odd != ROOM_NONE) {
-            return odd;
-        }
-        int type = pick(Hash.of(seed, band, k, 512), ROOM_WEIGHTS);
-        if (type == ROOM_SUMP && Level2Oddities.voidUnder(seed, band, k)) {
-            return ROOM_MAINTENANCE; // a void's black sky lies where the sump's pit would be
-        }
-        return type;
+        return best + Hash.range(Hash.of(seed, band, x, 545), 2 * ARRIVAL_SPREAD + 1) - ARRIVAL_SPREAD;
     }
 
     // ==========================================================================================
     // What is in the wall at x
     // ==========================================================================================
 
-    /**
-     * What breaks the pipe chase and wall on {@code side} at x: a doorway, an exit bay, a pump
-     * alcove... or F_NONE for the plain chase.
-     */
+    /** What breaks the wall on {@code side} at x: the exit recess, or F_NONE. */
     static int feature(long seed, int band, int x, int side) {
-        int f = fixedFeature(seed, band, x, side);
-        if (f != F_NONE) {
-            return f;
-        }
-        int n = segment(seed, band, x);
-        if (segType(seed, band, n) == SEG_PUMP && alcoveSide(seed, band, n) == side
-                && Math.abs(x - alcoveMid(seed, band, n)) <= ALCOVE_HALF) {
-            return F_ALCOVE;
-        }
-        return F_NONE;
-    }
-
-    /** {@link #feature} without the pump alcoves (they make way for everything else). */
-    private static int fixedFeature(long seed, int band, int x, int side) {
         int j0 = exitCell(seed, band, x);
         for (int j = j0 - 1; j <= j0 + 1; j++) {
             if (Math.abs(x - exitX(seed, band, j)) <= BAY_HALF && exitSide(seed, band, j) == side) {
                 return F_BAY;
             }
-        }
-        int k = roomCell(x);
-        int type = roomType(seed, band, k);
-        if (type != ROOM_NONE && slotSide(seed, band, k) == side) {
-            int slot = slotX(seed, band, k);
-            if (type == ROOM_HOT) {
-                if (Math.abs(x - slot) <= 2) {
-                    return F_HOT;
-                }
-            } else if (x == slot) {
-                return type == ROOM_SAFE ? F_SAFE_DOOR : F_DOOR;
-            }
-        }
-        AnomalySite site = Level2AnomalyPlan.cellSite(seed, band, Math.floorDiv(x, Level2AnomalyPlan.CELL));
-        if (site != null && Level2AnomalyPlan.isDoor(site) && Level2AnomalyPlan.doorSide(site) == side
-                && Level2AnomalyPlan.isMouth(site, x)) {
-            return F_MOUTH;
         }
         return F_NONE;
     }

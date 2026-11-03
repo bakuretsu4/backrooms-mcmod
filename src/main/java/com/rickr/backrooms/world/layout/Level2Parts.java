@@ -20,10 +20,8 @@ import com.rickr.backrooms.block.WallMountBlock;
 import com.rickr.backrooms.registry.Level2Blocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-import net.minecraft.world.level.block.state.properties.SlabType;
 
 /**
  * Short names for the block states Level 2 is built from, so the layout code reads like a
@@ -198,16 +196,6 @@ final class Level2Parts {
     /** Concrete with the yellow band painted along its {@code facing} side (a wall, or DOWN: the ceiling). */
     static BlockState paintedBand(Direction facing) {
         return Level2Blocks.PAINTED_BAND.get().defaultBlockState().setValue(Level2FaceBlock.FACING, facing);
-    }
-
-    /** Half a block of floor (a banked stretch's half step). */
-    static BlockState floorSlab() {
-        return Level2Blocks.FLOOR_SLAB.get().defaultBlockState().setValue(SlabBlock.TYPE, SlabType.BOTTOM);
-    }
-
-    /** The top half of a block of ceiling (a banked stretch's ceiling dropping half a block). */
-    static BlockState ceilingSlab() {
-        return Level2Blocks.CEILING_SLAB.get().defaultBlockState().setValue(SlabBlock.TYPE, SlabType.TOP);
     }
 
     static BlockState steamVent(Direction facing) {

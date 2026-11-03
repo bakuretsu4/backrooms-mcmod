@@ -126,8 +126,8 @@ public final class ClientLighting {
     /**
      * Without Veil there are no lamps to turn round the corridor with Level 2's spin, so the lamp
      * light breathes with it instead: up and down by this share per unit of spin strength times
-     * the comfort scale (+/-5% anywhere there, +/-8% deep in a twist), twice per virtual turn
-     * (~30 s), as if the light swelled each time the turning carried it past you.
+     * the comfort scale (+/-8% in the corridor, half at the exit), twice per virtual turn
+     * (~26 s), as if the light swelled each time the turning carried it past you.
      */
     private static final float LEVEL2_FALLBACK_BREATH = 0.08f;
     /** The breath for the lightmap being built (it is rebuilt at most once a tick: cached per tick). */

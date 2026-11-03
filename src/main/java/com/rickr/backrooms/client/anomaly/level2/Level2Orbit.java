@@ -22,35 +22,36 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 /**
- * The sound of Level 2 slowly turning around you. Nothing here is a literal rotation of the
- * world: a few quiet sounds are simply carried around your head, in step with the level's shared
- * "virtual rotation" ({@link Level2Spin#phase}), so the ear keeps telling you the corridor is
- * rolling while your eyes say it is standing still.
+ * The sound of Level 2 turning around you. Nothing here is a literal rotation of the world:
+ * a few sounds are simply carried around your head, in step with the level's shared "virtual
+ * rotation" ({@link Level2Spin#phase}), so the ear keeps telling you the corridor is rolling
+ * while your eyes say it is standing still.
  * <ul>
  *   <li><b>Three loops orbit you</b> on circles a few blocks out, each following the spin at its
- *       own speed and offset, so they never line up into one obvious moving point:
+ *       own speed and offset, so they never line up into one moving point:
  *       <ul>
- *         <li>the structure's groan, in the corridor's cross-section (up over the ceiling, down
- *             under the floor and back), so it reads as the corridor rolling, not a sound panning;</li>
- *         <li>a faint bracket rattle, faster, on a circle leaning partly along the corridor (the
- *             high sound the ear follows best);</li>
- *         <li>the plant's hum pitched down, slowest, on a flat circle round you (the level
- *             turning under your feet).</li>
+ *         <li>the structure's groan, at the spin's own speed (with the lamps and beacons), in the
+ *             corridor's cross-section (up over the ceiling, down under the floor and back), so it
+ *             reads as the corridor rolling, not a sound panning;</li>
+ *         <li>the brackets' rattle, three times as fast, on a circle leaning partly along the
+ *             corridor (the high sound the ear follows best);</li>
+ *         <li>a deep pressure, 3.5 times as fast, on a flat circle: it pans right round your
+ *             head every 12-20 s, stalls and drifts back when the spin lurches.</li>
  *       </ul>
  *       They grow louder (and the groan strains a little higher) while the spin is fast, sink when
  *       it slows, swell and close in where the spin is strong ({@link Level2Spin#strength}).</li>
- *   <li><b>Rolling creaks</b> every 15-40 s: a long creak of steel (or a pipe straining, or a
+ *   <li><b>Rolling creaks</b> every 8-20 s: a long creak of steel (or a pipe straining, or a
  *       run shuddering) that travels 180-360 degrees around your head over 3-6 s, the same way
  *       the level turns, easing in and out like a heavy mass rolling over.</li>
  * </ul>
  * It runs whenever {@link Level2Spin#active()} (from the first tick after you arrive), fades
- * over a second when you die, and stops at once when you leave Level 2 or disconnect. Nothing
- * plays in the void below the floor (it asks for silence).
+ * over a second when you die, and stops at once when you leave Level 2 or disconnect.
  *
  * <p>Motion comfort: how far the sounds travel follows {@code ClientSettings.tilt()} (capped at
  * 100%): at 50% they circle half as fast and roll half as far, at 0% they stay where they are
  * (still heard, never moving). Loudness is set in tools/anomaly_assets/level2_audio.py; the
- * volumes below keep everything well under the level's emitters and music.
+ * volumes below land them at your ear at about -30 LUFS (groan, pressure), -34 (rattle) and -27
+ * (rolls): clearly there, still under the music and the emitters' peaks.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Level2Orbit {
@@ -63,7 +64,7 @@ public final class Level2Orbit {
     /** Fading in or out takes about a second. */
     private static final float FADE_STEP = 1.0f / 20.0f;
     /** Sources sit this much further out where the spin is weak and closer in where it is strong:
-     *  radius * (CLOSE_BASE - CLOSE_DEPTH * strength), i.e. x1.08 in a safe room, x0.99 normally, x0.85 at full. */
+     *  radius * (CLOSE_BASE - CLOSE_DEPTH * strength): x0.85 in the corridor (strength 1), x1.03 at the exit approach (0.5). */
     private static final float CLOSE_BASE = 1.2f;
     private static final float CLOSE_DEPTH = 0.35f;
     /** If the sound engine refuses to (re)start a loop (master volume at zero, a reload), try again after this long. */
@@ -77,27 +78,32 @@ public final class Level2Orbit {
     // 0 = the corridor's cross-section, 90 = flat round you.
     private static final int GROAN = 0;
     private static final int RATTLE = 1;
-    private static final int HUM = 2;
+    private static final int PRESSURE = 2;
     private static final int LOOP_COUNT = 3;
-    private static final float[] LOOP_VOLUME = {0.7f, 0.6f, 0.3f};
-    private static final double[] LOOP_RADIUS = {4.5, 3.6, 5.5};
-    /** How many times faster than the spin each circle turns, and where on it each one starts. */
-    private static final double[] LOOP_SPEED = {1.0, 1.7, 0.6};
+    private static final float[] LOOP_VOLUME = {0.85f, 0.8f, 0.9f};
+    private static final double[] LOOP_RADIUS = {4.5, 3.6, 4.0};
+    /**
+     * How many times faster than the spin each circle turns (the spin averages a turn per 52 s:
+     * the rattle goes round in ~17 s, the pressure in ~15 s, about 12-20 s as the spin speeds and
+     * slows), and where on it each one starts.
+     */
+    private static final double[] LOOP_SPEED = {1.0, 3.0, 3.5};
     private static final double[] LOOP_OFFSET = {0.0, 2.1, Math.PI};
     private static final double[] LOOP_TILT = {0.0, Math.toRadians(35.0), Math.toRadians(90.0)};
-    /** Base pitch; the plant hum is taken down to sound like something far bigger than one plant room. */
-    private static final float[] LOOP_PITCH = {1.0f, 1.0f, 0.75f};
+    private static final float[] LOOP_PITCH = {1.0f, 1.0f, 1.0f};
     /** How far each one's pitch follows the spin speed (the groan strains as the spin hurries). */
-    private static final float[] LOOP_BEND = {0.06f, 0.03f, 0.04f};
+    private static final float[] LOOP_BEND = {0.06f, 0.03f, 0.05f};
     /** How much of each one's volume comes and goes with the spin speed. */
-    private static final float[] LOOP_MOTION = {0.35f, 0.4f, 0.2f};
+    private static final float[] LOOP_MOTION = {0.35f, 0.4f, 0.3f};
 
     // ---- Rolling creaks ----------------------------------------------------------------------
-    /** One every 15-40 s; the first 8-18 s after arriving. */
-    private static final int ROLL_MIN = 300;
-    private static final int ROLL_SPREAD = 500;
-    private static final int FIRST_ROLL_MIN = 160;
-    private static final int FIRST_ROLL_SPREAD = 200;
+    /** One every 8-20 s; the first 4-9 s after arriving. */
+    private static final int ROLL_MIN = 160;
+    private static final int ROLL_SPREAD = 240;
+    private static final int FIRST_ROLL_MIN = 80;
+    private static final int FIRST_ROLL_SPREAD = 100;
+    /** If the last roll is still sounding when the next is due, look again this soon. */
+    private static final int ROLL_BUSY_RETRY = 20;
     /** Carried around you 3.5-5 blocks out (before closing in with the strength) ... */
     private static final double ROLL_RADIUS_MIN = 3.5;
     private static final double ROLL_RADIUS_SPREAD = 1.5;
@@ -123,7 +129,7 @@ public final class Level2Orbit {
     private static boolean spinKnown;
     /** 0..1: ClientSettings.tilt(), capped. */
     private static float comfort = 1.0f;
-    /** 0..1 eased: on (in Level 2, alive, not in the void) or fading. */
+    /** 0..1 eased: on (in Level 2, alive, above the floor) or fading. */
     private static float fade;
     /** 0..1: Level2Spin.strength() now. */
     private static float strength;
@@ -160,7 +166,7 @@ public final class Level2Orbit {
         fade = on ? Math.min(1.0f, fade + FADE_STEP) : Math.max(0.0f, fade - FADE_STEP);
         if (!on && fade <= 0.0f) {
             if (running) {
-                stopAll(mc.getSoundManager()); // dead (or in the void): faded out, let the instances go
+                stopAll(mc.getSoundManager()); // dead: faded out, let the instances go
             }
             return;
         }
@@ -192,10 +198,12 @@ public final class Level2Orbit {
         SoundManager sounds = mc.getSoundManager();
         keepLoops(sounds);
         if (--ticksToRoll <= 0) {
-            ticksToRoll = ROLL_MIN + RANDOM.nextInt(ROLL_SPREAD);
             if (rolling == null || rolling.isStopped() || !sounds.isActive(rolling)) {
+                ticksToRoll = ROLL_MIN + RANDOM.nextInt(ROLL_SPREAD);
                 rolling = startRoll();
                 sounds.play(rolling);
+            } else {
+                ticksToRoll = ROLL_BUSY_RETRY;
             }
         }
     }
@@ -234,21 +242,21 @@ public final class Level2Orbit {
         if (pick < 12) {
             // The new rolling creak (~5 s): most of a turn.
             sound = Level2Audio.ROLL_CREAK.get();
-            volume = 0.75f;
+            volume = 0.85f;
             pitch = 0.9f + RANDOM.nextFloat() * 0.15f;
             sweepDeg = 200.0 + RANDOM.nextDouble() * 160.0;
             ticks = 70 + RANDOM.nextInt(41);
         } else if (pick < 17) {
             // A pipe straining in its hanger, slowed down to sound bigger (~3.2 s): half a turn or a bit more.
             sound = Level2Audio.PIPE_CREAK.get();
-            volume = 0.7f;
+            volume = 0.8f;
             pitch = 0.7f + RANDOM.nextFloat() * 0.12f;
             sweepDeg = 180.0 + RANDOM.nextDouble() * 80.0;
             ticks = 60 + RANDOM.nextInt(16);
         } else {
             // A long shudder (~7 s) running all the way round you.
             sound = Level2Audio.PIPE_SHUDDER.get();
-            volume = 0.5f;
+            volume = 0.85f;
             pitch = 0.85f + RANDOM.nextFloat() * 0.1f;
             sweepDeg = 270.0 + RANDOM.nextDouble() * 90.0;
             ticks = 100 + RANDOM.nextInt(21);
@@ -338,7 +346,8 @@ public final class Level2Orbit {
             return switch (index) {
                 case GROAN -> Level2Audio.SPIN_GROAN.get();
                 case RATTLE -> Level2Audio.SPIN_RATTLE.get();
-                default -> Level2Audio.PLANT_HUM.get();
+                case PRESSURE -> Level2Audio.SPIN_PRESSURE.get();
+                default -> throw new IllegalArgumentException("loop " + index);
             };
         }
 

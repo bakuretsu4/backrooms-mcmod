@@ -138,55 +138,36 @@ going down into the dark, until the picture breaks up and you are in the next le
   **storage lockers** opens off the halls: roll-up shutters, a few rolled up with supplies
   inside, something growling behind one or two, and a white door at the end that never opens. Car
   **ramps** lead down to a dimmer lower floor here and there. A stairwell leads down.
-- **Level 2 (Pipe Dreams):** one long, straight, dim maintenance corridor of grey poured concrete
-  that goes on forever, and is barely wide enough to walk: about two blocks of clear floor between
-  a bare stained wall and a rusty pipe rack stacked floor to ceiling, under a ceiling low enough
-  to touch, crowded with pipes and cable trays. Square light panels are recessed into it every 12
-  blocks, so the line reads as small pools of light swallowed by the dark ahead. The whole level
-  seems to turn slowly around you (`world/layout/Level2Twist`, `client/anomaly/level2/Level2Spin`).
-  In twist stretches (about half the corridor, never far from where you arrive), the pipe bundle
-  spirals over the ceiling or under the floor grating to the other wall, the light panels and the
-  painted band follow it round, and the floor banks in half steps.
-  - **Camera:** the view drifts a degree or two (more in a twist) and leans against the banked
-    floor, the field of view narrows and breathes, and the edges of the picture slide slowly
+- **Level 2 (Pipe Dreams):** one endless, perfectly straight maintenance corridor of grey poured
+  concrete, one block wide: the walls almost brush your shoulders and the ceiling sits just over
+  your head (2 blocks of headroom). Nothing branches off it: no rooms, no doors, no detours, only
+  the corridor ahead and behind. Its dressing corkscrews round you without pause, all the way
+  along (`world/layout/Level2Twist`, `world/layout/Level2Section`): the pipe bundle (a pale
+  insulated main, fat painted pipes, a cable tray on steel channel brackets) winds from one wall
+  over the ceiling to the other wall and under the floor grating, about one turn every 40-60
+  blocks, slowing, speeding up and reversing every few hundred blocks; recessed square light
+  panels every 10 blocks, a painted yellow band, wall fans and spinning amber warning beacons
+  (`registry/Level2SpinBlocks`) ride round with it. The whole level seems to turn around you
+  (`client/anomaly/level2/Level2Spin`).
+  - **Camera:** the view drifts a degree or two (more in a twist) and leans with the turning,
+    the field of view narrows and breathes, and the edges of the picture slide slowly
     round a still centre.
   - **Light and sound:** with Veil, the lamps' bright side travels round the corridor. Groans,
     rattles and long creaks orbit your head (`client/anomaly/level2/Level2Orbit`).
   - **Comfort:** all of the motion follows the "tilt" comfort setting; at 0 there is none.
 
-  You can only walk forwards or back: every 24-48 blocks the corridor changes (a valve manifold, a
-  pump bay, a low hot squeeze, a grating over a pipe trench, a bulkhead ring, a leak, a short dark
-  stretch), and every 60-120 blocks a door or doorway on alternating sides, reached through a
-  tight slot cut through the wall, leads into a dead-end maintenance room, ventilation room,
-  boiler room, storage closet or safe room. Every 320-420 blocks a cramped EXIT recess opens at
-  the side; its heavy bulkhead takes everyone within 6 blocks with you. Parallel corridors 48
-  blocks apart never meet. The concrete is marked by water and
-  age: rust bleeding from old bracket stumps, spalled patches with rusty rebar, chipped kickers;
-  in damp stretches (round leaks, and long patches where the cold pipes sweat) condensation runs
-  down from the ceiling, the floor is wet, the wall bases carry tide lines and the slab blooms
-  with white salts. Service pipes are paint-coded: green water, red steam, grey return, yellow gas.
-  The ceiling reads in layers: grey steel I-beams cross under the slab every 6 blocks, and below
-  them on hanger rods hang the cable tray (loose cable sagging out of it here and there) and the
-  pipe runs, with gaps where you look up past them at the beams. Pipes never just stop: racks
-  bend into the wall or pass into a pier through a bolted collar, risers turn into the wall, runs
-  overhead turn up into the slab, and racks sit on strut with U-bolts. A valve manifold's header
-  drops a branch into each of its valves (wheels or red-handled ball valves). Now and then a joint
-  of an insulated main weeps: a drip hangs under it and a puddle spreads on the floor.
-  The walls are numbered: a stencilled section number (2-A 03 up to 2-D 32, then round again) on
-  the first pier of every stretch, in order as you walk east, and on the bulkhead rings. About one
-  side room in six is a bigger **maintenance chamber** (`world/layout/Level2Chambers`, drawn as
-  little text plans you can edit): a pump room (two pump sets under their header, starter panels,
-  mercury lamps), a valve gallery (quarter-turn valves round three walls, each with a gauge or a
-  label), an electrical room (breaker panels, transformer cabinets, cable trays everywhere), a
-  flooded sump (a pit of black water with the dead sump pump standing in it, one grated walkway,
-  leaks dripping) and the crew's break room (lockers, a kettle on the counter, the logbook on the
-  table, a mattress in the corner, a hi-vis jacket left on its hook). The crews' shift logbooks
-  lie open in them: right-click one to read its page. About one stretch in ten is an odd but
-  grounded **detour** (`world/layout/Level2Detours`): a dog-leg where the corridor steps sideways
-  round a massive concrete column, a duct crossing where the ceiling drops to 2.2 blocks for four
-  blocks, a two-level stretch with a grated catwalk and railing over an open trench (a ladder
-  down to the walkway at its bottom), or a section sealed by two concrete walls with locked steel
-  doors and a narrow, low bypass passage round it behind the wall.
+  You can only walk forwards or back. Every 24-48 blocks the corridor changes (a valve manifold set
+  into the wall, a bulkhead ring, a leak with black ooze underfoot, a short dark stretch). Now and
+  then a backpack or a supply crate sits at the foot of a wall (Level 2 leans to bandages), and
+  every 250-350 blocks a checkpoint radio is set into the wall. The only way out is an EXIT
+  bulkhead at the back of a recess as wide as the lane, one every 1300-1600 blocks; you always
+  arrive halfway between two, at least 500 blocks from the nearest. Its bulkhead takes everyone
+  within 6 blocks with you. Parallel corridors 48 blocks apart never meet. The concrete is marked
+  by water and age; in damp stretches (round leaks, and long patches where the cold pipes sweat)
+  the floor is wet, the wall bases carry tide lines and the slab blooms with white salts. Service
+  pipes are paint-coded: green water, red steam, grey return, yellow gas. The walls are numbered:
+  a stencilled section number (2-A 03 up to 2-D 32, then round again) at the start of every
+  stretch, in order as you walk east.
 - **Level 4 (the Abandoned Office):** you arrive here through Level 2's EXIT door. As in canon,
   an endless, empty office building, almost completely devoid of furniture: white walls, cheap
   grey carpet, the low hum of air conditioning blowing through countless rooms and a cold draft
@@ -510,9 +491,9 @@ time while it's 100 BPM or more (amber below 50 sanity, pulsing red below 30).
 Every level has small safe rooms, marked by a green **SAFE** plaque over the doorway. Inside there
 is a warm lamp, a crate, a cot and an old field radio on a little table.
 About six in ten 128x128 areas have one: a panelled office room hidden in the Lobby maze, a
-concrete room with a metal door frame in the Habitable Zone, a carpeted side room off the Level 2
-corridor, a dry tiled room on a walkway in the Poolrooms, and on Level 9 a house with its porch
-light on and the sign over the front door.
+concrete room with a metal door frame in the Habitable Zone, a dry tiled room on a walkway in the
+Poolrooms, and on Level 9 a house with its porch light on and the sign over the front door.
+Level 2 has none (nothing opens off its corridor): its checkpoint radios are set into the wall.
 
 - **Safe:** no monster spawns in a safe room or within 12 blocks of one, the Bacteria never walks
   in (reaching one mid-chase counts as escaping), and Watchers and Observers leave you alone while
@@ -820,12 +801,9 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 
 **Level 2**
 - **Series circuits:** The corridor's light panels are wired in series along the line. Now and then a circuit gives out with a sharp pop, and a whole section of the line goes dark at once (a gap opens in the row of lights ahead), sometimes for nearly a minute, before the lamps stutter back to life. Sometimes a fault runs down the line: three sections pop out one after another, toward you or away. A dead section is dark but never blind: the floor edge, the walls and the pipes stay faintly visible in a cold blue-grey.
-- **Industrial lighting:** No two bulbs are alike: new ones burn a little whiter, old ones dimmer and browner, and a few failing ones sag now and then. Machine areas hang cold mercury lamps. Beside bulkheads, chamber doors and exits, red or amber battery emergency lamps wait on standby and click on when their section's circuit dies or the power fails. Wet floors, puddles, sweating pipes and bare metal catch the lamps in small highlights.
+- **Industrial lighting:** No two bulbs are alike: new ones burn a little whiter, old ones dimmer and browner, and a few failing ones sag now and then. Beside bulkhead rings and the exits, red or amber battery emergency lamps wait on standby and click on when their section's circuit dies or the power fails. Wet floors, puddles, sweating pipes and bare metal catch the lamps in small highlights.
 - **Brownouts:** Some sections never recovered from the Blackout. Almost every bulb is burst, the machines are silent, and only a few violet emergency lights still glow. Burst pipes have left pools of thick black sludge that clings to your boots.
-- **Hot zones:** Behind a wide opening off the corridor, some boiler rooms run hot: faulty machines whir and steam hisses from the walls on the way in. The heat slows you down, wears you out and makes you hungry fast, and if you stay too long it starts to hurt.
-- **Void doors:** At the back of a small hall off the corridor stands a door with a pitch-black window. It opens onto an endless, silent, lightless space where the doorway behind you is the only light. Don't lose sight of it.
-- **Looping hallway:** A few office doors, each at the back of a small hall off the corridor, open onto a long, plain, fluorescent-lit hallway. However far you walk, you keep passing the same door you came in by.
-- **Oddities:** Rare, quiet things that are simply wrong, if you notice them (`world/layout/Level2Oddities`). A **valve gallery** where every single valve has been turned the same way, all shut, yet water still rushes through the header overhead. A yellow gas **pipe** that rises from the floor and bends into one wall, and straight across the corridor comes out of the other wall upside down: high up, bending into the ceiling, its label below it; knock on one and the other answers. A run of corridor where **the section number repeats**: three or four sections in a row stencilled with the same number, each with the same dead bulb above it and the same chalk cross some earlier visitor drew underneath to check. A steel **door to nowhere** that opens onto bare concrete; the air in front of it is warm and something breathes softly behind it. And a **pressure gauge** at eye level whose needle reads your own heart rate (BPM / 10 on its dial) and ticks with every beat. The shift logbooks mention most of them.
+- **Oddities:** Rare, quiet things that are simply wrong, if you notice them (`world/layout/Level2Oddities`). A **valve manifold** where every single quarter-turn valve has been turned the same way, all shut, yet water still rushes through the header overhead. A yellow gas **pipe** that rises from the floor and bends into one wall, and straight across the lane comes out of the other wall upside down: high up, bending into the ceiling, its label below it; knock on one and the other answers. A run of corridor where **the section number repeats**: three or four sections in a row stencilled with the same number, each under the same dead panel, with the same chalk cross some earlier visitor drew underneath to check. And a **pressure gauge** set into the wall at eye level whose needle reads your own heart rate (BPM / 10 on its dial) and ticks with every beat.
 
 **Level 4**
 - **Looping stairwells:** Grey stair cores stand in some open-plan floors. However far you climb or descend, the sign on the landing always says 4, and somewhere far away you hear footsteps that never arrive. Once in a while the stairs let you out somewhere else.
@@ -1047,19 +1025,21 @@ saturation, hiss and a big, empty room.
   behind the Front Office's drawn door a clock and a PA microphone left on. Under the Atrium and
   the shafts the reverb turns harder and longer, coming back from far above.
 - **Level 2's pipes** (`client/anomaly/level2/Level2Emitters`, `tools/anomaly_assets/level2_audio.py`):
-  every 7-18 seconds the pipes act up somewhere up or down the corridor: a water-hammer knock
-  that runs along the pipes toward you or away, a heavy clank, a long creak of hot metal (far more
-  of them while the corridor twists), water rushing through the overhead bundle and over your
-  head, a shudder running along a pipe run past you with its brackets buzzing, or far metal
-  tapping: a few knocks of a tool on a pipe, a pause, the same knocks again a little closer
-  along the same pipe. The machinery is heard where it stands: pumps hum and thump, fan housings
-  and machine cabinets drone, breaker panels buzz, and every ~48 blocks a plant room behind the
-  wall swells a deep hum as you walk past it. When a section's circuit fails (or in a stretch
-  whose lamps died for good) its machines coast down and the level's drone dips about 7 dB;
-  they spin back up when the power returns. Leaking valves hiss and puff steam, and about once a
-  minute a relief valve near you lifts with a clunk and a burst of steam. A drop from a leak
-  plinks in a puddle or the gutter, ticks on a grating or a pipe, taps on bare concrete, plops
-  in black ooze.
+  every 7-18 seconds the pipes act up somewhere up or down the corridor, always in the pipe bundle
+  right beside the lane: a water-hammer knock that runs along the pipes toward you or away, a heavy
+  clank, a long creak of hot metal (far more of them while the corridor twists), water rushing
+  through the bundle past you, a shudder running along a pipe run with its brackets buzzing, or far
+  metal tapping: a few knocks of a tool on a pipe, a pause, the same knocks again a little closer
+  along the same pipe. The bundle corkscrews round the lane, so a run of knocks or a rush that
+  travels along it also turns round your head as it passes. The wall fans drone as you pass them.
+  In a dead section (its circuit popped, or its lamps dead for good) the level's drone dips about
+  7 dB. Leaking valves hiss and puff steam, and about once a minute a relief valve near you lifts
+  with a clunk and a burst of steam. A drop from a leak plinks in a puddle, ticks on a grating or a
+  pipe, taps on bare concrete, plops in black ooze. On top of it all the level turns round you
+  (`client/anomaly/level2/Level2Orbit`): the structure's groan rolls through the corridor's
+  cross-section at the spin's own pace (about a turn every 52 s), the brackets' rattle circles three
+  times as fast, a deep pressure pans right round your head every 12-20 s, and every 8-20 s a long
+  creak of steel rolls 180-360 degrees round you.
 - **Real recordings** (`tools/level_assets/recorded.py`, all CC0, see CREDITS.md): the fluorescent
   hum of every tube in Levels 0-2 is a real ballast, the flicker clicks are real tubes and starters
   catching and dropping out, a blackout is a big breaker clunking and the floor's hum sagging and
@@ -1081,10 +1061,11 @@ saturation, hiss and a big, empty room.
   -18 (at the ceiling, so it carries 80 blocks through the walls), the PA -18 like every PA line, a falling
   ceiling tile -24, a far district going dark -23 before distance, the blackout's wave -25, a
   tube popping -28 or striking again -30, the Atrium's air and the pit draught -30, the hidden
-  rooms' radio -31, clock -34 and stillness -37. Level 2: the plant hum -27, pumps -28, a
-  leaking valve -30, a breaker panel -31, the pipes' knocks, creaks, rushes and far tapping -24
-  to -25, a clank -24, a relief valve venting -23 (its hiss swells in over a fifth of a second),
-  drips -28 (puddle), -29 (metal) and -31 (concrete); the hot zone's machinery sits at -24.
+  rooms' radio -31, clock -34 and stillness -37. Level 2: the wall fans' drone -27, a leaking
+  valve -30, the pipes' knocks, creaks, rushes and far tapping -24 to -25, a clank -24, a relief
+  valve venting -23 (its hiss swells in over a fifth of a second), drips -28 (puddle), -29 (metal)
+  and -31 (concrete). Its turning is heard at your ear at about -30 (the groan and the pressure),
+  -34 (the rattle) and -27 (the rolling creaks).
 - **Level 39 "Megalophobia"** (`client/Level39Audio`, `client/Level39QuakeEffects`): the town
   rings like one colossal hall (the superstructure encloses it, so its echo is long and loud even
   in the open), while the marble tunnels below swallow sound. Its own loops follow you between
@@ -1113,8 +1094,8 @@ saturation, hiss and a big, empty room.
 /backrooms locate                       where is the nearest exit? (Level 227 has none, and says so)
 /backrooms locate saferoom              where is the nearest safe room?
 /backrooms anomaly here                 which anomalous area am I standing in?
-/backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... (e.g. level_0/zone/rooms, the room maze) and level_0/set/... (e.g. frame_tunnel, dead_end_cache, liar_arrows, bright_district, dim_district, abandoned_district). On Level 2 also segments (level_2/seg/..., e.g. dogleg, duct_crossing, catwalk, bypass), rooms and chambers (level_2/room/..., e.g. pump_room, valve_gallery, electrical, sump, break_room), level_2/exit and the oddities (level_2/wrong_valves, inverted_pipe, repeat_section, warm_door, heart_gauge)
-/backrooms anomaly visit <kind> <point>  Level 0 and Level 2 (ops, for testing): jump to a named spot of the nearest site of that kind (tab completes both). level_0/atrium ladder|balcony, level_0/front_office rug|hidden_room, level_0/shaft_hall lit_shaft; the hidden rooms and the older anomalies have their own points. Level 2: level_2/room/<chamber> door|story, level_2/seg/dogleg approach|around, duct_crossing approach|under, catwalk approach|catwalk|lower, bypass approach|seal|passage, level_2/wrong_valves door|inside, warm_door front, heart_gauge front, inverted_pipe between|wall_a|wall_b, repeat_section first|second|last
+/backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... (e.g. level_0/zone/rooms, the room maze) and level_0/set/... (e.g. frame_tunnel, dead_end_cache, liar_arrows, bright_district, dim_district, abandoned_district). On Level 2 also segments (level_2/seg/..., e.g. valves, bulkhead, leak, dark), level_2/exit, brownouts and the oddities (level_2/wrong_valves, inverted_pipe, repeat_section, heart_gauge)
+/backrooms anomaly visit <kind> <point>  Level 0 and Level 2 (ops, for testing): jump to a named spot of the nearest site of that kind (tab completes both). level_0/atrium ladder|balcony, level_0/front_office rug|hidden_room, level_0/shaft_hall lit_shaft; the hidden rooms and the older anomalies have their own points. Level 2: level_2/wrong_valves front, heart_gauge front, inverted_pipe between|wall_a|wall_b, repeat_section first|second|last
 /backrooms event <blackout|flicker|alarm|intercom|lightning|twist|fog|lampwave|water|rain|quake|end> [seconds]
 /backrooms outage <cut|stutter|wave> <radius> [seconds]   Level 0: cut the power in a circle around you (no seconds = until "/backrooms outage end")
 /backrooms l0event <room|corridor|district>   Level 0: let that local light event happen to you at the next right moment (walk into a room / walk a corridor / look down a long lit view), skipping the wait

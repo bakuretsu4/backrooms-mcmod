@@ -2,7 +2,6 @@ package com.rickr.backrooms.client.anomaly.level2;
 
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.client.Level2ClientState;
-import com.rickr.backrooms.player.SafeRoomClientState;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.layout.Level2Twist;
 import net.minecraft.client.Minecraft;
@@ -21,24 +20,25 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
  *
  * <p><b>Phase.</b> Computed from the level's game time, so it is the same for every player in the
  * level (two people filming each other see the same turn). The rate is never constant: a mean of
- * one turn per {@value #BASE_TURN_SECONDS} s, a slow swell faster and slower (~45-85 s a turn), a
+ * one turn per {@value #BASE_TURN_SECONDS} s, a slow swell faster and slower (~35-70 s a turn), a
  * little flutter, and every ~{@value #SURGE_PERIOD_S} s a lurch where it slows, stops and briefly
  * drifts back before catching up. Everything is a sum of closed-form terms, so the phase and its
  * exact rate come straight from the clock with no state to drift apart between players. Direction:
  * phase increasing means the environment turns clockwise as you look along +x (the same sense as
  * a positive {@link Level2Twist#bank}).
  *
- * <p><b>Strength.</b> How much of the illusion the local player gets: {@value #BASELINE} anywhere
- * in Level 2 from the first frame after arrival, rising toward 1 in the corridor's twist stretches
- * ({@link Level2Twist#amount}), down to {@value #SAFE} in a safe room, eased over about two
- * seconds; 0 outside Level 2. The comfort scale (ClientSettings.tilt) is applied by each effect,
- * not here, because the sound uses it differently from the camera.
+ * <p><b>Strength.</b> How much of the illusion the local player gets: 1 everywhere in Level 2's
+ * corridor from the first frame after arrival; only at the exit recess and its approach, where
+ * the corridor stops twisting ({@link Level2Twist#amount} falls to 0), does it ease down to
+ * {@value #EXIT_CALM}, so the way out feels like solid ground. Eased over about two seconds; 0
+ * outside Level 2. The comfort scale (ClientSettings.tilt) is applied by each effect, not here,
+ * because the sound uses it differently from the camera.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Level2Spin {
     // --- Phase ---------------------------------------------------------------------------------
     /** Mean time for one full virtual turn. */
-    private static final double BASE_TURN_SECONDS = 64.0;
+    private static final double BASE_TURN_SECONDS = 52.0;
     private static final double BASE_RATE = Math.PI * 2.0 / BASE_TURN_SECONDS;
     /**
      * The lurch: a smooth, lopsided sawtooth (atan2(k sin x, 1 - k cos x)) subtracted from the
@@ -66,10 +66,8 @@ public final class Level2Spin {
     private static final double FLUTTER_RADIANS = FLUTTER_AMOUNT * BASE_RATE / FLUTTER_FREQ;
 
     // --- Strength ------------------------------------------------------------------------------
-    /** Anywhere in Level 2. */
-    public static final float BASELINE = 0.6f;
-    /** In a safe room: the turning never quite stops, but it lets you breathe. */
-    public static final float SAFE = 0.35f;
+    /** At the exit and its approach (no twist): the turning eases off, but never stops. */
+    public static final float EXIT_CALM = 0.5f;
     /** Strength eases toward its target leaving this much of the gap per tick (95% in ~2 s). */
     private static final float STRENGTH_LEFT_PER_TICK = 0.928f;
 
@@ -118,11 +116,6 @@ public final class Level2Spin {
         return Mth.lerp(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false), prevStrength, strength);
     }
 
-    /** The share of {@link #strength()} above the baseline (0 in a plain corridor, 1 deep in a twist). */
-    public static float twistShare() {
-        return Mth.clamp((strength() - BASELINE) / (1.0f - BASELINE), 0.0f, 1.0f);
-    }
-
     public static long seed() {
         return Level2ClientState.seed();
     }
@@ -154,12 +147,11 @@ public final class Level2Spin {
     }
 
     private static float target(LocalPlayer player) {
-        if (SafeRoomClientState.inSafeRoom) {
-            return SAFE;
+        if (!hasSeed()) {
+            return 1.0f; // seed not here yet: assume the corridor (exits are hundreds of blocks off)
         }
-        float twist = hasSeed()
-                ? Level2Twist.amount(seed(), Mth.floor(player.getX()), Mth.floor(player.getZ())) : 0.0f;
-        return BASELINE + (1.0f - BASELINE) * Mth.clamp(twist, 0.0f, 1.0f);
+        float twist = Level2Twist.amount(seed(), Mth.floor(player.getX()), Mth.floor(player.getZ()));
+        return Mth.lerp(Mth.clamp(twist, 0.0f, 1.0f), EXIT_CALM, 1.0f);
     }
 
     private static double seconds(float partialTick) {

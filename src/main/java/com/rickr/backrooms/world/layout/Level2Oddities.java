@@ -5,43 +5,34 @@ import com.rickr.backrooms.block.Level2PipeBlock.Kind;
 import com.rickr.backrooms.block.Level2PipeBlock.Size;
 import com.rickr.backrooms.block.Level2StencilBlock.Variant;
 import com.rickr.backrooms.registry.ChalkRegistry;
+import com.rickr.backrooms.registry.Level2Blocks;
 import com.rickr.backrooms.registry.Level2ChamberBlocks;
 import com.rickr.backrooms.world.Hash;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.anomaly.level2.Level2Sites;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.Blocks;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Level 2's "oddities": small, rare architectural anomalies that are wrong in a way you only
- * notice if you look (kinds in {@link Level2Sites#ODDITIES}). Nothing attacks you and nothing
+ * Level 2's "oddities": small, rare anomalies in the corridor itself that are wrong in a way you
+ * only notice if you look (kinds in {@link Level2Sites#ODDITIES}). Nothing attacks you and nothing
  * jumps out; the building is just not right:
  * <ul>
- *   <li><b>wrong_valves</b>: a valve gallery (a chamber, see {@link Level2Chambers}) where every
- *       quarter-turn valve has been turned the same way, all shut, while water still rushes
- *       through the pipes;</li>
- *   <li><b>inverted_pipe</b>: a yellow gas pipe rises from the floor and bends into one corridor
- *       wall; straight across, the same pipe comes out of the other wall upside down: high up,
- *       bending into the ceiling, its label below it instead of above;</li>
+ *   <li><b>wrong_valves</b>: a valve manifold in the wall where every quarter-turn valve has been
+ *       turned the same way, all shut, while water still rushes through the pipes;</li>
+ *   <li><b>inverted_pipe</b>: a yellow gas pipe rises from the floor and bends into one wall;
+ *       straight across, the same pipe comes out of the other wall upside down: high up, bending
+ *       into the ceiling, its label below it instead of above;</li>
  *   <li><b>repeat_section</b>: three or four corridor sections in a row carry the same section
- *       number on the wall, each with the same dead lamp above it and the same chalk cross some
- *       earlier visitor drew to check;</li>
- *   <li><b>warm_door</b>: a steel door in the corridor wall that opens onto bare concrete. The air
- *       in front of it is warm and something like a boiler breathes behind it;</li>
- *   <li><b>heart_gauge</b>: a pressure gauge at eye level whose needle follows your heartbeat.</li>
+ *       number on the wall, each under the same dead panel, with the same chalk cross some earlier
+ *       visitor drew to check;</li>
+ *   <li><b>heart_gauge</b>: a pressure gauge set into the wall at eye level whose needle follows
+ *       your heartbeat.</li>
  * </ul>
  *
  * <p><b>Placement.</b> Level 2's stretches ({@link Level2AnomalyPlan#CELL} = 180 blocks of each
- * corridor) hold at most one anomaly. An oddity only goes into a stretch the ordinary planner
- * left empty (no brownout, void door, loop door or hot zone): 40% of those, so about one stretch
- * in ten (measured); each kind turns up every 8-20 km of corridor. Everything here is a pure
- * function of (seed, band, stretch).
- *
- * <p><b>Order matters.</b> The side-room plan asks {@link #roomOverride} which slot an oddity
- * takes, and the corridor plan asks it while working out segments; so roomOverride uses only the
- * plain arithmetic of {@link Level2Line} (slots, exits, centre) and the ordinary sites. The site
- * itself ({@link #site}) is worked out later and may look at segment types and doorways.
+ * corridor) hold at most one anomaly. An oddity only goes into a stretch without a brownout: 40%
+ * of those. Everything here is a pure function of (seed, band, stretch).
  */
 final class Level2Oddities {
     /** Out of 1: share of the empty stretches that get an oddity. */
@@ -58,10 +49,6 @@ final class Level2Oddities {
 
     private Level2Oddities() {}
 
-    // ==========================================================================================
-    // Which oddity a stretch holds (plain arithmetic only: safe to ask from anywhere)
-    // ==========================================================================================
-
     /** The oddity kind of stretch {@code cell} of band {@code band}, or null. */
     @Nullable
     static String kindOf(long seed, int band, int cell) {
@@ -73,64 +60,6 @@ final class Level2Oddities {
             return null;
         }
         return Level2Sites.ODDITIES.get(Hash.range(Hash.mix(h), Level2Sites.ODDITIES.size()));
-    }
-
-    /** The room type an oddity gives room slot k (ROOM_GALLERY_ODD, ROOM_WARM_DOOR), or ROOM_NONE. */
-    static int roomOverride(long seed, int band, int k) {
-        int cell = Math.floorDiv(k, 2);
-        String kind = kindOf(seed, band, cell);
-        if (kind == null || !(kind.equals(Level2Sites.WRONG_VALVES) || kind.equals(Level2Sites.WARM_DOOR))) {
-            return Level2Line.ROOM_NONE;
-        }
-        if (claimedSlot(seed, band, cell, kind) != k) {
-            return Level2Line.ROOM_NONE;
-        }
-        return kind.equals(Level2Sites.WRONG_VALVES) ? Level2Line.ROOM_GALLERY_ODD : Level2Line.ROOM_WARM_DOOR;
-    }
-
-    /**
-     * The room slot (k) of the stretch a room-taking oddity uses: one away from exits whose room
-     * stays clear of the void squares reaching in from the corridors either side; MIN_VALUE if none.
-     */
-    private static int claimedSlot(long seed, int band, int cell, String kind) {
-        int first = Hash.range(Hash.of(seed, band, cell, 931), 2);
-        int type = kind.equals(Level2Sites.WRONG_VALVES) ? Level2Line.ROOM_GALLERY_ODD : Level2Line.ROOM_WARM_DOOR;
-        for (int i = 0; i < 2; i++) {
-            int k = 2 * cell + ((first + i) & 1);
-            int slot = Level2Line.slotX(seed, band, k);
-            if (Level2Line.exitNear(seed, band, slot, EXIT_GAP) || voidTouches(seed, band, k, type)) {
-                continue;
-            }
-            return k;
-        }
-        return Integer.MIN_VALUE;
-    }
-
-    /** True if a void door's square (its black sky lies under the floor) covers part of slot k's room of {@code type}. */
-    static boolean voidUnder(long seed, int band, int k) {
-        return voidTouches(seed, band, k, Level2Line.ROOM_SUMP);
-    }
-
-    private static boolean voidTouches(long seed, int band, int k, int type) {
-        int slot = Level2Line.slotX(seed, band, k);
-        int side = Level2Line.slotSide(seed, band, k);
-        int c = Level2Line.centre(seed, band);
-        int hw = Level2Line.roomHalfWidth(type) + 1;
-        int near = c + side * Level2Line.WALL;
-        int far = c + side * (Level2Line.WALL + 2 + Level2Line.roomDepth(type));
-        int minX = slot - hw;
-        int maxX = slot + hw;
-        int minZ = Math.min(near, far);
-        int maxZ = Math.max(near, far);
-        int cell = Math.floorDiv(k, 2);
-        for (int b = band - 1; b <= band + 1; b++) {
-            AnomalySite s = Level2AnomalyPlan.cellSite(seed, b, cell);
-            if (s != null && s.kind().equals(Level2Sites.VOID_DOOR)
-                    && s.maxX() >= minX && s.minX() <= maxX && s.maxZ() >= minZ && s.minZ() <= maxZ) {
-                return true;
-            }
-        }
-        return false;
     }
 
     // ==========================================================================================
@@ -175,83 +104,69 @@ final class Level2Oddities {
         int c = Level2Line.centre(seed, band);
         long h = Hash.of(seed, band, cell, 932);
         switch (kind) {
-            case Level2Sites.WRONG_VALVES, Level2Sites.WARM_DOOR -> {
-                int k = claimedSlot(seed, band, cell, kind);
-                if (k == Integer.MIN_VALUE) {
-                    return null;
+            case Level2Sites.WRONG_VALVES -> {
+                // A valve segment wholly inside the stretch: its manifold is the oddity.
+                int base = cell * Level2AnomalyPlan.CELL;
+                for (int n = Level2Line.segment(seed, band, base) + 1; Level2Line.segEnd(seed, band, n) < base + Level2AnomalyPlan.CELL; n++) {
+                    if (Level2Line.segType(seed, band, n) != Level2Line.SEG_VALVES) {
+                        continue;
+                    }
+                    int x0 = Level2Line.segStart(seed, band, n) + 2;
+                    int x1 = Level2Line.segEnd(seed, band, n) - 2;
+                    int mid = Level2Line.segMid(seed, band, n);
+                    if (Level2Line.exitNear(seed, band, mid, EXIT_GAP + Level2Line.MAX_SEG)) {
+                        continue;
+                    }
+                    int side = Level2Line.featureSide(seed, band, n);
+                    return new AnomalySite(kind, x0, Math.min(c, c + side), x1, Math.max(c, c + side), mid, c + side,
+                            Level2Line.wallOf(side).get2DDataValue(), h);
                 }
-                int slot = Level2Line.slotX(seed, band, k);
-                int side = Level2Line.slotSide(seed, band, k);
-                int facing = Level2Line.wallOf(side).get2DDataValue();
-                if (kind.equals(Level2Sites.WARM_DOOR)) {
-                    // The warm air in front of the door: the corridor from the lane's edge to the door.
-                    int z0 = c + side;
-                    int z1 = c + side * Level2Line.WALL;
-                    return new AnomalySite(kind, slot - 2, Math.min(z0, z1), slot + 2, Math.max(z0, z1),
-                            slot, z1, facing, h);
-                }
-                // The gallery's floor (the anchor: just inside its door).
-                int hw = Level2Line.roomHalfWidth(Level2Line.ROOM_GALLERY_ODD);
-                int z0 = c + side * (Level2Line.WALL + 1);
-                int z1 = c + side * (Level2Line.WALL + Level2Line.roomDepth(Level2Line.ROOM_GALLERY_ODD));
-                return new AnomalySite(kind, slot - hw, Math.min(z0, z1), slot + hw, Math.max(z0, z1), slot, z0, facing, h);
+                return null;
             }
             case Level2Sites.HEART_GAUGE -> {
                 int side = Hash.unit(h) < 0.5 ? -1 : 1;
-                int x = findSpot(seed, band, cell, h, side, false);
+                int x = findSpot(seed, band, cell, h, side);
                 if (x == Integer.MIN_VALUE) {
                     return null;
                 }
-                int z0 = c + side;
-                int z1 = c + side * Level2Line.CHASE;
-                // Anchor: the gauge itself, at eye level in a niche in the bare inner wall.
-                return new AnomalySite(kind, x - 3, Math.min(z0, z1), x + 3, Math.max(z0, z1), x, z1,
+                // Anchor: the gauge itself, set into the wall at eye level.
+                return new AnomalySite(kind, x - 3, Math.min(c, c + side), x + 3, Math.max(c, c + side), x, c + side,
                         Level2Line.wallOf(side).get2DDataValue(), h);
             }
             case Level2Sites.INVERTED_PIPE -> {
                 int side = Hash.unit(h) < 0.5 ? -1 : 1; // the wall the pipe goes into
-                int x = findSpot(seed, band, cell, h, side, true);
+                int x = findSpot(seed, band, cell, h, 0);
                 if (x == Integer.MIN_VALUE) {
                     return null;
                 }
-                return new AnomalySite(kind, x - 2, c - Level2Line.CHASE, x + 2, c + Level2Line.CHASE,
-                        x, c + side * Level2Line.CHASE, Level2Line.wallOf(side).get2DDataValue(), h);
+                return new AnomalySite(kind, x - 2, c - Level2Line.WALL, x + 2, c + Level2Line.WALL,
+                        x, c + side * Level2Line.WALL, Level2Line.wallOf(side).get2DDataValue(), h);
             }
             default -> {
-                return planRepeat(seed, band, cell, c, h);
+                return planRepeat(seed, band, cell, c);
             }
         }
     }
 
     /**
-     * A spot for the gauge (in a niche in the bare inner wall of {@code side}) or the pipe (through
-     * both inner walls if {@code both}): in a plain or dark segment, between the twist stretches,
-     * away from doorways, bays, exits and the light panels. For the gauge the rack must be on the
-     * other wall there. MIN_VALUE if the stretch has none (it nearly always has).
+     * A spot for the gauge (in the high cell of the wall on {@code side}; that wall must be bare
+     * there, so the row at your feet keeps the lane tight beside the gauge) or the pipe
+     * ({@code side} 0: both walls): in a plain or dark segment, away from exits, the light panels and
+     * the other props. MIN_VALUE if the stretch has none (it nearly always has).
      */
-    private static int findSpot(long seed, int band, int cell, long h, int side, boolean both) {
+    private static int findSpot(long seed, int band, int cell, long h, int side) {
         int base = cell * Level2AnomalyPlan.CELL;
         int span = Level2AnomalyPlan.CELL - 40;
         int start = Hash.range(Hash.mix(h ^ 7), span);
         for (int t = 0; t < span; t++) {
             int x = base + 20 + Math.floorMod(start + t, span);
-            if (Level2Twist.inStretch(seed, band, x - 3) || Level2Twist.inStretch(seed, band, x)
-                    || Level2Twist.inStretch(seed, band, x + 3) || Level2Line.lampAt(seed, band, x)
-                    || (!both && Level2Section.frontSide(Level2Section.ring(seed, band, x)) == side)
-                    || Level2Line.exitNear(seed, band, x, EXIT_GAP)) {
+            double a = Level2Section.ring(seed, band, x);
+            if (Level2Line.exitNear(seed, band, x, EXIT_GAP) || Level2Layout.propAt(seed, band, x)
+                    || (side != 0 && (Level2Section.bundle(a, Level2Section.slot(side, 1)) || Level2Section.bundle(a, Level2Section.slot(side, 2))))) {
                 continue;
             }
             int type = Level2Line.segType(seed, band, Level2Line.segment(seed, band, x));
-            if (type != Level2Line.SEG_STANDARD && type != Level2Line.SEG_DARK) {
-                continue;
-            }
-            boolean free = true;
-            for (int dx = -3; dx <= 3 && free; dx++) {
-                free = Level2Line.feature(seed, band, x + dx, side) == Level2Line.F_NONE
-                        && (!both || Level2Line.feature(seed, band, x + dx, -side) == Level2Line.F_NONE)
-                        && Level2Line.segType(seed, band, Level2Line.segment(seed, band, x + dx)) == type;
-            }
-            if (free) {
+            if (type == Level2Line.SEG_STANDARD || type == Level2Line.SEG_DARK) {
                 return x;
             }
         }
@@ -260,17 +175,16 @@ final class Level2Oddities {
 
     /**
      * The repeating section number: the segments starting in the stretch, three or four in a row,
-     * none of them a squeeze, a detour or an exit (a bulkhead shows the number on its ring). The
-     * salt holds the first segment's index and how many there are.
+     * none of them an exit or a bulkhead (a bulkhead shows the number on its ring). The salt holds
+     * the first segment's index and how many there are.
      */
     @Nullable
-    private static AnomalySite planRepeat(long seed, int band, int cell, int c, long h) {
+    private static AnomalySite planRepeat(long seed, int band, int cell, int c) {
         int base = cell * Level2AnomalyPlan.CELL;
         int n0 = Level2Line.segment(seed, band, base + 4) + 1;
         int count = 0;
         while (count < REPEAT_MAX && Level2Line.segEnd(seed, band, n0 + count) <= base + Level2AnomalyPlan.CELL - 4) {
-            int type = Level2Line.segType(seed, band, n0 + count);
-            if (type == Level2Line.SEG_EXIT || !markerSegment(type) && type != Level2Line.SEG_BULKHEAD) {
+            if (!markerSegment(Level2Line.segType(seed, band, n0 + count))) {
                 break;
             }
             count++;
@@ -282,8 +196,8 @@ final class Level2Oddities {
         int x1 = Level2Line.segEnd(seed, band, n0 + count - 1);
         int marker = Level2Line.markerX(seed, band, n0);
         int side = Level2Section.bareSide(Level2Section.ring(seed, band, marker));
-        return new AnomalySite(Level2Sites.REPEAT_SECTION, x0, c - Level2Line.CHASE, x1, c + Level2Line.CHASE,
-                marker, c + side * Level2Line.SHOULDER, 0, ((long) n0 << 4) | count);
+        return new AnomalySite(Level2Sites.REPEAT_SECTION, x0, c - Level2Line.WALL, x1, c + Level2Line.WALL,
+                marker, c + side * Level2Line.WALL, 0, ((long) n0 << 4) | count);
     }
 
     // ==========================================================================================
@@ -291,9 +205,8 @@ final class Level2Oddities {
     // ==========================================================================================
 
     /**
-     * The section number stencilled at the start of segment n (and on its bulkhead ring, if it has
-     * one). Numbers go up along +x, A03 to D32, then round again; inside a repeat_section oddity
-     * every section has the number of the first.
+     * The section number stencilled at the start of segment n. Numbers go up along +x, A03 to D32,
+     * then round again; inside a repeat_section oddity every section has the number of the first.
      */
     static Variant section(long seed, int band, int n) {
         int start = Level2Line.segStart(seed, band, n);
@@ -305,9 +218,9 @@ final class Level2Oddities {
         return SECTIONS[Math.floorMod(n + offset, SECTIONS.length)];
     }
 
-    /** Segments whose start carries a section marker (squeezes and detours have no room for one). */
+    /** Segments whose start carries a section marker (not an exit's or a bulkhead's). */
     private static boolean markerSegment(int type) {
-        return type != Level2Line.SEG_SQUEEZE && type != Level2Line.SEG_BULKHEAD && !Level2Detours.isDetour(type);
+        return type != Level2Line.SEG_BULKHEAD && type != Level2Line.SEG_EXIT;
     }
 
     // ==========================================================================================
@@ -315,90 +228,58 @@ final class Level2Oddities {
     // ==========================================================================================
 
     /**
-     * Called after the corridor built column (x, z): the section marker at the start of each
-     * segment, and the oddities that live in the corridor itself (the heart gauge, the inverted
-     * pipe, the repeat section's dead lamps and chalk crosses). {@code site} is the anomaly at
-     * (x, z) or null.
+     * Called after the corridor built column (x, z) (the lane or a wall, |dz| 0-1): the section
+     * marker at the start of each segment, and the oddities built into the walls (the heart gauge,
+     * the inverted pipe, the repeat section's dead panels and chalk crosses). {@code site} is the
+     * anomaly at (x, z) or null.
      */
     static void decorate(Level2Layout layout, long seed, int x, int z, @Nullable AnomalySite site, LevelLayout.Column out) {
         int band = Level2Line.band(z);
         int c = Level2Line.centre(seed, band);
         int dz = z - c;
-        int a = Math.abs(dz);
         int floor = layout.floorY();
-        int top = layout.ceilingY() - 1;
-        if (a <= Level2Line.SHOULDER && a != 0 && (site == null || !site.kind().equals(Level2Sites.BROWNOUT))) {
-            // The section marker: stencilled on the bare inner wall a few blocks into the segment,
-            // where you look as you walk in.
+        int top = floor + 3; // the lane's ceiling (y43)
+        if (dz == 0 && (site == null || !site.kind().equals(Level2Sites.BROWNOUT))) {
+            // The section marker: stencilled on the bare wall a few blocks into the segment, where
+            // you look as you walk in.
             int n = Level2Line.segment(seed, band, x);
-            int side = dz < 0 ? -1 : 1;
-            if (x == Level2Line.markerX(seed, band, n) && markerSegment(Level2Line.segType(seed, band, n))
-                    && side == Level2Section.bareSide(Level2Section.ring(seed, band, x))
-                    && Level2Line.feature(seed, band, x, side) == Level2Line.F_NONE) {
+            if (x == Level2Line.markerX(seed, band, n) && markerSegment(Level2Line.segType(seed, band, n))) {
+                int side = Level2Section.bareSide(Level2Section.ring(seed, band, x));
                 Direction in = Level2Line.inwardOf(side);
-                boolean repeat = site != null && site.kind().equals(Level2Sites.REPEAT_SECTION);
-                if (a == 1) {
-                    out.set(floor + 2, Level2Parts.stencil(in, section(seed, band, n)));
-                    if (repeat && layout.floorRaise(seed, x, z) == 0) {
-                        // Every repeated section: the same chalk cross on the wall's foot ...
-                        out.set(floor + 1, ChalkRegistry.CHALK_MARK.get().defaultBlockState()
-                                .setValue(ChalkMarkBlock.FACING, in)
-                                .setValue(ChalkMarkBlock.SYMBOL, ChalkMarkBlock.Symbol.CROSS));
-                    }
-                } else if (repeat) {
-                    out.set(floor + 3, Level2Parts.lightPanel(in, true)); // ... and the same dead panel above the number
+                out.set(floor + 2, Level2Parts.stencil(in, section(seed, band, n)));
+                if (site != null && site.kind().equals(Level2Sites.REPEAT_SECTION)) {
+                    // Every repeated section: the same chalk cross at the wall's foot, the same dead panel overhead.
+                    out.set(floor + 1, ChalkRegistry.CHALK_MARK.get().defaultBlockState()
+                            .setValue(ChalkMarkBlock.FACING, in)
+                            .setValue(ChalkMarkBlock.SYMBOL, ChalkMarkBlock.Symbol.CROSS));
+                    out.set(top, Level2Parts.lightPanel(Direction.DOWN, true));
                 }
             }
         }
-        if (a == Level2Line.CHASE) {
-            // Over a chamber's door, on the corridor wall: an amber battery lamp that comes on when the section dies.
-            int side = dz < 0 ? -1 : 1;
-            int k = Level2Line.roomCell(x);
-            if (Level2Line.slotX(seed, band, k) == x && Level2Line.slotSide(seed, band, k) == side
-                    && Level2Chambers.isChamber(Level2Line.roomType(seed, band, k))) {
-                out.set(floor + 3, com.rickr.backrooms.registry.Level2LightBlocks.emergency(Level2Line.inwardOf(side), true, true));
-            }
-        }
-        if (site == null) {
+        if (site == null || x != site.anchorX()) {
             return;
         }
+        int side = Integer.signum(site.anchorZ() - c);
         if (site.kind().equals(Level2Sites.HEART_GAUGE)) {
-            if (x == site.anchorX() && Math.abs(site.anchorZ() - c) == Level2Line.CHASE && Integer.signum(dz) == Integer.signum(site.anchorZ() - c)) {
-                int side = dz < 0 ? -1 : 1;
-                if (a == Level2Line.CHASE) {
-                    out.set(floor + 2, Level2ChamberBlocks.heartGauge(Level2Line.inwardOf(side)));
-                } else if (a == Level2Line.SHOULDER) {
-                    out.set(floor + 2, Blocks.AIR.defaultBlockState()); // the niche in the inner wall it looks out of
-                }
+            if (dz == side) {
+                out.set(floor + 2, Level2ChamberBlocks.heartGauge(Level2Line.inwardOf(side)));
             }
         } else if (site.kind().equals(Level2Sites.INVERTED_PIPE)) {
-            if (x != site.anchorX() || a == 0 || a > Level2Line.CHASE) {
-                return;
-            }
-            if (a < Level2Line.CHASE) {
-                // Both inner walls open into niches here (and any rack's front pipes make way), so
-                // both ends of the pipe show.
-                for (int y = floor + 1; y < top; y++) {
-                    out.set(y, Blocks.AIR.defaultBlockState());
-                }
-                return;
-            }
-            int side = dz < 0 ? -1 : 1;
-            Direction wall = Level2Line.wallOf(side);
-            Direction in = Level2Line.inwardOf(side);
             Variant label = LABELS[Hash.range(site.salt(), LABELS.length)];
-            if (z == site.anchorZ()) {
-                // This wall: the pipe rises out of the floor and bends into the wall at waist height, its label above.
+            if (dz == side) {
+                // This wall: the pipe rises out of the floor and bends into the wall at head height.
                 out.set(floor + 1, Level2Parts.centrePipe(Direction.Axis.Y, Kind.PAINTED_YELLOW, Size.MEDIUM));
-                out.set(floor + 2, Level2Parts.elbow(wall, false, Kind.PAINTED_YELLOW, Size.MEDIUM));
-                out.set(floor + 3, Level2Parts.stencil(in, label));
-            } else {
-                // Straight across: the same pipe out of the other wall, upside down. It comes out high
-                // and bends up into the ceiling, its label below it.
+                out.set(floor + 2, Level2Parts.elbow(Level2Line.wallOf(side), false, Kind.PAINTED_YELLOW, Size.MEDIUM));
+            } else if (dz == -side) {
+                // Straight across: the same pipe out of the other wall, upside down: it comes out at
+                // head height and bends up into the ceiling, bare concrete under it.
+                out.set(floor + 1, Level2Blocks.WALL_BASE.get().defaultBlockState());
+                out.set(floor + 2, Level2Parts.elbow(Level2Line.wallOf(-side), true, Kind.PAINTED_YELLOW, Size.MEDIUM));
                 out.set(top, Level2Parts.centrePipe(Direction.Axis.Y, Kind.PAINTED_YELLOW, Size.MEDIUM));
-                out.set(top - 1, Level2Parts.elbow(wall, true, Kind.PAINTED_YELLOW, Size.MEDIUM));
-                out.set(floor + 2, Level2Parts.stencil(in, label));
-                out.set(floor + 1, Level2Parts.duct(in, false));
+            } else if (dz == 0) {
+                // The labels, painted on the walls beside the lane: above the bend on this wall, below it across.
+                out.set(floor + 2, Level2Parts.stencil(Level2Line.inwardOf(side), label));
+                out.set(floor + 1, Level2Parts.stencil(Level2Line.inwardOf(-side), label));
             }
         }
     }
