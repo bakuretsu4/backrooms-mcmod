@@ -47,12 +47,11 @@ public final class Level227Atmos {
     public static final DeferredHolder<SoundEvent, SoundEvent> BUBBLE_ENTER = register("entity.void_bubble.enter");
 
     // Far-off one-off sounds (client/audio/DistantAmbience): a far branch groaning as the tree
-    // moves, a giant limb cracking in the canopy, a bird call that is wrong, something big calling
-    // across the forest, a leaf as big as a sail sliding down through the canopy, the void howling.
+    // moves, a giant limb cracking in the canopy, a bird call that is wrong, a leaf as big as a sail
+    // sliding down through the canopy, the void howling.
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_TREE_GROAN = register("distant.level227.tree_groan");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_BRANCH_CRACK = register("distant.level227.branch_crack");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_WRONG_BIRD = register("distant.level227.wrong_bird");
-    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_ANIMAL_CALL = register("distant.level227.animal_call");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_LEAF_FALL = register("distant.level227.leaf_fall");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_VOID_HOWL = register("distant.level227.void_howl");
 

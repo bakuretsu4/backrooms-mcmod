@@ -2,7 +2,7 @@
 
 The looping stairwells (grey painted block walls, the floor sign that always says 4, footsteps far
 up and down the shaft), the Window (a clear pane onto a blurry, sunny, familiar place; the panes
-around it covered with cardboard and tape; its whispers and its grab), the vanishing elevator
+around it covered with cardboard and tape; its grab), the vanishing elevator
 (brushed-steel car, rubber floor, the ride down and the chime) and Level 4.3, the Cubicles (dim
 white hallways; paper, pencils, murmurs and muffled rain).
 
@@ -281,26 +281,6 @@ def _door_slam(rng) -> np.ndarray:
     return x
 
 
-def _whisper_breath(rng, dur, rate_lo=0.16, rate_hi=0.34) -> np.ndarray:
-    """Soft unintelligible whispering: breath through two wandering formants, in slow syllables."""
-    n = int(dur * G.SR)
-    t = np.arange(n) / G.SR
-    breath = G.fft_filter(rng.normal(size=n), lambda f: G.bp_gain(f, 300, 6000, 1))
-    f1 = 420 + 260 * (0.5 + 0.5 * np.sin(2 * np.pi * rng.uniform(1.5, 2.5) * t + rng.uniform(0, 6)))
-    f1 = f1 + G.smooth_jitter(rng, n, 4.0, 110.0)
-    f2 = 1300 + 700 * (0.5 + 0.5 * np.sin(2 * np.pi * rng.uniform(2.0, 3.2) * t + rng.uniform(0, 6)))
-    f2 = f2 + G.smooth_jitter(rng, n, 5.0, 300.0)
-    x = G.svf(breath, f1, 5.0) + 0.7 * G.svf(breath, f2, 7.0)
-    env = np.zeros(n)
-    tt = 0.1
-    while tt < dur - 0.35:
-        length = rng.uniform(rate_lo, rate_hi)
-        seg = np.arange(int(length * G.SR)) / G.SR
-        G.add_at(env, np.sin(np.pi * seg / length) ** 2 * rng.uniform(0.5, 1.0), tt, False)
-        tt += length + rng.uniform(0.05, 0.25)
-    return x * env
-
-
 def _murmur(rng, dur, f0_base) -> np.ndarray:
     """An unclear voice through a wall: a formant voice in syllables, everything above 1 kHz gone."""
     n = int(dur * G.SR)
@@ -380,23 +360,6 @@ def snd_level4_stairwell_echo() -> None:
         x = G.fft_filter(x, lambda f: G.lp_gain(f, 1800, 2))                 # it's floors away
         out = 0.35 * G.norm(x) + G.norm(G.conv(x, G.reverb_ir(rng, 3.0, 0.9, lp=1600, predelay=0.05))[:n])
         G.save_ogg(out, G.SND / "level4" / f"stairwell_echo{i}.ogg", peak=0.7, fade_out=0.6)
-
-
-def snd_level4_window_whisper() -> None:
-    """Soft, warm, comforting whispers (no words), over a faint major chord: come and see."""
-    for i in range(1, 4):
-        rng = G.rng_for(9810 + i)
-        dur = 3.2 + 0.4 * i
-        n = int(dur * G.SR)
-        t = np.arange(n) / G.SR
-        w = _whisper_breath(rng, dur)
-        w = G.fft_filter(w, lambda f: G.lp_gain(f, 3800, 2))
-        root = [196.0, 220.0, 174.6][i - 1]
-        pad = sum(a * np.sin(2 * np.pi * root * r * t + rng.uniform(0, 6)) for r, a in ((1, 1.0), (1.26, 0.7), (1.5, 0.6), (2, 0.3)))
-        pad *= G.env_adsr(n, 1.2, 1.4) * (1 + 0.1 * np.sin(2 * np.pi * 0.4 * t))
-        x = G.norm(w) + 0.12 * G.norm(pad)
-        out = _room(x, rng, 1.6, 0.4, 3000, 0.4)
-        G.save_ogg(out, G.SND / "level4" / f"window_whisper{i}.ogg", peak=0.6, fade_in=0.2, fade_out=0.6)
 
 
 def snd_level4_window_grab() -> None:
@@ -522,6 +485,6 @@ TEXTURES = [
     tex_level4_elevator_wall, tex_level4_elevator_floor, tex_level4_white_wall, tex_level4_white_floor,
 ]
 SOUNDS = [
-    snd_level4_stairwell_echo, snd_level4_window_whisper, snd_level4_window_grab, snd_level4_elevator_ride,
+    snd_level4_stairwell_echo, snd_level4_window_grab, snd_level4_elevator_ride,
     snd_level4_elevator_ding, snd_level4_cubicles_ambience, snd_level4_cubicles_work,
 ]

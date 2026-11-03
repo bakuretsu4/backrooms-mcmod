@@ -348,7 +348,7 @@ public class WretchModel extends HierarchicalModel<Wretch> {
             thigh[s].zRot = dir * 0.04f * corner;
         }
 
-        // --- Head: looks about nervously; jaw slack, wide open when it screams or drinks --------
+        // --- Head: looks about nervously; jaw slack, wide open when it flees or drinks ---------
         float glance = ClumpShapes.twitch(seed + 2, ageInTicks, 13, 0.5f) * calm;
         neck.xRot = -waist.xRot * 0.65f;
         head.yRot = netHeadYaw * Mth.DEG_TO_RAD * (1.0f - drink) + glance + corner * 0.25f * Mth.sin(ageInTicks * 1.9f)

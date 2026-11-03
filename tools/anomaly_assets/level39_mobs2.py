@@ -18,8 +18,7 @@ Mono 44.1 kHz OGG, synthesized:
   speech-like "words" from vowel formants, fricative noise and plosive bursts, then garbles them
   (stutters, wrong pitch jumps, a second voice an octave down, a vocal tract slightly too big).
   Also breathing, heavy bare footsteps, the low rattle when it starts to hunt, tearing, hurt, death.
-* Wretch: pained moans, hitching sobs, panicked screams, splashing, lapping water, bare wet
-  footsteps, hurt and death.
+* Wretch: splashing, lapping water, bare wet footsteps, hurt and death.
 
 The tunnels are white marble that "dampens sound", so the reverb tails are short and dark.
 Seeds 39200-39499. Run with `python tools/gen_assets.py level39m2` or a single generator name.
@@ -742,56 +741,6 @@ def _cry(rng, dur, f0_pts, vowel, breath=0.25, shake=0.03, crack=0.0):
     return G.norm(v) * (1 - breath) + G.norm(air) * breath
 
 
-def snd_level39m2_wretch_moan() -> None:
-    """A low, pained moan that wavers and breaks off into a shaky breath. 3 variants (~2 s)."""
-    for i in range(1, 4):
-        rng = G.rng_for(39410 + i)
-        dur = 1.8 + 0.3 * i
-        base = rng.uniform(120, 160)
-        x = _cry(rng, dur, [(0, base * 0.95), (dur * 0.3, base * 1.1), (dur, base * 0.8)],
-                 (520 + 40 * i, 900, 2400), breath=0.3, shake=0.04, crack=1)
-        t = np.arange(len(x)) / SR
-        x *= _env(t, [(0, 0), (0.15, 1), (dur * 0.7, 0.8), (dur, 0)])
-        G.save_ogg(_tunnel(rng, x, 0.3), OUT_SND / f"wretch_moan{i}.ogg", peak=0.6, fade_out=0.2)
-
-
-def snd_level39m2_wretch_sob() -> None:
-    """Sobbing: hitching, juddering inhales and short broken cries. 3 variants (~2 s)."""
-    for i in range(1, 4):
-        rng = G.rng_for(39420 + i)
-        dur = 2.2
-        n = int(dur * SR)
-        x = np.zeros(n)
-        pos = 0.05
-        while pos < dur - 0.45:
-            # A juddering inhale: 3-4 quick catches of breath.
-            for _ in range(int(rng.integers(3, 5))):
-                g = _band(rng, int(0.06 * SR), 600, 3500) * np.hanning(int(0.06 * SR))
-                G.add_at(x, G.norm(g) * 0.35, pos, circular=False)
-                pos += rng.uniform(0.07, 0.1)
-            d = rng.uniform(0.25, 0.4)
-            top = rng.uniform(300, 380)
-            c = _cry(rng, d, [(0, top), (d, top * 0.75)], (680, 1150, 2600), breath=0.35, shake=0.05)
-            c *= np.hanning(len(c)) ** 0.5
-            G.add_at(x, c * rng.uniform(0.7, 1.0), pos, circular=False)
-            pos += d + rng.uniform(0.1, 0.25)
-        G.save_ogg(_tunnel(rng, x, 0.3), OUT_SND / f"wretch_sob{i}.ogg", peak=0.6, fade_out=0.15)
-
-
-def snd_level39m2_wretch_scream() -> None:
-    """A panicked scream: high, rough, cracking, running out of breath. 2 variants."""
-    for i in range(1, 3):
-        rng = G.rng_for(39430 + i)
-        dur = 1.3 + 0.2 * i
-        top = rng.uniform(520, 640)
-        x = _cry(rng, dur, [(0, top * 0.7), (0.12, top), (dur * 0.6, top * 1.05), (dur, top * 0.6)],
-                 (950, 1550, 2900), breath=0.2, shake=0.06, crack=3)
-        x = G.dist(x, 2.5)
-        t = np.arange(len(x)) / SR
-        x *= _env(t, [(0, 0), (0.06, 1), (dur * 0.75, 0.9), (dur, 0)])
-        G.save_ogg(_tunnel(rng, x, 0.3), OUT_SND / f"wretch_scream{i}.ogg", peak=0.85, fade_out=0.15)
-
-
 def snd_level39m2_wretch_splash() -> None:
     """Splashing through shallow water in a panic: slaps, sloshes and bubbles. 3 variants."""
     for i in range(1, 4):
@@ -876,6 +825,6 @@ SOUNDS = [
     snd_level39m2_skin_stealer_mimic, snd_level39m2_skin_stealer_breath, snd_level39m2_skin_stealer_step,
     snd_level39m2_skin_stealer_hunt, snd_level39m2_skin_stealer_tear, snd_level39m2_skin_stealer_hurt,
     snd_level39m2_skin_stealer_death,
-    snd_level39m2_wretch_moan, snd_level39m2_wretch_sob, snd_level39m2_wretch_scream, snd_level39m2_wretch_splash,
+    snd_level39m2_wretch_splash,
     snd_level39m2_wretch_drink, snd_level39m2_wretch_step, snd_level39m2_wretch_hurt, snd_level39m2_wretch_death,
 ]

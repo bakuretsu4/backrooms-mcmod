@@ -27,8 +27,8 @@ import net.minecraft.world.level.block.state.properties.Half;
  * stays reachable.
  *
  * <p>Across the middle stands a pale wall with archways: the wiki's "Arch Variation", the most
- * stable of the rooms, which doesn't shift. It is the one landmark you can steer by. The carpet
- * along it is wetter, as the wiki says. Under Level 0's low ceiling each archway is 3 wide: its
+ * stable of the rooms, which doesn't shift. It is the one landmark you can steer by. Under Level
+ * 0's low ceiling each archway is 3 wide: its
  * middle is open to the ceiling, and its two top corners are rounded off, so only the middle
  * counts as walkable (the corners leave less than 3 blocks of headroom).
  */
@@ -222,18 +222,11 @@ public final class Level0PillarHall {
                         .setValue(StairBlock.FACING, towardPier)
                         .setValue(StairBlock.HALF, Half.TOP));
                 out.set(ceiling, arch);
-                wetCarpet(floor, out);
             }
             case ARCH_CENTRE -> {
                 out.set(ceiling, arch);
-                wetCarpet(floor, out);
             }
             case FLOOR -> {
-                int along = eastWest ? p : q;
-                int across = eastWest ? q : p;
-                if (Math.abs(across - MIDDLE) == 1 && along >= ARCH_FROM - 1 && along <= ARCH_TO + 1) {
-                    wetCarpet(floor, out); // "the carpet is deeper and wetter" by the arches
-                }
                 // A regular grid of lit panels: the hall is bright, so there's nothing to hide behind.
                 if (p % 4 == 0 && (q % 8 == 1 || q % 8 == 2)) {
                     out.set(ceiling, ModBlocks.FLUORESCENT_LIGHT.get().defaultBlockState());
@@ -245,9 +238,5 @@ public final class Level0PillarHall {
                 // MOAT_FLOOR: plain carpet.
             }
         }
-    }
-
-    private static void wetCarpet(int floor, LevelLayout.Column out) {
-        out.set(floor + 1, ModBlocks.CARPET_FLUID.get().defaultBlockState());
     }
 }

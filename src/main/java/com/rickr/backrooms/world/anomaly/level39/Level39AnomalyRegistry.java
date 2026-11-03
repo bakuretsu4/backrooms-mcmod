@@ -41,7 +41,6 @@ public final class Level39AnomalyRegistry {
     public static final DeferredHolder<SoundEvent, SoundEvent> WINDOW_NOCLIP = sound("level39_anoms.window_noclip");
     public static final DeferredHolder<SoundEvent, SoundEvent> ASH_SMELL = sound("level39_anoms.ash_smell");
     // ---- Houses ----------------------------------------------------------------------------------
-    public static final DeferredHolder<SoundEvent, SoundEvent> HOUSE_SCREAM = sound("level39_anoms.house_scream");
     public static final DeferredHolder<SoundEvent, SoundEvent> DOOR_VANISH = sound("level39_anoms.door_vanish");
     public static final DeferredHolder<SoundEvent, SoundEvent> BIGGER_INSIDE = sound("level39_anoms.bigger_inside");
     // ---- Holes -----------------------------------------------------------------------------------
@@ -53,7 +52,6 @@ public final class Level39AnomalyRegistry {
     public static final DeferredHolder<SoundEvent, SoundEvent> HYDROLITIS_CHILLS = sound("level39_anoms.hydrolitis_chills");
     public static final DeferredHolder<SoundEvent, SoundEvent> HYDROLITIS_HEARTBEAT = sound("level39_anoms.hydrolitis_heartbeat");
     public static final DeferredHolder<SoundEvent, SoundEvent> HYDROLITIS_RETCH = sound("level39_anoms.hydrolitis_retch");
-    public static final DeferredHolder<SoundEvent, SoundEvent> HYDROLITIS_WHISPER = sound("level39_anoms.hydrolitis_whisper");
     // ---- The M.E.G. camp -------------------------------------------------------------------------
     public static final DeferredHolder<SoundEvent, SoundEvent> CAMP_STASH = sound("level39_anoms.camp_stash");
 

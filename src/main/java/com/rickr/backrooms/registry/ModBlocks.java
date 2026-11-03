@@ -1145,10 +1145,15 @@ public final class ModBlocks {
                     .lightLevel(state -> 5)
                     .emissiveRendering((state, level, pos) -> true)
                     .isSuffocating((state, level, pos) -> false));
-    /** Blackout Zones: rough, grimy, darker wallpaper, and the ankle-deep murky fluid on the carpet (slows you a little). */
+    /** Blackout Zones: rough, grimy, darker wallpaper. */
     public static final DeferredBlock<Block> BLACKOUT_WALLPAPER = structural("blackout_wallpaper", MapColor.TERRACOTTA_BROWN, SoundType.WOOD);
-    public static final DeferredBlock<ThinLayerBlock> CARPET_FLUID = BLOCKS.registerBlock("carpet_fluid", ThinLayerBlock::new,
-            unbreakable(MapColor.TERRACOTTA_BROWN, SoundType.EMPTY).noCollission().noOcclusion().speedFactor(0.85f));
+    /**
+     * Worlds generated before 2 November 2026 have Level 0's old "wet carpet", a murky layer over
+     * the carpet in blackout zones and the flooded halls. It is gone; this keeps those blocks
+     * loading as nothing at all (no look, no collision, no slowdown, no sound).
+     */
+    public static final DeferredBlock<com.rickr.backrooms.block.InvisibleLightBlock> CARPET_FLUID = BLOCKS.registerBlock("carpet_fluid",
+            com.rickr.backrooms.block.InvisibleLightBlock::new, unbreakable(MapColor.NONE, SoundType.EMPTY).noCollission().noOcclusion().replaceable());
     /** The Manila Room: manila-beige wallpaper inside, the brown wall outside. */
     public static final DeferredBlock<Block> MANILA_WALLPAPER = structural("manila_wallpaper", MapColor.SAND, SoundType.WOOD);
     public static final DeferredBlock<Block> MANILA_BROWN_WALL = structural("manila_brown_wall", MapColor.COLOR_BROWN, SoundType.WOOD);

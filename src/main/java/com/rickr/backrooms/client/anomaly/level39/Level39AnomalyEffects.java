@@ -9,8 +9,6 @@ import com.rickr.backrooms.world.anomaly.level39.Level39AnomalyRegistry;
 import com.rickr.backrooms.world.anomaly.level39.Level39Sites;
 import com.rickr.backrooms.world.layout.Level39AnomalyPlan;
 import com.rickr.backrooms.world.layout.Level39Layout;
-import java.util.HashMap;
-import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -26,9 +24,6 @@ import org.joml.Vector3f;
  * <ul>
  *   <li>{@code hostile_windows}: coal ash drifting out of the lower windows, and now and then the
  *       smell of it (a faint rustle with the subtitle "Smell of coal ash").</li>
- *   <li>{@code house_screams}: the hallucination. Only you hear it (it is played here, on your own
- *       client), from a window of the house; for a moment the picture drains a little. The subtitle
- *       says it isn't real.</li>
  *   <li>{@code hole_sounds}: cold air breathing up out of the hole: a few pale motes rising.</li>
  *   <li>{@code hydrolitis}: a sickly green haze of motes over the stagnant water.</li>
  *   <li>{@code bigger_inside}: inside the big interior the house sounds and feels far too big.</li>
@@ -39,7 +34,6 @@ public final class Level39AnomalyEffects {
 
     public static void register() {
         AnomalyClientEffects.register(Level39Sites.HOSTILE_WINDOWS, new WindowsEffect());
-        AnomalyClientEffects.register(Level39Sites.HOUSE_SCREAMS, new ScreamEffect());
         AnomalyClientEffects.register(Level39Sites.HOLE_SOUNDS, new HoleEffect());
         AnomalyClientEffects.register(Level39Sites.HYDROLITIS, new StagnantEffect());
         AnomalyClientEffects.register(Level39Sites.BIGGER_INSIDE, new BiggerInsideEffect());
@@ -92,65 +86,6 @@ public final class Level39AnomalyEffects {
                 mc.level.playLocalSound(Level39Sites.worldX(site, a, 0.5), player.getEyeY() + 1.0, Level39Sites.worldZ(site, a, 0.5),
                         Level39AnomalyRegistry.ASH_SMELL.get(), SoundSource.AMBIENT, 0.5f, 0.9f + random.nextFloat() * 0.2f, false);
             }
-        }
-    }
-
-    // ==========================================================================================
-    // The screaming houses (a hallucination)
-    // ==========================================================================================
-
-    private static final class ScreamEffect implements AnomalyClientEffect {
-        private static final double MIN_RANGE = 6.0;
-        private static final double MAX_RANGE = 40.0;
-        /** Each house screams every so often (ms, random)... */
-        private static final int EVERY_MIN_MS = 30_000;
-        private static final int EVERY_SPREAD_MS = 50_000;
-        /** ...and never two screams within this long of each other, from any house. */
-        private static final long QUIET_MS = 25_000L;
-        /** For a moment after a scream the colour drains from the picture a little. */
-        private static final long FLINCH_MS = 2_500L;
-        private static final AtmosphereGrade.Mood FLINCH = new AtmosphereGrade.Mood(0.96f, 1.12f, 0.45f,
-                0.92f, 0.94f, 1.0f, 1.0f, 0.98f, 0.98f, 0.010f, 0.010f, 0.012f,
-                0.09f, 0.09f, 0.10f, 6.0f, 0.03f, 0.42f, 0.40f, 0.22f, 0.02f);
-
-        private final RandomSource random = RandomSource.create();
-        private final Map<AnomalySite, Long> next = new HashMap<>();
-        private long lastScream;
-
-        @Override
-        public void tick(Minecraft mc, AnomalySite site, boolean inside, float secondsInside) {
-            long now = System.currentTimeMillis();
-            if (now - lastScream < FLINCH_MS) {
-                float k = 1.0f - (now - lastScream) / (float) FLINCH_MS;
-                AtmosphereGrade.setAnomalyMood(FLINCH, 0.5f * k);
-            }
-            LocalPlayer player = mc.player;
-            if (mc.isPaused() || player.getY() < Level39Layout.GROUND_Y - 4) {
-                return;
-            }
-            double cx = (site.minX() + site.maxX() + 1) * 0.5;
-            double cz = (site.minZ() + site.maxZ() + 1) * 0.5;
-            double d = Math.hypot(player.getX() - cx, player.getZ() - cz);
-            Long due = next.get(site);
-            if (due == null) {
-                if (next.size() > 64) {
-                    next.clear();
-                }
-                next.put(site, now + EVERY_MIN_MS / 3 + random.nextInt(EVERY_SPREAD_MS));
-                return;
-            }
-            if (now < due || d < MIN_RANGE || d > MAX_RANGE || now - lastScream < QUIET_MS) {
-                return;
-            }
-            next.put(site, now + EVERY_MIN_MS + random.nextInt(EVERY_SPREAD_MS));
-            lastScream = now;
-            // From somewhere in the house: a window on an upper floor, usually.
-            int storeys = Math.max(1, Level39Sites.houseStoreys(site));
-            double y = Level39Sites.houseBaseY(site) + 1.6 + random.nextInt(storeys) * 7 * 0.5;
-            double hx = cx + (random.nextDouble() - 0.5) * Math.max(2, Level39Sites.houseWidth(site) - 2);
-            double hz = cz + (random.nextDouble() - 0.5) * Math.max(2, Level39Sites.houseDepth(site) - 2);
-            mc.level.playLocalSound(hx, y, hz, Level39AnomalyRegistry.HOUSE_SCREAM.get(), SoundSource.AMBIENT,
-                    1.0f, 0.9f + random.nextFloat() * 0.15f, false);
         }
     }
 

@@ -14,7 +14,7 @@ import java.util.List;
  * glowing squares far overhead and notice the holes; the rest are black. Things move up there:
  * the client plays scrapes and knocks from the top of a shaft now and then, and once in a while a
  * ceiling tile works loose and falls the whole way down (the server, ShaftHallBehavior). A few
- * broken tiles already lie on the carpet, and the carpet is damp under some shafts.
+ * broken tiles already lie on the carpet.
  *
  * <p>Plan (local frame, see {@link Level0SetPieces}):
  * <ul>
@@ -56,7 +56,6 @@ public final class Level0ShaftHall {
     private static final int TOP_LIGHT_BIT = 1 << 6;  // a hole with a lit tube at the top of its shaft
     private static final int CABLE_BIT = 1 << 7;      // a cable hanging near the top of a dark shaft
     private static final int DEBRIS_BIT = 1 << 8;     // a fallen tile lying on the carpet
-    private static final int WET_BIT = 1 << 9;
 
     private Level0ShaftHall() {}
 
@@ -169,11 +168,8 @@ public final class Level0ShaftHall {
                 } else if (r < 0.5) {
                     word |= CABLE_BIT;
                 }
-                double floor = Hash.unit(Hash.mix(h ^ 1));
-                if (floor < 0.18) {
+                if (Hash.unit(Hash.mix(h ^ 1)) < 0.18) {
                     word |= DEBRIS_BIT;
-                } else if (floor < 0.32) {
-                    word |= WET_BIT;
                 }
             } else if (topLit(site, u, v)) {
                 word |= TOP_LIGHT_BIT; // every block of a lit hole's top glows
@@ -220,13 +216,8 @@ public final class Level0ShaftHall {
             if (role == R_WALL || role == R_POST) {
                 return y == floor + 1 ? BASEBOARD : WALLPAPER;
             }
-            if (y == floor + 1 && role == R_HOLE) {
-                if ((word & DEBRIS_BIT) != 0) {
-                    return DEBRIS;
-                }
-                if ((word & WET_BIT) != 0) {
-                    return WET_CARPET;
-                }
+            if (y == floor + 1 && role == R_HOLE && (word & DEBRIS_BIT) != 0) {
+                return DEBRIS;
             }
             return AIR;
         }

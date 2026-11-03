@@ -30,7 +30,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * quietly moved down one turn ({@link Teleports#shift}: same view, same step, nothing jumps), so
  * you climb the same turn again, and again. Every time round something is different, and it gets
  * worse: a lantern has gone out, an alcove is bricked up, someone is counting on the wall, shackles
- * lie on the steps, footsteps above you, whispers, "GO BACK DOWN". The way out is to do that: walk
+ * lie on the steps, footsteps above you, "GO BACK DOWN". The way out is to do that: walk
  * back down to where you came in, and the loop breaks (everything is back as it was, a door creaks
  * far above); climb again and the stair goes on.
  *
@@ -154,13 +154,9 @@ public final class Level490Loops {
         switch (lap) {
             case 1 -> play(player, ModSounds.DISTANT_KNOCK, spire, y + 9, 0.7f, 0.8f);
             case 2 -> play(player, ModSounds.L4_STAIRWELL_ECHO, spire, y + 8, 0.9f, 0.9f);
-            case 3 -> play(player, ModSounds.SANITY_WHISPER, spire, y + 1, 0.6f, 1.0f);
-            case 4 -> play(player, Level39Mobs.CLUMP_DRAG, spire, y + 7, 0.8f, 0.7f);
-            case 5 -> play(player, ModSounds.SANITY_KNOCK, spire, y - 3, 0.9f, 0.9f);
-            default -> {
-                play(player, ModSounds.SANITY_HEARTBEAT, spire, y + 1, 0.8f, 1.0f);
-                play(player, ModSounds.DISTANT_L0_WALL_SCRATCH, spire, y + 6, 0.8f, 0.8f);
-            }
+            case 3 -> play(player, Level39Mobs.CLUMP_DRAG, spire, y + 7, 0.8f, 0.7f);
+            case 4 -> play(player, ModSounds.SANITY_KNOCK, spire, y - 3, 0.9f, 0.9f);
+            default -> play(player, ModSounds.SANITY_HEARTBEAT, spire, y + 1, 0.8f, 1.0f);
         }
     }
 

@@ -211,7 +211,7 @@ climber on an outside ledge under a colossal link. Built per site (world/layout/
   shown only to you: the first loop goes dark (lanterns out, an alcove bricked up, tally marks
   counting your laps, shackles on the steps, GO BACK DOWN, at last every stone scratched full of
   tallies); the second leaves lit lanterns and chains in the alcoves while its own lanterns go out.
-  Sounds above you each lap (a knock, footsteps, whispers, dragging, a knock behind, a heartbeat).
+  Sounds above you each lap (a knock, footsteps, dragging, a knock behind, a heartbeat).
   Walking back down to where you came in breaks it (a door creaks far above); then the stair goes
   on.
 - **The leap:** any fall that starts at the top platform takes you to Level 9 (a spur reaches out

@@ -11,9 +11,9 @@ Textures (src/main/resources/assets/backrooms/textures/...):
   gui/l39_survey_note.png        256x256 clipboard page for the note-reading screen
 Sounds (src/main/resources/assets/backrooms/sounds/level39_anoms/*.ogg), one sounds.json event
 "level39_anoms.<name>" each: window_wake, window_lure*, window_blinds*, window_shriek,
-glass_shards*, window_grab, window_fumes, window_noclip, ash_smell*, house_scream*, hole_scrape*,
-hole_breath, hole_growl, hole_climb, hydrolitis_chills*, hydrolitis_heartbeat, hydrolitis_retch,
-hydrolitis_whisper*, door_vanish, bigger_inside, camp_stash   (* = several takes)
+glass_shards*, window_grab, window_fumes, window_noclip, ash_smell*, hole_scrape*, hole_breath,
+hole_growl, hole_climb, hydrolitis_chills*, hydrolitis_heartbeat, hydrolitis_retch, door_vanish,
+bigger_inside, camp_stash   (* = several takes)
 
 Run only these with:  python tools/gen_assets.py l39anom_
 Every generator uses its own fixed random seed (39300-39499), so re-running gives identical files.
@@ -24,7 +24,6 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 import gen_assets as G
-from anomaly_assets import level4 as L4
 from anomaly_assets import level39_audio as A
 
 SR = G.SR
@@ -891,32 +890,6 @@ def snd_l39anom_ash_smell() -> None:
 # The houses
 # =============================================================================
 
-def snd_l39anom_house_scream() -> None:
-    """Three takes (1.5-3 s): a scream inside a house, heard through its walls. A woman (cut off
-    mid-scream), a child's two-breath wail and an animal-like screech. Dulled by the walls,
-    boxed in by the room, then carried off by the town's echo. It isn't real."""
-    specs = [
-        (39413, 2.4, [(0, 420), (0.12, 880), (0.5, 960), (1.2, 900), (1.7, 760), (2.4, 520)],
-         [(0, 700), (0.15, 1000), (2.4, 850)], [(0, 1500), (0.2, 1650), (2.4, 1400)],
-         [(0, 0), (0.08, 1), (1.4, 0.9), (1.68, 0.85), (1.74, 0), (2.4, 0)], 1.6, 9, 1.012, 0.15),
-        (39414, 1.6, [(0, 600), (0.1, 1150), (0.5, 1250), (0.9, 1100), (1.3, 1300), (1.6, 900)],
-         [(0, 900), (1.6, 1100)], [(0, 1900), (1.6, 2400)],
-         [(0, 0), (0.06, 1), (0.6, 0.9), (0.72, 0.15), (0.85, 1), (1.45, 0.8), (1.6, 0)], 1.8, 9, 1.015, 0.1),
-        (39415, 1.9, [(0, 300), (0.2, 620), (0.6, 780), (0.9, 560), (1.3, 700), (1.9, 340)],
-         [(0, 800), (0.6, 1300), (1.9, 700)], [(0, 1600), (0.6, 2600), (1.9, 1300)],
-         [(0, 0), (0.1, 1), (0.8, 0.9), (1.5, 0.6), (1.9, 0)], 4.0, 8, 1.07, 0.3),
-    ]
-    for i, (seed, dur, fp, f1, f2, ep, drive, bits, det, sub) in enumerate(specs, 1):
-        rng = G.rng_for(seed)
-        x = G._scream(rng, dur, fp, f1, f2, ep, drive=drive, bits=bits, hold=1, detune=det, sub=sub)
-        x = np.concatenate([np.zeros(int(0.05 * SR)), x])
-        # Through the walls: the highs and the deepest lows are gone.
-        x = G.fft_filter(x, lambda f: G.lp_gain(f, 1000, 3) * G.hp_gain(f, 120, 1))
-        x = _room(rng, x, 0.9, 0.28, 1800, 0.45)
-        x = A._hall(rng, x, decay=1.6, length=2.0, lp=1400, wet=0.35, slaps=((0.5, 0.2),))
-        A._save_ogg(_trim(x, dur + 0.9), _snd(f"house_scream{i}"), peak=0.6, fade_out=0.6)
-
-
 def snd_l39anom_door_vanish() -> None:
     """~1.2 s, quiet: wood and plaster settling behind you as the door you came through stops
     being a door. A slow low creak, a soft settle, a trickle of plaster dust."""
@@ -1156,30 +1129,6 @@ def snd_l39anom_hydrolitis_retch() -> None:
     A._save_ogg(_trim(x, 2.3), _snd("hydrolitis_retch"), peak=0.6, fade_out=0.3)
 
 
-def snd_l39anom_hydrolitis_whisper() -> None:
-    """Two ~4 s takes of delirium: several faint whispers overlapping, unintelligible, smeared
-    as if heard from under the water (a wobbling dull filter, a watery flange, bubbles)."""
-    for i, seed in enumerate((39427, 39428), 1):
-        rng = G.rng_for(seed)
-        dur = 4.0
-        t = _t(dur)
-        n = len(t)
-        x = np.zeros(n)
-        for start, g in ((0.0, 1.0), (rng.uniform(0.3, 0.6), 0.7), (rng.uniform(0.8, 1.2), 0.5)):
-            w = L4._whisper_breath(rng, dur - start, 0.14, 0.3)
-            G.add_at(x, g * G.norm(w), start, False)
-        fc = 700 + 1900 * (0.5 + 0.5 * np.sin(2 * np.pi * 0.5 * t + rng.uniform(0, 6))) + G.smooth_jitter(rng, n, 2, 300)
-        x = G.svf(x, np.clip(fc, 300, None), 0.9, mode="lp")
-        # Watery flange: the signal plus a copy delayed by a few wobbling milliseconds.
-        idx = np.arange(n)
-        delay = (0.004 + 0.0025 * np.sin(2 * np.pi * 0.3 * t)) * SR
-        x = x + 0.7 * np.interp(idx - delay, idx, x, left=0)
-        bubbles = G._water_bubbles(rng, n, 30, 0.2, 3.5, 300, 900, 0.4, skew=1.0)
-        x = G.norm(x) + 0.15 * G.norm(bubbles)
-        x = A._tunnel_room(rng, x, wet=0.4)
-        A._save_ogg(x, _snd(f"hydrolitis_whisper{i}"), peak=0.32, fade_in=0.4, fade_out=0.6)
-
-
 # =============================================================================
 # The M.E.G. camp
 # =============================================================================
@@ -1211,7 +1160,7 @@ TEXTURES = [tex_l39anom_window_shadow, tex_l39anom_window_glow, tex_l39anom_wind
 SOUNDS = [snd_l39anom_window_wake, snd_l39anom_window_lure, snd_l39anom_window_blinds,
           snd_l39anom_window_shriek, snd_l39anom_glass_shards, snd_l39anom_window_grab,
           snd_l39anom_window_fumes, snd_l39anom_window_noclip, snd_l39anom_ash_smell,
-          snd_l39anom_house_scream, snd_l39anom_door_vanish, snd_l39anom_bigger_inside,
+          snd_l39anom_door_vanish, snd_l39anom_bigger_inside,
           snd_l39anom_hole_scrape, snd_l39anom_hole_breath, snd_l39anom_hole_growl,
           snd_l39anom_hole_climb, snd_l39anom_hydrolitis_chills, snd_l39anom_hydrolitis_heartbeat,
-          snd_l39anom_hydrolitis_retch, snd_l39anom_hydrolitis_whisper, snd_l39anom_camp_stash]
+          snd_l39anom_hydrolitis_retch, snd_l39anom_camp_stash]

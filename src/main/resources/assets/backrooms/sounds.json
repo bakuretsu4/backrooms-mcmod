@@ -791,23 +791,6 @@
       "backrooms:level227/water/under_exit2"
     ]
   },
-  "sanity.whisper": {
-    "sounds": [
-      {
-        "name": "backrooms:sanity/whisper1",
-        "volume": 0.83
-      },
-      {
-        "name": "backrooms:sanity/whisper2",
-        "volume": 0.9
-      },
-      {
-        "name": "backrooms:sanity/whisper3",
-        "volume": 0.93
-      }
-    ],
-    "subtitle": "subtitles.backrooms.sanity_whisper"
-  },
   "sanity.heartbeat": {
     "sounds": [
       "backrooms:sanity/heartbeat"
@@ -993,23 +976,6 @@
         "volume": 0.62
       }
     ]
-  },
-  "level94.laugh": {
-    "sounds": [
-      {
-        "name": "backrooms:level94/laugh1",
-        "stream": true
-      },
-      {
-        "name": "backrooms:level94/laugh2",
-        "stream": true
-      },
-      {
-        "name": "backrooms:level94/laugh3",
-        "stream": true
-      }
-    ],
-    "subtitle": "subtitles.backrooms.l94_laugh"
   },
   "music.menu": {
     "sounds": [
@@ -1480,14 +1446,6 @@
       "backrooms:level4/stairwell_echo3"
     ],
     "subtitle": "subtitles.backrooms.level4_stairwell_echo"
-  },
-  "level4.window_whisper": {
-    "sounds": [
-      "backrooms:level4/window_whisper1",
-      "backrooms:level4/window_whisper2",
-      "backrooms:level4/window_whisper3"
-    ],
-    "subtitle": "subtitles.backrooms.level4_window_whisper"
   },
   "level4.window_grab": {
     "sounds": [
@@ -2260,23 +2218,6 @@
     ],
     "subtitle": "subtitles.backrooms.distant.level0.ballast_pop"
   },
-  "distant.level0.wall_scratch": {
-    "sounds": [
-      {
-        "name": "backrooms:ambient/distant/level0/wall_scratch1",
-        "attenuation_distance": 48
-      },
-      {
-        "name": "backrooms:ambient/distant/level0/wall_scratch2",
-        "attenuation_distance": 48
-      },
-      {
-        "name": "backrooms:ambient/distant/level0/wall_scratch3",
-        "attenuation_distance": 48
-      }
-    ],
-    "subtitle": "subtitles.backrooms.distant.level0.wall_scratch"
-  },
   "distant.level0.layout_shift": {
     "sounds": [
       {
@@ -2293,40 +2234,6 @@
       }
     ],
     "subtitle": "subtitles.backrooms.distant.level0.layout_shift"
-  },
-  "distant.level0.carpet_drip": {
-    "sounds": [
-      {
-        "name": "backrooms:ambient/distant/level0/carpet_drip1",
-        "attenuation_distance": 48
-      },
-      {
-        "name": "backrooms:ambient/distant/level0/carpet_drip2",
-        "attenuation_distance": 48
-      },
-      {
-        "name": "backrooms:ambient/distant/level0/carpet_drip3",
-        "attenuation_distance": 48
-      }
-    ],
-    "subtitle": "subtitles.backrooms.distant.level0.carpet_drip"
-  },
-  "distant.level0.far_call": {
-    "sounds": [
-      {
-        "name": "backrooms:ambient/distant/level0/far_call1",
-        "attenuation_distance": 48
-      },
-      {
-        "name": "backrooms:ambient/distant/level0/far_call2",
-        "attenuation_distance": 48
-      },
-      {
-        "name": "backrooms:ambient/distant/level0/far_call3",
-        "attenuation_distance": 48
-      }
-    ],
-    "subtitle": "subtitles.backrooms.distant.level0.far_call"
   },
   "distant.level0.settle_creak": {
     "sounds": [
@@ -3299,26 +3206,6 @@
     ],
     "subtitle": "subtitles.backrooms.level39_anoms.ash_smell"
   },
-  "level39_anoms.house_scream": {
-    "sounds": [
-      {
-        "name": "backrooms:level39_anoms/house_scream1",
-        "attenuation_distance": 40,
-        "volume": 0.72
-      },
-      {
-        "name": "backrooms:level39_anoms/house_scream2",
-        "attenuation_distance": 40,
-        "volume": 0.93
-      },
-      {
-        "name": "backrooms:level39_anoms/house_scream3",
-        "attenuation_distance": 40,
-        "volume": 0.92
-      }
-    ],
-    "subtitle": "subtitles.backrooms.level39_anoms.house_scream"
-  },
   "level39_anoms.hole_scrape": {
     "sounds": [
       {
@@ -3390,19 +3277,6 @@
       }
     ],
     "subtitle": "subtitles.backrooms.level39_anoms.hydrolitis_retch"
-  },
-  "level39_anoms.hydrolitis_whisper": {
-    "sounds": [
-      {
-        "name": "backrooms:level39_anoms/hydrolitis_whisper1",
-        "attenuation_distance": 8
-      },
-      {
-        "name": "backrooms:level39_anoms/hydrolitis_whisper2",
-        "attenuation_distance": 8
-      }
-    ],
-    "subtitle": "subtitles.backrooms.level39_anoms.hydrolitis_whisper"
   },
   "level39_anoms.door_vanish": {
     "sounds": [
@@ -3598,41 +3472,6 @@
       }
     ],
     "subtitle": "subtitles.backrooms.skin_stealer.death"
-  },
-  "entity.wretch.moan": {
-    "sounds": [
-      {
-        "name": "backrooms:entity/wretch_moan1",
-        "volume": 0.73
-      },
-      "backrooms:entity/wretch_moan2",
-      {
-        "name": "backrooms:entity/wretch_moan3",
-        "volume": 0.77
-      }
-    ],
-    "subtitle": "subtitles.backrooms.wretch.moan"
-  },
-  "entity.wretch.sob": {
-    "sounds": [
-      "backrooms:entity/wretch_sob1",
-      "backrooms:entity/wretch_sob2",
-      "backrooms:entity/wretch_sob3"
-    ],
-    "subtitle": "subtitles.backrooms.wretch.sob"
-  },
-  "entity.wretch.scream": {
-    "sounds": [
-      {
-        "name": "backrooms:entity/wretch_scream1",
-        "volume": 0.44
-      },
-      {
-        "name": "backrooms:entity/wretch_scream2",
-        "volume": 0.47
-      }
-    ],
-    "subtitle": "subtitles.backrooms.wretch.scream"
   },
   "entity.wretch.splash": {
     "sounds": [
@@ -4106,23 +3945,6 @@
       }
     ],
     "subtitle": "subtitles.backrooms.distant.level227.wrong_bird"
-  },
-  "distant.level227.animal_call": {
-    "sounds": [
-      {
-        "name": "backrooms:ambient/distant/level227/animal_call1",
-        "attenuation_distance": 48
-      },
-      {
-        "name": "backrooms:ambient/distant/level227/animal_call2",
-        "attenuation_distance": 48
-      },
-      {
-        "name": "backrooms:ambient/distant/level227/animal_call3",
-        "attenuation_distance": 48
-      }
-    ],
-    "subtitle": "subtitles.backrooms.distant.level227.animal_call"
   },
   "distant.level227.leaf_fall": {
     "sounds": [

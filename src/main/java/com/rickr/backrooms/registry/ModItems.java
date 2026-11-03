@@ -394,7 +394,6 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.STICKY_CARPET);
         ITEMS.registerSimpleBlockItem(ModBlocks.FLICKERING_WALL);
         ITEMS.registerSimpleBlockItem(ModBlocks.BLACKOUT_WALLPAPER);
-        ITEMS.registerSimpleBlockItem(ModBlocks.CARPET_FLUID);
         ITEMS.registerSimpleBlockItem(ModBlocks.MANILA_WALLPAPER);
         ITEMS.registerSimpleBlockItem(ModBlocks.MANILA_BROWN_WALL);
         ITEMS.registerSimpleBlockItem(ModBlocks.OCTAGON_TABLE);

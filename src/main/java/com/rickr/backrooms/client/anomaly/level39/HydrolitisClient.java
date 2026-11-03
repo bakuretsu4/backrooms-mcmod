@@ -2,13 +2,11 @@ package com.rickr.backrooms.client.anomaly.level39;
 
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.client.AtmosphereGrade;
-import com.rickr.backrooms.registry.Level39Mobs;
 import com.rickr.backrooms.world.anomaly.level39.Level39AnomalyRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.neoforged.api.distmarker.Dist;
@@ -27,7 +25,7 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
  *   <li>Fever: the picture warms and its exposure drifts a little; chills now and then.</li>
  *   <li>Weakness: the head sways; your heart races in your ears.</li>
  *   <li>Nausea: the sway grows (the server makes you throw up).</li>
- *   <li>Delirium: whispers from nowhere, and a hound growling somewhere close that isn't there.</li>
+ *   <li>Delirium: the fever look and the sway at their worst.</li>
  * </ol>
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
@@ -45,8 +43,6 @@ public final class HydrolitisClient {
     private static final RandomSource RANDOM = RandomSource.create();
     private static long nextChills;
     private static long nextHeart;
-    private static long nextWhisper;
-    private static long nextPhantom;
 
     private HydrolitisClient() {}
 
@@ -99,7 +95,7 @@ public final class HydrolitisClient {
         int s = stage();
         long now = System.currentTimeMillis();
         if (s == 0) {
-            nextChills = nextHeart = nextWhisper = nextPhantom = 0L;
+            nextChills = nextHeart = 0L;
             return;
         }
         if (now >= nextChills) {
@@ -114,32 +110,11 @@ public final class HydrolitisClient {
             }
             nextHeart = now + 14_000L + RANDOM.nextInt(16_000);
         }
-        if (s >= 4 && now >= nextWhisper) {
-            if (nextWhisper != 0L) {
-                around(mc, Level39AnomalyRegistry.HYDROLITIS_WHISPER.get(), 3.0, 6.0, 0.8f);
-            }
-            nextWhisper = now + 12_000L + RANDOM.nextInt(20_000);
-        }
-        if (s >= 4 && now >= nextPhantom) {
-            if (nextPhantom != 0L) {
-                around(mc, Level39Mobs.HOUND_GROWL.get(), 10.0, 16.0, 0.9f);
-            }
-            nextPhantom = now + 40_000L + RANDOM.nextInt(40_000);
-        }
     }
 
     /** A sound from your own body (right at your head). */
     private static void self(Minecraft mc, SoundEvent sound, float volume) {
         LocalPlayer p = mc.player;
         mc.level.playLocalSound(p.getX(), p.getEyeY(), p.getZ(), sound, SoundSource.PLAYERS, volume, 0.95f + RANDOM.nextFloat() * 0.1f, false);
-    }
-
-    /** A sound that isn't there, somewhere around you. */
-    private static void around(Minecraft mc, SoundEvent sound, double min, double max, float volume) {
-        LocalPlayer p = mc.player;
-        double a = RANDOM.nextDouble() * Math.PI * 2.0;
-        double d = Mth.lerp(RANDOM.nextDouble(), min, max);
-        mc.level.playLocalSound(p.getX() + Math.cos(a) * d, p.getEyeY(), p.getZ() + Math.sin(a) * d, sound,
-                SoundSource.AMBIENT, volume, 0.9f + RANDOM.nextFloat() * 0.15f, false);
     }
 }

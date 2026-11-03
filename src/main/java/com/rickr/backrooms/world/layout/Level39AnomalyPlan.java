@@ -22,8 +22,7 @@ import org.jetbrains.annotations.Nullable;
  *       one Window behind lit ground-storey glass, the only kind that can take you through to
  *       Level 94; {@link #exitWindowSpot} finds the nearest one for the exit hints.</li>
  *   <li>House anomalies: every house the town plan gave an anomaly (inverted, merged, cut, floating,
- *       odd furniture, bigger inside, flooded room, vanishing door) is a site covering its lot. A
- *       few ordinary houses are {@code house_screams} houses.</li>
+ *       odd furniture, bigger inside, flooded room, vanishing door) is a site covering its lot.</li>
  *   <li>{@code hole_sounds}: every hole into the tunnels, with a few blocks round it.</li>
  *   <li>{@code meg_camp}: the M.E.G. survey camp, where a town has one.</li>
  *   <li>{@code hydrolitis}: every stagnant tunnel run.</li>
@@ -43,8 +42,6 @@ public final class Level39AnomalyPlan {
 
     /** Chance that a facade stretch is infested with Windows. */
     private static final double INFESTED = 0.75;
-    /** Chance that an ordinary house is one of the screaming houses. */
-    private static final double SCREAM_HOUSE = 0.07;
     /** Hole sites reach this far past the hole's edge. */
     private static final int HOLE_MARGIN = 5;
     /** /backrooms anomaly locate looks this many towns away in each direction. */
@@ -513,11 +510,11 @@ public final class Level39AnomalyPlan {
         return null;
     }
 
-    /** Lot-wide site of a house with an anomaly (or one of the screaming houses), else null. */
+    /** Lot-wide site of a house with an anomaly, else null. */
     @Nullable
     private static AnomalySite houseSite(Level39HouseSpec h) {
         String kind = switch (h.anomaly()) {
-            case NONE -> Hash.unit(Hash.mix(h.hash() ^ 0x5C2EAL)) < SCREAM_HOUSE ? Level39Sites.HOUSE_SCREAMS : null;
+            case NONE -> null;
             case INVERTED -> Level39Sites.INVERTED_HOUSE;
             case MERGED -> Level39Sites.MERGED_HOUSE;
             case CUT_HALF -> Level39Sites.CUT_HOUSE;

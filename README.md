@@ -502,7 +502,7 @@ time while it's 100 BPM or more (amber below 50 sanity, pulsing red below 30).
   Watcher, an Observer or a Smiler, and during blackouts.
 - **Restores** in a safe room (fast), next to a friend in the light (slowly), out in the real world,
   and with Almond Water (+35) or Calm Pills (+25). Creative/spectator players aren't affected.
-- **When it's low** (mostly only you notice): below 70 you hear whispers, knocks and footsteps
+- **When it's low** (mostly only you notice): below 70 you hear knocks and footsteps
   right behind you; below 50 the camcorder picture darkens at the edges in time with your heart,
   loses colour and a black figure stands at the edge of your view until you look at it; below 30
   you hear your heartbeat and the readout blinks red, and the Bacteria find you more often; below
@@ -672,7 +672,7 @@ houses). Upside-down furniture doesn't count.
   hide in the ceiling drains and side alcoves, only a few arms dangling as bait; they hunt by ear
   (sprinting and splashing carry far), knuckles crack just before one strikes with a six-block
   arm that reels you in. Go quiet and still when you hear that. **Wretches**, people far gone with
-  Roth syndrome, moan at the water's edge; they flee from light and noise but lash out if you
+  Roth syndrome, drink at the water's edge; they flee from light and noise but lash out if you
   corner them. **Skin-stealers** stalk anyone who is alone, calling out in a garbled voice (sometimes
   your own last chat line); look straight at one and it slinks away, walk up to it and it charges.
 - **Level 227's big animals** (`entity/L227Bear`, `L227Doe`, `L227Boar`, placed by
@@ -805,7 +805,7 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 
 **Level 0**
 - **Red Rooms:** Sometimes the wallpaper starts peeling, there's crimson underneath, and the carpet grabs at your shoes. Turn the corner and you're in darkroom-red rooms that hum like a klaxon, and the way you came in is gone. The rooms keep count: every time you come round, the hum drags low for a moment and more of the walls have tally marks on them. Count the loops; Level 0 has its own way of letting people go.
-- **Blackout Zones:** Patches of the maze where every light is dead, the walls are rough and the carpet is flooded. Step in and the lights behind you die in a wave rolling away from you; a minute later (or once you're out) they come back from the edge inward. The buzz you hear seems to lead the way out, but it never stays in one place, though the longer you're in, the more honestly it points.
+- **Blackout Zones:** Patches of the maze where every light is dead and the walls are rough. Step in and the lights behind you die in a wave rolling away from you; a minute later (or once you're out) they come back from the edge inward. The buzz you hear seems to lead the way out, but it never stays in one place, though the longer you're in, the more honestly it points.
 - **The Manila Room:** A very rare brown wall with a wooden door. Behind it is a quiet beige room with a table, two chairs, supplies and notes from volunteers, and a piano playing from nowhere. It calms you faster than anywhere else, the lights never go out in it, and if you come back later someone will have put something in the cupboards you emptied. Sign the guestbook. Read the notes: the way to Level 1 is close.
 - **Shifting pillar halls:** Big bright halls full of pillars that are never quite where they were when you look back. You'll hear them settle behind you, and sometimes half the hall is on a different grid from the half you were watching. Mark a pillar with chalk and look away. Only the pale arches in the middle stay put.
 - **Pit rooms:** You hear cold air breathing up through the walls before you see it: a big room whose floor is a grid of square shafts with narrow carpeted walkways between them, and a wooden door on the far side. The light dies two blocks down. Don't fall in. You will land, hurt, somewhere very far away, under a hole in the ceiling.
@@ -888,7 +888,6 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **Flooded rooms:** One room of the house is filled to the ceiling with water.
 - **Bigger on the inside:** The rare house whose front door is unlocked opens onto an entry hall, and past it an endless run of rooms under a ceiling studded with bare bulbs that the house could never hold. Walk back through the hall to leave.
 - **Vanishing doors:** In some houses, a door you walk through is a wall when you turn around. It comes back once nobody is near, or after a while.
-- **Screams from the houses:** Now and then a scream comes from a house window and the colour drains from the picture. Only you hear it. It isn't real.
 - **Sounds from the holes:** If you hear scraping, then breathing, then a growl coming out of a hole in the ground, run: something is climbing up.
 - **Hydrolitis:** The rare dark stretches of tunnel, where the light orbs are out and green motes hang over a filmy surface, carry the Hydrolitis plague. Wade there and it builds up: fever and chills, then weakness, nausea and delirium. Almond water cures it.
 - **The M.E.G. survey camp:** Somewhere in each town the M.E.G.'s last expedition left a tent, crates and field notes (right-click to read). One of the crates has a false bottom.
@@ -1029,8 +1028,7 @@ saturation, hiss and a big, empty room.
   starter), striking again it clicks and catches, and a dying tube's starter ticks now and then.
   About once a minute, faint and far away, the building makes a sound: it settles with a creak,
   ducting ticks above the ceiling as it cools, a relay clacks in a far panel, a door clicks
-  somewhere. Now and then a tube pops in the distance or water drips onto the carpet; rarely,
-  something scratches behind a wall or a voice calls, far off.
+  somewhere. Now and then a tube pops in the distance or the halls shift, far off.
 - **Level 0's dark is silent** (`client/audio/Level0Soundscape`): the room tone belongs to a lit
   building. Where there is no lit tube near you (a dark district, the dark wing, a room whose
   lights just died) it sinks about 18 dB, and in a blackout, with the mains off, about 30 dB, so
