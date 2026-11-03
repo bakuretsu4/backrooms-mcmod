@@ -71,6 +71,20 @@ public final class Level2Spin {
     /** Strength eases toward its target leaving this much of the gap per tick (95% in ~2 s). */
     private static final float STRENGTH_LEFT_PER_TICK = 0.928f;
 
+    // --- The full roll (the room turning you upside down) -------------------------------------
+    /**
+     * Further than this from the nearest exit (blocks) the camera rolls right over with the spin;
+     * within {@link #FLIP_NONE_WITHIN} it is back upright, so the last stretch to the exit and the
+     * bulkhead itself are seen the right way up. In between it unwinds.
+     */
+    private static final float FLIP_FULL_FROM = 115.0f;
+    private static final float FLIP_NONE_WITHIN = 100.0f;
+    /** The flip weight eases toward its target leaving this much of the gap per tick (~1.5 s). */
+    private static final float FLIP_LEFT_PER_TICK = 0.9f;
+
+    private static float flip;
+    private static float prevFlip;
+
     private static float strength;
     private static float prevStrength;
     private static boolean wasActive;
@@ -116,6 +130,15 @@ public final class Level2Spin {
         return Mth.lerp(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false), prevStrength, strength);
     }
 
+    /**
+     * 0..1: how much the camera follows the spin all the way round (1 = rolls right over, through
+     * upside down; 0 = upright). 1 from {@value #FLIP_FULL_FROM} blocks from the nearest exit, 0
+     * within {@value #FLIP_NONE_WITHIN}; 0 outside Level 2.
+     */
+    public static float flipWeight() {
+        return Mth.lerp(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false), prevFlip, flip);
+    }
+
     public static long seed() {
         return Level2ClientState.seed();
     }
@@ -128,8 +151,10 @@ public final class Level2Spin {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         prevStrength = strength;
+        prevFlip = flip;
         if (!active()) {
             strength = prevStrength = 0.0f;
+            flip = prevFlip = 0.0f;
             wasActive = false;
             return;
         }
@@ -137,13 +162,30 @@ public final class Level2Spin {
             return;
         }
         float target = target(mc.player);
+        float flipGoal = flipTarget(mc.player);
         if (!wasActive) {
             // Arrival: the turning is already under way, not fading in from nothing.
             strength = prevStrength = target;
+            flip = prevFlip = flipGoal;
             wasActive = true;
             return;
         }
         strength += (target - strength) * (1.0f - STRENGTH_LEFT_PER_TICK);
+        flip += (flipGoal - flip) * (1.0f - FLIP_LEFT_PER_TICK);
+    }
+
+    /** 1 well away from every exit, 0 within FLIP_NONE_WITHIN of the nearest (once a tick, so the lookup is cheap). */
+    private static float flipTarget(LocalPlayer player) {
+        if (!hasSeed()) {
+            return 1.0f; // arrivals are 500+ blocks from an exit
+        }
+        int[] exit = BackroomsLevel.LEVEL_2.layout().exitPosition(seed(), Mth.floor(player.getX()), Mth.floor(player.getZ()));
+        if (exit == null) {
+            return 1.0f;
+        }
+        double d = Math.hypot(player.getX() - exit[0] - 0.5, player.getZ() - exit[1] - 0.5);
+        float u = Mth.clamp((float) ((d - FLIP_NONE_WITHIN) / (FLIP_FULL_FROM - FLIP_NONE_WITHIN)), 0.0f, 1.0f);
+        return u * u * (3.0f - 2.0f * u);
     }
 
     private static float target(LocalPlayer player) {
