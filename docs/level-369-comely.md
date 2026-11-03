@@ -156,7 +156,13 @@ The user's choices:
   the blocks merge into one field and stay soft in the distance. The lawn under it is a calm,
   even green. (Third pass, after the user's reference of a tall flowing grass field.) Frame rate
   in the huge pillar hall on the test machine: about 360 (450-480 with the old knee-high cards;
-  320 with four blades per plant, which looked the same from a few blocks).
+  320 with four blades per plant, which looked the same from a few blocks). Up close (fourth
+  pass) the meadow is real geometry instead (client/Level369Grass): within 32 blocks every grass
+  and flower block grows about 20 thin tapered blades, smooth gradient from shadowed root to
+  sunlit tip with no texture and no cutout edges, plus flower heads of petal fans on stems; past
+  20 blocks they thin out while the block panels rise, so the far field stays the panels (under a
+  shader pack or Sodium the panels stay everywhere). Frame rate in the huge pillar hall on the
+  test machine: 330-360 steady (295 at worst), about what the block meadow alone cost.
 - **The light, per kind of room** (client/Level369Atmosphere, client/AtmosphereGrade): window
   hallways cool white, their windows throwing shafts of light (client/light/SunBeams: only the
   six nearest windows, only while you are in a hallway); pillar halls a low golden sunset with
@@ -173,7 +179,9 @@ The user's choices:
   blade curves from an upright root. The whole field leans one way with the wind; waves roll
   across it, bending it further and catching the light on the tips as they pass, with gusts and
   a small flutter. Every other block is untouched. Under Iris or a shader pack the meadow stands
-  still (nothing breaks).
+  still (nothing breaks). The near blades (client/Level369Grass, shaders/core/l369_grass) use
+  the same wind in world coordinates, so both sway as one field; near the camera the cutout
+  shader sinks the block meadow into the lawn (uniform MeadowFade) to hand over without a seam.
 - **Sound:** the lawn has grass footsteps (it fell back to concrete before), and wading through
   the flowers rustles (step.meadow, layered over the footstep; player/PlayerGameplay). The
   ambience is quieter and warmer: low breeze, a faint warm room tone, the flowers' faint song in

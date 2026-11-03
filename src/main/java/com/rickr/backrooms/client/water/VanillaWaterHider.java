@@ -74,7 +74,7 @@ public final class VanillaWaterHider {
     }
 
     /** True while an Iris shader pack is in use (false when Iris isn't installed). */
-    static boolean shaderPackInUse() {
+    public static boolean shaderPackInUse() {
         if (irisFailed) {
             return true;
         }

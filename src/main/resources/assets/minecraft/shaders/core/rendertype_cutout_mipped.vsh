@@ -16,6 +16,9 @@ uniform mat4 ProjMat;
 uniform vec3 ChunkOffset;
 uniform int FogShape;
 uniform float GameTime;
+// Level 369's near meadow (client/Level369Grass): x how far its blades reach from the camera,
+// y how wide the hand-over is; 0 while it isn't drawn.
+uniform vec2 MeadowFade;
 
 out float vertexDistance;
 out vec4 vertexColor;
@@ -31,6 +34,10 @@ out vec2 texCoord0;
 // chunk section, and the lawn's top is Level 369's floor y41, nine blocks into its section
 // (Level369Plan.FEET_Y). Every wave repeats a whole number of times in 16 blocks and in
 // GameTime's 20-minute cycle, so nothing jumps at a section edge or when the cycle wraps.
+// Near the camera Level369Grass draws the meadow as real blades (same wind, see
+// assets/backrooms/shaders/core/l369_grass.vsh); there these plants sink into the lawn, rising
+// again over the hand-over ring while the blades thin out. Position + ChunkOffset is the vertex
+// relative to the camera.
 const float TAU = 6.2831853;
 const float LAWN_Y = 9.0;
 
@@ -43,7 +50,11 @@ void main() {
     vec4 color = Color;
     if (meadow(Color)) {
         color.g = 1.0;
-        float h = Position.y - LAWN_Y;
+        if (MeadowFade.x > 0.0) {
+            float keep = smoothstep(MeadowFade.x - MeadowFade.y, MeadowFade.x, length((Position + ChunkOffset).xz));
+            pos.y -= (1.0 - keep) * 1.3;
+        }
+        float h = pos.y - LAWN_Y;
         if (h > 0.02) {
             float along = (Position.x + Position.z) / 8.0;
             float across = (Position.x - Position.z) / 16.0;
