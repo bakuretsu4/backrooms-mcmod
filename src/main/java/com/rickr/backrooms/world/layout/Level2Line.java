@@ -94,7 +94,7 @@ final class Level2Line {
 
     // ---- Exits ---------------------------------------------------------------------------------
     /** One exit per this many blocks of each corridor ... */
-    static final int EXIT_CELL = 370;
+    static final int EXIT_CELL = 1024;
     /** ... at a random spot this wide inside the stretch, then moved to the middle of its segment. */
     private static final int EXIT_JITTER = 31;
     /** The exit bay reaches this far each way from the exit door along the corridor. */

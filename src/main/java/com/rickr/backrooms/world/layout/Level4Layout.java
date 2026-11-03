@@ -47,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
  * every column with plain numbers; this class turns those numbers into blocks and adds the parts
  * that use the shared building code:
  * <ul>
- *   <li><b>Exit:</b> one emergency stairwell per 288 x 288 region (the shared stairwell tower of
+ *   <li><b>Exit:</b> one emergency stairwell per 1008 x 1008 region (the shared stairwell tower of
  *       Levels 0/1, here with office walls and a steel fire door under a glowing EXIT sign, the
  *       fire door signs, an extinguisher, a call point and an evacuation plan beside it). The
  *       open, brightly lit floor around it makes the sign easy to spot. Going down the stairs
@@ -66,6 +66,11 @@ import org.jetbrains.annotations.Nullable;
 public final class Level4Layout extends LevelLayout {
     public Level4Layout() {
         super(4, Level4Plan.EXITS);
+    }
+
+    @Override
+    public int arrivalExitClearance() {
+        return 400;
     }
 
     // ==========================================================================================

@@ -110,7 +110,7 @@ public final class Level9Layout extends LevelLayout {
     private static final int EMPTY_LAWN = 7;
 
     // ---- Exit --------------------------------------------------------------------------------
-    private static final int EXIT_REGION = 512;
+    private static final int EXIT_REGION = 1024;
     /** Half the length of the underpass (it is 2 * EXIT_HALF + 1 long). */
     private static final int EXIT_HALF = 14;
     /** Side streets keep away from the underpass by this much. */
@@ -171,10 +171,15 @@ public final class Level9Layout extends LevelLayout {
     private final Level9AnomalyPlan plan;
 
     public Level9Layout() {
-        // The ExitLocator picks one point per 512x512 region; the underpass goes where the main
+        // The ExitLocator picks one point per 1024x1024 region; the underpass goes where the main
         // street nearest that point crosses its x.
         super(8, new ExitLocator(EXIT_REGION, 96, 9000));
         this.plan = new Level9AnomalyPlan(this);
+    }
+
+    @Override
+    public int arrivalExitClearance() {
+        return 400;
     }
 
     // ==========================================================================================

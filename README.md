@@ -145,8 +145,8 @@ going down into the dark, until the picture breaks up and you are in the next le
   distance. You can only walk forwards or back: every 24-48 blocks the corridor changes (a valve
   manifold, a pump bay, a low hot squeeze, a grating over a pipe trench, a bulkhead ring, a leak,
   a short dark stretch), and every 60-120 blocks a door or doorway on alternating sides leads into
-  a dead-end maintenance room, ventilation room, boiler room, storage closet or safe room. Every
-  320-420 blocks an EXIT bay opens at the side; its heavy bulkhead takes everyone within 6 blocks
+  a dead-end maintenance room, ventilation room, boiler room, storage closet or safe room. About
+  every 1000 blocks an EXIT bay opens at the side; its heavy bulkhead takes everyone within 6 blocks
   with you. Parallel corridors 48 blocks apart never meet. The concrete is marked by water and
   age: rust bleeding from old bracket stumps, spalled patches with rusty rebar, chipped kickers;
   in damp stretches (round leaks, and long patches where the cold pipes sweat) condensation runs
@@ -230,7 +230,7 @@ going down into the dark, until the picture breaks up and you are in the next le
   Calm and quiet: gentle lapping, distant drips, no monsters, no events, and your **sanity slowly
   comes back** (+0.6/s) anywhere on the level. Backpacks on the dry pool decks and at the top of
   the spiral stairs hold almond water and calm pills. The way on is down: a round rotunda with a
-  **pit of deep, dark water** in its middle (one every ~170 blocks; `/backrooms locate` points to
+  **pit of deep, dark water** in its middle (one per ~1000 x 1000 blocks; `/backrooms locate` points to
   it). Walk down the floating treads into the water and dive; a gentle current draws you down
   the shaft and out into Level 369.
 - **Level 369 ("Comely"):** reached by diving down Level 37's pit: you fall out of a skylight into
@@ -247,7 +247,7 @@ going down into the dark, until the picture breaks up and you are in the next le
   pollen into the light. Each kind of room has its own light: cool white hallways with shafts of
   sun from their windows, pillar halls in a low golden sunset, soft daylight under the skylights.
   Nothing lives here and nothing happens. The way on is a great **arch of vines** filled
-  with a curtain of hanging flowers (one every ~160 blocks; `/backrooms locate` points to it): walk
+  with a curtain of hanging flowers (one per ~1000 x 1000 blocks; `/backrooms locate` points to it): walk
   into the flowers and you come out in Level 7. See `docs/level-369-comely.md`.
 - **Level 7 ("Thalassophobia"):** reached through Level 369's arch of vines (or, as a shortcut, down
   the stairs of a flooded house in Level 94, about one exit house in three). You come up in a
@@ -390,7 +390,14 @@ going down into the dark, until the picture breaks up and you are in the next le
   that is the tree drifting in the void. The mist is thick in the forest and thins out at the
   edges and in the open air. The far view is built once when you arrive (about 0.6 s in the
   background, ~34 MB of graphics memory) and freed ten seconds after you leave.
-Every floor is endless; exits are spread out a few hundred blocks apart.
+Every floor is endless, and its way out is far away. On Levels 0, 1, 4, the Poolrooms, 369, 9
+and 94 there is about one main exit per 1000 x 1000 blocks, and wherever you arrive from another
+level, the nearest one is at least 400 blocks off (`world/Travel.clearOfExits` moves the arrival
+point away from it, the same way for everyone coming through the same exit, so friends still land
+together). Level 2's corridors have an EXIT bay about every 1000 blocks and Level 37 a pit per
+~1000 x 1000 blocks; there you arrive at least 300 blocks from one. Side ways out (the flickering
+wall in Level 0, Level 4's exit elevators, Level 37's openings, Level 94's flooded houses) and
+Levels 7, 39, 490 and 227 keep their own spacing.
 
 **Finding the exit** (subtle on purpose, `world/ExitHints`, `client/hint/ExitHints`): nothing on
 screen points the way, but every level's ordinary exit can be tracked down three ways. Secret

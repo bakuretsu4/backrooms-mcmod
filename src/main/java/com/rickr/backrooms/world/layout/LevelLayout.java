@@ -187,6 +187,15 @@ public abstract class LevelLayout {
     }
 
     /**
+     * Someone arriving from another level lands at least this many blocks from the nearest
+     * {@link #exitPosition} (Travel moves the arrival point away from it), so every level has to be
+     * explored before you find its way out. 0 (the default) leaves the arrival where it falls.
+     */
+    public int arrivalExitClearance() {
+        return 0;
+    }
+
+    /**
      * False for a level with no exit to find at all (Level 227: you only ever leave by noclipping
      * out at random). Then nothing points at {@link #exitPosition}: no exit sound, no camcorder
      * signal, and /backrooms locate says so.

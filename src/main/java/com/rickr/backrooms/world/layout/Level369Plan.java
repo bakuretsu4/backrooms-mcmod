@@ -148,8 +148,8 @@ public final class Level369Plan {
     /** Two hallways meeting end to end: the corridor runs on through. */
     static final int E_JOIN = -3;
 
-    /** One way out per region of EXIT_CELLS x EXIT_CELLS cells (160 x 160 blocks), never in its outer cells. */
-    private static final int EXIT_CELLS = 5;
+    /** One way out per region of EXIT_CELLS x EXIT_CELLS cells (1024 x 1024 blocks), never in its outer cells. */
+    private static final int EXIT_CELLS = 32;
     static final ExitLocator EXITS = new ExitLocator(EXIT_CELLS * CELL, 40, 3690);
 
     // ==========================================================================================

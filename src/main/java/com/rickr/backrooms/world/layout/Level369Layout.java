@@ -35,6 +35,11 @@ public final class Level369Layout extends LevelLayout {
         super(5, Level369Plan.EXITS);
     }
 
+    @Override
+    public int arrivalExitClearance() {
+        return 400;
+    }
+
     /** The plan, for the Level 369 rules. */
     public static Level369Plan plan() {
         return PLAN;

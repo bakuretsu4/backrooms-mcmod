@@ -81,8 +81,9 @@ final class Level4Plan {
     /** The core is local CORE_LO..CORE_HI (inclusive): 41 x 41 blocks. (The anomalies plan uses it too.) */
     static final int CORE_LO = RING + 1;
     static final int CORE_HI = CELL - RING - 1;
-    /** Exit stairwells: one per 288 x 288 region (6 x 6 zones). */
-    static final ExitLocator EXITS = new ExitLocator(288, 32, 4400);
+    /** Exit stairwells: one per EXIT_REGION x EXIT_REGION region (21 x 21 zones). */
+    static final int EXIT_REGION = 1008;
+    static final ExitLocator EXITS = new ExitLocator(EXIT_REGION, 32, 4400);
     /** Around a stairwell (outside its 11 x 11 tower) everything is cleared to bright open floor. */
     static final int CLEARING_RADIUS = 8;
 
@@ -449,7 +450,7 @@ final class Level4Plan {
 
     /**
      * True when the clearing around an exit stairwell reaches into zone (cx, cz). Exits sit at
-     * least 32 blocks inside their 288-block region, so only the regions overlapping the zone
+     * least 32 blocks inside their EXIT_REGION-block region, so only the regions overlapping the zone
      * (grown by the clearing) need checking.
      */
     static boolean touchesExitClearing(long seed, int cx, int cz) {
@@ -458,8 +459,8 @@ final class Level4Plan {
         int x1 = cx * CELL + CELL - 1 + reach;
         int z0 = cz * CELL - reach;
         int z1 = cz * CELL + CELL - 1 + reach;
-        for (int rx = Math.floorDiv(x0, 288); rx <= Math.floorDiv(x1, 288); rx++) {
-            for (int rz = Math.floorDiv(z0, 288); rz <= Math.floorDiv(z1, 288); rz++) {
+        for (int rx = Math.floorDiv(x0, EXIT_REGION); rx <= Math.floorDiv(x1, EXIT_REGION); rx++) {
+            for (int rz = Math.floorDiv(z0, EXIT_REGION); rz <= Math.floorDiv(z1, EXIT_REGION); rz++) {
                 int ex = EXITS.exitX(seed, rx, rz);
                 int ez = EXITS.exitZ(seed, rx, rz);
                 if (ex >= x0 && ex <= x1 && ez >= z0 && ez <= z1) {

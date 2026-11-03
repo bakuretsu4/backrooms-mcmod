@@ -90,7 +90,12 @@ public final class Level1Layout extends LevelLayout {
     private final AnomalyGrid roomGrid = new AnomalyGrid(Level1AnomalyPlan.ROOM_CELL, 0, this::planRoomSite);
 
     public Level1Layout() {
-        super(HALL_INTERIOR, new ExitLocator(384, 48, 2000));
+        super(HALL_INTERIOR, new ExitLocator(1024, 48, 2000));
+    }
+
+    @Override
+    public int arrivalExitClearance() {
+        return 400;
     }
 
     // ==========================================================================================

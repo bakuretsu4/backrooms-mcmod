@@ -64,7 +64,7 @@ Next: the user's first play-test.
 - **Doorways:** 3 wide, 3 high, a brick threshold.
 - **The way in:** from a Level 37 pit you appear at y50 in a skylight shaft of the nearest skylit
   room and fall into the flowers; no fall ever hurts in Level 369 (world/Level369Rules).
-- **The way out:** one arch of vines per 140 x 140 blocks, against the north wall of a skylit
+- **The way out:** one arch of vines per 1024 x 1024 blocks (140 x 140 at first), against the north wall of a skylit
   room: a round-topped opening in overgrown masonry, filled with a curtain of hanging blossom
   (l369_veil, full-bright, walk-through). Walk into it: Level 7.
 - Lighting: light panels, skylights and windows are Veil fixtures (client/light/FixtureType); the

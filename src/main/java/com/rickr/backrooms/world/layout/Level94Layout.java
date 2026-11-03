@@ -35,13 +35,18 @@ public final class Level94Layout extends LevelLayout {
     /** World height: hills reach ~y66, the glass mountain and castle go up to ~y215. */
     public static final int WORLD_HEIGHT = 256;
     /** One dark-door house in every square this size. */
-    static final int EXIT_REGION = 400;
+    static final int EXIT_REGION = 1024;
     static final ExitLocator EXITS = new ExitLocator(EXIT_REGION, 70, 9400);
     /** Solid dirt goes down to here under the ground (nothing ever sees lower). */
     private static final int DIRT_BOTTOM_Y = 34;
 
     public Level94Layout() {
         super(8, EXITS);
+    }
+
+    @Override
+    public int arrivalExitClearance() {
+        return 400;
     }
 
     @Override

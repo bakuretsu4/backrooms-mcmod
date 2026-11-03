@@ -103,6 +103,11 @@ public final class Level2Layout extends LevelLayout {
         super(4, EXITS);
     }
 
+    @Override
+    public int arrivalExitClearance() {
+        return 300;
+    }
+
     // ==========================================================================================
     // Public queries
     // ==========================================================================================
