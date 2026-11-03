@@ -36,8 +36,10 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
  * </ul>
  *
  * <p>Seen across the corridor everything is counted in q = dz * side, the distance from the centre
- * line towards the detour's side ({@link Level2Line#detourSide}): q = 1 the lane, 2 the shoulder,
- * 3 the chase, 4 the wall. The dog-leg, viewed from above (side = south, so q grows downwards):
+ * line towards the detour's side ({@link Level2Line#detourSide}): q = 1 the lane, 2 the inner wall,
+ * 3 the concrete behind it, 4 the wall. On the detour's side the rack's front pipes make way
+ * (Level2Section#frontCleared), so the way round is always two blocks wide. The dog-leg, viewed from
+ * above (side = south, so q grows downwards):
  * <pre>
  *   q-4  # # # # # # # # # # # #
  *   q-3  P P P P P P P P P P P P     P: the far wall's chase, untouched
@@ -373,8 +375,8 @@ final class Level2Detours {
         }
         if (type == Level2Line.SEG_BYPASS) {
             int am = Math.abs(m);
-            if (am == SEAL_HALF + 1 && q == 2) {
-                // On each sealing wall, beside the door: an arrow pointing to the bypass.
+            if (am == SEAL_HALF + 1 && q == 1) {
+                // On each sealing wall, beside the door (the lane's edge: the inner wall is solid): an arrow pointing to the bypass.
                 boolean lookingEast = m < 0;
                 Variant arrow = lookingEast == (side > 0) ? Variant.ARROW_RIGHT : Variant.ARROW_LEFT;
                 out.set(floor + 2, Level2Parts.stencil(m < 0 ? Direction.WEST : Direction.EAST, arrow));

@@ -18,19 +18,24 @@ import org.jetbrains.annotations.Nullable;
  * corridors never meet: a player can only walk forwards, backwards, or into a dead-end side room.
  * Everything that belongs to a band stays within {@link #REACH} blocks of its middle.
  *
- * <p><b>Across the corridor</b> (dz = distance from the centre line):
+ * <p><b>Across the corridor</b> (dz = distance from the centre line), barely wide enough to walk:
  * <pre>
  *   dz  -4  -3  -2  -1   0  +1  +2  +3  +4
- *        #   P   s   .   .   .   s   P   #      # wall   P pipe chase   s shoulder   . lane
+ *        #   #   W   .   .   f   R   #   #      # wall   W/R inner wall: bare concrete or the pipe rack
+ *                                                f the rack's front pipes   . lane
  * </pre>
- * The lane (|dz| &lt;= 1) is never blocked. The shoulders hold the lamps and the gutter.
+ * The inner walls stand at |dz| = 2; one of them carries the dense pipe rack, whose front pipes
+ * stick out into the lane column beside it, so you walk in two clear blocks between bare concrete
+ * and pipes. Which wall has the rack, where the light panels and the painted band are, and whether
+ * the floor is rolled, all follow {@link Level2Twist} (built by {@link Level2Section}). Doorways,
+ * bays and alcoves cut short passages through the inner wall and the concrete behind it.
  *
  * <p><b>Along the corridor</b> it is cut into segments 24 to 48 blocks long, each with its own
  * character (see the SEG_ constants), never the same kind twice in a row; about one in ten is an
  * odd but grounded detour (a dog-leg round a column, a duct crossing, a catwalk over a trench, a
  * sealed section with a bypass: {@link Level2Detours}). Side rooms open off the chase walls about
  * every 60-120 blocks, alternating sides (about one in six a bigger maintenance chamber,
- * {@link Level2Chambers}), and an exit bay comes every 320-420 blocks.
+ * {@link Level2Chambers}), and an exit bay comes about every 1024 blocks.
  *
  * <p>Everything is a pure function of (seed, x, z) built from cheap hashes. The few answers that
  * take a bit of work (a segment's type, a room's type) are remembered per thread in small tables,
@@ -46,9 +51,9 @@ final class Level2Line {
     private static final int MAX_OFFSET = 2;
     /** |dz| up to this is the lane: the clear walkway, never blocked. */
     static final int LANE = 1;
-    /** |dz| = this is the shoulder, beside the chase: lamps (hung on the chase's piers), the gutter. */
+    /** |dz| = this is the inner wall: bare concrete, or the pipe rack (a passage at doorways and bays). */
     static final int SHOULDER = 2;
-    /** |dz| = this is the pipe chase along each wall. */
+    /** |dz| = this is solid concrete behind the inner wall (the buried old chase; a passage at doorways). */
     static final int CHASE = 3;
     /** |dz| = this is the corridor wall. */
     static final int WALL = 4;
@@ -97,15 +102,19 @@ final class Level2Line {
     static final int EXIT_CELL = 1024;
     /** ... at a random spot this wide inside the stretch, then moved to the middle of its segment. */
     private static final int EXIT_JITTER = 31;
-    /** The exit bay reaches this far each way from the exit door along the corridor. */
-    static final int BAY_HALF = 5;
-    /** The exit door stands in the bay's back wall, this far from the centre line. */
-    static final int BAY_BACK = 6;
+    /**
+     * The exit bay reaches this far each way from the exit door along the corridor at its mouth
+     * (the inner wall: 5 wide); deeper in it narrows to the door's own 3 columns, pipes crowding
+     * in either side.
+     */
+    static final int BAY_HALF = 2;
+    /** The exit door stands in the bay's back wall, this far from the centre line (the recess is |dz| 2-4). */
+    static final int BAY_BACK = 5;
 
     // ---- Side rooms ----------------------------------------------------------------------------
     /** One side room slot per this many blocks of corridor (rooms alternate sides). */
     static final int ROOM_CELL = 90;
-    /** Rooms keep this far (along the corridor) from an exit door (its bay reaches 5 each way). */
+    /** Rooms keep this far (along the corridor) from an exit door (its bay reaches 2 each way). */
     private static final int ROOM_EXIT_GAP = 14;
     /** Rooms keep this far from a void or loop door on their side of the corridor (its hall and passage). */
     static final int ROOM_DOOR_GAP = 12;
@@ -158,9 +167,13 @@ final class Level2Line {
     /** A pump bay's alcove. */
     static final int F_ALCOVE = 6;
 
-    // ---- Lamps ---------------------------------------------------------------------------------
-    /** A caged lamp every this many blocks, alternating sides (so each wall has one every 12). */
-    static final int LAMP_SPACING = 6;
+    // ---- Lamps and brackets ----------------------------------------------------------------------
+    /** A recessed light panel every this many blocks (in a twist stretch also halfway between). */
+    static final int LAMP_SPACING = 12;
+    /** The pipe bundle is clamped to a steel channel bracket every this many blocks. */
+    static final int BRACKET_SPACING = 4;
+    /** A segment's section number is stencilled this many blocks after its start. */
+    static final int MARKER_IN = 3;
 
     private Level2Line() {}
 
@@ -206,47 +219,23 @@ final class Level2Line {
         return Hash.range(Hash.of(seed, band, 3, 507), LAMP_SPACING);
     }
 
-    /** The side of the lamp at x, or 0 if no lamp spot is at x. */
-    static int lampSide(long seed, int band, int x) {
-        int rel = x - lampPhase(seed, band);
-        if (Math.floorMod(rel, LAMP_SPACING) != 0) {
-            return 0;
-        }
-        return (Math.floorDiv(rel, LAMP_SPACING) & 1) == 0 ? -1 : 1;
-    }
-
-    // ==========================================================================================
-    // The rhythm of each wall's pipe chase
-    // ==========================================================================================
-
-    /** A concrete pier in the chase: the caged lamp hangs on its face (one every 12 blocks per wall). */
-    static final int CHASE_PIER = -1;
-    /** A riser: pipes climbing from the low main to the ceiling band (halfway between two piers). */
-    static final int CHASE_RISER = -2;
-
     /**
-     * Where column x sits in the rhythm of one wall's chase: {@link #CHASE_PIER} (at every lamp spot
-     * of that wall), {@link #CHASE_RISER}, or 0..4 = its place in the 5-block run of racks between them.
+     * True if a light panel belongs at x: every 12 blocks, and inside a twist stretch also halfway
+     * between, so the panels turning round the corridor read as one motion.
      */
-    static int chaseSlot(long seed, int band, int x, int side) {
-        int r = Math.floorMod(chaseRel(seed, band, x, side), 2 * LAMP_SPACING);
-        if (r == 0) {
-            return CHASE_PIER;
-        }
-        if (r == LAMP_SPACING) {
-            return CHASE_RISER;
-        }
-        return r < LAMP_SPACING ? r - 1 : r - LAMP_SPACING - 1;
+    static boolean lampAt(long seed, int band, int x) {
+        int r = Math.floorMod(x - lampPhase(seed, band), LAMP_SPACING);
+        return r == 0 || r == LAMP_SPACING / 2 && Level2Twist.inStretch(seed, band, x);
     }
 
-    /** Which 5-block run of racks column x belongs to on that wall (each run picks its own look). */
-    static int chaseRun(long seed, int band, int x, int side) {
-        return Math.floorDiv(chaseRel(seed, band, x, side), LAMP_SPACING);
+    /** True if the pipe bundle has a steel channel bracket at x. */
+    static boolean bracketAt(long seed, int band, int x) {
+        return Math.floorMod(x - lampPhase(seed, band) - 1, BRACKET_SPACING) == 0;
     }
 
-    /** x counted from a lamp spot of that wall (the north wall's lamps come first, the south's 6 later). */
-    private static int chaseRel(long seed, int band, int x, int side) {
-        return x - lampPhase(seed, band) - (side < 0 ? 0 : LAMP_SPACING);
+    /** X of segment n's section marker (and, in a repeat_section oddity, its dead lamp and chalk cross). */
+    static int markerX(long seed, int band, int n) {
+        return segStart(seed, band, n) + MARKER_IN;
     }
 
     // ==========================================================================================
@@ -555,11 +544,6 @@ final class Level2Line {
     private static int nearestLampSpot(long seed, int band, int x) {
         int rel = Math.floorMod(x - lampPhase(seed, band), LAMP_SPACING);
         return rel <= LAMP_SPACING / 2 ? x - rel : x + LAMP_SPACING - rel;
-    }
-
-    /** The first concrete pier (lamp spot) of {@code side}'s chase at or after x. */
-    static int pierAtOrAfter(long seed, int band, int x, int side) {
-        return x + Math.floorMod(-chaseRel(seed, band, x, side), 2 * LAMP_SPACING);
     }
 
     /**

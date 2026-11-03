@@ -135,7 +135,7 @@ final class Level2Finder {
         int c = Level2Line.centre(seed, band);
         int side = Level2Line.exitSide(seed, band, j);
         int door = c + side * Level2Line.BAY_BACK;
-        int mouth = c + side * Level2Line.CHASE;
+        int mouth = c + side * Level2Line.SHOULDER; // the bay's mouth in the inner wall
         return new AnomalySite(kind, ex - Level2Line.BAY_HALF, Math.min(door, mouth), ex + Level2Line.BAY_HALF,
                 Math.max(door, mouth), ex, door, 0, 0);
     }

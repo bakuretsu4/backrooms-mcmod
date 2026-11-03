@@ -42,6 +42,12 @@
 //  past white through steps 5 and 6 and ends step 6 with a soft highlight shoulder instead of
 //  clipping (and instead of the footage look's blow-out), so sunlit openings and skylights keep a
 //  gradient. Rolloff = 0 changes nothing at all.
+//  Level 2's spin (uniforms SpinTwist, SpinReach, SpinVignette from Level2Spin via CamcorderEffect):
+//  in step 1 the picture is turned around the screen centre by an angle that grows with the
+//  square of the distance from it (nothing in the middle, SpinTwist radians at the corners), so the
+//  walls at the edges seem to slide round you while what you aim at stays put; it zooms in just
+//  enough (from SpinReach, the swirl's slow-moving envelope) that a turned corner never runs off
+//  the picture. In step 6 the edges of the picture close in a little (SpinVignette). All 0 = unchanged.
 
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;
@@ -109,6 +115,9 @@ uniform float Footage;      // 0 or 1: the footage look (see the top)
 uniform float Bars;         // 0 or 1: 4:3 frame with black bars at the sides
 uniform float AutoExposure; // the camera's hunting auto-exposure (1 = none)
 uniform float Gain;         // 0..1 how far the camera has turned its gain up (noise in the dark)
+uniform float SpinTwist;    // radians the corners are turned (Level 2; 0 = unchanged)
+uniform float SpinReach;    // the largest SpinTwist can currently be (radians), for the crop
+uniform float SpinVignette; // 0..1 how far the edges close in (Level 2; 0 = unchanged)
 
 in vec2 texCoord;
 in vec2 oneTexel;
@@ -284,6 +293,16 @@ void main() {
     vec2 p = (texCoord - 0.5) * 2.0 * vec2(aspect, 1.0);
     float crop = 1.0 / (1.0 + LENS_K * (aspect * aspect + 1.0));
     vec2 src = p * (1.0 + LENS_K * dot(p, p)) * crop;
+    // 1b. Level 2's spin: the periphery turns, the middle doesn't (see the top). The turn is
+    //     measured on the output pixel (p), so the corners are turned by exactly SpinTwist.
+    if (SpinReach > 0.0) {
+        float reach = min(SpinReach, 0.05);
+        float fit = 1.0 / (cos(reach) + max(aspect, 1.0 / aspect) * sin(reach));
+        float a = SpinTwist * dot(p, p) / (aspect * aspect + 1.0);
+        float ca = cos(a);
+        float sa = sin(a);
+        src = mat2(ca, sa, -sa, ca) * src * fit;
+    }
     vec2 uv = src / vec2(aspect, 1.0) * 0.5 + 0.5;
 
     // 2. Tape transport. A faint line jitter is always there (tape); the head-switching strip at
@@ -515,6 +534,13 @@ void main() {
         col = mix(col, vec3(luma(col)), sanity * 0.3);
         float edge = smoothstep(0.45, 1.35, length((texCoord - 0.5) * 2.0));
         col *= 1.0 - sanity * (0.4 + 0.2 * clamp(SanityPulse, 0.0, 1.0)) * edge;
+    }
+    if (SpinVignette > 0.0) {
+        // Level 2: the edges of the picture close in (claustrophobia), tighter inside a twist
+        // stretch. Measured in screen-height units scaled so the corners are at 1.
+        float v = clamp(SpinVignette, 0.0, 1.0);
+        float r = length((texCoord - 0.5) * vec2(aspect, 1.0)) * 2.0 / sqrt(aspect * aspect + 1.0);
+        col *= 1.0 - v * 0.30 * smoothstep(mix(0.65, 0.45, v), 1.05, r);
     }
     // Faint magenta on neutrals: the less saturated a pixel, the more green it loses.
     float hi = max(col.r, max(col.g, col.b));

@@ -199,6 +199,10 @@ public enum FixtureType {
     // boiler rooms): the same cage as the amber bulkhead lamp with a cold blue-green-white mercury
     // bulb, a little stronger and wider (machine bays are bigger), on the same series circuits.
     L2_MERCURY_LAMP("l2_mercury_lamp", Mount.WALL, 1, 0.72f, 0.93f, 0.95f, 1.9f, 9.5f, Hum.FLUORESCENT, true),
+    // Level 2's recessed ceiling/wall light panel (the reference photo: a square of cold blue-white
+    // every ~12 blocks down the corridor). A full block in the surface, the light just inside the
+    // open side; on the same series circuits as the caged lamps (lit=false: a dead panel, no light).
+    L2_LIGHT_PANEL("l2_light_panel", Mount.CUBE, 1, 0.80f, 0.88f, 1.0f, 1.9f, 9.0f, Hum.FLUORESCENT, true),
     // The battery emergency lamps beside bulkheads, chamber doors and exits (lit=false: standby, on
     // only while its corridor section's circuit is dead or the floor is blacked out; see
     // FixturePower#levelOf). A small, deep red or amber pool on the floor and wall under it: enough
@@ -427,9 +431,10 @@ public enum FixtureType {
         if (type != null && modeOf(state) == LampMode.DEAD) {
             return null;
         }
-        // Level 39's house bulbs, Level 490's lanterns and a switched-off Level 0 beacon: the dark
-        // ones (lit = false) give no light at all.
-        if ((type == L39_BULB || type == L490_LANTERN || type == L0_BEACON) && state.hasProperty(BlockStateProperties.LIT)
+        // Level 39's house bulbs, Level 490's lanterns, a switched-off Level 0 beacon and Level 2's
+        // dead light panels: the dark ones (lit = false) give no light at all.
+        if ((type == L39_BULB || type == L490_LANTERN || type == L0_BEACON || type == L2_LIGHT_PANEL)
+                && state.hasProperty(BlockStateProperties.LIT)
                 && !state.getValue(BlockStateProperties.LIT)) {
             return null;
         }

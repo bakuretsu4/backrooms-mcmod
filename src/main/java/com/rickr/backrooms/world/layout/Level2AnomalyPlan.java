@@ -561,8 +561,8 @@ final class Level2AnomalyPlan {
             } else if (u == 1) {
                 out.set(ceiling - 1, ModBlocks.PIPE_WALL.get().defaultBlockState()); // the lintel over the way in
             } else if (u == 0) {
-                // The corridor chase's top pipe carries on over the way in.
-                out.set(ceiling - 1, Level2Layout.chaseTop(seed, Level2Line.band(z), x, doorSide(site)));
+                // The corridor's lowered ceiling carries on over the way in.
+                out.set(ceiling - 1, ModBlocks.PIPE_CEILING.get().defaultBlockState());
             }
             return;
         }
@@ -576,7 +576,7 @@ final class Level2AnomalyPlan {
         out.set(floor + 1, machine);
         out.set(floor + 2, machine);
         out.set(floor + 3, u >= Level2Sites.HOT_LENGTH - 1 ? machine : rack);
-        out.set(floor + 4, u == 0 ? Level2Layout.chaseTop(seed, Level2Line.band(z), x, doorSide(site)) // the corridor's top pipe
+        out.set(floor + 4, u == 0 ? ModBlocks.PIPE_WALL.get().defaultBlockState() // the concrete behind the corridor's inner wall
                 : Level2Sites.isVent(u, v) ? ModBlocks.L2_STEAM_VENT.get().defaultBlockState().setValue(WallMountBlock.FACING, front)
                 : rack);
     }

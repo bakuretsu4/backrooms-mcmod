@@ -20,6 +20,13 @@ they are). Played by src/main/java/.../client/anomaly/level2/Level2Emitters.java
   level2/drip_metal1..4   a drop landing on steel (grating, pipe)
   level2/drip_concrete1..4  a drop landing on wet concrete
 
+And the sounds of the level slowly turning around you (played by
+src/main/java/.../client/anomaly/level2/Level2Orbit.java, which carries them around your head):
+
+  level2/spin_groan       seamless loop: the whole steel structure groaning under slow torsion
+  level2/spin_rattle      seamless loop: brackets chattering faintly, a thin pipe singing
+  level2/roll_creak1..3   a long heavy creak that bends in pitch, as if the corridor rolled over
+
 Loudness is set in LUFS (EBU R128, measured here with the same gating ffmpeg's ebur128 uses), in
 line with the rest of the mix (README "Mix", tools/level_assets/recorded.py): the loops sit at
 the level of a lamp hum or quieter (-27 to -31), one-offs well under the -18 ceiling (the
@@ -554,6 +561,110 @@ def snd_l2line_warm_door() -> None:
     _save(x, "warm_door", -30.0, peak=0.5, loop=True)
 
 
+# =============================================================================
+# The level turning (played by client/anomaly/level2/Level2Orbit, which moves them around you)
+# =============================================================================
+
+def snd_l2line_spin_groan() -> None:
+    """16 s seamless loop: the whole steel structure groaning under a slow twist. Four
+    resonances of the structure (inharmonic, like the tube modes), each excited by low friction
+    noise and swelling in turn, so the weight of the groan seems to roll from one part of the
+    structure to the next; a moan whose pitch bends slowly up and back; a pressure rumble felt
+    under it; and a faint grain of metal under stress. Kept between ~90 and ~800 Hz: low enough to
+    sound huge, high enough that the ear can still tell where it is as the game carries it around
+    your head (the lowest notes have no direction at all)."""
+    rng = G.rng_for(20371)
+    T = 16.0
+    n = int(T * SR)
+    t = np.arange(n) / SR
+    f0 = _whole(92.0, T)
+    body = np.zeros(n)
+    swell_f = _whole(1.0 / 8.0, T)                                   # two swells per loop
+    # The upper resonances are kept fairly strong: they are what the ear follows around the head.
+    for k, (r, a, w) in enumerate(((1.0, 1.0, 3.0), (1.73, 0.8, 4.0), (2.756, 0.7, 6.0), (4.31, 0.55, 9.0))):
+        band = G.periodic_noise(n, rng, lambda f, fc=f0 * r, w=w: np.exp(-((f - fc) / w) ** 2))
+        swell = 0.55 + 0.45 * np.sin(2 * np.pi * swell_f * t - k * np.pi / 2)
+        body += a * G.norm(band) * swell
+    # The moan: pitch bending 4% up and back once per 8 s. The phase is written out (not summed),
+    # so it ends exactly where it began and the loop stays seamless.
+    f1, m, period = _whole(184.0, T), 0.04, T / 2
+    phi = 2 * np.pi * f1 * t - f1 * m * period * np.cos(2 * np.pi * t / period)
+    moan = np.sin(phi) + 0.35 * np.sin(2 * phi + 0.5) + 0.15 * np.sin(3 * phi + 1.0)
+    moan *= (0.5 - 0.5 * np.cos(2 * np.pi * t / T)) ** 2             # comes once per loop, never sharply
+    rumble = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 25, 80, 2)) * G.drift(n, rng, 0.3, 0.1, 0.4)
+    grain = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 600, 2000, 2))
+    grain *= np.clip(G.drift(n, rng, 1.0, 0.2, 0.8) - 0.9, 0.0, None)
+    x = G.norm(body) + 0.4 * G.norm(moan) + 0.4 * G.norm(rumble) + 0.08 * G.norm(grain)
+    x = G.fft_filter(x, lambda f: G.lp_gain(f, 1400, 2), circular=True)
+    _save(x, "spin_groan", -28.0, peak=0.6, loop=True)
+
+
+def snd_l2line_spin_rattle() -> None:
+    """6 s seamless loop: the pipes' brackets chattering very faintly as the structure works (small
+    clusters of ticks at no steady rate) and a thin pipe singing with the flow inside it. Quiet,
+    and mostly above 500 Hz: this is the part of the turning the ear can follow most precisely."""
+    rng = G.rng_for(20381)
+    T = 6.0
+    n = int(T * SR)
+    ticks = np.zeros(n)
+    at = 0.2
+    while at < T - 0.2:
+        level = rng.uniform(0.35, 1.0)
+        f = rng.uniform(900, 1500)
+        t_tap = at
+        for k in range(rng.integers(2, 5)):                        # one bracket chattering
+            tap = _modes(rng, f, TUBE[:3], (0.014, 0.008, 0.004), (1.0, 0.45, 0.2), 0.06)
+            G.add_at(ticks, level * (0.75 ** k) * G.norm(tap), t_tap, True)
+            t_tap += rng.uniform(0.03, 0.07)
+        at += rng.uniform(0.4, 1.2)
+    sing = (G.periodic_noise(n, rng, lambda f: np.exp(-((f - 640.0) / 8.0) ** 2))
+            + 0.5 * G.periodic_noise(n, rng, lambda f: np.exp(-((f - 1105.0) / 12.0) ** 2)))
+    sing *= G.drift(n, rng, 0.5, 0.2, 0.6)
+    x = G.norm(ticks) + 0.35 * G.norm(sing)
+    x = G.fft_filter(x, lambda f: G.hp_gain(f, 300, 2) * G.lp_gain(f, 5000, 2), circular=True)
+    _save(x, "spin_rattle", -32.0, peak=0.5, loop=True)
+
+
+def snd_l2line_roll_creak() -> None:
+    """Three ~5 s rolling creaks: something enormous turning over in its supports. A slow
+    stick-slip creak whose ringing body bends down in pitch as it goes (a heavy mass rolling past
+    its balance point), a low groan bending with it, then a deep settling thunk and a bracket
+    tick. The game carries each one 180-360 degrees around your head while it plays."""
+    for i, seed in enumerate((20391, 20392, 20393), 1):
+        rng = G.rng_for(seed)
+        dur = rng.uniform(4.6, 5.4)
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        # The grabs: 18-90 per second, wandering, so it crackles, groans, crackles.
+        rate = 18 + 72 * (0.5 + 0.5 * G.smooth_jitter(rng, n, 1.0, 1.0))
+        idx = np.nonzero(np.diff(np.floor(np.cumsum(rate) / SR)) > 0)[0]
+        # Each grab rings the steel at the resonance of that moment, which bends down ~25% and
+        # wobbles a little.
+        bend = 1.0 - 0.25 * G.smoothstep(0.0, dur, t) + 0.03 * G.smooth_jitter(rng, n, 0.8, 1.0)
+        fa, fb = rng.uniform(260, 340), rng.uniform(600, 720)
+        creak = np.zeros(n)
+        tb = np.arange(int(0.07 * SR)) / SR
+        for j in idx:
+            k = bend[j]
+            ring = (np.sin(2 * np.pi * fa * k * tb) * np.exp(-tb / 0.022)
+                    + 0.5 * np.sin(2 * np.pi * fb * k * tb) * np.exp(-tb / 0.012))
+            G.add_at(creak, rng.uniform(0.4, 1.0) * ring, j / SR, False)
+        # The groan under it, bending with the creak.
+        fg = rng.uniform(120, 150) * bend
+        groan = np.sin(2 * np.pi * np.cumsum(fg) / SR)
+        groan += 0.4 * np.sin(2 * 2 * np.pi * np.cumsum(fg) / SR + 0.6)
+        rumble = G.fft_filter(rng.normal(size=n), lambda f: G.bp_gain(f, 60, 130, 2))[:n]
+        env = G.smoothstep(0.0, rng.uniform(0.8, 1.2), t) * (1.0 - G.smoothstep(dur - 1.4, dur - 0.1, t))
+        x = (G.norm(creak) + 0.4 * G.norm(groan) + 0.35 * G.norm(rumble)) * env
+        # It settles: a deep thunk and a bracket tick.
+        settle = dur * rng.uniform(0.84, 0.9)
+        G.add_at(x, 0.5 * G.norm(_thud(rng, rng.uniform(50, 65), 0.12, 0.5)), settle, False)
+        tick = _modes(rng, rng.uniform(900, 1300), TUBE[:3], (0.03, 0.015, 0.008), (1.0, 0.4, 0.2), 0.1)
+        G.add_at(x, 0.3 * G.norm(tick), settle + rng.uniform(0.05, 0.12), False)
+        x = G.fft_filter(x, lambda f: G.bp_gain(f, 45, 3200, 2))[:n]
+        _save(_corridor(rng, x, wet=0.25), f"roll_creak{i}", -25.0, fade_in=0.05, fade_out=0.4)
+
+
 TEXTURES: list = []
 SOUNDS = [
     snd_l2line_pipe_knock, snd_l2line_pipe_clank, snd_l2line_pipe_creak, snd_l2line_pipe_rush,
@@ -561,4 +672,5 @@ SOUNDS = [
     snd_l2line_pipe_tap, snd_l2line_pipe_shudder, snd_l2line_pressure_release,
     snd_l2line_drip_puddle, snd_l2line_drip_metal, snd_l2line_drip_concrete,
     snd_l2line_gauge_tick, snd_l2line_warm_door,
+    snd_l2line_spin_groan, snd_l2line_spin_rattle, snd_l2line_roll_creak,
 ]

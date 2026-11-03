@@ -1,11 +1,14 @@
 package com.rickr.backrooms.client;
 
 import com.rickr.backrooms.camera.CameraClientState;
+import com.rickr.backrooms.client.anomaly.level2.Level2Spin;
 import com.rickr.backrooms.client.light.BackroomsLights;
 import com.rickr.backrooms.client.light.FixturePower;
 import com.rickr.backrooms.client.light.Level0Shading;
+import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.network.LevelEventPayload;
 import com.rickr.backrooms.world.BackroomsLevel;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import org.joml.Vector3f;
 import org.jetbrains.annotations.Nullable;
@@ -120,6 +123,16 @@ public final class ClientLighting {
     private static final float LEVEL2_FALLBACK_MAX_FILL = 0.80f;
     private static final float LEVEL2_FALLBACK_FALLOFF = 1.9f;
     private static final float LEVEL2_FALLBACK_DEAD_FILL = 0.12f;
+    /**
+     * Without Veil there are no lamps to turn round the corridor with Level 2's spin, so the lamp
+     * light breathes with it instead: up and down by this share per unit of spin strength times
+     * the comfort scale (+/-5% anywhere there, +/-8% deep in a twist), twice per virtual turn
+     * (~30 s), as if the light swelled each time the turning carried it past you.
+     */
+    private static final float LEVEL2_FALLBACK_BREATH = 0.08f;
+    /** The breath for the lightmap being built (it is rebuilt at most once a tick: cached per tick). */
+    private static long level2BreathTick = Long.MIN_VALUE;
+    private static float level2Breath = 1.0f;
 
     // Level 0 (Kane's Lobby): dim, uneven office light; whole dark wings near black.
     /**
@@ -449,6 +462,9 @@ public final class ClientLighting {
         }
         // The section of corridor you're in went dark (its series circuit popped): so does the fill.
         fill *= Mth.lerp(BackroomsLights.level2LampShare(), deadFill, 1.0f);
+        if (fallback) {
+            fill *= level2Breath(); // Level 2's spin, without Veil's lamps to carry it
+        }
         // Amber from the caged lamps, the battery lights' colour where they take over.
         float battery = BackroomsLights.emergencyShare();
         float tr = Mth.lerp(battery, LEVEL2_TINT_R, BackroomsLights.emergencyRed());
@@ -465,6 +481,18 @@ public final class ClientLighting {
         colors.set(Math.min(1.0f, UNLIT_R + ambient * LEVEL2_AMBIENT_R + fill * tr),
                 Math.min(1.0f, UNLIT_G + ambient * LEVEL2_AMBIENT_G + fill * tg),
                 Math.min(1.0f, UNLIT_B + ambient * LEVEL2_AMBIENT_B + fill * tb));
+    }
+
+    /** The lamp light's breath with Level 2's spin (1 = none: outside Level 2, or tilt 0). */
+    private static float level2Breath() {
+        Minecraft mc = Minecraft.getInstance();
+        long tick = mc.level == null ? Long.MIN_VALUE : mc.level.getGameTime();
+        if (tick != level2BreathTick) {
+            level2BreathTick = tick;
+            float depth = Level2Spin.active() ? LEVEL2_FALLBACK_BREATH * Level2Spin.strength() * ClientSettings.tilt() : 0.0f;
+            level2Breath = depth > 0.0f ? 1.0f + depth * (float) Math.sin(2.0 * Level2Spin.phase(0.0f) + 0.5) : 1.0f;
+        }
+        return level2Breath;
     }
 
     /**

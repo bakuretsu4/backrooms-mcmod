@@ -1,6 +1,7 @@
 package com.rickr.backrooms.client;
 
 import com.rickr.backrooms.Backrooms;
+import com.rickr.backrooms.client.anomaly.level2.Level2Spin;
 import com.rickr.backrooms.client.camera.HandheldCamera;
 import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.network.CameraTogglePayload;
@@ -25,6 +26,14 @@ public final class ClientEvents {
     /** World FOV multiplier in the Backrooms (wide camcorder lens), capped at {@link #MAX_FOV}. */
     private static final double FOV_MULTIPLIER = 1.2;
     private static final double MAX_FOV = 110.0;
+    /**
+     * Level 2: the lens closes in by this share per unit of spin strength (6% anywhere there, 10%
+     * deep in a twist stretch), on top of the wide lens, so the walls press in a little.
+     */
+    private static final double L2_FOV_NARROW = 0.10;
+    /** ...and breathes by this share per unit of strength (+/-1.2% .. 2%), very slowly. */
+    private static final double L2_FOV_BREATH = 0.02;
+    private static final double L2_FOV_BREATH_SECONDS = 13.0;
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -65,12 +74,26 @@ public final class ClientEvents {
         }
     }
 
-    /** Wide camcorder lens (can be turned off on the SETTINGS screen). Only the world view; the held item keeps its FOV. */
+    /**
+     * Wide camcorder lens (can be turned off on the SETTINGS screen). Only the world view; the held
+     * item keeps its FOV. In Level 2 the lens then narrows a little and breathes with the spin
+     * (times the comfort scale, so tilt 0 leaves the lens exactly as set).
+     */
     @SubscribeEvent
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
         if (event.usedConfiguredFov() && CamcorderEffect.wanted(Minecraft.getInstance())) {
             if (ClientSettings.WIDE_LENS.get()) {
                 event.setFOV(Math.min(event.getFOV() * FOV_MULTIPLIER, MAX_FOV));
+            }
+            if (Level2Spin.active()) {
+                float squeeze = Level2Spin.strength() * ClientSettings.tilt();
+                if (squeeze > 0.0f) {
+                    float partialTick = (float) event.getPartialTick();
+                    double seconds = (Minecraft.getInstance().level.getGameTime() + partialTick) / 20.0;
+                    double breath = 0.7 * Math.sin(seconds * Math.PI * 2.0 / L2_FOV_BREATH_SECONDS)
+                            + 0.3 * Math.sin(Level2Spin.phase(partialTick) * 3.0);
+                    event.setFOV(event.getFOV() * (1.0 - squeeze * (L2_FOV_NARROW + L2_FOV_BREATH * breath)));
+                }
             }
             // The motion blur needs the real FOV to turn degrees of rotation into screen distance.
             HandheldCamera.setFov(event.getFOV());
