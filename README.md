@@ -239,8 +239,9 @@ going down into the dark, until the picture breaks up and you are in the next le
   shafts, bushes along the walls and young trees under the light; and, now and then, a dark sage
   room with a single doorway, glowing flowers in the grass and glowing vines hanging from the
   ceiling. The halls are big: pillar halls open a hundred and more blocks across, hallways run as
-  far, and now and then one goes on for nearly four hundred. Every floor is one soft meadow that
-  sways in a breeze (not under shader packs), rustles as you wade through it, and sheds petals and
+  far, and now and then one goes on for nearly four hundred. Every floor is one soft meadow, thigh
+  to waist high, that leans and rolls in waves of wind (not under shader packs), rustles as you
+  wade through it, and sheds petals and
   pollen into the light. Each kind of room has its own light: cool white hallways with shafts of
   sun from their windows, pillar halls in a low golden sunset, soft daylight under the skylights.
   Nothing lives here and nothing happens. The way on is a great **arch of vines** filled

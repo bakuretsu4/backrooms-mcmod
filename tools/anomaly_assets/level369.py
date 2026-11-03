@@ -307,15 +307,16 @@ def _petal_head(rgb, a, X, Y, cx, cy, r, petals, col, edge, centre, tilt=0.6, wi
 
 def _flower_texture(seed, heads, draw, grass=26):
     """Grass behind, then each head on its stem: `heads` (x, y) in texture px; `draw(rgb, a, X, Y,
-    cx, cy, rng)` paints one head."""
+    cx, cy, rng)` paints one head. Heads ride high (the plant stands about thigh high and sways
+    from its root, so the heads bob in the waves)."""
     rng = G.rng_for(seed)
     X, Y, rgb, a = _blade_canvas()
-    rgb, a = _soft_blades(rng, X, Y, rgb, a, grass, (0.3, 0.7))
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, grass, (0.45, 0.85), lean=0.12)
     for hx, hy in heads:
-        cx, cy = hx * SS, hy * SS
+        cx, cy = hx * SS, (hy - 5) * SS
         rgb, a = _stem_to(rng, X, Y, rgb, a, cx, cy)
         rgb, a = draw(rgb, a, X, Y, cx, cy, rng)
-    rgb, a = _soft_blades(rng, X, Y, rgb, a, 8, (0.15, 0.35))     # a few blades in front of the stems
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 8, (0.2, 0.45), lean=0.12)     # a few blades in front of the stems
     return rgb, a
 
 
@@ -350,38 +351,61 @@ def tex_l369_flowers() -> None:
 
 
 def tex_l369_tufts() -> None:
-    """Grass 0-3 (64 px): short soft grass, tall grass, grass with seed heads, grass with tiny
-    buttercups. Tuft 0 also fills the straight planes of every plant model."""
+    """Grass 0-3 (64 px): soft grass, long grass, grass with seed heads, grass with tiny
+    buttercups. The blades rise nearly straight and fill the plane's height: the plants stand
+    thigh to waist high and the cutout shader bends them (lean and curve come from the wind)."""
     rng = G.rng_for(36964)
     X, Y, rgb, a = _blade_canvas()
-    rgb, a = _soft_blades(rng, X, Y, rgb, a, 44, (0.35, 0.75))
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 40, (0.55, 0.95), lean=0.1)
     F._finish(rgb, a, "l369_tuft_0")
 
     X, Y, rgb, a = _blade_canvas()
-    rgb, a = _soft_blades(rng, X, Y, rgb, a, 30, (0.6, 0.98), lean=0.3)
-    rgb, a = _soft_blades(rng, X, Y, rgb, a, 16, (0.25, 0.5))
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 30, (0.75, 1.0), width=(1.8, 3.0), lean=0.12)
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 14, (0.4, 0.7), lean=0.1)
     F._finish(rgb, a, "l369_tuft_1")
 
     X, Y, rgb, a = _blade_canvas()
-    rgb, a = _soft_blades(rng, X, Y, rgb, a, 30, (0.3, 0.65))
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 30, (0.5, 0.9), lean=0.1)
     for _ in range(5):
-        x, top = rng.uniform(8, 56) * SS, rng.uniform(4, 14) * SS
+        x, top = rng.uniform(8, 56) * SS, rng.uniform(2, 8) * SS
         rgb, a = _stem_to(rng, X, Y, rgb, a, x, top, col=(118, 130, 70))
         r2, a2 = F._leaf_at(X, Y, x, top + 5 * SS, -np.pi / 2, 9 * SS, 2.2 * SS, (204, 190, 128), veins=0, gloss=0.1)
         rgb, a = F._composite(rgb, a, r2, a2)
     F._finish(rgb, a, "l369_tuft_2")
 
     X, Y, rgb, a = _blade_canvas()
-    rgb, a = _soft_blades(rng, X, Y, rgb, a, 32, (0.3, 0.7))
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 32, (0.5, 0.9), lean=0.1)
 
     def buttercup(rgb, a, X, Y, cx, cy, rng):
         return _petal_head(rgb, a, X, Y, cx, cy, 2.6 * SS, 5, (232, 188, 30), (252, 226, 80), (200, 150, 20),
                            width=0.8, rng=rng)
-    for hx, hy in ((14, 30), (30, 22), (44, 34), (54, 26)):
+    for hx, hy in ((14, 22), (30, 14), (44, 26), (54, 18)):
         rgb, a = _stem_to(rng, X, Y, rgb, a, hx * SS, hy * SS)
         rgb, a = buttercup(rgb, a, X, Y, hx * SS, hy * SS, rng)
-    rgb, a = _soft_blades(rng, X, Y, rgb, a, 8, (0.15, 0.3))
+    rgb, a = _soft_blades(rng, X, Y, rgb, a, 8, (0.2, 0.4), lean=0.1)
     F._finish(rgb, a, "l369_tuft_3")
+
+
+def tex_l369_blades() -> None:
+    """Blades 0-1 (16 x 64 px): one broad grass blade each, filling the texture: full width at
+    its foot, tapering to a point at the top, shaded from shadowed root green to a sunlit
+    yellow-green tip, a paler midrib, one edge catching the light. The meadow models stand a few
+    of these as real blades among the planes, so up close the grass has depth, not just cards."""
+    W, H = 16, 64
+    for k, (foot, mid, tip) in enumerate(((BLADE_FOOT, BLADE_MID, BLADE_TIP),
+                                          ((40, 80, 32), (88, 146, 54), (168, 200, 92)))):
+        X, Y, rgb, a = F._canvas(W, H)
+        t = 1.0 - Y / (H * SS)                             # 0 at the foot, 1 at the tip
+        s = (X - W * SS / 2) / (W * SS / 2)                # -1 .. 1 across
+        half = (1.0 - t) ** 0.8 * 0.92
+        cover = np.clip((half - np.abs(s)) * W * SS / 2 + 0.5, 0, 1)
+        col = np.where((t < 0.5)[..., None],
+                       G.lerp(_col(foot), _col(mid), (t / 0.5)[..., None]),
+                       G.lerp(_col(mid), _col(tip), ((t - 0.5) / 0.5)[..., None]))
+        rib = np.exp(-(s / np.maximum(half * 0.18, 0.02)) ** 2)
+        col = col * (1.0 + 0.10 * rib + 0.10 * np.clip(s / np.maximum(half, 1e-3), 0, 1))[..., None]
+        rgb, a = F._composite(rgb, a, col, cover)
+        F._finish(rgb, a, f"l369_blade_{k}")
 
 
 def tex_l369_glow() -> None:
@@ -494,25 +518,44 @@ def _simple(name: str) -> None:
     F._item_block(name, name)
 
 
-def _meadow(name: str, tex: str, fill: str, height: float, fill_height: float) -> None:
-    """A meadow plant: two crossed planes of `tex` (`height` px tall, taller than a block for long
-    grass), and two straight planes of `fill` grass (`fill_height` px) set off the middle. Every
-    face takes tint 0: the block colour is the sway marker the cutout shader looks for
-    (assets/minecraft/shaders/core/rendertype_cutout_mipped.vsh), and no top is a whole block
-    high (the shader keeps vertices at whole block heights, the roots, still)."""
-    def plane(frm, to, faces, texture, rotate):
-        e = {"from": frm, "to": to, "shade": False,
-             "faces": {f: {"uv": [0, 0, 16, 16], "texture": texture, "tintindex": 0} for f in faces}}
-        if rotate:
-            e["rotation"] = {"origin": [8, 8, 8], "axis": "y", "angle": 45, "rescale": True}
-        return e
-    assert height % 16 and fill_height % 16
+def _meadow(name: str, tex: str, height: float, seed: int, blades: int = 2) -> None:
+    """A meadow plant, thigh to waist high: two crossed planes of `tex` (`height` px tall) and
+    `blades` single blades (l369_blade_0/1) standing round them at different angles, so up close
+    the grass has depth. Every plane and blade is cut in two at half its height: the cutout shader
+    (assets/minecraft/shaders/core/rendertype_cutout_mipped.vsh) bends each vertex by the square
+    of its height above the lawn, so a cut plane curves instead of tilting like a card. Every face
+    takes tint 0: the block colour is the sway marker the shader looks for."""
+    rng = G.rng_for(seed)
+
+    def standing(x0, x1, z0, z1, h, faces, texture, rotation):
+        cut = round(h / 2, 2)
+        v_cut = round(16 * (1 - cut / h), 2)
+        out = []
+        for y0, y1, v0, v1 in ((0, cut, v_cut, 16), (cut, h, 0, v_cut)):
+            e = {"from": [x0, y0, z0], "to": [x1, y1, z1], "shade": False,
+                 "faces": {f: {"uv": [0, v0, 16, v1], "texture": texture, "tintindex": 0} for f in faces}}
+            if rotation:
+                e["rotation"] = rotation
+            out.append(e)
+        return out
+
+    cross = {"origin": [8, 8, 8], "axis": "y", "angle": 45, "rescale": True}
+    elements = (standing(0.8, 15.2, 8, 8, height, ("north", "south"), "#plant", cross)
+                + standing(8, 8, 0.8, 15.2, height, ("east", "west"), "#plant", cross))
+    for i in range(blades):
+        bx, bz = round(rng.uniform(3, 13), 2), round(rng.uniform(3, 13), 2)
+        half = round(rng.uniform(1.1, 1.7), 2)
+        h = round(min(height * rng.uniform(0.8, 1.08), 31.5), 2)
+        angle = float(rng.choice([-45.0, -22.5, 0.0, 22.5, 45.0]))
+        rotation = {"origin": [bx, 0, bz], "axis": "y", "angle": angle} if angle else None
+        if rng.random() < 0.5:
+            elements += standing(bx - half, bx + half, bz, bz, h, ("north", "south"), f"#blade{i % 2}", rotation)
+        else:
+            elements += standing(bx, bx, bz - half, bz + half, h, ("east", "west"), f"#blade{i % 2}", rotation)
     F._model(name, {"parent": "minecraft:block/block", "render_type": "minecraft:cutout_mipped", "ambientocclusion": False,
-                    "textures": {"plant": F._ref(tex), "fill": F._ref(fill), "particle": F._ref(tex)},
-                    "elements": [plane([0.8, 0, 8], [15.2, height, 8], ("north", "south"), "#plant", True),
-                                 plane([8, 0, 0.8], [8, height, 15.2], ("east", "west"), "#plant", True),
-                                 plane([0, 0, 4.5], [16, fill_height, 4.5], ("north", "south"), "#fill", False),
-                                 plane([11.5, 0, 0], [11.5, fill_height, 16], ("east", "west"), "#fill", False)]})
+                    "textures": {"plant": F._ref(tex), "blade0": F._ref("l369_blade_0"), "blade1": F._ref("l369_blade_1"),
+                                 "particle": F._ref(tex)},
+                    "elements": elements})
 
 
 def tex_l369_models() -> None:
@@ -533,13 +576,13 @@ def tex_l369_models() -> None:
     _bright_cube("l369_veil", "l369_veil", cutout=True)
     _simple("l369_veil")
 
-    # The meadow: flowers and grass are two crossed planes of their own texture and two straight
-    # planes of soft grass (tuft 0; tuft 1 for tuft 0 itself), so blocks merge into one meadow.
+    # The meadow, thigh to waist high: flowers and grass are two crossed planes of their own
+    # texture and two single blades (four cost a third of the frame rate in the huge hall and
+    # looked the same at a few blocks), so blocks merge into one meadow with depth up close.
     # Mipmapped cutout, so it stays soft in the distance instead of breaking up into speckle.
     for k in range(4):
-        _meadow(f"l369_flower_{k}", f"l369_flower_{k}", "l369_tuft_0", 15.5, 12)
-        _meadow(f"l369_tuft_{k}", f"l369_tuft_{k}", "l369_tuft_1" if k == 0 else "l369_tuft_0",
-                20 if k == 1 else 15, 11)
+        _meadow(f"l369_flower_{k}", f"l369_flower_{k}", 18, 36980 + k)
+        _meadow(f"l369_tuft_{k}", f"l369_tuft_{k}", (16, 19, 17, 16)[k], 36990 + k)
         _bright_cross(f"l369_glow_{k}", f"l369_glow_{k}")
     for block in ("l369_flower", "l369_tuft", "l369_glow"):
         F._state(block, {f"kind={k}": [F._v(f"{block}_{k}", 0, y) for y in F.SPINS] for k in range(4)})
@@ -660,5 +703,5 @@ def _save_loop(x: np.ndarray, path, peak: float) -> None:
 
 
 TEXTURES = [tex_l369_plasters, tex_l369_ceilings, tex_l369_lights, tex_l369_brick, tex_l369_ground, tex_l369_vines,
-            tex_l369_flowers, tex_l369_tufts, tex_l369_glow, tex_l369_models, tex_l369_particles]
+            tex_l369_flowers, tex_l369_tufts, tex_l369_blades, tex_l369_glow, tex_l369_models, tex_l369_particles]
 SOUNDS = [snd_l369_ambience, snd_l369_rustle]

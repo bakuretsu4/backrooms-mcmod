@@ -150,9 +150,13 @@ The user's choices:
 - **The meadow** (tools/anomaly_assets/level369.py): 64 px grass and flowers drawn from soft
   tapered blades shaded root to tip (no pixel speckle), big open flower heads (cornflowers, red
   daisies, pink cosmos, white daisies, buttercups), every lit lawn block planted with flowers in
-  drifts. Each plant is two crossed planes of its own texture and two straight planes of grass,
-  mipmapped cutout, so the blocks merge into one field and stay soft in the distance. The lawn
-  under it is a calm, even green.
+  drifts. The plants stand thigh to waist high (16-19 px), flower heads riding near the top. Each
+  is two crossed planes of its own texture and two single 3D blades (l369_blade_0/1) at
+  different angles, every one cut in two at half height so it can curve; mipmapped cutout, so
+  the blocks merge into one field and stay soft in the distance. The lawn under it is a calm,
+  even green. (Third pass, after the user's reference of a tall flowing grass field.) Frame rate
+  in the huge pillar hall on the test machine: about 360 (450-480 with the old knee-high cards;
+  320 with four blades per plant, which looked the same from a few blocks).
 - **The light, per kind of room** (client/Level369Atmosphere, client/AtmosphereGrade): window
   hallways cool white, their windows throwing shafts of light (client/light/SunBeams: only the
   six nearest windows, only while you are in a hallway); pillar halls a low golden sunset with
@@ -163,10 +167,13 @@ The user's choices:
   drifting light now lifts the room you are in by 15% and turns it golden, instead of setting
   one bright exposure everywhere. Highlights roll off softly; the haze is a darker tint of each
   room's light, so the distance softens into colour instead of white.
-- **It sways** (assets/minecraft/shaders/core/rendertype_cutout_mipped.vsh): the meadow's grass
+- **It flows** (assets/minecraft/shaders/core/rendertype_cutout_mipped.vsh): the meadow's grass
   and flowers carry a marker block colour (client/Level369Atmosphere SWAY_MARKER); the cutout
-  shader moves only those vertices, only their tops, in slow travelling waves with gusts. Every
-  other block is untouched. Under Iris or a shader pack there is no sway (nothing breaks).
+  shader bends only those vertices, by the square of their height above the lawn, so every
+  blade curves from an upright root. The whole field leans one way with the wind; waves roll
+  across it, bending it further and catching the light on the tips as they pass, with gusts and
+  a small flutter. Every other block is untouched. Under Iris or a shader pack the meadow stands
+  still (nothing breaks).
 - **Sound:** the lawn has grass footsteps (it fell back to concrete before), and wading through
   the flowers rustles (step.meadow, layered over the footstep; player/PlayerGameplay). The
   ambience is quieter and warmer: low breeze, a faint warm room tone, the flowers' faint song in
