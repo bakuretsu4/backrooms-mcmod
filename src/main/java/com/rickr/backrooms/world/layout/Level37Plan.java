@@ -22,7 +22,8 @@ import org.jetbrains.annotations.Nullable;
  * Every cell keeps one way out to the west or north, so no room is ever sealed. Rooms:
  * <ul>
  *   <li><b>room</b>: a flooded tile room with rounded corners; sometimes a wavy wall, tall slit
- *       windows, a row of round pillars, a deep plunge pool, skylights, a handrail.</li>
+ *       windows, a row of round pillars, a deep plunge pool, skylights (never over a pillar or
+ *       the wavy wall), a handrail.</li>
  *   <li><b>corridor</b>: runs of cells make long, 4-wide flooded corridors: lit by slit windows
  *       (stripes of sun across the water), by a slot in the ceiling, or a dark round tunnel.</li>
  *   <li><b>hall</b> (2 x 2 cells): a 10-high forest of round pillars standing in water, with deep
@@ -31,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li><b>rotunda</b>: a round room (12 across) with a round pool, a stepped dome with an oculus,
  *       and glowing arched alcoves.</li>
  *   <li><b>tunnel</b>: a hall of receding round arches, lit at the near end, ending in a dark
- *       round tunnel.</li>
+ *       round tunnel. Side passages come in between the arches, never through one.</li>
  *   <li><b>spiral</b>: a spiral stair of floating treads around a round pillar, climbing through
  *       a hole in the ceiling up a light well toward the sun.</li>
  *   <li><b>pool</b>: a dry deck around a deep pool with rounded corners and chrome ladders,
@@ -177,9 +178,9 @@ public final class Level37Plan {
     static final int K_ROOM = 0;
     static final int K_POOL = 1;
     static final int K_CORRIDOR = 2;
-    private static final int K_HALL = 3;
+    static final int K_HALL = 3;
     private static final int K_ROTUNDA = 4;
-    private static final int K_TUNNEL = 5;
+    static final int K_TUNNEL = 5;
     private static final int K_SPIRAL = 6;
     private static final int K_PIT = 7;
     private static final int COR_SLITS = 0;
@@ -402,6 +403,12 @@ public final class Level37Plan {
         if (endA || endB || centred(a, crossX) || centred(b, crossX)) {
             start = MID - 2;
             width = 4;
+        } else if (tunnelSide(a, crossX) || tunnelSide(b, crossX)) {
+            // Into the side of a tunnel hall: 2 wide, in one of the gaps just past a ring arch (the
+            // last one is the gap before the dark round tunnel). Anywhere else its arched tunnel
+            // would slice the leg off a ring, or open into the side of the round tunnel.
+            width = 2;
+            start = RING_ALONG[Hash.range(Hash.of(seed, cx, cz, 3713 + side), RING_ALONG.length)] + 1;
         } else {
             long h = Hash.of(seed, cx, cz, 3713 + side);
             width = Hash.unit(h) < 0.4 ? 2 : 4;
@@ -411,6 +418,16 @@ public final class Level37Plan {
         // As tall as the lower room allows, with at least one row of wall left above the arch.
         int spring = FEET_Y + Math.min(7, Math.min(height(a), height(b))) - 1 - radius;
         return packEdge(E_ARCH, start, width, spring, false);
+    }
+
+    /** True when this wall is a side wall of tunnel hall {@code room} (a passage through it runs along X if {@code crossX}). */
+    private static boolean tunnelSide(int room, boolean crossX) {
+        return kind(room) == K_TUNNEL && alongX(room) != crossX;
+    }
+
+    /** True when edge {@code e} is an arched passage covering wall position {@code along}. */
+    private static boolean spans(int e, int along) {
+        return edgeState(e) == E_ARCH && along >= edgeStart(e) && along < edgeStart(e) + edgeWidth(e);
     }
 
     // ==========================================================================================
@@ -878,14 +895,36 @@ public final class Level37Plan {
                 }
             }
         }
-        // Skylights: two slots of sun in the ceiling.
+        // Skylights: two slots of sun in the ceiling, always a block clear of anything that stands
+        // up to the ceiling. A pillar or a bulge of the wavy wall under a slot would run up into the
+        // light, its curve chopped square by the ceiling block left on top of it.
         for (int k = 0; k < 2; k++) {
             long s = Hash.of(seed, cx, cz, 3721 + k);
             if (Hash.unit(s) < 0.45) {
                 boolean wide = Hash.unit(Hash.mix(s)) < 0.5;
+                int w = wide ? 4 : 2; // size along X
+                int d = wide ? 2 : 4; // size along Z
                 int sx = 8 + Hash.range(Hash.mix(s ^ 1), 8);
                 int sz = 8 + Hash.range(Hash.mix(s ^ 2), 8);
-                if (lx >= sx && lx < sx + (wide ? 4 : 2) && lz >= sz && lz < sz + (wide ? 2 : 4)) {
+                if (pillars) {
+                    // The row stands on the middle line (cells MID-1..MID across): slide the slot
+                    // sideways off it, to whichever side it was nearer.
+                    if (alongX) {
+                        sz = offRow(sz, d);
+                    } else {
+                        sx = offRow(sx, w);
+                    }
+                }
+                // The wavy wall bulges up to 6 blocks into the room (see wave).
+                switch (waveSide) {
+                    case 0 -> sx = Math.max(sx, x0 + 7);
+                    case 1 -> sx = Math.min(sx, x1 - 6 - w);
+                    case 2 -> sz = Math.max(sz, z0 + 7);
+                    case 3 -> sz = Math.min(sz, z1 - 6 - d);
+                    default -> {
+                    }
+                }
+                if (lx >= sx && lx < sx + w && lz >= sz && lz < sz + d) {
                     c.skylight(ceil);
                 }
             }
@@ -896,6 +935,19 @@ public final class Level37Plan {
         if (railSide >= 0) {
             handrail(seed, cx, cz, railSide, lx, lz, x0, x1, z0, z1, corner + 1, c);
         }
+    }
+
+    /**
+     * Start of a skylight {@code len} cells across, moved off the room's row of pillars (cells
+     * MID-1..MID across) and the block either side of it if it overlaps them.
+     */
+    private static int offRow(int start, int len) {
+        int lo = MID - 2;
+        int hi = MID + 1;
+        if (start > hi || start + len - 1 < lo) {
+            return start;
+        }
+        return 2 * start + len <= lo + hi + 1 ? lo - len : hi + 1;
     }
 
     // ---- Pool room ----------------------------------------------------------------------------
@@ -1190,9 +1242,11 @@ public final class Level37Plan {
 
     // ---- Tunnel of receding arches ------------------------------------------------------------
 
-    private static final int[] RING_ALONG = {7, 10, 13, 16};
-    private static final int[] RING_RADIUS = {4, 4, 3, 3};
-    private static final int RING_SPRING_Y = FEET_Y + 3;
+    static final int[] RING_ALONG = {7, 10, 13, 16};
+    static final int[] RING_RADIUS = {4, 4, 3, 3};
+    static final int RING_SPRING_Y = FEET_Y + 3;
+    /** The dark round tunnel fills the far end of a tunnel hall from here on (cell-local, along its axis). */
+    static final int FAR_TUNNEL_ALONG = RING_ALONG[RING_ALONG.length - 1] + 3;
 
     private static void tunnel(long seed, int cx, int cz, int lx, int lz, int room, Col c) {
         boolean alongX = alongX(room);
@@ -1207,14 +1261,18 @@ public final class Level37Plan {
         }
         for (int i = 0; i < RING_ALONG.length; i++) {
             if (along == RING_ALONG[i]) {
-                int a = across - MID;
-                c.archOf(a, RING_RADIUS[i], RING_SPRING_Y, alongX, ceil, true);
-                // A side passage may cut through the solid part of a ring wall, never its arch.
-                c.cuttable = (a >= 0 ? a : -a - 1) >= RING_RADIUS[i];
+                // Side passages come in between the rings (see edge), so their arched tunnels never
+                // reach one; but a corridor or a round room beside the hall forces its passage into
+                // the middle of the side wall, across a ring. That ring is left out: the passage
+                // would slice its leg off and leave the arch hanging.
+                if (ringCut(seed, cx, cz, alongX, along)) {
+                    break;
+                }
+                c.archOf(across - MID, RING_RADIUS[i], RING_SPRING_Y, alongX, ceil, true);
                 return;
             }
         }
-        if (along > RING_ALONG[RING_ALONG.length - 1] + 2) {
+        if (along >= FAR_TUNNEL_ALONG) {
             // The dark round tunnel at the far end, lined up with the passage out.
             int e = alongX ? edge(seed, cx + 1, cz, WEST) : edge(seed, cx, cz + 1, NORTH);
             if (across >= MID - 2 && across <= MID + 1) {
@@ -1240,6 +1298,12 @@ public final class Level37Plan {
         if (along < 13 && Math.floorMod(across, 6) == 4 && Math.floorMod(along, 4) == 0) {
             fillLights(c, ceil); // the near half is lit; the round tunnel at the far end is not
         }
+    }
+
+    /** True when a passage through either side wall of tunnel hall (cx, cz) runs across position {@code along} of its axis. */
+    private static boolean ringCut(long seed, int cx, int cz, boolean alongX, int along) {
+        return alongX ? spans(edge(seed, cx, cz, NORTH), along) || spans(edge(seed, cx, cz + 1, NORTH), along)
+                : spans(edge(seed, cx, cz, WEST), along) || spans(edge(seed, cx + 1, cz, WEST), along);
     }
 
     // ---- Spiral stair ----------------------------------------------------------------------------

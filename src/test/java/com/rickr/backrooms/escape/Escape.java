@@ -14,6 +14,7 @@ import com.rickr.backrooms.world.layout.Level39Layout;
 import com.rickr.backrooms.world.layout.Level490Spire;
 import com.rickr.backrooms.world.layout.Level9Layout;
 import com.rickr.backrooms.world.layout.LevelLayout;
+import com.rickr.backrooms.world.layout.PoolroomsLayout;
 import java.util.SplittableRandom;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
@@ -83,10 +84,16 @@ final class Escape {
 
     static Exit exitOf(BackroomsLevel level) {
         return switch (level) {
-            case LEVEL_0, LEVEL_1, LEVEL_4, POOLROOMS, LEVEL_37 -> {
+            case LEVEL_0, LEVEL_1, LEVEL_4, LEVEL_37 -> {
                 int below = level.transferBelowY();
-                yield new Exit("feet below y" + below + " (transferBelowY: stairs/drain/pit)", s -> false,
+                yield new Exit("feet below y" + below + " (transferBelowY: stairs/pit)", s -> false,
                         (w, x, y, z, fromY) -> y < below);
+            }
+            // PoolroomsRules: feet in the daylit niche at the top of the exit hall's stair.
+            case POOLROOMS -> {
+                PoolroomsLayout layout = (PoolroomsLayout) level.layout();
+                yield new Exit("feet in the daylit niche at the top of the exit hall's stair", s -> false,
+                        (w, x, y, z, fromY) -> layout.isHallExit(w.seed, x, y, z));
             }
             // Right-click the bulkhead: stand next to it (either half).
             case LEVEL_2 -> new Exit("standing next to the exit bulkhead", s -> s.getBlock() instanceof ExitDoorBlock,

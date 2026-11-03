@@ -51,7 +51,7 @@ import org.jetbrains.annotations.Nullable;
  *       Levels 0/1, here with office walls and a steel fire door under a glowing EXIT sign, the
  *       fire door signs, an extinguisher, a call point and an evacuation plan beside it). The
  *       open, brightly lit floor around it makes the sign easy to spot. Going down the stairs
- *       (below y30) takes you on to the Poolrooms. Some elevator lobbies also have an exit
+ *       (below y30) takes you on to Level 7. Some elevator lobbies also have an exit
  *       elevator going the same way ({@link Level4AnomalyPlan#ELEVATOR_EXIT}).</li>
  *   <li><b>Safe rooms:</b> a small office box standing in the middle of an open-plan floor
  *       ({@link SafeRoomPlan}), with the checkpoint radio, a cot and a crate.</li>

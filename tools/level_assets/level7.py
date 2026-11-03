@@ -4,8 +4,10 @@ Textures: the stained concrete ceiling over the sea, the entrance room's riveted
 grating and hatch, its soggy carpet, swollen bookcase of fake books, waterlogged coffee table and
 armchair, the rope; down in the sea the pale silt, dark wet rock, bone heaps, tar, scrap, and
 around the exit the giant pipes, stone pillars, the platform and the old wooden door. Also the
-murk at the bottom of Level 94's flooded houses, and the skin of the Thing (seen only as a shape).
-Sounds: the hollow sea ambience, the Thing's groans and the heave of the water as it passes, and
+murk at the bottom of Level 94's flooded houses, and the skin of the Thing and the soft glow of its
+eyes and flank lights.
+Sounds: the hollow sea ambience, the Thing's groans, the heave of the water as it passes, the loop
+of its body swimming, the surge of water when it is closest and the rush of bubbles it lets go, and
 the gut-drop lurch when you fall through the hatch.
 
 Run only these with:  python tools/gen_assets.py l7_
@@ -340,6 +342,19 @@ def tex_l7_thing() -> None:
     G.save_png(img, G.TEX / "entity" / "l7_thing.png")
 
 
+def tex_l7_thing_glow() -> None:
+    """The Thing's eye glints and the faint lights along its flanks: one soft round glow, white in
+    the middle fading to black at the edge, with the same falloff as alpha. Drawn twice
+    (client/Level7Thing): a blended core that writes depth (so the camcorder's haze treats it as
+    near, not as the black far behind it) and an additive halo, both tinted by the vertex colour."""
+    n = 32
+    X, Y = G.grid((n, n))
+    r = np.hypot(X - n / 2, Y - n / 2) / (n / 2)
+    glow = np.clip(1.0 - r, 0, 1) ** 2.2 + 0.6 * G.smoothstep(0.35, 0.0, r)
+    v = np.clip(glow / glow.max(), 0, 1)[..., None] * 255.0
+    G.save_png(np.concatenate([np.repeat(v, 3, axis=2), v], axis=2), G.TEX / "entity" / "l7_thing_glow.png")
+
+
 # ---------------------------------------------------------------- sounds ---
 
 def snd_l7_ambience() -> None:
@@ -432,9 +447,107 @@ def snd_l7_lurch() -> None:
     G.save_ogg(x, G.SND / "level7" / "lurch.ogg", peak=0.8)
 
 
+def _creak(rng, dur: float, rate: tuple[float, float], res: tuple[float, ...]) -> np.ndarray:
+    """A slow stick-slip creak of something huge bending (hide, cartilage, a ship's hull): clicks
+    whose rate glides from rate[0] to rate[1] per second, each ringing a few low resonances.
+    Not a voice: there is no pitch to it, only the click rate."""
+    n = int(dur * G.SR)
+    t = np.arange(n) / G.SR
+    pulses = np.zeros(n)
+    phase = np.cumsum(np.interp(t, [0, dur], rate)) / G.SR
+    for i in np.nonzero(np.diff(np.floor(phase)) > 0)[0]:
+        pulses[i] += rng.uniform(0.5, 1.0)
+    body = sum(G.fft_filter(pulses, lambda f, c=c: G.bp_gain(f, c * 0.8, c * 1.25, 3))[:n] for c in res)
+    return body * G.env_adsr(n, dur * 0.3, dur * 0.4)
+
+
+def snd_l7_thing_swim() -> None:
+    """12 s loop that follows the Thing while it swims near you (client/Level7Thing places it on
+    the nearest part of the body, so it moves across and pans). Four slow tail beats: each a
+    surge of shoved water and a soft deep thump, over a constant sub-bass push of the body through
+    the water; now and then the hide creaks. Everything periodic so the loop has no seam."""
+    rng = G.rng_for(7141)
+    T = 12.0
+    n = int(T * G.SR)
+    t = np.arange(n) / G.SR
+    beat = 0.5 - 0.5 * np.cos(2 * np.pi * t * 4 / T)          # 4 beats per loop, 0..1
+    push = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 16, 55, 3)) * (0.6 + 0.4 * beat)
+    surge = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 70, 420, 2) / np.sqrt(np.maximum(f, 20)))
+    surge = G.norm(surge) * beat ** 2.5
+    thumps = np.zeros(n)
+    for k in range(4):
+        G.add_at(thumps, G.ring([31, 47], [0.5, 0.25], [1, 0.35], 1.6), (k + 0.5) * T / 4 - 0.1, circular=True)
+    creaks = np.zeros(n)
+    for start, dur in ((2.1, 1.8), (8.4, 1.4)):
+        G.add_at(creaks, _creak(rng, dur, (rng.uniform(14, 20), rng.uniform(8, 12)), (110.0, 240.0)), start, circular=True)
+    x = G.norm(push) + 0.45 * surge + 0.5 * G.norm(thumps) + 0.18 * G.norm(creaks)
+    ir = G.reverb_ir(rng, 4.0, 1.5, lp=900, predelay=0.06)
+    x = 0.6 * x + 0.4 * G.norm(G.circ_conv(x, ir)) * np.abs(x).max()
+    x = G.fft_filter(x, lambda f: G.lp_gain(f, 700, 2), circular=True)
+    G.save_ogg(x, G.SND / "level7" / "thing_swim.ogg", peak=0.8, loop=True)
+
+
+def snd_l7_thing_near() -> None:
+    """7 s, when the Thing is at its closest: a pressure wave you feel more than hear (a sub tone
+    sinking from 44 to 22 Hz), the rush of a wall of displaced water, one great tail beat and a
+    long creak of the body bending past."""
+    rng = G.rng_for(7151)
+    dur = 7.0
+    n = int(dur * G.SR)
+    t = np.arange(n) / G.SR
+    f = 44.0 * 2 ** (-1.0 * np.clip(t / 5.0, 0, 1))
+    sub = np.sin(2 * np.pi * np.cumsum(f) / G.SR) * G.env_adsr(n, 1.6, 4.0)
+    rush_env = np.exp(-((t - 2.4) / 1.3) ** 2)
+    rush = G.fft_filter(rng.normal(size=n), lambda fr: G.bp_gain(fr, 60, 650, 2) / np.sqrt(np.maximum(fr, 20)))[:n] * rush_env
+    thump = np.zeros(n)
+    G.add_at(thump, G.ring([28, 41, 63], [0.8, 0.45, 0.2], [1, 0.5, 0.2], 2.5), 2.9, circular=False)
+    creak = np.zeros(n)
+    G.add_at(creak, _creak(rng, 2.6, (22.0, 9.0), (95.0, 180.0, 330.0)), 3.2, circular=False)
+    x = G.norm(sub) + 0.55 * G.norm(rush) + 0.6 * G.norm(thump) + 0.22 * G.norm(creak)
+    ir = G.reverb_ir(rng, 5.0, 1.8, lp=800, predelay=0.08)
+    wet = G.conv(x, ir)[: n + int(2.5 * G.SR)]
+    out = np.zeros(len(wet))
+    out[:n] += x * 0.6
+    out += 0.4 * G.norm(wet) * np.abs(x).max()
+    out = G.fft_filter(out, lambda fr: G.lp_gain(fr, 900, 2))[: len(out)]
+    G.save_ogg(out, G.SND / "level7" / "thing_near.ogg", peak=0.85)
+
+
+def snd_l7_thing_bubbles() -> None:
+    """4.5 s: a great gulp of air let go somewhere below, rising past you as hundreds of big
+    bubbles: each a short low "blup" whose pitch slides up as it rises and shrinks. Starts as a
+    dense burst, thins out to stragglers."""
+    rng = G.rng_for(7161)
+    dur = 4.5
+    n = int(dur * G.SR)
+    x = np.zeros(n)
+    count = 340
+    # Most bubbles early (the burst), fewer later: start times skewed toward the beginning.
+    starts = dur * 0.85 * rng.random(count) ** 1.8
+    for s in starts:
+        f0 = rng.uniform(140, 620)
+        d = rng.uniform(0.04, 0.11)
+        m = int(d * G.SR)
+        tt = np.arange(m) / G.SR
+        f = f0 * (1 + rng.uniform(0.2, 0.6) * tt / d)
+        blup = np.sin(2 * np.pi * np.cumsum(f) / G.SR) * np.exp(-tt / (d * 0.35)) * (1 - np.exp(-tt / 0.003))
+        G.add_at(x, blup * rng.uniform(0.3, 1.0) * (200 / f0) ** 0.5, s, circular=False)
+    t = np.arange(n) / G.SR
+    gulp = G.fft_filter(rng.normal(size=n), lambda fr: G.bp_gain(fr, 25, 140, 2))[:n] * np.exp(-t / 0.9)
+    x = G.norm(x) + 0.5 * G.norm(gulp)
+    ir = G.reverb_ir(rng, 2.5, 0.9, lp=1500, predelay=0.03)
+    wet = G.conv(x, ir)[: n + G.SR]
+    out = np.zeros(len(wet))
+    out[:n] += x * 0.65
+    out += 0.35 * G.norm(wet) * np.abs(x).max()
+    out = G.fft_filter(out, lambda fr: G.lp_gain(fr, 1800, 2))[: len(out)]
+    G.save_ogg(out, G.SND / "level7" / "thing_bubbles.ogg", peak=0.8)
+
+
 TEXTURES = [tex_l7_concrete, tex_l7_rust_metal, tex_l7_grating, tex_l7_carpet, tex_l7_silt, tex_l7_rock,
             tex_l7_bone, tex_l7_tar, tex_l7_scrap, tex_l7_pipe, tex_l7_pipe_end, tex_l7_pillar, tex_l7_platform,
             tex_l7_exit_door, tex_l7_exit_door_side, tex_l7_rope, tex_l7_hatch, tex_l7_bookcase,
             tex_l7_bookcase_top, tex_l7_wet_wood, tex_l7_armchair, tex_l7_armchair_cushion, tex_l7_flood_dark,
-            tex_l7_thing]
-SOUNDS = [snd_l7_ambience, snd_l7_groans, snd_l7_heave, snd_l7_lurch]
+            tex_l7_thing, tex_l7_thing_glow]
+SOUNDS = [snd_l7_ambience, snd_l7_groans, snd_l7_heave, snd_l7_lurch, snd_l7_thing_swim, snd_l7_thing_near,
+          snd_l7_thing_bubbles]

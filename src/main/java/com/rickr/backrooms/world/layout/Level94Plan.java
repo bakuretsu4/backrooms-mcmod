@@ -641,7 +641,7 @@ final class Level94Plan {
 
     /**
      * True if exit region (ex, ez)'s house is flooded (its stairs lead back down to Level 7)
-     * instead of dark-doored (on to Level 490). About two regions in three. Cheap: needs no house.
+     * instead of dark-doored (on to Level 369). About two regions in three. Cheap: needs no house.
      */
     static boolean isFloodedRegion(long seed, int ex, int ez) {
         return Hash.unit(Hash.mix(Hash.of(seed, ex, ez, 9496) ^ 0x7L)) < FLOODED_SHARE;

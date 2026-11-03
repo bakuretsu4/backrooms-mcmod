@@ -433,7 +433,7 @@ public class PhantomFriend extends PathfinderMob {
             return;
         }
 
-        // Somehow ended up in a deep pool (or the drain): swim to the nearest place to stand and climb out.
+        // Somehow ended up in a deep pool: swim to the nearest place to stand and climb out.
         if (inDeepWater()) {
             tickEscapeDeepWater();
             return;
@@ -736,7 +736,7 @@ public class PhantomFriend extends PathfinderMob {
 
     /**
      * Vanilla's walking pathfinder treats all water the same. Here water with more water under it
-     * (a deep pool or the drain) is a wall, while the 1-deep shallows (water over a tile floor) stay
+     * (a deep pool) is a wall, while the 1-deep shallows (water over a tile floor) stay
      * as cheap as dry tile. So paths go around deep pools instead of swimming through them.
      */
     private static final class ShallowWaterEvaluator extends WalkNodeEvaluator {

@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/ceiling_tube"
+    },
+    "axis=z": {
+      "model": "backrooms:block/ceiling_tube",
+      "y": 90
+    }
+  }
+}

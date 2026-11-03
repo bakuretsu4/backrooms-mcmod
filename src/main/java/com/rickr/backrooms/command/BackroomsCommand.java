@@ -47,7 +47,7 @@ import java.util.Locale;
 /**
  * Operator tools for hosting sessions with friends:
  * <pre>
- * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7, level_39, level_490, level_227 (default: level_0)
+ * /backrooms enter [targets] [level]   noclip players into a level by name: level_0, level_1, level_2, level_4, level_7, level_9, poolrooms, level_37, level_39, level_94, level_369, level_490, level_227 (default: level_0)
  * /backrooms escape [targets]          send players back to reality
  * /backrooms battery [targets] [pct]   set camcorder batteries (default: full)
  * /backrooms sanity [targets] <0-100>   set sanity (for testing the low-sanity effects)
@@ -64,6 +64,7 @@ import java.util.Locale;
  * /backrooms anomaly here              which anomalous area you are standing in
  * /backrooms anomaly visit <kind> <point>   Level 0 / Level 2: jump to a named spot of the nearest site of that kind (for testing)
  * /backrooms house9 <plan|safe|clay_door|long_hall>   Level 9: jump to the front path of the nearest house of that plan (Level9HouseCommand)
+ * /backrooms wayback [sunlit|clay]     Level 39 / 94: where the side ways back are (sunlit dead end, clay door); with an argument, go there (WayBackCommand)
  * </pre>
  */
 public final class BackroomsCommand {
@@ -98,6 +99,8 @@ public final class BackroomsCommand {
                         .then(Commands.literal("saferoom").executes(BackroomsCommand::locateSafeRoom)))
                 // Level 9 houses: jump to the nearest house of a plan (Level9HouseCommand).
                 .then(Level9HouseCommand.node())
+                // Level 39 / 94: the side ways back to the Poolrooms and Level 9 (WayBackCommand).
+                .then(WayBackCommand.node())
                 // Anomalous areas: where is the nearest one of a kind / what am I standing in?
                 .then(Commands.literal("anomaly")
                         .then(Commands.literal("here").executes(BackroomsCommand::anomalyHere))
@@ -164,6 +167,8 @@ public final class BackroomsCommand {
                         .then(Commands.literal("dusk").executes(ctx -> time94(ctx, Level94Clock.DAY_TICKS - Level94Clock.DUSK_TICKS)))
                         .then(Commands.literal("night").executes(ctx -> time94(ctx, Level94Clock.DAY_TICKS)))
                         .then(Commands.literal("dawn").executes(ctx -> time94(ctx, Level94Clock.CYCLE - Level94Clock.DAWN_TICKS))))
+                // Level 7: make the Thing pass by you now / jump to full dread, for testing.
+                .then(Level7ThingCommand.node())
                 // Film the Bacteria's animations: force a pose on the nearest one (it stands still).
                 .then(Commands.literal("bacteria").then(bacteriaPoseNode()))
                 .then(Commands.literal("spawn")

@@ -200,6 +200,9 @@ public final class CamcorderEffect {
         chain.setUniform("Signal", CameraClientState.exitSignal);
         chain.setUniform("Transition", transition);
         chain.setUniform("Alarm", alarmPulse(now));
+        // Level 1's lights-out under a shader pack, which still lights the world by the dead tubes'
+        // block light: the picture itself is pressed toward black (0 = picture exactly unchanged).
+        chain.setUniform("Blackout", Level1Atmosphere.screenCrush());
         // Penance has its own lightning (Level490Lightning): the picture flashes as much as the strike is near.
         chain.setUniform("Flash", BackroomsLevel.fromDimension(mc.level.dimension()) == BackroomsLevel.LEVEL_490
                 ? Level490Lightning.flash() * 0.6f : lightningFlash(now));

@@ -5,11 +5,15 @@ import static com.rickr.backrooms.world.layout.Level39HousesBlocks.*;
 import com.rickr.backrooms.block.Level39HouseWallBlock;
 import com.rickr.backrooms.world.Hash;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The houses of Level 39: the town ({@link Level39Town}) asks this class for every column of a
@@ -56,6 +60,28 @@ public final class Level39Houses {
         for (int i = 0; i + 3 < d.length; i += 4) {
             sink.door(d[i], d[i + 1], d[i + 2], Direction.from2DDataValue(d[i + 3]));
         }
+    }
+
+    /**
+     * The lower half of the clay front door (the way back to Level 9) nearest to (x, z) in the
+     * town (x, z) belongs to, or null if that town has none. Builds the plan of every house it
+     * checks, nearest first: for commands and tests, not for world generation.
+     */
+    @Nullable
+    public static BlockPos nearestClayDoor(long seed, int x, int z) {
+        Level39HouseSpec[] houses = Level39Cell.of(seed, x, z).houses.clone();
+        Arrays.sort(houses, Comparator.comparingLong(h -> {
+            long dx = h.x0() - x;
+            long dz = h.z0() - z;
+            return dx * dx + dz * dz;
+        }));
+        for (Level39HouseSpec h : houses) {
+            BlockPos door = Level39HousesPlan.of(seed, h).clayDoor;
+            if (door != null) {
+                return door;
+            }
+        }
+        return null;
     }
 
     /**

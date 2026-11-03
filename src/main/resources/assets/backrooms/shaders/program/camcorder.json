@@ -24,6 +24,7 @@
         { "name": "Signal", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Transition", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Alarm", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Blackout", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Flash", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "BlurX", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "BlurY", "type": "float", "count": 1, "values": [ 0.0 ] },

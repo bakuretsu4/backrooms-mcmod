@@ -30,12 +30,12 @@ class LevelEscapabilityTest {
             {BackroomsLevel.LEVEL_1, BackroomsLevel.LEVEL_0},
             {BackroomsLevel.LEVEL_2, BackroomsLevel.LEVEL_1},
             {BackroomsLevel.LEVEL_4, BackroomsLevel.LEVEL_2},
-            {BackroomsLevel.POOLROOMS, BackroomsLevel.LEVEL_4},
+            {BackroomsLevel.LEVEL_7, BackroomsLevel.LEVEL_4},
+            {BackroomsLevel.LEVEL_9, BackroomsLevel.LEVEL_7},
+            {BackroomsLevel.POOLROOMS, BackroomsLevel.LEVEL_9},
             {BackroomsLevel.LEVEL_37, BackroomsLevel.POOLROOMS},
-            {BackroomsLevel.LEVEL_7, BackroomsLevel.LEVEL_369},
-            {BackroomsLevel.LEVEL_39, BackroomsLevel.LEVEL_7},
+            {BackroomsLevel.LEVEL_39, BackroomsLevel.LEVEL_37},
             {BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_39},
-            {BackroomsLevel.LEVEL_9, BackroomsLevel.LEVEL_490},
     };
 
     @TestFactory
@@ -75,24 +75,24 @@ class LevelEscapabilityTest {
     }
 
     /**
-     * Every exit leads where the documented path says (BackroomsLevel's javadoc). Note: Level94Rules'
-     * class doc, Level94Houses and the l94_dark_void block comment still say the dark door leads to
-     * Level 9; the code (and BackroomsLevel) say Level 490. This test pins the code's answer.
+     * Every exit leads where the documented path says (BackroomsLevel's javadoc): the wiki's
+     * numbers, with the Poolrooms between 9 and 37, and Level 490's leap the way back to reality.
+     * SideExitTest checks the line as a whole and the side ways off it.
      */
     @Test
     void exitsFollowTheDocumentedPath() {
         assertEquals(BackroomsLevel.LEVEL_1, BackroomsLevel.LEVEL_0.next());
         assertEquals(BackroomsLevel.LEVEL_2, BackroomsLevel.LEVEL_1.next());
         assertEquals(BackroomsLevel.LEVEL_4, BackroomsLevel.LEVEL_2.next());
-        assertEquals(BackroomsLevel.POOLROOMS, BackroomsLevel.LEVEL_4.next());
+        assertEquals(BackroomsLevel.LEVEL_7, BackroomsLevel.LEVEL_4.next());
+        assertEquals(BackroomsLevel.LEVEL_9, BackroomsLevel.LEVEL_7.next());
+        assertEquals(BackroomsLevel.POOLROOMS, BackroomsLevel.LEVEL_9.next());
         assertEquals(BackroomsLevel.LEVEL_37, BackroomsLevel.POOLROOMS.next());
-        assertEquals(BackroomsLevel.LEVEL_369, BackroomsLevel.LEVEL_37.next());
-        assertEquals(BackroomsLevel.LEVEL_7, BackroomsLevel.LEVEL_369.next());
-        assertEquals(BackroomsLevel.LEVEL_39, BackroomsLevel.LEVEL_7.next());
+        assertEquals(BackroomsLevel.LEVEL_39, BackroomsLevel.LEVEL_37.next());
         assertEquals(BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_39.next());
-        assertEquals(BackroomsLevel.LEVEL_490, BackroomsLevel.LEVEL_94.next());
-        assertEquals(BackroomsLevel.LEVEL_9, BackroomsLevel.LEVEL_490.next());
-        assertEquals(null, BackroomsLevel.LEVEL_9.next(), "Level 9's underpass leads back to reality");
+        assertEquals(BackroomsLevel.LEVEL_369, BackroomsLevel.LEVEL_94.next());
+        assertEquals(BackroomsLevel.LEVEL_490, BackroomsLevel.LEVEL_369.next());
+        assertEquals(null, BackroomsLevel.LEVEL_490.next(), "Level 490's leap leads back to reality");
         // Every level is reached exactly once along the path (except Level 227, which is off it).
         BackroomsLevel at = BackroomsLevel.LEVEL_0;
         int steps = 0;
@@ -107,12 +107,13 @@ class LevelEscapabilityTest {
     @Test
     void fallTriggersSitBelowTheFloor() {
         for (BackroomsLevel level : new BackroomsLevel[] {BackroomsLevel.LEVEL_0, BackroomsLevel.LEVEL_1, BackroomsLevel.LEVEL_4,
-                BackroomsLevel.POOLROOMS, BackroomsLevel.LEVEL_37, BackroomsLevel.LEVEL_39}) {
+                BackroomsLevel.LEVEL_37, BackroomsLevel.LEVEL_39}) {
             assertTrue(level.transferBelowY() < level.layout().floorY(),
                     level.getSerializedName() + ": transferBelowY " + level.transferBelowY() + " is above the floor");
         }
-        for (BackroomsLevel level : new BackroomsLevel[] {BackroomsLevel.LEVEL_2, BackroomsLevel.LEVEL_7, BackroomsLevel.LEVEL_9,
-                BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_227, BackroomsLevel.LEVEL_369, BackroomsLevel.LEVEL_490}) {
+        for (BackroomsLevel level : new BackroomsLevel[] {BackroomsLevel.LEVEL_2, BackroomsLevel.POOLROOMS, BackroomsLevel.LEVEL_7,
+                BackroomsLevel.LEVEL_9, BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_227, BackroomsLevel.LEVEL_369,
+                BackroomsLevel.LEVEL_490}) {
             assertEquals(Integer.MIN_VALUE, level.transferBelowY(), level.getSerializedName() + " is never left by falling");
         }
     }

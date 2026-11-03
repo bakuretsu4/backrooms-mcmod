@@ -17,8 +17,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * Tells each player where the nearest real exit of their level is, for the subtle hints that point
  * at it on the client: a faint sound coming from it, and marks only the camcorder's NightShot shows
  * (see {@code client/hint/ExitHints}). The torn notes in supply containers use {@link #nearestExit}
- * too. Secret ways (the Poolrooms' sunlit archway, Level 9's clay doors, the throne light) are never
- * hinted: only each level's ordinary way on.
+ * too. Secret ways (the Poolrooms' sunlit archway, the clay doors, Level 39's sunlit dead ends,
+ * the throne light) are never hinted: only each level's ordinary way on.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
 public final class ExitHints {

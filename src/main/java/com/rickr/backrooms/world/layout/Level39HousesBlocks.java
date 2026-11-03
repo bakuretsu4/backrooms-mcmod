@@ -95,6 +95,12 @@ final class Level39HousesBlocks {
     static final int ROOF_LOW = 37;
     /** Roof trim (Level39RoofBlock.Trim ordinal) lives in bits 20-21. */
     static final int TRIM_SHIFT = 20;
+    /**
+     * The moulded-clay front door (l94_clay_door) of the odd unlocked house in town: it opens onto
+     * Level 9, the way back for whoever the gondola dropped in from there (world/ClayDoors). Uses
+     * the facing, SECOND and HINGE bits like FRONT_DOOR.
+     */
+    static final int CLAY_DOOR = 38;
     static final int ARMCHAIR = FURN;
     static final int SOFA = FURN + 1;
     static final int SIDE_TABLE = FURN + 2;
@@ -205,7 +211,7 @@ final class Level39HousesBlocks {
     /** Doors can't stand upside down (their halves fall apart); flipped houses lose them. */
     static boolean isDoor(int code) {
         int k = kind(code);
-        return k == FRONT_DOOR || k == INT_DOOR;
+        return k == FRONT_DOOR || k == INT_DOOR || k == CLAY_DOOR;
     }
 
     /**
@@ -216,7 +222,7 @@ final class Level39HousesBlocks {
     static int flip(int code) {
         int k = kind(code);
         return switch (k) {
-            case FRONT_DOOR, INT_DOOR -> AIR;
+            case FRONT_DOOR, INT_DOOR, CLAY_DOOR -> AIR;
             case FLOOR_OAK, FLOOR_DARK, LINO, BATH_TILE, POPCORN, INWALL, EXTWALL,
                  PORCH_STAIR, OAK_STAIR, BULB, ROOF, ROOF_LOW -> code ^ INV;
             default -> k >= FURN ? (pairLayout(k) == Level39PairFurnitureBlock.Layout.WIDE ? code ^ INV ^ SECOND : code ^ INV) : code;
@@ -286,6 +292,7 @@ final class Level39HousesBlocks {
                     .setValue(HouseDoorBlock.LOCKED, (code & FLAG) != 0);
             case INT_DOOR -> door(Level39HouseBlocks.INTERIOR_DOOR.get().defaultBlockState(), code)
                     .setValue(HouseDoorBlock.LOCKED, (code & FLAG) != 0);
+            case CLAY_DOOR -> door(ModBlocks.L94_CLAY_DOOR.get().defaultBlockState(), code);
             case GARAGE_DOOR -> ModBlocks.GARAGE_DOOR.get().defaultBlockState().setValue(WallDecalBlock.FACING, f);
             case BULB -> Level39HouseBlocks.CEILING_BULB.get().defaultBlockState()
                     .setValue(Level39BulbBlock.LIT, (code & FLAG) != 0)

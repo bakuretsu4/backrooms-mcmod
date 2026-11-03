@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/stairs",
+  "textures": {
+    "bottom": "backrooms:block/pool_tile",
+    "top": "backrooms:block/pool_tile",
+    "side": "backrooms:block/pool_tile"
+  }
+}

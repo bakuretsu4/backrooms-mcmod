@@ -85,9 +85,15 @@ public final class AtmosphereGrade {
      */
     private static final Mood LEVEL_0_FALLBACK = new Mood(1.22f, 1.08f, 0.92f, 1.0f, 0.98f, 0.86f, 1.0f, 0.99f, 0.95f,
             0.006f, 0.0025f, 0.008f, 0.25f, 0.22f, 0.155f, 20.0f, 0.015f, 0.06f, 0.55f, 0.14f, 0.010f);
-    /** Level 1: cold, damp concrete. Blue shadows, grey highlights, little colour, grey-blue air. */
+    /**
+     * Level 1: cold, wet concrete. Blue shadows, grey highlights, little colour. The air is a dark
+     * blue-grey (#111217), not a light one: far stretches between the lamps sink into the dark
+     * instead of turning milky, so the lit pillars and the reflections in the wet floor
+     * (client/light/Level1WetFloor) stand out the way they do in the reference shots. The
+     * lights-out turns the air black (Level1Atmosphere).
+     */
     private static final Mood LEVEL_1 = new Mood(1.0f, 1.08f, 0.74f, 0.90f, 0.95f, 1.06f, 1.0f, 1.0f, 1.03f,
-            0.012f, 0.013f, 0.018f, 0.18f, 0.19f, 0.23f, 7.0f, 0.032f, 0.40f, 0.45f, 0.12f, 0.010f);
+            0.012f, 0.013f, 0.018f, 0.065f, 0.070f, 0.090f, 7.0f, 0.032f, 0.42f, 0.45f, 0.12f, 0.010f);
     /**
      * Level 2: cramped industrial corridor under warm caged lamps, with a COLD dark (the 2026-10
      * industrial overhaul). Amber highlights, but blue-grey shadows and a blue-black floor, so
@@ -430,17 +436,20 @@ public final class AtmosphereGrade {
         chain.setUniform("HighlightR", m.hiR());
         chain.setUniform("HighlightG", m.hiG());
         chain.setUniform("HighlightB", m.hiB());
-        chain.setUniform("LiftR", m.liftR());
-        chain.setUniform("LiftG", m.liftG());
-        chain.setUniform("LiftB", m.liftB());
-        chain.setUniform("HazeR", m.fogR() * fogLight);
-        chain.setUniform("HazeG", m.fogG() * fogLight);
-        chain.setUniform("HazeB", m.fogB() * fogLight);
-        chain.setUniform("HazeStart", m.fogStart());
-        chain.setUniform("HazeDensity", m.fogDensity());
-        chain.setUniform("HazeMax", m.fogMax());
+        // Level 1's lights-out turns the air black and the tape's black darker (Level1Atmosphere;
+        // these return the mood's own values everywhere else and while the power is on).
+        chain.setUniform("LiftR", Level1Atmosphere.liftR(m.liftR()));
+        chain.setUniform("LiftG", Level1Atmosphere.liftG(m.liftG()));
+        chain.setUniform("LiftB", Level1Atmosphere.liftB(m.liftB()));
+        float hazeLight = fogLight * Level1Atmosphere.hazeLight();
+        chain.setUniform("HazeR", m.fogR() * hazeLight);
+        chain.setUniform("HazeG", m.fogG() * hazeLight);
+        chain.setUniform("HazeB", m.fogB() * hazeLight);
+        chain.setUniform("HazeStart", Level1Atmosphere.hazeStart(m.fogStart()));
+        chain.setUniform("HazeDensity", Level1Atmosphere.hazeDensity(m.fogDensity()));
+        chain.setUniform("HazeMax", Level1Atmosphere.hazeMax(m.fogMax()));
         chain.setUniform("ContactShadow", m.ao());
-        chain.setUniform("Glow", m.glow());
+        chain.setUniform("Glow", m.glow() * Level1Atmosphere.glow());
         chain.setUniform("Breath", m.breath());
         chain.setUniform("Rolloff", rolloff);
         chain.setUniform("ShoulderKnee", shoulderKnee);

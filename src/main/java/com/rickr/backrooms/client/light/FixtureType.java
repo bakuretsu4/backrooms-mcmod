@@ -102,8 +102,22 @@ public enum FixtureType {
      * Silent and steady (no hum, no flicker): daylight doesn't buzz.
      */
     POOL_SKYLIGHT("pool_skylight", Mount.CEILING_BLOCK, 5, 0.90f, 0.96f, 1.0f, 2.6f, 28.0f, Hum.NONE, false),
+    /**
+     * Poolrooms open sky (the exit hall's skylight, the sky court's roof): cooler and bluer than the
+     * frosted skylights. One light per 9x9 patch keeps the big court to a handful of lights; the
+     * reach (26) lights a court's floor 17 blocks down but leaves the exit hall's pool, 56 blocks
+     * under its skylight, in the dark, as in the footage.
+     */
+    POOL_SKY("pool_sky", Mount.CEILING_BLOCK, 9, 0.84f, 0.93f, 1.0f, 2.4f, 26.0f, Hum.NONE, false),
     /** Underwater lamp in a pool wall: a small cyan glow that makes the water read in dark rooms. */
     POOL_LAMP("pool_lamp", Mount.INSET, 1, 0.30f, 0.92f, 1.0f, 0.7f, 8.0f, Hum.NONE, false),
+    /**
+     * The dim pool lamp of the dark anomaly areas and the exit hall's steps: a short cyan glow on
+     * the water and the tile right round it, so walls a few blocks off stay black.
+     */
+    POOL_LAMP_DIM("pool_lamp_dim", Mount.INSET, 1, 0.30f, 0.92f, 1.0f, 0.45f, 5.0f, Hum.NONE, false),
+    /** The glow halls' pier strip lights: a faint, short white glow in each lit opening, steady and silent. */
+    POOL_STRIP_DIM("pool_strip_dim", Mount.HANGING_TUBE, 2, 0.90f, 0.95f, 1.0f, 0.3f, 6.0f, Hum.NONE, false),
     /** Emergency beacon: a dim red glow, rotating red cones during the alarm. */
     RED_ALARM_LAMP("red_alarm_lamp", Mount.WALL, 1, 1.0f, 0.05f, 0.03f, 0.35f, 7.0f, Hum.NONE, false),
     /** Green exit sign: a small glow so you can spot exits in the dark. */

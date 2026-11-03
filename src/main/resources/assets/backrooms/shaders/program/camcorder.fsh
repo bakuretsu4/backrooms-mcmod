@@ -50,6 +50,10 @@
 //  the picture it is mirrored back in (only the corners and side edges, which the vignette makes
 //  near black). In step 6 tunnel vision (SpinVignette): the edges go near black round a smaller
 //  clear middle. All 0 = unchanged.
+//  Blackout (uniform 0..1, Level 1's lights-out while an Iris shader pack draws the world, from
+//  client/Level1Atmosphere): after step 3 the picture is pressed down to near black, the bright
+//  parts hardest, and the bloom with it; the fallback flashlight (step 4) still lifts what it
+//  reaches. 0 = unchanged.
 
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;
@@ -68,6 +72,7 @@ uniform float FlashY;
 uniform float Signal;     // 0..1, nearness of the exit (calms the picture)
 uniform float Transition; // 1 -> 0 over the noclip / escape transition
 uniform float Alarm;      // 0..1 red emergency pulse
+uniform float Blackout;   // 0..1 Level 1 lights-out under a shader pack: press the picture to black (0 = unchanged)
 uniform float Flash;      // 0..1 lightning flash
 uniform float BlurX;      // motion blur streak for this frame, texture units
 uniform float BlurY;
@@ -151,6 +156,15 @@ const float FLASH_RADIUS = 0.47;
 const float FLASH_LEVEL = 0.22;
 const float FLASH_FALLOFF_BLOCKS = 3.2;
 const float FLASH_RANGE_BLOCKS = 25.0;
+// Level 1's lights-out under a shader pack (Blackout): the scene is pressed down to KEEP x its
+// brightness, the bright parts harder (KNEE), so lit floor (~0.3) ends near 5/255 and a dead tube
+// that the pack still draws lit (1.0) near 9/255: only the faintest shapes.
+const float BLACKOUT_KEEP = 0.12;
+const float BLACKOUT_KNEE = 2.5;
+
+vec3 blackoutCrush(vec3 c) {
+    return BLACKOUT_KEEP * c / (1.0 + BLACKOUT_KNEE * c);
+}
 
 float hash12(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -396,6 +410,13 @@ void main() {
         }
     }
 
+    // 3b. Lights out (Level 1, shader packs only: see Blackout). Before the fallback flashlight, so
+    //     your own light still lifts what it reaches out of the dark.
+    float crush = clamp(Blackout, 0.0, 1.0);
+    if (crush > 0.0) {
+        col = mix(col, blackoutCrush(col), crush);
+    }
+
     // 4. Fallback flashlight. It lifts dark surfaces toward a target brightness that depends on
     //    distance, keeping texture detail by dividing by the local average brightness.
     if (Flashlight > 0.0) {
@@ -415,6 +436,8 @@ void main() {
                 + luma(texture(DiffuseSampler, uv - vec2(o.x, o.y)).rgb)
                 + luma(texture(DiffuseSampler, uv + vec2(o.x, -o.y)).rgb)
                 + luma(texture(DiffuseSampler, uv - vec2(o.x, -o.y)).rgb));
+        // The neighbours are read from the picture as drawn: pressed down the same way in a lights-out.
+        localLum = mix(localLum, BLACKOUT_KEEP * localLum / (1.0 + BLACKOUT_KNEE * localLum), crush);
         localLum = mix(luma(col), localLum, 0.6);
         col *= clamp(target / max(localLum, 0.004), 1.0, 40.0);
     }
@@ -455,7 +478,9 @@ void main() {
     // 5. Bloom from the three blur sizes. Only light fixtures made it into these buffers.
     //    Rolloff levels keep what goes past white (up to 4x) for the shoulder in 6d; others clip here.
     float ceiling = mix(1.0, 4.0, clamp(Rolloff, 0.0, 1.0));
-    col += (texture(Bloom1Sampler, uv).rgb + texture(Bloom2Sampler, uv).rgb + texture(Bloom3Sampler, uv).rgb) * BLOOM_STRENGTH * BloomStrength * BloomGain;
+    // The bloom was cut from the picture as drawn: in a lights-out (Blackout) it goes dark with it.
+    col += (texture(Bloom1Sampler, uv).rgb + texture(Bloom2Sampler, uv).rgb + texture(Bloom3Sampler, uv).rgb) * BLOOM_STRENGTH * BloomStrength * BloomGain
+            * (1.0 - 0.97 * crush);
     col = clamp(col, 0.0, ceiling);
 
     // 6b. Glow: bright areas bleed softly into their neighbourhood (old, slightly hazy optics), and

@@ -47,7 +47,7 @@ import net.minecraft.world.level.block.state.properties.SlabType;
  * ({@link Level490Spire}), and about 400 blocks' walk away the <b>arrival</b> island. A route of main
  * bridges always joins the two. One island in forty or so has a colossal chain running straight
  * through it, its ruins built around the chain like a collar. Leaping from the top of the spire is
- * the way out (to Level 9); falling anywhere else sends you back to your last checkpoint
+ * the way out (the last exit: back to reality); falling anywhere else sends you back to your last checkpoint
  * (world/Level490Rules).
  */
 public final class Level490Layout extends LevelLayout {

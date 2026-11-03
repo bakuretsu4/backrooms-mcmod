@@ -907,7 +907,11 @@ final class Level39HousesBuilder {
         }
     }
 
-    /** The front door in the middle of the front wall (mostly locked, sometimes a fake). */
+    /**
+     * The front door in the middle of the front wall (mostly locked, sometimes a fake). About one
+     * open door in {@value #CLAY_DOOR_ONE_IN} is moulded clay instead: the way back to Level 9 for
+     * anyone the Crimson Field's gondola dropped here (world/ClayDoors).
+     */
     void drawFrontDoor() {
         int v = fv;
         if (cell(0, du, v) != WALL) return;
@@ -917,7 +921,9 @@ final class Level39HousesBuilder {
         boolean bigger = a == Level39HouseSpec.Anomaly.BIGGER_INSIDE && primary;
         boolean locked = !bigger && (roll < 0.68 || !primary);
         boolean fake = !bigger && !locked && roll < 0.86;
-        int door = code(FRONT_DOOR, F) | (locked ? FLAG : 0) | (Hash.unit(bits(du, v, 407)) < 0.5 ? HINGE : 0);
+        boolean clay = !bigger && !locked && !fake && Hash.range(bits(du, v, 408), CLAY_DOOR_ONE_IN) == 0;
+        int door = clay ? code(CLAY_DOOR, F) : code(FRONT_DOOR, F) | (locked ? FLAG : 0);
+        door |= Hash.unit(bits(du, v, 407)) < 0.5 ? HINGE : 0;
         put(du, v, y0 + 1, door);
         put(du, v, y0 + 2, door | SECOND);
         put(du, v, y0 + 3, code(TRIM));
@@ -936,6 +942,9 @@ final class Level39HousesBuilder {
             put(du, v + 1, y0 + 2, withParam(code(INWALL), finish(in, 2)));
         }
     }
+
+    /** One open front door in this many is a clay door to Level 9 (about one house in seventy). */
+    private static final int CLAY_DOOR_ONE_IN = 10;
 
     // ==========================================================================================
     // Stairs, chimneys, porches, dormers, cellar

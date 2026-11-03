@@ -45,7 +45,11 @@ public class VoidBubble extends Entity {
     public static final float RADIUS = 1.5f;
     /** How far out over the void it hangs from the edge (blocks, to its centre). */
     private static final double OUT_FROM_EDGE = 3.2;
-    /** Bubbles mirror the levels with a glimpse picture (textures/entity/void_bubble/&lt;level&gt;.png). */
+    /**
+     * Bubbles mirror the levels with a glimpse picture (textures/entity/void_bubble/&lt;level&gt;.png).
+     * Only levels up to 94 on the path: Level 227 is off it, and from 369 and 490 there would be no
+     * way back to Level 9 or 94, where you were dragged in from (see Level227Noclip.DANGER).
+     */
     private static final BackroomsLevel[] MIRRORS = {
             BackroomsLevel.LEVEL_0, BackroomsLevel.LEVEL_1, BackroomsLevel.LEVEL_2, BackroomsLevel.LEVEL_4,
             BackroomsLevel.POOLROOMS, BackroomsLevel.LEVEL_37, BackroomsLevel.LEVEL_9, BackroomsLevel.LEVEL_94,

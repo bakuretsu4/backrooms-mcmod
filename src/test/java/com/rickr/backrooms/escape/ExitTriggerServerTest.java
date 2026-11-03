@@ -10,9 +10,14 @@ import com.rickr.backrooms.registry.Level2Blocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
+import com.rickr.backrooms.world.ClayDoors;
 import com.rickr.backrooms.world.Level7Rules;
 import com.rickr.backrooms.world.Travel;
+import com.rickr.backrooms.world.layout.Level39Layout;
+import com.rickr.backrooms.world.layout.Level39Tunnels;
+import com.rickr.backrooms.world.layout.Level490Spire;
 import com.rickr.backrooms.world.layout.Level9Layout;
+import com.rickr.backrooms.world.layout.PoolroomsLayout;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,10 +45,11 @@ import org.junit.jupiter.api.Test;
 
 /**
  * The exit triggers themselves, in a real (throwaway, in-process) server with the mod loaded and
- * mock players: falling below transferBelowY, Level 9's underpass, Level 7's sea door, Level 94's
- * dark door, Level 2's bulkhead taking the group within 6 blocks. Each move must end on the next
- * level at exactly the spot the arrival code promises (so friends using the same exit land
- * together), and a dead or disconnected player must never hold anyone else up.
+ * mock players: falling below transferBelowY, the Poolrooms' exit hall, Level 9's underpass, Level 7's sea door, Level 94's
+ * dark door, Level 490's leap, Level 2's bulkhead taking the group within 6 blocks, and the side
+ * ways back (clay doors, Level 39's sunlit dead ends). Each move must end on the next level at
+ * exactly the spot the arrival code promises (so friends using the same exit land together), and
+ * a dead or disconnected player must never hold anyone else up.
  *
  * <p>Player ticks are driven by posting the same PlayerTickEvent.Post the game posts every tick,
  * so every rule the mod hangs on it (ServerEvents, Level7Rules, Level9Rules, Level94Rules...) runs.
@@ -69,13 +75,13 @@ class ExitTriggerServerTest {
     }
 
     // ------------------------------------------------------------------------------------------
-    // Falling below transferBelowY: Levels 0, 1, 4, Poolrooms and 37
+    // Falling below transferBelowY: Levels 0, 1, 4 and 37
     // ------------------------------------------------------------------------------------------
 
     @Test
     void fallingBelowTheTriggerTakesYouOn() throws Exception {
         for (BackroomsLevel from : new BackroomsLevel[] {BackroomsLevel.LEVEL_0, BackroomsLevel.LEVEL_1, BackroomsLevel.LEVEL_4,
-                BackroomsLevel.POOLROOMS, BackroomsLevel.LEVEL_37}) {
+                BackroomsLevel.LEVEL_37}) {
             onServer(() -> {
                 int[] exit = exitNear(from, 0, 0);
                 ServerPlayer p = player("faller", from, exit[0] + 0.5, from.transferBelowY() - 1.0, exit[1] + 0.5);
@@ -102,6 +108,46 @@ class ExitTriggerServerTest {
         });
     }
 
+    // ------------------------------------------------------------------------------------------
+    // The Poolrooms: the daylit niche at the top of the exit hall's stair
+    // ------------------------------------------------------------------------------------------
+
+    @Test
+    void poolroomsHallNicheTakesYouOn() throws Exception {
+        onServer(() -> {
+            BackroomsLevel from = BackroomsLevel.POOLROOMS;
+            long seed = BackroomsSeeds.layoutSeed(level(from), from);
+            PoolroomsLayout layout = (PoolroomsLayout) from.layout();
+            int[] niche = layout.exitPosition(seed, 0, 0);
+            int feet = layout.exitY(seed, niche[0], niche[1]);
+            assertTrue(layout.isHallExit(seed, niche[0], feet, niche[1]), "exitPosition/exitY is not the hall's way out");
+            assertFalse(layout.isHallExit(seed, niche[0], feet - 1, niche[1]), "the niche's floor counts as the way out");
+            ServerPlayer p = player("climber", from, niche[0] + 0.5, feet, niche[1] + 0.5);
+            tick(p);
+            assertTrue(Travel.isMoving(p), "stepping into the exit hall's daylit niche didn't start the exit");
+            tickUntilMoved(p, from);
+            assertArrivedAsPromised(p, from, from.next(), niche);
+            return null;
+        });
+    }
+
+    /** The hall's pool lies at the bottom of the world: swimming down in it takes you nowhere. */
+    @Test
+    void theExitHallsPoolIsNoWayOut() throws Exception {
+        onServer(() -> {
+            BackroomsLevel from = BackroomsLevel.POOLROOMS;
+            long seed = BackroomsSeeds.layoutSeed(level(from), from);
+            int[] centre = from.layout().exits().nearest(seed, 0, 0);
+            ServerPlayer p = player("swimmer", from, centre[0] + 0.5, 3.0, centre[1] + 0.5);
+            for (int i = 0; i < MOVE_TICKS; i++) {
+                tick(p);
+            }
+            assertFalse(Travel.isMoving(p), "the bottom of the exit hall's pool started an exit");
+            assertEquals(from.dimension(), p.level().dimension());
+            return null;
+        });
+    }
+
     /** Two friends walking down the same stairwell come out at the same spot. */
     @Test
     void friendsUsingTheSameStairsLandTogether() throws Exception {
@@ -121,11 +167,11 @@ class ExitTriggerServerTest {
     }
 
     // ------------------------------------------------------------------------------------------
-    // Level 9's underpass, Level 7's sea door, Level 94's dark door
+    // Level 9's underpass, Level 7's sea door, Level 94's dark door, Level 490's leap
     // ------------------------------------------------------------------------------------------
 
     @Test
-    void level9UnderpassEscapesToReality() throws Exception {
+    void level9UnderpassLeadsToThePoolrooms() throws Exception {
         onServer(() -> {
             ServerLevel level = level(BackroomsLevel.LEVEL_9);
             long seed = BackroomsSeeds.layoutSeed(level, BackroomsLevel.LEVEL_9);
@@ -141,18 +187,20 @@ class ExitTriggerServerTest {
                     }
                 }
             }
-            assertNotNull(zone, "no escape zone within 24 blocks of Level 9's exit position " + exit[0] + " " + exit[1]);
+            assertNotNull(zone, "no underpass zone within 24 blocks of Level 9's exit position " + exit[0] + " " + exit[1]);
             double feet = layout.feetY(seed, zone[0], zone[1]);
             assertTrue(feet < 47, "the underpass road (feet y" + feet + ") is not below Level9Rules' y47 trigger");
-            ServerPlayer p = player("escaper", BackroomsLevel.LEVEL_9, zone[0] + 0.5, feet, zone[1] + 0.5);
+            ServerPlayer p = player("underpass", BackroomsLevel.LEVEL_9, zone[0] + 0.5, feet, zone[1] + 0.5);
             tick(p);
-            assertEquals(Level.OVERWORLD, p.level().dimension(), "walking into the underpass didn't escape");
+            assertTrue(Travel.isMoving(p), "walking into the underpass didn't start the exit");
+            tickUntilMoved(p, BackroomsLevel.LEVEL_9);
+            assertArrivedAsPromised(p, BackroomsLevel.LEVEL_9, BackroomsLevel.POOLROOMS, zone);
             return null;
         });
     }
 
     @Test
-    void level7SeaDoorLeadsToLevel39Tunnels() throws Exception {
+    void level7SeaDoorLeadsToLevel9() throws Exception {
         onServer(() -> {
             int[] door = exitNear(BackroomsLevel.LEVEL_7, 0, 0);
             ServerPlayer p = player("diver", BackroomsLevel.LEVEL_7, door[0] + 0.5, 52.0, door[1] + 0.5);
@@ -160,15 +208,12 @@ class ExitTriggerServerTest {
             tick(p);
             assertTrue(Travel.isMoving(p), "the sea door didn't start the exit");
             tickUntilMoved(p, BackroomsLevel.LEVEL_7);
-            assertArrivedAsPromised(p, BackroomsLevel.LEVEL_7, BackroomsLevel.LEVEL_39, door);
+            assertArrivedAsPromised(p, BackroomsLevel.LEVEL_7, BackroomsLevel.LEVEL_9, door);
             return null;
         });
     }
 
-    /**
-     * Pins what the code does today: the dark door goes to next() = Level 490. Level94Rules' class
-     * javadoc, Level94Houses and the l94_dark_void block comment say Level 9 (reported, not changed).
-     */
+    /** The dark door goes to next() = Level 369, falling in through a skylight (Level369Layout.preferredArrival). */
     @Test
     void level94DarkDoorLeadsOn() throws Exception {
         onServer(() -> {
@@ -180,8 +225,61 @@ class ExitTriggerServerTest {
             tick(p);
             assertTrue(Travel.isMoving(p), "standing in l94_dark_void didn't start the exit");
             tickUntilMoved(p, BackroomsLevel.LEVEL_94);
-            assertEquals(BackroomsLevel.LEVEL_490.dimension(), p.level().dimension(),
-                    "dark door destination changed (BackroomsLevel.next and the comments say Level 490)");
+            assertArrivedAsPromised(p, BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_369, spot);
+            return null;
+        });
+    }
+
+    /** The leap off the top of Level 490's spire is the last exit: back to reality, at once (the tape stops). */
+    @Test
+    void level490LeapEscapesToReality() throws Exception {
+        onServer(() -> {
+            ServerPlayer p = player("leaper", BackroomsLevel.LEVEL_490, 0.5, Level490Spire.LEAP_Y, 0.5);
+            tick(p); // the fall starts up at the collar
+            p.teleportTo(level(BackroomsLevel.LEVEL_490), 0.5, Level490Spire.LEAP_Y - 5.0, 0.5, 0f, 0f);
+            tick(p);
+            assertEquals(Level.OVERWORLD, p.level().dimension(), "the leap didn't take you back to reality");
+            return null;
+        });
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // The side ways back: clay doors (to Level 9) and Level 39's sunlit dead ends (to the Poolrooms)
+    // ------------------------------------------------------------------------------------------
+
+    @Test
+    void clayDoorsLeadWhereTheyShould() throws Exception {
+        BackroomsLevel[][] doors = {
+                {BackroomsLevel.LEVEL_9, BackroomsLevel.LEVEL_94},
+                {BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_9},
+                {BackroomsLevel.LEVEL_39, BackroomsLevel.LEVEL_9}};
+        for (BackroomsLevel[] door : doors) {
+            onServer(() -> {
+                ServerPlayer p = player("clay_" + door[0].getSerializedName(), door[0], 300.5, 80.0, -200.5);
+                ClayDoors.steppedThrough(p); // what ClayDoorBlock.entityInside does
+                tick(p);
+                assertTrue(Travel.isMoving(p), door[0] + ": stepping through a clay door didn't start the move");
+                tickUntilMoved(p, door[0]);
+                assertLandedAsPromised(p, door[0], door[1], 300, -201);
+                return null;
+            });
+        }
+    }
+
+    @Test
+    void level39SunlitDeadEndLeadsBackToThePoolrooms() throws Exception {
+        onServer(() -> {
+            long seed = BackroomsSeeds.layoutSeed(level(BackroomsLevel.LEVEL_39), BackroomsLevel.LEVEL_39);
+            BlockPos arch = null;
+            for (int k = 0; k < 9 && arch == null; k++) {
+                arch = Level39Tunnels.nearestSunlitEnd(seed, (k % 3 - 1) * Level39Layout.CELL, (k / 3 - 1) * Level39Layout.CELL);
+            }
+            assertNotNull(arch, "no sunlit dead end in nine towns of Level 39");
+            ServerPlayer p = player("sunlit", BackroomsLevel.LEVEL_39, arch.getX() + 0.5, arch.getY(), arch.getZ() + 0.5);
+            tick(p);
+            assertTrue(Travel.isMoving(p), "walking into the sunlit arch didn't start the move");
+            tickUntilMoved(p, BackroomsLevel.LEVEL_39);
+            assertLandedAsPromised(p, BackroomsLevel.LEVEL_39, BackroomsLevel.POOLROOMS, arch.getX(), arch.getZ());
             return null;
         });
     }
@@ -303,6 +401,15 @@ class ExitTriggerServerTest {
         Vec3 expected = new Vec3(arrival.x() + 0.5, arrival.feet(), arrival.z() + 0.5);
         assertTrue(p.position().distanceTo(expected) < 1e-6,
                 from + " -> " + next + ": landed at " + p.position() + ", the arrival code says " + expected);
+    }
+
+    /** The player is on {@code target}, where Travel's arrival code lands someone sent there from (x, z) of {@code from}. */
+    private void assertLandedAsPromised(ServerPlayer p, BackroomsLevel from, BackroomsLevel target, int x, int z) {
+        assertEquals(target.dimension(), p.level().dimension(), from + " led somewhere else than " + target);
+        Escape.Arrival arrival = Escape.arrive(target, BackroomsSeeds.layoutSeed(level(target), target), x, z, from);
+        Vec3 expected = new Vec3(arrival.x() + 0.5, arrival.feet(), arrival.z() + 0.5);
+        assertTrue(p.position().distanceTo(expected) < 1e-6,
+                from + " -> " + target + ": landed at " + p.position() + ", the arrival code says " + expected);
     }
 
     private <T> T onServer(Supplier<T> task) throws Exception {

@@ -21,8 +21,8 @@ import org.jetbrains.annotations.Nullable;
  * Level 369, "Comely": an endless indoor garden of pastel rooms with lawns and flowers for floors.
  * The floor plan lives in {@link Level369Plan}; this class only turns its codes into blocks.
  *
- * <p>Nothing lives here. You fall in through a skylight from Level 37's pits
- * ({@link #preferredArrival}) and leave through an arch of vines to Level 7
+ * <p>Nothing lives here. You fall in through a skylight from Level 94's dark-doored houses
+ * ({@link #preferredArrival}) and leave through an arch of vines to Level 490
  * ({@code Level369Rules}). See {@code docs/level-369-comely.md}.
  */
 public final class Level369Layout extends LevelLayout {
@@ -73,11 +73,11 @@ public final class Level369Layout extends LevelLayout {
         return PLAN.archFront(seed, x, z);
     }
 
-    /** From Level 37's pits you fall in through a skylight; from anywhere else, the usual search. */
+    /** Through Level 94's dark doors you fall in through a skylight; from anywhere else, the usual search. */
     @Override
     @Nullable
     public BlockPos preferredArrival(long seed, int x, int z, @Nullable BackroomsLevel from) {
-        return from == BackroomsLevel.LEVEL_37 ? PLAN.skylightArrival(seed, x, z) : null;
+        return from == BackroomsLevel.LEVEL_94 ? PLAN.skylightArrival(seed, x, z) : null;
     }
 
     /** The block for one plan code, or null for air. */

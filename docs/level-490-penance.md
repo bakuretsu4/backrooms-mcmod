@@ -100,8 +100,9 @@ Two kinds:
 - At the top, all the structure's chains meet and carry on up into the clouds: they don't end,
   they go up into something even bigger.
 - **The exit is a jump:** you let go and step off the top into the clouds on purpose, the one fall
-  that doesn't bring you back. The datamosh transition plays as your "death" and takes you to
-  Level 9.
+  that doesn't bring you back. Since the 2026-11 reorder (levels in the wiki's number order) it is
+  the last exit of all: the tape stops and you are back in the real world (it used to lead to
+  Level 9).
 - **The creature watches you leave:** no final chase. In a last lightning flash you see it whole,
   just watching as you go.
 
@@ -120,14 +121,16 @@ that: the level is hard enough.
 
 ## Place in the path
 
-One straight path through every level, each exit leading naturally into the next:
+One straight path through every level, each exit leading naturally into the next. Since the
+2026-11 reorder it follows the wiki's numbers:
 
-Level 0 → Level 1 → Level 2 → Level 4 → Poolrooms → Level 37 → Level 7 → Level 39 → Level 94 →
-**Level 490** → Level 9 → home.
+Level 0 → Level 1 → Level 2 → Level 4 → Level 7 → Level 9 → Poolrooms → Level 37 → Level 39 →
+Level 94 → Level 369 → **Level 490** → home.
 
-Built: Level 94's dark doorways lead here and the leap leads to Level 9.
+Built: Level 369's arch of vines leads here and the leap leads home (before the reorder: Level
+94's dark doorways led here and the leap to Level 9).
 
-- Level 94's main exit leads here; the exit at the top of the structure leads to Level 9.
+- Level 369's main exit leads here; the exit at the top of the structure is the last one, home.
 - Every exit has its own look, but all use the datamosh transition.
 - The old rare exits stay as shortcuts.
 - Exits get harder to find each level, mainly by cutting the NightShot (night vision) arrows;

@@ -1,8 +1,10 @@
 package com.rickr.backrooms.world.layout;
 
 import com.rickr.backrooms.block.HouseDoorBlock;
+import com.rickr.backrooms.block.SunlitVoidBlock;
 import com.rickr.backrooms.block.WallDecalBlock;
 import com.rickr.backrooms.registry.Level39Blocks;
+import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.Hash;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
@@ -33,9 +35,12 @@ import org.jetbrains.annotations.Nullable;
  *   y38 #T_________T#     _ = pale tiles under the water
  * </pre>
  * Where three or four runs meet there is a domed round chamber; where a run ends there is a dry
- * platform, a round arch and a wall with two white panelled doors (always locked). Side arches
- * open little dry alcoves in the walls, small square drains go up from the crown of the vault,
- * and rare stagnant runs (Hydrolitis zones) are darker, filmed with green and have no lights.
+ * platform, a round arch and a wall with two white panelled doors (always locked). At about one
+ * dead end in {@value #SUNLIT_ONE_IN} the wall behind the arch is a wall of warm daylight instead
+ * (Level 37's sunlit void, the light of the Poolrooms' archway): walk into the arch and you are
+ * back in the Poolrooms ({@code Level39Rules}), the way back for whoever that archway sent here.
+ * Side arches open little dry alcoves in the walls, small square drains go up from the crown of
+ * the vault, and rare stagnant runs (Hydrolitis zones) are darker, filmed with green and have no lights.
  */
 public final class Level39Tunnels {
     /** Water surface: feet of a swimmer float about here. */
@@ -100,6 +105,10 @@ public final class Level39Tunnels {
     private static final int ORB = 1 << 19;
     private static final int DRAIN_INNER = 1 << 20;
     private static final int DRAIN_RING = 1 << 21;
+    /** A sunlit dead end's arch and the daylight wall behind it (DOOR_FACING = the way the light shines). */
+    private static final int SUNLIT = 1 << 22;
+    /** One dead end in this many (of the clean runs, never a stagnant one) ends in daylight. */
+    private static final int SUNLIT_ONE_IN = 8;
 
     static int kind(int c) {
         return c & KIND_MASK;
@@ -208,17 +217,24 @@ public final class Level39Tunnels {
             if (ao > 5) {
                 return NONE;
             }
+            boolean sunlit = sunlitEnd(seg, endA);
+            Direction back = seg.alongX() ? (endA ? Direction.EAST : Direction.WEST) : (endA ? Direction.SOUTH : Direction.NORTH);
             boolean arch = endA ? t == a - 4 : t == b + 4;
+            int archTop = ao <= 1 ? 44 : ao == 2 ? 43 : 42;
             if (arch) {
                 if (ao <= 3) {
-                    int archTop = ao <= 1 ? 44 : ao == 2 ? 43 : 42;
-                    return pack(ARCH, archTop, stag);
+                    return pack(ARCH, archTop, stag) | (sunlit ? SUNLIT : 0);
                 }
                 return pack(WALL, 0, stag);
             }
             int c = pack(DOOR_WALL, 0, stag);
-            if (ao == 2) {
-                Direction back = seg.alongX() ? (endA ? Direction.EAST : Direction.WEST) : (endA ? Direction.SOUTH : Direction.NORTH);
+            if (sunlit) {
+                // The daylight fills the arch's opening; its top rides in the TOP bits (a door
+                // wall has no air of its own, so classify never rewrites them).
+                if (ao <= 3) {
+                    c |= SUNLIT | (archTop << TOP_SHIFT) | (back.get2DDataValue() << DOOR_FACING_SHIFT);
+                }
+            } else if (ao == 2) {
                 c |= DOOR | (back.get2DDataValue() << DOOR_FACING_SHIFT);
                 // The pair is hinged on the outsides, so the two doors read as a symmetrical pair.
                 boolean right = (o > 0) == (back == Direction.EAST || back == Direction.SOUTH);
@@ -294,6 +310,11 @@ public final class Level39Tunnels {
     /** Which wall (+1 or -1 in offset) the run's side arches open in. */
     private static int sideArchSide(Level39Cell.Seg seg) {
         return (seg.salt() & 8) == 0 ? 1 : -1;
+    }
+
+    /** True when this end of a dead-end run is a sunlit one (the daylight back to the Poolrooms). */
+    private static boolean sunlitEnd(Level39Cell.Seg seg, boolean endA) {
+        return !seg.stagnant() && Hash.range(Hash.mix(seg.salt() + (endA ? 61 : 62)), SUNLIT_ONE_IN) == 0;
     }
 
     /** Middle (along) of the side arch covering along position t (within 1), or MIN_VALUE. */
@@ -379,7 +400,13 @@ public final class Level39Tunnels {
             }
             case DOOR_WALL -> {
                 for (int y = 38; y <= 50; y++) out.set(y, marble);
-                if ((c & DOOR) != 0) {
+                if ((c & SUNLIT) != 0) {
+                    // Daylight filling the arch (the Poolrooms archway's light, shining back up the
+                    // tunnel); it lights the platform itself (light 14), Veil adds its sun shaft.
+                    BlockState light = ModBlocks.L37_SUNLIT_VOID.get().defaultBlockState()
+                            .setValue(SunlitVoidBlock.FACING, Direction.from2DDataValue((c >>> DOOR_FACING_SHIFT) & 3));
+                    for (int y = RIM_FEET_Y; y <= top; y++) out.set(y, light);
+                } else if ((c & DOOR) != 0) {
                     Direction facing = Direction.from2DDataValue((c >>> DOOR_FACING_SHIFT) & 3);
                     BlockState door = Level39Blocks.PANEL_DOOR.get().defaultBlockState()
                             .setValue(DoorBlock.FACING, facing)
@@ -742,9 +769,52 @@ public final class Level39Tunnels {
     }
 
     /**
+     * True in the arch of a sunlit dead end, right in front of the daylight: walking in there
+     * takes you back to the Poolrooms ({@code Level39Rules}).
+     */
+    public static boolean isSunlitThreshold(long seed, int x, int z) {
+        if (!Level39Layout.inTown(x, z)) {
+            return false;
+        }
+        int c = classify(Level39Tile.of(seed, x, z), x, z);
+        return kind(c) == ARCH && (c & SUNLIT) != 0;
+    }
+
+    /**
+     * The middle of the arch (feet) of the sunlit dead end nearest to (x, z) in the town (x, z)
+     * belongs to, or null if it has none. For commands and tests.
+     */
+    @Nullable
+    public static BlockPos nearestSunlitEnd(long seed, int x, int z) {
+        Level39Cell cell = Level39Cell.of(seed, x, z);
+        BlockPos best = null;
+        long bestD = Long.MAX_VALUE;
+        for (Level39Cell.Seg seg : cell.segs) {
+            for (int end = 0; end < 2; end++) {
+                boolean endA = end == 0;
+                if (!(endA ? seg.deadA() : seg.deadB()) || !sunlitEnd(seg, endA)) {
+                    continue;
+                }
+                int t = endA ? seg.a() - 4 : seg.b() + 4;
+                int px = seg.alongX() ? t : seg.fixed();
+                int pz = seg.alongX() ? seg.fixed() : t;
+                long d = (long) (px - x) * (px - x) + (long) (pz - z) * (pz - z);
+                if (d < bestD && isSunlitThreshold(seed, px, pz)) {
+                    bestD = d;
+                    best = new BlockPos(px, RIM_FEET_Y, pz);
+                }
+            }
+        }
+        return best;
+    }
+
+    /**
      * A rim spot (feet block, y = {@link #RIM_FEET_Y}) on the tunnel run nearest to (x, z),
-     * away from junctions and holes, or null if this town has no tunnels at all. Used when the
-     * Poolrooms' drain empties a traveller into Level 39.
+     * away from junctions and holes, or null if this town has no tunnels at all. Used when Level
+     * 37's pits (or the Poolrooms' sunlit archway) bring a traveller into Level 39. Only runs with
+     * a way up count: a stretch of tunnels that no access shaft climbs out of (it happens: the
+     * lattice can leave a run or two cut off from the rest, and shafts only stand where a town
+     * path crosses over) would trap whoever surfaced in it.
      */
     @Nullable
     public static BlockPos nearestRim(long seed, int x, int z) {
@@ -752,11 +822,13 @@ public final class Level39Tunnels {
         int cx = Level39Cell.cellIndex(x);
         int cz = Level39Cell.cellIndex(z);
         Level39Cell cell = Level39Cell.byIndex(seed, cx, cz);
+        boolean[] up = runsWithAWayUp(cell);
         Level39Cell.Seg bestSeg = null;
         int bestT = 0;
         long bestD = Long.MAX_VALUE;
-        for (Level39Cell.Seg seg : cell.segs) {
-            if (seg.b() - seg.a() < 30) {
+        for (int i = 0; i < cell.segs.length; i++) {
+            Level39Cell.Seg seg = cell.segs[i];
+            if (seg.b() - seg.a() < 30 || !up[i]) {
                 continue;
             }
             int t = Math.max(seg.a() + 12, Math.min(seg.b() - 12, seg.alongX() ? x : z));
@@ -787,6 +859,60 @@ public final class Level39Tunnels {
             }
         }
         return null;
+    }
+
+    /**
+     * Per run of the cell: true if it belongs to a stretch of connected runs (joined end to end,
+     * at bends and junction chambers) that has at least one access shaft up to the town.
+     */
+    private static boolean[] runsWithAWayUp(Level39Cell cell) {
+        int n = cell.segs.length;
+        int[] parent = new int[n];
+        for (int i = 0; i < n; i++) {
+            parent[i] = i;
+        }
+        // Runs that share an end node are joined (the lattice nodes are exact shared points).
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                if (shareAnEnd(cell.segs[i], cell.segs[j])) {
+                    parent[root(parent, i)] = root(parent, j);
+                }
+            }
+        }
+        boolean[] rootUp = new boolean[n];
+        for (Level39Cell.Shaft shaft : cell.shafts) {
+            rootUp[root(parent, shaft.seg())] = true;
+        }
+        boolean[] up = new boolean[n];
+        for (int i = 0; i < n; i++) {
+            up[i] = rootUp[root(parent, i)];
+        }
+        return up;
+    }
+
+    private static int root(int[] parent, int i) {
+        while (parent[i] != i) {
+            parent[i] = parent[parent[i]];
+            i = parent[i];
+        }
+        return i;
+    }
+
+    private static boolean shareAnEnd(Level39Cell.Seg s, Level39Cell.Seg o) {
+        for (int e = 0; e < 2; e++) {
+            int t = e == 0 ? s.a() : s.b();
+            int sx = s.alongX() ? t : s.fixed();
+            int sz = s.alongX() ? s.fixed() : t;
+            for (int f = 0; f < 2; f++) {
+                int u = f == 0 ? o.a() : o.b();
+                int ox = o.alongX() ? u : o.fixed();
+                int oz = o.alongX() ? o.fixed() : u;
+                if (sx == ox && sz == oz) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean shaftAt(Level39Cell cell, int x, int z) {

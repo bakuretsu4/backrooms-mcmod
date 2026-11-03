@@ -126,6 +126,16 @@ public final class WaterRenderer {
         return style;
     }
 
+    /**
+     * True while this renderer draws the current level's water (at {@code AFTER_LEVEL}, over the
+     * finished scene). Anything that must show ON the water surface has to be drawn after it then;
+     * otherwise (vanilla water, or an Iris shader pack's) the water is in place by
+     * {@code AFTER_TRANSLUCENT_BLOCKS}.
+     */
+    public static boolean drawingWater() {
+        return style != null;
+    }
+
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();

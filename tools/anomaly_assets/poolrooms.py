@@ -5,6 +5,7 @@
   faint chorus of chants, slithering, whimpers, and the dull swell of the drift itself.
 * The "obtrusive" water of both pool levels: a loud, close rush of lapping and sloshing water.
 * The rush of a current in a stair pit.
+* The painted sky seen through the exit hall's skylight and the sky court's open roof.
 
 The Poolrooms are calm: nothing here is a jump scare. Sounds stay soft and low (modest peaks),
 and the voices are wordless and far away.
@@ -118,6 +119,26 @@ def tex_poolrooms_reservoir_sprout() -> None:
     rgb = (a[..., :3] * wgt).sum(axis=(1, 3)) / np.maximum(wgt.sum(axis=(1, 3)), 1e-6)
     alpha = np.where(cov >= 0.5, 255.0, 0.0)
     G.save_png(np.concatenate([rgb, alpha[..., None]], axis=2), _blk("reservoir_sprout"))
+
+
+SKY_BLUE = np.array([96.0, 178.0, 238.0])   # the clear sky of the footage's open courts
+SKY_PALE = np.array([214.0, 236.0, 250.0])  # thin cloud, lit through
+
+
+def tex_poolrooms_sky() -> None:
+    """The painted sky over the exit hall's skylight and the sky court's open roof (pool_sky).
+
+    Seen from far below through a roof, and every block of it the same texture: any cloud would
+    repeat block after block like wallpaper (tried: it reads as a pattern, not a sky). So it is a
+    clear, slightly hazy blue with only the faintest seamless mottling, and only 16 px (the block
+    atlas is full).
+    """
+    n = 16
+    rng = G.rng_for(3710)
+    haze = G.blur(G.fnoise(rng, (n, n), beta=3.0, kmin=1.0, kmax=3.0), 0.8)
+    img = SKY_BLUE[None, None, :] * (1.0 + 0.02 * haze[..., None])
+    img = G.lerp(img, SKY_PALE, 0.08)
+    G.save_png(np.clip(img, 0, 255), _blk("pool_sky"))
 
 
 # =============================================================================
@@ -296,7 +317,7 @@ def snd_poolrooms_current() -> None:
 
 TEXTURES = [
     tex_poolrooms_reservoir_tile, tex_poolrooms_reservoir_floor, tex_poolrooms_reservoir_lamp,
-    tex_poolrooms_reservoir_sprout,
+    tex_poolrooms_reservoir_sprout, tex_poolrooms_sky,
 ]
 SOUNDS = [
     snd_poolrooms_obtrusive_water, snd_poolrooms_chant, snd_poolrooms_slither, snd_poolrooms_whimper,

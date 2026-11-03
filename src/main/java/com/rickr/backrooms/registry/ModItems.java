@@ -100,6 +100,8 @@ public final class ModItems {
         ITEMS.registerSimpleBlockItem(ModBlocks.POOL_FLOOR);
         ITEMS.registerSimpleBlockItem(ModBlocks.POOL_SKYLIGHT);
         ITEMS.registerSimpleBlockItem(ModBlocks.POOL_LAMP);
+        ITEMS.registerSimpleBlockItem(ModBlocks.POOL_TILE_STAIRS);
+        ITEMS.registerSimpleBlockItem(ModBlocks.POOL_SKY);
         // Ankle-deep water (Level 37 floods its floors with it); invisible once placed.
         ITEMS.registerSimpleBlockItem(ModBlocks.SHALLOW_WATER);
         // Level 37 "Sublimity" (the curved tile pieces have no item: the layout places them).
