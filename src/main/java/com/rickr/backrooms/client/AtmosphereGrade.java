@@ -4,6 +4,7 @@ import com.rickr.backrooms.client.light.BackroomsLights;
 import com.rickr.backrooms.client.light.FixturePower;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.Level94Clock;
+import com.rickr.backrooms.world.layout.Level369Plan;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.PostChain;
 import org.jetbrains.annotations.Nullable;
@@ -169,16 +170,45 @@ public final class AtmosphereGrade {
      */
     private static final Mood LEVEL_490 = new Mood(1.35f, 1.14f, 0.38f, 0.90f, 0.95f, 1.08f, 0.98f, 1.0f, 1.04f,
             0.018f, 0.020f, 0.028f, 0.135f, 0.145f, 0.175f, 40.0f, 0.006f, 0.15f, 0.30f, 0.20f, 0.008f);
-    /**
-     * Level 369, "Comely": a summer afternoon remembered. Soft contrast, the flowers' colour turned
-     * up a little, warm golden highlights, faintly green shadows, warm cream air and a generous glow
-     * so skylights and windows bloom: lovely, and a little too soft to trust.
+    /*
+     * Level 369, "Comely". Calibrated against the user's two reference pictures (mean luminance of
+     * the whole frame: the pillar hall 0.24 with nothing clipped, the window hallway 0.37 with ~5%
+     * clipped in its window glow). The first version landed at 0.40-0.76 with up to 27% clipped
+     * ("it looks like heaven"): exposure above 1, near-white haze that turned every distance white,
+     * a big glow, on top of a level full of light-15 blocks. Now exposure stays under 1, the haze is
+     * a darker tint of the room's light (it softens the distance instead of erasing it), the glow is
+     * modest, and the highlights roll off instead of clipping ({@link #ROLLOFF_369}).
      */
-    private static final Mood LEVEL_369 = new Mood(1.02f, 0.95f, 1.08f, 0.97f, 1.0f, 0.94f, 1.04f, 1.01f, 0.93f,
-            0.028f, 0.028f, 0.022f, 0.92f, 0.88f, 0.80f, 14.0f, 0.016f, 0.30f, 0.30f, 0.26f, 0.012f);
-    /** Level 369 in the drifting light: brighter, more colour, golden highlights, golden air, a big glow. */
-    private static final Mood LEVEL_369_GOLDEN = new Mood(1.12f, 0.93f, 1.16f, 1.0f, 0.98f, 0.88f, 1.08f, 1.0f, 0.82f,
-            0.034f, 0.030f, 0.020f, 0.98f, 0.86f, 0.62f, 12.0f, 0.020f, 0.34f, 0.26f, 0.40f, 0.012f);
+    /**
+     * A skylit room: a summer afternoon remembered. Soft contrast, the flowers' colour up a little,
+     * warm golden highlights, faintly green shadows, warm cream air, a gentle glow on the skylights.
+     */
+    private static final Mood LEVEL_369 = new Mood(0.98f, 0.95f, 1.12f, 0.97f, 1.0f, 0.95f, 1.04f, 1.0f, 0.92f,
+            0.024f, 0.024f, 0.020f, 0.66f, 0.64f, 0.56f, 18.0f, 0.010f, 0.18f, 0.32f, 0.18f, 0.012f);
+    /**
+     * A window hallway (the user's picture of the white corridor): clean, cool daylight, near-white
+     * highlights with a breath of blue, and pale blue-white air from fairly close by, so a long
+     * corridor ends in soft light; a little more glow, for the windows.
+     */
+    private static final Mood LEVEL_369_HALL = new Mood(0.56f, 0.98f, 1.0f, 0.95f, 0.99f, 1.06f, 0.98f, 1.0f, 1.04f,
+            0.022f, 0.025f, 0.030f, 0.70f, 0.74f, 0.80f, 14.0f, 0.016f, 0.40f, 0.30f, 0.24f, 0.012f);
+    /**
+     * A pillar hall (the user's picture of the red flowers among cream pillars): a low golden
+     * sunset. Golden highlights, rosy shadows, rich colour in the flowers, amber air that softens
+     * the far rows of pillars, a warm glow. The darkest of the lit rooms, like the picture.
+     */
+    private static final Mood LEVEL_369_PILLAR = new Mood(0.70f, 1.0f, 1.08f, 1.05f, 0.92f, 0.90f, 1.12f, 0.95f, 0.80f,
+            0.030f, 0.020f, 0.016f, 0.62f, 0.46f, 0.34f, 20.0f, 0.012f, 0.30f, 0.34f, 0.20f, 0.012f);
+    /**
+     * In the drifting light: more colour, golden highlights and air, more glow. Its exposure is not
+     * used as it stands: the light lifts the room you are in by {@link #LEVEL_369_GOLDEN_LIFT}
+     * (a fixed exposure brightened the dark pillar halls and the hallways alike to the brightest
+     * room's level whenever it passed, which is what washed the level out).
+     */
+    private static final Mood LEVEL_369_GOLDEN = new Mood(0.95f, 0.94f, 1.14f, 1.0f, 0.98f, 0.88f, 1.08f, 1.0f, 0.82f,
+            0.030f, 0.026f, 0.018f, 0.68f, 0.56f, 0.40f, 14.0f, 0.014f, 0.28f, 0.28f, 0.28f, 0.012f);
+    /** How much brighter the drifting light makes the room you are in. */
+    private static final float LEVEL_369_GOLDEN_LIFT = 1.15f;
     /** A stagnant (Hydrolitis) tunnel segment: orbs dead, sick green-black air. */
     private static final Mood LEVEL_39_STAGNANT = new Mood(0.98f, 1.08f, 0.80f, 0.90f, 1.04f, 0.94f, 0.98f, 1.02f, 0.94f,
             0.008f, 0.012f, 0.010f, 0.05f, 0.09f, 0.07f, 4.0f, 0.040f, 0.45f, 0.40f, 0.18f, 0.012f);
@@ -223,6 +253,12 @@ public final class AtmosphereGrade {
      * 0.86 and is a little softer, so the windows glow faintly through the camcorder optics.
      */
     private static final Highlights ROLLOFF_4 = new Highlights(1.0f, 0.62f, 0.96f, 0.86f, 0.6f);
+    /**
+     * Level 369: the skylights, windows and light panels (full-bright) and the sun on the meadow
+     * ease along the shoulder instead of clipping to white, and the bloom is half strength, so a
+     * skylight shaft or a window glows without washing the room out.
+     */
+    private static final Highlights ROLLOFF_369 = new Highlights(1.0f, 0.62f, 0.95f, 0.84f, 0.5f);
 
     /** Fraction of the way to the target mood per frame at 60 fps (about two seconds to settle). */
     private static final float BLEND_PER_FRAME = 0.035f;
@@ -278,8 +314,17 @@ public final class AtmosphereGrade {
             // Level 227: misty forest, clearing with height, black in the void, white in a sunbeam.
             case LEVEL_227 -> Level227Lighting.mood();
             case LEVEL_490 -> LEVEL_490;
-            // Level 369: golden while its drifting light passes over you.
-            case LEVEL_369 -> LEVEL_369.lerp(LEVEL_369_GOLDEN, Level369Atmosphere.light());
+            // Level 369: each kind of room its own light (Level369Atmosphere#room), lifted and
+            // turned golden while its drifting light passes over you.
+            case LEVEL_369 -> {
+                Mood room = LEVEL_369.lerp(LEVEL_369_HALL, Level369Atmosphere.room(Level369Plan.HALL))
+                        .lerp(LEVEL_369_PILLAR, Level369Atmosphere.room(Level369Plan.PILLAR));
+                Mood g = LEVEL_369_GOLDEN;
+                Mood golden = new Mood(room.exposure() * LEVEL_369_GOLDEN_LIFT, g.contrast(), g.saturation(),
+                        g.shR(), g.shG(), g.shB(), g.hiR(), g.hiG(), g.hiB(), g.liftR(), g.liftG(), g.liftB(),
+                        g.fogR(), g.fogG(), g.fogB(), g.fogStart(), g.fogDensity(), g.fogMax(), g.ao(), g.glow(), g.breath());
+                yield room.lerp(golden, Level369Atmosphere.light());
+            }
         };
     }
 
@@ -303,6 +348,9 @@ public final class AtmosphereGrade {
         }
         if (floor == BackroomsLevel.LEVEL_4) {
             return ROLLOFF_4;
+        }
+        if (floor == BackroomsLevel.LEVEL_369) {
+            return ROLLOFF_369;
         }
         return floor == BackroomsLevel.POOLROOMS ? ROLLOFF_POOLROOMS : CLIPPED;
     }

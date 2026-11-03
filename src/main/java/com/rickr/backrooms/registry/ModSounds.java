@@ -83,6 +83,8 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> STEP_WOOD_RUN = register("step.wood_run");
     /** Dry dead leaves underfoot (one sound for walking and running; it is played louder when running). */
     public static final DeferredHolder<SoundEvent, SoundEvent> STEP_LEAVES = register("step.leaves");
+    /** Wading through Level 369's meadow: a rustle laid over the grass footstep. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> STEP_MEADOW = register("step.meadow");
     /** Wading through shallow water (Level 37's flooded floors, the Poolrooms' 1-deep shallows). */
     public static final DeferredHolder<SoundEvent, SoundEvent> STEP_WATER_WADE_WALK = register("step.water_wade_walk");
     public static final DeferredHolder<SoundEvent, SoundEvent> STEP_WATER_WADE_RUN = register("step.water_wade_run");

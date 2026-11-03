@@ -6,7 +6,10 @@ import com.rickr.backrooms.block.SunlitVoidBlock;
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.client.water.WaterStyle;
 import com.rickr.backrooms.registry.ModBlocks;
+import com.rickr.backrooms.registry.Level369Blocks;
 import com.rickr.backrooms.world.BackroomsLevel;
+import com.rickr.backrooms.client.Level369Atmosphere;
+import com.rickr.backrooms.world.layout.Level369Plan;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.VeilRenderer;
 import foundry.veil.api.client.render.light.data.AreaLightData;
@@ -109,6 +112,18 @@ public final class SunBeams {
     /** The Poolrooms archway: warm light spilling into a dim room (same calibration). */
     private static final float BRIGHTNESS_ARCHWAY = 2.0f;
     /**
+     * Level 369's hallway windows (the user's picture of the white corridor): flush with the wall
+     * (no niche), so each shaft lands as bright stripes across the meadow and the far wall. Cool
+     * white daylight, #EEF3FF.
+     */
+    private static final float BRIGHTNESS_369 = 2.4f;
+    private static final float WINDOW_R = 0xEE / 255.0f;
+    private static final float WINDOW_G = 0xF3 / 255.0f;
+    private static final float WINDOW_B = 0xFF / 255.0f;
+    /** In Level 369 only this many window shafts at once, within this many blocks (frame rate). */
+    private static final int COMELY_BEAMS = 6;
+    private static final double COMELY_RANGE = 28.0;
+    /**
      * How far a shaft reaches (it fades out smoothly by this distance, as (1 - d/reach)^3). Long, so
      * sunlight crosses a room at nearly full strength (0.8 at 4 blocks, 0.4 at 14) and lands as
      * stripes on the far wall and pillars, not only as a patch at the window's foot (at 24 a patch
@@ -204,7 +219,24 @@ public final class SunBeams {
     }
 
     private static boolean activeIn(@Nullable BackroomsLevel floor) {
-        return floor == BackroomsLevel.LEVEL_37 || floor == BackroomsLevel.POOLROOMS;
+        return floor == BackroomsLevel.LEVEL_37 || floor == BackroomsLevel.POOLROOMS || floor == BackroomsLevel.LEVEL_369;
+    }
+
+    /** True while the bound level is Level 369 (its windows' cool white light). */
+    private static boolean comely() {
+        return boundLevel != null && BackroomsLevel.fromDimension(boundLevel.dimension()) == BackroomsLevel.LEVEL_369;
+    }
+
+    private static float red() {
+        return comely() ? WINDOW_R : SUN_R;
+    }
+
+    private static float green() {
+        return comely() ? WINDOW_G : SUN_G;
+    }
+
+    private static float blue() {
+        return comely() ? WINDOW_B : SUN_B;
     }
 
     @SubscribeEvent
@@ -285,7 +317,28 @@ public final class SunBeams {
     // ------------------------------------------------------------------------------------------
 
     private static boolean isVoid(BlockState state) {
-        return state.is(ModBlocks.L37_SUNLIT_VOID.get());
+        return state.is(ModBlocks.L37_SUNLIT_VOID.get()) || state.is(Level369Blocks.WINDOW.get());
+    }
+
+    /**
+     * The way an opening shines: a sunlit void block says so itself; a Level 369 window, flush in
+     * its wall, shines toward the side with open air (always in the same chunk: the window stands
+     * one block outside the corridor, both well inside a chunk). Null if no side is open.
+     */
+    @Nullable
+    private static Direction facingOf(LevelChunk chunk, BlockState state, int x, int y, int z) {
+        if (state.hasProperty(SunlitVoidBlock.FACING)) {
+            return state.getValue(SunlitVoidBlock.FACING);
+        }
+        for (Direction d : Direction.Plane.HORIZONTAL) {
+            int nx = x + d.getStepX();
+            int nz = z + d.getStepZ();
+            if (nx >= 0 && nx < 16 && nz >= 0 && nz < 16
+                    && chunk.getBlockState(new BlockPos(chunk.getPos().getMinBlockX() + nx, y, chunk.getPos().getMinBlockZ() + nz)).isAir()) {
+                return d;
+            }
+        }
+        return null;
     }
 
     private static void scan(LevelChunk chunk) {
@@ -307,9 +360,13 @@ public final class SunBeams {
                     for (int z = 0; z < 16; z++) {
                         BlockState state = section.getBlockState(x, y, z);
                         if (isVoid(state)) {
+                            Direction facing = facingOf(chunk, state, x, baseY + y, z);
+                            if (facing == null) {
+                                continue;
+                            }
                             long pos = BlockPos.asLong(baseX + x, baseY + y, baseZ + z);
                             found.add(pos);
-                            FACING.put(pos, state.getValue(SunlitVoidBlock.FACING));
+                            FACING.put(pos, facing);
                         }
                     }
                 }
@@ -588,10 +645,19 @@ public final class SunBeams {
         appliedScale = scale;
         WANTED.clear();
         WANTED_GLOWS.clear();
-        double maxSq = BEAM_RANGE * BEAM_RANGE;
+        // Level 369's hallways have a window every few blocks along hundreds of blocks of
+        // corridor: lighting every one in range halved the frame rate, even in rooms with no
+        // window in sight (each shaft is shadowed). There only the nearest few shine, and only
+        // while you are mostly in a hallway (the light outside one stays the room's own).
+        boolean comely = comely();
+        if (comely && Level369Atmosphere.room(Level369Plan.HALL) < 0.5f) {
+            freeLights();
+            return;
+        }
+        double maxSq = comely ? COMELY_RANGE * COMELY_RANGE : BEAM_RANGE * BEAM_RANGE;
         double glowSq = GLOW_RANGE * GLOW_RANGE;
-        int maxBeams = ClientSettings.quality().maxSunBeams;
-        int maxGlows = ClientSettings.quality().maxSunGlows;
+        int maxBeams = comely ? Math.min(COMELY_BEAMS, ClientSettings.quality().maxSunBeams) : ClientSettings.quality().maxSunBeams;
+        int maxGlows = comely ? 0 : ClientSettings.quality().maxSunGlows;
         for (Beam beam : beams) {
             double distSq = beam.distSq(eye);
             if (WANTED.size() >= maxBeams || distSq > maxSq) {
@@ -661,7 +727,7 @@ public final class SunBeams {
     }
 
     private static float brightnessOf(Beam beam) {
-        return beam.archway() ? BRIGHTNESS_ARCHWAY : BRIGHTNESS_37;
+        return beam.archway() ? BRIGHTNESS_ARCHWAY : comely() ? BRIGHTNESS_369 : BRIGHTNESS_37;
     }
 
     /** The shaft of sun: out of the back face along the opening's slanted sun direction. */
@@ -670,7 +736,7 @@ public final class SunBeams {
                 .setSize(beam.halfX(), beam.halfY())
                 .setAngle(EDGE_ANGLE)
                 .setDistance(DISTANCE)
-                .setColor(SUN_R, SUN_G, SUN_B)
+                .setColor(red(), green(), blue())
                 .setBrightness(brightnessOf(beam) * scale)
                 .setOcclusionEnabled(true);
         Direction out = beam.facing();
@@ -688,7 +754,7 @@ public final class SunBeams {
                 .setSize(Math.max(beam.faceHalfX() - COVE_INSET, 0.2f), Math.max(beam.faceHalfY() - COVE_INSET, 0.2f))
                 .setAngle(COVE_ANGLE)
                 .setDistance(COVE_DISTANCE)
-                .setColor(SUN_R, SUN_G, SUN_B)
+                .setColor(red(), green(), blue())
                 .setBrightness(COVE_BRIGHTNESS * scale)
                 .setOcclusionEnabled(true);
         Direction out = beam.facing();
@@ -707,7 +773,7 @@ public final class SunBeams {
         return new PointLightData()
                 .setPosition(beam.x() + out.getStepX() * reach, beam.y() + out.getStepY() * reach, beam.z() + out.getStepZ() * reach)
                 .setRadius(BOUNCE_REACH + Math.max(beam.faceHalfX(), beam.faceHalfY()))
-                .setColor(SUN_R, SUN_G, SUN_B)
+                .setColor(red(), green(), blue())
                 .setBrightness(BOUNCE_BRIGHTNESS * scale)
                 .setOcclusionEnabled(true); // stays in the room it lights
     }
