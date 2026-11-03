@@ -24,7 +24,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * Server rules of Level 490, "Penance": falling.
  * <ul>
  *   <li><b>The leap:</b> stepping off the collar of the colossal chain at the very top of the climb
- *       ({@link Level490Spire#LEAP_Y}) is the way out, to Level 9: the one fall that doesn't bring
+ *       ({@link Level490Spire#LEAP_Y}) is the way out, back to reality (the tape stops): the one fall that doesn't bring
  *       you back, wherever it ends.</li>
  *   <li><b>Any other fall:</b> once you sink into the clouds (below {@link Level490Layout#FALL_Y}),
  *       or land on something after falling {@value #BIG_FALL} blocks or more (off a ledge onto the

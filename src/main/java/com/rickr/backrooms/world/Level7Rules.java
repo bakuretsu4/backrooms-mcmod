@@ -18,9 +18,10 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  *       longer than anywhere else. Under water your air runs out ten times slower than normal
  *       (about 2.5 minutes instead of 15 seconds), just enough to reach the bottom and back.</li>
  *   <li><b>Out:</b> the wooden door in the stone platform on the sea floor, 150 blocks west of the
- *       entrance room ({@code block/SeaDoorBlock} tells us). Swim into it: on to Level 39's flooded tunnels.</li>
+ *       entrance room ({@code block/SeaDoorBlock} tells us). Swim into it: on to Level 9's suburbs
+ *       ({@code BackroomsLevel.next}).</li>
  * </ul>
- * The way in is a flooded house in Level 94 ({@link Level94Rules}).
+ * The way in is Level 4's stairwells (and exit elevators), or a flooded house in Level 94 ({@link Level94Rules}).
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
 public final class Level7Rules {

@@ -73,7 +73,10 @@ public final class VanillaWaterHider {
         }
     }
 
-    /** True while an Iris shader pack is in use (false when Iris isn't installed). */
+    /**
+     * True while an Iris shader pack is in use (false when Iris isn't installed). Also read once a
+     * tick by client/Level1Atmosphere (under a pack the lightmap can't darken the world).
+     */
     public static boolean shaderPackInUse() {
         if (irisFailed) {
             return true;

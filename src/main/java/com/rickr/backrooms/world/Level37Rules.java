@@ -21,12 +21,13 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * Server rules of the Poolrooms' sunlit archway and of leaving Level 37 ("Sublimity"):
  * <ul>
  *   <li><b>The archway:</b> somewhere in the Poolrooms a sunlit archway glows in a wall. Walk into
- *       its light (the back half of the passage) and you skip ahead to Level 39's flooded
- *       tunnels. (Level 37 itself is reached down the Poolrooms' drain.)</li>
+ *       its light (the back half of the passage) and you skip Level 37, ahead to Level 39's flooded
+ *       tunnels. Its way back is a dead end of those tunnels glowing with the same daylight
+ *       ({@code Level39Rules}). (Level 37 itself is reached through the Poolrooms' main exit.)</li>
  *   <li><b>Out:</b> the round pits of deep, dark water. Once you have dived a few blocks down
  *       one, a gentle current draws you down the shaft. Below
  *       {@link Level37Layout#TRANSFER_BELOW_Y} the usual exit check ({@code ServerEvents}) sends
- *       you on to Level 369 (you fall out of a skylight there).</li>
+ *       you on to Level 39: you come up in its flooded tunnels.</li>
  * </ul>
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
@@ -63,7 +64,7 @@ public final class Level37Rules {
 
     /**
      * Stepping into the light at the back of a sunlit archway: a rare shortcut that skips Level 37
-     * and Level 7 and brings you up in Level 39's flooded tunnels (Level39Layout.preferredArrival).
+     * and brings you up in Level 39's flooded tunnels (Level39Layout.preferredArrival).
      */
     private static void checkArchway(ServerPlayer player) {
         if (player.getY() < ARCHWAY_MIN_Y || player.getY() > ARCHWAY_MAX_Y) {

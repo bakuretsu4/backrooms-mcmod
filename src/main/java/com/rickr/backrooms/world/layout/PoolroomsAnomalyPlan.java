@@ -43,16 +43,14 @@ import org.jetbrains.annotations.Nullable;
 public final class PoolroomsAnomalyPlan {
     public static final String DARK_CORNER = "poolrooms/dark_corner";
     public static final String STAIR_PIT = "poolrooms/stair_pit";
-    public static final List<String> KINDS = List.of(DARK_CORNER, STAIR_PIT);
+    /** Every Poolrooms anomaly kind (command suggestions), the big areas of {@link PoolroomsAreas} included. */
+    public static final List<String> KINDS = List.of(DARK_CORNER, STAIR_PIT,
+            PoolroomsAreas.SKY_COURT, PoolroomsAreas.GLOW_HALL, PoolroomsAreas.TANGLE);
 
     private static final int CELL = PoolroomsLayout.CELL;
 
     // ---- Stair pits ------------------------------------------------------------------------------
-    /**
-     * The pit's bottom block. The Poolrooms send you on to Level 37 below y30
-     * ({@code BackroomsLevel.transferBelowY}), so the deepest you can sink is standing on this,
-     * feet at y31: a pit is never a secret exit.
-     */
+    /** The pit's bottom block, 11 under the surface: standing on it, your feet are at y31. */
     public static final int PIT_FLOOR_Y = 30;
     /** One pit per 9 x 9 rooms (126 x 126 blocks) at most ... */
     private static final int PIT_REGION_CELLS = 9;

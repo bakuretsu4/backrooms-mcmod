@@ -12,11 +12,11 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 /**
  * Server rules of Level 369 ("Comely"), in and out:
  * <ul>
- *   <li><b>In:</b> down one of Level 37's pits; you fall out of a skylight
+ *   <li><b>In:</b> through a dark-doored house in Level 94; you fall out of a skylight
  *       ({@code Level369Layout#preferredArrival}) into the flowers. Nothing up here can hurt you
  *       by falling: every landing is soft.</li>
  *   <li><b>Out:</b> walk into the curtain of flowers hanging in an arch of vines
- *       ({@code l369_veil}) and you come out in Level 7.</li>
+ *       ({@code l369_veil}) and you come out in Level 490 ({@code BackroomsLevel.next}).</li>
  *   <li><b>The light:</b> the warm light drifting through the rooms ({@link Level369Light}) heals
  *       you while you stand in it (and gives back your sanity, see {@code SanityService}).</li>
  * </ul>

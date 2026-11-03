@@ -133,9 +133,11 @@ public final class ModSounds {
     // scheduled by client/Level94Atmosphere).
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_WIND = register("ambient.level94_wind");
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_BIRDS = register("level94.birds");
-    // Level 7 "Thalassophobia": the hollow sea ambience (the biome's loop), and the Thing, which you
-    // only ever hear: its groans from far below, the swell when it passes under you, and the gut-drop
-    // lurch when you fall through the hatch (one-shots from client/Level7Client).
+    // Level 7 "Thalassophobia": the hollow sea ambience (the biome's loop), and the Thing: its groans
+    // from far below, the swell when it passes under you, the loop of its huge body swimming (placed
+    // on the body, so it moves past you), the surge of water when it is closest and the rush of
+    // bubbles it lets go; and the gut-drop lurch when you fall through the hatch (all from
+    // client/Level7Client and client/Level7Thing).
     // Your own breathing (client/Breathing): panting after a sprint, quick shaky breaths when scared.
     public static final DeferredHolder<SoundEvent, SoundEvent> BREATH_HEAVY = register("player.breath_heavy");
     public static final DeferredHolder<SoundEvent, SoundEvent> BREATH_SCARED = register("player.breath_scared");
@@ -145,6 +147,9 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> L7_GROAN = register("level7.groan");
     public static final DeferredHolder<SoundEvent, SoundEvent> L7_HEAVE = register("level7.heave");
     public static final DeferredHolder<SoundEvent, SoundEvent> L7_LURCH = register("level7.lurch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L7_THING_SWIM = register("level7.thing_swim");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L7_THING_NEAR = register("level7.thing_near");
+    public static final DeferredHolder<SoundEvent, SoundEvent> L7_THING_BUBBLES = register("level7.thing_bubbles");
     // Exit hints: the faint loop each level's exit gives off (client/hint/ExitHints plays it at the
     // nearest exit; no subtitle, it is meant to be noticed, not announced).
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_0 = register("exit_hint.level_0");

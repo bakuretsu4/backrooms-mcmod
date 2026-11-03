@@ -11,10 +11,12 @@ of pillars with red flowers and a winding brick path.
 
 - **Level 369 with a twist.** It looks like the wiki's gentlest level ("habitable", nothing
   lives here), and on the surface it is: no creature at all. The level itself is the danger.
-- **Where:** after Level 37. Level 37 --a deep pit--> Level 369 --the arch of vines--> Level 7.
-- **Way in:** dive down one of Level 37's dark pits as before; you fall out of a skylight into
-  soft flowers (the landing never hurts).
-- **Way out:** a great archway of vines and flowers (from the wiki); walk through it into Level 7.
+- **Where:** after Level 94 (since the 2026-11 reorder to the wiki's numbers; before that it came
+  after Level 37 and led to Level 7). Level 94 --a dark doorway--> Level 369 --the arch of
+  vines--> Level 490.
+- **Way in:** walk into the dark of one of Level 94's dark-door houses; you fall out of a skylight
+  into soft flowers (the landing never hurts).
+- **Way out:** a great archway of vines and flowers (from the wiki); walk through it into Level 490.
 - **Rooms**, all four looks:
   - white window hallways with blue flowers (picture 1);
   - peach pillar halls with red flowers and a winding brick path (picture 2);

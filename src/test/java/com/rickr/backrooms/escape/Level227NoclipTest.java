@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SplittableRandom;
 import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
@@ -28,20 +29,25 @@ import org.junit.jupiter.api.TestFactory;
  * on the tree is somewhere you can stand (not in the void under the branches).
  */
 class Level227NoclipTest {
-    /** Levels the noclip may pick that are checked here (369 and 490 are in FriendLevelsReportTest). */
+    /**
+     * Every level the noclip may pick: everything up to Level 94 on the path (from there the path
+     * still leads back to Level 9 or 94, where you were dragged in from). Never 227, 369 or 490.
+     */
     private static final BackroomsLevel[] OURS = {BackroomsLevel.LEVEL_0, BackroomsLevel.LEVEL_1, BackroomsLevel.LEVEL_2,
             BackroomsLevel.LEVEL_4, BackroomsLevel.POOLROOMS, BackroomsLevel.LEVEL_37, BackroomsLevel.LEVEL_7,
             BackroomsLevel.LEVEL_39, BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_9};
 
     @Test
-    void noclipNeverPicksTheTreeAndReachesEveryOtherLevel() {
+    void noclipOnlyPicksLevelsWithAWayBack() {
         Map<BackroomsLevel, Integer> picks = new EnumMap<>(BackroomsLevel.class);
         RandomSource random = RandomSource.create(227L);
         for (int i = 0; i < 20_000; i++) {
             picks.merge(Level227Noclip.dangerousLevel(random), 1, Integer::sum);
         }
         assertFalse(picks.containsKey(BackroomsLevel.LEVEL_227), "the noclip sent someone back into Level 227: " + picks);
-        assertEquals(BackroomsLevel.values().length - 1, picks.size(), "some level is never picked: " + picks);
+        assertFalse(picks.containsKey(BackroomsLevel.LEVEL_369), "the noclip sent someone past Level 94 (369): " + picks);
+        assertFalse(picks.containsKey(BackroomsLevel.LEVEL_490), "the noclip sent someone past Level 94 (490): " + picks);
+        assertEquals(Set.of(OURS), picks.keySet(), "some level is never picked: " + picks);
         assertFalse(BackroomsLevel.LEVEL_227.layout().hasExits(), "Level 227 must report that it has no exit");
     }
 

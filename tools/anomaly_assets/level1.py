@@ -392,9 +392,34 @@ def snd_level1_corridor_drone() -> None:
     G.save_ogg(x, G.SND / "level1" / "corridor_drone.ogg", peak=0.6)
 
 
+def tex_level1_wet_glints() -> None:
+    """128 x 128 grey, tiling (one tile = 4 x 4 blocks of floor): what a lamp's reflection in the
+    wet garage floor is made of. client/light/Level1WetFloor adds it on top of the floor, tinted
+    by the lamp and shaped into the streak under it. A dim, uneven sheen (wetter and drier
+    patches, dark pores in the concrete) spattered with bright glints, more of them where the
+    sheen is wettest: the puddles' sparkle. It is pinned to the world, so as you walk the glints
+    crawl through a streak and twinkle at its edges. Not in the block atlas (textures/misc).
+    Also writes l1_wet_glints_pack.png, the same raised by the square root: shader packs square
+    colours on their way into linear light, and the strips vanished there without it."""
+    rng = G.rng_for(9631)
+    wet = G.fnoise(rng, beta=2.6)                                   # big wet / damp patches
+    sheen = 0.36 + 0.08 * np.clip(wet, -2.0, 2.0)
+    sheen *= 1.0 + 0.12 * np.clip(G.fnoise(rng, beta=1.0, aniso=(1.0, 3.0)), -2.0, 2.0)  # rough, a little streaky
+    pores = G.smoothstep(1.4, 2.6, G.fnoise(rng, beta=0.4))          # small dark pits
+    sheen *= 1.0 - 0.65 * pores
+    # Glints: small and sparse (single pixels), a few more in the wet patches.
+    chance = 0.004 + 0.016 * G.smoothstep(-0.2, 1.4, wet)
+    sparks = (rng.random((S, S)) < chance) * (0.7 + 0.3 * rng.random((S, S)))
+    halo = np.clip(G.blur(sparks, 0.5) * 1.4, 0.0, 0.4)               # a slight bleed round each
+    v = np.clip(np.maximum(np.maximum(sheen, halo), sparks), 0.0, 1.0)
+    G.save_png(np.stack([v, v, v], axis=-1) * 255.0, G.TEX / "misc" / "l1_wet_glints.png")
+    p = np.sqrt(v)
+    G.save_png(np.stack([p, p, p], axis=-1) * 255.0, G.TEX / "misc" / "l1_wet_glints_pack.png")
+
+
 TEXTURES = [
     tex_level1_paintings, tex_level1_floor_paintings, tex_level1_condensation,
     tex_level1_cinderblock, tex_level1_noclip_wall, tex_level1_blue_tile, tex_level1_bright_patch,
-    tex_level1_monochrome_wall, tex_level1_monochrome_floor,
+    tex_level1_monochrome_wall, tex_level1_monochrome_floor, tex_level1_wet_glints,
 ]
 SOUNDS = [snd_level1_drip, snd_level1_crate_thud, snd_level1_corridor_drone]

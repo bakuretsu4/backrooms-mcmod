@@ -67,21 +67,27 @@ Backrooms. About three seconds, no cut.
 
 ### The way out
 
-One path runs through every level, each exit leading naturally into the next place:
+One path runs through every level, in the order of the wiki's level numbers (the unnumbered
+Poolrooms sit between 9 and 37):
 
 ```
-Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Poolrooms --drain--> Level 37 --deep pit--> Level 369 --arch of vines--> Level 7 --sunken door--> Level 39 --mill window--> Level 94 --dark doorway--> Level 490 --the leap--> Level 9 --underpass--> Overworld
+Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Level 7 --sunken door--> Level 9 --underpass--> Poolrooms --the great pool hall--> Level 37 --deep pit--> Level 39 --mill window--> Level 94 --dark doorway--> Level 369 --arch of vines--> Level 490 --the leap--> Overworld
 ```
 
 Every exit looks different, but every move from one level to the next is filmed the same way:
 the same datamosh as noclipping in, the old place smearing into the new one. Only escaping back
-to reality has its own ending (the tape stops).
+to reality, with the leap at the end of Level 490, has its own ending (the tape stops).
 
-Rare shortcuts stay as extra ways in and out: a sunlit archway in the Poolrooms skips ahead to
-**Level 39**'s flooded tunnels; a moulded-clay front door on a Level 9 house opens onto
-**Level 94**, whose flooded houses lead down to **Level 7** and whose castle throne leads back to
-**Level 1**; a very rare chairlift in Level 9's Crimson Field climbs into the clouds and drops you
-into **Level 39**'s town.
+Rare side ways lead off the line, ahead or back. The rule for them: the level you land in always
+has a way back to the level you left (going back needs nothing, you just walk the line forward
+again). A sunlit archway in the Poolrooms skips ahead to **Level 39**'s flooded tunnels, and a
+few dead ends of those tunnels glow with the same daylight: walk into one and you are back in
+the Poolrooms. A moulded-clay front door on a Level 9 house opens onto **Level 94**, and a very
+rare chairlift in Level 9's Crimson Field climbs into the clouds and drops you into **Level
+39**'s town; both levels have the odd house with a clay front door of their own that leads back
+to **Level 9**. Going back: Level 94's flooded houses lead down to **Level 7** and its castle
+throne to **Level 1**; Level 37's void and dark openings lead to **Level 0** and the
+**Poolrooms**; Level 9.1's foxholes lead to **Level 2** and its gloom to **Level 0**.
 
 And out in the Backrooms' own nature (Level 9's woods behind the backyards, Level 9.1's Crimson
 Field, Level 94's open hills) something can take hold of you and drag you into **Level 227**: after
@@ -138,6 +144,21 @@ going down into the dark, until the picture breaks up and you are in the next le
   **storage lockers** opens off the halls: roll-up shutters, a few rolled up with supplies
   inside, something growling behind one or two, and a white door at the end that never opens. Car
   **ramps** lead down to a dimmer lower floor here and there. A stairwell leads down.
+  - **Wet floor:** the concrete is damp and the puddles are wet, so the lamps show in the floor:
+    a pillar's tube as a long bright streak running from its foot toward you, a hanging fixture
+    as a short wide patch, both sparkling where they cross a puddle and faint on dry concrete,
+    strongest looking far across the floor and faint at your feet; between the lamps the floor
+    stays dark. The reflections are flat strips drawn on the floor with vanilla's glowing render
+    type (`client/light/Level1WetFloor`), so they look the same with Veil, without it and under
+    Iris shader packs. They go out with their lamp (blackout, flicker, dead zones) and a lamp
+    behind a pillar or wall leaves none.
+  - **Lights out:** when the power fails (the blackout event, 20-40 s) the garage goes nearly
+    pitch black: every tube, its glowing face and its reflection die over two seconds, the air
+    turns black and swallows everything a few blocks out, and only the faintest shape of the
+    floor at your feet is left. Your flashlight holds the dark back further, NightShot sees
+    through most of it. Under an Iris shader pack (which still lights the world by the dead
+    tubes' block light) the camcorder presses the picture itself down to black, before your
+    flashlight (`client/Level1Atmosphere`). Then the Smilers come.
 - **Level 2 (Pipe Dreams):** one endless, perfectly straight maintenance corridor of grey poured
   concrete, one block wide: the walls almost brush your shoulders and the ceiling sits just over
   your head (2 blocks of headroom). Nothing branches off it: no rooms, no doors, no detours, only
@@ -205,18 +226,75 @@ going down into the dark, until the picture breaks up and you are in the next le
   **exit signs** over the doorways and hanging in the big spaces, pointing toward the nearest
   stairwell. Some filing cabinets marked SUPPLIES are lockers. Safe rooms stand as little office
   boxes in the open floors. Behind one locked door with a brass "6", faint music plays. There are
-  two ways out, both to the Poolrooms: an **emergency stairwell** (look for the glowing EXIT sign
+  two ways out, both to Level 7: an **emergency stairwell** (look for the glowing EXIT sign
   over a grey steel fire door in a bright, cleared area; go down the stairs), or, now and then in
   an elevator lobby, an **exit elevator** standing open and lit under a green EXIT sign: step in
   and wait, and it takes you down.
-- **The Poolrooms:** dim white-tiled rooms and long water channels lit by a few tubes, glowing
+- **Level 7 ("Thalassophobia"):** reached down Level 4's emergency stairwells and exit elevators
+  (or, coming back from further on, down the stairs of a flooded house in Level 94, about two exit
+  houses in three). You come up in a
+  small flooded sitting room (bookcase, coffee
+  table, armchair, a radio and a crate on the dry landing) hanging from a concrete ceiling over an
+  endless dark sea in a thick pale fog. Open a hatch in the landing and drop; the rope by the
+  other hatch climbs back up (hold jump). Around the room is a shallow shelf of pale silt, then a
+  sheer drop to a carpeted sea floor about 150 blocks down, with rock stacks, tar, scrap and the
+  ribs of giant fish. You can hold your breath about ten times longer than normal here. The way
+  out is a wooden door lying in a round stone platform on the sea floor, ringed by pillars and
+  huge pipes, 150 blocks west of the room: swim into it and you come out in Level 9's suburbs.
+  No monsters that hunt you, but something enormous lives in the water, and the longer you stay
+  in (faster the deeper you are) the more interested it gets: over about 5 minutes in deep water
+  (12 at the surface; it forgets you a minute after you climb out) its groans come from every
+  30-80 s down to every 12-30 s and from closer, and it swims past you every 40-80 s down to
+  every 14-30 s (the first time 12-25 s after you swim out over open water). Swimming at the
+  surface, a huge shadow glides under you (it follows you until it has passed), the sea heaves
+  and bubbles boil up around you. Under water it crosses in front of you 12-27 blocks off, and
+  later slides past right under your feet or, deep down, over your head; two pale eyes and a row
+  of faint lights along its flanks show where it is even in the black, and at its boldest its
+  head turns toward you as it passes. You hear its body the whole way (shoved water and slow tail
+  beats, coming from the part of it nearest you), then the surge and the rush of bubbles when it
+  is closest, and its wake pushes you and rocks the view (scaled by the view-tilt setting). It
+  never touches you. To test: `/backrooms thing` in the water (it passes now, at full dread) or
+  `/backrooms thing dread`. Your sanity drains in the water, faster the deeper you go; the room calms you. The
+  sea is drawn like the pool water (below), in its own murky grey-green: a rippled surface that
+  mirrors the concrete above and lets the pale shallows show through, and underneath a dim teal
+  murk that turns black and closes in as you go down. Far off, waves slap against rock, the
+  ceiling drips and the giant pipes thump.
+- **Level 9 (the Suburbs):** reached through the door on Level 7's sea floor. An endless suburb at midnight in thick fog that drains the colour
+  from everything. Wet roads covered in leaves, old sodium streetlamps (most dead, some
+  flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark
+  forest behind the yards. Follow the green EXIT arrow signs (a few lie) to a highway underpass
+  and walk into the dark: it lets you out in the Poolrooms.
+  - **Houses:** not every house is the same plan any more: wide one-storey ranch houses, houses with
+    a ladder up to a dusty attic, houses with stairs down to a dark cellar (water heater, washer,
+    boxes), boarded-up houses full of dust sheets and cobwebs, and now and then a half-built house
+    of bare studs, rafters, sawhorses and a tarp.
+  - **Lived in:** the TV is sometimes still on (soft static), dinner is left on the table, beds are
+    unmade, some houses have a kid's room with toys and drawings, family photos hang on the walls
+    (some with the faces scratched out), and a few kitchens have an answering machine on the counter.
+- **The Poolrooms:** reached through Level 9's highway underpass. Dim white-tiled rooms and long water channels lit by a few tubes, glowing
   cyan pools with underwater lamps and moving light ripples, and now and then a tall atrium full
-  of daylight. No monsters. The way out is the drain: a dark-tiled shaft in the middle of a deep
-  pool, lit by lamps around its edge. Swim into it and it pulls you down into Level 37.
+  of daylight. No monsters. The way out is the **great pool hall** (about one per 1000 x 1000
+  blocks): a dark hall 41 blocks across, sunk 35 blocks under the level, its floor one big
+  turquoise pool and its ceiling sloping up from all four walls to a small square of open sky
+  at the top. A doorway in its outer wall leads down a long dark stairway inside the wall and out
+  of a small doorway at the water's edge; across the pool, a straight tiled stair climbs the far
+  wall to a landing high under the slope, where a niche is full of daylight. Climb up and step
+  into the light: you go on to Level 37. The pool glows from within, a rising line of small step
+  lights picks out the stair from anywhere in the hall, lamps glow in the corners, and there are
+  ladders and a drifting plank at the edge. `/backrooms locate` gives the niche's position.
   Somewhere (about once every 300 x 300 blocks) a dim, dry room has a **sunlit archway** in its
   north wall: a round arch lined with fine white mosaic, warm daylight pouring out of it from somewhere deep inside. Walk
-  into the light: a shortcut that skips ahead to Level 39's flooded tunnels.
-- **Level 37 ("Sublimity"):** reached down the Poolrooms' drain. Pristine cream-white mosaic on
+  into the light: a shortcut that skips ahead to Level 39's flooded tunnels (its way back is a dead
+  end of those tunnels that ends in the same daylight).
+  Bigger stretches of the level are one strange space (`/backrooms anomaly locate
+  poolrooms/...`): **sky courts** (`sky_court`), open-air courtyard pools between plain grey
+  concrete walls, heavy beams across an open roof of blue sky, the water bright turquoise, a dark
+  covered deck along one side and dark doorways out; **glow halls** (`glow_hall`), long, tall,
+  dark halls with a channel of glowing cyan water down the middle, tall tiled piers along both
+  sides with a strip light in every other opening, its reflection lying in the water, black aisles
+  behind them and dark slots high in the walls; and **tangles** (`tangle`), dark flooded rooms
+  crossed by a tangle of low tiled walkways, ledges and blocks, lit only from under the water.
+- **Level 37 ("Sublimity"):** reached up the long stair of the Poolrooms' great pool hall. Pristine cream-white mosaic on
   every surface, floors flooded ankle-deep in clear sea-green water, deep pools with no ledge and
   chrome ladders, forests of round pillars standing in the water, wavy walls and rounded corners, round arches
   and circular tunnels fading into darkness, domed rotundas with an oculus and softly lit arched
@@ -229,8 +307,44 @@ going down into the dark, until the picture breaks up and you are in the next le
   the spiral stairs hold almond water and calm pills. The way on is down: a round rotunda with a
   **pit of deep, dark water** in its middle (one per ~1000 x 1000 blocks; `/backrooms locate` points to
   it). Walk down the floating treads into the water and dive; a gentle current draws you down
-  the shaft and out into Level 369.
-- **Level 369 ("Comely"):** reached by diving down Level 37's pit: you fall out of a skylight into
+  the shaft and up into Level 39's flooded tunnels.
+- **Level 39 ("Megalophobia"):** you come up out of Level 37's pits (or the Poolrooms' sunlit archway) into long, white
+  marble tunnels, barrel-vaulted and flooded with still turquoise water, lit by light that comes
+  from nowhere (the tunnels swallow sound). Walkways run along both sides of the water. The way
+  back up: iron rungs in a pool of light at the foot of the wall, wherever a town path crosses
+  over the tunnel, climbing to a hatch in the town above: a
+  foggy night town of light-blue clapboard houses from every era (1800s saltboxes, Victorians with
+  turrets, farmhouses, bungalows, Cape Cods, 1980s ranches), unpainted picket fences, dirt and rocky
+  paths, hedges, bare trees, sagging power lines, the odd lattice telephone tower or abandoned
+  park. All around it, colossal, a 1900s mill wall rises into the clouds: rows upon rows of bright
+  windows, so big it has its own weather (it rains in the town now and then), and everything you
+  do echoes off it for seconds. Loud noises can echo into an earthquake. Food and Almond Water you
+  bring vanish when you arrive. The houses hold almond water on pantry shelves, in old fridges and
+  in cellars, but the front doors are mostly locked or fake: punch through a rotten wall section
+  (it takes a few seconds, and it is loud). Some houses are wrong (see Anomalous areas). Holes in
+  the ground drop back into the tunnels. Two ways back for whoever skipped ahead to here: a few
+  dead ends of the tunnels (about one in eight) end, behind their round arch, in a wall of warm
+  daylight instead of the two locked doors; walk into the arch and you are back in the Poolrooms.
+  And about one house in seventy has a moulded-clay front door that opens: step through it and
+  you are back in Level 9's suburbs. The way on is through the mill: walk into one of the
+  glowing ground-floor windows that wakes up, and survive its grab for three seconds against the
+  glass, and you noclip through it into Level 94.
+- **Level 94 ("Motion"):** reached through a window of Level 39's mill (you come out at a
+  crossroads), or through a rare clay front door on a Level 9 house (about one unlocked house in
+  forty). Endless rolling hills of felt grass under a painted sky with fat
+  cartoon clouds, winding roads, little cream houses with red roofs (some enterable, with a CRT TV
+  showing static), house fragments on the hills, water towers, parked old cars and milk vans, siren
+  poles that play a happy tune by day, and a town with a chess-king fountain. Far away a white
+  cartoon castle stands on a see-through glass mountain; walk the spiral ramp up to it. Inside it
+  turns into a real (and wrong) play centre: checker floors, a ball pit, a playground with a
+  climbing frame, a looping upstairs hall, an animation studio and an empty throne room. Day lasts
+  8 minutes (the last 30 s is dusk), night 3: at night the music stops and Smilers come out on the
+  hills, so get inside a house (they can't follow you in; your sanity holds steady there). Ways
+  out: houses whose doorway is pure black lead on to Level 369, flooded houses (knee-deep water,
+  steps going down into murk) lead to Level 7, and the light behind the throne leads to Level 1.
+  And about one house in twelve has a moulded-clay front door like Level 9's: step through it
+  and you are back in Level 9's suburbs.
+- **Level 369 ("Comely"):** reached through a dark doorway in Level 94: you fall out of a skylight into
   soft flowers (no landing ever hurts here). An endless indoor garden: rooms of pastel-painted
   plaster, every floor a lawn carpeted wall to wall with grass and flowers. Long white hallways
   with tall windows full of pale blue light down one side, closed doors down the other and blue
@@ -248,56 +362,8 @@ going down into the dark, until the picture breaks up and you are in the next le
   sun from their windows, pillar halls in a low golden sunset, soft daylight under the skylights.
   Nothing lives here and nothing happens. The way on is a great **arch of vines** filled
   with a curtain of hanging flowers (one per ~1000 x 1000 blocks; `/backrooms locate` points to it): walk
-  into the flowers and you come out in Level 7. See `docs/level-369-comely.md`.
-- **Level 7 ("Thalassophobia"):** reached through Level 369's arch of vines (or, as a shortcut, down
-  the stairs of a flooded house in Level 94, about two exit houses in three). You come up in a
-  small flooded sitting room (bookcase, coffee
-  table, armchair, a radio and a crate on the dry landing) hanging from a concrete ceiling over an
-  endless dark sea in a thick pale fog. Open a hatch in the landing and drop; the rope by the
-  other hatch climbs back up (hold jump). Around the room is a shallow shelf of pale silt, then a
-  sheer drop to a carpeted sea floor about 150 blocks down, with rock stacks, tar, scrap and the
-  ribs of giant fish. You can hold your breath about ten times longer than normal here. The way
-  out is a wooden door lying in a round stone platform on the sea floor, ringed by pillars and
-  huge pipes, 150 blocks west of the room: swim into it and you come out in Level 39's flooded tunnels. No monsters,
-  but something enormous lives in the water: you hear it groan far below, feel the water heave
-  when it passes under you, and once in a while a vast dark shape glides past at the edge of what
-  you can see. Your sanity drains in the water, faster the deeper you go; the room calms you. The
-  sea is drawn like the pool water (below), in its own murky grey-green: a rippled surface that
-  mirrors the concrete above and lets the pale shallows show through, and underneath a dim teal
-  murk that turns black and closes in as you go down. Far off, waves slap against rock, the
-  ceiling drips and the giant pipes thump.
-
-- **Level 39 ("Megalophobia"):** you come up out of Level 7's sunken door into long, white
-  marble tunnels, barrel-vaulted and flooded with still turquoise water, lit by light that comes
-  from nowhere (the tunnels swallow sound). Walkways run along both sides of the water. The way
-  back up: iron rungs in a pool of light at the foot of the wall, wherever a town path crosses
-  over the tunnel, climbing to a hatch in the town above: a
-  foggy night town of light-blue clapboard houses from every era (1800s saltboxes, Victorians with
-  turrets, farmhouses, bungalows, Cape Cods, 1980s ranches), unpainted picket fences, dirt and rocky
-  paths, hedges, bare trees, sagging power lines, the odd lattice telephone tower or abandoned
-  park. All around it, colossal, a 1900s mill wall rises into the clouds: rows upon rows of bright
-  windows, so big it has its own weather (it rains in the town now and then), and everything you
-  do echoes off it for seconds. Loud noises can echo into an earthquake. Food and Almond Water you
-  bring vanish when you arrive. The houses hold almond water on pantry shelves, in old fridges and
-  in cellars, but the front doors are mostly locked or fake: punch through a rotten wall section
-  (it takes a few seconds, and it is loud). Some houses are wrong (see Anomalous areas). Holes in
-  the ground drop back into the tunnels. The way on is through the mill: walk into one of the
-  glowing ground-floor windows that wakes up, and survive its grab for three seconds against the
-  glass, and you noclip through it into Level 94.
-- **Level 94 ("Motion"):** reached through a window of Level 39's mill (you come out at a
-  crossroads), or through a rare clay front door on a Level 9 house (about one unlocked house in
-  forty). Endless rolling hills of felt grass under a painted sky with fat
-  cartoon clouds, winding roads, little cream houses with red roofs (some enterable, with a CRT TV
-  showing static), house fragments on the hills, water towers, parked old cars and milk vans, siren
-  poles that play a happy tune by day, and a town with a chess-king fountain. Far away a white
-  cartoon castle stands on a see-through glass mountain; walk the spiral ramp up to it. Inside it
-  turns into a real (and wrong) play centre: checker floors, a ball pit, a playground with a
-  climbing frame, a looping upstairs hall, an animation studio and an empty throne room. Day lasts
-  8 minutes (the last 30 s is dusk), night 3: at night the music stops and Smilers come out on the
-  hills, so get inside a house (they can't follow you in; your sanity holds steady there). Ways
-  out: houses whose doorway is pure black lead on to Level 490, flooded houses (knee-deep water,
-  steps going down into murk) lead to Level 7, and the light behind the throne leads to Level 1.
-- **Level 490 ("Penance"):** through a dark doorway in Level 94 you come out among crumbling ruins
+  into the flowers and you come out in Level 490. See `docs/level-369-comely.md`.
+- **Level 490 ("Penance"):** through Level 369's arch of vines you come out among crumbling ruins
   on floating islands of rock over a sea of storm cloud, at night, in rain (after Elden
   Ring's Crumbling Farum Azula). On the islands stand rings of pillars, arcade walls with broken
   tops, tower stubs, rubble, dead trees and open shackles; stone bridges with spiked iron railings
@@ -319,7 +385,7 @@ going down into the dark, until the picture breaks up and you are in the next le
   crumbled stretches, rotten planks), in through a half-way room with a radio, where the stair
   inside never ends until you go back down (something changes every time round), and out again
   round the outside to the top. From its crumbled top a broken bridge runs out to a
-  colossal chain; climb the ladder up it to the collar and step off: the way on, to Level 9. Fall
+  colossal chain; climb the ladder up it to the collar and step off: the last leap, back to reality (the tape stops). Fall
   anywhere else (into the clouds, or a long fall onto something) and you wake at the last radio you
   used, unhurt. And something hunts you: a colossal shape of drifting smoke like the Mind Flayer,
   long spider legs fraying into tendrils, a crown of spines and a scatter of dim eyes, hard to see
@@ -332,18 +398,6 @@ going down into the dark, until the picture breaks up and you are in the next le
   are safe. At the top it holds the tower in its hands and stares at you, then floats in
   the sky watching as you climb the chain. If it catches you, you wake chained on a punishment
   platform behind you: pull at the chains (jump) to break free.
-- **Level 9 (the Suburbs):** the last level, through the leap in Level 490. An endless suburb at midnight in thick fog that drains the colour
-  from everything. Wet roads covered in leaves, old sodium streetlamps (most dead, some
-  flickering), houses with blacked-out windows, some unlocked with dark rooms inside, and dark
-  forest behind the yards. Follow the green EXIT arrow signs (a few lie) to a highway underpass
-  and walk into the dark, back to reality.
-  - **Houses:** not every house is the same plan any more: wide one-storey ranch houses, houses with
-    a ladder up to a dusty attic, houses with stairs down to a dark cellar (water heater, washer,
-    boxes), boarded-up houses full of dust sheets and cobwebs, and now and then a half-built house
-    of bare studs, rafters, sawhorses and a tarp.
-  - **Lived in:** the TV is sometimes still on (soft static), dinner is left on the table, beds are
-    unmade, some houses have a kid's room with toys and drawings, family photos hang on the walls
-    (some with the faces scratched out), and a few kitchens have an answering machine on the counter.
 - **Level 227 ("Megaflora"):** reached only by being dragged in out of the Backrooms' own nature
   (see above) or with `/backrooms enter level_227`. A tree the size of a planet hangs upside down
   over a black void, its roots reaching up out of the sky. You arrive in a misty rainforest that
@@ -404,16 +458,17 @@ screen points the way, but every level's ordinary exit can be tracked down three
 ways (the sunlit archway, the clay doors, the throne light) are never hinted.
 - **Listen.** Every exit gives off a faint sound of its own that fades in within about 40 blocks
   and comes through the walls: a draft up Level 0's stairwell, the hollow drone of Level 1's,
-  Level 2's EXIT door buzzing, a cold draft hissing under Level 4's fire door, the Poolrooms' drain
-  gurgling, water rushing down Level 37's pit, highway hum through Level 9's underpass, the dark
-  breathing behind Level 94's dark doors, bubbles rising from Level 7's sunken door. Unlike the
+  Level 2's EXIT door buzzing, a cold draft hissing under Level 4's fire door, open air spilling
+  down the Poolrooms' great pool hall over its lapping water, water rushing down Level 37's pit,
+  highway hum through Level 9's underpass, the dark breathing behind Level 94's dark doors,
+  bubbles rising from Level 7's sunken door. Unlike the
   rest of the level's sounds, it never moves.
 - **NightShot.** Earlier wanderers painted arrows in something that only the camcorder's
   infrared shows. With NightShot on, a few dark arrows appear on walls and floors around you, each
   pointing toward the exit, or down when it lies far below. Unlike the arrows drawn on Level 0's
   walls, they never lie. They thin out along the path: about one per dozen blocks of wall on
-  Level 0, fewer on every level after it, and from Level 37 on they only show near the exit (Level
-  9: a rare one within 50 blocks).
+  Level 0, fewer on every level after it, and from Level 7 on they only show near the exit (Level
+  490, the last: a rare one within 60 blocks).
 - **Torn notes.** About one backpack in three, and one crate or locker in five, holds a note
   from someone who came through before: a rough direction and distance to the exit from where
   the container stands. One note in five points the wrong way. Some mention the other two hints.
@@ -637,7 +692,7 @@ houses). Upside-down furniture doesn't count.
   knocks and creaks.
 - **Hallucinations (Poolrooms):** stay in the water too long and the picture starts to swim. Then
   you see your friend (or yourself, if you're alone) waving at you. Only you can see them. They
-  walk away and want you to follow... always away from the drain. Get out of the water and dry
+  walk away and want you to follow... always away from the way out. Get out of the water and dry
   off, or drink Almond Water, to clear your head.
 - **The Neighborhood Watch (Level 9):** huge floating veined eyes that drift over the streets,
   sweeping a searchlight. If one sees you, it stares, then charges a beam: stay in sight and you
@@ -830,7 +885,8 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 
 **The Poolrooms (and Level 37's water)**
 - **Sound in the pools:** In the Poolrooms and Level 37, footsteps and voices die out a few blocks away and everything sounds muffled; only the water stays clear. Every so often the water grows loud and close, drowning out everything else for half a minute.
-- **Dark corners:** Some lit rooms have a corner that no light reaches: a small nook of dark, ankle-deep water behind a tiled screen, with faint chanting drifting out of it. Stay inside too long and the light drains away, and you may find yourself somewhere that looks exactly the same, but red, where the water holds on to you and the chanting never stops. The only way on from there is down a drain.
+- **Dark corners:** Some lit rooms have a corner that no light reaches: a small nook of dark, ankle-deep water behind a tiled screen, with faint chanting drifting out of it. Stay inside too long and the light drains away, and you may find yourself somewhere that looks exactly the same, but red, where the water holds on to you and the chanting never stops. The only way on from there is the stair of an exit hall, its niche at the top dark now but still the way out.
+- **Sky courts, glow halls and tangles:** whole blocks of rooms that are one strange space (see the Poolrooms above): an open-air courtyard pool under a painted blue sky, a long dark hall with a glowing channel down its middle, and a black, flooded tangle of low walkways over glowing water.
 - **Stair pits:** Some rooms are one deep, dark flooded shaft, with a staircase running straight down into the water. Down there your breath runs out fast and currents drag you around. The stairs are always the way back up.
 
 **Level 37**
@@ -849,7 +905,7 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **Clipped houses:** Now and then two houses have grown into each other. Walls run through the middle of rooms, furniture sticks out of walls, and there are two front doors. Some of the walls in there aren't quite solid.
 - **Twin houses:** Two identical houses stand side by side. Leave one by its back door and you may find you aren't where you think you are. The front door always leads out.
 - **Grass walkways and Level 9.1:** Rarely, a paved path runs between two houses and on into the woods, getting colder as it goes, to a clearing of tall grass. Stand in the middle of the clearing and you are in the Crimson Field: endless grass at night under a red glow that pulses on the horizon. Don't walk toward the glow. To get home, follow the path back to where it started; the rare foxhole hatches in the ground lead elsewhere, one way only.
-- **The chairlift (side entrance to Level 39):** Very rarely, somewhere in the Crimson Field, you hear a cable creaking before you see it: a small frozen lift station and steel towers marching off into the fog, each taller than the last, with empty frosted chairs creeping along the line. Sit in the chair waiting at the station and it carries you up into a white-out; you can still hop off in the first second, after that the bar stays locked. Where it lets you go, you fall through the clouds into Level 39.
+- **The chairlift (side entrance to Level 39):** Very rarely, somewhere in the Crimson Field, you hear a cable creaking before you see it: a small frozen lift station and steel towers marching off into the fog, each taller than the last, with empty frosted chairs creeping along the line. Sit in the chair waiting at the station and it carries you up into a white-out; you can still hop off in the first second, after that the bar stays locked. Where it lets you go, you fall through the clouds into Level 39. (The way back: the odd moulded-clay front door in Level 39's town opens onto Level 9's suburbs.)
 - **Missing posters:** Photocopied MISSING posters are stapled to streetlamp poles, front fences, garage doors and house corners. Right-click one to read it close up. Every so often the name and the face on it are your own.
 - **Neighborhood Watch flyers:** The Watch's rules for staying alive on the street (the streetlights, the tall ones with a light for a face, the fog, porch lights, the signs that lie, not answering the door). Found pinned to porch posts (sneak + right-click to take one), in some mailboxes (right-click a mailbox to open it, once), and in Level 9's supply crates, lockers and backpacks. Right-click a flyer to read it; the Watch notice boards in front of empty lots can be read the same way.
 - **Answering machines:** Some kitchens have an answering machine with its red light blinking: a message nobody heard. Right-click it to play the tape. The voicemails start out ordinary.
@@ -903,7 +959,7 @@ left). Turn the footage look off for a clean picture.
 | Level | Mood |
 |---|---|
 | Level 0 | Kane Pixels' tapes: a soft, faded yellow-beige (never olive). With Veil the troffers are the real light: warm pools under each one, cut block-exact by every wall, post and door jamb (`client/light/Level0LightRenderer`, shadows from a top-down wall map of the 128 x 128 columns around you, `Level0WallGrid`), so jambs facing away go black and posts throw hard wedges; a weak bounce from the lightmap fills in under the pools and dies away into corners and wall feet, which a screen pass darkens from the same wall map (no halos). Lit doorways far down dark runs read as beacons (64 lamps within 42 blocks on HIGH). Without Veil the lightmap alone makes the pools, steeper, with contact shadows for the corners. Tubes differ in age, chosen by the layout (`world/layout/Level0Tubes`, a `glow` block state: full, worn, tired or dying, each with its own light level, so it works with or without Veil); whole stretches of ceiling were re-lamped at different times, so some areas are brighter than others. Each tube also has its own colour temperature (mostly neutral, some yellowed, a few cool). About one tube in twenty is faulty: it stutters in a short burst every 12-45 s, or now and then cuts out for a few seconds and re-strikes with a few flashes, clicking each time; the room under it dims a little with it. A blackout is a dying wave rolling out from a point near you (22 blocks/s, each tube popping), then a partial recovery: emergency lamps and a few tubes on emergency ballasts come on, half the 24-block patches come back after 20-60 s, a quarter when the event ends and a quarter stay dead for 2-4 more minutes (`client/light/Level0Power`). Server code can cut the power locally (`world/FixtureOutages`: a circle or a list of fixtures, cut, stuttering or as a wave; restored on demand). Almost no haze (6% from 20 blocks), dark wings crushed to black. F3 shows the Level 0 lights' GPU time |
-| Level 1 | Cold, damp concrete: blue shadows, little colour, grey-blue air |
+| Level 1 | Cold, wet concrete: blue shadows, little colour, a dark blue-grey air; the lamps streak and sparkle in the wet floor, dark between them; nearly pitch black when the lights go out |
 | Level 2 | Small pools under the recessed light panels, swallowed by a near-black haze 18-26 blocks ahead; pipe racks sunk in shadow right beside you; the picture's edges darkened and slowly turning round a still centre. With Veil the lamps take block-exact shadows from the same wall map as Level 0 (48 lamps within 39 blocks on HIGH), their bright side travels round the corridor with the spin, and wet floors, puddles, sweating pipes and bare metal get a small highlight of the nearby lamps (`client/light/Level2Gloss` says which blocks are damp, wet or metal). F3 shows the Level 2 lights' GPU time |
 | Level 4 | Cold fluorescent blue-grey, quiet |
 | Poolrooms | Teal shadows, soft cool highlights, a gentle wet glow; skylights and the tiles under the tubes roll off softly instead of clipping |
@@ -1099,12 +1155,14 @@ saturation, hiss and a big, empty room.
 ## Operator commands
 
 ```
-/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, poolrooms, level_37, level_9, level_94, level_7, level_39, level_490, level_227
+/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, level_7, level_9, poolrooms, level_37, level_39, level_94, level_369, level_490 (the path's order), level_227
 /backrooms time94 <day|dusk|night|dawn> jump Level 94's day/night clock (testing)
+/backrooms thing [dread]                Level 7, in the water: the Thing passes by you now at full dread (dread: full dread only) (testing)
 /backrooms escape [players]             send players back to reality
 /backrooms battery [players] [percent]  set camcorder battery
 /backrooms locate                       where is the nearest exit? (Level 227 has none, and says so)
 /backrooms locate saferoom              where is the nearest safe room?
+/backrooms wayback [sunlit|clay]        Level 39 / 94: where the side ways back are (Level 39: the nearest sunlit tunnel dead end, back to the Poolrooms, and clay front door, back to Level 9; Level 94: the nearest clay front door); with an argument, takes you there
 /backrooms anomaly here                 which anomalous area am I standing in?
 /backrooms anomaly locate <kind>        where is the nearest one of a kind (e.g. level_0/red_rooms; tab completes)? On Level 0 it also finds zones and set pieces: level_0/zone/... (e.g. level_0/zone/rooms, the room maze) and level_0/set/... (e.g. frame_tunnel, dead_end_cache, liar_arrows, bright_district, dim_district, abandoned_district). On Level 2 also segments (level_2/seg/..., e.g. valves, bulkhead, leak, dark), level_2/exit, brownouts and the oddities (level_2/wrong_valves, inverted_pipe, repeat_section, heart_gauge)
 /backrooms anomaly visit <kind> <point>  Level 0 and Level 2 (ops, for testing): jump to a named spot of the nearest site of that kind (tab completes both). level_0/atrium centre|edge|corridor, level_0/warren centre|room|corridor, level_0/front_office rug|hidden_room, level_0/shaft_hall lit_shaft; the hidden rooms and the older anomalies have their own points. Level 2: level_2/wrong_valves front, heart_gauge front, inverted_pipe between|wall_a|wall_b, repeat_section first|second|last
@@ -1164,6 +1222,10 @@ level they place an arrival the way `Travel` does and search the generated block
 half steps, ladders, water, and jumps only where the level allows them) for that level's exit.
 Levels 369 and 490 belong to a friend: they are only reported, in
 `build/minecraft-junit/build/reports/friend-levels.txt`, and never fail the build.
+`SideExitTest` pins the line itself (every level but 227 once, in the wiki's order, ending in
+reality) and the rule for side ways: every side way that skips ahead has a way straight back,
+Level 227 only drops you where the line leads back, and the ways back (Level 39's sunlit dead ends
+and clay doors, Level 94's clay doors) are really generated.
 
 The `pilot` source set is a dev-only mod (`backrooms_pilot`, never in the release jar) that lets a
 script drive a dev client with real key and mouse input over a local socket, for survival
@@ -1203,7 +1265,7 @@ never reused, across every level, letterboxed at 24 fps, with no creatures in it
 | `block`, `item` | Decals, lamps, supply containers (crate/backpack/locker share `SupplyContainerBlock`), doors, food, pills, bandages; big surfaces (wallpaper, carpets, ceiling tiles, concrete, pool tile, asphalt) come in a few stained/cracked versions picked per block by the world generator (`SurfaceBlock`; plain inside anomalous areas); Level 0's versions cluster in worn patches and some keep to one wall row (`Level0SurfaceBlock`, art in `tools/anomaly_assets/level0_surfaces.py`); Level 2's wet versions gather in damp stretches (`Level2SurfaceBlock` with `world/layout/Level2Damp`, art in `tools/anomaly_assets/level2_materials.py`); Level 227's flora (`Level227*Block`: tall plants, hanging strands, the Palette, GammaPali, Lestron; registered in `registry/Level227Blocks`, art in `tools/anomaly_assets/level227_flora.py`) |
 | `network` | Packets between server and clients |
 | `client/particle` | Steam and dust particles, drawn soft by their own shader (`SoftParticles`, `shaders/core/soft_particle`); dust spawning (`DustMotes`); Level 227's splash drops, surface rings and foam, and bubbles (`WaterDropletParticle`, `WaterSurfaceParticle`, `WaterBubbleParticle`) |
-| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, Level 0's faulty tubes (stutter, lazy restart, dying pulse: `FixturePower`; the tube ages and colours themselves are block states, `block/Level0TubeGlow`, picked by `world/layout/Level0Tubes`), Level 0's own light type with wall-map shadows and the power/corner screen pass (`Level0LightRenderer`, `Level0WallGrid`, `Level0PowerMap`, shaders in `pinwheel/shaders/program/light/level0_*`), its blackout wave and local outages (`Level0Power`), flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening), Level 4's window glow, troffer downlights and lobby/cafeteria feature lights (`Level4Lights`: shadowed area lights) |
+| `client/light` | Veil dynamic lights: fixture index, light manager, flicker/blackout, Level 0's faulty tubes (stutter, lazy restart, dying pulse: `FixturePower`; the tube ages and colours themselves are block states, `block/Level0TubeGlow`, picked by `world/layout/Level0Tubes`), Level 0's own light type with wall-map shadows and the power/corner screen pass (`Level0LightRenderer`, `Level0WallGrid`, `Level0PowerMap`, shaders in `pinwheel/shaders/program/light/level0_*`), its blackout wave and local outages (`Level0Power`), flashlights, hum sounds, Level 37's shafts of sun (`SunBeams`: one area light per opening), Level 4's window glow, troffer downlights and lobby/cafeteria feature lights (`Level4Lights`: shadowed area lights), Level 1's lamp reflections in the wet floor (`Level1WetFloor`: glowing strips on the floor, in any renderer) |
 | `client/water` | Pool water (also Level 7's sea and Level 227's ponds): surface finder (`WaterSurfaces`), renderer + shaders (`WaterRenderer`, `shaders/core/pool_*`), per-level look (`WaterStyle`), impact rings on the surface (`WaterRipples`), underwater fog and its darkening with depth (`UnderwaterView`); Level 227's splashes (`WaterSplashes`) and underwater sound (`UnderwaterAudio`) |
 | `client/audio` | Wall muffling and room reverb through OpenAL EFX (`Acoustics`, `AcousticsEfx`); distant one-off sounds per level (`DistantAmbience`) |
 | `mixin/client` | Hides vanilla water faces in the pool levels; tells the water renderer about block changes; lets you sprint through the knee-deep shallows (`LocalPlayerMixin`); reaches the sound engine's channels for `client/audio` (`SoundManagerAccessor`, `SoundEngineAccessor`, `ChannelAccessor`); moves your view inside the furniture while you hide (`CameraMixin`) |

@@ -155,6 +155,10 @@ public final class ModNetwork {
         // Level 9 Street (testing): start the lamps going out behind you, or the dog chorus, now.
         registrar.playToClient(Level9StreetPayload.TYPE, Level9StreetPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.level9.Level9StreetEffects.receive(payload.kind())));
+        // Level 7 (testing): the Thing passes by you now / full dread (command/Level7ThingCommand).
+        registrar.playToClient(Level7ThingPayload.TYPE, Level7ThingPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.Level7Thing.debug(
+                        payload.kind() == Level7ThingPayload.DREAD)));
 
         // Level 2: the layout seed (so the client knows where the corridor twists, for the spin illusion).
         registrar.playToClient(Level2StatePayload.TYPE, Level2StatePayload.STREAM_CODEC,

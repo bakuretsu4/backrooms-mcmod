@@ -53,6 +53,12 @@ final class Level94Houses {
     static final int FLOODED = 6;
     /** Chance that the sink of a furniture pile still holds the coin dated 1953 the M.E.G. found (about one pile in seven). */
     private static final double COIN_CHANCE = 0.15;
+    /**
+     * About one ordinary house (BIG or TINY) in this many has the moulded-clay front door of Level
+     * 9's clay-door houses instead of its own. It is their way back: Level 9's clay doors lead here,
+     * and a level you are sent ahead to must always have a way back (world/ClayDoors).
+     */
+    static final int CLAY_DOOR_ONE_IN = 12;
 
     private Level94Houses() {}
 
@@ -135,6 +141,11 @@ final class Level94Houses {
         /** Random bits of this house, from where it stands (fragments use them to vary their furniture). */
         long bits() {
             return Hash.of(0x94_5EEDL, x0, z0, 9499);
+        }
+
+        /** True for the odd ordinary house whose front door is a clay door back to Level 9. */
+        boolean clayDoor() {
+            return (kind == BIG || kind == TINY) && Hash.range(Hash.mix(bits() ^ 0xC1A7L), CLAY_DOOR_ONE_IN) == 0;
         }
 
         /** Local rectangle of everything this house draws (roof overhang, fence) or flattens: {u0, v0, u1, v1}. */
@@ -286,7 +297,8 @@ final class Level94Houses {
             boolean door = v == 0 && u == h.mid();
             boolean windows = windowColumn(h, u, v);
             if (door) {
-                BlockState state = ModBlocks.L94_HOUSE_DOOR.get().defaultBlockState()
+                // The clay door is a ClayDoorBlock: stepping through it (Level 94 side) goes to Level 9.
+                BlockState state = (h.clayDoor() ? ModBlocks.L94_CLAY_DOOR : ModBlocks.L94_HOUSE_DOOR).get().defaultBlockState()
                         .setValue(DoorBlock.FACING, h.inward)
                         .setValue(DoorBlock.OPEN, false);
                 out.set(g + 1, state.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));

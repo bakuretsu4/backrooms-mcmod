@@ -7,7 +7,7 @@ placement), quiet and low so it reads as part of the level until you notice it s
   level_1     the hollow drone of a concrete stairwell, a drip far down
   level_2     the emergency EXIT door's alarm buzz, heard through the door
   level_4     cold air drawn up the office stairwell, hissing under the fire door, a deep hollow drone
-  poolrooms   the drain gurgling
+  poolrooms   daylight air spilling down the great hall's stair, its pool lapping far below
   level_37    water rushing down the pit
   level_9     highway traffic humming through the underpass
   level_94    the dark behind the door, breathing
@@ -103,11 +103,19 @@ def snd_exit_hint_level_4() -> None:
 
 
 def snd_exit_hint_poolrooms() -> None:
+    # The way out is the opening of daylight at the top of the exit hall's long stair: soft open
+    # air spilling in through it, and under that the hall's huge pool lapping in a long echo.
     rng = G.rng_for(7405)
-    gurgle = _bubbles(rng, 60, 180, 520)
-    gurgle = G.circ_conv(gurgle, G.reverb_ir(rng, 1.5, 0.5, lp=2500))
-    swirl = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 60, 400, 2)) * _swell(2.0, 0.6)
-    x = G.norm(gurgle) + 0.6 * G.norm(swirl)
+    air = G.periodic_noise(N, rng, lambda f: G.bp_gain(f, 180, 2600, 2) / np.sqrt(np.maximum(f, 20)))
+    laps = np.zeros(N)
+    for start in rng.uniform(0, T, 14):
+        dur = rng.uniform(0.25, 0.6)
+        k = np.arange(int(dur * G.SR)) / G.SR
+        lap = rng.normal(size=k.size) * np.sin(np.pi * k / dur) ** 2
+        G.add_at(laps, lap * rng.uniform(0.4, 1.0), start, circular=True)
+    laps = G.fft_filter(laps, lambda f: G.bp_gain(f, 150, 900, 2), circular=True)
+    laps = G.circ_conv(laps, G.reverb_ir(rng, 4.0, 1.8, lp=1800, predelay=0.08))
+    x = G.norm(air) * _swell(8.0, 0.5) + 0.55 * G.norm(laps)
     _save(x, "poolrooms")
 
 

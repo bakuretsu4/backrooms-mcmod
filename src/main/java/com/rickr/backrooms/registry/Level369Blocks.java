@@ -58,7 +58,7 @@ public final class Level369Blocks {
                     .isSuffocating((state, level, pos) -> false).isViewBlocking((state, level, pos) -> false));
     /**
      * The curtain of hanging flowers filling the arch. You walk into it (no collision), and through
-     * it you come out in Level 7 (world/Level369Rules).
+     * it you come out in Level 490 (world/Level369Rules).
      */
     public static final DeferredBlock<Block> VEIL = block("l369_veil", Block::new,
             unbreakable(MapColor.PLANT, SoundType.AZALEA_LEAVES).noCollission().noOcclusion().lightLevel(state -> 9)

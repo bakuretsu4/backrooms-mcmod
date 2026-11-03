@@ -35,6 +35,12 @@ public final class Level227Noclip {
      * levels with something hunting you weigh most (Level 39's hounds and creatures, Level 9's
      * Watch, the Bacteria of Level 0, the Thing of Level 7, Level 1's Smilers), the calm ones least.
      * A level not listed here (a newer one) gets weight 1.
+     *
+     * <p>Weight 0: never there. Level 227 is off the path (you are only dragged in, from Level 9's
+     * woods and Level 94's hills), and a level you are sent to off the path must have a way back to
+     * the one you left: from every level up to Level 94 the path still reaches Level 9 or 94, but
+     * from 369 and 490 it only goes on to the end. (The void bubbles mirror the same levels, see
+     * VoidBubble.MIRRORS.)
      */
     private static final Map<BackroomsLevel, Integer> DANGER = new EnumMap<>(BackroomsLevel.class);
 
@@ -46,15 +52,15 @@ public final class Level227Noclip {
         DANGER.put(BackroomsLevel.LEVEL_1, 3);
         DANGER.put(BackroomsLevel.LEVEL_2, 2);
         DANGER.put(BackroomsLevel.LEVEL_94, 2);
-        DANGER.put(BackroomsLevel.LEVEL_490, 2); // the storm, and falls back to the last radio
         DANGER.put(BackroomsLevel.POOLROOMS, 1);
         DANGER.put(BackroomsLevel.LEVEL_4, 1);
         DANGER.put(BackroomsLevel.LEVEL_37, 1);
-        DANGER.put(BackroomsLevel.LEVEL_369, 1); // nothing hunts you there
+        DANGER.put(BackroomsLevel.LEVEL_369, 0); // past Level 94 on the path: no way back
+        DANGER.put(BackroomsLevel.LEVEL_490, 0); // the same
         DANGER.put(BackroomsLevel.LEVEL_227, 0); // never back into the tree itself
     }
 
-    /** A random level weighted toward the dangerous ones (never Level 227). */
+    /** A random level weighted toward the dangerous ones (never Level 227, 369 or 490). */
     public static BackroomsLevel dangerousLevel(RandomSource random) {
         int total = 0;
         for (BackroomsLevel level : BackroomsLevel.values()) {

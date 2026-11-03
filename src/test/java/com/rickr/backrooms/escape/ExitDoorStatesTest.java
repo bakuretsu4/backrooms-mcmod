@@ -23,6 +23,7 @@ class ExitDoorStatesTest {
         assertOpensByHand(ModBlocks.L94_HOUSE_DOOR.get(), "Level 94's dark-door house door");
         assertOpensByHand(Level39Blocks.HATCH.get(), "Level 39's shaft hatch (tunnels -> town)");
         assertOpensByHand(ModBlocks.L7_HATCH.get(), "Level 7's room hatch");
+        assertOpensByHand(ModBlocks.L94_CLAY_DOOR.get(), "the clay door (Level 9 -> 94, and back from 94 and 39)");
     }
 
     private static void assertOpensByHand(Block block, String what) {

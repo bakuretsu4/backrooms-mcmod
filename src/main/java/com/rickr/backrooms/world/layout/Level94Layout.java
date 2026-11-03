@@ -28,9 +28,11 @@ import org.jetbrains.annotations.Nullable;
  * (where can I stand, is this a safe room, where is the exit).
  *
  * <p>Ways out: rare exit houses (one per {@value #EXIT_REGION}-block square). About one in three
- * is a dark-door house, found with {@code /backrooms locate}, that leads on to Level 490 (so about
+ * is a dark-door house, found with {@code /backrooms locate}, that leads on to Level 369 (so about
  * one per 1024 x 1024 blocks); the others are flooded and lead back down to Level 7. The light behind the castle's throne leads to
- * Level 1. All are handled in {@code Level94Rules}.
+ * Level 1. All are handled in {@code Level94Rules}. And about one house in
+ * {@value Level94Houses#CLAY_DOOR_ONE_IN} has a moulded-clay front door instead of its own: the way back
+ * to Level 9, whose clay doors lead here ({@code world/ClayDoors}).
  *
  * <p>Anomalies (furniture drift on the hills, the wandering door and the blinding hall in the
  * castle) are placed by {@link Level94AnomalyPlan}.
@@ -294,5 +296,50 @@ public final class Level94Layout extends LevelLayout {
     public int[] arrivalHint(long seed, int x, int z) {
         @Nullable int[] node = Level94Roads.nearestNode(seed, x, z);
         return node != null ? node : new int[] {x, z};
+    }
+
+    /**
+     * The door column {x, z} of the house with a clay front door (the way back to Level 9) nearest
+     * to (x, z), within about {@code radius} blocks, or null if there is none. Works out whole plan
+     * squares, ring by ring outward, stopping once no further ring can hold a nearer door: for
+     * commands and tests, not for world generation.
+     */
+    @Nullable
+    public static int[] nearestClayDoor(long seed, int x, int z, int radius) {
+        long[] best = {Long.MAX_VALUE, 0, 0};
+        Level94Town.DoorSink keep = (dx, dz) -> {
+            long d = (long) (dx - x) * (dx - x) + (long) (dz - z) * (dz - z);
+            if (d < best[0]) {
+                best[0] = d;
+                best[1] = dx;
+                best[2] = dz;
+            }
+        };
+        int rings = radius / Level94Plan.SIZE + 1;
+        for (int r = 0; r <= rings; r++) {
+            // Every square of ring r is at least (r - 1) squares away from (x, z).
+            long nearestPossible = (long) Math.max(0, r - 1) * Level94Plan.SIZE;
+            if (best[0] != Long.MAX_VALUE && nearestPossible * nearestPossible > best[0]) {
+                break;
+            }
+            for (int px = -r; px <= r; px++) {
+                for (int pz = -r; pz <= r; pz++) {
+                    if (Math.max(Math.abs(px), Math.abs(pz)) != r) {
+                        continue;
+                    }
+                    Level94Plan plan = Level94Plan.of(seed, x + px * Level94Plan.SIZE, z + pz * Level94Plan.SIZE);
+                    for (Level94Builds.Thing t : plan.things) {
+                        Level94Houses.House h = t.house;
+                        if (t.kind == Level94Builds.HOUSE && h != null && h.clayDoor()) {
+                            keep.door(h.worldX(h.mid(), 0), h.worldZ(h.mid(), 0));
+                        }
+                    }
+                    for (Level94Roads.Town town : plan.towns) {
+                        Level94Town.forEachClayDoor(seed, town, keep);
+                    }
+                }
+            }
+        }
+        return best[0] == Long.MAX_VALUE ? null : new int[] {(int) best[1], (int) best[2]};
     }
 }

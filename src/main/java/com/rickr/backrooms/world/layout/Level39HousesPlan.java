@@ -4,8 +4,10 @@ import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * One Level 39 house, finished and packed small for world generation: its blocks as a byte per
@@ -50,6 +52,9 @@ final class Level39HousesPlan {
     final boolean old;
     /** Number of knockable wall sections. */
     final int knockWalls;
+    /** The lower half of the house's clay front door (the way back to Level 9), or null. */
+    @Nullable
+    final BlockPos clayDoor;
 
     Level39HousesPlan(long seed, Level39HouseSpec h, Level39HousesBuilder b) {
         this.seed = seed;
@@ -87,6 +92,7 @@ final class Level39HousesPlan {
         BlockState[] pal = new BlockState[256];
         int size = 1;
         int doorCount = 0;
+        BlockPos clay = null;
         int[] doorTmp = new int[64 * 4];
         for (int u = 0; u < w; u++) {
             for (int v = 0; v < d; v++) {
@@ -109,6 +115,9 @@ final class Level39HousesPlan {
                         index.put(code, p);
                     }
                     vox[((u * d) + v) * height + (y - lo)] = (byte) (int) p;
+                    if (Level39HousesBlocks.kind(code) == Level39HousesBlocks.CLAY_DOOR && (code & Level39HousesBlocks.SECOND) == 0) {
+                        clay = new BlockPos(b.worldX(u, v), Level39HousesBuilder.Y0 + y, b.worldZ(u, v));
+                    }
                     if (Level39HousesBlocks.kind(code) == Level39HousesBlocks.INT_DOOR
                             && (code & Level39HousesBlocks.SECOND) == 0 && doorCount + 4 <= doorTmp.length) {
                         doorTmp[doorCount++] = b.worldX(u, v);
@@ -129,6 +138,7 @@ final class Level39HousesPlan {
         this.floorKind = b.floorMain;
         this.old = b.old;
         this.knockWalls = b.knockWalls.size();
+        this.clayDoor = clay;
     }
 
     int u(int x, int z) {

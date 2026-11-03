@@ -192,8 +192,8 @@ public final class Travel {
 
     /**
      * Where someone sent to (x, z) of this level lands. Some floors pick the spot themselves
-     * depending on where you come from (Level 39: the Poolrooms' archway and Level 7's door bring you
-     * up in its tunnels; Level 369: a skylight near the spot); otherwise the nearest safe column.
+     * depending on where you come from (Level 39: Level 37's pits and the Poolrooms' archway bring
+     * you up in its tunnels; Level 369: Level 94's dark doors drop you through a skylight); otherwise the nearest safe column.
      * With {@code keepClear} (arriving from another level) the spot keeps the level's
      * {@link LevelLayout#arrivalExitClearance} from the nearest exit: the start point is pushed away
      * first, and since the level's own pick can wander off it, a spot that still lands too close

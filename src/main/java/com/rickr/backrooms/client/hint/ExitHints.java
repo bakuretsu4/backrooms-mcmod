@@ -36,7 +36,7 @@ import org.joml.Vector3f;
  * is, see {@code world/ExitHints}). Nothing on screen points at it; you have to notice:
  * <ul>
  *   <li><b>Its sound:</b> every exit gives off a faint loop of its own (a draft up Level 0's
- *       stairwell, Level 2's EXIT door buzzing, the Poolrooms' drain gurgling, highway hum through
+ *       stairwell, Level 2's EXIT door buzzing, open air spilling down the Poolrooms' pool hall, highway hum through
  *       Level 9's underpass, bubbles rising from Level 7's door...). Within about 40 blocks it
  *       fades in, quiet, and the wall muffling of {@code client/audio/Acoustics} makes it come
  *       "through the walls" until you find the way round.</li>
@@ -82,8 +82,10 @@ public final class ExitHints {
     private record Guidance(double share, int reach) {}
 
     /**
-     * The marks are what make finding an exit easy, so they thin out along the path: the first
-     * floors teach you that NightShot shows them, the last ones only confirm you're close.
+     * The marks are what make finding an exit easy, so they thin out along the path (Level 0, 1,
+     * 2, 4, 7, 9, the Poolrooms, 37, 39, 94, 369, 490): the first floors teach you that NightShot
+     * shows them, the last ones only confirm you're close. From Level 7 on they only show within
+     * {@code reach} of the exit.
      */
     private static Guidance guidance(BackroomsLevel floor) {
         return switch (floor) {
@@ -91,16 +93,16 @@ public final class ExitHints {
             case LEVEL_1 -> new Guidance(0.75, 0);
             case LEVEL_2 -> new Guidance(0.55, 0);
             case LEVEL_4 -> new Guidance(0.40, 0);
-            case POOLROOMS -> new Guidance(0.30, 0);
+            case LEVEL_7 -> new Guidance(0.30, 120);
+            case LEVEL_9 -> new Guidance(0.20, 80);
+            case POOLROOMS -> new Guidance(0.15, 150);
             // Its pits are only ~170 blocks apart, so a longer reach would show marks everywhere.
-            case LEVEL_37 -> new Guidance(0.20, 60);
-            // Its arches are 140 blocks apart; the marks show only on the way to the nearest one.
-            case LEVEL_369 -> new Guidance(0.18, 60);
-            case LEVEL_7 -> new Guidance(0.15, 120);
+            case LEVEL_37 -> new Guidance(0.12, 60);
             case LEVEL_39 -> new Guidance(0.10, 100);
             case LEVEL_94 -> new Guidance(0.07, 80);
-            case LEVEL_490 -> new Guidance(0.05, 60);
-            case LEVEL_9 -> new Guidance(0.03, 50);
+            // Its arches are 140 blocks apart; the marks show only on the way to the nearest one.
+            case LEVEL_369 -> new Guidance(0.05, 60);
+            case LEVEL_490 -> new Guidance(0.03, 60);
             // No exit at all (the tree noclips you out by itself), so nothing to mark.
             case LEVEL_227 -> new Guidance(0.0, 0);
         };

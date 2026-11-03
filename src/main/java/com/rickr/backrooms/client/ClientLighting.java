@@ -435,6 +435,10 @@ public final class ClientLighting {
         tg = Mth.lerp(alarm, tg, 0.12f);
         tb = Mth.lerp(alarm, tb, 0.10f);
         colors.set(UNLIT_R + fill * tr, UNLIT_G + fill * tg, UNLIT_B + fill * tb);
+        if (floor == BackroomsLevel.LEVEL_1) {
+            // Lights out: the faintest shape of the floor stays (Level1Atmosphere; 0 while the power is on).
+            Level1Atmosphere.addBlackoutAmbient(colors);
+        }
     }
 
     /**

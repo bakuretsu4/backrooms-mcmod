@@ -3578,6 +3578,35 @@
     ],
     "subtitle": "subtitles.backrooms.l7_lurch"
   },
+  "level7.thing_swim": {
+    "sounds": [
+      {
+        "name": "backrooms:level7/thing_swim",
+        "stream": true,
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.backrooms.l7_thing_swim"
+  },
+  "level7.thing_near": {
+    "sounds": [
+      {
+        "name": "backrooms:level7/thing_near",
+        "stream": true,
+        "attenuation_distance": 64
+      }
+    ],
+    "subtitle": "subtitles.backrooms.l7_thing_near"
+  },
+  "level7.thing_bubbles": {
+    "sounds": [
+      {
+        "name": "backrooms:level7/thing_bubbles",
+        "attenuation_distance": 40
+      }
+    ],
+    "subtitle": "subtitles.backrooms.l7_thing_bubbles"
+  },
   "exit_hint.level_0": {
     "sounds": [
       {

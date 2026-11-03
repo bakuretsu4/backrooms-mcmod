@@ -2,8 +2,10 @@ package com.rickr.backrooms.world;
 
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.mixin.ServerGamePacketListenerAccessor;
+import com.rickr.backrooms.player.Checkpoints;
 import com.rickr.backrooms.registry.ModItems;
 import com.rickr.backrooms.world.layout.Level39Layout;
+import com.rickr.backrooms.world.layout.Level39Tunnels;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +40,11 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  *       disconnected while drifting down is saved hanging there) gives the same protection: high
  *       over the town, Slow Falling and a soft landing; otherwise 10 s of grace while the client
  *       loads the chunks.</li>
+ *   <li><b>The daylight back to the Poolrooms.</b> A few dead ends of the tunnels end in a wall
+ *       of warm daylight (the Poolrooms' archway light, {@code Level39Tunnels}). Walk into the
+ *       arch in front of it and you are back in the Poolrooms: the way back for whoever that
+ *       archway sent ahead to here. (The way back for the gondola's riders is the odd clay front
+ *       door in town, {@link ClayDoors}.)</li>
  * </ul>
  * The way on (a superstructure window, to Level 94) lives with the Window entities.
  */
@@ -108,6 +115,23 @@ public final class Level39Rules {
         ServerGamePacketListenerAccessor connection = (ServerGamePacketListenerAccessor) player.connection;
         connection.backrooms$setAboveGroundTickCount(0);
         connection.backrooms$setAboveGroundVehicleTickCount(0);
+    }
+
+    /** Feet in a sunlit dead end's arch (standing on its floor, not swimming under it): back to the Poolrooms. */
+    @SubscribeEvent
+    public static void onSunlitTick(PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || player.isSpectator()
+                || player.getY() < Level39Tunnels.RIM_FEET_Y - 0.5 || player.getY() > Level39Tunnels.RIM_FEET_Y + 2.0
+                || BackroomsLevel.fromDimension(player.level().dimension()) != BackroomsLevel.LEVEL_39 || Travel.isMoving(player)) {
+            return;
+        }
+        long seed = BackroomsSeeds.layoutSeed(player.serverLevel(), BackroomsLevel.LEVEL_39);
+        if (!Level39Tunnels.isSunlitThreshold(seed, player.getBlockX(), player.getBlockZ())) {
+            return;
+        }
+        // A secret way, but still a move between floors: the Level 39 checkpoint no longer applies.
+        Checkpoints.clear(player);
+        Travel.sendTo(player, BackroomsLevel.POOLROOMS, player.getBlockX(), player.getBlockZ(), "message.backrooms.level39.sunlit");
     }
 
     @SubscribeEvent

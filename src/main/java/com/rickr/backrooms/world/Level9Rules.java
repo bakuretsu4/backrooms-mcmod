@@ -12,7 +12,9 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  *
  * <p>Somewhere in every 512x512 stretch of suburb a concrete highway embankment crosses a street,
  * which runs through it in a long, unlit underpass. Walk deep enough into the dark (the middle of
- * the tunnel, where the road surface turns to worn concrete) and you come out in the real world.
+ * the tunnel, where the road surface turns to worn concrete) and you come out in the Poolrooms
+ * ({@link BackroomsLevel#next()}). The zone is still called the "escape zone" in the layout: until
+ * the levels were put in the wiki's order it led back to the real world.
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID)
 public final class Level9Rules {
@@ -30,7 +32,7 @@ public final class Level9Rules {
         Level9Layout layout = (Level9Layout) BackroomsLevel.LEVEL_9.layout();
         long seed = BackroomsSeeds.layoutSeed(player.serverLevel(), BackroomsLevel.LEVEL_9);
         if (layout.isEscapeZone(seed, player.getBlockX(), player.getBlockZ())) {
-            Travel.useExit(player, BackroomsLevel.LEVEL_9); // the last floor: this escapes
+            Travel.useExit(player, BackroomsLevel.LEVEL_9); // on to the next floor (the Poolrooms)
         }
     }
 

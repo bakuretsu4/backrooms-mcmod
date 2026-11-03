@@ -35,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
  * </ul>
  * The way out (one per 160 x 160 blocks, never in a region's outer cells): a skylit room with a
  * great arch of vines against its north wall, filled with a curtain of hanging flowers (the veil).
- * Walk into the veil and you come out in Level 7 ({@code Level369Rules}).
+ * Walk into the veil and you come out in Level 490 ({@code Level369Rules}).
  *
  * <h2>Heights</h2>
  * Soil y36-39, lawn y40, feet y41. Doorways y41-43. Ceilings: pillar halls y45, hallways and dark
@@ -115,7 +115,7 @@ public final class Level369Plan {
     private static final int ROOF_TOP = 53;
     /** The highest block the plan ever places. */
     public static final int HIGHEST_Y = ROOF_TOP;
-    /** Where someone falling in through a skylight from Level 37 appears (feet), high in a shaft. */
+    /** Where someone falling in through a skylight from Level 94 appears (feet), high in a shaft. */
     public static final int SKYLIGHT_ARRIVAL_Y = 50;
 
     // ==========================================================================================
@@ -201,7 +201,7 @@ public final class Level369Plan {
     }
 
     /**
-     * Where someone coming down Level 37's pit falls in: high in the skylight shaft of the skylit
+     * Where someone coming through Level 94's dark door falls in: high in the skylight shaft of the skylit
      * room nearest to (x, z) (not the one with the way out), or null if there is none close by.
      */
     @Nullable

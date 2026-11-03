@@ -31,7 +31,7 @@ class FriendLevelsReportTest {
                 .append("are live behaviour it can't see. A CHECK is a lead to look at, not proof: Level 490's docs mention\n")
                 .append("a scripted climb of both flights, which is the better authority for the spire.\n\n");
         int problems = 0;
-        BackroomsLevel[][] steps = {{BackroomsLevel.LEVEL_369, BackroomsLevel.LEVEL_37}, {BackroomsLevel.LEVEL_490, BackroomsLevel.LEVEL_94}};
+        BackroomsLevel[][] steps = {{BackroomsLevel.LEVEL_369, BackroomsLevel.LEVEL_94}, {BackroomsLevel.LEVEL_490, BackroomsLevel.LEVEL_369}};
         for (BackroomsLevel[] step : steps) {
             report.append("== ").append(step[0].getSerializedName()).append(" (arriving from ").append(step[1].getSerializedName())
                     .append("; exit leads to ").append(step[0].next() == null ? "reality" : step[0].next().getSerializedName()).append(")\n");

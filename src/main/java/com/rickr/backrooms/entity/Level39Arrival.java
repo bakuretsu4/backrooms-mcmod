@@ -18,7 +18,7 @@ import java.util.UUID;
 
 /**
  * A minute's grace for anyone who has just arrived in Level 39 (same idea as Level 227's). You
- * come in from Level 7's sea door with nothing, in the dark, often a long wade from the ladder:
+ * come up out of Level 37's pits (or the Poolrooms' archway) with nothing, in the dark tunnels, often a long wade from the ladder:
  * without this a Wretch or Hound could appear and kill you before you had any chance to get your
  * bearings. Every Level 39 spawner ({@link Level39Spawner}, {@link TunnelDwellers}, the town hole)
  * asks {@link #inGrace} before placing anything near a player.

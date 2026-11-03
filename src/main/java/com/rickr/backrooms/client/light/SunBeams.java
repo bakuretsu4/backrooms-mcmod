@@ -218,8 +218,10 @@ public final class SunBeams {
         return beams;
     }
 
+    /** Level 39 too: a few of its tunnels' dead ends hold the Poolrooms archway's daylight (the way back there). */
     private static boolean activeIn(@Nullable BackroomsLevel floor) {
-        return floor == BackroomsLevel.LEVEL_37 || floor == BackroomsLevel.POOLROOMS || floor == BackroomsLevel.LEVEL_369;
+        return floor == BackroomsLevel.LEVEL_37 || floor == BackroomsLevel.POOLROOMS || floor == BackroomsLevel.LEVEL_369
+                || floor == BackroomsLevel.LEVEL_39;
     }
 
     /** True while the bound level is Level 369 (its windows' cool white light). */
@@ -402,7 +404,10 @@ public final class SunBeams {
         int maxCx = SectionPos.blockToSectionCoord(centerX + BUILD_RANGE);
         int minCz = SectionPos.blockToSectionCoord(centerZ - BUILD_RANGE);
         int maxCz = SectionPos.blockToSectionCoord(centerZ + BUILD_RANGE);
-        boolean archway = boundLevel != null && BackroomsLevel.fromDimension(boundLevel.dimension()) == BackroomsLevel.POOLROOMS;
+        // Level 39's sunlit dead ends are the same light as the Poolrooms' archway: a wall of daylight
+        // filling an arch, shining level out along a passage.
+        BackroomsLevel floor = boundLevel == null ? null : BackroomsLevel.fromDimension(boundLevel.dimension());
+        boolean archway = floor == BackroomsLevel.POOLROOMS || floor == BackroomsLevel.LEVEL_39;
         for (int cx = minCx; cx <= maxCx; cx++) {
             for (int cz = minCz; cz <= maxCz; cz++) {
                 long[] positions = BY_CHUNK.get(ChunkPos.asLong(cx, cz));

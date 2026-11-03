@@ -225,7 +225,7 @@ public final class ModBlocks {
             props -> new WallLampBlock(props, 6, 3, 13, 6), wallFixture(MapColor.SNOW, 10)
                     .emissiveRendering(com.rickr.backrooms.block.Level2LampGlow::emissive));
 
-    // The Poolrooms: big white tiles, dark tiles for the drain and lane lines, a tile floor with
+    // The Poolrooms: big white tiles, dark tiles for the lane lines and dark corners, a tile floor with
     // moving light ripples (caustics) under all the water, daylight skylights and underwater lamps.
     public static final DeferredBlock<SurfaceBlock> POOL_TILE = surface("pool_tile", MapColor.SNOW, SoundType.STONE, 7, 1, 1);
     public static final DeferredBlock<Block> POOL_TILE_DARK = structural("pool_tile_dark", MapColor.COLOR_BLACK, SoundType.STONE);
@@ -237,6 +237,30 @@ public final class ModBlocks {
     /** Underwater lamp set into a pool wall; FACING is the lens side, pointing into the water. */
     public static final DeferredBlock<PoolLampBlock> POOL_LAMP = BLOCKS.registerBlock("pool_lamp", PoolLampBlock::new,
             fixture(MapColor.COLOR_CYAN, SoundType.GLASS, 14));
+    /**
+     * The same lamp, glowing just as bright to look at but casting only a little light (vanilla 6):
+     * the dark anomaly areas' underwater lamps and the exit hall's step lights, where the water or
+     * the lens must be the brightest thing and the walls a few blocks away stay black (Iris and
+     * plain rendering light everything from the vanilla level).
+     */
+    public static final DeferredBlock<PoolLampBlock> POOL_LAMP_DIM = BLOCKS.registerBlock("pool_lamp_dim", PoolLampBlock::new,
+            fixture(MapColor.COLOR_CYAN, SoundType.GLASS, 6));
+    /** A tube strip that casts only a faint light (vanilla 5): the glow halls' pier lights. */
+    public static final DeferredBlock<CeilingTubeBlock> POOL_STRIP_DIM = BLOCKS.registerBlock("pool_strip_dim", CeilingTubeBlock::new,
+            fixture(MapColor.SNOW, SoundType.GLASS, 5).noCollission().noOcclusion());
+    /**
+     * Tile stairs: the long flight up the wall of the Poolrooms' exit hall, and (upside down) the
+     * smoothed steps of its sloping ceiling. Same tile texture as {@link #POOL_TILE}.
+     */
+    public static final DeferredBlock<StairBlock> POOL_TILE_STAIRS = BLOCKS.registerBlock("pool_tile_stairs",
+            props -> new StairBlock(POOL_TILE.get().defaultBlockState(), props), unbreakable(MapColor.SNOW, SoundType.STONE));
+    /**
+     * Open sky seen through a roof: the exit hall's skylight and the sky court's open roof. The
+     * level has no real sky, so this is a full-bright painted one (vanilla light 15 for Iris and
+     * plain rendering; client/light/FixtureType#POOL_SKY adds the daylight with Veil).
+     */
+    public static final DeferredBlock<Block> POOL_SKY = BLOCKS.registerBlock("pool_sky", Block::new,
+            fixture(MapColor.COLOR_LIGHT_BLUE, SoundType.GLASS, 15));
     /**
      * Ankle-deep water (Level 37's flooded floors): an invisible, walk-through marker in the
      * feet-level cell; the pool water renderer draws its surface 0.375 above the floor.
@@ -909,7 +933,7 @@ public final class ModBlocks {
             unbreakable(MapColor.COLOR_YELLOW, SoundType.WOOD).noOcclusion().lightLevel(state -> 13));
     /**
      * The dark behind a dark-door house's door: pitch black, gives no light, lets no light in and
-     * you can walk into it (which takes you on to Level 490). The dark sibling of l37_sunlit_void.
+     * you can walk into it (which takes you on to Level 369). The dark sibling of l37_sunlit_void.
      */
     public static final DeferredBlock<Block> L94_DARK_VOID = BLOCKS.registerBlock("l94_dark_void", Block::new,
             unbreakable(MapColor.COLOR_BLACK, SoundType.EMPTY).noCollission()
@@ -920,7 +944,10 @@ public final class ModBlocks {
             unbreakable(MapColor.COLOR_BLACK, SoundType.EMPTY).noCollission()
                     .isSuffocating((state, level, pos) -> false)
                     .isViewBlocking((state, level, pos) -> false));
-    /** The moulded-clay front door on a few Level 9 houses: step through it into Level 94. */
+    /**
+     * The moulded-clay front door, on a few Level 9 houses (step through it into Level 94) and, as
+     * their way back, on a few Level 94 houses and Level 39 town houses (into Level 9): see world/ClayDoors.
+     */
     public static final DeferredBlock<ClayDoorBlock> L94_CLAY_DOOR = BLOCKS.registerBlock("l94_clay_door",
             props -> new ClayDoorBlock(BlockSetType.OAK, props), unbreakable(MapColor.TERRACOTTA_ORANGE, SoundType.MUD).noOcclusion());
 
@@ -1307,7 +1334,7 @@ public final class ModBlocks {
     /** Carved stone with rings round it: the round platform the exit door lies in. */
     public static final DeferredBlock<Block> L7_PLATFORM = structural("l7_platform", MapColor.STONE, SoundType.STONE);
     /**
-     * The exit: an old wooden door lying in the platform. Swim into it (to Level 39's tunnels). A faint light
+     * The exit: an old wooden door lying in the platform. Swim into it (to Level 9's suburbs). A faint light
      * seeps round its edges (light 10), the only thing you can make out down there from afar.
      */
     public static final DeferredBlock<SeaDoorBlock> L7_EXIT_DOOR = BLOCKS.registerBlock("l7_exit_door", SeaDoorBlock::new,

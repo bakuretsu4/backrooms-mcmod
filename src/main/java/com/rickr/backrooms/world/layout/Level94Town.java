@@ -133,6 +133,30 @@ final class Level94Town {
         return houseAt(seed, t, x - t.tx, z - t.tz, h) && h.isSafe(x, z);
     }
 
+    /** Receives the door column of a town house. */
+    @FunctionalInterface
+    interface DoorSink {
+        void door(int x, int z);
+    }
+
+    /**
+     * The door column of every house of town {@code t} that has a clay front door (the way back to
+     * Level 9, see Level94Houses#CLAY_DOOR_ONE_IN). Walks the whole town square: for commands and
+     * tests, not for world generation.
+     */
+    static void forEachClayDoor(long seed, Level94Roads.Town t, DoorSink out) {
+        Level94Houses.House h = HOUSE.get();
+        for (int u = -Level94Roads.TOWN_HALF; u <= Level94Roads.TOWN_HALF; u++) {
+            for (int v = -Level94Roads.TOWN_HALF; v <= Level94Roads.TOWN_HALF; v++) {
+                int x = t.tx + u;
+                int z = t.tz + v;
+                if (houseAt(seed, t, u, v, h) && h.clayDoor() && h.v(x, z) == 0 && h.u(x, z) == h.mid()) {
+                    out.door(x, z);
+                }
+            }
+        }
+    }
+
     /** Writes everything standing on town column (x, z): fountain, sirens, houses, parked vehicles. */
     static void column(long seed, Level94Roads.Town t, int x, int z, LevelLayout.Column out) {
         int u = x - t.tx;

@@ -43,7 +43,8 @@ All other textures and sounds are generated procedurally by `tools/gen_assets.py
   mixed with the [Backrooms Fandom wiki's Level 7](https://backrooms.fandom.com/wiki/Level_7)
   (rewrite by SherlsF, CC BY-SA). Changes include a Minecraft terrain adaptation, an exit door in a
   ringed stone platform leading to Level 9, a flooded Level 94 house as the way in, and the Thing
-  kept off-screen (sounds, a swell of the water, a distant silhouette).
+  as a presence that never attacks (it swims past, closer the longer you stay: a shadow under you,
+  pale eyes in the dark, its wake and bubbles; its sounds are generated in `tools/level_assets/level7.py`).
 - [Escape the Backrooms screenshots](https://escapethebackrooms.fandom.com/wiki/Level_7)
   were consulted for visual reference only. No game assets were imported into the mod.
 
