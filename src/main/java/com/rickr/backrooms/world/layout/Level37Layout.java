@@ -43,6 +43,11 @@ public final class Level37Layout extends LevelLayout {
         super(7, Level37Plan.EXITS);
     }
 
+    @Override
+    public int arrivalExitClearance() {
+        return 300;
+    }
+
     /** The plan, for the Level 37 rules (where the pits are). */
     public static Level37Plan plan() {
         return PLAN;

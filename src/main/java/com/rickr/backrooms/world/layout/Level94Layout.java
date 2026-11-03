@@ -27,9 +27,9 @@ import org.jetbrains.annotations.Nullable;
  * This class turns a plan's numbers into blocks and answers the questions other code asks
  * (where can I stand, is this a safe room, where is the exit).
  *
- * <p>Ways out: rare exit houses (one per {@value #EXIT_REGION}-block square). Most are dark-door
- * houses, found with {@code /backrooms locate}, that lead on to Level 490; about one in three is
- * flooded instead and leads back down to Level 7. The light behind the castle's throne leads to
+ * <p>Ways out: rare exit houses (one per {@value #EXIT_REGION}-block square). About one in three
+ * is a dark-door house, found with {@code /backrooms locate}, that leads on to Level 490 (so about
+ * one per 1024 x 1024 blocks); the others are flooded and lead back down to Level 7. The light behind the castle's throne leads to
  * Level 1. All are handled in {@code Level94Rules}.
  *
  * <p>Anomalies (furniture drift on the hills, the wandering door and the blinding hall in the
@@ -38,8 +38,12 @@ import org.jetbrains.annotations.Nullable;
 public final class Level94Layout extends LevelLayout {
     /** World height: hills reach ~y66, the glass mountain and castle go up to ~y215. */
     public static final int WORLD_HEIGHT = 256;
-    /** One exit house (dark-door or flooded) in every square this size. */
-    static final int EXIT_REGION = 400;
+    /**
+     * One exit house (dark-door or flooded) in every square this size. With Level94Plan's
+     * FLOODED_SHARE that makes about one dark-door house (the way on) per 1024 x 1024 blocks and
+     * one flooded house (the way back down to Level 7) per ~700 x 700 blocks.
+     */
+    static final int EXIT_REGION = 576;
     static final ExitLocator EXITS = new ExitLocator(EXIT_REGION, 70, 9400);
     /** Solid dirt goes down to here under the ground (nothing ever sees lower). */
     private static final int DIRT_BOTTOM_Y = 34;
@@ -54,6 +58,11 @@ public final class Level94Layout extends LevelLayout {
 
     public Level94Layout() {
         super(8, EXITS);
+    }
+
+    @Override
+    public int arrivalExitClearance() {
+        return 400;
     }
 
     @Override

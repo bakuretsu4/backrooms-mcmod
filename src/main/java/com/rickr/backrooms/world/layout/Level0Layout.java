@@ -319,8 +319,13 @@ public final class Level0Layout extends LevelLayout {
         // player's head, which is what makes the Lobby feel low and oppressive. It is also exactly
         // enough for Bacteria (2.9 tall), so nothing may ever hang lower than the ceiling over a
         // walkable spot.
-        super(3, new ExitLocator(512, 64, 1000));
+        super(3, new ExitLocator(1024, 64, 1000));
         this.anomalies = new Level0AnomalyPlan(this);
+    }
+
+    @Override
+    public int arrivalExitClearance() {
+        return 400;
     }
 
     /** The set pieces (atrium, shaft hall, hidden office) build up to here and hang lights near it. */

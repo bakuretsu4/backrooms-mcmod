@@ -88,6 +88,16 @@ public final class Level2Layout extends LevelLayout {
         super(4, EXITS);
     }
 
+    /**
+     * Arrivals from another level must start at least 500 blocks from an exit (the user's rule for
+     * this level). preferredArrival already lands halfway between two exits (545+ blocks), so
+     * Travel's push-away check only ever confirms it.
+     */
+    @Override
+    public int arrivalExitClearance() {
+        return 500;
+    }
+
     // ==========================================================================================
     // Public queries
     // ==========================================================================================

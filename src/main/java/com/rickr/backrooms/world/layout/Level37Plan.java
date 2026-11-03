@@ -204,8 +204,9 @@ public final class Level37Plan {
     static final int C_OUT = -2;
     private static final int NONE = -3;
 
-    /** One exit pit per 168 x 168 blocks (7 x 7 cells), never in a region's outer cells. */
-    static final ExitLocator EXITS = new ExitLocator(7 * CELL, 36, 3700);
+    /** One exit pit per EXIT_CELLS x EXIT_CELLS cells (1008 x 1008 blocks), never in a region's outer cells. */
+    private static final int EXIT_CELLS = 42;
+    static final ExitLocator EXITS = new ExitLocator(EXIT_CELLS * CELL, 36, 3700);
 
     // ==========================================================================================
     // Public queries
@@ -280,7 +281,7 @@ public final class Level37Plan {
     }
 
     private static int[] exitOfRegion(long seed, int x, int z) {
-        int size = 7 * CELL;
+        int size = EXIT_CELLS * CELL;
         int rx = Math.floorDiv(x, size);
         int rz = Math.floorDiv(z, size);
         return new int[] {EXITS.exitX(seed, rx, rz), EXITS.exitZ(seed, rx, rz)};

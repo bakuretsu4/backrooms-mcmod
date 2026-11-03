@@ -161,20 +161,118 @@ public final class Travel {
             return false;
         }
         long seed = BackroomsSeeds.layoutSeed(level, target);
-        // Some floors pick the spot themselves depending on where you come from (Level 39: the
-        // Poolrooms' archway and Level 7's door bring you up in its tunnels, not onto its streets).
-        // Level 227 instead puts every arrival on a branch far from everyone else (canon: wanderers
-        // are always separated).
         BackroomsLevel from = BackroomsLevel.fromDimension(player.level().dimension());
-        BlockPos preferred = target == BackroomsLevel.LEVEL_227
-                ? Level227Layout.separatedArrival(level, player)
-                : target.layout().preferredArrival(seed, x, z, from);
-        BlockPos spot = preferred != null ? preferred : findSafeSpot(level, target, x, z);
+        // Level 227 puts every arrival on a branch far from everyone else (canon: wanderers are
+        // always separated); every other level picks the spot from the floor plan.
+        BlockPos separated = target == BackroomsLevel.LEVEL_227 ? Level227Layout.separatedArrival(level, player) : null;
+        Arrival arrival = separated != null
+                ? new Arrival(separated, true, false)
+                : arrival(target.layout(), seed, x, z, from, from != target);
+        BlockPos spot = arrival.spot();
         // Feet exactly on the surface: Level 9's sidewalks are half slabs (feet at y + 0.5).
-        double feet = preferred != null ? preferred.getY() : target.layout().feetY(seed, spot.getX(), spot.getZ());
+        double feet = arrival.exact() ? spot.getY() : target.layout().feetY(seed, spot.getX(), spot.getZ());
         CameraService.startTape(player);
         teleport(player, level, new Vec3(spot.getX() + 0.5, feet, spot.getZ() + 0.5));
         return true;
+    }
+
+    /**
+     * Where an arrival lands: the block the feet are in; whether its y is exactly the feet (a
+     * level's own preferred spot) rather than a column to stand in; and whether no safe column was
+     * found, so the spot is the level's arrival hint, unchecked.
+     */
+    public record Arrival(BlockPos spot, boolean exact, boolean fallback) {}
+
+    /** Extra blocks beyond the clearance when pushing an arrival away, for the walkable-spot search. */
+    private static final int CLEARANCE_SLACK = 24;
+    /** Directions tried, evenly around the circle, when pushing straight away is not enough. */
+    private static final int CLEARANCE_DIRECTIONS = 16;
+    /** Tries at a landing spot far enough from the exits before taking the farthest one found. */
+    private static final int CLEARANCE_ATTEMPTS = 5;
+
+    /**
+     * Where someone sent to (x, z) of this level lands. Some floors pick the spot themselves
+     * depending on where you come from (Level 39: the Poolrooms' archway and Level 7's door bring you
+     * up in its tunnels; Level 369: a skylight near the spot); otherwise the nearest safe column.
+     * With {@code keepClear} (arriving from another level) the spot keeps the level's
+     * {@link LevelLayout#arrivalExitClearance} from the nearest exit: the start point is pushed away
+     * first, and since the level's own pick can wander off it, a spot that still lands too close
+     * is pushed again, a little further each time. Depends only on (x, z), so friends using the
+     * same exit land together.
+     */
+    public static Arrival arrival(LevelLayout layout, long seed, int x, int z, @Nullable BackroomsLevel from, boolean keepClear) {
+        int min = layout.arrivalExitClearance();
+        boolean clear = keepClear && min > 0 && layout.hasExits();
+        Arrival best = null;
+        double bestDistance = -1;
+        int sx = x;
+        int sz = z;
+        for (int attempt = 0; attempt < CLEARANCE_ATTEMPTS; attempt++) {
+            if (clear) {
+                int[] start = clearOfExits(layout, seed, sx, sz, CLEARANCE_SLACK * (1 + 3 * attempt));
+                sx = start[0];
+                sz = start[1];
+            }
+            BlockPos preferred = layout.preferredArrival(seed, sx, sz, from);
+            Arrival a = preferred != null ? new Arrival(preferred, true, false) : safeArrival(layout, seed, sx, sz);
+            if (!clear) {
+                return a;
+            }
+            int[] exit = layout.exitPosition(seed, a.spot().getX(), a.spot().getZ());
+            double d = Math.hypot(a.spot().getX() - exit[0], a.spot().getZ() - exit[1]);
+            if (d >= min) {
+                return a;
+            }
+            if (d > bestDistance) {
+                best = a;
+                bestDistance = d;
+            }
+            sx = a.spot().getX();
+            sz = a.spot().getZ();
+        }
+        return best;
+    }
+
+    /**
+     * (x, z), or the nearest point to it whose nearest exit is at least the level's clearance plus
+     * {@code slack} away. First pushes straight away from the nearest exit, a few times (a push can
+     * bring a neighbouring exit close); failing that, tries rings of points around (x, z).
+     */
+    private static int[] clearOfExits(LevelLayout layout, long seed, int x, int z, int slack) {
+        int min = layout.arrivalExitClearance();
+        double want = min + slack;
+        int px = x;
+        int pz = z;
+        for (int i = 0; i < 4; i++) {
+            int[] exit = layout.exitPosition(seed, px, pz);
+            double dx = px - exit[0];
+            double dz = pz - exit[1];
+            double d = Math.sqrt(dx * dx + dz * dz);
+            if (d >= want) {
+                return new int[] {px, pz};
+            }
+            if (d < 1) {
+                dx = 1;
+                dz = 0;
+                d = 1;
+            }
+            px = exit[0] + (int) Math.round(dx / d * want);
+            pz = exit[1] + (int) Math.round(dz / d * want);
+        }
+        for (int r = min; r <= 4 * min; r += min / 2) {
+            for (int k = 0; k < CLEARANCE_DIRECTIONS; k++) {
+                double a = 2 * Math.PI * k / CLEARANCE_DIRECTIONS;
+                int cx = x + (int) Math.round(Math.cos(a) * r);
+                int cz = z + (int) Math.round(Math.sin(a) * r);
+                int[] exit = layout.exitPosition(seed, cx, cz);
+                double ex = cx - exit[0];
+                double ez = cz - exit[1];
+                if (ex * ex + ez * ez >= want * want) {
+                    return new int[] {cx, cz};
+                }
+            }
+        }
+        return new int[] {px, pz};
     }
 
     /** How high above the town a gondola rider appears in Level 39 (under the rendered cloud ceiling). */
@@ -263,11 +361,15 @@ public final class Travel {
 
     /** Nearest safe column to (x, z) (or to the level's hint for it), searched in growing squares. */
     public static BlockPos findSafeSpot(ServerLevel level, BackroomsLevel target, int x, int z) {
-        LevelLayout layout = target.layout();
-        long seed = BackroomsSeeds.layoutSeed(level, target);
+        return safeArrival(target.layout(), BackroomsSeeds.layoutSeed(level, target), x, z).spot();
+    }
+
+    private static Arrival safeArrival(LevelLayout layout, long seed, int x, int z) {
         int[] hint = layout.arrivalHint(seed, x, z);
         BlockPos found = searchWalkable(layout, seed, hint[0], hint[1], SEARCH_RADIUS);
-        return found != null ? found : new BlockPos(hint[0], layout.standY(seed, hint[0], hint[1]), hint[1]);
+        return found != null
+                ? new Arrival(found, false, false)
+                : new Arrival(new BlockPos(hint[0], layout.standY(seed, hint[0], hint[1]), hint[1]), false, true);
     }
 
     /**

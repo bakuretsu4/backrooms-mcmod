@@ -269,11 +269,16 @@ public final class PoolroomsLayout extends LevelLayout {
     private static final double SPROUT_SHARE = 0.025;
 
     /** The exits, kept in a static field so the static floor-plan helpers can reach them. */
-    private static final ExitLocator EXITS = new ExitLocator(384, 48, 5000)
+    private static final ExitLocator EXITS = new ExitLocator(1024, 48, 5000)
             .copying(RESERVOIR_OFFSET - RESERVOIR_HALF, RESERVOIR_OFFSET + RESERVOIR_HALF, RESERVOIR_OFFSET);
 
     public PoolroomsLayout() {
         super(INTERIOR_HEIGHT, EXITS);
+    }
+
+    @Override
+    public int arrivalExitClearance() {
+        return 400;
     }
 
     // ==========================================================================================

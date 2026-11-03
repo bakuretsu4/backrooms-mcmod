@@ -613,8 +613,8 @@ final class Level94Plan {
 
     /**
      * The exit house of exit region (ex, ez): at the exit locator's point, or moved a little if
-     * that spot is on a road, in a town or near a castle. Dark-doored, or flooded in about one
-     * region in three ({@link #isFloodedRegion}). Cached; it's a pure function of the seed.
+     * that spot is on a road, in a town or near a castle. Dark-doored, or flooded in about two
+     * regions in three ({@link #isFloodedRegion}). Cached; it's a pure function of the seed.
      */
     static Level94Builds.Thing darkHouse(long seed, int ex, int ez) {
         long key = Hash.of(seed, ex, ez, 9495);
@@ -633,11 +633,18 @@ final class Level94Plan {
     }
 
     /**
+     * Share of exit regions whose house is flooded. With Level94Layout.EXIT_REGION (576) that
+     * leaves about one dark-door house per 1024 x 1024 blocks (the main way on, far apart) and
+     * keeps flooded houses as common as they always were (one per ~700 x 700 blocks).
+     */
+    private static final double FLOODED_SHARE = 0.69;
+
+    /**
      * True if exit region (ex, ez)'s house is flooded (its stairs lead back down to Level 7)
-     * instead of dark-doored (on to Level 490). About one region in three. Cheap: needs no house.
+     * instead of dark-doored (on to Level 490). About two regions in three. Cheap: needs no house.
      */
     static boolean isFloodedRegion(long seed, int ex, int ez) {
-        return Hash.unit(Hash.mix(Hash.of(seed, ex, ez, 9496) ^ 0x7L)) < 0.33;
+        return Hash.unit(Hash.mix(Hash.of(seed, ex, ez, 9496) ^ 0x7L)) < FLOODED_SHARE;
     }
 
     /**

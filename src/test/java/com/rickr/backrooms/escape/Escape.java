@@ -54,22 +54,19 @@ final class Escape {
     }
 
     /**
-     * Same as {@code Travel.sendToQuietly}: the level's preferred arrival for travellers from
-     * {@code from}, else the nearest safe column to its arrival hint ({@code Travel.findSafeSpot}),
-     * else (nothing found) the hint itself, unchecked.
+     * Where {@code Travel.sendToQuietly} puts a player sent to {@code target} at (x, z) from
+     * {@code from}: {@link Travel#arrival} itself (the level's preferred arrival, else the nearest
+     * safe column, kept clear of the exits when coming from another level).
      */
     static Arrival arrive(BackroomsLevel target, long seed, int x, int z, @Nullable BackroomsLevel from) {
         LevelLayout layout = target.layout();
-        BlockPos preferred = layout.preferredArrival(seed, x, z, from);
-        if (preferred != null) {
-            return new Arrival(target, seed, preferred.getX(), preferred.getZ(), preferred.getY(), preferred.getY(), true, false);
+        Travel.Arrival a = Travel.arrival(layout, seed, x, z, from, from != target);
+        BlockPos spot = a.spot();
+        if (a.exact()) {
+            return new Arrival(target, seed, spot.getX(), spot.getZ(), spot.getY(), spot.getY(), true, false);
         }
-        int[] hint = layout.arrivalHint(seed, x, z);
-        BlockPos found = Travel.searchWalkable(layout, seed, hint[0], hint[1], 96);
-        boolean fallback = found == null;
-        BlockPos spot = found != null ? found : new BlockPos(hint[0], layout.standY(seed, hint[0], hint[1]), hint[1]);
         double feet = layout.feetY(seed, spot.getX(), spot.getZ());
-        return new Arrival(target, seed, spot.getX(), spot.getZ(), (int) Math.floor(feet + 1e-6), feet, false, fallback);
+        return new Arrival(target, seed, spot.getX(), spot.getZ(), (int) Math.floor(feet + 1e-6), feet, false, a.fallback());
     }
 
     /**
