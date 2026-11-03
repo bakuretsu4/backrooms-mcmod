@@ -42,12 +42,14 @@
 //  past white through steps 5 and 6 and ends step 6 with a soft highlight shoulder instead of
 //  clipping (and instead of the footage look's blow-out), so sunlit openings and skylights keep a
 //  gradient. Rolloff = 0 changes nothing at all.
-//  Level 2's spin (uniforms SpinTwist, SpinReach, SpinVignette from Level2Spin via CamcorderEffect):
+//  Level 2's spin (uniforms SpinTwist, SpinSqueeze, SpinVignette from Level2Spin via CamcorderEffect):
 //  in step 1 the picture is turned around the screen centre by an angle that grows with the
 //  square of the distance from it (nothing in the middle, SpinTwist radians at the corners), so the
-//  walls at the edges seem to slide round you while what you aim at stays put; it zooms in just
-//  enough (from SpinReach, the swirl's slow-moving envelope) that a turned corner never runs off
-//  the picture. In step 6 the edges of the picture close in a little (SpinVignette). All 0 = unchanged.
+//  walls at the edges visibly slide round you while what you aim at stays put, and the edges are
+//  drawn inward with each heartbeat (SpinSqueeze: "the walls closing in"). Where that reaches past
+//  the picture it is mirrored back in (only the corners and side edges, which the vignette makes
+//  near black). In step 6 tunnel vision (SpinVignette): the edges go near black round a smaller
+//  clear middle. All 0 = unchanged.
 
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;
@@ -116,8 +118,8 @@ uniform float Bars;         // 0 or 1: 4:3 frame with black bars at the sides
 uniform float AutoExposure; // the camera's hunting auto-exposure (1 = none)
 uniform float Gain;         // 0..1 how far the camera has turned its gain up (noise in the dark)
 uniform float SpinTwist;    // radians the corners are turned (Level 2; 0 = unchanged)
-uniform float SpinReach;    // the largest SpinTwist can currently be (radians), for the crop
-uniform float SpinVignette; // 0..1 how far the edges close in (Level 2; 0 = unchanged)
+uniform float SpinSqueeze;  // how far the edges are drawn in, 0..~0.04 at the corners (Level 2; 0 = unchanged)
+uniform float SpinVignette; // 0..~1.1 tunnel vision (Level 2; 0 = unchanged)
 
 in vec2 texCoord;
 in vec2 oneTexel;
@@ -295,13 +297,12 @@ void main() {
     vec2 src = p * (1.0 + LENS_K * dot(p, p)) * crop;
     // 1b. Level 2's spin: the periphery turns, the middle doesn't (see the top). The turn is
     //     measured on the output pixel (p), so the corners are turned by exactly SpinTwist.
-    if (SpinReach > 0.0) {
-        float reach = min(SpinReach, 0.05);
-        float fit = 1.0 / (cos(reach) + max(aspect, 1.0 / aspect) * sin(reach));
-        float a = SpinTwist * dot(p, p) / (aspect * aspect + 1.0);
+    if (SpinTwist != 0.0 || SpinSqueeze > 0.0) {
+        float r2 = dot(p, p) / (aspect * aspect + 1.0); // 0 in the middle, 1 at the corners
+        float a = SpinTwist * r2;
         float ca = cos(a);
         float sa = sin(a);
-        src = mat2(ca, sa, -sa, ca) * src * fit;
+        src = mat2(ca, sa, -sa, ca) * src * (1.0 + SpinSqueeze * r2);
     }
     vec2 uv = src / vec2(aspect, 1.0) * 0.5 + 0.5;
 
@@ -348,6 +349,9 @@ void main() {
         float tearOn = step(1.0 - Interference * 0.12, hash12(vec2(row, slot)));
         uv.x += tearOn * (hash12(vec2(slot, row + 7.0)) - 0.5) * 0.05 * Interference;
         uv.x += (noise1(t * 3.0 + texCoord.y * 40.0) - 0.5) * 0.004 * Interference; // fine wobble
+    }
+    if (SpinTwist != 0.0 || SpinSqueeze > 0.0) {
+        uv = 1.0 - abs(1.0 - abs(uv)); // Level 2's swirl reached past the picture: mirror it back in
     }
     uv = clamp(uv, vec2(0.0), vec2(1.0));
 
@@ -536,11 +540,14 @@ void main() {
         col *= 1.0 - sanity * (0.4 + 0.2 * clamp(SanityPulse, 0.0, 1.0)) * edge;
     }
     if (SpinVignette > 0.0) {
-        // Level 2: the edges of the picture close in (claustrophobia), tighter inside a twist
-        // stretch. Measured in screen-height units scaled so the corners are at 1.
-        float v = clamp(SpinVignette, 0.0, 1.0);
+        // Level 2: tunnel vision. Clear in the middle (out to ~0.3 of the way to the corners, a
+        // circle about 0.6 screen-heights across), near black from ~0.8 out, so the side walls
+        // fade into the dark; it tightens a little with each heartbeat squeeze. Measured so the
+        // corners are at 1.
+        float v = clamp(SpinVignette, 0.0, 1.2);
         float r = length((texCoord - 0.5) * vec2(aspect, 1.0)) * 2.0 / sqrt(aspect * aspect + 1.0);
-        col *= 1.0 - v * 0.30 * smoothstep(mix(0.65, 0.45, v), 1.05, r);
+        float inner = 0.62 - 0.30 * v - 1.5 * SpinSqueeze;
+        col *= 1.0 - min(0.96, 0.94 * v) * smoothstep(inner, inner + 0.5, r);
     }
     // Faint magenta on neutrals: the less saturated a pixel, the more green it loses.
     float hi = max(col.r, max(col.g, col.b));

@@ -23,9 +23,9 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
  *   <li><b>Roll:</b> the horizon tilts into turns and strafes.</li>
  *   <li><b>Events:</b> Level 2's TWIST event slowly leans the world ~3.5 degrees and back; Bacteria
  *       nearby makes your hands shake; the wake-up intro lies you on the carpet.</li>
- *   <li><b>Level 2's spin:</b> always on there (client/anomaly/level2/Level2Spin): a slow, uneven
- *       roll drift, a partial counter-roll against the way the corridor banks where you stand, and
- *       a tiny yaw sway of the picture only. Your real facing and movement never change.</li>
+ *   <li><b>Level 2's spin:</b> always on there (client/anomaly/level2/Level2Spin): a large, slow,
+ *       uneven roll drift, a partial counter-roll against the way the corridor banks where you
+ *       stand, and a yaw sway of the picture only. Your real facing and movement never change.</li>
  * </ul>
  *
  * <p>All easing uses {@link #ease}, an exponential follow measured in game ticks, so the feel is
@@ -67,25 +67,27 @@ public final class HandheldCamera {
 
     // --- Level 2 spin (all of it times ClientSettings.tilt(): 0 = none) --------------------------
     /**
-     * Roll drift per unit of spin strength: ~1.3 degrees anywhere in Level 2 (strength 0.6), ~0.7
-     * in a safe room. It follows the shared spin phase, so it wanders one way and back over about
-     * a minute, never at a steady rate, and never fast enough to feel like the camera moved.
+     * Roll drift at full spin strength (everywhere in Level 2's corridor; half at the exit). It
+     * follows the shared spin phase: a big uneven swing one way and back about once a minute, a
+     * faster harmonic over it, and a slow swell of +/-{@value #SPIN_ROLL_SWELL} of its size, so it
+     * mostly sits 7-11 degrees off level and now and then leans ~14 (with the counter-roll ~15+).
+     * It turns at most ~2-3 degrees a second, and reverses only when the spin itself lurches back,
+     * so it never jerks and you can still walk the line.
      */
-    private static final float SPIN_ROLL_DEG = 2.1f;
-    /** Extra drift deep in a twist stretch (Level2Spin#twistShare): up to ~3.5 degrees there. */
-    private static final float SPIN_ROLL_TWIST_DEG = 1.4f;
+    private static final float SPIN_ROLL_DEG = 11.0f;
+    private static final float SPIN_ROLL_SWELL = 0.3f;
     /**
      * Counter-roll: this share of the corridor's bank (Level2Twist#bank, up to ~25 degrees) is
-     * rolled the other way, so a banked stretch looks banked a little MORE than it is built: the
-     * corridor seems to keep turning around you as you walk through it. Scaled by how much you
-     * look along the corridor (bank reads as roll only when you look down it).
+     * rolled the other way, so a banked stretch looks banked MORE than it is built: the corridor
+     * seems to keep turning around you as you walk through it. Scaled by how much you look along
+     * the corridor (bank reads as roll only when you look down it).
      */
-    private static final float BANK_COUNTER_SHARE = 0.12f;
-    private static final float BANK_COUNTER_MAX_DEG = 3.0f;
+    private static final float BANK_COUNTER_SHARE = 0.16f;
+    private static final float BANK_COUNTER_MAX_DEG = 4.0f;
     /** The bank under you eases leaving 95% of the gap per tick (~3 s): no step at a block edge. */
     private static final float BANK_SMOOTHING = 0.95f;
-    /** Tiny yaw sway of the picture (never your aim), per unit of strength: at most ~1.2 degrees. */
-    private static final float SPIN_YAW_DEG = 1.2f;
+    /** Yaw sway of the picture (never your aim), at full strength: up to ~3.5 degrees. */
+    private static final float SPIN_YAW_DEG = 3.5f;
 
     // --- TWIST event (Level 2) -----------------------------------------------------------------
     /**
@@ -277,9 +279,11 @@ public final class HandheldCamera {
         float strength = Level2Spin.strength();
         double phase = Level2Spin.phase(partialTick);
 
-        // Drift: two incommensurate harmonics of the phase, so it never settles into a clean swing.
-        float wave = (float) (0.75 * Math.sin(phase) + 0.25 * Math.sin(2.618 * phase + 0.9));
-        float drift = -wave * (SPIN_ROLL_DEG * strength + SPIN_ROLL_TWIST_DEG * Level2Spin.twistShare());
+        // Drift: two incommensurate harmonics of the phase under a slow swell, so it never settles
+        // into a clean swing.
+        float wave = (float) (0.65 * Math.sin(phase) + 0.35 * Math.sin(2.618 * phase + 0.9));
+        float swell = 1.0f + SPIN_ROLL_SWELL * (float) Math.sin(0.37 * phase + 1.7);
+        float drift = -wave * swell * SPIN_ROLL_DEG * strength;
 
         // Counter-roll against the bank under you. A positive bank turns the corridor clockwise as
         // seen looking along +x; a negative roll turns the picture clockwise, so -bank adds to it.

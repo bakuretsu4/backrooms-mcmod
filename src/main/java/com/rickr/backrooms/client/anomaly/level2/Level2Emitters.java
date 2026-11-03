@@ -3,16 +3,16 @@ package com.rickr.backrooms.client.anomaly.level2;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.block.WallMountBlock;
 import com.rickr.backrooms.camera.CameraClientState;
-import com.rickr.backrooms.client.anomaly.AnomalyClientState;
 import com.rickr.backrooms.client.light.BackroomsLights;
 import com.rickr.backrooms.client.light.FixturePower;
 import com.rickr.backrooms.network.LevelEventPayload;
 import com.rickr.backrooms.registry.Level2Audio;
+import com.rickr.backrooms.registry.Level2SpinBlocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.registry.ModSounds;
 import com.rickr.backrooms.world.BackroomsLevel;
-import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.anomaly.level2.Level2Sites;
+import com.rickr.backrooms.world.layout.Level2Twist;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import java.util.ArrayList;
@@ -43,73 +43,75 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The sounds of Level 2's long pipe corridor, played on the client around you. Everything is
- * placed in the world (it comes from a direction and fades with distance), nothing is stuck to
- * your head:
+ * The sounds of Level 2's long, one-block-wide pipe corridor, played on the client around you.
+ * Everything is placed in the world (it comes from a direction and fades with distance), nothing
+ * is stuck to your head:
  * <ul>
- *   <li><b>The machine bed</b>: a deep hum from the machinery itself (pumps thump, fan housings
- *       and machine cabinets drone, breaker panels buzz) and from plant rooms behind the
- *       corridor walls, one every ~48 blocks, so the hum swells as you pass one and thins out
- *       between them.</li>
- *   <li><b>Dead sections go quiet</b>: everything on the mains runs on the section's series
- *       circuit. When a circuit fails (or in a stretch whose lamps died for good) its machines
- *       coast down (the hum sinks in pitch and fades) and spin back up when the power returns;
- *       the level's background drone dips about 7 dB while you stand in the dark.</li>
- *   <li><b>Pressure in the pipes</b> every 7-18 seconds (sparser in the dark), always somewhere
- *       up or down the straight line, on one wall or overhead: a water-hammer knock running along
- *       the pipes, a heavy clank, a long creak of hot metal, water rushing over your head, a
- *       shudder running along a pipe run past you, or far metal tapping: a few knocks of a tool on
- *       a pipe, a pause, the same knocks again a little closer along the same pipe. While the
- *       corridor TWISTs the pipes creak far more often.</li>
+ *   <li><b>Pressure in the pipes</b> every 7-18 seconds (sparser in the dark), always in the pipe
+ *       bundle right beside the lane, somewhere up or down the straight line: a water-hammer knock
+ *       running along the pipes, a heavy clank, a long creak of hot metal, water rushing through
+ *       the bundle past you, a shudder running along a pipe run, or far metal tapping: a few
+ *       knocks of a tool on a pipe, a pause, the same knocks again a little closer along the same
+ *       pipe. The bundle corkscrews round the lane ({@link Level2Twist#helix}), so a run of knocks
+ *       or a rush that travels along it also turns round you as it passes. While the corridor
+ *       TWISTs the pipes creak far more often.</li>
+ *   <li><b>Wall fans</b>: the nearest fans set into the walls drone.</li>
+ *   <li><b>Dead sections</b>: in a stretch whose lamps are out (a popped series circuit, or lamps
+ *       dead for good) the level's background drone dips about 7 dB.</li>
  *   <li><b>Leaks and valves</b>: a leaking steam valve hisses steadily, wisps steam and now and then
  *       blows a jet; every minute or so a relief valve somewhere near you lifts with a clunk and
  *       vents a burst of steam (the cloud blows out of that valve).</li>
  *   <li><b>Drips</b>: every ceiling drip lets a drop fall on its own slow rhythm; what you hear
- *       when it lands depends on what it hits: a plink in a puddle or the wet gutter, a bright
- *       tick on a grating or a pipe, a dull tap on bare concrete, a gloopy plop in black ooze.</li>
+ *       when it lands depends on what it hits: a plink in a puddle, a bright tick on a grating or
+ *       a pipe, a dull tap on bare concrete, a gloopy plop in black ooze.</li>
  * </ul>
- * The client has no layout seed for Level 2, so the machines, valves, drips and lamps are found by
- * looking at the blocks around you: a slab of the corridor 65 blocks long is swept a few slices
- * per tick, and the things found are used until the next sweep finishes (under a second later).
- * The plant rooms behind the walls need no blocks: their places come from the corridor's grid.
+ * The fans, valves, drips and lamps are found by looking at the blocks around you: a slab of the
+ * corridor 65 blocks long is swept a few slices per tick, and the things found are used until the
+ * next sweep finishes (a quarter of a second later).
  *
- * <p>Nothing plays in the void below the floor or the loop hall above it, and Level2Sounds already
- * drops every sound while the void asks for silence. The loudness of each file is set in
- * tools/anomaly_assets/level2_audio.py (in line with the rest of the mix).
+ * <p>The slow orbiting soundscape of the level turning is {@link Level2Orbit}. The loudness of each
+ * file is set in tools/anomaly_assets/level2_audio.py (in line with the rest of the mix).
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
 public final class Level2Emitters {
     private static final int FLOOR = Level2Sites.FLOOR_Y;
-    /** One corridor per this many blocks of Z (Level2Line.BAND); a band's middle is at band * 48. */
+    /** One corridor per this many blocks of Z (Level2Line.BAND). */
     private static final int CORRIDOR_BAND = 48;
 
     // ---- The block sweep ---------------------------------------------------------------------
     /** Blocks swept either way along the corridor (X) ... */
     private static final int SCAN_ALONG = 32;
-    /** ... and across it (Z): the corridor, its pump bays and the side rooms and chambers. */
-    private static final int SCAN_ACROSS = 14;
-    /** The floor (a flooded sump's pump stands at the floor's height) up to the ceiling band. */
-    private static final int SCAN_Y_MIN = FLOOR;
-    private static final int SCAN_Y_MAX = FLOOR + 5;
-    /** Slices (one x each) swept per tick: 65 slices, so a full sweep takes 13 ticks. */
-    private static final int SLICES_PER_TICK = 5;
-    /** Blocks of one multi-block thing closer than this count as the same thing (one sound each). */
-    private static final int PUMP_MERGE = 3;
-    private static final int MACHINE_MERGE = 2;
-    private static final int PANEL_MERGE = 1;
+    /** ... and across it (Z): the walls beside the lane, and the exit recess (2 deep, bulkhead at 3). */
+    private static final int SCAN_ACROSS = 3;
+    /** The lane's two clear blocks and the ceiling cell over it (drips, light panels, beacons). */
+    private static final int SCAN_Y_MIN = FLOOR + 1;
+    private static final int SCAN_Y_MAX = FLOOR + 3;
+    /** Slices (one x each) swept per tick: 65 slices, so a full sweep takes 5 ticks. */
+    private static final int SLICES_PER_TICK = 13;
 
-    // ---- Machinery, leaks, drips -------------------------------------------------------------
-    private static final double PUMP_RANGE = 26.0;
-    private static final int MAX_PUMPS = 2;
-    private static final float PUMP_VOLUME = 0.9f;
-    /** Fan housings and machine cabinets (outside the hot zones, which run their own machines). */
-    private static final double MACHINE_RANGE = 30.0;
-    private static final int MAX_MACHINES = 2;
-    private static final float MACHINE_VOLUME = 0.75f;
-    /** Breaker panels and junction boxes: only heard up close. */
-    private static final double PANEL_RANGE = 11.0;
-    private static final int MAX_PANELS = 2;
-    private static final float PANEL_VOLUME = 0.8f;
+    // ---- Where the sounds can be ---------------------------------------------------------------
+    /** Above the floor and under the ceiling cell's top (y44 and up is solid rock). */
+    private static final double HEAR_MIN_Y = FLOOR;
+    private static final double HEAR_MAX_Y = FLOOR + 4;
+    /**
+     * The pipe bundle wraps the one-block lane: a pipe in it sits this far across from the lane's
+     * middle (in the wall cells beside you) ...
+     */
+    private static final double BUNDLE_ACROSS = 1.3;
+    /** ... or this far above or below it (the ceiling cell at y43, the run under the floor grating) ... */
+    private static final double BUNDLE_UP = 1.5;
+    /** ... measured from the lane's middle height (the clear y41-42). */
+    private static final double LANE_MID_Y = FLOOR + 2.0;
+    /** The bundle fills cells up to 67.5 degrees round from its centre: a sound sits within this. */
+    private static final double BUNDLE_SPREAD = Math.toRadians(60.0);
+    /** Where the bundle is taken to be before the layout seed has arrived: overhead. */
+    private static final double NO_SEED_HELIX = Math.PI / 2.0;
+
+    // ---- Fans, leaks, drips ------------------------------------------------------------------
+    /** The wall fans' drone: the nearest two within this many blocks. */
+    private static final double FAN_RANGE = 24.0;
+    private static final int MAX_FANS = 2;
+    private static final float FAN_VOLUME = 0.6f;
     private static final double LEAK_RANGE = 16.0;
     private static final int MAX_LEAKS = 3;
     private static final float LEAK_VOLUME = 0.8f;
@@ -123,18 +125,6 @@ public final class Level2Emitters {
     /** Each drip lets a drop go every 1.5-5 s. */
     private static final int DRIP_PERIOD_MIN = 30;
     private static final int DRIP_PERIOD_SPREAD = 70;
-
-    // ---- The plant behind the walls ----------------------------------------------------------
-    /** One plant room per this many blocks along each corridor ... */
-    private static final int PLANT_SPACING = 48;
-    /** ... moved up to this far either way, so they don't sit on a visible grid ... */
-    private static final int PLANT_JITTER = 12;
-    /** ... this far from the corridor's middle (behind the wall at |dz| = 4, past the pipe chase) ... */
-    private static final double PLANT_BEHIND = 7.5;
-    /** ... at mid-height. sounds.json gives the hum a 40-block range; the walls muffle it too. */
-    private static final double PLANT_Y = FLOOR + 2.5;
-    private static final double PLANT_RANGE = 40.0;
-    private static final float PLANT_VOLUME = 0.9f;
 
     // ---- Dead sections -----------------------------------------------------------------------
     /** A stretch counts as dead for good when the nearest corridor lamp within this many blocks is a dead one. */
@@ -163,17 +153,15 @@ public final class Level2Emitters {
     /** ... and while the corridor twists (1.5-3.5 s, creaks only). */
     private static final int TWIST_MIN = 30;
     private static final int TWIST_SPREAD = 40;
-    /** Overhead pipes run at about this height, the wall racks a block lower. */
-    private static final double CEILING_PIPES_Y = FLOOR + 4.5;
-    private static final double RACK_Y = FLOOR + 3.5;
-    /** The pipe chases are about this far either side of the lane. */
-    private static final double CHASE_OFFSET = 2.5;
 
     private static final RandomSource RANDOM = RandomSource.create();
     private static final BlockPos.MutableBlockPos SCAN_POS = new BlockPos.MutableBlockPos();
     private static final BlockPos.MutableBlockPos PROBE = new BlockPos.MutableBlockPos();
     /** Scratch for the nearest few things (no allocation per tick). */
     private static final long[] NEAREST = new long[8];
+    /** Scratch: where {@link #bundleAt} put the pipe. */
+    private static double bundleY;
+    private static double bundleZ;
 
     /**
      * One kind of thing the sweep looks for: what the last finished sweep found (packed block
@@ -184,20 +172,7 @@ public final class Level2Emitters {
         LongArrayList now = new LongArrayList();
         LongArrayList next = new LongArrayList();
 
-        /** Adds {@code pos}, unless something found already lies within {@code merge} blocks (one entry per multi-block thing). */
-        void add(long pos, int merge) {
-            if (merge > 0) {
-                int x = BlockPos.getX(pos);
-                int y = BlockPos.getY(pos);
-                int z = BlockPos.getZ(pos);
-                for (int i = 0; i < next.size(); i++) {
-                    long other = next.getLong(i);
-                    if (Math.abs(BlockPos.getX(other) - x) <= merge && Math.abs(BlockPos.getZ(other) - z) <= merge
-                            && Math.abs(BlockPos.getY(other) - y) <= merge) {
-                        return;
-                    }
-                }
-            }
+        void add(long pos) {
             next.add(pos);
         }
 
@@ -214,22 +189,20 @@ public final class Level2Emitters {
         }
     }
 
-    private static final Found PUMPS = new Found();
-    private static final Found MACHINES = new Found();
-    private static final Found PANELS = new Found();
+    private static final Found FANS = new Found();
     private static final Found VENTS = new Found();
     private static final Found VALVES = new Found();
     private static final Found DRIPS = new Found();
     /** Corridor lamps that still have a bulb, and the dead ones of a stretch whose lamps died for good. */
     private static final Found LAMPS = new Found();
     private static final Found DEAD_LAMPS = new Found();
-    private static final Found[] ALL_FOUND = {PUMPS, MACHINES, PANELS, VENTS, VALVES, DRIPS, LAMPS, DEAD_LAMPS};
+    private static final Found[] ALL_FOUND = {FANS, VENTS, VALVES, DRIPS, LAMPS, DEAD_LAMPS};
     private static boolean sweeping;
     private static int sweepX;
     private static int sweepEndX;
     private static int sweepZ;
 
-    /** The machine and leak loops playing, by the block (or plant room) they belong to. */
+    /** The fan and leak loops playing, by the block they belong to. */
     private static final Long2ObjectOpenHashMap<MachineLoopSound> LOOPS = new Long2ObjectOpenHashMap<>();
 
     /**
@@ -245,7 +218,7 @@ public final class Level2Emitters {
     private static int ticksToPressure = PRESSURE_MIN;
     private static int ticksToRelease = RELEASE_MIN;
     private static boolean active;
-    /** 0..1, eased: how dead the spot you stand in is (its lamps out, its machines stopped). */
+    /** 0..1, eased: how dead the spot you stand in is (its lamps out). */
     private static float deadness;
 
     /** The relief valve venting right now (Long.MIN_VALUE: none), where and which way its steam blows, and for how long. */
@@ -260,32 +233,22 @@ public final class Level2Emitters {
     // an older world or not exist yet: then that kind of emitter simply never finds anything).
     private static boolean resolved;
     @Nullable
-    private static Block pumpBlock;
-    @Nullable
     private static Block dripBlock;
     @Nullable
     private static Block gratingBlock;
     @Nullable
-    private static Block gutterBlock;
-    @Nullable
     private static Block puddleBlock;
-    @Nullable
-    private static Block fanBlock;
-    @Nullable
-    private static Block breakerBlock;
-    @Nullable
-    private static Block junctionBlock;
     @Nullable
     private static Block valveWheelBlock;
     @Nullable
     private static Block valveLeverBlock;
     @Nullable
     private static Block mercuryLampBlock;
-    /** The corridor's recessed ceiling/wall light panel (replaced the caged lamps there); unlit = dead for good. */
+    /** The corridor's recessed light panel; unlit = dead for good. */
     @Nullable
     private static Block lightPanelBlock;
+    private static Block fanBlock;
     private static Block ventBlock;
-    private static Block machineBlock;
     private static Block oozeBlock;
     private static Block floorGrateBlock;
     private static Block pipeValveBlock;
@@ -311,12 +274,10 @@ public final class Level2Emitters {
         sweep(level, mc.player.blockPosition());
         Vec3 eye = mc.gameRenderer.getMainCamera().getPosition();
         long time = level.getGameTime();
-        // Only in the corridor itself: not down in the void, not up in the loop hall's office.
-        if (eye.y > FLOOR && eye.y < FLOOR + Level2Sites.LOOP_RISE) {
-            dead(eye, time);
-            pumps(mc, eye, time);
-            machines(mc, eye, time);
-            plants(mc, eye, time);
+        // Only in the corridor itself, not noclipping through the rock.
+        if (eye.y > HEAR_MIN_Y && eye.y < HEAR_MAX_Y) {
+            dead(eye);
+            fans(mc, eye);
             leaks(mc, level, eye);
             releases(mc, level, eye);
             drips(level, eye);
@@ -348,20 +309,15 @@ public final class Level2Emitters {
             return;
         }
         resolved = true;
-        pumpBlock = byId("l2_pump");
         dripBlock = byId("l2_drip");
         gratingBlock = byId("l2_grating");
-        gutterBlock = byId("l2_gutter");
         puddleBlock = byId("l2_leak_puddle");
-        fanBlock = byId("l2_fan_housing");
-        breakerBlock = byId("l2_breaker_panel");
-        junctionBlock = byId("l2_junction_box");
         valveWheelBlock = byId("l2_valve_wheel");
         valveLeverBlock = byId("l2_valve_lever");
         mercuryLampBlock = byId("l2_mercury_lamp");
         lightPanelBlock = byId("l2_light_panel");
+        fanBlock = Level2SpinBlocks.WALL_FAN.get();
         ventBlock = ModBlocks.L2_STEAM_VENT.get();
-        machineBlock = ModBlocks.L2_MACHINE.get();
         oozeBlock = ModBlocks.L2_BLACK_OOZE.get();
         floorGrateBlock = ModBlocks.FLOOR_GRATE.get();
         pipeValveBlock = ModBlocks.PIPE_VALVE.get();
@@ -396,26 +352,20 @@ public final class Level2Emitters {
                     Block block = state.getBlock();
                     long pos = SCAN_POS.asLong();
                     if (block == lampBlock || block == mercuryLampBlock) {
-                        LAMPS.add(pos, 0);
+                        LAMPS.add(pos);
                     } else if (block == deadLampBlock) {
-                        DEAD_LAMPS.add(pos, 0);
+                        DEAD_LAMPS.add(pos);
                     } else if (block == lightPanelBlock) {
                         boolean lit = !state.hasProperty(BlockStateProperties.LIT) || state.getValue(BlockStateProperties.LIT);
-                        (lit ? LAMPS : DEAD_LAMPS).add(pos, 0);
+                        (lit ? LAMPS : DEAD_LAMPS).add(pos);
                     } else if (block == dripBlock) {
-                        DRIPS.add(pos, 0);
-                    } else if (block == pumpBlock) {
-                        PUMPS.add(pos, PUMP_MERGE);
-                    } else if (block == fanBlock || block == machineBlock) {
-                        MACHINES.add(pos, MACHINE_MERGE);
-                    } else if (block == breakerBlock || block == junctionBlock) {
-                        PANELS.add(pos, PANEL_MERGE);
+                        DRIPS.add(pos);
+                    } else if (block == fanBlock) {
+                        FANS.add(pos);
                     } else if (block == valveWheelBlock || block == valveLeverBlock || block == pipeValveBlock) {
-                        VALVES.add(pos, 0);
+                        VALVES.add(pos);
                     } else if (block == ventBlock) {
-                        if (!onMachine(level, state)) {
-                            VENTS.add(pos, 0);
-                        }
+                        VENTS.add(pos);
                     }
                 }
             }
@@ -427,13 +377,6 @@ public final class Level2Emitters {
             }
             sweeping = false;
         }
-    }
-
-    /** A steam vent bolted to a hot zone's machine: Level2AnomalyEffects runs those. (A pump's vent is a leak here.) */
-    private static boolean onMachine(ClientLevel level, BlockState vent) {
-        Direction back = vent.getValue(WallMountBlock.FACING).getOpposite();
-        Block behind = level.getBlockState(PROBE.setWithOffset(SCAN_POS, back)).getBlock();
-        return behind == machineBlock;
     }
 
     /**
@@ -475,17 +418,8 @@ public final class Level2Emitters {
     }
 
     // ==========================================================================================
-    // Power: dead sections
+    // Dead sections
     // ==========================================================================================
-
-    /**
-     * Is the mains on at (x, z)? Off while that stretch's series circuit is out (the same
-     * outages that kill its lamps, see FixturePower), and for good in a stretch whose lamps are
-     * all dead (the DARK segments: the nearest corridor lamp is a dead one).
-     */
-    private static boolean powered(double x, double z, long time) {
-        return FixturePower.level2CircuitPowered(FixturePower.level2Circuit(x, z), time) && !darkStretch(x, z);
-    }
 
     /** True when the nearest corridor lamp to (x, z), within {@link #DARK_REACH} along the corridor, has no bulb. */
     private static boolean darkStretch(double x, double z) {
@@ -512,7 +446,7 @@ public final class Level2Emitters {
 
     /** Distance along the corridor to a lamp of the same corridor (lamps of another band don't count). */
     private static double lampDistSq(long lamp, double x, double z) {
-        if (Math.abs(BlockPos.getZ(lamp) + 0.5 - z) > PLANT_BEHIND + 2.0) {
+        if (Math.abs(BlockPos.getZ(lamp) + 0.5 - z) > CORRIDOR_BAND / 2.0) {
             return Double.MAX_VALUE;
         }
         double dx = BlockPos.getX(lamp) + 0.5 - x;
@@ -524,7 +458,7 @@ public final class Level2Emitters {
      * circuit; BackroomsLights works it out for the lightmap fill), or 1 in a stretch whose lamps
      * died for good. The level's background drone (the biome loop, see Level2Sounds) dips with it.
      */
-    private static void dead(Vec3 eye, long time) {
+    private static void dead(Vec3 eye) {
         float target = 1.0f - BackroomsLights.level2LampShare();
         if (darkStretch(eye.x, eye.z)) {
             target = 1.0f;
@@ -537,97 +471,32 @@ public final class Level2Emitters {
     }
 
     // ==========================================================================================
-    // Machinery: pumps, fans and cabinets, panels, the plant behind the walls
+    // Wall fans, leaks, relief valves and drips
     // ==========================================================================================
 
-    /** Keeps a hum loop going on the nearest pumps. */
-    private static void pumps(Minecraft mc, Vec3 eye, long time) {
-        int n = nearest(PUMPS.now, eye, PUMP_RANGE, MAX_PUMPS);
+    /**
+     * The drone of the nearest wall fans. They are not on the mains (their blades turn with the
+     * level, see Level2SpinProps), so they keep droning in a dead section.
+     */
+    private static void fans(Minecraft mc, Vec3 eye) {
+        int n = nearest(FANS.now, eye, FAN_RANGE, MAX_FANS);
         for (int i = 0; i < n; i++) {
             long pos = NEAREST[i];
-            // The sweep meets a pump at its lowest-x, lowest-z, lowest cell first (it runs up x,
-            // then z, then y), and the pump is 2x2x2: its centre is the far corner of that cell.
-            loop(mc, pos, Level2Audio.PUMP_HUM.get(), BlockPos.getX(pos) + 1.0, BlockPos.getY(pos) + 1.0,
-                    BlockPos.getZ(pos) + 1.0, PUMP_VOLUME, true, time);
-        }
-    }
-
-    /** The deep drone of the nearest fan housings and machine cabinets, and the buzz of the nearest live panels. */
-    private static void machines(Minecraft mc, Vec3 eye, long time) {
-        int n = nearest(MACHINES.now, eye, MACHINE_RANGE, MAX_MACHINES);
-        for (int i = 0; i < n; i++) {
-            long pos = NEAREST[i];
-            if (inHotZone(BlockPos.getX(pos), BlockPos.getZ(pos))) {
-                continue; // a hot zone's own faulty machinery: Level2AnomalyEffects plays that
-            }
             loop(mc, pos, Level2Audio.PLANT_HUM.get(), BlockPos.getX(pos) + 0.5, BlockPos.getY(pos) + 0.5,
-                    BlockPos.getZ(pos) + 0.5, MACHINE_VOLUME, true, time);
-        }
-        n = nearest(PANELS.now, eye, PANEL_RANGE, MAX_PANELS);
-        for (int i = 0; i < n; i++) {
-            long pos = NEAREST[i];
-            loop(mc, pos, Level2Audio.PANEL_BUZZ.get(), BlockPos.getX(pos) + 0.5, BlockPos.getY(pos) + 0.8,
-                    BlockPos.getZ(pos) + 0.5, PANEL_VOLUME, true, time);
+                    BlockPos.getZ(pos) + 0.5, FAN_VOLUME);
         }
     }
 
-    /**
-     * The plant rooms behind the corridor walls: one per {@link #PLANT_SPACING} blocks of each
-     * corridor, on one side or the other (a pure function of the corridor and the slot, so every
-     * player hears them in the same places). You hear the one or two in range, muffled by the
-     * wall, swelling as you walk past each.
-     */
-    private static void plants(Minecraft mc, Vec3 eye, long time) {
-        long band = Math.floorDiv(Mth.floor(eye.z) + CORRIDOR_BAND / 2, CORRIDOR_BAND);
-        int slot = Math.floorDiv(Mth.floor(eye.x), PLANT_SPACING);
-        for (int k = slot - 1; k <= slot + 1; k++) {
-            long h = FixturePower.mix(band * 0x632BE59BD9B4E019L ^ k * 0x9E3779B97F4A7C15L ^ 0x3C6EF372FE94F82BL);
-            int x = k * PLANT_SPACING + PLANT_SPACING / 2 + (int) Math.floorMod(h, 2 * PLANT_JITTER + 1) - PLANT_JITTER;
-            double z = band * CORRIDOR_BAND + 0.5 + (((h >>> 40) & 1L) == 0L ? PLANT_BEHIND : -PLANT_BEHIND);
-            double dx = x + 0.5 - eye.x;
-            double dz = z - eye.z;
-            if (dx * dx + dz * dz > PLANT_RANGE * PLANT_RANGE) {
-                continue;
-            }
-            loop(mc, BlockPos.asLong(x, Mth.floor(PLANT_Y), Mth.floor(z)), Level2Audio.PLANT_HUM.get(), x + 0.5, PLANT_Y, z,
-                    PLANT_VOLUME, true, time);
-        }
-    }
-
-    /**
-     * Keeps the loop for {@code key} playing (starting it if needed). {@code mains}: it runs on
-     * the section's power, and coasts down while that is out.
-     */
-    private static void loop(Minecraft mc, long key, SoundEvent sound, double x, double y, double z, float volume,
-                             boolean mains, long time) {
+    /** Keeps the loop for {@code key} playing (starting it if needed). */
+    private static void loop(Minecraft mc, long key, SoundEvent sound, double x, double y, double z, float volume) {
         MachineLoopSound loop = LOOPS.get(key);
         if (loop == null || loop.isStopped() || !mc.getSoundManager().isActive(loop)) {
-            loop = new MachineLoopSound(sound, x, y, z, FixturePower.mix(key), volume, false);
-            if (mains) {
-                loop.powered(powered(x, z, time)); // a machine already dead when you arrive starts silent
-            }
+            loop = new MachineLoopSound(sound, x, y, z, FixturePower.mix(key), volume);
             mc.getSoundManager().play(loop);
             LOOPS.put(key, loop);
         }
         loop.keepAlive();
-        if (mains) {
-            loop.powered(powered(x, z, time));
-        }
     }
-
-    /** Is (x, z) in or right by a hot zone? */
-    private static boolean inHotZone(int x, int z) {
-        for (AnomalySite site : AnomalyClientState.nearby()) {
-            if (Level2Sites.HOT_ZONE.equals(site.kind()) && site.near(x, z, 2)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // ==========================================================================================
-    // Leaks, relief valves and drips
-    // ==========================================================================================
 
     /** The nearest leaking valves: a steady hiss, wisps of steam, and now and then a jet. */
     private static void leaks(Minecraft mc, ClientLevel level, Vec3 eye) {
@@ -636,18 +505,18 @@ public final class Level2Emitters {
         for (int i = 0; i < n; i++) {
             long pos = NEAREST[i];
             BlockState state = level.getBlockState(PROBE.set(pos));
-            if (state.getBlock() != ventBlock || hotZoneVent(pos)) {
-                continue; // gone since the sweep, or a hot zone's vent (Level2AnomalyEffects blows those)
+            if (state.getBlock() != ventBlock) {
+                continue; // gone since the sweep
             }
             Direction facing = state.getValue(WallMountBlock.FACING);
             double fx = facing.getStepX();
             double fz = facing.getStepZ();
-            // The nozzle: the front of the vent block (as in Level2AnomalyEffects' steam).
+            // The nozzle: the front of the vent block.
             double px = BlockPos.getX(pos) + 0.5 + fx * 0.45;
             double py = BlockPos.getY(pos) + 0.45;
             double pz = BlockPos.getZ(pos) + 0.5 + fz * 0.45;
             // Steam pressure, not the mains: a leak keeps hissing in a dead section.
-            loop(mc, pos, Level2Audio.STEAM_LEAK.get(), px, py, pz, LEAK_VOLUME, false, time);
+            loop(mc, pos, Level2Audio.STEAM_LEAK.get(), px, py, pz, LEAK_VOLUME);
             // Each leak has its own jet rhythm (from its position and the game time: everyone sees the same).
             long h = FixturePower.mix(pos ^ 0x4C1E5A7D3B9F2E61L);
             long period = JET_PERIOD_MIN + Math.floorMod(h, JET_PERIOD_SPREAD);
@@ -673,27 +542,6 @@ public final class Level2Emitters {
                         fz * 0.02 + (RANDOM.nextDouble() - 0.5) * 0.01);
             }
         }
-    }
-
-    /**
-     * Is this one of a nearby hot zone's own vents (Level2Sites.vents)? Level2AnomalyEffects blows
-     * the steam for those. The vents along a hot zone's approach are ordinary leaks.
-     */
-    private static boolean hotZoneVent(long pos) {
-        int x = BlockPos.getX(pos);
-        int y = BlockPos.getY(pos);
-        int z = BlockPos.getZ(pos);
-        for (AnomalySite site : AnomalyClientState.nearby()) {
-            if (!Level2Sites.HOT_ZONE.equals(site.kind()) || !site.near(x, z, 2)) {
-                continue;
-            }
-            for (Level2Sites.Vent vent : Level2Sites.vents(site)) {
-                if (vent.x() == x && vent.y() == y && vent.z() == z) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     /**
@@ -731,7 +579,7 @@ public final class Level2Emitters {
                 RELEASE_VOLUME, 0.92f + RANDOM.nextFloat() * 0.16f, RANDOM, releaseX, releaseY, releaseZ));
     }
 
-    /** A random valve or (non hot zone) vent in the release ring, or Long.MIN_VALUE. */
+    /** A random valve or vent in the release ring, or Long.MIN_VALUE. */
     private static long pickRelease(Vec3 eye) {
         int valves = VALVES.now.size();
         int total = valves + VENTS.now.size();
@@ -743,7 +591,7 @@ public final class Level2Emitters {
             int index = (start + i) % total;
             long pos = index < valves ? VALVES.now.getLong(index) : VENTS.now.getLong(index - valves);
             double d = distSq(pos, eye);
-            if (d >= RELEASE_NEAR * RELEASE_NEAR && d <= RELEASE_FAR * RELEASE_FAR && !hotZoneVent(pos)) {
+            if (d >= RELEASE_NEAR * RELEASE_NEAR && d <= RELEASE_FAR * RELEASE_FAR) {
                 return pos;
             }
         }
@@ -820,12 +668,12 @@ public final class Level2Emitters {
         float volume;
         float pitch;
         if (landed == null) {
-            return; // fell into the dark below the trench: nothing to hear
+            return; // nothing below it within reach: nothing to hear
         } else if (landed.getBlock() == oozeBlock) {
             sound = ModSounds.L2_OOZE_DRIP.get();
             volume = 0.35f;
             pitch = 0.9f + RANDOM.nextFloat() * 0.2f;
-        } else if (landed.getBlock() == puddleBlock || landed.getBlock() == gutterBlock || !landed.getFluidState().isEmpty()) {
+        } else if (landed.getBlock() == puddleBlock || !landed.getFluidState().isEmpty()) {
             // Into standing water: the plink of the bubble it traps.
             sound = Level2Audio.DRIP_PUDDLE.get();
             volume = 0.5f;
@@ -907,12 +755,11 @@ public final class Level2Emitters {
         } else if (roll < 11) {
             creak(eye, false);
         } else if (roll < 14) {
-            mc.getSoundManager().play(new TravellingSound(Level2Audio.PIPE_RUSH.get(), eye, CEILING_PIPES_Y, eye.z,
-                    22.0, 26.0, 0.52, 0.85f));
+            mc.getSoundManager().play(new TravellingSound(Level2Audio.PIPE_RUSH.get(), eye, 22.0, 26.0, 0.52, 0.85f));
         } else if (roll < 17) {
             tapRun(eye);
         } else {
-            shudder(mc, eye);
+            mc.getSoundManager().play(new TravellingSound(Level2Audio.PIPE_SHUDDER.get(), eye, 25.0, 26.0, 0.34, 0.8f));
         }
     }
 
@@ -921,15 +768,33 @@ public final class Level2Emitters {
         return RANDOM.nextBoolean() ? 1.0 : -1.0;
     }
 
-    /** One of the two pipe chases (or the overhead bundle, half the time for knocks). */
-    private static double chaseZ(Vec3 eye) {
-        return eye.z + side() * CHASE_OFFSET;
+    /** A random spot round the bundle's cross-section (radians off its centre). */
+    private static double round() {
+        return (RANDOM.nextDouble() * 2.0 - 1.0) * BUNDLE_SPREAD;
+    }
+
+    /** The middle of the lane you stand in (the corridor is one block wide). */
+    private static double laneZ(Vec3 eye) {
+        return Mth.floor(eye.z) + 0.5;
+    }
+
+    /**
+     * Puts {@link #bundleY}/{@link #bundleZ} on a pipe of the bundle at {@code x}: where the bundle
+     * sits round the lane there ({@link Level2Twist#helix}: 0 = the +z wall, PI/2 = overhead), plus
+     * {@code round} radians. Following x along the corridor, it corkscrews with the pipes.
+     */
+    private static void bundleAt(double x, double laneZ, double round) {
+        double helix = Level2Spin.hasSeed()
+                ? Level2Twist.helix(Level2Spin.seed(), Mth.floor(x), Mth.floor(laneZ)) : NO_SEED_HELIX;
+        double angle = helix + round;
+        bundleZ = laneZ + Math.cos(angle) * BUNDLE_ACROSS;
+        bundleY = LANE_MID_Y + Math.sin(angle) * BUNDLE_UP;
     }
 
     /**
      * Water hammer: a slug of water slams through the pipes and every bracket it passes knocks,
      * so a row of 3-7 knocks runs along the corridor at 14-26 blocks a second, usually toward you
-     * (sometimes past you), sometimes away.
+     * (sometimes past you), sometimes away, turning round you with the bundle.
      */
     private static void knockRun(Vec3 eye) {
         double from = side();
@@ -938,15 +803,17 @@ public final class Level2Emitters {
         double spacing = Mth.nextDouble(RANDOM, 2.0, 4.0);
         double speed = Mth.nextDouble(RANDOM, 14.0, 26.0);
         int count = 3 + RANDOM.nextInt(5);
-        double y = RANDOM.nextBoolean() ? CEILING_PIPES_Y : RACK_Y;
-        double z = y == CEILING_PIPES_Y ? eye.z : chaseZ(eye);
+        double lane = laneZ(eye);
+        double round = round(); // one pipe of the bundle
         float pitch = 0.85f + RANDOM.nextFloat() * 0.3f;
         for (int i = 0; i < count; i++) {
             long delay = Math.round(spacing * i / speed * 20.0);
+            double x = startX + travel * spacing * i;
+            bundleAt(x, lane, round);
             // The first knock is the hardest; the slug loses a little each time.
             float volume = 0.85f * (1.0f - 0.07f * i);
             PENDING.add(new Pending(tick + delay, Level2Audio.PIPE_KNOCK.get(), SoundSource.AMBIENT,
-                    startX + travel * spacing * i, y, z, volume, pitch * (0.97f + RANDOM.nextFloat() * 0.06f), 0L));
+                    x, bundleY, bundleZ, volume, pitch * (0.97f + RANDOM.nextFloat() * 0.06f), 0L));
         }
     }
 
@@ -959,8 +826,8 @@ public final class Level2Emitters {
         double from = side();
         double distance = Mth.nextDouble(RANDOM, 26.0, 44.0);
         double step = Mth.nextDouble(RANDOM, 4.0, 8.0);
-        double y = RANDOM.nextBoolean() ? CEILING_PIPES_Y : RACK_Y;
-        double z = y == CEILING_PIPES_Y ? eye.z : chaseZ(eye);
+        double lane = laneZ(eye);
+        double round = round();
         int groups = 2 + RANDOM.nextInt(3);
         int taps = 2 + RANDOM.nextInt(3);
         float pitch = 0.9f + RANDOM.nextFloat() * 0.2f;
@@ -968,8 +835,9 @@ public final class Level2Emitters {
         long at = tick;
         for (int g = 0; g < groups; g++) {
             double x = eye.x + from * Math.max(10.0, distance - g * step);
+            bundleAt(x, lane, round);
             for (int t = 0; t < taps; t++) {
-                PENDING.add(new Pending(at, Level2Audio.PIPE_TAP.get(), SoundSource.AMBIENT, x, y, z, 0.8f,
+                PENDING.add(new Pending(at, Level2Audio.PIPE_TAP.get(), SoundSource.AMBIENT, x, bundleY, bundleZ, 0.8f,
                         pitch * (0.99f + RANDOM.nextFloat() * 0.02f), variant));
                 at += 7 + RANDOM.nextInt(4);
             }
@@ -977,30 +845,27 @@ public final class Level2Emitters {
         }
     }
 
-    /** A shudder running along a pipe run: from ~25 blocks one way, past you, to ~26 blocks the other, in about 7.5 s. */
-    private static void shudder(Minecraft mc, Vec3 eye) {
-        double y = RANDOM.nextBoolean() ? CEILING_PIPES_Y : RACK_Y;
-        double z = y == CEILING_PIPES_Y ? eye.z : chaseZ(eye);
-        mc.getSoundManager().play(new TravellingSound(Level2Audio.PIPE_SHUDDER.get(), eye, y, z, 25.0, 26.0, 0.34, 0.8f));
-    }
-
     /** A single heavy clank somewhere along the line, sometimes answered by a smaller knock. */
     private static void clank(Vec3 eye) {
         double x = eye.x + side() * Mth.nextDouble(RANDOM, 8.0, 30.0);
-        double z = chaseZ(eye);
-        PENDING.add(new Pending(tick, Level2Audio.PIPE_CLANK.get(), SoundSource.AMBIENT, x, CEILING_PIPES_Y, z,
+        double lane = laneZ(eye);
+        double round = round();
+        bundleAt(x, lane, round);
+        PENDING.add(new Pending(tick, Level2Audio.PIPE_CLANK.get(), SoundSource.AMBIENT, x, bundleY, bundleZ,
                 0.9f, 0.9f + RANDOM.nextFloat() * 0.2f, 0L));
         if (RANDOM.nextBoolean()) {
+            double kx = x + side() * Mth.nextDouble(RANDOM, 1.0, 2.5);
+            bundleAt(kx, lane, round);
             PENDING.add(new Pending(tick + 6 + RANDOM.nextInt(9), Level2Audio.PIPE_KNOCK.get(), SoundSource.AMBIENT,
-                    x + side() * Mth.nextDouble(RANDOM, 1.0, 2.5), RACK_Y, z, 0.5f, 0.8f + RANDOM.nextFloat() * 0.15f, 0L));
+                    kx, bundleY, bundleZ, 0.5f, 0.8f + RANDOM.nextFloat() * 0.15f, 0L));
         }
     }
 
     /** Hot metal stretching: a long creak from a pipe a little way off (closer during a twist). */
     private static void creak(Vec3 eye, boolean twist) {
         double x = eye.x + side() * (twist ? Mth.nextDouble(RANDOM, 3.0, 14.0) : Mth.nextDouble(RANDOM, 5.0, 20.0));
-        double y = RANDOM.nextBoolean() ? CEILING_PIPES_Y : RACK_Y;
-        PENDING.add(new Pending(tick, Level2Audio.PIPE_CREAK.get(), SoundSource.AMBIENT, x, y, chaseZ(eye),
+        bundleAt(x, laneZ(eye), round());
+        PENDING.add(new Pending(tick, Level2Audio.PIPE_CREAK.get(), SoundSource.AMBIENT, x, bundleY, bundleZ,
                 twist ? 0.8f : 0.7f, (twist ? 0.75f : 0.85f) + RANDOM.nextFloat() * 0.3f, 0L));
     }
 
@@ -1021,22 +886,25 @@ public final class Level2Emitters {
     /**
      * A sound that really moves along the pipes while it plays: from {@code startDistance}
      * blocks up the corridor (or down it), past you, to {@code endDistance} blocks the other way,
-     * at {@code speed} blocks per tick. Water rushing through the overhead bundle (44 blocks in
-     * ~4.2 s, the length of the recording), or a shudder running along a pipe run.
+     * at {@code speed} blocks per tick, following one pipe of the bundle as it corkscrews round the
+     * lane (so it also turns round you as it passes). Water rushing through the bundle (44 blocks
+     * in ~4.2 s, the length of the recording), or a shudder running along a pipe run.
      */
     private static final class TravellingSound extends AbstractTickableSoundInstance {
         private final double step;
         private final double endX;
+        private final double lane;
+        private final double round;
 
-        TravellingSound(SoundEvent sound, Vec3 eye, double y, double z, double startDistance, double endDistance,
-                        double speed, float volume) {
+        TravellingSound(SoundEvent sound, Vec3 eye, double startDistance, double endDistance, double speed, float volume) {
             super(sound, SoundSource.AMBIENT, RandomSource.create(RANDOM.nextLong()));
             double from = side();
+            this.lane = laneZ(eye);
+            this.round = round();
             this.x = eye.x + from * startDistance;
-            this.y = y;
-            this.z = z;
             this.step = -from * speed;
             this.endX = eye.x - from * endDistance;
+            follow();
             this.volume = volume;
             this.pitch = 0.9f + RANDOM.nextFloat() * 0.2f;
             this.looping = false;
@@ -1044,9 +912,16 @@ public final class Level2Emitters {
             this.relative = false;
         }
 
+        private void follow() {
+            bundleAt(x, lane, round);
+            y = bundleY;
+            z = bundleZ;
+        }
+
         @Override
         public void tick() {
             x += step;
+            follow();
             if ((step > 0 && x > endX) || (step < 0 && x < endX)) {
                 stop();
             }

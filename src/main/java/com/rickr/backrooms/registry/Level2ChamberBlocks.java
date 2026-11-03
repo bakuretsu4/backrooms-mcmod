@@ -13,8 +13,9 @@ import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.neoforge.registries.DeferredBlock;
 
 /**
- * Blocks of Level 2's maintenance chambers and oddities (world/layout/Level2Chambers and
- * Level2Oddities): the things the crews left behind, and the gauge that reads your heart.
+ * Blocks once made for Level 2's maintenance chambers (gone: Level 2 is one straight corridor now;
+ * the props stay for builders) and the heart_gauge oddity (world/layout/Level2Oddities), the gauge
+ * that reads your heart.
  * Textures, models and blockstates: tools/anomaly_assets/level2_chambers.py.
  *
  * <p>Like every Backrooms block they go through the shared {@link ModBlocks#BLOCKS} register (and

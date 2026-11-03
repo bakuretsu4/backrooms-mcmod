@@ -1509,16 +1509,6 @@
     ],
     "subtitle": "subtitles.backrooms.level2_circuit_pop"
   },
-  "level2.machine_loop": {
-    "sounds": [
-      {
-        "name": "backrooms:level2/machine_loop",
-        "attenuation_distance": 28,
-        "volume": 0.4
-      }
-    ],
-    "subtitle": "subtitles.backrooms.level2_machine_loop"
-  },
   "level2.steam_hiss": {
     "sounds": [
       {
@@ -1633,15 +1623,6 @@
     ],
     "subtitle": "subtitles.backrooms.level2_steam_leak"
   },
-  "level2.pump_hum": {
-    "sounds": [
-      {
-        "name": "backrooms:level2/pump_hum",
-        "attenuation_distance": 24
-      }
-    ],
-    "subtitle": "subtitles.backrooms.level2_pump_hum"
-  },
   "level2.drip_puddle": {
     "sounds": [
       {
@@ -1718,15 +1699,6 @@
     ],
     "subtitle": "subtitles.backrooms.level2_plant_hum"
   },
-  "level2.panel_buzz": {
-    "sounds": [
-      {
-        "name": "backrooms:level2/panel_buzz",
-        "attenuation_distance": 10
-      }
-    ],
-    "subtitle": "subtitles.backrooms.level2_panel_buzz"
-  },
   "level2.pipe_tap": {
     "sounds": [
       {
@@ -1795,20 +1767,11 @@
     ],
     "subtitle": "subtitles.backrooms.level2_gauge_tick"
   },
-  "level2.warm_door": {
-    "sounds": [
-      {
-        "name": "backrooms:level2/warm_door",
-        "attenuation_distance": 8
-      }
-    ],
-    "subtitle": "subtitles.backrooms.level2_warm_door"
-  },
   "level2.spin_groan": {
     "sounds": [
       {
         "name": "backrooms:level2/spin_groan",
-        "attenuation_distance": 16
+        "attenuation_distance": 24
       }
     ],
     "subtitle": "subtitles.backrooms.level2_spin_groan"
@@ -1817,10 +1780,19 @@
     "sounds": [
       {
         "name": "backrooms:level2/spin_rattle",
-        "attenuation_distance": 10
+        "attenuation_distance": 14
       }
     ],
     "subtitle": "subtitles.backrooms.level2_spin_rattle"
+  },
+  "level2.spin_pressure": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/spin_pressure",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_spin_pressure"
   },
   "level2.roll_creak": {
     "sounds": [

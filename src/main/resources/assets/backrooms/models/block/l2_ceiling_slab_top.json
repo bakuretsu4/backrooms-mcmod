@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/slab_top",
-  "textures": {
-    "bottom": "backrooms:block/pipe_ceiling",
-    "top": "backrooms:block/pipe_ceiling",
-    "side": "backrooms:block/pipe_ceiling"
-  }
-}

@@ -7,25 +7,30 @@ they are). Played by src/main/java/.../client/anomaly/level2/Level2Emitters.java
                           travels along the corridor)
   level2/pipe_clank1..3   a heavy clank that rings on, a bracket chattering after it
   level2/pipe_creak1..3   hot metal stretching: a slow stick-slip groan and a couple of ticks
-  level2/pipe_rush1..2    water rushing through the overhead bundle (the game moves it past you)
+  level2/pipe_rush1..2    water rushing through the pipe bundle (the game moves it past you)
   level2/pipe_tap1..4     far metal on metal: a pipe struck with a tool, ringing long (played in
                           short patterns that creep along the pipes toward you)
   level2/pipe_shudder1..2 a pipe run vibrating, brackets buzzing (the game moves it along the pipes)
   level2/pressure_release1..3  a relief valve lifting: clunk, a swelling steam roar, valve reseats
   level2/steam_leak       seamless loop: a leaking steam valve's steady hiss and faint whistle
-  level2/pump_hum         seamless loop: a pump's motor hum, slow piston thump, bearing whine
-  level2/plant_hum        seamless loop: the deep machine bed behind the walls and in machinery
-  level2/panel_buzz       seamless loop: a breaker panel's transformer buzz
-  level2/drip_puddle1..5  a drop landing in standing water (puddle, gutter)
+  level2/plant_hum        seamless loop: a deep machine drone (played on the wall fans)
+  level2/drip_puddle1..5  a drop landing in standing water (a puddle)
   level2/drip_metal1..4   a drop landing on steel (grating, pipe)
   level2/drip_concrete1..4  a drop landing on wet concrete
+  level2/gauge_tick1..3   a pressure gauge's needle ticking (Level2OddityEffects, the heart gauge)
 
 And the sounds of the level slowly turning around you (played by
 src/main/java/.../client/anomaly/level2/Level2Orbit.java, which carries them around your head):
 
   level2/spin_groan       seamless loop: the whole steel structure groaning under slow torsion
-  level2/spin_rattle      seamless loop: brackets chattering faintly, a thin pipe singing
+  level2/spin_rattle      seamless loop: brackets chattering, a thin pipe singing
+  level2/spin_pressure    seamless loop: a deep heaving pressure, like air forced through the mains
   level2/roll_creak1..3   a long heavy creak that bends in pitch, as if the corridor rolled over
+
+These are louder than the rest of the level's loops on purpose (-27 to -30 in the file): the
+game plays them a few blocks from your head at less than full volume, which lands them about
+-30 (groan, pressure), -34 (rattle) and -27 (rolls) at your ear, still under the music and the
+emitters' peaks.
 
 Loudness is set in LUFS (EBU R128, measured here with the same gating ffmpeg's ebur128 uses), in
 line with the rest of the mix (README "Mix", tools/level_assets/recorded.py): the loops sit at
@@ -259,9 +264,9 @@ def snd_l2line_pipe_creak() -> None:
 
 
 def snd_l2line_pipe_rush() -> None:
-    """Two ~4.3 s rushes: a surge of water through the overhead bundle. A low flowing body and
+    """Two ~4.3 s rushes: a surge of water through the pipe bundle. A low flowing body and
     a softer wash on top, a few gurgles as air rides along, swelling in and dying away (the game
-    moves the sound over your head while it plays)."""
+    moves the sound along the bundle, past you and round you, while it plays)."""
     for i, seed in enumerate((20231, 20232), 1):
         rng = G.rng_for(seed)
         dur = 4.3
@@ -311,39 +316,12 @@ def snd_l2line_steam_leak() -> None:
     _save(x, "steam_leak", -30.0, peak=0.5, loop=True)
 
 
-def snd_l2line_pump_hum() -> None:
-    """8 s seamless loop: a pump in a pump bay. A 50 Hz motor hum with its harmonics, the slow
-    thump of the piston (10 strokes per loop) with the click of its valve, a faint bearing whine
-    and water churning in the casing. Warm and low, like the lamp hums."""
-    rng = G.rng_for(20251)
-    T = 8.0
-    n = int(T * SR)
-    t = np.arange(n) / SR
-    hum = G.mains_hum(t, f0=50.0, levels_db=(0, -6, -14, -20, -28, -34)) * G.drift(n, rng, 0.06, 0.2, 0.6)
-    thump = np.zeros(n)
-    stroke = T / 10
-    for k in range(10):
-        at = k * stroke + rng.uniform(-0.01, 0.01)
-        hit = _thud(rng, rng.uniform(48, 58), 0.09, 0.4)
-        click = _click(rng, 0.04, 1500, 5000, 0.005)
-        hit[:click.size] += 0.15 * click
-        G.add_at(thump, (0.85 + 0.15 * rng.uniform()) * hit, at % T, True)
-    whine = np.sin(2 * np.pi * _whole(880.0, T) * t) * G.drift(n, rng, 0.6, 0.12, 0.4)
-    churn = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 70, 500, 2)) * G.drift(n, rng, 0.3, 0.2, 0.7)
-    x = 0.8 * G.norm(hum) + 0.6 * G.norm(thump) + 0.03 * G.norm(whine) + 0.25 * G.norm(churn)
-    # Through the casing: almost nothing above ~1.5 kHz.
-    x = G.fft_filter(x, lambda f: G.lp_gain(f, 1500, 2), circular=True)
-    _save(x, "pump_hum", -28.0, peak=0.6, loop=True)
-
-
 def snd_l2line_plant_hum() -> None:
-    """12 s seamless loop: heavy plant running behind the concrete (the pumps, fans and
-    compressors that keep the pipes full), the deep bed of the level. Two big motors a hair apart
-    in speed, so their hum slowly swells and sinks (a beat every 2 s, like something breathing in
-    the walls); a 24 Hz shaft rumble felt more than heard; the low roar of the machine room; and a
-    loose part ticking now and then. Everything above ~700 Hz is lost in the wall. The game plays
-    it from machines and from points behind the corridor walls, so it swells and fades as you
-    walk, and winds down when that stretch's power fails."""
+    """12 s seamless loop: heavy machinery running behind the concrete, the deep bed of the level.
+    Two big motors a hair apart in speed, so their hum slowly swells and sinks (a beat every 2 s,
+    like something breathing in the walls); a 24 Hz shaft rumble felt more than heard; the low roar
+    of the machine room; and a loose part ticking now and then. Everything above ~700 Hz is lost in
+    the wall. The game plays it on the wall fans, so it swells and fades as you walk past them."""
     rng = G.rng_for(20271)
     T = 12.0
     n = int(T * SR)
@@ -362,25 +340,6 @@ def snd_l2line_plant_hum() -> None:
     x = 0.8 * G.norm(m1) + 0.7 * G.norm(m2) + 0.5 * G.norm(shaft) + 0.45 * G.norm(roar) + 0.05 * G.norm(ticks)
     x = G.fft_filter(x, lambda f: G.lp_gain(f, 700, 2), circular=True)
     _save(x, "plant_hum", -27.0, peak=0.6, loop=True)
-
-
-def snd_l2line_panel_buzz() -> None:
-    """4 s seamless loop: a breaker panel or junction box on a live circuit. The transformer's
-    100 Hz buzz (gritty: the iron saturating adds odd harmonics), a faint 50 Hz under it, and a
-    contact somewhere fizzing very quietly, coming and going. Goes dead with its circuit."""
-    rng = G.rng_for(20281)
-    T = 4.0
-    n = int(T * SR)
-    t = np.arange(n) / SR
-    f = _whole(100.0, T)
-    buzz = np.tanh(2.5 * np.sin(2 * np.pi * f * t)) + 0.3 * np.sin(2 * np.pi * 2 * f * t + 0.4)
-    buzz *= G.drift(n, rng, 0.08, 0.25, 1.0)
-    low = np.sin(2 * np.pi * _whole(50.0, T) * t)
-    fizz = G.periodic_noise(n, rng, lambda ff: G.bp_gain(ff, 2000, 6000, 2))
-    fizz *= np.clip(G.drift(n, rng, 1.0, 0.5, 2.0) - 0.8, 0.0, None)
-    x = G.norm(buzz) + 0.25 * G.norm(low) + 0.06 * G.norm(fizz)
-    x = G.fft_filter(x, lambda ff: G.lp_gain(ff, 2500, 2), circular=True)
-    _save(x, "panel_buzz", -31.0, peak=0.5, loop=True)
 
 
 # =============================================================================
@@ -477,7 +436,7 @@ def _drip_save(rng, x, name: str, target: float) -> None:
 
 
 def snd_l2line_drip_puddle() -> None:
-    """Five ~0.9 s drops into standing water (a puddle, the wet gutter): the tiny tick of impact,
+    """Five ~0.9 s drops into standing water (a puddle): the tiny tick of impact,
     a little splash, the plink of the bubble it traps (each a different pitch), sometimes a
     smaller second drop."""
     for i, seed in enumerate((20261, 20262, 20263, 20264, 20265), 1):
@@ -538,29 +497,6 @@ def snd_l2line_gauge_tick() -> None:
         _save(x, f"gauge_tick{i}", -26.0, fade_out=0.02)
 
 
-def snd_l2line_warm_door() -> None:
-    """10 s seamless loop: warmth breathing behind a steel door that leads nowhere. A low soft
-    roar like a boiler room (60-120 Hz) that slowly swells and settles, a burner's hush above it,
-    and now and then the tick of metal expanding. No voices, nothing alive: just warm."""
-    rng = G.rng_for(20361)
-    T = 10.0
-    n = int(T * SR)
-    t = np.arange(n) / SR
-    roar = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 60, 120, 2))
-    hush = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 150, 450, 2))
-    # The swell: about one slow breath every 5 s (two per loop, so it wraps cleanly).
-    breath = 1.0 + 0.35 * np.sin(2 * np.pi * _whole(0.2, T) * t - 1.0)
-    ticks = np.zeros(n)
-    at = 0.8
-    while at < T - 0.5:
-        tick = _modes(rng, rng.uniform(1400, 2200), TUBE[:2], (0.012, 0.006), (1.0, 0.3), 0.06)
-        G.add_at(ticks, rng.uniform(0.3, 1.0) * G.norm(tick), at, True)
-        at += rng.uniform(1.5, 3.5)
-    x = (G.norm(roar) + 0.35 * G.norm(hush)) * breath * G.drift(n, rng, 0.1, 0.1, 0.4) + 0.06 * G.norm(ticks)
-    x = G.fft_filter(x, lambda f: G.lp_gain(f, 1200, 2), circular=True)
-    _save(x, "warm_door", -30.0, peak=0.5, loop=True)
-
-
 # =============================================================================
 # The level turning (played by client/anomaly/level2/Level2Orbit, which moves them around you)
 # =============================================================================
@@ -596,13 +532,13 @@ def snd_l2line_spin_groan() -> None:
     grain *= np.clip(G.drift(n, rng, 1.0, 0.2, 0.8) - 0.9, 0.0, None)
     x = G.norm(body) + 0.4 * G.norm(moan) + 0.4 * G.norm(rumble) + 0.08 * G.norm(grain)
     x = G.fft_filter(x, lambda f: G.lp_gain(f, 1400, 2), circular=True)
-    _save(x, "spin_groan", -28.0, peak=0.6, loop=True)
+    _save(x, "spin_groan", -27.0, peak=0.6, loop=True)
 
 
 def snd_l2line_spin_rattle() -> None:
-    """6 s seamless loop: the pipes' brackets chattering very faintly as the structure works (small
-    clusters of ticks at no steady rate) and a thin pipe singing with the flow inside it. Quiet,
-    and mostly above 500 Hz: this is the part of the turning the ear can follow most precisely."""
+    """6 s seamless loop: the pipes' brackets chattering as the structure works (small clusters of
+    ticks at no steady rate) and a thin pipe singing with the flow inside it. Mostly above
+    500 Hz: this is the part of the turning the ear can follow most precisely."""
     rng = G.rng_for(20381)
     T = 6.0
     n = int(T * SR)
@@ -622,7 +558,31 @@ def snd_l2line_spin_rattle() -> None:
     sing *= G.drift(n, rng, 0.5, 0.2, 0.6)
     x = G.norm(ticks) + 0.35 * G.norm(sing)
     x = G.fft_filter(x, lambda f: G.hp_gain(f, 300, 2) * G.lp_gain(f, 5000, 2), circular=True)
-    _save(x, "spin_rattle", -32.0, peak=0.5, loop=True)
+    _save(x, "spin_rattle", -30.0, peak=0.5, loop=True)
+
+
+def snd_l2line_spin_pressure() -> None:
+    """12 s seamless loop: a deep pressure heaving through the mains, the weight of the level
+    pressing on your ears. Two low tones a hair apart (55 and 55.5 Hz, so they beat slowly) with
+    harmonics up to ~330 Hz, a muffled roar of air forced along the big pipes (90-400 Hz), and a
+    slow heave every 4 s, as if the pressure built and let go. The game carries it right round
+    your head every 12-20 s; the harmonics and the roar are there so the ear can hear it go (a
+    pure sub-bass hum would have no direction)."""
+    rng = G.rng_for(20401)
+    T = 12.0
+    n = int(T * SR)
+    t = np.arange(n) / SR
+    tone = (G.mains_hum(t, f0=_whole(55.0, T), levels_db=(0, -4, -8, -12, -18, -24))
+            + 0.8 * G.mains_hum(t + 0.0051, f0=_whole(55.5, T), levels_db=(0, -6, -10, -14, -20, -26)))
+    roar = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 90, 400, 2)) * G.drift(n, rng, 0.25, 0.1, 0.5)
+    sub = G.periodic_noise(n, rng, lambda f: G.bp_gain(f, 28, 70, 2))
+    # The heave: three per loop, a quick build and a slow letting go.
+    ph = (t * _whole(0.25, T)) % 1.0
+    heave = 0.45 + 0.55 * np.where(ph < 0.3, G.smoothstep(0.0, 0.3, ph), 1.0 - G.smoothstep(0.3, 1.0, ph))
+    # The roar carries most of the weight: it is what lets the ear follow the pressure round.
+    x = (G.norm(tone) * 0.7 + G.norm(roar) * 0.85 + G.norm(sub) * 0.4) * heave
+    x = G.fft_filter(x, lambda f: G.lp_gain(f, 600, 2), circular=True)
+    _save(x, "spin_pressure", -28.0, peak=0.6, loop=True)
 
 
 def snd_l2line_roll_creak() -> None:
@@ -662,15 +622,15 @@ def snd_l2line_roll_creak() -> None:
         tick = _modes(rng, rng.uniform(900, 1300), TUBE[:3], (0.03, 0.015, 0.008), (1.0, 0.4, 0.2), 0.1)
         G.add_at(x, 0.3 * G.norm(tick), settle + rng.uniform(0.05, 0.12), False)
         x = G.fft_filter(x, lambda f: G.bp_gain(f, 45, 3200, 2))[:n]
-        _save(_corridor(rng, x, wet=0.25), f"roll_creak{i}", -25.0, fade_in=0.05, fade_out=0.4)
+        _save(_corridor(rng, x, wet=0.25), f"roll_creak{i}", -24.0, fade_in=0.05, fade_out=0.4)
 
 
 TEXTURES: list = []
 SOUNDS = [
     snd_l2line_pipe_knock, snd_l2line_pipe_clank, snd_l2line_pipe_creak, snd_l2line_pipe_rush,
-    snd_l2line_steam_leak, snd_l2line_pump_hum, snd_l2line_plant_hum, snd_l2line_panel_buzz,
+    snd_l2line_steam_leak, snd_l2line_plant_hum,
     snd_l2line_pipe_tap, snd_l2line_pipe_shudder, snd_l2line_pressure_release,
     snd_l2line_drip_puddle, snd_l2line_drip_metal, snd_l2line_drip_concrete,
-    snd_l2line_gauge_tick, snd_l2line_warm_door,
-    snd_l2line_spin_groan, snd_l2line_spin_rattle, snd_l2line_roll_creak,
+    snd_l2line_gauge_tick,
+    snd_l2line_spin_groan, snd_l2line_spin_rattle, snd_l2line_spin_pressure, snd_l2line_roll_creak,
 ]

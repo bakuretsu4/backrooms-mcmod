@@ -449,6 +449,7 @@ public final class FixturePower {
     public static float levelOf(FixtureLight light) {
         if (light.type == FixtureType.EXIT_SIGN || light.type == FixtureType.L0_EXIT_SIGN || light.type == FixtureType.SAFE_LAMP
                 || light.type == FixtureType.L2_EMERGENCY_LIGHT || light.type == FixtureType.L0_BEACON
+                || light.type == FixtureType.L2_SPIN_BEACON
                 || light.type == FixtureType.L0_DOOR_GLOW || light.type == FixtureType.CHECKPOINT_RADIO
                 // The Red Rooms are "somewhere else": the floor's blackouts and outages never reach them.
                 || light.type == FixtureType.RED_ROOM_LIGHT) {

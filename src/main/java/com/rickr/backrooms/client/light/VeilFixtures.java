@@ -3,6 +3,7 @@ package com.rickr.backrooms.client.light;
 import com.rickr.backrooms.block.Level0TubeGlow;
 import com.rickr.backrooms.client.Level2Atmosphere;
 import com.rickr.backrooms.client.anomaly.level2.Level2Spin;
+import com.rickr.backrooms.client.anomaly.level2.Level2SpinProps;
 import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.layout.Level2Twist;
@@ -17,6 +18,7 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 /**
  * The Veil lights for the fixtures picked by {@link BackroomsLights}: one occluded point light
@@ -44,6 +46,20 @@ final class VeilFixtures {
     private static final float L0_BEACON_SOFT_EDGE = 0.22f;
     private static final float L0_BEACON_DISTANCE = 16.0f;
     private static final float L0_BEACON_BRIGHTNESS = 2.6f;
+    /**
+     * Level 2's warning beacons (registry/Level2SpinBlocks): two amber cones back to back, turning
+     * about the beacon's own axis (out of its ceiling or wall) with the corridor's spin
+     * (client/anomaly/level2/Level2SpinProps), leaning ~70 degrees off that axis so they rake along
+     * the narrow corridor's walls, floor and ceiling. Short and fairly narrow: the lane is one block
+     * wide, so most of a cone lands within a few blocks.
+     */
+    private static final float L2_BEACON_HALF_ANGLE = 0.32f;
+    private static final float L2_BEACON_SOFT_EDGE = 0.22f;
+    private static final float L2_BEACON_DISTANCE = 10.0f;
+    private static final float L2_BEACON_BRIGHTNESS = 1.6f;
+    private static final float L2_BEACON_INSCATTER = 0.35f;
+    /** Scratch direction for aiming the Level 2 beacons' cones (render thread only). */
+    private static final Vector3f SWEEP = new Vector3f();
 
     /**
      * How many of the nearest streetlamps get a glow cone. These count against
@@ -87,7 +103,7 @@ final class VeilFixtures {
     /**
      * Level 2's spin (client/anomaly/level2/Level2Spin): each lamp is brighter on the side of the
      * corridor the virtual rotation has reached and dimmer opposite, by this share per unit of
-     * spin strength times the comfort scale (+/-15% anywhere there, +/-25% deep in a twist), so
+     * spin strength times the comfort scale (+/-25% in the corridor, half that at the exit), so
      * the light seems to travel round the corridor with it.
      */
     private static final float LEVEL2_ORBIT_DEPTH = 0.25f;
@@ -261,7 +277,7 @@ final class VeilFixtures {
 
     /** Lamps whose light spins (their point glow is set every frame in {@link #frame}). */
     private static boolean isBeacon(FixtureType type) {
-        return type == FixtureType.RED_ALARM_LAMP || type == FixtureType.L0_BEACON;
+        return type == FixtureType.RED_ALARM_LAMP || type == FixtureType.L0_BEACON || type == FixtureType.L2_SPIN_BEACON;
     }
 
     /**
@@ -283,16 +299,24 @@ final class VeilFixtures {
             if (!isBeacon(light.type)) {
                 continue;
             }
-            // Level 0's beacon always turns (it only exists while switched on); the alarm lamps
-            // keep a steady dim glow and only turn during the alarm.
+            // Level 0's beacon always turns (it only exists while switched on), and so do Level 2's
+            // (with the corridor's spin); the alarm lamps keep a steady dim glow and only turn
+            // during the alarm.
             boolean level0Beacon = light.type == FixtureType.L0_BEACON;
-            float spin = level0Beacon ? 1.0f : alarm;
-            double phase = ((FixturePower.mix(light.key) >>> 11) & 0xFFFF) / 65535.0 * Math.PI * 2.0;
-            double angle = (nowMs % 3_600_000L) * (level0Beacon ? L0_BEACON_RAD_PER_MS : BEACON_RAD_PER_MS) + phase;
+            boolean level2Beacon = light.type == FixtureType.L2_SPIN_BEACON && light.facing != null;
+            float spin = level0Beacon || level2Beacon ? 1.0f : alarm;
+            double angle;
+            if (level2Beacon) {
+                angle = Level2SpinProps.beaconAngle(BlockPos.getX(light.key), partialTick);
+            } else {
+                double phase = ((FixturePower.mix(light.key) >>> 11) & 0xFFFF) / 65535.0 * Math.PI * 2.0;
+                angle = (nowMs % 3_600_000L) * (level0Beacon ? L0_BEACON_RAD_PER_MS : BEACON_RAD_PER_MS) + phase;
+            }
             float pulse = 0.5f + 0.5f * (float) Math.sin(angle * 2.0);
             setBrightness(entry, (light.type.brightness + 0.45f * spin * pulse) * light.level * scale);
 
-            float coneBrightness = (level0Beacon ? L0_BEACON_BRIGHTNESS : BEACON_BRIGHTNESS) * spin * light.level * scale;
+            float coneBrightness = (level0Beacon ? L0_BEACON_BRIGHTNESS : level2Beacon ? L2_BEACON_BRIGHTNESS : BEACON_BRIGHTNESS)
+                    * spin * light.level * scale;
             if (coneBrightness <= 0.001f) {
                 entry.freeCones();
                 continue;
@@ -309,11 +333,20 @@ final class VeilFixtures {
                 entry.coneA = lights.addLight(newCone(light));
                 entry.coneB = lights.addLight(newCone(light));
             }
-            // Two cones back to back, sweeping round the vertical axis like a police beacon.
-            float dx = (float) Math.cos(angle);
-            float dz = (float) Math.sin(angle);
-            aim(entry.coneA.getLightData(), dx, dz);
-            aim(entry.coneB.getLightData(), -dx, -dz);
+            if (level2Beacon) {
+                // Two cones back to back, turning round the beacon's own axis (the same angle its
+                // renderer draws the lens's hot spots and fallback beams at).
+                Level2SpinProps.sweep(light.facing, angle, Level2SpinProps.BEACON_LEAN, SWEEP);
+                aim(entry.coneA.getLightData(), SWEEP.x, SWEEP.y, SWEEP.z);
+                Level2SpinProps.sweep(light.facing, angle + Math.PI, Level2SpinProps.BEACON_LEAN, SWEEP);
+                aim(entry.coneB.getLightData(), SWEEP.x, SWEEP.y, SWEEP.z);
+            } else {
+                // Two cones back to back, sweeping round the vertical axis like a police beacon.
+                float dx = (float) Math.cos(angle);
+                float dz = (float) Math.sin(angle);
+                aim(entry.coneA.getLightData(), dx, -0.2f, dz);
+                aim(entry.coneB.getLightData(), -dx, -0.2f, -dz);
+            }
             if (coneBrightness != entry.lastConeBrightness) {
                 entry.coneA.getLightData().setBrightness(coneBrightness);
                 entry.coneB.getLightData().setBrightness(coneBrightness);
@@ -445,14 +478,26 @@ final class VeilFixtures {
 
     private static SpotLightData newCone(FixtureLight light) {
         boolean level0Beacon = light.type == FixtureType.L0_BEACON;
-        SpotLightData cone = new SpotLightData()
-                .setSize(level0Beacon ? L0_BEACON_HALF_ANGLE : BEACON_HALF_ANGLE)
-                .setAngle(level0Beacon ? L0_BEACON_SOFT_EDGE : BEACON_SOFT_EDGE)
-                .setDistance(level0Beacon ? L0_BEACON_DISTANCE : BEACON_DISTANCE)
-                .setColor(1.0f, 0.04f, 0.02f)
-                .setBrightness(0.0f)
-                .setOcclusionEnabled(true)
-                .setInscatteringStrength(level0Beacon ? 0.3f : 0.2f); // faint red beams in the dust
+        SpotLightData cone;
+        if (light.type == FixtureType.L2_SPIN_BEACON) {
+            cone = new SpotLightData()
+                    .setSize(L2_BEACON_HALF_ANGLE)
+                    .setAngle(L2_BEACON_SOFT_EDGE)
+                    .setDistance(L2_BEACON_DISTANCE)
+                    .setColor(light.type.red, light.type.green, light.type.blue)
+                    .setBrightness(0.0f)
+                    .setOcclusionEnabled(true)
+                    .setInscatteringStrength(L2_BEACON_INSCATTER); // amber beams in the damp air
+        } else {
+            cone = new SpotLightData()
+                    .setSize(level0Beacon ? L0_BEACON_HALF_ANGLE : BEACON_HALF_ANGLE)
+                    .setAngle(level0Beacon ? L0_BEACON_SOFT_EDGE : BEACON_SOFT_EDGE)
+                    .setDistance(level0Beacon ? L0_BEACON_DISTANCE : BEACON_DISTANCE)
+                    .setColor(1.0f, 0.04f, 0.02f)
+                    .setBrightness(0.0f)
+                    .setOcclusionEnabled(true)
+                    .setInscatteringStrength(level0Beacon ? 0.3f : 0.2f); // faint red beams in the dust
+        }
         cone.getPositionMutable().set(light.x, light.y, light.z);
         return cone;
     }
@@ -475,9 +520,8 @@ final class VeilFixtures {
         return cone;
     }
 
-    /** Points a cone along (dx, -0.2, dz). Veil cones shine along their local +Z axis. */
-    private static void aim(SpotLightData cone, float dx, float dz) {
-        float dy = -0.2f;
+    /** Points a cone along (dx, dy, dz). Veil cones shine along their local +Z axis. */
+    private static void aim(SpotLightData cone, float dx, float dy, float dz) {
         float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         // lookAlong makes -Z face the given direction, so pass the reverse to get +Z facing it.
         cone.getOrientationMutable().identity().lookAlong(-dx / len, -dy / len, -dz / len, 0.0f, 1.0f, 0.0f);

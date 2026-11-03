@@ -46,6 +46,8 @@ public final class Backrooms {
         com.rickr.backrooms.registry.Level2LightBlocks.bootstrap();
         // Level 2 chambers and oddities: the crews' logbooks, kettles and jackets, the heart-rate gauge.
         com.rickr.backrooms.registry.Level2ChamberBlocks.bootstrap();
+        // Level 2's spin: the wall fans and warning beacons that turn with the corridor.
+        com.rickr.backrooms.registry.Level2SpinBlocks.bootstrap();
         // Level 39 Hounds/Facelings (and Clumps, Skin-stealers, Wretches): loads their registrations.
         com.rickr.backrooms.registry.Level39Mobs.bootstrap();
         // Level 39 "Megalophobia": the town, superstructure and tunnel blocks (and their items).

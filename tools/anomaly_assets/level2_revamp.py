@@ -1988,8 +1988,8 @@ def _puddle_model() -> None:
     _im("l2_leak_puddle", layer=_ref("l2_drip_stain"))
 
 
-# The cramped corridor's twist dressing (registry/Level2Blocks LIGHT_PANEL, PAINTED_BAND and the
-# two slabs). All of it reuses textures already on the atlas (the atlas must stay 4096 x 4096):
+# The corkscrewing corridor's dressing (registry/Level2Blocks LIGHT_PANEL and PAINTED_BAND). All of
+# it reuses textures already on the atlas (the atlas must stay 4096 x 4096):
 # the corridor concrete, the old pipe_light strip for the panel's diffuser, the beam steel for its
 # bezel and the yellow line of l2_floor_line for the paint.
 
@@ -2052,10 +2052,6 @@ def _twist_models() -> None:
     _bs("l2_painted_band", {"variants": _facing6_variants(
         lambda f: f"l2_painted_band_{'ceiling' if f in ('up', 'down') else 'wall'}")})
     _im("l2_painted_band", parent=_ref("l2_painted_band_wall"))
-
-    P._slab("l2_floor_slab", "pipe_floor", "pipe_floor")
-    P._slab("l2_ceiling_slab", "pipe_ceiling", "pipe_ceiling")
-
 
 
 def tex_level2_revamp_models() -> None:

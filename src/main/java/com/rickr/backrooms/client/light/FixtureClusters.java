@@ -217,10 +217,12 @@ final class FixtureClusters {
                 lz += open.getStepZ() * 0.75;
             }
             // Full block with the lamp on one face: three quarters of a block out of that face
-            // (into the water for a pool lamp), where nothing blocks it.
+            // (into the water for a pool lamp, down into the corridor for a ceiling beacon), where
+            // nothing blocks it.
             case INSET -> {
                 if (facing != null) {
                     lx += facing.getStepX() * 0.75;
+                    ly += facing.getStepY() * 0.75;
                     lz += facing.getStepZ() * 0.75;
                 }
             }

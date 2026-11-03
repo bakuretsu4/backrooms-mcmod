@@ -203,6 +203,10 @@ public enum FixtureType {
     // every ~12 blocks down the corridor). A full block in the surface, the light just inside the
     // open side; on the same series circuits as the caged lamps (lit=false: a dead panel, no light).
     L2_LIGHT_PANEL("l2_light_panel", Mount.CUBE, 1, 0.80f, 0.88f, 1.0f, 1.9f, 9.0f, Hum.FLUORESCENT, true),
+    // Level 2's warning beacon (registry/Level2SpinBlocks): set into the ceiling or a wall, its
+    // amber light swept round by two cones (VeilFixtures, turning with Level 2's spin) over a small
+    // steady glow. Battery-backed: never on the series circuits, never flickers.
+    L2_SPIN_BEACON("l2_spin_beacon", Mount.INSET, 1, 1.0f, 0.58f, 0.16f, 0.5f, 4.0f, Hum.NONE, false),
     // The battery emergency lamps beside bulkheads, chamber doors and exits (lit=false: standby, on
     // only while its corridor section's circuit is dead or the floor is blacked out; see
     // FixturePower#levelOf). A small, deep red or amber pool on the floor and wall under it: enough

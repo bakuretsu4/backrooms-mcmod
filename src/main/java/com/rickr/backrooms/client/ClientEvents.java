@@ -27,13 +27,14 @@ public final class ClientEvents {
     private static final double FOV_MULTIPLIER = 1.2;
     private static final double MAX_FOV = 110.0;
     /**
-     * Level 2: the lens closes in by this share per unit of spin strength (6% anywhere there, 10%
-     * deep in a twist stretch), on top of the wide lens, so the walls press in a little.
+     * Level 2: the lens closes in by this share at full spin strength (everywhere in the corridor;
+     * half at the exit), on top of the wide lens, so the walls press in: a 70 degree setting with
+     * the wide lens (84) ends up near 67.
      */
-    private static final double L2_FOV_NARROW = 0.10;
-    /** ...and breathes by this share per unit of strength (+/-1.2% .. 2%), very slowly. */
-    private static final double L2_FOV_BREATH = 0.02;
-    private static final double L2_FOV_BREATH_SECONDS = 13.0;
+    private static final double L2_FOV_NARROW = 0.20;
+    /** ...and breathes by this share (+/-3.5%) over a slow, uneven ~11 s cycle. */
+    private static final double L2_FOV_BREATH = 0.035;
+    private static final double L2_FOV_BREATH_SECONDS = 11.0;
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
