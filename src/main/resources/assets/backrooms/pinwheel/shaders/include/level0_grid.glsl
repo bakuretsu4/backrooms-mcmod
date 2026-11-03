@@ -4,8 +4,8 @@
 // can be answered from a map seen from above: one texel per block column, 128 x 128 columns
 // around the camera. Each texel holds 32 bits, one per block from WallGridInfo.y upward (bit 0 =
 // the carpet's block y40, bits 1-3 = the room, bit 4 = the ceiling, the rest = tall rooms up to
-// y71). So half walls, window holes, door tops and the atrium's balcony all block light only
-// at their own height. The map wraps around: column (x, z) lives in texel (x & 127, z & 127).
+// y71). So half walls, window holes and door tops all block light only at their own height.
+// The map wraps around: column (x, z) lives in texel (x & 127, z & 127).
 
 uniform usampler2D WallGrid;
 // xz = world x/z of the window's corner (columns outside the window count as open), y = base y.

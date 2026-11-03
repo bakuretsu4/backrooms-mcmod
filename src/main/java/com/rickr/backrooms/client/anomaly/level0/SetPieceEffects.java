@@ -36,7 +36,7 @@ final class SetPieceEffects {
     // max | contact shadows, glow, breath (see AtmosphereGrade.Mood)
 
     /**
-     * Under the atrium's void: a little colder and deeper than the halls, a faint grey haze that
+     * Under the atrium's shaft: a little colder and deeper than the halls, a faint grey haze that
      * starts far out so the top of the shaft melts into black, and the camera's breath a touch
      * stronger (a space too big for the eye).
      */
@@ -107,7 +107,7 @@ final class SetPieceEffects {
         }
     }
 
-    /** The atrium: its cold air high in the void, and its mood under the void and upstairs. */
+    /** The atrium: its cold air high in the shaft, and its mood (strongest under the shaft). */
     static final class Atrium implements AnomalyClientEffect {
         @Override
         public void tick(Minecraft mc, AnomalySite site, boolean inside, float secondsInside) {
@@ -125,13 +125,7 @@ final class SetPieceEffects {
             if (!inside) {
                 return;
             }
-            if (Level0Atrium.upstairs(site, player.getX(), player.getY(), player.getZ())) {
-                AtmosphereGrade.setAnomalyMood(VOID, 0.35f);
-            } else if (Level0Atrium.underVoid(site, player.getBlockX(), player.getBlockZ())) {
-                AtmosphereGrade.setAnomalyMood(VOID, 0.7f);
-            } else {
-                AtmosphereGrade.setAnomalyMood(VOID, 0.3f);
-            }
+            AtmosphereGrade.setAnomalyMood(VOID, Level0Atrium.underShaft(site, player.getBlockX(), player.getBlockZ()) ? 0.7f : 0.3f);
         }
     }
 

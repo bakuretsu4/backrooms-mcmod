@@ -26,8 +26,8 @@ import org.lwjgl.system.MemoryUtil;
  * the camera, each holding 32 bits, one per block from y{@value #BASE_Y} up to y71 (the carpet,
  * the three-high room, the ceiling and the tall atrium and shafts above it). The shader
  * (pinwheel/shaders/include/level0_grid.glsl) walks the columns between a pixel and a lamp and
- * only tests the blocks at the heights the line passes, so half walls, window holes and the
- * atrium's balcony throw the right shadows too.
+ * only tests the blocks at the heights the line passes, so half walls, window holes and door
+ * tops throw the right shadows too.
  *
  * <p>The map wraps around: column (x, z) lives in texel (x & 127, z & 127). Walking only means the
  * chunks that come into the window get read (up to {@value #BUILDS_PER_TICK} per tick, nearest

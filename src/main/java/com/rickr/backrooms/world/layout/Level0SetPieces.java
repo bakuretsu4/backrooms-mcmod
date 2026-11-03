@@ -1,6 +1,6 @@
 package com.rickr.backrooms.world.layout;
 
-import com.rickr.backrooms.block.Level0MannequinBlock;
+import com.rickr.backrooms.block.AxisShapeBlock;
 import com.rickr.backrooms.block.RugBlock;
 import com.rickr.backrooms.block.WallDoorDrawingBlock;
 import com.rickr.backrooms.registry.Level0Blocks;
@@ -15,8 +15,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 /**
- * What Level 0's three big set pieces ({@link Level0Atrium}, {@link Level0ShaftHall},
- * {@link Level0FrontOffice}) have in common.
+ * What Level 0's big set pieces ({@link Level0Atrium}, {@link Level0ShaftHall},
+ * {@link Level0FrontOffice}) and the warren ({@link Level0Warren}) have in common.
  *
  * <ul>
  *   <li><b>A turned frame.</b> Each set piece is drawn once, in its own "local" grid (u across, v
@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
  *       coordinates, {@link #worldX}/{@link #worldZ} turn them back and {@link #toWorld} turns a
  *       local direction (for doors, lamps, chairs) into the real one.</li>
  *   <li><b>Piece codes.</b> The set pieces don't build blocks straight away. For each column they
- *       first work out a small number per height ({@link #CARPET}, {@link #TILE}, {@link #PENDANT}
+ *       first work out a small number per height ({@link #CARPET}, {@link #TILE}, {@link #DOWNLIGHT}
  *       ...), and only {@link #state} turns that number into a block. That keeps the shape a pure
  *       piece of maths (a throwaway preview script can draw it without starting Minecraft) and
  *       allocates nothing while the world generates.</li>
@@ -34,7 +34,7 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
  */
 public final class Level0SetPieces {
     /**
-     * The roof of the tall spaces (the atrium void, the shafts): the last-but-one block layer of
+     * The roof of the tall spaces (the atrium's shaft, the shafts): the last-but-one block layer of
      * Level 0's world, which is 64 blocks tall (y0..y63). Lights hang one block under it.
      */
     public static final int ROOF_Y = 62;
@@ -48,14 +48,12 @@ public final class Level0SetPieces {
     /** A lit Level 0 troffer of some age (Level0Tubes), or a dead one. */
     static final int TUBE = 5;
     static final int TUBE_DEAD = 6;
-    /** Chest-high partition top: the balcony's parapet. */
-    static final int PARAPET = 7;
-    static final int LADDER = 8;
-    static final int CHAIN = 9;
-    static final int PENDANT = 10;
+    /** A small square downlight recessed into a ceiling tile (the atrium, the warren's rooms). */
+    static final int DOWNLIGHT = 7;
+    /** A run of Level 0's troffer strip (lit, or dead), along the axis of the facing passed to {@link #state}. */
+    static final int STRIP = 8;
+    static final int STRIP_DEAD = 9;
     static final int LAMP = 11;
-    /** An emergency lamp on standby: it only comes on when the power fails around it. */
-    static final int LAMP_STANDBY = 12;
     static final int BEACON = 13;
     static final int DOOR_LOWER = 14;
     static final int DOOR_UPPER = 15;
@@ -64,11 +62,10 @@ public final class Level0SetPieces {
     /** A fallen ceiling tile lying on the carpet. */
     static final int DEBRIS = 19;
     static final int CABLE = 20;
-    static final int ARROW = 21;
+    /** A heap of cardboard boxes (the warren's rooms). */
+    static final int BOXES = 21;
     static final int CRATE = 22;
     static final int CHAIR = 23;
-    static final int MANNEQUIN_LOWER = 24;
-    static final int MANNEQUIN_UPPER = 25;
     static final int DESK_PC = 26;
     static final int DESK = 27;
     static final int RADIO = 28;
@@ -185,12 +182,11 @@ public final class Level0SetPieces {
             case TILE -> ModBlocks.CEILING_TILE.get().defaultBlockState();
             case TUBE -> Level0Tubes.pick(seed, x, z, false, false);
             case TUBE_DEAD -> Level0Tubes.pick(seed, x, z, true, false);
-            case PARAPET -> turned(Level0Blocks.HALF_WALL_CAP.get().defaultBlockState(), facing);
-            case LADDER -> turned(Level0Blocks.LADDER.get().defaultBlockState(), facing);
-            case CHAIN -> Blocks.CHAIN.defaultBlockState();
-            case PENDANT -> Level0LightBlocks.PENDANT_LIGHT.get().defaultBlockState();
-            case LAMP, LAMP_STANDBY -> turned(Level0LightBlocks.EMERGENCY_LAMP.get().defaultBlockState(), facing)
-                    .setValue(BlockStateProperties.LIT, code == LAMP);
+            case DOWNLIGHT -> Level0LightBlocks.DOWNLIGHT.get().defaultBlockState();
+            case STRIP, STRIP_DEAD -> Level0Tubes.pick(seed, x, z, code == STRIP_DEAD, true)
+                    .setValue(AxisShapeBlock.AXIS, facing.getAxis());
+            case LAMP -> turned(Level0LightBlocks.EMERGENCY_LAMP.get().defaultBlockState(), facing)
+                    .setValue(BlockStateProperties.LIT, true);
             case BEACON -> turned(Level0LightBlocks.BEACON.get().defaultBlockState(), facing)
                     .setValue(BlockStateProperties.LIT, true);
             case DOOR_LOWER, DOOR_UPPER -> turned(ModBlocks.WALL_DOOR_DRAWING.get().defaultBlockState(), facing)
@@ -199,11 +195,9 @@ public final class Level0SetPieces {
             case RUG -> ModBlocks.RUG.get().defaultBlockState().setValue(RugBlock.PART, extra);
             case DEBRIS -> Level0SetPieceBlocks.FALLEN_TILE.get().defaultBlockState();
             case CABLE -> turned(Level0Blocks.DANGLING_CABLE.get().defaultBlockState(), facing);
-            case ARROW -> turned(ModBlocks.LOBBY_CARPET_ARROW.get().defaultBlockState(), facing);
+            case BOXES -> turned(ModBlocks.CARDBOARD_BOXES.get().defaultBlockState(), facing);
             case CRATE -> ModBlocks.SUPPLY_CRATE.get().defaultBlockState();
             case CHAIR -> turned(ModBlocks.OFFICE_CHAIR.get().defaultBlockState(), facing);
-            case MANNEQUIN_LOWER, MANNEQUIN_UPPER -> turned(Level0Blocks.MANNEQUIN.get().defaultBlockState(), facing)
-                    .setValue(Level0MannequinBlock.HALF, code == MANNEQUIN_LOWER ? DoubleBlockHalf.LOWER : DoubleBlockHalf.UPPER);
             case DESK_PC -> turned(ModBlocks.OFFICE_DESK_PC.get().defaultBlockState(), facing);
             case DESK -> turned(ModBlocks.OFFICE_DESK.get().defaultBlockState(), facing);
             case RADIO -> turned(ModBlocks.CHECKPOINT_RADIO.get().defaultBlockState(), facing);

@@ -19,11 +19,13 @@ import org.jetbrains.annotations.Nullable;
  *   <li>{@link #MANILA_ROOM}: one per 512x512 square (90%): very rare, like the wiki's "15% chance
  *       after a day of walking".</li>
  *   <li>{@link #RED_ROOMS}: one per 384x384 square (90%).</li>
- *   <li>{@link #PITFALLS} and {@link #PERIPHERAL_SHIFT}: one each per 256x256 square (80%).</li>
- *   <li>The three set pieces, {@link #ATRIUM}, {@link #SHAFT_HALL} and {@link #FRONT_OFFICE}:
- *       together one in EVERY 256x256 square (they share one grid; which of the three a square
- *       gets follows a fixed pattern, so the same kind never sits in three squares in a row).
- *       This is what keeps a set piece within reach of any spot (see "Findability").</li>
+ *   <li>{@link #PITFALLS}, {@link #PERIPHERAL_SHIFT} and {@link #WARREN}: one each per 256x256
+ *       square (80%).</li>
+ *   <li>The five set pieces, {@link #ATRIUM}, {@link #SHAFT_HALL}, {@link #FRONT_OFFICE},
+ *       {@link #STREET} and {@link #STACK}: together one in EVERY 256x256 square (they share one
+ *       grid; which one a square gets follows a fixed pattern, so the same kind never sits in
+ *       three squares in a row). This is what keeps a set piece within reach of any spot (see
+ *       "Findability").</li>
  *   <li>The hidden rooms ({@link Level0HiddenRooms}): one per 256x256 square (90%), small.</li>
  *   <li>{@link #BLACKOUT_ZONE}: one per 128x128 square (50%), the most common.</li>
  * </ul>
@@ -33,13 +35,13 @@ import org.jetbrains.annotations.Nullable;
  * <p><b>No overlaps.</b> Every site sits entirely inside one 128x128 "sub-square" (the same squares
  * safe rooms use), with a margin to its edges. Two kinds clash only if they pick the same
  * sub-square; then the rarer kind wins (order: Manila Room, Red Rooms, Pitfalls, pillar hall, set
- * pieces, hidden rooms, blackout). A site also never covers an exit stairwell (and its lobby), a
+ * pieces, warren, hidden rooms, blackout). A site also never covers an exit stairwell (and its lobby), a
  * safe room or a small grey office: the planner tries a few spots and gives up if none is free.
  *
  * <p><b>Sensible spots.</b> Each kind prefers the part of the maze it belongs in: the pillar hall a
- * "big open hall" zone, the pit room an ordinary-rooms zone, the Red Rooms the tight maze (you turn
- * a corner and you're in), blackouts the half of the level that is already dark. The set pieces
- * are buildings in their own right and go anywhere.
+ * "big open hall" zone, the pit room an ordinary-rooms zone, the Red Rooms and the warren the
+ * tight maze (you turn a corner and you're in), blackouts the half of the level that is already
+ * dark. The set pieces are buildings in their own right and go anywhere.
  *
  * <p><b>Findability.</b> With a set piece in (nearly) every 256x256 square (placed in a free
  * 128x128 quarter of it, up to 32 tries) on top of the pit rooms and pillar halls, no spot of
@@ -56,7 +58,7 @@ public final class Level0AnomalyPlan {
     public static final String MANILA_ROOM = "level_0/manila_room";
     public static final String PERIPHERAL_SHIFT = "level_0/peripheral_shift";
     public static final String PITFALLS = "level_0/pitfalls";
-    /** The two-storey void with pendant lights and a balcony you can climb to ({@link Level0Atrium}). */
+    /** The tall square shaft over a low hall ringed by pillars, lit bays and corridors ({@link Level0Atrium}). */
     public static final String ATRIUM = "level_0/atrium";
     /** The low dark hall with holes into tall shafts ({@link Level0ShaftHall}). */
     public static final String SHAFT_HALL = "level_0/shaft_hall";
@@ -66,13 +68,15 @@ public final class Level0AnomalyPlan {
     public static final String STREET = "level_0/street";
     /** The void through floor after floor of offices, mostly drawn, from the film ({@link Level0Stack}). */
     public static final String STACK = "level_0/stack";
+    /** A patch of 1-wide twisting slots and small one-prop rooms in place of the maze ({@link Level0Warren}). */
+    public static final String WARREN = "level_0/warren";
     /** The set pieces, in the order of the pattern that spreads them over the 256x256 squares. */
     private static final String[] SET_PIECES = {ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET, STACK};
     public static final List<String> KINDS;
 
     static {
         List<String> kinds = new ArrayList<>(List.of(RED_ROOMS, BLACKOUT_ZONE, MANILA_ROOM, PERIPHERAL_SHIFT, PITFALLS,
-                ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET, STACK));
+                ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET, STACK, WARREN));
         kinds.addAll(Level0HiddenRooms.KINDS);
         KINDS = Collections.unmodifiableList(kinds);
     }
@@ -92,8 +96,9 @@ public final class Level0AnomalyPlan {
     private static final int P_PITS = 2;
     private static final int P_PILLARS = 3;
     private static final int P_SET_PIECE = 4;
-    private static final int P_HIDDEN = 5;
-    private static final int P_BLACKOUT = 6;
+    private static final int P_WARREN = 5;
+    private static final int P_HIDDEN = 6;
+    private static final int P_BLACKOUT = 7;
 
     /** Red Rooms: the warning signs reach this far (blocks) beyond the site; must fit in the margin. */
     public static final int RED_RING = 8;
@@ -113,6 +118,7 @@ public final class Level0AnomalyPlan {
     private final AnomalyGrid pits;
     private final AnomalyGrid pillars;
     private final AnomalyGrid setPieces;
+    private final AnomalyGrid warren;
     private final AnomalyGrid hidden;
     private final AnomalyGrid blackout;
     /** The "carved out" kinds (replace the maze completely), in priority order. */
@@ -126,9 +132,10 @@ public final class Level0AnomalyPlan {
         this.pits = new AnomalyGrid(256, 0, this::planPits);
         this.pillars = new AnomalyGrid(256, 0, this::planPillars);
         this.setPieces = new AnomalyGrid(SET_PIECE_CELL, 0, this::planSetPiece);
+        this.warren = new AnomalyGrid(256, 0, this::planWarren);
         this.hidden = new AnomalyGrid(256, 0, this::planHidden);
         this.blackout = new AnomalyGrid(SUB, 0, this::planBlackout);
-        this.structures = new AnomalyGrid[] {manila, red, pits, pillars, setPieces, hidden};
+        this.structures = new AnomalyGrid[] {manila, red, pits, pillars, setPieces, warren, hidden};
     }
 
     // ==========================================================================================
@@ -145,7 +152,7 @@ public final class Level0AnomalyPlan {
         return blackoutAt(seed, x, z);
     }
 
-    /** The structure (Red Rooms, Manila Room, pit room, pillar hall, set piece, hidden room) covering (x, z) (moat included), or null. */
+    /** The structure (Red Rooms, Manila Room, pit room, pillar hall, set piece, warren, hidden room) covering (x, z) (moat included), or null. */
     @Nullable
     public AnomalySite structureAt(long seed, int x, int z) {
         for (AnomalyGrid grid : structures) {
@@ -200,6 +207,7 @@ public final class Level0AnomalyPlan {
             case PITFALLS -> pits.nearest(seed, x, z, s -> true, 12);
             case PERIPHERAL_SHIFT -> pillars.nearest(seed, x, z, s -> true, 12);
             case ATRIUM, SHAFT_HALL, FRONT_OFFICE, STREET, STACK -> setPieces.nearest(seed, x, z, s -> s.kind().equals(kind), 10);
+            case WARREN -> warren.nearest(seed, x, z, s -> true, 12);
             case BLACKOUT_ZONE -> blackout.nearest(seed, x, z, s -> true, 16);
             default -> Level0HiddenRooms.KINDS.contains(kind) ? hidden.nearest(seed, x, z, s -> s.kind().equals(kind), 12) : null;
         };
@@ -251,10 +259,7 @@ public final class Level0AnomalyPlan {
             case PERIPHERAL_SHIFT -> Level0PillarHall.fill(site, x, z, floor, ceiling, out);
             case ATRIUM -> {
                 int word = Level0Atrium.column(site, x, z);
-                Direction facing = Level0SetPieces.toWorld(site, Level0SetPieces.localDir(Level0Atrium.facingBits(word)));
-                if (Level0Atrium.isArrow(word)) {
-                    facing = exitDirection(seed, site); // the balcony's arrows tell the truth
-                }
+                Direction facing = Level0Atrium.stripFacing(site, word);
                 for (int y = floor; y <= Level0SetPieces.ROOF_Y; y++) {
                     put(Level0Atrium.piece(word, y, floor, ceiling), facing, 0, site, x, y, z, out);
                 }
@@ -275,11 +280,12 @@ public final class Level0AnomalyPlan {
             }
             case STREET -> Level0Street.fill(site, x, z, floor, ceiling, out);
             case STACK -> Level0Stack.fill(site, x, z, floor, ceiling, out);
+            case WARREN -> Level0Warren.fill(site, x, z, floor, ceiling, out);
             default -> Level0HiddenRooms.fill(site, x, z, floor, ceiling, out);
         }
-        // Abandoned furniture in the big halls, like the film's tapes (only in open floor).
+        // Abandoned furniture in the big halls, like the film's tapes (only in open floor). The
+        // Atrium stays bare: nothing in the way of the empty dark under its shaft.
         switch (site.kind()) {
-            case ATRIUM -> Level0Clutter.overlay(site, x, z, floor, (px, pz) -> site.contains(px, pz) && Level0Atrium.isWalkable(site, px, pz), out);
             case SHAFT_HALL -> Level0Clutter.overlay(site, x, z, floor, (px, pz) -> site.contains(px, pz) && Level0ShaftHall.isWalkable(site, px, pz), out);
             case FRONT_OFFICE -> Level0Clutter.overlay(site, x, z, floor, (px, pz) -> site.contains(px, pz) && Level0FrontOffice.isWalkable(site, px, pz), out);
             case STACK -> Level0Clutter.overlay(site, x, z, floor, (px, pz) -> site.contains(px, pz) && Level0Stack.isWalkable(site, px, pz), out);
@@ -295,24 +301,11 @@ public final class Level0AnomalyPlan {
         }
     }
 
-    /** The way from the middle of a site to the nearest exit, rounded to one of four directions. */
-    private Direction exitDirection(long seed, AnomalySite site) {
-        int cx = (int) Math.floor(site.centerX());
-        int cz = (int) Math.floor(site.centerZ());
-        int[] exit = host.exits().nearest(seed, cx, cz);
-        int dx = exit[0] - cx;
-        int dz = exit[1] - cz;
-        if (Math.abs(dx) >= Math.abs(dz)) {
-            return dx >= 0 ? Direction.EAST : Direction.WEST;
-        }
-        return dz >= 0 ? Direction.SOUTH : Direction.NORTH;
-    }
-
     // ==========================================================================================
     // Named spots for /backrooms anomaly visit (testing: jump straight to the mechanic)
     // ==========================================================================================
 
-    /** The named spots of a kind (the set pieces' here, everyone else's in Level0VisitPoints). */
+    /** The named spots of a kind (the set pieces' and the warren's here, everyone else's in Level0VisitPoints). */
     public static List<String> visitPoints(String kind) {
         return switch (kind) {
             case ATRIUM -> Level0Atrium.VISIT_POINTS;
@@ -320,6 +313,7 @@ public final class Level0AnomalyPlan {
             case FRONT_OFFICE -> Level0FrontOffice.VISIT_POINTS;
             case STREET -> Level0Street.VISIT_POINTS;
             case STACK -> Level0Stack.VISIT_POINTS;
+            case WARREN -> Level0Warren.VISIT_POINTS;
             default -> Level0VisitPoints.names(kind);
         };
     }
@@ -333,6 +327,7 @@ public final class Level0AnomalyPlan {
             case FRONT_OFFICE -> Level0FrontOffice.visit(site, name, layout.floorY());
             case STREET -> Level0Street.visit(site, name, layout.floorY());
             case STACK -> Level0Stack.visit(site, name, layout.floorY());
+            case WARREN -> Level0Warren.visit(site, name, layout.floorY());
             default -> Level0VisitPoints.point(layout, seed, site, name);
         };
     }
@@ -349,6 +344,7 @@ public final class Level0AnomalyPlan {
             case FRONT_OFFICE -> Level0FrontOffice.isSolid(site, x, z);
             case STREET -> Level0Street.isSolid(site, x, z);
             case STACK -> Level0Stack.isSolid(site, x, z);
+            case WARREN -> Level0Warren.isSolid(site, x, z);
             default -> Level0HiddenRooms.isSolid(site, x, z);
         };
     }
@@ -365,6 +361,7 @@ public final class Level0AnomalyPlan {
             case FRONT_OFFICE -> Level0FrontOffice.isWalkable(site, x, z);
             case STREET -> Level0Street.isWalkable(site, x, z);
             case STACK -> Level0Stack.isWalkable(site, x, z);
+            case WARREN -> Level0Warren.isWalkable(site, x, z);
             default -> Level0HiddenRooms.isWalkable(site, x, z);
         };
     }
@@ -497,6 +494,18 @@ public final class Level0AnomalyPlan {
         }
         return new AnomalySite(kind, spot.x0, spot.z0, spot.x0 + w - 1, spot.z0 + d - 1,
                 spot.x0 + w / 2, spot.z0 + d / 2, turns, spot.salt);
+    }
+
+    /** The warren: in the tight maze if it can, like the Red Rooms (8 tries: the set pieces come first). */
+    @Nullable
+    private AnomalySite planWarren(long seed, int cellX, int cellZ) {
+        int size = Level0Warren.BOX + 2 * Level0Warren.MOAT;
+        Spot spot = pickSpot(seed, cellX, cellZ, warren, 3801, 0.8, P_WARREN, size, size, 6, 0, 8);
+        if (spot == null) {
+            return null;
+        }
+        return new AnomalySite(WARREN, spot.x0, spot.z0, spot.x0 + size - 1, spot.z0 + size - 1,
+                spot.x0 + size / 2, spot.z0 + size / 2, 0, spot.salt);
     }
 
     /** The small hidden rooms (Level0HiddenRooms picks the kind in a pattern, like the set pieces). */

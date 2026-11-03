@@ -265,7 +265,7 @@ final class FixtureSounds {
             if (light.distSq > changeSq) {
                 break;
             }
-            boolean tube = isLevel0Tube(light.type) || isPendant(light.type);
+            boolean tube = isLevel0Tube(light.type) || isDownlight(light.type);
             boolean emergency = isEmergencyLamp(light.type);
             if (!tube && !emergency) {
                 continue;
@@ -327,9 +327,9 @@ final class FixtureSounds {
         }
     }
 
-    /** Level 0's hanging pendant light (the Atrium): mains-powered like a tube, so it pops and strikes like one. */
-    private static boolean isPendant(FixtureType type) {
-        return type == FixtureType.L0_PENDANT;
+    /** Level 0's recessed downlight (the Atrium): mains-powered like a tube, so it pops and strikes like one. */
+    private static boolean isDownlight(FixtureType type) {
+        return type == FixtureType.L0_DOWNLIGHT;
     }
 
     /** Level 0's battery emergency lamp: its relay clunks when it switches on. */
