@@ -21,14 +21,18 @@ out float vertexDistance;
 out vec4 vertexColor;
 out vec2 texCoord0;
 
-// The Backrooms (Level 369's meadow): vanilla's shader, plus a breeze. Only the meadow's grass
-// and flowers sway: their block colour is a marker, white with green one step down (255, 254,
-// 255), which nothing else uses. Their roots stay put (a plant's foot is always on a whole block
-// height, its top never is); the tops lean in slow travelling waves across the field, now and
-// then in a stronger gust. Position is relative to the 16-block chunk section and every wave
-// repeats a whole number of times in 16 blocks and in GameTime's 20-minute cycle, so nothing
-// jumps at a section edge or when the cycle wraps.
+// The Backrooms (Level 369's meadow): vanilla's shader, plus wind. Only the meadow's grass and
+// flowers move: their block colour is a marker, white with green one step down (255, 254, 255),
+// which nothing else uses. Every vertex is bent by the square of its height above the lawn, so
+// the roots stay put and each plane and blade (cut in two at half height, see
+// tools/anomaly_assets/level369.py _meadow) curves like a real blade. The whole field leans one
+// way with the wind; waves roll across it, bending the grass further as they pass and catching
+// the light on its tips, now and then in a stronger gust. Position is relative to the 16-block
+// chunk section, and the lawn's top is Level 369's floor y41, nine blocks into its section
+// (Level369Plan.FEET_Y). Every wave repeats a whole number of times in 16 blocks and in
+// GameTime's 20-minute cycle, so nothing jumps at a section edge or when the cycle wraps.
 const float TAU = 6.2831853;
+const float LAWN_Y = 9.0;
 
 bool meadow(vec4 c) {
     return c.r > 0.998 && c.b > 0.998 && abs(c.g - 254.0 / 255.0) < 0.002;
@@ -39,14 +43,18 @@ void main() {
     vec4 color = Color;
     if (meadow(Color)) {
         color.g = 1.0;
-        if (fract(Position.y) > 0.02) {
-            float along = (Position.x + Position.z) / 16.0;
+        float h = Position.y - LAWN_Y;
+        if (h > 0.02) {
+            float along = (Position.x + Position.z) / 8.0;
             float across = (Position.x - Position.z) / 16.0;
-            float gust = 0.55 + 0.45 * sin(TAU * (GameTime * 37.0 + across));
-            float wave = sin(TAU * (GameTime * 400.0 + along)) * 0.7 + sin(TAU * (GameTime * 170.0 + Position.x / 8.0)) * 0.3;
-            float lean = 0.055 * gust * wave;
-            pos.x += lean;
-            pos.z += lean * 0.6 + 0.012 * sin(TAU * (GameTime * 290.0 + Position.z / 8.0));
+            float gust = 0.6 + 0.4 * sin(TAU * (GameTime * 37.0 + across));
+            float wave = sin(TAU * (GameTime * 360.0 - along)) * 0.75 + sin(TAU * (GameTime * 150.0 + Position.x / 16.0)) * 0.25;
+            float bend = (0.16 + 0.14 * gust * wave) * h * h;
+            float flutter = 0.015 * h * sin(TAU * (GameTime * 900.0 + (Position.x + Position.z * 2.0) / 4.0));
+            pos.x += bend * 0.8 + flutter;
+            pos.z += bend * 0.6 - flutter * 0.5;
+            pos.y -= 0.5 * bend * bend / max(h, 0.1);
+            color.rgb *= 1.0 + 0.12 * gust * wave * min(h, 1.0);
         }
     }
     pos += ChunkOffset;
