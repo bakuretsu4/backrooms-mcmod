@@ -62,10 +62,13 @@ public enum FixtureType {
      */
     L0_EMERGENCY_LAMP("l0_emergency_lamp", Mount.WALL, 1, 0.90f, 0.95f, 1.0f, 1.9f, 9.0f, Hum.NONE, false),
     /**
-     * Level 0 pendant lamp on a chain (the Atrium): a warm incandescent shade hanging in the dark
-     * void, its light just under the shade. On the mains, so it dies in outages and blackouts.
+     * Level 0 recessed downlight (the Atrium: a ring round the top of its shaft, a pair in each bay
+     * of the hall below, one down each diagonal corridor; one over the prop in each warren room):
+     * a small square lamp in a ceiling tile, a little warm, a short soft pool, so the lens reads as
+     * a bright dot and the dark stays dark around it.
+     * One block is one light. On the mains, so it dies in outages and blackouts.
      */
-    L0_PENDANT("l0_pendant_light", Mount.LAMP_HEAD, 1, 1.0f, 0.84f, 0.62f, 2.4f, 12.0f, Hum.NONE, false),
+    L0_DOWNLIGHT("l0_downlight", Mount.CEILING_BLOCK, 1, 1.0f, 0.95f, 0.86f, 0.7f, 7.0f, Hum.NONE, true),
     /** Level 1 tube strip hanging just under the concrete ceiling: neutral white (reference #EEECFA), long reach. */
     CEILING_TUBE("ceiling_tube", Mount.HANGING_TUBE, 5, 0.96f, 0.96f, 1.0f, 0.8f, 18.0f, Hum.FLUORESCENT, true),
     /**

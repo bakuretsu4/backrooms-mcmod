@@ -108,7 +108,7 @@ public final class BackroomsCommand {
                                             return SharedSuggestionProvider.suggest(floor == null ? java.util.List.of() : floor.layout().anomalyKinds(), builder);
                                         })
                                         .executes(ctx -> anomalyLocate(ctx, StringArgumentType.getString(ctx, "kind")))))
-                        // Testing: teleport to a named spot (the atrium's ladder, the Front Office's rug, a
+                        // Testing: teleport to a named spot (a warren room, the Front Office's rug, a
                         // Level 2 chamber's logbook...) of the nearest site of a kind. The kind is "level_0/..."
                         // or "level_2/..." (a resource-location-like argument, since plain words can't hold the slash).
                         .then(Commands.literal("visit")

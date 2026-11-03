@@ -15,8 +15,9 @@ import com.rickr.backrooms.world.layout.Level0HiddenRooms;
  *   <li>{@link HiddenRoomBehavior}: the four kinds of hidden room (slit, stockroom, crawlspace, sealed);</li>
  *   <li>{@link Level0LocalEvents} (not a site): a room's lights dying as you walk in, a far district
  *       going dark, a corridor's tubes dying one by one behind you;</li>
- *   <li>{@link AtriumBehavior}, {@link ShaftHallBehavior}, {@link FrontOfficeBehavior}: the three
- *       set pieces (the watcher on the balcony, falling tiles, the drawn door that is sometimes real).</li>
+ *   <li>{@link ShaftHallBehavior}, {@link FrontOfficeBehavior}, {@link StackBehavior}: the set pieces
+ *       (falling tiles, the drawn door that is sometimes real, the fall down the stack's void). The
+ *       Atrium and the warren have no server side: they are only shape and light.</li>
  * </ul>
  */
 public final class Level0Anomalies {
@@ -30,7 +31,6 @@ public final class Level0Anomalies {
         for (String kind : Level0HiddenRooms.KINDS) {
             Anomalies.register(kind, hidden);
         }
-        Anomalies.register(Level0AnomalyPlan.ATRIUM, new AtriumBehavior());
         Anomalies.register(Level0AnomalyPlan.SHAFT_HALL, new ShaftHallBehavior());
         Anomalies.register(Level0AnomalyPlan.FRONT_OFFICE, new FrontOfficeBehavior());
         Anomalies.register(Level0AnomalyPlan.STACK, new StackBehavior());
