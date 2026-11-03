@@ -3,6 +3,8 @@ package com.rickr.backrooms.world.layout;
 import com.rickr.backrooms.world.Hash;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import com.rickr.backrooms.world.anomaly.level39.Level39Sites;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.core.Direction;
 import org.jetbrains.annotations.Nullable;
@@ -16,7 +18,9 @@ import org.jetbrains.annotations.Nullable;
  * <ul>
  *   <li>{@code hostile_windows}: the facade is cut into 48-block stretches; about three in four
  *       are infested with Window entities (Entity 2). The site is a strip from the glass
- *       {@value Level39Sites#STRIP_DEPTH} blocks into the town.</li>
+ *       {@value Level39Sites#STRIP_DEPTH} blocks into the town. Every infested stretch has at least
+ *       one Window behind lit ground-storey glass, the only kind that can take you through to
+ *       Level 94; {@link #exitWindowSpot} finds the nearest one for the exit hints.</li>
  *   <li>House anomalies: every house the town plan gave an anomaly (inverted, merged, cut, floating,
  *       odd furniture, bigger inside, flooded room, vanishing door) is a site covering its lot. A
  *       few ordinary houses are {@code house_screams} houses.</li>
@@ -45,6 +49,13 @@ public final class Level39AnomalyPlan {
     private static final int HOLE_MARGIN = 5;
     /** /backrooms anomaly locate looks this many towns away in each direction. */
     private static final int LOCATE_CELLS = 2;
+    /**
+     * How far in front of the glass (blocks) the exit spot's middle is: the first town column, well
+     * inside a Window's grab reach (3.2) and its "pressed against the glass" distance (2.6).
+     */
+    private static final double EXIT_FRONT = 1.5;
+    /** Columns tried for the exit spot, across the window: its middle first, then either side. */
+    private static final int[] SPOT_SIDES = {0, -1, 1};
 
     private Level39AnomalyPlan() {}
 
@@ -298,7 +309,12 @@ public final class Level39AnomalyPlan {
         }
     }
 
-    /** Facade stretch {@code i} of one wall of town (cellX, cellZ), or null if not infested. */
+    /**
+     * Facade stretch {@code i} of one wall of town (cellX, cellZ), or null if not infested. A
+     * stretch whose ground-storey windows are all boarded, bricked or behind a stair tower is never
+     * infested: nothing could grab you through it, so it would be a dead end for everything that
+     * points at the exit.
+     */
     @Nullable
     private static AnomalySite windowSite(long seed, int cellX, int cellZ, Direction wall, int i) {
         if (Hash.unit(seed, cellX * 8 + wall.get2DDataValue(), cellZ * 64 + i, 39101) >= INFESTED) {
@@ -312,7 +328,7 @@ public final class Level39AnomalyPlan {
         int inner = g - Level39Sites.STRIP_DEPTH;
         long salt = i | (long) wall.get2DDataValue() << 8;
         int facing = wall.get2DDataValue();
-        return switch (wall) {
+        AnomalySite site = switch (wall) {
             // East wall (local x +449), facing west: its town-side face is at local x 449.
             case WEST -> new AnomalySite(Level39Sites.HOSTILE_WINDOWS, ox + inner, oz + a0, ox + g, oz + a1,
                     ox + g, oz + (a0 + a1) / 2, facing, salt);
@@ -324,11 +340,177 @@ public final class Level39AnomalyPlan {
             default -> new AnomalySite(Level39Sites.HOSTILE_WINDOWS, ox + a0, oz - g, ox + a1, oz - inner,
                     ox + (a0 + a1) / 2, oz - g + 1, facing, salt);
         };
+        for (int bay = Level39Sites.firstBay(site); bay <= Level39Sites.lastBay(site); bay++) {
+            if (windowLit(seed, site, bay, 0)) {
+                return site;
+            }
+        }
+        return null;
     }
 
-    /** True if bay {@code bay} of storey {@code storey} on this facade stretch has a Window living in it. */
+    /**
+     * True if bay {@code bay} of storey {@code storey} on this facade stretch has a Window living in
+     * it. Mostly the seed's choice, but every stretch keeps at least one Window behind lit
+     * ground-storey glass ({@link #keptGroundBay}): only those can grab you and pull you through to
+     * Level 94, and the upper storeys alone would make the stretch a death trap with no way out.
+     */
     public static boolean windowInhabited(long seed, AnomalySite site, int bay, int storey) {
+        if (seededInhabited(seed, site, bay, storey)) {
+            return true;
+        }
+        return storey == 0 && bay == keptGroundBay(seed, site);
+    }
+
+    private static boolean seededInhabited(long seed, AnomalySite site, int bay, int storey) {
         return Hash.unit(seed, Level39Sites.bayColumn(site, bay), Level39Sites.glassColumn(site) * 4 + storey, 39102) < 0.55;
+    }
+
+    /**
+     * The lit ground-storey bay given a Window when the seed put none behind lit ground glass (the
+     * one nearest the middle of the stretch), or MIN_VALUE when the seed already did. Only ever
+     * adds that one Window, so the rest of the seeded distribution is untouched.
+     */
+    private static int keptGroundBay(long seed, AnomalySite site) {
+        int first = Level39Sites.firstBay(site);
+        int last = Level39Sites.lastBay(site);
+        double middle = (first + last) / 2.0;
+        int best = Integer.MIN_VALUE;
+        double bestOff = Double.MAX_VALUE;
+        for (int bay = first; bay <= last; bay++) {
+            if (!windowLit(seed, site, bay, 0)) {
+                continue;
+            }
+            if (seededInhabited(seed, site, bay, 0)) {
+                return Integer.MIN_VALUE;
+            }
+            double off = Math.abs(bay - middle);
+            if (off < bestOff) {
+                bestOff = off;
+                best = bay;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * True when bay {@code bay} of storey {@code storey} shows lit glass: not boarded or bricked
+     * over, not hidden behind a stair tower. Only such windows wake (and the ground ones grab).
+     */
+    public static boolean windowLit(long seed, AnomalySite site, int bay, int storey) {
+        int column = Level39Sites.glassColumn(site);
+        int along = Level39Sites.bayColumn(site, bay);
+        boolean xSide = Level39Sites.xSide(site);
+        return Level39Superstructure.facadeWindowAt(seed, xSide ? column : along, Level39Sites.glassBottom(storey) + 2,
+                xSide ? along : column);
+    }
+
+    /**
+     * Where you stand to be taken through the wall: the town column in front of the nearest
+     * ground-storey window that is lit and inhabited (so its Window wakes and can grab you), on
+     * open ground. Searched ring by ring of towns like {@link #nearest}; null if none is near.
+     */
+    @Nullable
+    public static int[] exitWindowSpot(long seed, int x, int z) {
+        int sx = isCopy(x) ? x - BIG_DX : x;
+        int ccx = Level39Cell.cellIndex(sx);
+        int ccz = Level39Cell.cellIndex(z);
+        for (int ring = 0; ring <= LOCATE_CELLS; ring++) {
+            // First pass: the nearest window by distance alone. The open-ground check needs the
+            // town tile in front of it built, so it is only asked of the winner; it almost always
+            // passes (the gravel apron runs all round the wall), and the slow path below only runs
+            // when a pole happens to stand right in front of that window.
+            ExitCandidate best = nearestExitWindow(seed, sx, z, ccx, ccz, ring, null);
+            if (best == null) {
+                continue;
+            }
+            int[] spot = floorSpot(seed, best.site, best.bay);
+            if (spot != null) {
+                return spot;
+            }
+            List<ExitCandidate> blocked = new ArrayList<>();
+            blocked.add(best);
+            while ((best = nearestExitWindow(seed, sx, z, ccx, ccz, ring, blocked)) != null) {
+                spot = floorSpot(seed, best.site, best.bay);
+                if (spot != null) {
+                    return spot;
+                }
+                blocked.add(best);
+            }
+        }
+        return null;
+    }
+
+    private record ExitCandidate(AnomalySite site, int bay) {}
+
+    /** Nearest lit, inhabited ground-storey window in one ring of towns, skipping {@code skip}. */
+    @Nullable
+    private static ExitCandidate nearestExitWindow(long seed, int x, int z, int ccx, int ccz, int ring,
+            @Nullable List<ExitCandidate> skip) {
+        AnomalySite bestSite = null;
+        int bestBay = 0;
+        double bestD = Double.MAX_VALUE;
+        for (int cx = ccx - ring; cx <= ccx + ring; cx++) {
+            for (int cz = ccz - ring; cz <= ccz + ring; cz++) {
+                if (Math.max(Math.abs(cx - ccx), Math.abs(cz - ccz)) != ring) {
+                    continue;
+                }
+                for (Direction wall : WALLS) {
+                    for (int i = 0; i < Level39Sites.SEGMENTS_PER_SIDE; i++) {
+                        AnomalySite site = windowSite(seed, cx, cz, wall, i);
+                        if (site == null) {
+                            continue;
+                        }
+                        for (int bay = Level39Sites.firstBay(site); bay <= Level39Sites.lastBay(site); bay++) {
+                            double along = Level39Sites.bayCentre(site, bay);
+                            double dx = Level39Sites.worldX(site, along, EXIT_FRONT) - x;
+                            double dz = Level39Sites.worldZ(site, along, EXIT_FRONT) - z;
+                            double d = dx * dx + dz * dz;
+                            if (d >= bestD || !windowLit(seed, site, bay, 0) || !windowInhabited(seed, site, bay, 0)
+                                    || skipped(skip, site, bay)) {
+                                continue;
+                            }
+                            bestD = d;
+                            bestSite = site;
+                            bestBay = bay;
+                        }
+                    }
+                }
+            }
+        }
+        return bestSite != null ? new ExitCandidate(bestSite, bestBay) : null;
+    }
+
+    private static boolean skipped(@Nullable List<ExitCandidate> skip, AnomalySite site, int bay) {
+        if (skip == null) {
+            return false;
+        }
+        for (ExitCandidate c : skip) {
+            if (c.bay == bay && c.site.equals(site)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Open town ground in front of the window of {@code bay}: the column right before the middle of
+     * the glass, else one beside it, else one row further out (all still within grab reach); null
+     * when something stands on all of them.
+     */
+    @Nullable
+    private static int[] floorSpot(long seed, AnomalySite site, int bay) {
+        int middle = Level39Sites.bayColumn(site, bay);
+        for (double front = EXIT_FRONT; front <= EXIT_FRONT + 1.0; front += 1.0) {
+            for (int side : SPOT_SIDES) {
+                double along = middle + side + 0.5;
+                int x = (int) Math.floor(Level39Sites.worldX(site, along, front));
+                int z = (int) Math.floor(Level39Sites.worldZ(site, along, front));
+                if (Level39Layout.townWalkable(seed, x, z)) {
+                    return new int[] {x, z};
+                }
+            }
+        }
+        return null;
     }
 
     /** Lot-wide site of a house with an anomaly (or one of the screaming houses), else null. */

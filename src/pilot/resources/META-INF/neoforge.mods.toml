@@ -1,0 +1,29 @@
+# Dev-only test pilot. This file lives in the `pilot` source set, which only dev runs load;
+# the release jar is built from `main` and never contains it.
+modLoader="javafml"
+loaderVersion="[1,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="backrooms_pilot"
+version="0.0.0-dev"
+displayName="Backrooms Test Pilot (dev only)"
+authors="rickr"
+description='''
+Lets a local test script drive the player with ordinary inputs (keys, view, clicks) and read
+telemetry over a localhost socket. Does nothing unless a port is configured
+(-Dbackrooms.pilot.port=N or the BACKROOMS_PILOT_PORT environment variable).
+'''
+
+[[dependencies.backrooms_pilot]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1,)"
+    ordering="NONE"
+    side="CLIENT"
+[[dependencies.backrooms_pilot]]
+    modId="minecraft"
+    type="required"
+    versionRange="[1.21.1]"
+    ordering="NONE"
+    side="CLIENT"

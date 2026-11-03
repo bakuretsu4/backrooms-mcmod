@@ -72,14 +72,17 @@ public final class Level39Layout extends LevelLayout {
     }
 
     /**
-     * The real way on is a mill window with a Window living in it, so {@code /backrooms locate} and
-     * the exit hints (the faint sound, the NightShot marks) point at the nearest infested stretch of
-     * facade, not at the random spot above. Falls back to that spot if no infested stretch is near.
+     * The real way on is a ground-storey mill window with a Window living in it: stand in front of
+     * it, let it grab you and hold on. So {@code /backrooms locate} and the exit hints (the faint
+     * sound, the NightShot marks, the camcorder) point at the open ground right in front of the
+     * nearest such window ({@link Level39AnomalyPlan#exitWindowSpot}), not at the middle of an
+     * infested stretch, whose nearest awake Window may well be one up the wall that can't grab.
+     * Falls back to the random spot above if no infested stretch is near.
      */
     @Override
     public int[] exitPosition(long seed, int x, int z) {
-        AnomalySite windows = Level39AnomalyPlan.nearest(seed, x, z, "hostile_windows");
-        return windows != null ? new int[] {windows.anchorX(), windows.anchorZ()} : super.exitPosition(seed, x, z);
+        int[] spot = Level39AnomalyPlan.exitWindowSpot(seed, x, z);
+        return spot != null ? spot : super.exitPosition(seed, x, z);
     }
 
     /** The ground-floor windows: glass starts two blocks above the town ground. */
@@ -274,6 +277,11 @@ public final class Level39Layout extends LevelLayout {
     /** Open town ground: no house, fence, pole, tree trunk, hole or tower in the way. */
     @Override
     public boolean isWalkable(long seed, int x, int z) {
+        return townWalkable(seed, x, z);
+    }
+
+    /** {@link #isWalkable} without a layout instance (the anomaly plan checks exit spots with it). */
+    static boolean townWalkable(long seed, int x, int z) {
         if (!inTown(x, z) || inStairTower(x, z)) {
             return false;
         }

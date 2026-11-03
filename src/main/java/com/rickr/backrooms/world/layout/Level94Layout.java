@@ -1,10 +1,13 @@
 package com.rickr.backrooms.world.layout;
 
 import com.rickr.backrooms.registry.ModBlocks;
+import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.ExitLocator;
+import com.rickr.backrooms.world.Travel;
 import com.rickr.backrooms.world.anomaly.AnomalySite;
 import java.util.List;
 import java.util.function.Consumer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,9 +27,10 @@ import org.jetbrains.annotations.Nullable;
  * This class turns a plan's numbers into blocks and answers the questions other code asks
  * (where can I stand, is this a safe room, where is the exit).
  *
- * <p>Ways out: rare dark-door houses (one per {@value #EXIT_REGION}-block square, found with
- * {@code /backrooms locate}) lead to Level 9; the light behind the castle's throne leads to
- * Level 1. Both are handled in {@code Level94Rules}.
+ * <p>Ways out: rare exit houses (one per {@value #EXIT_REGION}-block square). Most are dark-door
+ * houses, found with {@code /backrooms locate}, that lead on to Level 490; about one in three is
+ * flooded instead and leads back down to Level 7. The light behind the castle's throne leads to
+ * Level 1. All are handled in {@code Level94Rules}.
  *
  * <p>Anomalies (furniture drift on the hills, the wandering door and the blinding hall in the
  * castle) are placed by {@link Level94AnomalyPlan}.
@@ -34,11 +38,19 @@ import org.jetbrains.annotations.Nullable;
 public final class Level94Layout extends LevelLayout {
     /** World height: hills reach ~y66, the glass mountain and castle go up to ~y215. */
     public static final int WORLD_HEIGHT = 256;
-    /** One dark-door house in every square this size. */
+    /** One exit house (dark-door or flooded) in every square this size. */
     static final int EXIT_REGION = 400;
     static final ExitLocator EXITS = new ExitLocator(EXIT_REGION, 70, 9400);
     /** Solid dirt goes down to here under the ground (nothing ever sees lower). */
     private static final int DIRT_BOTTOM_Y = 34;
+    /**
+     * How far an exit house's door can lie outside its own region: the locator keeps 70 blocks
+     * inside, the house may move up to 80 off it (Level94Plan's DARK_TRIES), the door is 5 from the
+     * middle. Rounded up generously; it only decides when exitPosition may stop looking.
+     */
+    private static final int DOOR_SPILL = 100;
+    /** How far round the crossroads arrivals look (the same reach as Travel.findSafeSpot). */
+    private static final int ARRIVAL_SEARCH = 96;
 
     public Level94Layout() {
         super(8, EXITS);
@@ -138,12 +150,56 @@ public final class Level94Layout extends LevelLayout {
     @Override
     public boolean isSafeArrival(long seed, int x, int z) {
         Level94Plan plan = Level94Plan.of(seed, x, z);
+        return isOpenRoad(plan, x, z) && plan.nearHouse(x, z);
+    }
+
+    /** Road, curb, sidewalk or plaza with nothing standing on it. */
+    private static boolean isOpenRoad(Level94Plan plan, int x, int z) {
         int i = plan.index(x, z);
         byte s = plan.surf[i];
         if (s != Level94Plan.ROAD && s != Level94Plan.CURB && s != Level94Plan.SIDEWALK && s != Level94Plan.PAVING) {
             return false;
         }
-        return (plan.flags[i] & Level94Plan.BLOCKED) == 0 && plan.nearHouse(x, z);
+        return (plan.flags[i] & Level94Plan.BLOCKED) == 0;
+    }
+
+    /**
+     * Every arrival: open road with houses in sight ({@link #isSafeArrival}) as near the crossroads
+     * ({@link #arrivalHint}) as possible. Near a castle the hilltop houses have drifted apart into
+     * fragments, which don't count, so a crossroads can have no house within reach at all; then any
+     * open road will do, rather than the unchecked spot Travel falls back on when its search finds
+     * nothing.
+     */
+    @Override
+    @Nullable
+    public BlockPos preferredArrival(long seed, int x, int z, @Nullable BackroomsLevel from) {
+        int[] hint = arrivalHint(seed, x, z);
+        BlockPos spot = Travel.searchWalkable(this, seed, hint[0], hint[1], ARRIVAL_SEARCH);
+        return spot != null ? spot : openRoadNear(seed, hint[0], hint[1]);
+    }
+
+    /** Nearest open road column to (x, z) with open road on all four sides (room to move), or null. */
+    @Nullable
+    private BlockPos openRoadNear(long seed, int x, int z) {
+        for (int r = 0; r <= ARRIVAL_SEARCH; r++) {
+            for (int ox = -r; ox <= r; ox++) {
+                // Only the ring's edge: the inside was searched at smaller r.
+                int step = Math.abs(ox) == r ? 1 : 2 * r;
+                for (int oz = -r; oz <= r; oz += step) {
+                    int cx = x + ox;
+                    int cz = z + oz;
+                    if (isOpenRoad(seed, cx, cz) && isOpenRoad(seed, cx + 1, cz) && isOpenRoad(seed, cx - 1, cz)
+                            && isOpenRoad(seed, cx, cz + 1) && isOpenRoad(seed, cx, cz - 1)) {
+                        return new BlockPos(cx, standY(seed, cx, cz), cz);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean isOpenRoad(long seed, int x, int z) {
+        return isOpenRoad(Level94Plan.of(seed, x, z), x, z);
     }
 
     /** Inside an intact house (town houses too): Smilers keep out and your sanity recovers. */
@@ -153,29 +209,45 @@ public final class Level94Layout extends LevelLayout {
         return (plan.flags[plan.index(x, z)] & Level94Plan.SAFE) != 0;
     }
 
-    /** /backrooms locate: the cell in front of the nearest dark-door house's door. */
+    /**
+     * /backrooms locate, the exit hint sound and the camcorder signal: the cell in front of the
+     * nearest dark-door house's door. Flooded exit houses are skipped (they lead back to Level 7,
+     * not on), and so are the few left with no room beside a castle or town (they are never drawn),
+     * so the nearest dark one can be a region or two further out.
+     */
     @Override
     public int[] exitPosition(long seed, int x, int z) {
         int rx = Math.floorDiv(x, EXIT_REGION);
         int rz = Math.floorDiv(z, EXIT_REGION);
         int[] best = null;
         long bestD = Long.MAX_VALUE;
-        for (int ox = -1; ox <= 1; ox++) {
-            for (int oz = -1; oz <= 1; oz++) {
-                int[] door = darkDoor(seed, rx + ox, rz + oz);
-                long dx = door[0] - x;
-                long dz = door[1] - z;
-                long d = dx * dx + dz * dz;
-                if (d < bestD) {
-                    bestD = d;
-                    best = door;
+        // Rings of regions round (x, z)'s own. A door in ring r is at least (r - 1) regions away,
+        // less DOOR_SPILL; once even that is further than the best door so far, nothing nearer is left.
+        for (int r = 0; ; r++) {
+            long reach = Math.max(0L, (long) (r - 1) * EXIT_REGION - DOOR_SPILL);
+            if (best != null && reach * reach > bestD) {
+                return best;
+            }
+            for (int ox = -r; ox <= r; ox++) {
+                int step = Math.abs(ox) == r ? 1 : 2 * r;
+                for (int oz = -r; oz <= r; oz += step) {
+                    if (!Level94Plan.hasDarkDoor(seed, rx + ox, rz + oz)) {
+                        continue;
+                    }
+                    int[] door = darkDoor(seed, rx + ox, rz + oz);
+                    long dx = door[0] - x;
+                    long dz = door[1] - z;
+                    long d = dx * dx + dz * dz;
+                    if (d < bestD) {
+                        bestD = d;
+                        best = door;
+                    }
                 }
             }
         }
-        return best;
     }
 
-    /** The cell just outside the door of exit region (rx, rz)'s dark house: {x, z}. */
+    /** The cell just outside the door of exit region (rx, rz)'s exit house: {x, z}. */
     static int[] darkDoor(long seed, int rx, int rz) {
         Level94Houses.House h = Level94Plan.darkHouse(seed, rx, rz).house;
         int mid = h.mid();

@@ -1,6 +1,7 @@
 package com.rickr.backrooms.world.anomaly.level39;
 
 import com.rickr.backrooms.entity.Hound;
+import com.rickr.backrooms.entity.Level39Arrival;
 import com.rickr.backrooms.entity.Level39Spawner;
 import com.rickr.backrooms.registry.Level39Mobs;
 import com.rickr.backrooms.world.anomaly.AnomalyBehavior;
@@ -123,10 +124,14 @@ final class HoleSounds implements AnomalyBehavior {
         double z = site.anchorZ() + 0.5;
         level.playSound(null, x, Level39Layout.GROUND_Y, z, Level39AnomalyRegistry.HOLE_CLIMB.get(), SoundSource.HOSTILE, 2.0f, 1.0f);
         emit(level, site, Level39Mobs.HOUND_GROWL.get(), 2.0f, 1.4f);
+        ServerPlayer target = listener(level, site);
+        // Someone who has only just arrived in Level 39 gets the noise but not the Hound.
+        if (target != null && Level39Arrival.inGrace(target)) {
+            return;
+        }
         if (level.getEntitiesOfClass(Hound.class, new AABB(x - 32, 20, z - 32, x + 32, 110, z + 32)).size() >= MAX_HOUNDS_NEAR) {
             return;
         }
-        ServerPlayer target = listener(level, site);
         double angle = target == null ? level.getRandom().nextDouble() * Math.PI * 2.0
                 : Math.atan2(target.getZ() - z, target.getX() - x);
         double reach = Level39Sites.holeRadius(site) + 2.0;

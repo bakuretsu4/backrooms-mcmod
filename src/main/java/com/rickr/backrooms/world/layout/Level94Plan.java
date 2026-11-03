@@ -319,13 +319,19 @@ final class Level94Plan {
         int wx1 = x1 + WINDOW;
         int wz1 = z1 + WINDOW;
         List<Level94Builds.Thing> cands = new ArrayList<>();
-        // Dark houses (exits).
+        // Dark houses (exits). Looked for a shoulder's width beyond the window too: a candidate whose
+        // pad would tilt a dark house's pad loses to it (padsClash), and every plan that judges that
+        // candidate must see the dark house to agree on it.
         int er = Level94Layout.EXIT_REGION;
-        for (int ex = Math.floorDiv(wx0 - 100, er); ex <= Math.floorDiv(wx1 + 100, er); ex++) {
-            for (int ez = Math.floorDiv(wz0 - 100, er); ez <= Math.floorDiv(wz1 + 100, er); ez++) {
+        int dx0 = wx0 - SHOULDER;
+        int dz0 = wz0 - SHOULDER;
+        int dx1 = wx1 + SHOULDER;
+        int dz1 = wz1 + SHOULDER;
+        for (int ex = Math.floorDiv(dx0 - 100, er); ex <= Math.floorDiv(dx1 + 100, er); ex++) {
+            for (int ez = Math.floorDiv(dz0 - 100, er); ez <= Math.floorDiv(dz1 + 100, er); ez++) {
                 Level94Builds.Thing dark = darkHouse(seed, ex, ez);
                 int[] c = dark.claim();
-                if (c[2] >= wx0 && c[0] <= wx1 && c[3] >= wz0 && c[1] <= wz1) cands.add(dark);
+                if (c[2] >= dx0 && c[0] <= dx1 && c[3] >= dz0 && c[1] <= dz1) cands.add(dark);
             }
         }
         // Hilltops.
@@ -376,7 +382,7 @@ final class Level94Plan {
             if (cl[2] < rx0 || cl[0] > rx1 || cl[3] < rz0 || cl[1] > rz1) continue;
             boolean lost = false;
             for (Level94Builds.Thing o : cands) {
-                if (o != c && o.beats(c) && o.overlaps(c, 3)) {
+                if (o != c && o.beats(c) && (o.overlaps(c, 3) || o.priority == 0 && padsClash(o, c))) {
                     lost = true;
                     break;
                 }
@@ -391,6 +397,27 @@ final class Level94Plan {
             }
         }
         return winners.toArray(new Level94Builds.Thing[0]);
+    }
+
+    /**
+     * True if {@code c}'s pad would tilt the dark house's pad. Pads are flattened in priority order,
+     * so a later pad's shoulder overrides the dark house's ground wherever the two pads are further
+     * apart in height than {@link #SLOPE} can bridge across the gap between them. A hilltop house
+     * next door could raise the ground in front of the dark door a block or more above its sill (or
+     * a roadside pad drop it below), and then the door can't be walked into. Such a neighbour loses
+     * instead, so a dark house always keeps its own flat ground.
+     */
+    private static boolean padsClash(Level94Builds.Thing dark, Level94Builds.Thing c) {
+        if (dark.pad == null || c.pad == null) return false;
+        int[] a = dark.pad;
+        int[] b = c.pad;
+        // The same column distance applyPad measures, at the dark pad's column nearest c's pad.
+        int dx = Math.max(0, Math.max(b[0] - a[2], a[0] - b[2]));
+        int dz = Math.max(0, Math.max(b[1] - a[3], a[1] - b[3]));
+        if (dx > SHOULDER || dz > SHOULDER) return false; // applyPad doesn't reach that far
+        float d = (float) Math.sqrt(dx * dx + dz * dz);
+        float ph = c.padHeight;
+        return ph + d * SLOPE < dark.padHeight || c.padRaises && ph - d * SLOPE > dark.padHeight;
     }
 
     /** Facing toward the nearest road, as one of the four directions (north if there's none). */
@@ -585,14 +612,17 @@ final class Level94Plan {
             {40, -40}, {-40, 40}, {80, 0}, {-80, 0}, {0, 80}, {0, -80}};
 
     /**
-     * The dark-door house of exit region (ex, ez): at the exit locator's point, or moved a little
-     * if that spot is on a road, in a town or near a castle. Cached; it's a pure function of the seed.
+     * The exit house of exit region (ex, ez): at the exit locator's point, or moved a little if
+     * that spot is on a road, in a town or near a castle. Dark-doored, or flooded in about one
+     * region in three ({@link #isFloodedRegion}). Cached; it's a pure function of the seed.
      */
     static Level94Builds.Thing darkHouse(long seed, int ex, int ez) {
         long key = Hash.of(seed, ex, ez, 9495);
         Level94Builds.Thing t = DARK.get(key);
         if (t == null) {
-            if (DARK.size() > 256) {
+            // A few hundred houses: exitPosition looks at a 5 x 5 block of regions per call, for
+            // every player, so a small cache would keep clearing and rebuilding.
+            if (DARK.size() > 1024) {
                 DARK.clear();
             }
             t = buildDarkHouse(seed, ex, ez);
@@ -600,6 +630,32 @@ final class Level94Plan {
             if (prev != null) t = prev;
         }
         return t;
+    }
+
+    /**
+     * True if exit region (ex, ez)'s house is flooded (its stairs lead back down to Level 7)
+     * instead of dark-doored (on to Level 490). About one region in three. Cheap: needs no house.
+     */
+    static boolean isFloodedRegion(long seed, int ex, int ez) {
+        return Hash.unit(Hash.mix(Hash.of(seed, ex, ez, 9496) ^ 0x7L)) < 0.33;
+    }
+
+    /**
+     * True if exit region (ex, ez) has a dark door a player can walk into: its house isn't flooded,
+     * and it stands clear of castles and towns. When every spot tried is too close to one,
+     * buildDarkHouse leaves the house at the locator's point, where the castle's clear zone or the
+     * town draws its own columns instead, so the house never appears at all.
+     */
+    static boolean hasDarkDoor(long seed, int ex, int ez) {
+        if (isFloodedRegion(seed, ex, ez)) return false;
+        Level94Builds.Thing t = darkHouse(seed, ex, ez);
+        return clearOfCastlesAndTowns(seed, t.x, t.z);
+    }
+
+    /** Far enough from castles and towns for an exit house to stand whole. */
+    private static boolean clearOfCastlesAndTowns(long seed, int x, int z) {
+        return Level94Roads.castleDistance(seed, x, z) >= Level94Castle.CLEAR_RADIUS + 40
+                && Level94Roads.townDistance(seed, x, z) >= 30;
     }
 
     private static Level94Builds.Thing buildDarkHouse(long seed, int ex, int ez) {
@@ -618,8 +674,7 @@ final class Level94Plan {
         for (int[] off : DARK_TRIES) {
             int cx = px + off[0];
             int cz = pz + off[1];
-            if (Level94Roads.castleDistance(seed, cx, cz) < Level94Castle.CLEAR_RADIUS + 40
-                    || Level94Roads.townDistance(seed, cx, cz) < 30) {
+            if (!clearOfCastlesAndTowns(seed, cx, cz)) {
                 continue;
             }
             float room = Level94Roads.roadDistance(roads, cx + 0.5f, cz + 0.5f);
@@ -640,8 +695,7 @@ final class Level94Plan {
         int topH = (int) Math.floor(hillHeight(hills, bestX + 0.5f, bestZ + 0.5f));
         Direction front = faceRoad(roads, bestX + 0.5f, bestZ + 0.5f, q);
         Level94Builds.Thing t = new Level94Builds.Thing(Level94Builds.HOUSE, 0, h, bestX, bestZ);
-        // About one exit house in three is flooded (the way to Level 7) instead of dark (Level 9).
-        int kind = Hash.unit(Hash.mix(h ^ 0x7L)) < 0.33 ? Level94Houses.FLOODED : Level94Houses.DARK;
+        int kind = isFloodedRegion(seed, ex, ez) ? Level94Houses.FLOODED : Level94Houses.DARK;
         t.house = new Level94Houses.House().centred(kind, bestX, bestZ, front, 7, 9,
                 LevelLayout.FLOOR_Y + topH, false, Hash.unit(Hash.mix(h)) < 0.5);
         t.box = t.house.worldReach(0);
@@ -651,7 +705,8 @@ final class Level94Plan {
         t.padRaises = true;
         t.path = gardenPath(t.house, roads, q);
         if (!found) {
-            // No good spot: it still stands (every region has its exit), just less tidily placed.
+            // No good spot: it still stands, just less tidily placed (or, if even castles and
+            // towns left no room, not at all: see hasDarkDoor).
             t.path = null;
         }
         return t;

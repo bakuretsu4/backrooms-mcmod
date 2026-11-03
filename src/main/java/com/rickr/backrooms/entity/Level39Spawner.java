@@ -105,8 +105,9 @@ public final class Level39Spawner {
         }
         long seed = BackroomsSeeds.layoutSeed(level, BackroomsLevel.LEVEL_39);
         for (ServerPlayer player : level.players()) {
-            if (player.isSpectator() || SafeRooms.isSafe(player) || HidingService.isHidden(player)) {
-                continue; // nothing new shows up for someone resting in a safe room or hiding in furniture
+            if (player.isSpectator() || SafeRooms.isSafe(player) || HidingService.isHidden(player)
+                    || Level39Arrival.inGrace(player)) {
+                continue; // nothing new shows up for someone resting, hiding, or who just arrived
             }
             Zone zone = zoneOf(player);
             if (zone == Zone.TUNNELS) {

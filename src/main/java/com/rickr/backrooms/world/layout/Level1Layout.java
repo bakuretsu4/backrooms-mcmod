@@ -43,7 +43,8 @@ import org.jetbrains.annotations.Nullable;
  *       of exits, safe rooms, anomalies and corridor blocks) and built by {@link Level1Areas}.</li>
  * </ul>
  *
- * <p>Exit: one white stairwell per 384x384 region.
+ * <p>Exit: one white stairwell per 384x384 region, in an open clearing that is cut out of any
+ * corridor block it lands on (so the block never walls up the stairwell door).
  *
  * <p><b>Safe rooms.</b> About 60% of the 128x128 squares try for one (only in the halls): a
  * concrete room built over a block of 2x2 bays (so its outside lines up with the pillar rows), with
@@ -395,9 +396,12 @@ public final class Level1Layout extends LevelLayout {
                 out.set(floor + 1, concrete);
             }
         }
-        if (!hallZone(seed, x, z)) {
-            Level1Areas.fillCorridors(seed, x, z, floor, lowCeiling(), out);
-            fillAboveLowCeiling(out);
+        // Exits are placed without looking at the corridor blocks, so a stairwell's clearing can
+        // overlap one. The clearing wins: the block's walls, rooms and crates would otherwise stand
+        // right outside the stairwell door and seal it. It is cut out as open hall (the corridors
+        // it crosses just open into it), which is also what isWalkable says about it.
+        if (!hallZone(seed, x, z) && exitDistance > CLEARING_RADIUS) {
+            fillCorridorBlock(seed, x, z, out);
             return;
         }
         int sector = Level1Areas.sector(seed, x, z);
@@ -517,6 +521,36 @@ public final class Level1Layout extends LevelLayout {
         for (int y = lowCeiling() + 1; y <= ceilingY(); y++) {
             out.set(y, concrete);
         }
+    }
+
+    /** A column of a corridor block, up to the halls' ceiling. */
+    void fillCorridorBlock(long seed, int x, int z, Column out) {
+        Level1Areas.fillCorridors(seed, x, z, floorY(), lowCeiling(), out);
+        fillAboveLowCeiling(out);
+    }
+
+    /**
+     * True if the 16x16 chunk starting at (minX, minZ) has any column of an exit's clearing. A
+     * chunk never straddles two exit regions (both are aligned to 16), so one exit is enough.
+     */
+    boolean chunkTouchesClearing(long seed, int minX, int minZ) {
+        int exitX = minX - exits().dx(seed, minX, minZ);
+        int exitZ = minZ - exits().dz(seed, minX, minZ);
+        return exitX + CLEARING_RADIUS >= minX && exitX - CLEARING_RADIUS <= minX + 15
+                && exitZ + CLEARING_RADIUS >= minZ && exitZ - CLEARING_RADIUS <= minZ + 15;
+    }
+
+    /**
+     * True for a column of an exit's clearing inside a corridor block: builds before the clearing
+     * was cut out of corridor blocks put the block itself here ({@link #fillCorridorBlock}), which
+     * could wall up the stairwell door. Level1ClearingRepair rebuilds these columns.
+     */
+    boolean clearingInCorridorBlock(long seed, int x, int z) {
+        int d = exits().distance(seed, x, z);
+        // Same order as fillColumn: only columns that really got as far as the corridor block.
+        return d > STAIRWELL_RADIUS && d <= CLEARING_RADIUS && !hallZone(seed, x, z)
+                && safeRoomNear(seed, x, z) == null && anomalyAt(seed, x, z) == null
+                && lockersAt(seed, x, z) == null && rampAt(seed, x, z) == null;
     }
 
     /**
@@ -798,8 +832,13 @@ public final class Level1Layout extends LevelLayout {
     // Storage lockers and ramps down (their shapes: Level1Areas)
     // ==========================================================================================
 
-    /** The last square asked about, per thread (every column of a hallway asks about the same one). */
+    /**
+     * The last square asked about, per thread (every column of a hallway asks about the same one).
+     * Keyed by the seed too: worker threads are shared between worlds (and the tests run many seeds
+     * on one thread), and another seed's site would make isWalkable and the blocks disagree.
+     */
     private static final class SquareCache<T> {
+        long seed;
         long key = Long.MIN_VALUE;
         @Nullable
         T site;
@@ -815,7 +854,8 @@ public final class Level1Layout extends LevelLayout {
         int cellZ = Math.floorDiv(z, LOCKER_CELL);
         SquareCache<Level1Areas.LockerSite> cache = lockerCache.get();
         long key = ((long) cellX << 32) ^ (cellZ & 0xffffffffL);
-        if (cache.key != key) {
+        if (cache.key != key || cache.seed != seed) {
+            cache.seed = seed;
             cache.key = key;
             cache.site = planLockers(seed, cellX, cellZ);
         }
@@ -830,7 +870,8 @@ public final class Level1Layout extends LevelLayout {
         int cellZ = Math.floorDiv(z, RAMP_CELL);
         SquareCache<Level1Areas.RampSite> cache = rampCache.get();
         long key = ((long) cellX << 32) ^ (cellZ & 0xffffffffL);
-        if (cache.key != key) {
+        if (cache.key != key || cache.seed != seed) {
+            cache.seed = seed;
             cache.key = key;
             cache.site = planRamp(seed, cellX, cellZ);
         }

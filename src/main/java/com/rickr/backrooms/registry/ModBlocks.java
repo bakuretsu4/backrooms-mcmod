@@ -909,7 +909,7 @@ public final class ModBlocks {
             unbreakable(MapColor.COLOR_YELLOW, SoundType.WOOD).noOcclusion().lightLevel(state -> 13));
     /**
      * The dark behind a dark-door house's door: pitch black, gives no light, lets no light in and
-     * you can walk into it (which takes you back to Level 9). The dark sibling of l37_sunlit_void.
+     * you can walk into it (which takes you on to Level 490). The dark sibling of l37_sunlit_void.
      */
     public static final DeferredBlock<Block> L94_DARK_VOID = BLOCKS.registerBlock("l94_dark_void", Block::new,
             unbreakable(MapColor.COLOR_BLACK, SoundType.EMPTY).noCollission()

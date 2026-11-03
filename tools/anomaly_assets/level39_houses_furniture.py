@@ -1931,13 +1931,19 @@ def _grow_mask(m, n) -> np.ndarray:
     return out
 
 
+# Planes are spelled out in texture names: Iris reads a sprite ending in "_s" or "_n" as the
+# specular or normal map of the one without it, so "l39_roof_shingles_s" vanished under shaders.
+_PLANE_WORD = {"N": "north", "E": "east", "S": "south", "W": "west"}
+
+
 def _roof_tex(kind, shape, plane, cut) -> str:
+    word = _PLANE_WORD[plane]
     if kind == "shingles":
         if cut:
-            return f"l39_roof_shingles_{shape}_{plane.lower()}"
-        return "l39_roof_shingles" + ("" if plane == "N" else "_" + plane.lower())
+            return f"l39_roof_shingles_{shape}_{word}"
+        return "l39_roof_shingles" + ("" if plane == "N" else "_" + word)
     if cut:
-        return f"l39_roof_underside_{shape}_{plane.lower()}"
+        return f"l39_roof_underside_{shape}_{word}"
     return "l39_roof_underside" + ("" if plane in "NS" else "_z")
 
 
