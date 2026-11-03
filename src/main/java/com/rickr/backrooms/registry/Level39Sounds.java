@@ -33,7 +33,7 @@ public final class Level39Sounds {
     // a metal door slamming somewhere inside it with a very long echo, a dog barking that echoes
     // back off the facades, a screen door, a wind chime, a telephone ringing in an empty house and
     // coal ash rattling against the facade glass. In the tunnels: drips and something moving in
-    // the water far down the tunnel. (House screams and hole noises belong to the anomaly code.)
+    // the water far down the tunnel. (Hole noises belong to the anomaly code.)
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_GROAN = register("distant.level39.superstructure_groan");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_METAL_SLAM = register("distant.level39.metal_slam");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_DOG_BARK = register("distant.level39.dog_bark");

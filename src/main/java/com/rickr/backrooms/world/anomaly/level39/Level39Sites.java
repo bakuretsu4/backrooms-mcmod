@@ -15,7 +15,7 @@ import net.minecraft.core.Direction;
  *
  * <p>Canon sources (Fandom, Level 39 by SherlsF): the Window entities (Entity 2) infesting the
  * superstructure, the house anomalies (inverted, merged, cut, floating, odd furniture, bigger on
- * the inside, flooded rooms, vanishing doors), screams from houses that are hallucinations,
+ * the inside, flooded rooms, vanishing doors),
  * "if sounds come from the holes, run", the Hydrolitis plague in stagnant water, and the M.E.G.
  * teams that survey the town.
  */
@@ -27,8 +27,6 @@ public final class Level39Sites {
     public static final String VANISHING_DOOR = "level_39/vanishing_door";
     /** A house whose front door leads into a far larger interior. */
     public static final String BIGGER_INSIDE = "level_39/bigger_inside";
-    /** An ordinary-looking house that screams at you (only you hear it, and it isn't real). */
-    public static final String HOUSE_SCREAMS = "level_39/house_screams";
     /** A hole down to the tunnels: when it makes noises, a Hound is coming up. */
     public static final String HOLE_SOUNDS = "level_39/hole_sounds";
     /** A stagnant tunnel run: its water carries the Hydrolitis plague. */
@@ -44,7 +42,7 @@ public final class Level39Sites {
     public static final String ODD_FURNITURE = "level_39/odd_furniture";
     public static final String FLOODED_ROOM = "level_39/flooded_room";
 
-    public static final List<String> KINDS = List.of(HOSTILE_WINDOWS, VANISHING_DOOR, BIGGER_INSIDE, HOUSE_SCREAMS,
+    public static final List<String> KINDS = List.of(HOSTILE_WINDOWS, VANISHING_DOOR, BIGGER_INSIDE,
             HOLE_SOUNDS, HYDROLITIS, MEG_CAMP, INVERTED_HOUSE, MERGED_HOUSE, CUT_HOUSE, FLOATING_HOUSE,
             ODD_FURNITURE, FLOODED_ROOM);
 
@@ -167,7 +165,7 @@ public final class Level39Sites {
         return xSide(site) ? along : glassFace(site) + front * f.getAxisDirection().getStep();
     }
 
-    // ---- Houses (screams, bigger inside, vanishing doors): salt packs the house's size -------------
+    // ---- Houses (bigger inside, vanishing doors): salt packs the house's size ---------------------
 
     /** Packs what the client needs to know about a house into a site salt. */
     public static long houseSalt(int baseY, int width, int depth, int storeys, int id) {

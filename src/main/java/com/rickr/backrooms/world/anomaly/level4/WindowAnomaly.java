@@ -32,7 +32,7 @@ import net.minecraft.world.phys.Vec3;
  *   <li>Touch it and it grabs you: the screen goes dark, it hurts (never below half a heart) and
  *       takes a big bite of sanity, then throws you back across the room.</li>
  * </ul>
- * The whispers and the warm light are client effects.
+ * The warm light is a client effect.
  */
 final class WindowAnomaly implements AnomalyBehavior {
     /** Sanity lost per second while you look at the window. */

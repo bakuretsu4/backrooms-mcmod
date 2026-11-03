@@ -147,11 +147,7 @@ public final class Level39Mobs {
                     .noSave()
                     .build(Backrooms.id("wretch").toString()));
 
-    // Wretch sounds: pain and panic. The scream means it is running from you; the sobbing means
-    // it is cornered and about to lash out.
-    public static final DeferredHolder<SoundEvent, SoundEvent> WRETCH_MOAN = sound("entity.wretch.moan");
-    public static final DeferredHolder<SoundEvent, SoundEvent> WRETCH_SOB = sound("entity.wretch.sob");
-    public static final DeferredHolder<SoundEvent, SoundEvent> WRETCH_SCREAM = sound("entity.wretch.scream");
+    // Wretch sounds: splashing through the water, drinking it, steps, pain.
     public static final DeferredHolder<SoundEvent, SoundEvent> WRETCH_SPLASH = sound("entity.wretch.splash");
     public static final DeferredHolder<SoundEvent, SoundEvent> WRETCH_DRINK = sound("entity.wretch.drink");
     public static final DeferredHolder<SoundEvent, SoundEvent> WRETCH_STEP = sound("entity.wretch.step");

@@ -118,7 +118,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p><b>Anomalies.</b> Five kinds of anomalous area, placed by {@link Level0AnomalyPlan}: the Red
  * Rooms ({@link Level0RedRooms}), Blackout Zones ({@link Level0Blackout}, the maze in place with
- * no lights, rough walls and fluid on the carpet), the Manila Room ({@link Level0ManilaRoom}), a
+ * no lights and rough walls), the Manila Room ({@link Level0ManilaRoom}), a
  * pillar hall that rearranges itself ({@link Level0PillarHall}) and Room 14D's grid of pits
  * ({@link Level0Pitfalls}).
  *
@@ -1912,13 +1912,12 @@ public final class Level0Layout extends LevelLayout {
         int code = column & 15;
         int kind = column >>> 4 & 7;
         Direction facing = Direction.from2DDataValue(column >>> 8 & 3);
-        // A blackout zone is the same maze with no lights, rough dark walls and fluid on the carpet.
+        // A blackout zone is the same maze with no lights and rough dark walls.
         boolean blackout = anomalies.blackoutAt(seed, x, z) != null;
         // Near the Red Rooms the wallpaper peels off crimson and the carpet turns sticky, more and
         // more of it the closer you get.
         double red = blackout ? -1 : redRoomsDistance(seed, x, z);
         BlockState rough = ModBlocks.BLACKOUT_WALLPAPER.get().defaultBlockState();
-        BlockState fluid = ModBlocks.CARPET_FLUID.get().defaultBlockState();
         BlockState paper = blackout ? rough : wallpaper;
         BlockState base = blackout ? rough : baseboard;
         out.set(ceiling, tile);
@@ -1985,9 +1984,6 @@ public final class Level0Layout extends LevelLayout {
             // Full height and frameless: a lintel under the low ceiling would leave too little
             // headroom, so the ceiling just carries on through every opening.
             out.set(floor, sticky ? stickyCarpet : carpet);
-            if (blackout) {
-                out.set(floor + 1, fluid);
-            }
             return;
         }
         if (kind == BUILDERS) {
@@ -2001,7 +1997,6 @@ public final class Level0Layout extends LevelLayout {
         if (kind == CORRIDOR) {
             out.set(floor, sticky ? stickyCarpet : carpet);
             if (blackout) {
-                out.set(floor + 1, fluid);
                 Level0Clutter.wear(seed ^ 0xB1AC0L, x, z, floor, ceiling, 0.04, out); // tiles down in the dark
                 return;
             }
@@ -2017,7 +2012,6 @@ public final class Level0Layout extends LevelLayout {
             // now and then a piece of furniture fused into a pillar, the floor or the ceiling.
             out.set(floor, sticky ? stickyCarpet : carpet);
             if (blackout) {
-                out.set(floor + 1, fluid);
                 Level0Clutter.wear(seed ^ 0xB1AC0L, x, z, floor, ceiling, 0.04, out);
                 return;
             }
@@ -2103,9 +2097,6 @@ public final class Level0Layout extends LevelLayout {
             out.set(floor + 2, state.setValue(Level0MannequinBlock.HALF, DoubleBlockHalf.UPPER));
         }
         if (blackout) {
-            if (part == 0 && !mannequin) {
-                out.set(floor + 1, ModBlocks.CARPET_FLUID.get().defaultBlockState());
-            }
             return;
         }
         int fixture = fixture(seed, x, z, column, sx, sz);
@@ -2146,9 +2137,6 @@ public final class Level0Layout extends LevelLayout {
             }
         }
         if (blackout) {
-            if (prop == Level0RoomMaze.PROP_NONE) {
-                out.set(floor + 1, ModBlocks.CARPET_FLUID.get().defaultBlockState());
-            }
             return;
         }
         int fixture = Level0RoomMaze.fixture(seed, x, z);
@@ -2180,10 +2168,7 @@ public final class Level0Layout extends LevelLayout {
             floorUsed = crates > 0 || backpack != null;
         }
         if (blackout) {
-            if (!floorUsed) {
-                out.set(floor + 1, ModBlocks.CARPET_FLUID.get().defaultBlockState()); // ankle-deep, murky
-            }
-            return; // and not a single working lamp
+            return; // not a single working lamp
         }
         boolean lit = false;
         boolean hole = propType == P_CABLE || propType == P_HOLE;

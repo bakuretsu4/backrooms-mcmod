@@ -46,8 +46,11 @@ bool level0Solid(ivec3 at) {
 
 // 1 when nothing solid lies on the straight line from p to l, 0 when a wall is in the way.
 // Walks the columns the line crosses seen from above (a 2D grid walk), and in each column only
-// tests the blocks at the heights the line passes through there. The column p is in is skipped:
-// p sits on the surface being lit, nudged into the air in front of it.
+// tests the blocks at the heights the line passes through there. p sits on the surface being
+// lit, nudged into the air in front of it: in its own column the block p is in is left out (so
+// a surface never shadows itself), but the rest of that column counts. That matters wherever
+// rooms are stacked (Level 0's stack, the hidden room over it): a lamp on the floor above or
+// below, nearly overhead, sends its ray through the slab between them inside this first column.
 float level0Ray(vec3 p, vec3 l) {
     vec2 start = p.xz;
     vec2 delta = l.xz - start;
@@ -66,12 +69,17 @@ float level0Ray(vec3 p, vec3 l) {
     float tPrev = 0.0;
     for (int i = 0; i < WALL_GRID_MAX_STEPS; i++) {
         float tNext = min(min(tMax.x, tMax.y), len);
-        if (i > 0) {
-            float y0 = p.y + climb * tPrev;
-            float y1 = p.y + climb * tNext;
-            if ((level0Column(cell) & level0Span(min(y0, y1), max(y0, y1))) != 0u) {
-                return 0.0;
+        float y0 = p.y + climb * tPrev;
+        float y1 = p.y + climb * tNext;
+        uint span = level0Span(min(y0, y1), max(y0, y1));
+        if (i == 0) {
+            int own = int(floor(p.y - WallGridInfo.y));
+            if (own >= 0 && own <= 31) {
+                span &= ~(1u << uint(own));
             }
+        }
+        if ((level0Column(cell) & span) != 0u) {
+            return 0.0;
         }
         if (tNext >= len) {
             break;

@@ -61,7 +61,6 @@ public final class Level0SetPieces {
     static final int DOOR_UPPER = 15;
     static final int WINDOW = 16;
     static final int RUG = 17;
-    static final int WET_CARPET = 18;
     /** A fallen ceiling tile lying on the carpet. */
     static final int DEBRIS = 19;
     static final int CABLE = 20;
@@ -198,7 +197,6 @@ public final class Level0SetPieces {
                     .setValue(WallDoorDrawingBlock.HALF, code == DOOR_LOWER ? DoubleBlockHalf.LOWER : DoubleBlockHalf.UPPER);
             case WINDOW -> turned(ModBlocks.WALL_WINDOW_DRAWING.get().defaultBlockState(), facing);
             case RUG -> ModBlocks.RUG.get().defaultBlockState().setValue(RugBlock.PART, extra);
-            case WET_CARPET -> ModBlocks.CARPET_FLUID.get().defaultBlockState();
             case DEBRIS -> Level0SetPieceBlocks.FALLEN_TILE.get().defaultBlockState();
             case CABLE -> turned(Level0Blocks.DANGLING_CABLE.get().defaultBlockState(), facing);
             case ARROW -> turned(ModBlocks.LOBBY_CARPET_ARROW.get().defaultBlockState(), facing);

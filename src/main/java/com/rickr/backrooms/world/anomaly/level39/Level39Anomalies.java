@@ -21,7 +21,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
  * Server behaviours of Level 39's anomalies (shapes in {@link Level39Sites}, where they are in
  * {@code world/layout/Level39AnomalyPlan}). Kinds without a behaviour here (the inverted, merged,
  * cut, floating, odd-furniture and flooded houses) are all in their blocks, built by
- * {@code Level39Houses}; the screaming houses are a pure hallucination played by the client.
+ * {@code Level39Houses}.
  * Hydrolitis ({@link Hydrolitis}), the echoes ({@link Echoes}) and the M.E.G. camp's stash
  * ({@link MegCamp}) run from their own events.
  *

@@ -109,7 +109,6 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> INTRO_IMPACT = register("intro.impact");
     public static final DeferredHolder<SoundEvent, SoundEvent> DEATH_STING = register("death.sting");
     // Low sanity: things you hear that aren't there (only you hear them; played client side).
-    public static final DeferredHolder<SoundEvent, SoundEvent> SANITY_WHISPER = register("sanity.whisper");
     public static final DeferredHolder<SoundEvent, SoundEvent> SANITY_HEARTBEAT = register("sanity.heartbeat");
     public static final DeferredHolder<SoundEvent, SoundEvent> SANITY_KNOCK = register("sanity.knock");
     // Supplies: locker latch, pill bottle rattle, bandage being wrapped.
@@ -130,11 +129,10 @@ public final class ModSounds {
     // Level 94 "Motion" (Props slice): the happy cartoon tune the siren poles play all day.
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_SIREN_SONG = register("level94.siren_song");
     // Level 94 "Motion" (Sky slice): the soft wind over the hills (the biome's ambient loop, day and
-    // night), faint synthetic birdsong by day and far-off cartoon laughter at night (one-shots
+    // night) and faint synthetic birdsong by day (one-shots
     // scheduled by client/Level94Atmosphere).
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_WIND = register("ambient.level94_wind");
     public static final DeferredHolder<SoundEvent, SoundEvent> L94_BIRDS = register("level94.birds");
-    public static final DeferredHolder<SoundEvent, SoundEvent> L94_LAUGH = register("level94.laugh");
     // Level 7 "Thalassophobia": the hollow sea ambience (the biome's loop), and the Thing, which you
     // only ever hear: its groans from far below, the swell when it passes under you, and the gut-drop
     // lurch when you fall through the hatch (one-shots from client/Level7Client).
@@ -223,11 +221,10 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> L1_CRATE_THUD = register("level1.crate_thud");
     public static final DeferredHolder<SoundEvent, SoundEvent> L1_CORRIDOR_DRONE = register("level1.corridor_drone");
     // Level 4 anomalies (world/anomaly/level4, client/anomaly/level4): footsteps and a door far up or
-    // down a looping stairwell, the Window's soft whispers and its grab, an elevator ride down and
+    // down a looping stairwell, the Window's grab, an elevator ride down and
     // its chime, and the Cubicles' work ambience (paper, pencils, murmurs, muffled rain) and its
     // nearby desk noises.
     public static final DeferredHolder<SoundEvent, SoundEvent> L4_STAIRWELL_ECHO = register("level4.stairwell_echo");
-    public static final DeferredHolder<SoundEvent, SoundEvent> L4_WINDOW_WHISPER = register("level4.window_whisper");
     public static final DeferredHolder<SoundEvent, SoundEvent> L4_WINDOW_GRAB = register("level4.window_grab");
     public static final DeferredHolder<SoundEvent, SoundEvent> L4_ELEVATOR_RIDE = register("level4.elevator_ride");
     public static final DeferredHolder<SoundEvent, SoundEvent> L4_ELEVATOR_DING = register("level4.elevator_ding");
@@ -304,10 +301,7 @@ public final class ModSounds {
     // long stay never sounds like the same loop. One is picked every half minute or so and placed
     // 14-40 blocks off in a random direction. Files: sounds/ambient/distant/<level>/<name>1..3.ogg.
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_BALLAST_POP = register("distant.level0.ballast_pop");
-    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_WALL_SCRATCH = register("distant.level0.wall_scratch");
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_LAYOUT_SHIFT = register("distant.level0.layout_shift");
-    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_CARPET_DRIP = register("distant.level0.carpet_drip");
-    public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_FAR_CALL = register("distant.level0.far_call");
     // Level 0's quiet building sounds (tools/anomaly_assets/level0_audio.py): it settling, a door
     // somewhere, a relay in a far electrical panel, ducting ticking as it cools.
     public static final DeferredHolder<SoundEvent, SoundEvent> DISTANT_L0_SETTLE_CREAK = register("distant.level0.settle_creak");

@@ -35,15 +35,15 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Wretches (Entity 15 / Phenomenon 35): people in the last stage of Roth syndrome. Starved to
  * skin and bone, they have picked and torn patches of their own skin away, and they are in
- * constant pain and panic. They drink from the tunnel water and moan and sob to themselves.
+ * constant pain and panic. They drink from the tunnel water.
  *
  * <p>They are driven by fear, not hunger:
  * <ul>
  *   <li>A light (your flashlight, or a torch or lantern in hand) within {@value #LIGHT_RANGE}
  *       blocks, a loud noise (sprinting, splashing), or someone walking up to them sends them
- *       running with a scream.</li>
+ *       running.</li>
  *   <li>Cornered (nowhere to run, or you stay right on top of them) they lash out wildly,
- *       sobbing, until they get a gap to run through again.</li>
+ *       until they get a gap to run through again.</li>
  *   <li>Leave them alone (keep your light off, keep your distance, move quietly) and they leave
  *       you alone.</li>
  * </ul>
@@ -83,7 +83,6 @@ public class Wretch extends Monster {
     /** ...or after this long at most. */
     private static final int CORNERED_MAX_TICKS = 120;
     private static final int ATTACK_COOLDOWN = 15;
-    private static final int SCREAM_COOLDOWN = 120;
     private static final int LONELY_DESPAWN_TICKS = 90 * 20;
     private static final double LONELY_RANGE = 80.0;
 
@@ -100,7 +99,6 @@ public class Wretch extends Monster {
     private int calmTicks;
     private int closeTicks;
     private int attackCooldown;
-    private int screamCooldown;
     private int drinkFor;
     @Nullable
     private BlockPos drinkFrom;
@@ -170,9 +168,6 @@ public class Wretch extends Monster {
         modeTicks++;
         if (attackCooldown > 0) {
             attackCooldown--;
-        }
-        if (screamCooldown > 0) {
-            screamCooldown--;
         }
         boolean senseNow = (tickCount + getId()) % SENSE_INTERVAL == 0;
         switch (mode) {
@@ -251,10 +246,6 @@ public class Wretch extends Monster {
         calmTicks = 0;
         closeTicks = 0;
         setMode(Mode.FLEE);
-        if (screamCooldown <= 0) {
-            screamCooldown = SCREAM_COOLDOWN;
-            playSound(Level39Mobs.WRETCH_SCREAM.get(), 1.8f, 0.95f + random.nextFloat() * 0.15f);
-        }
         runFrom(scare);
     }
 
@@ -300,10 +291,9 @@ public class Wretch extends Monster {
     private void corner() {
         setMode(Mode.CORNERED);
         getNavigation().stop();
-        playSound(Level39Mobs.WRETCH_SOB.get(), 1.4f, 1.0f + random.nextFloat() * 0.2f);
     }
 
-    /** Lashes out at whoever cornered it, sobbing, until they back off. */
+    /** Lashes out at whoever cornered it until they back off. */
     private void tickCornered() {
         Player scare = threat;
         if (scare == null || !isThreat(scare)) {
@@ -324,10 +314,6 @@ public class Wretch extends Monster {
             attackCooldown = ATTACK_COOLDOWN + random.nextInt(8);
             swing(random.nextBoolean() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND);
             doHurtTarget(scare);
-        }
-        if (modeTicks % 35 == 0) {
-            playSound(random.nextInt(3) == 0 ? Level39Mobs.WRETCH_SCREAM.get() : Level39Mobs.WRETCH_SOB.get(),
-                    1.3f, 1.0f + random.nextFloat() * 0.25f);
         }
     }
 
@@ -455,21 +441,6 @@ public class Wretch extends Monster {
     @Override
     public boolean removeWhenFarAway(double distance) {
         return false;
-    }
-
-    @Override
-    public int getAmbientSoundInterval() {
-        return 160;
-    }
-
-    @Override
-    @Nullable
-    protected SoundEvent getAmbientSound() {
-        return switch (mode) {
-            case FLEE -> null; // it already screamed
-            case CORNERED -> Level39Mobs.WRETCH_SOB.get();
-            case DRINK, WANDER -> random.nextInt(3) == 0 ? Level39Mobs.WRETCH_SOB.get() : Level39Mobs.WRETCH_MOAN.get();
-        };
     }
 
     @Override

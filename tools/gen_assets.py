@@ -3201,35 +3201,6 @@ def snd_leaf_steps() -> None:
 
 # ---- Sanity (low-sanity hallucinations) ----------------------------------------------------
 
-def snd_sanity_whisper() -> None:
-    """3 unintelligible whispers (~2 s): breathy noise through two sweeping 'formant' bandpasses,
-    chopped into syllable-like puffs, with a little room so it sounds like it's right behind you."""
-    for i in range(1, 4):
-        rng = rng_for(2500 + i)
-        dur = 1.8 + 0.3 * i
-        n = int(dur * SR)
-        t = np.arange(n) / SR
-        breath = fft_filter(rng.normal(size=n), lambda f: bp_gain(f, 400, 7000, 1))[:n]
-        # Two formants that wander like a mouth shaping vowels (but never real words).
-        f1 = 500 + 350 * (0.5 + 0.5 * np.sin(2 * np.pi * rng.uniform(2.5, 4.0) * t + rng.uniform(0, 6)))
-        f1 += smooth_jitter(rng, n, 6.0, 150.0)
-        f2 = 1500 + 900 * (0.5 + 0.5 * np.sin(2 * np.pi * rng.uniform(3.0, 5.0) * t + rng.uniform(0, 6)))
-        f2 += smooth_jitter(rng, n, 8.0, 400.0)
-        x = svf(breath, f1, 6.0) + 0.8 * svf(breath, f2, 8.0) + 0.15 * fft_filter(breath, lambda f: hp_gain(f, 3500, 2))[:n]
-        # Syllables: 4-7 soft puffs with gaps between them.
-        env = np.zeros(n)
-        tt = 0.05
-        while tt < dur - 0.25:
-            length = rng.uniform(0.12, 0.3)
-            seg = np.arange(int(length * SR)) / SR
-            puff = np.sin(np.pi * seg / length) ** 1.5 * rng.uniform(0.5, 1.0)
-            add_at(env, puff, tt, False)
-            tt += length + rng.uniform(0.03, 0.15)
-        x = x * env
-        wet = conv(x, reverb_ir(rng, 1.2, 0.25, lp=5000, predelay=0.01))[:n]
-        save_ogg(norm(x) + 0.35 * norm(wet), SND / "sanity" / f"whisper{i}.ogg", peak=0.8, fade_out=0.2)
-
-
 def snd_sanity_heartbeat() -> None:
     """One 'lub-dub' (0.55 s). The client retriggers it once per beat, so the rate can change."""
     rng = rng_for(2510)
@@ -7725,8 +7696,8 @@ L94_CASTLE_TEXTURES = [tex_l94c_mountain, tex_l94c_exterior, tex_l94c_stone_ligh
 # Level 94 "Motion" sky (Sky slice): the big painted clouds and the far-off
 # castle on its glass mountain that client/Level94Sky draws in the sky, the soft
 # wind of the hills (the biome's ambient loop), very faint synthetic birdsong by
-# day and the distant cartoon laughter at night (client/Level94Atmosphere).
-# Run: python tools/gen_assets.py l94_sky l94_castle_far snd_l94_wind snd_l94_birds snd_l94_laugh
+# day (client/Level94Atmosphere).
+# Run: python tools/gen_assets.py l94_sky l94_castle_far snd_l94_wind snd_l94_birds
 # =============================================================================
 
 def _l94_env(name: str):
@@ -7908,50 +7879,8 @@ def snd_l94_birds() -> None:
         save_ogg(x, SND / "level94" / f"birds{i}.ogg", peak=0.5, fade_out=0.2)
 
 
-def snd_l94_laugh() -> None:
-    """Three takes of distant cartoon laughter at night (laugh1..3), echoing over the hills.
-
-    Entirely synthetic (no recorded voice): an additive formant voice says "hoo", "hoo", "ha"
-    in a bouncy cartoon rhythm, the pitch wobbling like a warped record. Then it is pushed far
-    away: everything above ~1.2 kHz rolled off, a long hazy reverb and two slap-back echoes
-    off the hills, so it's barely a voice at all."""
-    hoo = [(320, 90, 1.0), (800, 140, 0.45), (2300, 300, 0.05)]
-    ha = [(760, 120, 1.0), (1220, 160, 0.7), (2500, 300, 0.12)]
-    takes = [
-        # (seed, base pitch Hz, [(vowel, start s, length s, pitch multiplier), ...])
-        (9500, 240, [(hoo, 0.0, 0.20, 1.0), (hoo, 0.30, 0.20, 1.12), (ha, 0.62, 0.55, 1.35)]),
-        (9501, 200, [(ha, 0.0, 0.18, 1.2), (ha, 0.26, 0.18, 1.1), (ha, 0.52, 0.18, 1.0), (hoo, 0.84, 0.6, 0.85)]),
-        (9502, 280, [(hoo, 0.0, 0.16, 1.0), (hoo, 0.24, 0.16, 1.06), (hoo, 0.48, 0.16, 1.12), (ha, 0.76, 0.7, 1.45)]),
-    ]
-    for i, (seed, base, syllables) in enumerate(takes, 1):
-        rng = rng_for(seed)
-        dur = 6.0
-        n = int(dur * SR)
-        dry = np.zeros(n)
-        for formants, start, ln, mult in syllables:
-            m = int(ln * SR)
-            t = np.arange(m) / SR
-            # Each syllable bounces: up quickly, then sags (the long last one sags a lot).
-            contour = mult * (1 + 0.08 * np.sin(np.pi * np.clip(t / ln * 1.4, 0, 1)) - 0.18 * (t / ln) ** 2 * (ln > 0.4))
-            f0 = base * contour * (1 + 0.012 * np.sin(2 * np.pi * 6.0 * t))
-            v = voice(f0, formants, rng, nh=24, tilt=0.02)
-            breath = fft_filter(rng.normal(size=m), lambda f: bp_gain(f, 300, 1500, 2)) * 0.04
-            env = env_adsr(m, 0.03, min(0.12, ln * 0.5))
-            add_at(dry, norm(v + breath) * env, 0.1 + start, circular=False)
-        # The warped-record wobble: the whole thing drifts in pitch by a few percent.
-        idx = np.arange(n) + np.cumsum(0.04 * np.sin(2 * np.pi * 0.9 * np.arange(n) / SR) + smooth_jitter(rng, n, 3, 0.02))
-        dry = np.interp(np.clip(idx, 0, n - 1), np.arange(n), dry)
-        dry = fft_filter(dry, lambda f: lp_gain(f, 1200, 2) * hp_gain(f, 120, 2))[:n]   # far away: muffled
-        echoes = np.zeros(n)
-        add_at(echoes, dry * 0.45, 0.38, circular=False)
-        add_at(echoes, dry * 0.22, 0.95, circular=False)
-        hall = conv(dry + echoes, reverb_ir(rng, 4.0, 1.3, lp=1400, predelay=0.08))[:n]
-        x = 0.35 * norm(dry) + 0.3 * norm(echoes) + 1.0 * norm(hall)
-        save_ogg(x, SND / "level94" / f"laugh{i}.ogg", peak=0.7, fade_out=0.6)
-
-
 L94_SKY_TEXTURES = [tex_l94_sky_clouds, tex_l94_castle_far]
-L94_SKY_SOUNDS = [snd_l94_wind, snd_l94_birds, snd_l94_laugh]
+L94_SKY_SOUNDS = [snd_l94_wind, snd_l94_birds]
 
 
 # =============================================================================
@@ -8749,19 +8678,10 @@ def _da_save(x, level, name, i, loud=1.0) -> None:
     save_ogg(x, DIST / level / f"{name}{i}.ogg", peak=peak, fade_in=0.002, fade_out=0.12)
 
 
-def _da_voice(rng, f0a, f0b, dur, formants, nh=30) -> np.ndarray:
-    """One syllable of a far-off voice: a pitch glide through fixed formants, with some breath."""
-    n = int(dur * SR)
-    f0 = np.geomspace(f0a, f0b, n) * (1 + smooth_jitter(rng, n, 5, 0.02))
-    v = norm(voice(f0, formants, rng, nh=nh)) + 0.12 * _da_band(rng, n, 500, 3000)
-    return v * env_adsr(n, 0.03, 0.08)
-
-
 def snd_dist_amb_level0() -> None:
     """Level 0 (https://backrooms-wiki.wikidot.com/level-0): the lights' buzz "can fluctuate severely
-    and randomly" (a far tube pops and stutters out); "scratching sounds from behind the walls, as if
-    something is sharpening its nails"; the "Peripheral Shift" rearranging halls out of sight (a deep
-    settle); fluids soaking the carpet (dull drips); "familiar voices calling out" (a muffled call)."""
+    and randomly" (a far tube pops and stutters out); the "Peripheral Shift" rearranging halls out of
+    sight (a deep settle)."""
     for i in range(1, 4):
         # A ballast pops somewhere: a sharp tock, one to three stuttering buzz flares, a dying hum.
         rng = rng_for(9600 + i)
@@ -8779,24 +8699,6 @@ def snd_dist_amb_level0() -> None:
         add_at(x, 0.25 * hum * np.exp(-np.arange(m) / (0.15 * SR)), tt, False)
         _da_save(_da_far(x, rng, 2200, hp=90), "level0", "ballast_pop", i)
 
-        # Scratching behind the wall: short gritty strokes, heard through plaster.
-        rng = rng_for(9610 + i)
-        dur = 3.2
-        n = int(dur * SR)
-        x = np.zeros(n)
-        tt = 0.05
-        while tt < dur - 0.7:
-            sd = rng.uniform(0.25, 0.6)
-            grit = _da_stickslip(rng, sd, [(0, rng.uniform(90, 160)), (sd, rng.uniform(200, 320))],
-                                 [rng.uniform(1400, 2200), rng.uniform(2800, 3800)], [0.002, 0.0015], [1, 0.6])
-            m = len(grit)
-            stroke = (norm(grit) + 0.3 * _da_band(rng, m, 1200, 4000)) * _da_env(m, [(0, 0), (0.04, 1), (sd * 0.7, 0.8), (sd, 0)])
-            add_at(x, stroke * rng.uniform(0.6, 1.0), tt, False)
-            tt += sd + rng.uniform(0.08, 0.35)
-        wall = ring([rng.uniform(180, 240), rng.uniform(420, 520)], [0.01, 0.006], [1, 0.6], 0.06)
-        x = x + 0.6 * norm(conv(x, wall)[:n]) * np.abs(x).max()
-        _da_save(_da_far(x, rng, 1300, hp=150, air=0.1), "level0", "wall_scratch", i, loud=0.8)
-
         # The halls shifting out of sight: a deep muffled thump, a long low groan, ceiling tiles ticking.
         rng = rng_for(9620 + i)
         x = np.zeros(int(4.2 * SR))
@@ -8813,37 +8715,6 @@ def snd_dist_amb_level0() -> None:
         add_at(x, 0.25 * norm(clicks(rng, np.sort(rng.uniform(0.15, 0.9, 6 + 3 * i)), 1.2, 900, 2200, amp_pow=2.0)),
                0.05, False)
         _da_save(_da_far(x, rng, 750, hp=35, air=0.12, room=0.4), "level0", "layout_shift", i)
-
-        # Drips falling onto the soaked carpet: dull, wet pats.
-        rng = rng_for(9630 + i)
-        dur = 3.0
-        x = np.zeros(int(dur * SR))
-        tt = 0.05
-        for _ in range(3 + i):
-            m = int(0.12 * SR)
-            pat = norm(ring([rng.uniform(140, 220), rng.uniform(380, 520)], [0.012, 0.006], [1, 0.4], 0.12))
-            wet = 0.6 * _da_band(rng, m, 400, 1400) * np.exp(-np.arange(m) / (0.02 * SR))
-            add_at(x, (pat + wet) * rng.uniform(0.5, 1.0), tt, False)
-            tt += rng.uniform(0.35, 0.8)
-            if tt > dur - 0.3:
-                break
-        _da_save(_da_far(x, rng, 1500, hp=90, air=0.1), "level0", "carpet_drip", i, loud=0.7)
-
-        # A voice calling, far off and through many walls: never clear enough to make out.
-        rng = rng_for(9640 + i)
-        e_vowel = [(550, 90, 1.0), (1800, 160, 0.5), (2500, 200, 0.2)]
-        o_vowel = [(480, 80, 1.0), (850, 120, 0.7), (2400, 200, 0.1)]
-        a_vowel = [(700, 100, 1.0), (1200, 140, 0.6), (2500, 200, 0.15)]
-        if i == 1:      # "hel-lo?"
-            sylls = [(0.05, 190, 200, 0.16, e_vowel), (0.25, 185, 250, 0.34, o_vowel)]
-        elif i == 2:    # "hey?" ... "hey?"
-            sylls = [(0.05, 230, 215, 0.3, e_vowel), (1.0, 215, 245, 0.32, e_vowel)]
-        else:           # a lower voice, two syllables, like a name
-            sylls = [(0.05, 135, 150, 0.2, a_vowel), (0.3, 150, 120, 0.42, o_vowel)]
-        x = np.zeros(int(2.0 * SR))
-        for k, (start, fa, fb, sd, formants) in enumerate(sylls):
-            add_at(x, _da_voice(rng, fa, fb, sd, formants) * (0.6 if i == 2 and k == 1 else 1.0), start, False)
-        _da_save(_da_far(x, rng, 850, hp=180, air=0.2, room=0.35), "level0", "far_call", i, loud=0.75)
 
 
 def snd_dist_amb_level1() -> None:
@@ -9447,7 +9318,7 @@ SOUNDS = [
     snd_level9_ambience, snd_sodium_hum, snd_lamp_flicker, snd_distant_rumble, snd_watcher_hum,
     snd_watcher_spot, snd_watcher_beam, snd_watcher_dust, snd_observer_vanish, snd_leaf_steps,
     snd_smiler_breath,
-    snd_sanity_whisper, snd_sanity_heartbeat, snd_sanity_knock,
+    snd_sanity_heartbeat, snd_sanity_knock,
     snd_locker_open, snd_locker_close, snd_pills_rattle, snd_bandage_wrap,
     snd_checkpoint_save,
     snd_water_wade, snd_water_splash,

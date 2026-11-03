@@ -283,20 +283,6 @@ def tex_level0_a_blackout_wallpaper() -> None:
     G.save_png(img, _blk("blackout_wallpaper"))
 
 
-def tex_level0_a_carpet_fluid() -> None:
-    """Murky carpet fluid (translucent): brownish-olive, slow ripples, floating fibres."""
-    rng = G.rng_for(5031)
-    img = G.fill((86, 76, 42), (S, S))
-    ripple = G.fnoise(rng, beta=2.4)
-    img = G.add_lum(img, ripple * 9.0 + G.fnoise(rng, beta=1.0, kmin=12) * 4.0, (1.0, 0.95, 0.7))
-    glint = G.smoothstep(1.6, 2.4, G.fnoise(rng, beta=1.8, kmin=4))
-    img = G.add_lum(img, glint * 40.0)
-    fibres = (rng.random((S, S)) < 0.01) * 25.0
-    img = G.add_lum(img, -fibres)
-    alpha = np.clip(165 + ripple * 12 + glint * 40, 120, 220)
-    G.save_png(np.concatenate([img, alpha[..., None]], axis=2), _blk("carpet_fluid"))
-
-
 # =============================================================================
 # The Manila Room and the arch wall
 # =============================================================================
@@ -357,7 +343,7 @@ TEXTURES = [
     tex_level0_a_red_wallpaper, tex_level0_a_red_wallpaper_mould, tex_level0_a_red_wall_tally,
     tex_level0_a_red_carpet_coarse, tex_level0_a_red_room_light, tex_level0_a_red_mushrooms,
     tex_level0_a_peeling_wallpaper, tex_level0_a_sticky_carpet, tex_level0_a_flickering_wall,
-    tex_level0_a_blackout_wallpaper, tex_level0_a_carpet_fluid,
+    tex_level0_a_blackout_wallpaper,
     tex_level0_a_manila_wallpaper, tex_level0_a_manila_brown_wall, tex_level0_a_volunteer_note,
     tex_level0_a_arch_wall,
 ]

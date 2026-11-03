@@ -37,7 +37,7 @@ import org.jetbrains.annotations.Nullable;
  * What low sanity does to you. Everything here is client-only and only you see/hear it; the server
  * just sends the number ({@link SanityClientState}). Only active in the Backrooms.
  * <ul>
- *   <li>below 70: now and then a whisper, a knock or a single footstep right behind you;</li>
+ *   <li>below 70: now and then a knock or a single footstep right behind you;</li>
  *   <li>below 50: the camcorder picture gets worse (see {@link #shaderSanity()}), and a black
  *       figure stands at the edge of your view... until you look at it;</li>
  *   <li>below 30: you hear your own heartbeat, faster and louder the lower you go (friends near you
@@ -169,7 +169,7 @@ public final class SanityClientEffects {
         long now = System.currentTimeMillis();
         LocalPlayer player = mc.player;
 
-        // Below 70: whispers, knocks and footsteps behind you.
+        // Below 70: knocks and footsteps behind you.
         if (shown < SOUNDS_BELOW) {
             if (nextNoiseMs == 0) {
                 nextNoiseMs = now + randomMs(40, 90);
@@ -237,7 +237,7 @@ public final class SanityClientEffects {
         return (minSeconds + RANDOM.nextInt(maxSeconds - minSeconds + 1)) * 1000L;
     }
 
-    /** A whisper (most often), a knock or a single footstep, 4-8 blocks behind you. Never in front. */
+    /** A knock or a single footstep (even odds), 4-8 blocks behind you. Never in front. */
     private static void playNoiseBehind(ClientLevel level, LocalPlayer player) {
         // Straight behind you, give or take 35 degrees.
         float yaw = player.getYRot() + 180.0f + (RANDOM.nextFloat() * 70.0f - 35.0f);
@@ -245,15 +245,10 @@ public final class SanityClientEffects {
         Vec3 dir = horizontal(yaw);
         double x = player.getX() + dir.x * distance;
         double z = player.getZ() + dir.z * distance;
-        float roll = RANDOM.nextFloat();
         SoundEvent sound;
         double y;
         float volume;
-        if (roll < 0.5f) {
-            sound = ModSounds.SANITY_WHISPER.get();
-            y = player.getEyeY();
-            volume = 0.6f;
-        } else if (roll < 0.75f) {
+        if (RANDOM.nextBoolean()) {
             sound = ModSounds.SANITY_KNOCK.get();
             y = player.getEyeY() - 0.3;
             volume = 0.8f;

@@ -86,7 +86,7 @@ public final class DistantAmbience {
         // Level 0: an empty office building at night. Long stretches of nothing but the hum, then,
         // rarely and faintly, the building itself: it settling, a vent ticking as it cools, a relay
         // in a far panel, a door somewhere. The older, stranger sounds (a tube popping, the halls
-        // shifting, drips, scratching, a voice) are still there but rarer and quieter, so when one
+        // shifting) are still there but rarer and quieter, so when one
         // comes it is easy to doubt you heard it. 35-90 s apart (about one a minute on average).
         SCHEDULES.put(BackroomsLevel.LEVEL_0, new Schedule(35, 90, List.of(
                 new Entry(ModSounds.DISTANT_L0_SETTLE_CREAK, 4, 0.9f, When.ANY),
@@ -94,10 +94,7 @@ public final class DistantAmbience {
                 new Entry(ModSounds.DISTANT_L0_RELAY, 3, 0.8f, When.ANY),
                 new Entry(ModSounds.DISTANT_L0_DOOR_CLICK, 3, 0.8f, When.ANY),
                 new Entry(ModSounds.DISTANT_L0_BALLAST_POP, 2, 0.6f, When.ANY),
-                new Entry(ModSounds.DISTANT_L0_CARPET_DRIP, 2, 0.5f, When.ANY),
-                new Entry(ModSounds.DISTANT_L0_LAYOUT_SHIFT, 1, 0.7f, When.ANY),
-                new Entry(ModSounds.DISTANT_L0_WALL_SCRATCH, 1, 0.5f, When.ANY),
-                new Entry(ModSounds.DISTANT_L0_FAR_CALL, 1, 0.45f, When.ANY))));
+                new Entry(ModSounds.DISTANT_L0_LAYOUT_SHIFT, 1, 0.7f, When.ANY))));
         SCHEDULES.put(BackroomsLevel.LEVEL_1, new Schedule(20, 45, List.of(
                 new Entry(ModSounds.DISTANT_L1_PIPE_CLANG, 4, 0.9f, When.ANY),
                 new Entry(ModSounds.DISTANT_L1_PIPE_RUMBLE, 4, 1.0f, When.ANY),
@@ -162,8 +159,8 @@ public final class DistantAmbience {
                 new Entry(ModSounds.DISTANT_L94_CARTOON_TIPTOE, 2, 1.0f, When.NIGHT))));
         // Level 39: the vast, echoing town (its far sounds carry: volumes above 1.0 stretch their
         // range across the open streets) and the damped marble tunnels below. In the tunnels the
-        // superstructure's groan comes through the rock, quieter. (The hallucinated house screams
-        // and the noises from the holes are real events played by the anomaly code, not here.)
+        // superstructure's groan comes through the rock, quieter. (The noises from the holes are
+        // real events played by the anomaly code, not here.)
         SCHEDULES.put(BackroomsLevel.LEVEL_39, new Schedule(22, 50, List.of(
                 new Entry(Level39Sounds.DISTANT_GROAN, 4, 1.6f, When.TOWN),
                 new Entry(Level39Sounds.DISTANT_METAL_SLAM, 3, 1.6f, When.TOWN),
@@ -176,14 +173,13 @@ public final class DistantAmbience {
                 new Entry(Level39Sounds.DISTANT_TUNNEL_SPLASH, 2, 0.8f, When.TUNNEL),
                 new Entry(Level39Sounds.DISTANT_GROAN, 2, 0.6f, When.TUNNEL))));
         // Level 227: the tree moving (far branches groaning, a limb cracking in the canopy), the
-        // forest's life slightly wrong (a bird call that isn't right, something big calling, a leaf
+        // forest's life slightly wrong (a bird call that isn't right, a leaf
         // the size of a sail sliding down through the leaves), and the void howling below the edge.
         // Open forest: like the outdoor levels, volumes above 1.0 only stretch the range.
         SCHEDULES.put(BackroomsLevel.LEVEL_227, new Schedule(20, 45, List.of(
                 new Entry(Level227Atmos.DISTANT_TREE_GROAN, 4, 1.6f, When.ANY),
                 new Entry(Level227Atmos.DISTANT_BRANCH_CRACK, 2, 1.5f, When.ANY),
                 new Entry(Level227Atmos.DISTANT_WRONG_BIRD, 4, 1.2f, When.ANY),
-                new Entry(Level227Atmos.DISTANT_ANIMAL_CALL, 2, 1.5f, When.ANY),
                 new Entry(Level227Atmos.DISTANT_LEAF_FALL, 3, 1.0f, When.ANY),
                 new Entry(Level227Atmos.DISTANT_VOID_HOWL, 2, 1.3f, When.ANY))));
     }

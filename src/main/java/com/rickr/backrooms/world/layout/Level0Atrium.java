@@ -93,7 +93,6 @@ public final class Level0Atrium {
     private static final int LOW_FIX_SHIFT = 8;
     private static final int HIGH_FIX_SHIFT = 10;
     private static final int STANDBY_BIT = 1 << 12;
-    private static final int WET_BIT = 1 << 13;
     /** The ladder shaft's inner wall above the ceiling (y45-51 solid). */
     private static final int BOX_BIT = 1 << 14;
     private static final int THING_SHIFT = 15; // 6 bits: piece code standing on the balcony
@@ -222,10 +221,6 @@ public final class Level0Atrium {
         if (westArm && ax == FIN_TO && along == lc + 1) {
             word |= STANDBY_BIT | E << FACING_SHIFT;
         }
-        // Damp carpet under the void: whatever is up there drips.
-        if (m <= 3 && Hash.unit(site.salt(), x, z, 73) < 0.22) {
-            word |= WET_BIT;
-        }
 
         // ---- The upper storey ----
         int upper;
@@ -324,9 +319,6 @@ public final class Level0Atrium {
                 case R_WALL, R_FIN, R_POST -> y == floor + 1 ? BASEBOARD : WALLPAPER;
                 case R_LADDER -> LADDER;
                 default -> {
-                    if (y == floor + 1 && (word & WET_BIT) != 0) {
-                        yield WET_CARPET;
-                    }
                     if (y == ceiling - 1 && (word & STANDBY_BIT) != 0) {
                         yield LAMP_STANDBY;
                     }

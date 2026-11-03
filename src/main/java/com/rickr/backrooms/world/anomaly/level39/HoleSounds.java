@@ -123,7 +123,6 @@ final class HoleSounds implements AnomalyBehavior {
         double x = site.anchorX() + 0.5;
         double z = site.anchorZ() + 0.5;
         level.playSound(null, x, Level39Layout.GROUND_Y, z, Level39AnomalyRegistry.HOLE_CLIMB.get(), SoundSource.HOSTILE, 2.0f, 1.0f);
-        emit(level, site, Level39Mobs.HOUND_GROWL.get(), 2.0f, 1.4f);
         ServerPlayer target = listener(level, site);
         // Someone who has only just arrived in Level 39 gets the noise but not the Hound.
         if (target != null && Level39Arrival.inGrace(target)) {

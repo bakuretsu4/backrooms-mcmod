@@ -483,22 +483,6 @@ def snd_l227atmos_distant_wrong_bird() -> None:
         G._da_save(_forest_room(rng, _far(call, 4000), wet=0.55, length=2.5, decay=0.8, lp=3500), "level227", "wrong_bird", i)
 
 
-def snd_l227atmos_distant_animal_call() -> None:
-    """Three takes: something large calling across the forest: a long bellow that slides down and
-    breaks, too low for a deer and too long for a bear."""
-    for i, seed in enumerate((22739, 22740, 22741), 1):
-        rng = G.rng_for(seed)
-        dur = rng.uniform(2.0, 2.8)
-        n = int(dur * SR)
-        t = np.arange(n) / SR
-        f0 = np.interp(t, [0, 0.3, dur * 0.7, dur], [rng.uniform(95, 120), rng.uniform(140, 170), rng.uniform(110, 125), rng.uniform(70, 85)])
-        f0 = f0 * (1 + G.smooth_jitter(rng, n, 9, 0.03))
-        v = G.voice(f0, [(500, 120, 1.0), (900, 150, 0.6), (2400, 260, 0.2)], rng, nh=36, tilt=0.05)
-        v = G.norm(v) * _env(n, [(0, 0), (0.15, 1), (dur - 0.4, 0.9), (dur, 0)])
-        v = np.tanh(2.0 * v)
-        G._da_save(_forest_room(rng, _far(v, 1800), wet=0.7, length=3.5, decay=1.3, lp=2000), "level227", "animal_call", i)
-
-
 def snd_l227atmos_distant_leaf_fall() -> None:
     """Three takes: a huge leaf (or a dead frond as big as a sail) sliding down through the canopy,
     brushing leaves all the way, and landing with a soft slap."""
@@ -716,6 +700,6 @@ SOUNDS = [
     snd_l227atmos_lurch, snd_l227atmos_unstable, snd_l227atmos_drag, snd_l227atmos_sun_burn,
     snd_l227atmos_disintegrate, snd_l227atmos_sun_whisper, snd_l227atmos_bubble_enter,
     snd_l227atmos_distant_tree_groan, snd_l227atmos_distant_branch_crack, snd_l227atmos_distant_wrong_bird,
-    snd_l227atmos_distant_animal_call, snd_l227atmos_distant_leaf_fall, snd_l227atmos_distant_void_howl,
+    snd_l227atmos_distant_leaf_fall, snd_l227atmos_distant_void_howl,
     snd_l227atmos_music_megaflora,
 ]

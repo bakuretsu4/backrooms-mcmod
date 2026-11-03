@@ -45,9 +45,8 @@ import org.joml.Vector3f;
  *   <li><b>Fog:</b> a soft pale-blue haze far away by day (the screenshots are hazy), warm at dusk,
  *       closer and dark blue at night. Its colour is the sky's horizon colour, so they meet.</li>
  *   <li><b>Ambience:</b> the biome plays a soft wind loop all the time. On top of that, by day a
- *       faint synthetic bird now and then, and at night, every half minute or so, distant cartoon
- *       laughter echoing over the hills. These are one-off sounds started here, so there is no
- *       loop to switch over at dusk and dawn: the next sound is simply the right one.</li>
+ *       faint synthetic bird now and then. These are one-off sounds started here, so they simply
+ *       stop at dusk and start again at dawn; nights are quiet but for the wind.</li>
  * </ul>
  */
 @EventBusSubscriber(modid = Backrooms.MOD_ID, value = Dist.CLIENT)
@@ -98,11 +97,6 @@ public final class Level94Atmosphere extends DimensionSpecialEffects {
     private static final int BIRD_MIN_TICKS = 7 * 20;
     private static final int BIRD_MAX_TICKS = 18 * 20;
     private static final float BIRD_VOLUME = 0.6f;
-    /** Laughter every 25-60 s at night (not dusk or dawn), ~40 blocks off across the hills. */
-    private static final int LAUGH_MIN_TICKS = 25 * 20;
-    private static final int LAUGH_MAX_TICKS = 60 * 20;
-    private static final float LAUGH_VOLUME = 4.0f; // > 1 only makes it carry further (64 blocks)
-    private static final double LAUGH_DISTANCE = 40.0;
 
     private static final RandomSource RANDOM = RandomSource.create();
     private static int ticksToNextSound = -1;
@@ -227,7 +221,7 @@ public final class Level94Atmosphere extends DimensionSpecialEffects {
     // Ambience
     // ==========================================================================================
 
-    /** Birds by day, laughter at night: one sound now and then, chosen by the time of day. */
+    /** Birds by day: one now and then; dusk, night and dawn have none. */
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
@@ -237,7 +231,7 @@ public final class Level94Atmosphere extends DimensionSpecialEffects {
         }
         Level94Clock.Phase phase = Level94Clock.phase(mc.level);
         if (phase != soundPhase) {
-            // Day turned to dusk, night to dawn...: start counting afresh for the new kind of sound.
+            // Day turned to dusk, night to dawn...: start counting afresh.
             soundPhase = phase;
             ticksToNextSound = nextDelay(phase);
         }
@@ -245,23 +239,13 @@ public final class Level94Atmosphere extends DimensionSpecialEffects {
             return;
         }
         ticksToNextSound = nextDelay(phase);
-        if (phase == Level94Clock.Phase.DAY) {
-            play(mc, ModSounds.L94_BIRDS.get(), 8.0 + RANDOM.nextDouble() * 4.0, 3.0 + RANDOM.nextDouble() * 4.0,
-                    BIRD_VOLUME, 0.92f + RANDOM.nextFloat() * 0.2f);
-        } else if (phase == Level94Clock.Phase.NIGHT) {
-            // Pitch varies a lot: a different "voice" each time.
-            play(mc, ModSounds.L94_LAUGH.get(), LAUGH_DISTANCE, RANDOM.nextDouble() * 6.0,
-                    LAUGH_VOLUME, 0.8f + RANDOM.nextFloat() * 0.35f);
-        }
+        play(mc, ModSounds.L94_BIRDS.get(), 8.0 + RANDOM.nextDouble() * 4.0, 3.0 + RANDOM.nextDouble() * 4.0,
+                BIRD_VOLUME, 0.92f + RANDOM.nextFloat() * 0.2f);
     }
 
-    /** Ticks until the next sound in this phase; -1 = none (dusk and dawn are silent). */
+    /** Ticks until the next bird; -1 = none (only the day has birds). */
     private static int nextDelay(Level94Clock.Phase phase) {
-        return switch (phase) {
-            case DAY -> Mth.nextInt(RANDOM, BIRD_MIN_TICKS, BIRD_MAX_TICKS);
-            case NIGHT -> Mth.nextInt(RANDOM, LAUGH_MIN_TICKS, LAUGH_MAX_TICKS);
-            default -> -1;
-        };
+        return phase == Level94Clock.Phase.DAY ? Mth.nextInt(RANDOM, BIRD_MIN_TICKS, BIRD_MAX_TICKS) : -1;
     }
 
     /** One sound from a random direction, {@code distance} blocks off and {@code up} blocks up. */
