@@ -88,6 +88,12 @@ public final class HandheldCamera {
     private static final float BANK_SMOOTHING = 0.95f;
     /** Yaw sway of the picture (never your aim), at full strength: up to ~3.5 degrees. */
     private static final float SPIN_YAW_DEG = 3.5f;
+    /**
+     * Near an exit the full roll unwinds back to upright at most this fast (degrees per tick, so
+     * ~70 degrees a second at full pull): from fully upside down it is upright within ~2.6 s of
+     * passing 115 blocks, i.e. by about 100 even at a sprint; quick, but a turn, never a snap.
+     */
+    private static final float FLIP_UNWIND_DEG_PER_TICK = 3.5f;
 
     // --- TWIST event (Level 2) -----------------------------------------------------------------
     /**
@@ -129,6 +135,13 @@ public final class HandheldCamera {
     private static float bank;
     private static float spinRoll;
     private static float spinYaw;
+    /**
+     * Level 2's full roll (degrees, unbounded): far from an exit it follows the shared spin phase
+     * one-for-one, so the room turns right round you (upside down half of every turn); near an exit
+     * it unwinds to the nearest whole turn. lastFlipPhase is NaN until the first frame in Level 2.
+     */
+    private static double flipRoll;
+    private static double lastFlipPhase = Double.NaN;
     private static float lastRenderYaw;
     private static float lastRenderPitch;
     private static float beamYaw;
@@ -189,6 +202,8 @@ public final class HandheldCamera {
         noiseSpeed = 0.1f;
         turnRoll = strafeRoll = twist = 0.0f;
         bank = spinRoll = spinYaw = 0.0f;
+        flipRoll = 0.0;
+        lastFlipPhase = Double.NaN;
         blurU = blurV = flashX = flashY = 0.0f;
     }
 
@@ -273,6 +288,8 @@ public final class HandheldCamera {
     private static void updateLevel2Spin(ViewportEvent.ComputeCameraAngles event, float tilt, float dTicks) {
         if (!Level2Spin.active() || tilt <= 0.0f) {
             bank = spinRoll = spinYaw = 0.0f;
+            flipRoll = 0.0;
+            lastFlipPhase = Double.NaN;
             return;
         }
         float partialTick = (float) event.getPartialTick();
@@ -297,8 +314,35 @@ public final class HandheldCamera {
         float along = -Mth.sin(smoothYaw * Mth.DEG_TO_RAD); // +1 looking along +x, -1 along -x
         float counter = Mth.clamp(-BANK_COUNTER_SHARE * bank * along, -BANK_COUNTER_MAX_DEG, BANK_COUNTER_MAX_DEG);
 
-        spinRoll = (drift + counter) * tilt;
+        spinRoll = (drift + counter) * tilt + (float) updateFlip(phase, tilt, dTicks);
         spinYaw = (float) (0.6 * Math.sin(phase + 1.9) + 0.4 * Math.sin(1.618 * phase + 0.3)) * SPIN_YAW_DEG * strength * tilt;
+    }
+
+    /**
+     * The full roll: away from the exits (Level2Spin#flipWeight 1) the picture turns with the spin
+     * phase one-for-one, about one whole turn a minute, with the spin's surges and backward lurches,
+     * so half of every turn is spent past sideways and upside down. Near an exit it unwinds the
+     * short way to the nearest upright, so you meet the bulkhead the right way up. Returns degrees.
+     */
+    private static double updateFlip(double phase, float tilt, float dTicks) {
+        double dPhase = Double.isNaN(lastFlipPhase) ? 0.0 : phase - lastFlipPhase;
+        lastFlipPhase = phase;
+        if (Math.abs(dPhase) > 1.0) {
+            dPhase = 0.0; // a jump in game time (rejoining): don't whirl round in one frame
+        }
+        float w = Level2Spin.flipWeight();
+        // A negative roll turns the picture clockwise, the way the room turns as the phase grows.
+        flipRoll -= Math.toDegrees(dPhase) * w * Math.min(1.0f, tilt);
+        if (w < 1.0f) {
+            double upright = Math.rint(flipRoll / 360.0) * 360.0;
+            double gap = upright - flipRoll;
+            double step = FLIP_UNWIND_DEG_PER_TICK * dTicks * (1.0f - w);
+            flipRoll += Math.copySign(Math.min(Math.abs(gap), step), gap);
+        }
+        if (Math.abs(flipRoll) > 3600.0) {
+            flipRoll -= Math.rint(flipRoll / 360.0) * 360.0; // whole turns look the same; keep the number small
+        }
+        return flipRoll;
     }
 
     /** 0 normally; ramps to +/-1 during the Level 2 TWIST event and back before it ends. */

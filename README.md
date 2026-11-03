@@ -149,9 +149,12 @@ going down into the dark, until the picture breaks up and you are in the next le
   panels every 10 blocks, a painted yellow band, wall fans and spinning amber warning beacons
   (`registry/Level2SpinBlocks`) ride round with it. The whole level seems to turn around you
   (`client/anomaly/level2/Level2Spin`).
-  - **Camera:** the view drifts a degree or two (more in a twist) and leans with the turning,
-    the field of view narrows and breathes, and the edges of the picture slide slowly
-    round a still centre.
+  - **Camera:** while you are more than 100 blocks from the nearest exit, the whole room turns
+    right round you with the spin (about one turn a minute, speeding up, stalling and drifting
+    back), so half the time you are walking past sideways and upside down; within 100 blocks it
+    settles back upright, so you reach the bulkhead the right way up. On top of that the view
+    drifts 7-11 degrees and leans with the turning, the field of view narrows and breathes, and
+    the edges of the picture slide round a still centre.
   - **Light and sound:** with Veil, the lamps' bright side travels round the corridor. Groans,
     rattles and long creaks orbit your head (`client/anomaly/level2/Level2Orbit`).
   - **Comfort:** all of the motion follows the "tilt" comfort setting; at 0 there is none.
