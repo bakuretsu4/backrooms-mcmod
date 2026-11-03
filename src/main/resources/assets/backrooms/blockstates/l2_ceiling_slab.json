@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "backrooms:block/l2_ceiling_slab"
+    },
+    "type=top": {
+      "model": "backrooms:block/l2_ceiling_slab_top"
+    },
+    "type=double": {
+      "model": "backrooms:block/pipe_ceiling"
+    }
+  }
+}

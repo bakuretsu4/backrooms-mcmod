@@ -1988,6 +1988,76 @@ def _puddle_model() -> None:
     _im("l2_leak_puddle", layer=_ref("l2_drip_stain"))
 
 
+# The cramped corridor's twist dressing (registry/Level2Blocks LIGHT_PANEL, PAINTED_BAND and the
+# two slabs). All of it reuses textures already on the atlas (the atlas must stay 4096 x 4096):
+# the corridor concrete, the old pipe_light strip for the panel's diffuser, the beam steel for its
+# bezel and the yellow line of l2_floor_line for the paint.
+
+# Facing -> (x, y) model rotation, for models built facing UP (as vanilla's end rod).
+FACING_XY = {"up": (0, 0), "down": (180, 0), "north": (90, 0), "east": (90, 90), "south": (90, 180), "west": (90, 270)}
+# The light panel: a 12 x 12 diffuser sunk 2 px into the concrete inside a 2 px steel rim.
+PANEL_RIM = 2.0
+PANEL_DEPTH = 2.0
+# Where on pipe_light the diffuser comes from: the bright tube strip (lit) or the dull panel beside it (dead).
+PANEL_LIT_UV = [0, 7.2, 16, 7.9]
+PANEL_DEAD_UV = [2, 1, 14, 5]
+# The painted band: 5 px wide down the middle of the face, from the yellow line of l2_floor_line.
+BAND_HALF = 2.5
+BAND_UV = [0, 0.5, 16, 2.0]
+
+
+def _facing6_variants(model_of, extra=""):
+    """Blockstate variants for a FACING (all six) block whose models are built facing up."""
+    variants = {}
+    for facing, (x, y) in FACING_XY.items():
+        v = {"model": _ref(model_of(facing))}
+        if x:
+            v["x"] = x
+        if y:
+            v["y"] = y
+        variants[f"facing={facing}{extra}"] = v
+    return variants
+
+
+def _twist_models() -> None:
+    top = 16 - PANEL_DEPTH
+    r0, r1 = PANEL_RIM, 16 - PANEL_RIM
+    for surface, concrete in (("ceiling", "pipe_ceiling"), ("wall", "pipe_wall")):
+        for lit in (True, False):
+            els = [_box((0, 0, 0), (16, top, 16), {**_cube_faces("#concrete", skip=("up",)),
+                                                    "up": ("#lens", PANEL_LIT_UV if lit else PANEL_DEAD_UV)})]
+            # The rim: four bars round the recess, concrete on top, bare steel on the inside.
+            for f, t, inner in (((0, top, 0), (16, 16, r0), "south"), ((0, top, r1), (16, 16, 16), "north"),
+                                ((0, top, r0), (r0, 16, r1), "east"), ((r1, top, r0), (16, 16, r1), "west")):
+                faces = {k: ("#concrete", None) for k in ("north", "south", "east", "west", "up") if k != inner}
+                faces[inner] = ("#bezel", None)
+                els.append(_box(f, t, faces))
+            name = f"l2_light_panel_{surface}" + ("" if lit else "_dead")
+            _bm(name, P._model({"particle": _ref(concrete), "concrete": _ref(concrete), "lens": _ref("pipe_light"),
+                                "bezel": _ref("l2_beam")}, els, render=None))
+    variants = {}
+    for lit in ("true", "false"):
+        suffix = "" if lit == "true" else "_dead"
+        variants.update(_facing6_variants(
+            lambda f, s=suffix: f"l2_light_panel_{'ceiling' if f in ('up', 'down') else 'wall'}{s}", f",lit={lit}"))
+    _bs("l2_light_panel", {"variants": variants})
+    _im("l2_light_panel", parent=_ref("l2_light_panel_ceiling"))
+
+    for surface, concrete in (("ceiling", "pipe_ceiling"), ("wall", "pipe_wall")):
+        els = [_box((0, 0, 0), (16, 16, 16), _cube_faces("#concrete")),
+               # A hair proud of the face, so it never flickers against the concrete under it.
+               _box((0, 16.01, 8 - BAND_HALF), (16, 16.01, 8 + BAND_HALF), {"up": ("#paint", BAND_UV)})]
+        _bm(f"l2_painted_band_{surface}", P._model({"particle": _ref(concrete), "concrete": _ref(concrete),
+                                                    "paint": _ref("l2_floor_line")}, els, render=None))
+    _bs("l2_painted_band", {"variants": _facing6_variants(
+        lambda f: f"l2_painted_band_{'ceiling' if f in ('up', 'down') else 'wall'}")})
+    _im("l2_painted_band", parent=_ref("l2_painted_band_wall"))
+
+    P._slab("l2_floor_slab", "pipe_floor", "pipe_floor")
+    P._slab("l2_ceiling_slab", "pipe_ceiling", "pipe_ceiling")
+
+
+
 def tex_level2_revamp_models() -> None:
     """Block models, blockstates and item models for registry/Level2Blocks (LF JSON), and the
     remade models of the older Level 2 blocks (their blockstates are unchanged)."""
@@ -2012,6 +2082,7 @@ def tex_level2_revamp_models() -> None:
     _door_models()
     _stencil_models()
     _floor_models()
+    _twist_models()
     _old_block_models()
 
 

@@ -33,6 +33,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.api.distmarker.Dist;
@@ -280,6 +281,9 @@ public final class Level2Emitters {
     private static Block valveLeverBlock;
     @Nullable
     private static Block mercuryLampBlock;
+    /** The corridor's recessed ceiling/wall light panel (replaced the caged lamps there); unlit = dead for good. */
+    @Nullable
+    private static Block lightPanelBlock;
     private static Block ventBlock;
     private static Block machineBlock;
     private static Block oozeBlock;
@@ -355,6 +359,7 @@ public final class Level2Emitters {
         valveWheelBlock = byId("l2_valve_wheel");
         valveLeverBlock = byId("l2_valve_lever");
         mercuryLampBlock = byId("l2_mercury_lamp");
+        lightPanelBlock = byId("l2_light_panel");
         ventBlock = ModBlocks.L2_STEAM_VENT.get();
         machineBlock = ModBlocks.L2_MACHINE.get();
         oozeBlock = ModBlocks.L2_BLACK_OOZE.get();
@@ -394,6 +399,9 @@ public final class Level2Emitters {
                         LAMPS.add(pos, 0);
                     } else if (block == deadLampBlock) {
                         DEAD_LAMPS.add(pos, 0);
+                    } else if (block == lightPanelBlock) {
+                        boolean lit = !state.hasProperty(BlockStateProperties.LIT) || state.getValue(BlockStateProperties.LIT);
+                        (lit ? LAMPS : DEAD_LAMPS).add(pos, 0);
                     } else if (block == dripBlock) {
                         DRIPS.add(pos, 0);
                     } else if (block == pumpBlock) {

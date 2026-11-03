@@ -139,15 +139,28 @@ going down into the dark, until the picture breaks up and you are in the next le
   inside, something growling behind one or two, and a white door at the end that never opens. Car
   **ramps** lead down to a dimmer lower floor here and there. A stairwell leads down.
 - **Level 2 (Pipe Dreams):** one long, straight, dim maintenance corridor of grey poured concrete
-  that goes on forever, its walls buried in pipe chases (insulated mains, racks of steel, copper
-  and painted service pipes, risers) under a low band of pipes and cable trays. Caged lamps hang
-  every few blocks, alternating sides, so the line reads as pools of light receding into the
-  distance. You can only walk forwards or back: every 24-48 blocks the corridor changes (a valve
-  manifold, a pump bay, a low hot squeeze, a grating over a pipe trench, a bulkhead ring, a leak,
-  a short dark stretch), and every 60-120 blocks a door or doorway on alternating sides leads into
-  a dead-end maintenance room, ventilation room, boiler room, storage closet or safe room. Every
-  320-420 blocks an EXIT bay opens at the side; its heavy bulkhead takes everyone within 6 blocks
-  with you. Parallel corridors 48 blocks apart never meet. The concrete is marked by water and
+  that goes on forever, and is barely wide enough to walk: about two blocks of clear floor between
+  a bare stained wall and a rusty pipe rack stacked floor to ceiling, under a ceiling low enough
+  to touch, crowded with pipes and cable trays. Square light panels are recessed into it every 12
+  blocks, so the line reads as small pools of light swallowed by the dark ahead. The whole level
+  seems to turn slowly around you (`world/layout/Level2Twist`, `client/anomaly/level2/Level2Spin`).
+  In twist stretches (about half the corridor, never far from where you arrive), the pipe bundle
+  spirals over the ceiling or under the floor grating to the other wall, the light panels and the
+  painted band follow it round, and the floor banks in half steps.
+  - **Camera:** the view drifts a degree or two (more in a twist) and leans against the banked
+    floor, the field of view narrows and breathes, and the edges of the picture slide slowly
+    round a still centre.
+  - **Light and sound:** with Veil, the lamps' bright side travels round the corridor. Groans,
+    rattles and long creaks orbit your head (`client/anomaly/level2/Level2Orbit`).
+  - **Comfort:** all of the motion follows the "tilt" comfort setting; at 0 there is none.
+
+  You can only walk forwards or back: every 24-48 blocks the corridor changes (a valve manifold, a
+  pump bay, a low hot squeeze, a grating over a pipe trench, a bulkhead ring, a leak, a short dark
+  stretch), and every 60-120 blocks a door or doorway on alternating sides, reached through a
+  tight slot cut through the wall, leads into a dead-end maintenance room, ventilation room,
+  boiler room, storage closet or safe room. Every 320-420 blocks a cramped EXIT recess opens at
+  the side; its heavy bulkhead takes everyone within 6 blocks with you. Parallel corridors 48
+  blocks apart never meet. The concrete is marked by water and
   age: rust bleeding from old bracket stumps, spalled patches with rusty rebar, chipped kickers;
   in damp stretches (round leaks, and long patches where the cold pipes sweat) condensation runs
   down from the ceiling, the floor is wet, the wall bases carry tide lines and the slab blooms
@@ -806,7 +819,7 @@ the world seed (`world/anomaly`: `AnomalyGrid` plans them, each level's layout b
 - **The Corrupted Corridor (Level 1.1):** Very rarely, a doorway in a garage wall opens onto a long white-cinderblock corridor with a blue tiled floor. The further you go the worse it gets: the colours go wrong, the same stretch of hallway seems to repeat, the dark swallows your light, and the walls turn black and white and won't hold still. At the very end, a light beckons.
 
 **Level 2**
-- **Series circuits:** The caged lamps are wired in series along the corridor. Now and then a circuit gives out with a sharp pop, and a whole section of the line goes dark at once (a gap opens in the row of lights ahead), sometimes for nearly a minute, before the lamps stutter back to life. Sometimes a fault runs down the line: three sections pop out one after another, toward you or away. A dead section is dark but never blind: the floor edge, the walls and the pipes stay faintly visible in a cold blue-grey.
+- **Series circuits:** The corridor's light panels are wired in series along the line. Now and then a circuit gives out with a sharp pop, and a whole section of the line goes dark at once (a gap opens in the row of lights ahead), sometimes for nearly a minute, before the lamps stutter back to life. Sometimes a fault runs down the line: three sections pop out one after another, toward you or away. A dead section is dark but never blind: the floor edge, the walls and the pipes stay faintly visible in a cold blue-grey.
 - **Industrial lighting:** No two bulbs are alike: new ones burn a little whiter, old ones dimmer and browner, and a few failing ones sag now and then. Machine areas hang cold mercury lamps. Beside bulkheads, chamber doors and exits, red or amber battery emergency lamps wait on standby and click on when their section's circuit dies or the power fails. Wet floors, puddles, sweating pipes and bare metal catch the lamps in small highlights.
 - **Brownouts:** Some sections never recovered from the Blackout. Almost every bulb is burst, the machines are silent, and only a few violet emergency lights still glow. Burst pipes have left pools of thick black sludge that clings to your boots.
 - **Hot zones:** Behind a wide opening off the corridor, some boiler rooms run hot: faulty machines whir and steam hisses from the walls on the way in. The heat slows you down, wears you out and makes you hungry fast, and if you stay too long it starts to hurt.
@@ -900,7 +913,7 @@ left). Turn the footage look off for a clean picture.
 |---|---|
 | Level 0 | Kane Pixels' tapes: a soft, faded yellow-beige (never olive). With Veil the troffers are the real light: warm pools under each one, cut block-exact by every wall, post and door jamb (`client/light/Level0LightRenderer`, shadows from a top-down wall map of the 128 x 128 columns around you, `Level0WallGrid`), so jambs facing away go black and posts throw hard wedges; a weak bounce from the lightmap fills in under the pools and dies away into corners and wall feet, which a screen pass darkens from the same wall map (no halos). Lit doorways far down dark runs read as beacons (64 lamps within 42 blocks on HIGH). Without Veil the lightmap alone makes the pools, steeper, with contact shadows for the corners. Tubes differ in age, chosen by the layout (`world/layout/Level0Tubes`, a `glow` block state: full, worn, tired or dying, each with its own light level, so it works with or without Veil); whole stretches of ceiling were re-lamped at different times, so some areas are brighter than others. Each tube also has its own colour temperature (mostly neutral, some yellowed, a few cool). About one tube in twenty is faulty: it stutters in a short burst every 12-45 s, or now and then cuts out for a few seconds and re-strikes with a few flashes, clicking each time; the room under it dims a little with it. A blackout is a dying wave rolling out from a point near you (22 blocks/s, each tube popping), then a partial recovery: emergency lamps and a few tubes on emergency ballasts come on, half the 24-block patches come back after 20-60 s, a quarter when the event ends and a quarter stay dead for 2-4 more minutes (`client/light/Level0Power`). Server code can cut the power locally (`world/FixtureOutages`: a circle or a list of fixtures, cut, stuttering or as a wave; restored on demand). Almost no haze (6% from 20 blocks), dark wings crushed to black. F3 shows the Level 0 lights' GPU time |
 | Level 1 | Cold, damp concrete: blue shadows, little colour, grey-blue air |
-| Level 2 | Warm amber pools from the caged lamps receding down the line, cold blue-grey darkness between and beyond them, pipe chases sunk in shadow, a thin cold haze far off. With Veil the lamps take block-exact shadows from the same wall map as Level 0 (48 lamps within 39 blocks on HIGH) and wet floors, puddles, sweating pipes and bare metal get a small highlight of the nearby lamps (`client/light/Level2Gloss` says which blocks are damp, wet or metal). F3 shows the Level 2 lights' GPU time |
+| Level 2 | Small pools under the recessed light panels, swallowed by a near-black haze 18-26 blocks ahead; pipe racks sunk in shadow right beside you; the picture's edges darkened and slowly turning round a still centre. With Veil the lamps take block-exact shadows from the same wall map as Level 0 (48 lamps within 39 blocks on HIGH), their bright side travels round the corridor with the spin, and wet floors, puddles, sweating pipes and bare metal get a small highlight of the nearby lamps (`client/light/Level2Gloss` says which blocks are damp, wet or metal). F3 shows the Level 2 lights' GPU time |
 | Level 4 | Cold fluorescent blue-grey, quiet |
 | Poolrooms | Teal shadows, soft cool highlights, a gentle wet glow; skylights and the tiles under the tubes roll off softly instead of clipping |
 | Level 37 | Dreamlike: warm overexposed highlights, warm air and a soft glow, with natural contrast (tunnels fade into real darkness). The camcorder rolls the highlights off along a soft shoulder and the bloom is half as strong, so the lit niches and the shafts of sun land just under white with their grout still showing |

@@ -119,8 +119,9 @@ public final class Level2VisitPoints {
                 if (which < 0) {
                     yield null;
                 }
-                int pier = Level2Line.pierAtOrAfter(seed, band, Level2Line.segStart(seed, band, first + which), -1);
-                yield look(pier, c + 1, pier, c - Level2Line.SHOULDER, 1.5);
+                int marker = Level2Line.markerX(seed, band, first + which);
+                int wall = Level2Section.bareSide(Level2Section.ring(seed, band, marker));
+                yield look(marker, c, marker, c + wall * Level2Line.SHOULDER, 1.5);
             }
             default -> null;
         };

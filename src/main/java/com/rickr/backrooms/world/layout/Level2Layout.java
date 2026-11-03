@@ -4,11 +4,9 @@ import com.rickr.backrooms.block.CeilingTubeBlock;
 import com.rickr.backrooms.block.ExitDoorBlock;
 import com.rickr.backrooms.block.Level2BulkheadFrameBlock.Part;
 import com.rickr.backrooms.block.Level2ExitBulkheadBlock;
-import com.rickr.backrooms.block.Level2PipeBlock;
 import com.rickr.backrooms.block.Level2PipeBlock.Kind;
 import com.rickr.backrooms.block.Level2PipeBlock.Size;
 import com.rickr.backrooms.block.Level2StencilBlock.Variant;
-import com.rickr.backrooms.block.WallMountBlock;
 import com.rickr.backrooms.registry.Level2Blocks;
 import com.rickr.backrooms.registry.Level2LightBlocks;
 import com.rickr.backrooms.registry.ModBlocks;
@@ -28,33 +26,36 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Level 2, "Pipe Dreams": one long, straight, dim maintenance corridor that never ends, its walls
- * and ceiling buried in pipework. You can only go forwards or back; doors along the way lead into
- * small dead-end rooms, and every few hundred blocks a heavy EXIT bulkhead waits in a bay at the side.
+ * Level 2, "Pipe Dreams": one long, straight, cramped maintenance corridor that never ends, barely
+ * wide enough to walk, one wall bare stained concrete and the other a dense rack of rusty pipes.
+ * You can only go forwards or back; short slots through the walls lead into small dead-end rooms,
+ * and every few hundred blocks a heavy EXIT bulkhead waits in a bay at the side.
  *
  * <p><b>Floor plan</b> ({@link Level2Line}): a corridor along X every 48 blocks of Z, solid concrete
- * in between, so parallel corridors never meet. Seen down the corridor:
+ * in between, so parallel corridors never meet. Seen down the corridor (looking east, a plain
+ * stretch with the rack on the right):
  * <pre>
- *   ceiling  y45  # # # # # # # # #
- *            y44  # t = = T = . t #     band under the ceiling, in layers: I-beams across the top every
- *                                       6 blocks; hung below them T cable tray, = pipe runs, the fat
- *                                       mains (the south lane run only along some segments: see steelRun)
- *            y43  # H * . . . . H #     H high rack (some runs), * caged lamp on a concrete pier
- *            y42  # L . . . . . L #     L low rack (some runs); . clear: the 3-wide lane is never blocked
- *            y41  # D . . . . . D #     D insulated main along the bottom of each chase
- *   floor    y40  # # g - . - . # #     g drainage gutter, - yellow lane lines
+ *   slab     y45  # # # # # # # # #
+ *   ceiling  y44  # # # c L = h # #     c concrete ceiling, L recessed light panel (every 12 blocks),
+ *                                       = the bundle's pipes hung under the slab, h its top pipes
+ *            y43  # # # . . p r # #     p the rack's front: a pair of pipes at head height
+ *            y42  # # B . . k r # #     k the rusty three on a strut channel, B the painted band
+ *            y41  # # w . . D r # #     D the big pale main on the floor, r the rack's back pipes, w scuffed base
+ *   floor    y40  # # # g . = # # #     g drainage gutter, = grating with pipes under it
  *            dz  -4-3-2-1 0+1+2+3+4
  * </pre>
- * Each chase has a rhythm (see {@link #fillChase}): a concrete pier every 12 blocks with a caged lamp
- * on it (the two walls take turns, so a lamp every 6 blocks), a riser halfway between, and 5-block
- * runs between them that are full racks, low or high racks only, or bare wall. Every 24-48 blocks the corridor
- * changes character (a valve manifold, a pump bay, a low squeeze, a grated trench, a bulkhead ring,
- * a leak, a dark stretch); side rooms (maintenance, ventilation, boiler, storage, safe room) come
- * every 60-120 blocks on alternating sides; an exit bay every 320-420 blocks.
+ * Two clear blocks to walk in (dz -1 and 0) under a ceiling three blocks up; the front pipes take
+ * dz +1. In the twist stretches ({@link Level2Twist}, built by {@link Level2Section}) the bundle,
+ * the light panels and the painted band turn round the cross-section together, over the ceiling
+ * onto the other wall or under a floor grating, and the floor of a banked stretch rises in half
+ * steps on one side while the ceiling drops on the other. Every 24-48 blocks the corridor changes
+ * character (a valve manifold, a pump bay, a low squeeze, a grated trench, a bulkhead ring, a leak,
+ * a dark stretch); side rooms (maintenance, ventilation, boiler, storage, safe room) come every
+ * 60-120 blocks on alternating sides; an exit bay every 320-420 blocks.
  *
  * <p><b>Anomalies</b> ({@link Level2AnomalyPlan}, world/anomaly/level2): brownout stretches where the
  * Blackout never ended, a hot zone in some boiler rooms, a door onto the void and a door onto a
- * looping office hallway, each in a little hall off the corridor. The caged lamps also hang on
+ * looping office hallway, each in a little hall off the corridor. The light panels also hang on
  * series circuits that fail a whole section at a time (client side, see client/light/FixturePower).
  *
  * <p><b>Exit.</b> The EXIT bulkhead takes you (and anyone standing next to you) on to Level 4.
@@ -122,16 +123,19 @@ public final class Level2Layout extends LevelLayout {
 
     /**
      * Arrivals land right on the centre line of the nearest corridor, where nothing ever stands,
-     * except in the odd detour (a dog-leg's column, a bypass's sealed section): then a few blocks
-     * along the line, the nearest spot that is open again.
+     * except in the odd detour (a dog-leg's column, a bypass's sealed section) or on the raised
+     * half of a banked stretch: then a few blocks along the line, the nearest spot that is open
+     * and level again. Twist stretches come every 76 blocks ({@link Level2Twist}), so one is always
+     * within about 30 blocks of where you land.
      */
     @Override
     public BlockPos preferredArrival(long seed, int x, int z, @Nullable BackroomsLevel from) {
         int c = Level2Line.centre(seed, Level2Line.band(z));
         for (int d = 0; d <= 2 * Level2Detours.BYPASS_HALF; d++) {
             for (int sign = 1; sign >= -1; sign -= 2) {
-                if (column(seed, x + sign * d, c) == OPEN) {
-                    return new BlockPos(x + sign * d, FLOOR_Y + 1, c);
+                int ax = x + sign * d;
+                if (column(seed, ax, c) == OPEN && floorRaise(seed, ax, c) == 0) {
+                    return new BlockPos(ax, FLOOR_Y + 1, c);
                 }
                 if (d == 0) {
                     break;
@@ -139,6 +143,39 @@ public final class Level2Layout extends LevelLayout {
             }
         }
         return new BlockPos(x, FLOOR_Y + 1, c);
+    }
+
+    /**
+     * The lane is two blocks wide between bare concrete and the rack, so no spot in it has four
+     * open neighbours: spawners and searches take any safe column, like Level 9's sidewalks.
+     */
+    @Override
+    public boolean arrivalNeedsSpace() {
+        return false;
+    }
+
+    /** Feet are half a block up on a banked stretch's half step, a whole block up on its high edge. */
+    @Override
+    public int standY(long seed, int x, int z) {
+        return FLOOR_Y + 1 + floorRaise(seed, x, z) / 2;
+    }
+
+    @Override
+    public double feetY(long seed, int x, int z) {
+        return FLOOR_Y + 1 + 0.5 * floorRaise(seed, x, z);
+    }
+
+    /** How many half steps a banked stretch lifts the floor of column (x, z) (0 off the lane). */
+    int floorRaise(long seed, int x, int z) {
+        if (Level2Line.outsideReach(z)) {
+            return 0;
+        }
+        int band = Level2Line.band(z);
+        int dz = z - Level2Line.centre(seed, band);
+        if (Math.abs(dz) > Level2Line.LANE || dz != 0 && Level2Section.laneBlocked(seed, band, x, dz)) {
+            return 0;
+        }
+        return Level2Section.raise(Level2Section.bankSteps(seed, band, x), dz);
     }
 
     /** Everything inside a safe room, walls and doorway included. */
@@ -152,7 +189,8 @@ public final class Level2Layout extends LevelLayout {
     }
 
     /**
-     * The nearest exit door on your own corridor: the one /backrooms locate, the exit's sound, the
+     * The spot right in front of the nearest exit door on your own corridor (the floor of its
+     * cramped bay, one block from the bulkhead): the one /backrooms locate, the exit's sound, the
      * NightShot marks and the wanderers' notes all point at.
      */
     @Override
@@ -160,7 +198,7 @@ public final class Level2Layout extends LevelLayout {
         int band = Level2Line.band(z);
         int j = Level2Line.nearestExit(seed, band, x);
         return new int[] {Level2Line.exitX(seed, band, j),
-                Level2Line.centre(seed, band) + Level2Line.exitSide(seed, band, j) * Level2Line.BAY_BACK};
+                Level2Line.centre(seed, band) + Level2Line.exitSide(seed, band, j) * (Level2Line.BAY_BACK - 1)};
     }
 
     @Override
@@ -233,11 +271,12 @@ public final class Level2Layout extends LevelLayout {
             }
         }
         if (a <= Level2Line.LANE) {
-            return OPEN;
+            // The lane: always open in the middle; beside a wall carrying the rack, its front pipes take the column.
+            return a != 0 && Level2Section.laneBlocked(seed, band, x, side) ? CHASE : OPEN;
         }
         if (a == Level2Line.SHOULDER) {
-            int n = Level2Line.segment(seed, band, x);
-            return shoulderSolid(seed, band, n, x, side) ? CHASE : OPEN;
+            // The inner wall (bare concrete or the rack), cut by short passages at doorways and bays.
+            return Level2Section.passage(seed, band, x, side) ? OPEN : CHASE;
         }
         // Anomaly structures (hot rooms, void and loop doors) start at the chase.
         int anomaly = Level2AnomalyPlan.column(siteKnown ? site : Level2AnomalyPlan.at(seed, x, z), x, z);
@@ -246,6 +285,9 @@ public final class Level2Layout extends LevelLayout {
         }
         int feature = Level2Line.feature(seed, band, x, side);
         if (a == Level2Line.CHASE) {
+            if (feature == Level2Line.F_BAY) {
+                return bayOpen(seed, band, x) ? OPEN : CHASE; // the bay narrows behind its mouth
+            }
             return feature == Level2Line.F_NONE || feature == Level2Line.F_HOT ? CHASE : OPEN;
         }
         if (a == Level2Line.WALL) {
@@ -253,16 +295,16 @@ public final class Level2Layout extends LevelLayout {
                 case Level2Line.F_DOOR:
                     return DOOR;
                 case Level2Line.F_MOUTH:
-                case Level2Line.F_BAY:
                     return OPEN;
+                case Level2Line.F_BAY:
+                    return bayOpen(seed, band, x) ? OPEN : CHASE;
                 case Level2Line.F_ALCOVE:
                     return pumpCell(seed, band, x) ? CHASE : OPEN;
                 default:
                     break; // safe room door wall, or plain wall: see below
             }
         } else if (feature == Level2Line.F_BAY && a <= Level2Line.BAY_BACK) {
-            int ex = bayExit(seed, band, x);
-            return a == Level2Line.BAY_BACK || Math.abs(x - ex) >= Level2Line.BAY_HALF - 1 ? CHASE : OPEN;
+            return CHASE; // the back wall round the bulkhead (and the bulkhead itself)
         } else if (feature == Level2Line.F_ALCOVE && a == Level2Line.WALL + 1) {
             return CHASE;
         }
@@ -289,15 +331,6 @@ public final class Level2Layout extends LevelLayout {
             return ROCK;
         }
         return Level2Rooms.isFree(type, i, j) ? ROOM_OPEN : ROOM_SOLID;
-    }
-
-    /** True where a shoulder column is taken by a bulkhead ring or a squeeze's grown chase. */
-    private static boolean shoulderSolid(long seed, int band, int n, int x, int side) {
-        if (Level2Line.segType(seed, band, n) == Level2Line.SEG_BULKHEAD && Level2Line.frameX(seed, band, n) == x) {
-            return true;
-        }
-        return Level2Line.segType(seed, band, n) == Level2Line.SEG_SQUEEZE
-                && Level2Line.feature(seed, band, x, side) == Level2Line.F_NONE; // the way into a doorway stays clear
     }
 
     /** X of the exit door whose bay column x is in. */
@@ -393,7 +426,10 @@ public final class Level2Layout extends LevelLayout {
 
     // ---- The corridor --------------------------------------------------------------------------
 
-    /** One column of the corridor itself (lane, shoulder, chase, and the bays beyond the chase). */
+    /**
+     * One column of the corridor itself: the lane, the inner walls (bare concrete or the pipe
+     * rack), the concrete behind them with the passages through it, and the bays beyond.
+     */
     private void fillCorridor(long seed, int x, int z, @Nullable AnomalySite site, Column out) {
         int band = Level2Line.band(z);
         int dz = z - Level2Line.centre(seed, band);
@@ -401,20 +437,26 @@ public final class Level2Layout extends LevelLayout {
         int side = dz < 0 ? -1 : 1;
         int n = Level2Line.segment(seed, band, x);
         int type = Level2Line.segType(seed, band, n);
-        boolean brownout = site != null && site.kind().equals(Level2Sites.BROWNOUT);
+        AnomalySite brownout = site != null && site.kind().equals(Level2Sites.BROWNOUT) ? site : null;
         out.set(ceilingY(), ModBlocks.PIPE_CEILING.get().defaultBlockState());
         // Detours (Level2Detours, L2Chambers): the odd stretch builds some columns itself.
         if (Level2Detours.fill(this, seed, band, n, type, x, dz, out)) {
             return;
         }
         if (a <= Level2Line.LANE) {
-            fillLane(seed, band, n, type, x, dz, out);
+            fillLane(seed, band, n, type, x, z, dz, site, brownout, out);
         } else if (a == Level2Line.SHOULDER) {
-            fillShoulder(seed, band, n, type, x, z, side, brownout ? site : null, out);
+            fillInner(seed, band, n, type, x, z, side, site, brownout, out);
         } else {
             int feature = Level2Line.feature(seed, band, x, side);
-            if (a == Level2Line.CHASE) {
-                fillChase(seed, band, n, type, x, side, feature, brownout ? site : null, out);
+            if (a == Level2Line.CHASE && feature == Level2Line.F_BAY) {
+                fillBay(seed, band, x, a, side, out);
+            } else if (a == Level2Line.CHASE) {
+                if (Level2Section.passage(seed, band, x, side)) {
+                    fillPassage(a, feature, out);
+                } else {
+                    fillRock(out);
+                }
             } else if (feature == Level2Line.F_BAY) {
                 fillBay(seed, band, x, a, side, out);
             } else if (feature == Level2Line.F_ALCOVE) {
@@ -433,24 +475,21 @@ public final class Level2Layout extends LevelLayout {
     }
 
     /**
-     * The lane: floor (or the trench's grating), and the ceiling band over it, in layers you can
-     * tell apart: a steel I-beam across the corridor at every lamp spot right under the slab, and
-     * hung below on rods the cable tray in the middle with a painted pipe run beside it and, along
-     * some segments, a steel pair on its other side (see {@link #steelRun}).
+     * One lane column (dz -1..1, see {@link Level2Section}): the floor (concrete, the gutter, the
+     * painted band, or a grating with the bundle under it), the lowered ceiling at y44 (concrete,
+     * a light panel, the band, or the bundle hung under the slab), the rack's front pipes when the
+     * bundle is on this column's wall, the roll's half steps, and the water and warnings.
      */
-    private void fillLane(long seed, int band, int n, int type, int x, int dz, Column out) {
+    private void fillLane(long seed, int band, int n, int type, int x, int z, int dz, @Nullable AnomalySite site,
+                          @Nullable AnomalySite brownout, Column out) {
         int floor = floorY();
         int top = ceilingY() - 1;
+        int side = dz < 0 ? -1 : 1;
+        double s = Level2Section.ring(seed, band, x);
         boolean trench = type == Level2Line.SEG_TRENCH && Level2Line.hasTrench(seed, band, n)
                 && fillTrench(seed, band, n, x, dz, out);
         if (!trench) {
-            out.set(floor, dz == 0 ? ModBlocks.PIPE_FLOOR.get().defaultBlockState()
-                    : Level2Parts.floorLine(Level2Line.wallOf(dz)));
-            // A leak over the gutter: the water spreads out of the gutter onto the lane beside it.
-            int side = dz < 0 ? -1 : 1;
-            if (dz != 0 && Level2Line.gutterSide(seed, band) == side && leakAt(seed, band, x, side)) {
-                out.set(floor + 1, Level2Parts.puddle());
-            }
+            fillFloor(seed, band, type, x, dz, s, site, out);
         }
         if (type == Level2Line.SEG_BULKHEAD && Level2Line.frameX(seed, band, n) == x) {
             out.set(top, Level2Parts.frame(Direction.NORTH, Part.TOP));
@@ -464,73 +503,347 @@ public final class Level2Layout extends LevelLayout {
             }
             return;
         }
-        boolean beam = beamAt(seed, band, n, type, x);
-        if (dz == 0) {
-            out.set(top, Level2Parts.cableTray(Direction.Axis.X, beam, !beam && droopAt(seed, band, x)));
-        } else if (dz < 0) {
-            out.set(top, Level2Parts.hung(Direction.Axis.X, servicePaint(seed, band), Size.SMALL,
-                    !beam && Math.floorMod(x, 5) == 0, beam));
-        } else {
-            BlockState steel = steelRun(seed, band, n, x, beam);
-            if (steel != null) {
-                out.set(top, steel);
+        // The rack's front pipes, in this lane column when the bundle is on its wall.
+        boolean blocked = dz != 0 && Level2Section.laneBlocked(seed, band, x, side);
+        boolean frontTop = false;
+        if (blocked) {
+            for (int row = 1; row <= 3; row++) {
+                if (Level2Section.front(seed, band, x, side, row)) {
+                    out.set(floor + row, frontPiece(seed, band, x, side, row));
+                    frontTop |= row == 3;
+                }
             }
         }
+        // The roll: the floor up in half steps on the high edge, the ceiling down on the low edge.
+        int steps = blocked ? 0 : Level2Section.bankSteps(seed, band, x);
+        int raise = Level2Section.raise(steps, dz);
+        int drop = Level2Section.drop(steps, dz);
+        if (raise > 0) {
+            out.set(floor + 1, raise == 1 ? Level2Parts.floorSlab() : ModBlocks.PIPE_FLOOR.get().defaultBlockState());
+        }
+        // Overhead (ring row 4).
+        int lamp = Level2Line.lampAt(seed, band, x) ? Level2Section.lampSlot(s) : -1;
+        if (lamp >= 3 && lamp <= 5 && Level2Section.drop(steps, 4 - lamp) > 0) {
+            lamp = Level2Section.slot(0, 4); // its cell is behind the dropped ceiling: the middle of the ceiling instead
+        }
+        int i = Level2Section.slot(dz, 4);
+        if (Level2Section.bundle(s, i)) {
+            out.set(top, hungPiece(seed, band, x, dz, i));
+        } else if (i == lamp) {
+            out.set(top, Level2Parts.lightPanel(Direction.DOWN, lampDead(seed, band, n, type, x, z, brownout)));
+        } else if (i == Level2Section.stripeSlot(s)) {
+            out.set(top, Level2Parts.paintedBand(Direction.DOWN));
+        } else {
+            out.set(top, ModBlocks.PIPE_CEILING.get().defaultBlockState());
+        }
+        if (drop > 0) {
+            out.set(top - 1, drop == 1 ? Level2Parts.ceilingSlab() : ModBlocks.PIPE_CEILING.get().defaultBlockState());
+        }
+        boolean topFree = !frontTop && drop == 0;
         if (type == Level2Line.SEG_SQUEEZE) {
             if (x == Level2Line.segStart(seed, band, n) || x == Level2Line.segEnd(seed, band, n)) {
                 // A low concrete beam at each end of the squeeze: the sagging pipes run into it (2 blocks clear under it).
                 out.set(top - 1, ModBlocks.PIPE_WALL.get().defaultBlockState());
                 out.set(top, ModBlocks.PIPE_WALL.get().defaultBlockState());
-                return;
+            } else if (topFree) {
+                // The whole ceiling sags: pipes in the top half of the lane's top row, 2.5 blocks to walk in.
+                out.set(top - 1, sagPipe(x, dz));
             }
-            // The bundle sags: pipes in the top half of the block below, leaving 2.5 blocks to walk in.
-            out.set(top - 1, dz == 0
-                    ? Level2Parts.pipe(Direction.Axis.X, Direction.UP, Kind.INSULATED, Size.MEDIUM, Math.floorMod(x + 1, 5) == 0)
-                    : Level2Parts.pipe(Direction.Axis.X, Direction.UP, Kind.STEEL, Size.SMALL, Math.floorMod(x + 3 + dz, 5) == 0));
+        } else if (topFree && raise == 0 && i >= 0 && Level2Section.bundle(s, i) && Level2Section.sags(s, dz)) {
+            out.set(top - 1, sagPipe(x, dz)); // the bundle overhead hangs down into the top row
         }
-    }
-
-    /** Chance that a segment carries the steel pair over the south half of its lane. */
-    private static final double STEEL_RUN_CHANCE = 0.45;
-
-    private static boolean steelRunIn(long seed, int band, int n) {
-        int type = Level2Line.segType(seed, band, n);
-        return type == Level2Line.SEG_SQUEEZE || type == Level2Line.SEG_BULKHEAD
-                || Hash.unit(seed, band, n, 534) < STEEL_RUN_CHANCE;
+        if (dz == 0 || blocked) {
+            return;
+        }
+        // On the open floor beside a wall: leaks, the gutter's ooze, warnings, battery lights.
+        boolean gutter = Level2Line.gutterSide(seed, band) == side;
+        boolean leak = leakAt(seed, band, x, side);
+        if (leak && topFree) {
+            out.set(top - 1, Level2Blocks.DRIP.get().defaultBlockState()); // under the weeping joint overhead
+        }
+        if (raise == 0 && !gutter && (leak || leakAt(seed, band, x - 1, side) || leakAt(seed, band, x + 1, side))) {
+            out.set(floor + 1, Level2Parts.puddle()); // (over the gutter the water runs off)
+        }
+        if (raise == 0 && gutter && type == Level2Line.SEG_LEAK && Math.abs(x - Level2Line.segMid(seed, band, n)) <= 2) {
+            out.set(floor + 1, ModBlocks.L2_BLACK_OOZE.get().defaultBlockState());
+        }
+        if (raise == 0 && gutter && brownout != null) {
+            int burst = Level2AnomalyPlan.burstX(seed, brownout, x);
+            if (burst != Integer.MIN_VALUE && Math.abs(x - burst) <= 2) {
+                out.set(floor + 1, ModBlocks.L2_BLACK_OOZE.get().defaultBlockState());
+            }
+        }
+        Direction in = Level2Line.inwardOf(side);
+        int k = Level2Line.roomCell(x);
+        if (Level2Line.roomType(seed, band, k) == Level2Line.ROOM_HOT && Level2Line.slotSide(seed, band, k) == side
+                && Math.abs(x - Level2Line.slotX(seed, band, k)) == 4) {
+            out.set(floor + 2, Level2Parts.stencil(in, Variant.DANGER_HOT)); // on the wall each side of the hot room's way in
+        }
+        if (type == Level2Line.SEG_LEAK && side != Level2Line.gutterSide(seed, band) && topFree
+                && x == Level2Line.segMid(seed, band, n) + JET_OFFSET + 1) {
+            out.set(top - 1, Level2Parts.stencil(in, Variant.STEAM)); // beside the steam jet in the wall
+        }
+        if (type == Level2Line.SEG_BULKHEAD) {
+            int frame = Level2Line.frameX(seed, band, n);
+            if (frame != Integer.MIN_VALUE && x == frame + emergencyOffset(seed, band, n) && side == -Level2Line.gutterSide(seed, band)) {
+                // One red battery lamp on the wall beside the ring, dark until this section's circuit dies.
+                out.set(floor + 3, Level2LightBlocks.emergency(in, true, false));
+            }
+        }
+        if (brownout != null && Level2Line.lampAt(seed, band, x) && side == Level2Section.bareSide(s)
+                && Level2AnomalyPlan.emergencyLight(seed, x, z)) {
+            out.set(floor + 2, Level2Parts.emergencyLight(in)); // the violet battery light on the bare wall
+        }
     }
 
     /**
-     * The ceiling over the south half of the lane at x (null: nothing). A steel pair runs there
-     * along some segments only: where it doesn't you look up past the tray at the beams, the
-     * hanger rods and the dark slab, which is what lets the ceiling read in layers. Where the pair
-     * stops its two pipes bend up into the slab (never under a beam, so the beam stays whole).
+     * The floor of a lane column: a grating with the bundle under it where the bundle runs under the
+     * floor, else the painted band, the gutter or plain concrete. Wherever the bundle is under the
+     * floor at x or beside it, the lane and the inner walls get a shallow concrete trench under the
+     * floor (except over a void, in a trench segment and in detours, which have their own below).
      */
-    @Nullable
-    private static BlockState steelRun(long seed, int band, int n, int x, boolean beam) {
-        BlockState bare = beam ? Level2Parts.beam(Direction.Axis.Z) : null;
-        if (!steelRunIn(seed, band, n)) {
-            return bare;
+    private void fillFloor(long seed, int band, int type, int x, int dz, double s, @Nullable AnomalySite site, Column out) {
+        int floor = floorY();
+        boolean under = underFloor(seed, band, type, x, site);
+        int i = Level2Section.slot(dz, 0);
+        if (under && Level2Section.bundle(s, i)) {
+            out.set(floor, Level2Parts.grating(Direction.Axis.X));
+            out.set(floor - 1, switch (dz) {
+                case -1 -> Level2Parts.pipe(Direction.Axis.X, Direction.DOWN, Kind.INSULATED, Size.LARGE, Math.floorMod(x, 4) == 0);
+                case 0 -> Level2Parts.pipe(Direction.Axis.X, Direction.DOWN, Kind.STEEL, Size.MEDIUM, Math.floorMod(x + 1, 4) == 0);
+                default -> Level2Parts.pipe(Direction.Axis.X, Direction.DOWN, Kind.COPPER, Size.SMALL, Math.floorMod(x + 2, 4) == 0);
+            });
+            out.set(floor - 2, ModBlocks.PIPE_FLOOR.get().defaultBlockState());
+            return;
         }
-        boolean openWest = !steelRunIn(seed, band, n - 1);
-        boolean openEast = !steelRunIn(seed, band, n + 1);
-        int first = Level2Line.segStart(seed, band, n);
-        int last = Level2Line.segEnd(seed, band, n);
-        if (openWest && Level2Line.lampSide(seed, band, first) != 0) {
-            first++;
+        if (under) {
+            out.set(floor - 1, ModBlocks.PIPE_WALL.get().defaultBlockState());
+            out.set(floor - 2, ModBlocks.PIPE_FLOOR.get().defaultBlockState());
         }
-        if (openEast && Level2Line.lampSide(seed, band, last) != 0) {
-            last--;
+        int side = dz < 0 ? -1 : 1;
+        if (i == Level2Section.stripeSlot(s)) {
+            out.set(floor, Level2Parts.floorLine(dz == 0 ? Direction.NORTH : Level2Line.wallOf(dz)));
+        } else if (dz != 0 && Level2Line.gutterSide(seed, band) == side) {
+            out.set(floor, Level2Parts.gutter(Direction.Axis.X));
+        } else {
+            out.set(floor, ModBlocks.PIPE_FLOOR.get().defaultBlockState());
         }
-        if (x < first || x > last) {
-            return bare;
+    }
+
+    /** True if the shallow trench under the floor is built at x: the bundle is under a lane column at x or beside it. */
+    private static boolean underFloor(long seed, int band, int type, int x, @Nullable AnomalySite site) {
+        if (type == Level2Line.SEG_TRENCH || Level2Detours.isDetour(type)
+                || site != null && site.kind().equals(Level2Sites.VOID_DOOR)) {
+            return false; // their own trench, a lower walkway, or the void's black sky right under the floor
         }
-        if (openWest && x == first) {
-            return Level2Parts.hungEnd(Direction.NORTH, Direction.EAST, Kind.STEEL, Size.MEDIUM);
+        for (int nx = x - 1; nx <= x + 1; nx++) {
+            double s = Level2Section.ring(seed, band, nx);
+            for (int dz = -Level2Line.LANE; dz <= Level2Line.LANE; dz++) {
+                if (Level2Section.bundle(s, Level2Section.slot(dz, 0))) {
+                    return true;
+                }
+            }
         }
-        if (openEast && x == last) {
-            return Level2Parts.hungEnd(Direction.NORTH, Direction.WEST, Kind.STEEL, Size.MEDIUM);
+        return false;
+    }
+
+    /**
+     * An inner wall column (|dz| 2): a passage at a doorway or bay, a bulkhead ring's post, a
+     * valve manifold, or the ring's four wall cells: the bundle's back pipes against the concrete
+     * behind, or bare concrete with a light panel or the painted band in it.
+     */
+    private void fillInner(long seed, int band, int n, int type, int x, int z, int side, @Nullable AnomalySite site,
+                           @Nullable AnomalySite brownout, Column out) {
+        int floor = floorY();
+        Direction in = Level2Line.inwardOf(side);
+        out.set(floor, ModBlocks.PIPE_FLOOR.get().defaultBlockState());
+        if (underFloor(seed, band, type, x, site)) {
+            out.set(floor - 1, ModBlocks.PIPE_WALL.get().defaultBlockState()); // the side walls of the shallow trench
+            out.set(floor - 2, ModBlocks.PIPE_FLOOR.get().defaultBlockState());
         }
-        return Level2Parts.hung(Direction.Axis.X, Kind.STEEL, Size.MEDIUM, !beam && Math.floorMod(x + 2, 5) == 0, beam);
+        if (type == Level2Line.SEG_TRENCH && Level2Line.hasTrench(seed, band, n)
+                && x >= Level2Line.segStart(seed, band, n) + 2 && x <= Level2Line.segEnd(seed, band, n) - 2) {
+            for (int y = floor - 3; y < floor; y++) {
+                out.set(y, ModBlocks.PIPE_WALL.get().defaultBlockState()); // the trench's side walls
+            }
+        }
+        if (Level2Section.passage(seed, band, x, side)) {
+            fillPassage(Level2Line.SHOULDER, Level2Line.feature(seed, band, x, side), out);
+            return;
+        }
+        if (type == Level2Line.SEG_BULKHEAD && Level2Line.frameX(seed, band, n) == x) {
+            fillFrameSide(in, out);
+            return;
+        }
+        if (Level2Section.manifoldAt(seed, band, x, side)) {
+            fillManifold(seed, band, n, x, side, out);
+            return;
+        }
+        double s = Level2Section.ring(seed, band, x);
+        int lamp = Level2Line.lampAt(seed, band, x) ? Level2Section.lampSlot(s) : -1;
+        int stripe = Level2Section.stripeSlot(s);
+        for (int row = 1; row <= 4; row++) {
+            int i = Level2Section.slot(2 * side, row);
+            BlockState state;
+            if (Level2Section.bundle(s, i)) {
+                state = backPiece(seed, band, x, side, row, i);
+            } else if (i == lamp) {
+                state = Level2Parts.lightPanel(in, lampDead(seed, band, n, type, x, z, brownout));
+            } else if (i == stripe) {
+                state = Level2Parts.paintedBand(in);
+            } else {
+                state = row == 1 ? Level2Blocks.WALL_BASE.get().defaultBlockState() : ModBlocks.PIPE_WALL.get().defaultBlockState();
+            }
+            out.set(floor + row, state);
+        }
+        if (type == Level2Line.SEG_LEAK && side != Level2Line.gutterSide(seed, band)
+                && x == Level2Line.segMid(seed, band, n) + JET_OFFSET) {
+            // The leak's steam jet: a hissing vent over a red valve, set into the wall.
+            out.set(floor + 2, Level2Parts.valve(in, true));
+            out.set(floor + 3, Level2Parts.steamVent(in));
+        }
+    }
+
+    /** The leak segment's steam jet stands this far east of the segment's middle. */
+    private static final int JET_OFFSET = 6;
+
+    /**
+     * A passage through the inner wall (|dz| 2) or the concrete behind it (|dz| 3): floor, the
+     * lowered ceiling carried on through, and for a side room's door a lintel at the inner wall so
+     * you duck into a one-wide, two-high slot with the door at its end.
+     */
+    private void fillPassage(int a, int feature, Column out) {
+        out.set(floorY(), ModBlocks.PIPE_FLOOR.get().defaultBlockState());
+        out.set(ceilingY() - 1, ModBlocks.PIPE_CEILING.get().defaultBlockState());
+        if (a == Level2Line.SHOULDER && (feature == Level2Line.F_DOOR || feature == Level2Line.F_SAFE_DOOR)) {
+            out.set(ceilingY() - 2, ModBlocks.PIPE_WALL.get().defaultBlockState());
+        }
+    }
+
+    /**
+     * A valve manifold column in the inner wall (|dz| 2): the insulated main low down, and from the
+     * header hung in the top corner a branch drops into a valve every third column, a gauge
+     * between, the label in the middle; the gaps are bare niches in the wall.
+     */
+    private void fillManifold(long seed, int band, int n, int x, int side, Column out) {
+        int floor = floorY();
+        int top = ceilingY() - 1;
+        Direction in = Level2Line.inwardOf(side);
+        Kind header = headerKind(seed, band, n);
+        int start = Level2Line.segStart(seed, band, n);
+        int end = Level2Line.segEnd(seed, band, n);
+        out.set(floor + 1, Level2Parts.duct(in, Math.floorMod(x, 6) == 0));
+        int r = Math.floorMod(x - start, 3);
+        if (x == Level2Line.segMid(seed, band, n)) {
+            out.set(floor + 2, Level2Parts.stencil(in, LABELS[Hash.range(Hash.of(seed, band, n, 517), LABELS.length)]));
+            out.set(floor + 3, Level2Parts.gauge(in));
+        } else if (r == 0) {
+            out.set(floor + 3, Level2Parts.feedPipe(in, header));
+            long hv = Hash.of(seed, band, x, 533);
+            out.set(floor + 2, header != Kind.PAINTED_RED && Hash.unit(hv) < 0.45
+                    ? Level2Parts.leverValve(in, Hash.unit(Hash.mix(hv)) < 0.8, true)
+                    : Level2Parts.valve(in, header == Kind.PAINTED_RED, true));
+        } else if (r == 1) {
+            out.set(floor + 3, Level2Parts.gauge(in));
+        }
+        // The header: a fatter pair in the colour of what it carries, a flange at each end of the run.
+        boolean flange = x == start + 2 || x == end - 2 || Math.floorMod(x + 1, 5) == 0;
+        out.set(top, Level2Parts.hung(Direction.Axis.X, header, Size.MEDIUM, flange, false));
+    }
+
+    // ---- The bundle's pieces -------------------------------------------------------------------
+
+    /**
+     * One of the rack's front pipes in the lane column beside its wall: the big pale main on the
+     * floor, the rusty three on a strut channel at waist height, a pair at head height. Where the
+     * run stops (a doorway, the bundle turning off the wall) the pipes bend into the rack.
+     */
+    private static BlockState frontPiece(long seed, int band, int x, int side, int row) {
+        Direction in = Level2Line.inwardOf(side);
+        Direction wall = Level2Line.wallOf(side);
+        boolean west = Level2Section.front(seed, band, x - 1, side, row);
+        boolean east = Level2Section.front(seed, band, x + 1, side, row);
+        Kind kind = row == 1 ? Kind.INSULATED : row == 2 ? Kind.STEEL : rackKind(seed, band, side);
+        Size size = row == 1 ? Size.LARGE : row == 2 ? Size.SMALL : Size.MEDIUM;
+        if (west != east) {
+            return Level2Parts.pipeEnd(in, west ? Direction.WEST : Direction.EAST, true, kind, size);
+        }
+        return switch (row) {
+            case 1 -> Level2Parts.duct(in, Math.floorMod(x + 3 * side, 6) == 0);
+            case 2 -> Level2Parts.rack(in, Level2Line.bracketAt(seed, band, x));
+            default -> Level2Parts.pipe(Direction.Axis.X, wall, kind, size, Math.floorMod(x + 2, 5) == 0);
+        };
+    }
+
+    /** True if the inner wall on {@code side} carries the bundle's back pipes in ring cell i at x. */
+    private static boolean backAt(long seed, int band, int x, int side, int i) {
+        if (!Level2Section.bundle(Level2Section.ring(seed, band, x), i) || Level2Section.passage(seed, band, x, side)
+                || Level2Section.manifoldAt(seed, band, x, side)) {
+            return false;
+        }
+        int n = Level2Line.segment(seed, band, x);
+        return !(Level2Line.segType(seed, band, n) == Level2Line.SEG_BULKHEAD && Level2Line.frameX(seed, band, n) == x);
+    }
+
+    /**
+     * One of the bundle's back pipes in the inner wall column, against the concrete behind: the
+     * insulated main low, a pair above it, a painted service line at head height, and a pair hung
+     * in the top corner. Where the run stops the pipes bend into the wall (or up into the slab).
+     */
+    private static BlockState backPiece(long seed, int band, int x, int side, int row, int i) {
+        Direction in = Level2Line.inwardOf(side);
+        Direction wall = Level2Line.wallOf(side);
+        boolean west = backAt(seed, band, x - 1, side, i);
+        boolean east = backAt(seed, band, x + 1, side, i);
+        Kind kind = switch (row) {
+            case 1 -> Kind.INSULATED;
+            case 2 -> LOW_KINDS[Hash.range(Hash.of(seed, 2 * band + (side < 0 ? 0 : 1), 0, 519), LOW_KINDS.length)];
+            case 3 -> servicePaint(seed, band);
+            default -> Kind.STEEL;
+        };
+        Size size = row == 1 ? Size.LARGE : row == 3 ? Size.SMALL : Size.MEDIUM;
+        boolean flange = Math.floorMod(x + 2 * row, 5) == 0;
+        if (row == 4) {
+            if (west != east) {
+                return Level2Parts.hungEnd(Direction.NORTH, west ? Direction.WEST : Direction.EAST, kind, size);
+            }
+            boolean bracket = Level2Line.bracketAt(seed, band, x);
+            return Level2Parts.hung(Direction.Axis.X, kind, size, flange && !bracket, bracket);
+        }
+        if (west != east) {
+            return Level2Parts.pipeEnd(in, west ? Direction.WEST : Direction.EAST, true, kind, size);
+        }
+        return Level2Parts.pipe(Direction.Axis.X, wall, kind, size, flange);
+    }
+
+    /**
+     * The bundle hung under the slab over lane column dz (ring cell i): the cable tray in the
+     * middle, a steel pair or the painted service line either side, on a steel channel bracket
+     * every few blocks; where the run stops its pipes bend up into the slab.
+     */
+    private static BlockState hungPiece(long seed, int band, int x, int dz, int i) {
+        boolean bracket = Level2Line.bracketAt(seed, band, x);
+        if (dz == 0) {
+            return Level2Parts.cableTray(Direction.Axis.X, bracket, !bracket && droopAt(seed, band, x));
+        }
+        Kind kind = dz > 0 ? Kind.STEEL : servicePaint(seed, band);
+        Size size = dz > 0 ? Size.MEDIUM : Size.SMALL;
+        boolean west = Level2Section.bundle(Level2Section.ring(seed, band, x - 1), i);
+        boolean east = Level2Section.bundle(Level2Section.ring(seed, band, x + 1), i);
+        if (west != east) {
+            return Level2Parts.hungEnd(Direction.NORTH, west ? Direction.WEST : Direction.EAST, kind, size);
+        }
+        return Level2Parts.hung(Direction.Axis.X, kind, size, !bracket && Math.floorMod(x + 2 * dz, 5) == 0, bracket);
+    }
+
+    /**
+     * The bundle sagging into the lane's top row (y43): pipes against the top of the block, the
+     * lowest at 43.6, so even over a half step 2 blocks stay clear.
+     */
+    private static BlockState sagPipe(int x, int dz) {
+        return dz == 0
+                ? Level2Parts.pipe(Direction.Axis.X, Direction.UP, Kind.INSULATED, Size.MEDIUM, Math.floorMod(x + 1, 5) == 0)
+                : Level2Parts.pipe(Direction.Axis.X, Direction.UP, Kind.STEEL, Size.SMALL, Math.floorMod(x + 3 + dz, 5) == 0);
     }
 
     /**
@@ -565,107 +878,7 @@ public final class Level2Layout extends LevelLayout {
         return true;
     }
 
-    /**
-     * The shoulder: gutter or plain floor, the fat insulated main hung in the ceiling band (one
-     * unbroken run), and the caged lamp hung just under it on the face of the chase's concrete pier.
-     * Now and then a joint of the main weeps: a drip under it and a puddle on the floor.
-     */
-    private void fillShoulder(long seed, int band, int n, int type, int x, int z, int side,
-                              @Nullable AnomalySite brownout, Column out) {
-        int floor = floorY();
-        int top = ceilingY() - 1;
-        Direction in = Level2Line.inwardOf(side);
-        Direction wall = Level2Line.wallOf(side);
-        boolean gutter = Level2Line.gutterSide(seed, band) == side;
-        out.set(floor, gutter ? Level2Parts.gutter(Direction.Axis.X) : ModBlocks.PIPE_FLOOR.get().defaultBlockState());
-        if (type == Level2Line.SEG_TRENCH && Level2Line.hasTrench(seed, band, n)
-                && x >= Level2Line.segStart(seed, band, n) + 2 && x <= Level2Line.segEnd(seed, band, n) - 2) {
-            for (int y = floor - 3; y < floor; y++) {
-                out.set(y, ModBlocks.PIPE_WALL.get().defaultBlockState()); // the trench's side walls
-            }
-        }
-        if (type == Level2Line.SEG_BULKHEAD && Level2Line.frameX(seed, band, n) == x) {
-            fillFrameSide(in, out);
-            return;
-        }
-        boolean plain = Level2Line.feature(seed, band, x, side) == Level2Line.F_NONE;
-        boolean squeeze = type == Level2Line.SEG_SQUEEZE;
-        if (squeeze && plain && (x == Level2Line.segStart(seed, band, n) || x == Level2Line.segEnd(seed, band, n))) {
-            // The squeeze's end portal: solid concrete, the main and the grown chase run into it.
-            fillPier(out, true);
-            return;
-        }
-        boolean beam = beamAt(seed, band, n, type, x);
-        out.set(top, Level2Parts.hung(Direction.Axis.X, Kind.INSULATED, Size.LARGE, !beam && Math.floorMod(x + 4, 5) == 0, beam));
-        if (!plain) {
-            return; // the way into a doorway, bay or alcove stays clear
-        }
-        if (squeeze && (Level2Line.feature(seed, band, x - 1, side) != Level2Line.F_NONE
-                || Level2Line.feature(seed, band, x + 1, side) != Level2Line.F_NONE)) {
-            fillPier(out, false); // the grown chase ends against a pier beside a doorway
-            return;
-        }
-        boolean lamp = Level2Line.chaseSlot(seed, band, x, side) == Level2Line.CHASE_PIER;
-        if (lamp) {
-            out.set(floor + 3, Level2Parts.lamp(in, lampDead(seed, band, n, type, x, z, brownout)));
-            if (brownout != null && Level2AnomalyPlan.emergencyLight(seed, x, z)) {
-                out.set(floor + 2, Level2Parts.emergencyLight(in)); // the violet battery light under the dead lamp
-            }
-        }
-        if (squeeze) {
-            // The chases grow: a main lying on the floor and a rack against the chase, under the lamps.
-            out.set(floor + 1, Level2Parts.pipe(Direction.Axis.X, Direction.DOWN, Kind.INSULATED, Size.LARGE, Math.floorMod(x, 5) == 0));
-            out.set(floor + 2, Level2Parts.pipe(Direction.Axis.X, wall, Kind.STEEL, Size.SMALL, Math.floorMod(x + 2, 5) == 0));
-            return;
-        }
-        if (type == Level2Line.SEG_BULKHEAD) {
-            // The ring's section number, on the faces of its shoulder pieces.
-            int frame = Level2Line.frameX(seed, band, n);
-            if (frame != Integer.MIN_VALUE && Math.abs(x - frame) == 1) {
-                out.set(floor + 2, Level2Parts.stencil(x < frame ? Direction.WEST : Direction.EAST,
-                        Level2Oddities.section(seed, band, n)));
-            }
-            if (frame != Integer.MIN_VALUE && !lamp && x == frame + emergencyOffset(seed, band, n)
-                    && side == emergencySide(seed, band, frame + emergencyOffset(seed, band, n))) {
-                // One red battery lamp on the ring's face, dark until this section's circuit dies.
-                out.set(floor + 3, Level2LightBlocks.emergency(x < frame ? Direction.WEST : Direction.EAST, true, false));
-            }
-        }
-        boolean leak = leakAt(seed, band, x, side);
-        if (leak) {
-            out.set(floor + 3, Level2Blocks.DRIP.get().defaultBlockState()); // under the weeping joint of the main
-        }
-        if (!gutter && (leak || leakAt(seed, band, x - 1, side) || leakAt(seed, band, x + 1, side))) {
-            out.set(floor + 1, Level2Parts.puddle()); // (over the gutter the water runs off: see fillLane)
-        }
-        if (type == Level2Line.SEG_LEAK && gutter) {
-            int mid = Level2Line.segMid(seed, band, n);
-            if (Math.abs(x - mid) <= 2) {
-                out.set(floor + 1, ModBlocks.L2_BLACK_OOZE.get().defaultBlockState());
-                if (((x - mid) & 1) == 0 && !lamp) {
-                    out.set(floor + 3, Level2Blocks.DRIP.get().defaultBlockState()); // right under the main
-                }
-            }
-        }
-        if (brownout != null && gutter) {
-            int burst = Level2AnomalyPlan.burstX(seed, brownout, x);
-            if (burst != Integer.MIN_VALUE && Math.abs(x - burst) <= 2) {
-                out.set(floor + 1, ModBlocks.L2_BLACK_OOZE.get().defaultBlockState());
-            }
-        }
-    }
-
-    /** A concrete pier (the scuffed base, then wall), up to the ceiling if {@code full}, else to head height. */
-    private void fillPier(Column out, boolean full) {
-        int floor = floorY();
-        out.set(floor + 1, Level2Blocks.WALL_BASE.get().defaultBlockState());
-        BlockState wall = ModBlocks.PIPE_WALL.get().defaultBlockState();
-        for (int y = floor + 2; y < (full ? ceilingY() : ceilingY() - 1); y++) {
-            out.set(y, wall);
-        }
-    }
-
-    /** A dead bulb: in a dark segment's dark run (all but one), or in a brownout (most). */
+    /** A dead tube: in a dark segment's dark run (all but one), or in a brownout (most). */
     private static boolean lampDead(long seed, int band, int n, int type, int x, int z, @Nullable AnomalySite brownout) {
         if (brownout != null && !Level2AnomalyPlan.lampSurvives(seed, x, z)) {
             return true;
@@ -674,7 +887,7 @@ public final class Level2Layout extends LevelLayout {
                 && x != Level2Line.survivorX(seed, band, n);
     }
 
-    /** One side post of a bulkhead ring (shoulder or chase), its lips facing the lane. */
+    /** One side post of a bulkhead ring (in the inner wall), its lips facing the lane. */
     private void fillFrameSide(Direction in, Column out) {
         int floor = floorY();
         for (int y = floor + 1; y < ceilingY() - 1; y++) {
@@ -683,265 +896,19 @@ public final class Level2Layout extends LevelLayout {
         out.set(ceilingY() - 1, Level2Parts.frame(in, Part.CORNER));
     }
 
-    /**
-     * The pipe chase along a wall. It has a rhythm: a concrete pier every 12 blocks (the lamp hangs
-     * on its face), a riser halfway between (pipes climbing from the low main and bending into the
-     * wall), and between them 5-block runs that each pick their own look: two racks, only the low
-     * one, only the high one, or bare wall with a junction box, a breaker panel, a valve, a gauge or
-     * a stencil. Racks never end in mid-air: at each end the pipes bend into the wall, or run into
-     * the pier through a bolted wall collar. The insulated main runs along the bottom and a thin
-     * pipe along the top, hung under the ceiling, the whole way; along a valve manifold the top pipe
-     * is the manifold's header and a branch drops from it into every valve.
-     */
-    private void fillChase(long seed, int band, int n, int type, int x, int side, int feature,
-                           @Nullable AnomalySite brownout, Column out) {
-        int floor = floorY();
-        int top = ceilingY() - 1;
-        Direction in = Level2Line.inwardOf(side);
-        Direction wall = Level2Line.wallOf(side);
-        out.set(floor, ModBlocks.PIPE_FLOOR.get().defaultBlockState());
-        if (type == Level2Line.SEG_BULKHEAD && Level2Line.frameX(seed, band, n) == x) {
-            fillFrameSide(in, out);
-            return;
-        }
-        out.set(top, chaseTop(seed, band, x, side, beamAt(seed, band, n, type, x)));
-        if (feature != Level2Line.F_NONE) {
-            return; // a doorway, bay or alcove: only the top pipe carries on over it
-        }
-        int slot = Level2Line.chaseSlot(seed, band, x, side);
-        if (slot == Level2Line.CHASE_PIER || Level2Line.feature(seed, band, x - 1, side) != Level2Line.F_NONE
-                || Level2Line.feature(seed, band, x + 1, side) != Level2Line.F_NONE) {
-            fillPier(out, false);
-            return;
-        }
-        boolean pocket = brownout != null && Level2Line.gutterSide(seed, band) == side
-                && Level2AnomalyPlan.burstX(seed, brownout, x) == x;
-        out.set(floor + 1, pocket ? ModBlocks.L2_BLACK_OOZE.get().defaultBlockState() // a burst main, ooze pooled in its gap
-                : Level2Parts.duct(in, Math.floorMod(x + 3 * side, 6) == 0));
-        int run = Level2Line.chaseRun(seed, band, x, side);
-        long h = Hash.of(seed, 2 * band + (side < 0 ? 0 : 1), run, 519);
-        if (slot == Level2Line.CHASE_RISER) {
-            // Pipes climbing from the main, bending into the wall at the top; the racks either side end beside them.
-            Kind kind = Hash.unit(h) < 0.5 ? Kind.STEEL : Kind.COPPER;
-            out.set(floor + 2, Level2Parts.pipe(Direction.Axis.Y, wall, kind, Size.MEDIUM, false));
-            out.set(floor + 3, Level2Parts.riserTop(in, kind, Size.MEDIUM));
-            return;
-        }
-        // What this run looks like.
-        double look = Hash.unit(Hash.mix(h));
-        boolean hasLow = look < 0.52;                 // both racks (34%) or only the low one (18%)
-        boolean hasHigh = look < 0.34 || (look >= 0.52 && look < 0.70); // ... or only the high one (18%)
-        int decor = Hash.range(Hash.mix(h ^ 0x5DEECE66DL), 5); // for bare runs (30%)
-        int mid = Level2Line.segMid(seed, band, n);
-        // Special runs: the valve manifold, the leak's steam jet, the hot zone's approach.
-        boolean valves = manifoldAt(seed, band, x, side);
-        boolean jet = type == Level2Line.SEG_LEAK && side != Level2Line.gutterSide(seed, band)
-                && run == Level2Line.chaseRun(seed, band, mid + 6, side);
-        int k = Level2Line.roomCell(x);
-        boolean hot = Level2Line.roomType(seed, band, k) == Level2Line.ROOM_HOT
-                && Math.abs(x - Level2Line.slotX(seed, band, k)) <= 12;
-        BlockState low = null;
-        BlockState high = null;
-        if (valves) {
-            // The valve manifold: from the header under the ceiling a branch drops into a valve at
-            // every other column (and on into the main below), a gauge between them, the label in the middle.
-            Kind header = headerKind(seed, band, n);
-            if (slot == 2 && Math.abs(x - mid) <= 3) {
-                low = Level2Parts.stencil(in, LABELS[Hash.range(Hash.of(seed, band, n, 517), LABELS.length)]);
-                high = Level2Parts.gauge(in);
-            } else if ((slot & 1) == 0) {
-                high = Level2Parts.feedPipe(in, header);
-                long hv = Hash.of(seed, band, x, 533);
-                low = header != Kind.PAINTED_RED && Hash.unit(hv) < 0.45
-                        ? Level2Parts.leverValve(in, Hash.unit(Hash.mix(hv)) < 0.8, true)
-                        : Level2Parts.valve(in, header == Kind.PAINTED_RED, true);
-            } else if (slot == 1) {
-                high = Level2Parts.gauge(in);
-            }
-        } else if (jet || hot) {
-            // Bare wall: a hissing vent beside a red valve (and the warning on the hot room's side).
-            if (slot == 2) {
-                low = jet ? Level2Parts.valve(in, true) : null;
-                high = Level2Parts.steamVent(in);
-            } else if (slot == 3) {
-                high = jet ? Level2Parts.stencil(in, Variant.STEAM)
-                        : Level2Line.slotSide(seed, band, k) == side ? Level2Parts.stencil(in, Variant.DANGER_HOT) : null;
-            }
-        } else if (hasLow || hasHigh) {
-            // Where does this run stop? Beside a pier (solid) or a riser, or another kind of run.
-            int west = chaseNext(seed, band, x, side, -1);
-            int east = chaseNext(seed, band, x, side, 1);
-            if (hasLow) {
-                Kind kind = LOW_KINDS[Hash.range(h, LOW_KINDS.length)];
-                Size size = Hash.unit(h ^ 1) < 0.5 ? Size.SMALL : Size.MEDIUM;
-                low = rackPiece(wall, in, kind, size, slot == 1, west, east, Hash.mix(h ^ 7)); // its support clamp mid-run
-            }
-            if (hasHigh) {
-                Kind kind = HIGH_KINDS[Hash.range(Hash.mix(h ^ 3), HIGH_KINDS.length)];
-                Size size = Hash.unit(h ^ 4) < 0.6 ? Size.SMALL : Size.MEDIUM;
-                high = rackPiece(wall, in, kind, size, slot == 3, west, east, Hash.mix(h ^ 8));
-            }
-        } else {
-            // A bare stretch of wall, with something on it.
-            switch (decor) {
-                case 0 -> {
-                    if (slot == 2) {
-                        // A junction box with its conduit running up into the ceiling band.
-                        low = Level2Blocks.JUNCTION_BOX.get().defaultBlockState().setValue(WallMountBlock.FACING, in);
-                        high = Level2Parts.pipe(Direction.Axis.Y, wall, Kind.CONDUIT, Size.SMALL, false);
-                    }
-                }
-                case 1 -> {
-                    if (slot == 2) {
-                        if (side < 0) {
-                            // A ball valve on a branch dropping from the painted pipe above.
-                            low = Level2Parts.leverValve(in, Hash.unit(h ^ 9) < 0.75, true);
-                            high = Level2Parts.feedPipe(in, chaseTopKind(seed, band, x, side));
-                        } else {
-                            low = Level2Parts.valve(in, false);
-                            high = Level2Parts.gauge(in);
-                        }
-                    }
-                }
-                case 2 -> {
-                    if (slot == 2) {
-                        high = Level2Parts.stencil(in, WALL_STENCILS[Hash.range(Hash.mix(h ^ 6), WALL_STENCILS.length)]);
-                    }
-                }
-                case 3 -> {
-                    if (slot == 2 && side > 0) {
-                        // A breaker panel, its conduits rising into the conduit run along the top.
-                        BlockState panel = Level2Blocks.BREAKER_PANEL.get().defaultBlockState();
-                        low = Level2Parts.tall(panel, in, false);
-                        high = Level2Parts.tall(panel, in, true);
-                    } else if (slot == 2) {
-                        low = Level2Blocks.JUNCTION_BOX.get().defaultBlockState().setValue(WallMountBlock.FACING, in);
-                        high = Level2Parts.pipe(Direction.Axis.Y, wall, Kind.CONDUIT, Size.SMALL, false);
-                    }
-                }
-                default -> {
-                    if (slot == 1) {
-                        high = Level2Parts.gauge(in);
-                    } else if (slot == 3) {
-                        low = Level2Blocks.JUNCTION_BOX.get().defaultBlockState().setValue(WallMountBlock.FACING, in);
-                        high = Level2Parts.pipe(Direction.Axis.Y, wall, Kind.CONDUIT, Size.SMALL, false);
-                    }
-                }
-            }
-        }
-        if (low != null) {
-            out.set(floor + 2, low);
-        }
-        if (high != null) {
-            out.set(floor + 3, high);
-        }
-    }
-
-    /** What lies beside a chase column along the wall (see {@link #chaseNext}). */
-    private static final int NEXT_RUN = 0;
-    private static final int NEXT_PIER = 1;
-    private static final int NEXT_OTHER = 2;
-
-    /**
-     * What is next to rack column x on the wall, one step {@code dir} (-1 west, +1 east): more of
-     * the same run (NEXT_RUN), a solid pier or bulkhead post (NEXT_PIER), or a riser or a stretch
-     * of a different kind, where the pipes have to turn into the wall (NEXT_OTHER). Column x itself
-     * is a rack column, so its own neighbours have no doorway (that would make x a pier).
-     */
-    private static int chaseNext(long seed, int band, int x, int side, int dir) {
-        int nx = x + dir;
-        int slot = Level2Line.chaseSlot(seed, band, nx, side);
-        if (slot == Level2Line.CHASE_RISER) {
-            return NEXT_OTHER;
-        }
-        if (slot == Level2Line.CHASE_PIER || Level2Line.feature(seed, band, nx + dir, side) != Level2Line.F_NONE) {
-            return NEXT_PIER;
-        }
-        int n = Level2Line.segment(seed, band, nx);
-        if (Level2Line.segType(seed, band, n) == Level2Line.SEG_BULKHEAD && Level2Line.frameX(seed, band, n) == nx) {
-            return NEXT_PIER;
-        }
-        return manifoldAt(seed, band, nx, side) ? NEXT_OTHER : NEXT_RUN;
-    }
-
-    /**
-     * One block of a wall rack: a plain length (or its joint, with the support, when
-     * {@code joint}), or, at the end of the run, the piece where the pipes bend into the wall or
-     * pass into the pier through a collar. {@code west}/{@code east} come from {@link #chaseNext}.
-     */
-    private static BlockState rackPiece(Direction wall, Direction in, Kind kind, Size size, boolean joint,
-                                        int west, int east, long h) {
-        int stop = west != NEXT_RUN && east == NEXT_RUN ? west : east != NEXT_RUN && west == NEXT_RUN ? east : NEXT_RUN;
-        if (stop == NEXT_RUN) {
-            return Level2Parts.pipe(Direction.Axis.X, wall, kind, size, joint); // a run's middle (or a lone column)
-        }
-        // The pipes arrive from the side the run carries on; against a riser they must bend away.
-        Direction from = west == NEXT_RUN ? Direction.WEST : Direction.EAST;
-        boolean bend = stop == NEXT_OTHER || Hash.unit(h) < 0.45;
-        return Level2Parts.pipeEnd(in, from, bend, kind, size);
-    }
-
-    /** True along the valve manifold: on its side of a valve segment, clear of the segment's two ends. */
-    private static boolean manifoldAt(long seed, int band, int x, int side) {
-        int n = Level2Line.segment(seed, band, x);
-        return Level2Line.segType(seed, band, n) == Level2Line.SEG_VALVES && side == Level2Line.featureSide(seed, band, n)
-                && x > Level2Line.segStart(seed, band, n) + 1 && x < Level2Line.segEnd(seed, band, n) - 1;
-    }
-
     /** The colour of a valve segment's header, matching the label stencilled on the manifold. */
     private static Kind headerKind(long seed, int band, int n) {
         return HEADERS[Hash.range(Hash.of(seed, band, n, 517), HEADERS.length)];
     }
 
-    /** The thin pipe run along the top of each chase (see the 5-argument version), with no beam. */
-    static BlockState chaseTop(long seed, int band, int x, int side) {
-        return chaseTop(seed, band, x, side, false);
+    /** The pipes along the top of the rack's front on {@code side} (one kind per corridor and side). */
+    private static Kind rackKind(long seed, int band, int side) {
+        return HIGH_KINDS[Hash.range(Hash.of(seed, 2 * band + (side < 0 ? 0 : 1), 1, 519), HIGH_KINDS.length)];
     }
 
-    /**
-     * The pipe run along the top of each chase, hung under the ceiling: painted on the north wall,
-     * conduit on the south. Along a valve segment's manifold side it is the manifold's header
-     * instead: a fatter pair in the colour of what it carries, with a flange where the paint
-     * changes at each end of the segment.
-     */
-    private static BlockState chaseTop(long seed, int band, int x, int side, boolean beam) {
-        int n = Level2Line.segment(seed, band, x);
-        if (Level2Line.segType(seed, band, n) == Level2Line.SEG_VALVES && side == Level2Line.featureSide(seed, band, n)) {
-            boolean end = x == Level2Line.segStart(seed, band, n) || x == Level2Line.segEnd(seed, band, n);
-            return Level2Parts.hung(Direction.Axis.X, headerKind(seed, band, n), Size.MEDIUM,
-                    end || (!beam && Math.floorMod(x + 1, 5) == 0), beam);
-        }
-        return Level2Parts.hung(Direction.Axis.X, side < 0 ? PAINTS[Hash.range(Hash.of(seed, band, 7, 520), PAINTS.length)] : Kind.CONDUIT,
-                Size.SMALL, !beam && Math.floorMod(x + (side < 0 ? 0 : 2), 5) == 0, beam);
-    }
+    // ---- Leaks, the bulkhead's battery lamp ------------------------------------------------------
 
-    /** The kind of the top pipe at x (what a branch dropping from it carries). */
-    private static Kind chaseTopKind(long seed, int band, int x, int side) {
-        return chaseTop(seed, band, x, side, false).getValue(Level2PipeBlock.KIND);
-    }
-
-    // ---- The ceiling band's beams, leaks, the bulkhead's battery lamp ---------------------------
-
-    /**
-     * True where a steel I-beam crosses the corridor under the slab: at every lamp spot (every 6
-     * blocks, so each beam has a lamp under one end and they read as one rhythm), except where a
-     * doorway, bay or alcove opens on either side (no wall to carry it), at a bulkhead ring (the
-     * ring is the beam there) and at a squeeze's concrete end beams.
-     */
-    private static boolean beamAt(long seed, int band, int n, int type, int x) {
-        if (Level2Line.lampSide(seed, band, x) == 0) {
-            return false;
-        }
-        if (type == Level2Line.SEG_BULKHEAD && Level2Line.frameX(seed, band, n) == x) {
-            return false;
-        }
-        if (type == Level2Line.SEG_SQUEEZE && (x == Level2Line.segStart(seed, band, n) || x == Level2Line.segEnd(seed, band, n))) {
-            return false;
-        }
-        return Level2Line.feature(seed, band, x, -1) == Level2Line.F_NONE && Level2Line.feature(seed, band, x, 1) == Level2Line.F_NONE;
-    }
-
-    /** About one tray block in 16 (never under a beam) has a loop of loose cable sagging out of it. */
+    /** About one tray block in 16 (never at a bracket) has a loop of loose cable sagging out of it. */
     private static boolean droopAt(long seed, int band, int x) {
         return Hash.unit(seed, band, x, 531) < 0.06;
     }
@@ -954,10 +921,10 @@ public final class Level2Layout extends LevelLayout {
     private static final double DRY_LEAK_CHANCE = 0.25;
 
     /**
-     * True if the insulated main over the shoulder on {@code side} weeps at x: a drip hangs under
-     * the joint and a puddle spreads on the floor. Leaks gather where the walls and floor are damp
-     * (Level2Damp), sit at one of the main's joints, and keep clear of the lamps, the doorways and
-     * the segments that already have water of their own (the leak segment) or no room for it.
+     * True if a joint overhead weeps at x on {@code side}: a drip hangs under it and a puddle
+     * spreads on the floor. Leaks gather where the walls and floor are damp (Level2Damp), and keep
+     * clear of the lamps, the doorways and the segments that already have water of their own (the
+     * leak segment) or no room for it.
      */
     private static boolean leakAt(long seed, int band, int x, int side) {
         int cell = Math.floorDiv(x, LEAK_CELL);
@@ -966,8 +933,8 @@ public final class Level2Layout extends LevelLayout {
             return false;
         }
         int lx = cell * LEAK_CELL + 2 + Hash.range(Hash.mix(h), LEAK_CELL - 4);
-        lx -= Math.floorMod(lx + 4, 5); // back to a joint of the main (see fillShoulder)
-        if (x != lx || Level2Line.lampSide(seed, band, x) == side) {
+        lx -= Math.floorMod(lx + 4, 5); // back to a joint of the pipes overhead
+        if (x != lx || Level2Line.lampAt(seed, band, x)) {
             return false;
         }
         int type = Level2Line.segType(seed, band, Level2Line.segment(seed, band, x));
@@ -984,43 +951,35 @@ public final class Level2Layout extends LevelLayout {
         return (Hash.of(seed, band, n, 532) & 1) == 0 ? -1 : 1;
     }
 
-    /** Which wall's shoulder the ring's battery lamp is on at x: away from the gutter, unless a caged lamp is there. */
-    private static int emergencySide(long seed, int band, int x) {
-        int side = -Level2Line.gutterSide(seed, band);
-        return Level2Line.lampSide(seed, band, x) == side ? -side : side;
-    }
-
     private static final Variant[] LABELS = {Variant.STEAM, Variant.RETURN, Variant.H2O};
     /** A manifold header's paint for each label above: red steam, grey return, green water. */
     private static final Kind[] HEADERS = {Kind.PAINTED_RED, Kind.PAINTED_BLUE, Kind.PAINTED_GREEN};
-    /**
-     * What may be stencilled on a bare stretch of chase wall (no section numbers: those run in
-     * order along the corridor, see Level2Oddities.section).
-     */
-    private static final Variant[] WALL_STENCILS = {Variant.NO_SMOKING, Variant.H2O, Variant.RETURN, Variant.STEAM,
-            Variant.DANGER_HOT};
-    /** The low rack's pipes: grey steel, copper, insulated, painted. */
+    /** The rack's middle pipes: grey steel, copper, insulated, painted. */
     private static final Kind[] LOW_KINDS = {Kind.STEEL, Kind.STEEL, Kind.COPPER, Kind.INSULATED, Kind.PAINTED_BLUE, Kind.PAINTED_GREEN};
-    /** The high rack's pipes. */
-    private static final Kind[] HIGH_KINDS = {Kind.COPPER, Kind.STEEL, Kind.PAINTED_RED, Kind.PAINTED_YELLOW, Kind.CONDUIT, Kind.INSULATED};
+    /** The pipes along the top of the rack's front. */
+    private static final Kind[] HIGH_KINDS = {Kind.COPPER, Kind.STEEL, Kind.STEEL, Kind.PAINTED_RED, Kind.PAINTED_YELLOW, Kind.CONDUIT};
 
     private static final Kind[] PAINTS = {Kind.PAINTED_RED, Kind.PAINTED_BLUE, Kind.PAINTED_YELLOW, Kind.PAINTED_GREEN};
 
-    /** The painted service pipe over the north half of the lane (one colour per corridor). */
+    /** The painted service line in the bundle (one colour per corridor). */
     private static Kind servicePaint(long seed, int band) {
         return PAINTS[Hash.range(Hash.of(seed, band, 6, 518), PAINTS.length)];
     }
 
     /**
-     * The exit bay beyond the chase (|dz| 4-6): grated floor, two tube lights, and in its back wall
-     * the EXIT bulkhead in a striped steel frame under a lit EXIT sign, with an amber battery lamp
-     * beside it that never goes out.
+     * The exit bay behind its 5-wide mouth in the inner wall (|dz| 2, a plain passage): a cramped
+     * recess only the door's 3 columns wide through |dz| 3-4, under the lowered ceiling, pipes
+     * standing floor to ceiling on either side and a pair hung overhead running back into the wall.
+     * In its back wall (|dz| 5) the EXIT bulkhead in a striped steel frame under the lit EXIT sign,
+     * a drain grate in front of it and an amber battery lamp on the frame that never goes out: the
+     * only light in there.
      */
     private void fillBay(long seed, int band, int x, int a, int side, Column out) {
         int floor = floorY();
         int top = ceilingY() - 1;
         Direction in = Level2Line.inwardOf(side);
         int m = x - bayExit(seed, band, x);
+        int am = Math.abs(m);
         if (a == Level2Line.BAY_BACK) {
             fillRock(out);
             if (m == 0) {
@@ -1029,7 +988,7 @@ public final class Level2Layout extends LevelLayout {
                 out.set(floor + 2, door.setValue(ExitDoorBlock.HALF, DoubleBlockHalf.UPPER));
                 out.set(floor + 3, ModBlocks.EXIT_SIGN.get().defaultBlockState());
                 out.set(top, Level2Parts.frame(in, Part.TOP));
-            } else if (Math.abs(m) == 1) {
+            } else if (am == 1) {
                 Direction toDoor = m < 0 ? Direction.EAST : Direction.WEST;
                 for (int y = floor + 1; y < top; y++) {
                     out.set(y, Level2Parts.frame(toDoor, Part.SIDE));
@@ -1038,24 +997,43 @@ public final class Level2Layout extends LevelLayout {
             }
             return;
         }
-        if (a == Level2Line.BAY_BACK - 1 && Math.abs(m) >= Level2Line.BAY_HALF - 1) {
-            fillRock(out); // the bay's back corners are solid, so it reads as a clean recess
+        out.set(floor, ModBlocks.PIPE_FLOOR.get().defaultBlockState());
+        if (am > BAY_INNER_HALF) {
+            // Either side of the recess: pipes standing floor to ceiling against its open side.
+            Direction against = m > 0 ? Direction.WEST : Direction.EAST;
+            Kind kind = a == Level2Line.CHASE ? Kind.INSULATED : Kind.STEEL;
+            for (int y = floor + 1; y < top; y++) {
+                out.set(y, Level2Parts.pipe(Direction.Axis.Y, against, kind, Size.MEDIUM, y == floor + 2));
+            }
+            out.set(top, ModBlocks.PIPE_WALL.get().defaultBlockState());
             return;
         }
-        if (Math.abs(m) <= 1) {
+        if (m == 0 && a == Level2Line.BAY_BACK - 1) {
             // A drain grate, with a dark sump under it (so nothing shows through if the grate is see-through).
             out.set(floor, ModBlocks.FLOOR_GRATE.get().defaultBlockState());
             out.set(floor - 1, ModBlocks.PIPE_FLOOR.get().defaultBlockState());
-        } else {
-            out.set(floor, ModBlocks.PIPE_FLOOR.get().defaultBlockState());
         }
-        if (a == Level2Line.WALL && Math.abs(m) == 3) {
-            out.set(top, ModBlocks.CEILING_TUBE.get().defaultBlockState().setValue(CeilingTubeBlock.AXIS, Direction.Axis.X));
-        } else if (a == Level2Line.BAY_BACK - 1 && Math.abs(m) == 2) {
-            out.set(floor + 3, Level2Parts.stencil(in, Variant.EXIT));
-        } else if (a == Level2Line.BAY_BACK - 1 && m == 3) {
+        if (m == 0) {
+            out.set(top, ModBlocks.PIPE_CEILING.get().defaultBlockState()); // the corridor's lowered ceiling, carried on in
+        } else if (a == Level2Line.CHASE) {
+            // The hung pair coming out of the back wall turns up into the slab at the bay's mouth.
+            out.set(top, Level2Parts.hungEnd(Direction.EAST, Level2Line.wallOf(side), Kind.STEEL, Size.MEDIUM));
+        } else {
+            out.set(top, Level2Parts.hung(Direction.Axis.Z, Kind.STEEL, Size.MEDIUM, true, false));
+        }
+        if (a == Level2Line.BAY_BACK - 1 && m == -1) {
+            out.set(floor + 3, Level2Parts.stencil(in, Variant.EXIT)); // on the bulkhead's frame
+        } else if (a == Level2Line.BAY_BACK - 1 && m == 1) {
             out.set(floor + 3, Level2LightBlocks.emergency(in, false, true));
         }
+    }
+
+    /** Behind its mouth the exit bay is open this far each way from the door (3 columns). */
+    private static final int BAY_INNER_HALF = 1;
+
+    /** True for the exit bay's columns that stay open behind its mouth: the door's own 3. */
+    private static boolean bayOpen(long seed, int band, int x) {
+        return Math.abs(x - bayExit(seed, band, x)) <= BAY_INNER_HALF;
     }
 
     /**

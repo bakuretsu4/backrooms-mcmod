@@ -370,9 +370,9 @@ public final class BackroomsLights {
         }
     }
 
-    /** Level 2's caged lamps on the series circuits: the amber bulkhead lamp and the mercury lamp. */
+    /** Level 2's lamps on the series circuits: the amber bulkhead lamp, the mercury lamp and the recessed light panel. */
     private static boolean level2CircuitLamp(FixtureType type) {
-        return type == FixtureType.BULKHEAD_LAMP || type == FixtureType.L2_MERCURY_LAMP;
+        return type == FixtureType.BULKHEAD_LAMP || type == FixtureType.L2_MERCURY_LAMP || type == FixtureType.L2_LIGHT_PANEL;
     }
 
     /** Level 2's battery lamps: the brownout's violet light and the red/amber emergency lamps. */
@@ -561,7 +561,7 @@ public final class BackroomsLights {
         }
     }
 
-    /** Per-frame: flashlights follow the view smoothly, beacons spin. Runs before Veil draws its lights. */
+    /** Per-frame: flashlights follow the view smoothly, beacons spin, Level 2's light turns with its spin. Runs before Veil draws its lights. */
     @SubscribeEvent
     public static void onRenderStage(RenderLevelStageEvent event) {
         if (!veilActive || event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) {
@@ -573,7 +573,8 @@ public final class BackroomsLights {
         }
         float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         Flashlights.frame(event.getCamera(), partialTick, mc.level, mc.player);
-        VeilFixtures.frame(System.currentTimeMillis());
+        Vec3 eye = event.getCamera().getPosition();
+        VeilFixtures.frame(System.currentTimeMillis(), eye.x, eye.y, eye.z, partialTick);
         ThrownLights.frame(partialTick, System.currentTimeMillis());
         Level0Shading.armed = true; // time this frame's world light pass (not the hand's)
     }

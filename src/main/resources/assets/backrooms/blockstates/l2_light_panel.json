@@ -1,0 +1,56 @@
+{
+  "variants": {
+    "facing=up,lit=true": {
+      "model": "backrooms:block/l2_light_panel_ceiling"
+    },
+    "facing=down,lit=true": {
+      "model": "backrooms:block/l2_light_panel_ceiling",
+      "x": 180
+    },
+    "facing=north,lit=true": {
+      "model": "backrooms:block/l2_light_panel_wall",
+      "x": 90
+    },
+    "facing=east,lit=true": {
+      "model": "backrooms:block/l2_light_panel_wall",
+      "x": 90,
+      "y": 90
+    },
+    "facing=south,lit=true": {
+      "model": "backrooms:block/l2_light_panel_wall",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west,lit=true": {
+      "model": "backrooms:block/l2_light_panel_wall",
+      "x": 90,
+      "y": 270
+    },
+    "facing=up,lit=false": {
+      "model": "backrooms:block/l2_light_panel_ceiling_dead"
+    },
+    "facing=down,lit=false": {
+      "model": "backrooms:block/l2_light_panel_ceiling_dead",
+      "x": 180
+    },
+    "facing=north,lit=false": {
+      "model": "backrooms:block/l2_light_panel_wall_dead",
+      "x": 90
+    },
+    "facing=east,lit=false": {
+      "model": "backrooms:block/l2_light_panel_wall_dead",
+      "x": 90,
+      "y": 90
+    },
+    "facing=south,lit=false": {
+      "model": "backrooms:block/l2_light_panel_wall_dead",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west,lit=false": {
+      "model": "backrooms:block/l2_light_panel_wall_dead",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

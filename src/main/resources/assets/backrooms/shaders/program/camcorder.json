@@ -67,6 +67,9 @@
         { "name": "Footage", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "Bars", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "AutoExposure", "type": "float", "count": 1, "values": [ 1.0 ] },
-        { "name": "Gain", "type": "float", "count": 1, "values": [ 0.0 ] }
+        { "name": "Gain", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "SpinTwist", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "SpinReach", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "SpinVignette", "type": "float", "count": 1, "values": [ 0.0 ] }
     ]
 }

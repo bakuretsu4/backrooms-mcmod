@@ -45,6 +45,12 @@ public final class Level2Audio {
     // a gauge needle that keeps time with your heart, and the warm breath behind a door to nowhere.
     public static final DeferredHolder<SoundEvent, SoundEvent> GAUGE_TICK = register("level2.gauge_tick");
     public static final DeferredHolder<SoundEvent, SoundEvent> WARM_DOOR = register("level2.warm_door");
+    // The level slowly turning around you (played by client/anomaly/level2/Level2Orbit, which
+    // carries them around your head): the whole structure groaning under a slow twist and its
+    // brackets chattering faintly (two loops), and a long heavy creak as if the corridor rolled over.
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPIN_GROAN = register("level2.spin_groan");
+    public static final DeferredHolder<SoundEvent, SoundEvent> SPIN_RATTLE = register("level2.spin_rattle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ROLL_CREAK = register("level2.roll_creak");
 
     private static DeferredHolder<SoundEvent, SoundEvent> register(String name) {
         return ModSounds.SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(Backrooms.id(name)));

@@ -5,6 +5,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.client.camera.HandheldCamera;
+import com.rickr.backrooms.client.anomaly.level2.Level2Spin;
 import com.rickr.backrooms.client.intro.NoclipTransition;
 import com.rickr.backrooms.client.light.BackroomsLights;
 import com.rickr.backrooms.client.water.UnderwaterView;
@@ -51,6 +52,12 @@ public final class CamcorderEffect {
     private static final float BASE_GRAIN = 0.0f;
     /** Lightning: how long the white flash takes to die away (ms). */
     private static final float LIGHTNING_MS = 900.0f;
+    /**
+     * Level 2's peripheral swirl: how far the picture's corners turn (radians) at full spin
+     * strength and comfort scale. ~0.8 degrees anywhere in Level 2 (strength 0.6), ~1.3 deep in a
+     * twist stretch, ~0.45 in a safe room; the middle of the picture never turns.
+     */
+    private static final float SPIN_CORNER_RAD = (float) Math.toRadians(1.3);
 
     /** Smoothed 0..1 "something is near" value; also read by the HUD and camera shake. */
     private static float danger;
@@ -209,6 +216,31 @@ public final class CamcorderEffect {
         chain.setUniform("Gain", Mth.clamp((autoExposure - EXPOSURE_BRIGHT) / (EXPOSURE_DARK - EXPOSURE_BRIGHT), 0.0f, 1.0f));
         chain.setUniform("Near", GameRenderer.PROJECTION_Z_NEAR);
         chain.setUniform("Far", mc.gameRenderer.getDepthFar());
+        updateSpinUniforms(mc, chain);
+    }
+
+    /**
+     * Level 2's spin in the picture (0 everywhere else): the corners turn back and forth with the
+     * shared spin phase, leaning back further while the turning lurches backwards, so the walls at
+     * the edges of the screen seem to slide round you; and the edges close in with the spin
+     * strength. The swirl is motion, so it takes the comfort scale; the closing edges don't move.
+     */
+    private static void updateSpinUniforms(Minecraft mc, PostChain chain) {
+        float twist = 0.0f;
+        float reach = 0.0f;
+        float vignette = 0.0f;
+        if (Level2Spin.active()) {
+            float strength = Level2Spin.strength();
+            float partialTick = mc.getTimer().getGameTimeDeltaPartialTick(false);
+            reach = SPIN_CORNER_RAD * strength * ClientSettings.tilt();
+            double phase = Level2Spin.phase(partialTick);
+            double lurch = Level2Spin.spinRate(partialTick) / Level2Spin.baseRate() - 1.0;
+            twist = reach * (float) Mth.clamp(0.75 * Math.sin(phase + 0.6) + 0.25 * lurch, -1.0, 1.0);
+            vignette = strength;
+        }
+        chain.setUniform("SpinTwist", twist);
+        chain.setUniform("SpinReach", reach);
+        chain.setUniform("SpinVignette", vignette);
     }
 
     /**

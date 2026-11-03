@@ -1,8 +1,11 @@
 package com.rickr.backrooms.client.light;
 
 import com.rickr.backrooms.block.Level0TubeGlow;
+import com.rickr.backrooms.client.Level2Atmosphere;
+import com.rickr.backrooms.client.anomaly.level2.Level2Spin;
 import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.world.BackroomsLevel;
+import com.rickr.backrooms.world.layout.Level2Twist;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.VeilRenderer;
 import foundry.veil.api.client.render.light.data.PointLightData;
@@ -12,6 +15,7 @@ import foundry.veil.api.client.render.light.renderer.LightRenderer;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -75,6 +79,20 @@ final class VeilFixtures {
      * BackroomsLights#LEVEL2_RANGE_SCALE.)
      */
     private static final float LEVEL2_FADE_FROM = 0.5f;
+    /**
+     * Level 2's fog swallows the corridor at 18-26 blocks (client/Level2Atmosphere), so its lamps
+     * have faded out by a few blocks past that: a pool of light must not glow out of the black.
+     */
+    private static final float LEVEL2_FOG_MARGIN = 4.0f;
+    /**
+     * Level 2's spin (client/anomaly/level2/Level2Spin): each lamp is brighter on the side of the
+     * corridor the virtual rotation has reached and dimmer opposite, by this share per unit of
+     * spin strength times the comfort scale (+/-15% anywhere there, +/-25% deep in a twist), so
+     * the light seems to travel round the corridor with it.
+     */
+    private static final float LEVEL2_ORBIT_DEPTH = 0.25f;
+    /** The orbit factor is rounded to this step, so a lamp only re-uploads to Veil when it shows. */
+    private static final float LEVEL2_ORBIT_STEP = 1.0f / 128.0f;
 
     private static final class Entry {
         FixtureLight light;
@@ -90,6 +108,12 @@ final class VeilFixtures {
         float lastConeBrightness = -1.0f;
         float lastLampConeBrightness = -1.0f;
         boolean seen;
+        /** Level 2: the brightness before the spin's orbit (set per tick), the orbit factor (per frame). */
+        boolean orbits;
+        float base;
+        float orbit = 1.0f;
+        /** Level 2: where round the corridor's twist this lamp sits (Level2Twist#helix), NaN until known. */
+        float helix = Float.NaN;
 
         Entry(FixtureLight light, LightRenderHandle<PointLightData> point) {
             this.light = light;
@@ -168,6 +192,7 @@ final class VeilFixtures {
                 }
                 fadeEnd = Math.min(fadeEnd, farthest);
             }
+            fadeEnd = Math.min(fadeEnd, Level2Atmosphere.fogEnd() + LEVEL2_FOG_MARGIN);
         }
         for (FixtureLight light : selected) {
             Entry entry = ACTIVE.get(light.key);
@@ -184,8 +209,11 @@ final class VeilFixtures {
             entry.light = light;
             entry.seen = true;
             if (!isBeacon(light.type)) {
-                setBrightness(entry, light.type.brightnessOn(floor) * tubeBrightness(light, floor) * level2Age(light, floor)
-                        * light.level * scale * edgeFade(light, fadeEnd, fadeFrom));
+                // Level 2's lamps get the spin's orbit on top every frame (see frame).
+                entry.orbits = floor == BackroomsLevel.LEVEL_2;
+                entry.base = light.type.brightnessOn(floor) * tubeBrightness(light, floor) * level2Age(light, floor)
+                        * light.level * scale * edgeFade(light, fadeEnd, fadeFrom);
+                setBrightness(entry, entry.orbits ? entry.base * entry.orbit : entry.base);
             }
             // The nearest few streetlamps (selected is nearest first) get their glow cone.
             if (light.type.isStreetlamp() && conesLeft > 0) {
@@ -236,12 +264,22 @@ final class VeilFixtures {
         return type == FixtureType.RED_ALARM_LAMP || type == FixtureType.L0_BEACON;
     }
 
-    /** Per-frame work: spin the alarm beacons smoothly (per tick would look steppy). */
-    static void frame(long nowMs) {
+    /**
+     * Per-frame work: spin the alarm beacons smoothly (per tick would look steppy), and turn Level
+     * 2's light round the corridor with its spin ({@code eyeX/Y/Z}: the camera).
+     */
+    static void frame(long nowMs, double eyeX, double eyeY, double eyeZ, float partialTick) {
         float alarm = FixturePower.alarm();
         LightRenderer lights = null;
+        // Level 2's orbit: how deep it is right now (0 = none) and where the spin has got to.
+        float orbitDepth = Level2Spin.active() ? LEVEL2_ORBIT_DEPTH * Level2Spin.strength() * ClientSettings.tilt() : 0.0f;
+        double spinPhase = orbitDepth > 0.0f ? Level2Spin.phase(partialTick) : 0.0;
         for (Entry entry : ACTIVE.values()) {
             FixtureLight light = entry.light;
+            if (entry.orbits) {
+                orbit(entry, orbitDepth, spinPhase, eyeX, eyeY, eyeZ);
+                continue;
+            }
             if (!isBeacon(light.type)) {
                 continue;
             }
@@ -281,6 +319,31 @@ final class VeilFixtures {
                 entry.coneB.getLightData().setBrightness(coneBrightness);
                 entry.lastConeBrightness = coneBrightness;
             }
+        }
+    }
+
+    /**
+     * One Level 2 lamp's orbit factor. Its angle round the corridor (0 = the right wall looking
+     * along +x, PI/2 = the ceiling, the same convention as Level2Twist#helix) is where it sits
+     * round you in the cross-section, plus how far the corridor's twist has carried it
+     * (Level2Twist#helix at the lamp: in a twist stretch the bright side corkscrews off down the
+     * corridor with the geometry). The spin turns the environment clockwise looking along +x as its
+     * phase grows, i.e. toward smaller angles, so the brightest lamps are those at angle -phase.
+     */
+    private static void orbit(Entry entry, float depth, double phase, double eyeX, double eyeY, double eyeZ) {
+        float factor = 1.0f;
+        if (depth > 0.0f) {
+            FixtureLight light = entry.light;
+            if (Float.isNaN(entry.helix) && Level2Spin.hasSeed()) {
+                entry.helix = Level2Twist.helix(Level2Spin.seed(), Mth.floor(light.x), Mth.floor(light.z));
+            }
+            double angle = Math.atan2(light.y - eyeY, light.z - eyeZ) + (Float.isNaN(entry.helix) ? 0.0f : entry.helix);
+            factor = 1.0f + depth * (float) Math.cos(angle + phase);
+            factor = Math.round(factor / LEVEL2_ORBIT_STEP) * LEVEL2_ORBIT_STEP;
+        }
+        if (factor != entry.orbit) {
+            entry.orbit = factor;
+            setBrightness(entry, entry.base * factor);
         }
     }
 
@@ -332,9 +395,9 @@ final class VeilFixtures {
         return floor == BackroomsLevel.LEVEL_2 && level2Bulb(light.type) ? FixturePower.level2BulbLevel(light.key) : 1.0f;
     }
 
-    /** The caged incandescent-style lamps of Level 2 (amber bulkhead and mercury). */
+    /** Level 2's lamps that age on the series circuits (amber bulkhead, mercury, recessed panel). */
     private static boolean level2Bulb(FixtureType type) {
-        return type == FixtureType.BULKHEAD_LAMP || type == FixtureType.L2_MERCURY_LAMP;
+        return type == FixtureType.BULKHEAD_LAMP || type == FixtureType.L2_MERCURY_LAMP || type == FixtureType.L2_LIGHT_PANEL;
     }
 
     // Level 2 bulb colours by age (multipliers on the fixture colour): a new bulb burns a touch

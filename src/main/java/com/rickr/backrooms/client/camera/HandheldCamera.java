@@ -3,10 +3,13 @@ package com.rickr.backrooms.client.camera;
 import com.rickr.backrooms.camera.CameraClientState;
 import com.rickr.backrooms.config.ClientSettings;
 import com.rickr.backrooms.client.CamcorderEffect;
+import com.rickr.backrooms.client.anomaly.level2.Level2Spin;
+import com.rickr.backrooms.world.layout.Level2Twist;
 import com.rickr.backrooms.network.LevelEventPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 
 /**
@@ -20,6 +23,9 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
  *   <li><b>Roll:</b> the horizon tilts into turns and strafes.</li>
  *   <li><b>Events:</b> Level 2's TWIST event slowly leans the world ~3.5 degrees and back; Bacteria
  *       nearby makes your hands shake; the wake-up intro lies you on the carpet.</li>
+ *   <li><b>Level 2's spin:</b> always on there (client/anomaly/level2/Level2Spin): a slow, uneven
+ *       roll drift, a partial counter-roll against the way the corridor banks where you stand, and
+ *       a tiny yaw sway of the picture only. Your real facing and movement never change.</li>
  * </ul>
  *
  * <p>All easing uses {@link #ease}, an exponential follow measured in game ticks, so the feel is
@@ -59,6 +65,28 @@ public final class HandheldCamera {
     /** Turn roll and strafe roll are each clamped to this many degrees. */
     private static final float ROLL_LIMIT_DEG = 7.0f;
 
+    // --- Level 2 spin (all of it times ClientSettings.tilt(): 0 = none) --------------------------
+    /**
+     * Roll drift per unit of spin strength: ~1.3 degrees anywhere in Level 2 (strength 0.6), ~0.7
+     * in a safe room. It follows the shared spin phase, so it wanders one way and back over about
+     * a minute, never at a steady rate, and never fast enough to feel like the camera moved.
+     */
+    private static final float SPIN_ROLL_DEG = 2.1f;
+    /** Extra drift deep in a twist stretch (Level2Spin#twistShare): up to ~3.5 degrees there. */
+    private static final float SPIN_ROLL_TWIST_DEG = 1.4f;
+    /**
+     * Counter-roll: this share of the corridor's bank (Level2Twist#bank, up to ~25 degrees) is
+     * rolled the other way, so a banked stretch looks banked a little MORE than it is built: the
+     * corridor seems to keep turning around you as you walk through it. Scaled by how much you
+     * look along the corridor (bank reads as roll only when you look down it).
+     */
+    private static final float BANK_COUNTER_SHARE = 0.12f;
+    private static final float BANK_COUNTER_MAX_DEG = 3.0f;
+    /** The bank under you eases leaving 95% of the gap per tick (~3 s): no step at a block edge. */
+    private static final float BANK_SMOOTHING = 0.95f;
+    /** Tiny yaw sway of the picture (never your aim), per unit of strength: at most ~1.2 degrees. */
+    private static final float SPIN_YAW_DEG = 1.2f;
+
     // --- TWIST event (Level 2) -----------------------------------------------------------------
     /**
      * How far the corridor leans at the height of the event. Was 20 degrees (the whole view tipped
@@ -95,6 +123,10 @@ public final class HandheldCamera {
     private static float turnRoll;
     private static float strafeRoll;
     private static float twist;
+    /** Level 2: the corridor bank under you (degrees, eased) and this frame's spin roll and yaw. */
+    private static float bank;
+    private static float spinRoll;
+    private static float spinYaw;
     private static float lastRenderYaw;
     private static float lastRenderPitch;
     private static float beamYaw;
@@ -154,6 +186,7 @@ public final class HandheldCamera {
         trauma = TRAUMA_MIN;
         noiseSpeed = 0.1f;
         turnRoll = strafeRoll = twist = 0.0f;
+        bank = spinRoll = spinYaw = 0.0f;
         blurU = blurV = flashX = flashY = 0.0f;
     }
 
@@ -217,16 +250,51 @@ public final class HandheldCamera {
         shakePitch += Mth.cos(t * 27.0f) * 0.8f * jitter;
 
         twist += (twistGoal() - twist) * ease(TWIST_SMOOTHING, dTicks);
+        updateLevel2Spin(event, tilt, dTicks);
 
-        float yaw = smoothYaw + shakeYaw;
+        float yaw = smoothYaw + shakeYaw + spinYaw;
         float pitch = smoothPitch + shakePitch;
-        float roll = event.getRoll() + turnRoll + strafeRoll + shakeRoll + twist * TWIST_ROLL_DEG;
+        float roll = event.getRoll() + turnRoll + strafeRoll + shakeRoll + twist * TWIST_ROLL_DEG + spinRoll;
 
         event.setYaw(yaw);
         event.setPitch(pitch);
         event.setRoll(roll);
 
         updateBlurAndBeam(mc, yaw, pitch, aimYaw, aimPitch, dt, dTicks);
+    }
+
+    /**
+     * Level 2's continuous spin layer ({@link #spinRoll}, {@link #spinYaw}); 0 everywhere else.
+     * Everything follows the shared spin phase and the eased spin strength, so nothing here can
+     * jump: the only inputs that change quickly (where you look) only scale the counter-roll.
+     */
+    private static void updateLevel2Spin(ViewportEvent.ComputeCameraAngles event, float tilt, float dTicks) {
+        if (!Level2Spin.active() || tilt <= 0.0f) {
+            bank = spinRoll = spinYaw = 0.0f;
+            return;
+        }
+        float partialTick = (float) event.getPartialTick();
+        float strength = Level2Spin.strength();
+        double phase = Level2Spin.phase(partialTick);
+
+        // Drift: two incommensurate harmonics of the phase, so it never settles into a clean swing.
+        float wave = (float) (0.75 * Math.sin(phase) + 0.25 * Math.sin(2.618 * phase + 0.9));
+        float drift = -wave * (SPIN_ROLL_DEG * strength + SPIN_ROLL_TWIST_DEG * Level2Spin.twistShare());
+
+        // Counter-roll against the bank under you. A positive bank turns the corridor clockwise as
+        // seen looking along +x; a negative roll turns the picture clockwise, so -bank adds to it.
+        // Looking the other way the same bank turns the picture the other way, hence "along".
+        float bankGoal = 0.0f;
+        if (Level2Spin.hasSeed()) {
+            Vec3 pos = event.getCamera().getPosition();
+            bankGoal = Level2Twist.bank(Level2Spin.seed(), Mth.floor(pos.x), Mth.floor(pos.z));
+        }
+        bank += (bankGoal - bank) * ease(BANK_SMOOTHING, dTicks);
+        float along = -Mth.sin(smoothYaw * Mth.DEG_TO_RAD); // +1 looking along +x, -1 along -x
+        float counter = Mth.clamp(-BANK_COUNTER_SHARE * bank * along, -BANK_COUNTER_MAX_DEG, BANK_COUNTER_MAX_DEG);
+
+        spinRoll = (drift + counter) * tilt;
+        spinYaw = (float) (0.6 * Math.sin(phase + 1.9) + 0.4 * Math.sin(1.618 * phase + 0.3)) * SPIN_YAW_DEG * strength * tilt;
     }
 
     /** 0 normally; ramps to +/-1 during the Level 2 TWIST event and back before it ends. */

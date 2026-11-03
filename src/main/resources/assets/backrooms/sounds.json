@@ -1846,6 +1846,41 @@
     ],
     "subtitle": "subtitles.backrooms.level2_warm_door"
   },
+  "level2.spin_groan": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/spin_groan",
+        "attenuation_distance": 16
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_spin_groan"
+  },
+  "level2.spin_rattle": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/spin_rattle",
+        "attenuation_distance": 10
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_spin_rattle"
+  },
+  "level2.roll_creak": {
+    "sounds": [
+      {
+        "name": "backrooms:level2/roll_creak1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "backrooms:level2/roll_creak2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "backrooms:level2/roll_creak3",
+        "attenuation_distance": 24
+      }
+    ],
+    "subtitle": "subtitles.backrooms.level2_roll_creak"
+  },
   "level0.red_rooms_hum": {
     "sounds": [
       {
