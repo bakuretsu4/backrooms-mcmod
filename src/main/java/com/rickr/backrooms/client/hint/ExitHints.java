@@ -100,8 +100,9 @@ public final class ExitHints {
             case LEVEL_37 -> new Guidance(0.12, 60);
             case LEVEL_39 -> new Guidance(0.10, 100);
             case LEVEL_94 -> new Guidance(0.07, 80);
-            // Every exit mirror is ~1000 blocks from the next; the marks show only on the way in.
-            case LEVEL_228 -> new Guidance(0.06, 80);
+            // One compact maze (~100 blocks across): marks only close to the final chamber and the
+            // exit hallway, or they would be everywhere; the maze itself is the puzzle.
+            case LEVEL_228 -> new Guidance(0.06, 40);
             // Its arches are 140 blocks apart; the marks show only on the way to the nearest one.
             case LEVEL_369 -> new Guidance(0.05, 60);
             case LEVEL_490 -> new Guidance(0.03, 60);
@@ -167,6 +168,12 @@ public final class ExitHints {
         BlockPos exit = new BlockPos(exitX, exitY, exitZ);
         if (mc.player.position().distanceToSqr(Vec3.atCenterOf(exit)) > HEAR_RANGE * HEAR_RANGE) {
             return; // not fed: it fades out and stops by itself
+        }
+        if (floor == BackroomsLevel.LEVEL_228 && com.rickr.backrooms.client.level228.Level228Atmosphere.zone()
+                == com.rickr.backrooms.world.layout.Level228Plan.Zone.CHAMBER) {
+            // The final chamber is silent, and a draught heard there could give away which of the
+            // three mirrors leads on: the hint must never touch the puzzle.
+            return;
         }
         if (sound == null || !exit.equals(soundAt) || !mc.getSoundManager().isActive(sound)) {
             sound = new FadingLoopSound(soundOf(floor), false, exitX + 0.5, exitY + 1.0, exitZ + 0.5, SOUND_FADE);

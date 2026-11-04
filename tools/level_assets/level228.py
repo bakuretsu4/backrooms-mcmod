@@ -1,69 +1,20 @@
-"""Level 228 ("Maze of Mirrors") blocks: the plain textures, and the block models, blockstates and
-item models of every l228_ block (world/layout/Level228Plan builds the maze out of them).
-
-Textures (block atlas: few and small, it must stay 4096 x 4096): 32 px each.
-  block/l228_mirror_frame   the dark metal of the posts between panes and the lintels over them
-  block/l228_panel          the dark matte panels: the walls that are not glass
-  block/l228_floor          polished black floor with a faint sheen
-  block/l228_ceiling        the low dark ceiling
-The glass, the light panels and the black exit mirror are the level's look and have their own
-generator (level_assets/level228_atmos.py); the models here only point at them.
+"""Level 228 ("Hall of Mirrors") blocks: the block models, blockstates and item models of every
+l228_ block (world/layout/Level228Plan builds the maze out of them). The block textures and all
+of the level's look come from level_assets/level228_props.py.
 
 Shapes (must match block/Level228MirrorBlock): a mirror pane is a 2 px sheet through the middle
-of its block; AXIS is the pane's normal (axis=x: the sheet in the plane x = const).
+of its block; AXIS is the pane's normal (axis=x: the sheet in the plane x = const). In v2 the pane
+blocks render nothing in the world (the props draw every pane); the models remain for items.
+l228_post (a column's invisible collision) has a particle-only model.
 
-Run only these with:  python tools/gen_assets.py tex_l228_blocks tex_l228_models
-Every generator has its own fixed seed (22850-22859), so re-running gives identical files.
+Run only these with:  python tools/gen_assets.py tex_l228_models
 """
 from __future__ import annotations
 
-import numpy as np
-
-import gen_assets as G
 from anomaly_assets import level227_flora as F
 
-N = 32
 FULL_BRIGHT = {"block_light": 15, "sky_light": 15}
 COLOURS = ("blue", "green", "red")
-
-
-def _noise(rng, beta: float, aniso=(1.0, 1.0), kmin: float = 1.0) -> np.ndarray:
-    return G.fnoise(rng, (N, N), beta=beta, aniso=aniso, kmin=kmin)
-
-
-def tex_l228_blocks() -> None:
-    """The four plain surfaces: dark greys, told apart by their grain more than their colour (the
-    coloured lights are what you see). Not near black: the first version (albedo 14-34 / 255) left
-    the lit maze black on camera in both renderers, since the light has nothing to bounce off. At
-    these values a corridor under its panels reads around 30-45 / 255 in its light's colour."""
-    rng = G.rng_for(22850)
-    # Frame: brushed dark metal, fine horizontal brushing, a slightly lighter bevel at the edges.
-    img = G.fill((84, 86, 92), (N, N))
-    img = G.add_lum(img, _noise(rng, 1.2, aniso=(1.0, 0.08), kmin=2) * 3.0 + rng.normal(0, 0.8, (N, N)))
-    X, Y = G.grid((N, N))
-    edge = np.minimum(np.minimum(X, N - 1 - X), np.minimum(Y, N - 1 - Y))
-    img = G.add_lum(img, np.where(edge < 1.5, 14.0, 0.0))
-    F._save(img, "l228_mirror_frame")
-
-    rng = G.rng_for(22851)
-    # Panel: matte, a soft mottle, a faint seam round the edge (panels butt up against each other).
-    img = G.fill((78, 78, 84), (N, N))
-    img = G.add_lum(img, G.blur(_noise(rng, 2.2, kmin=1.5), 1.0) * 3.5 + rng.normal(0, 0.9, (N, N)))
-    img = G.add_lum(img, np.where(edge < 0.5, -12.0, 0.0))
-    F._save(img, "l228_panel")
-
-    rng = G.rng_for(22852)
-    # Floor: polished dark stone, a few long soft streaks of sheen and a very fine speckle.
-    img = G.fill((58, 58, 64), (N, N))
-    sheen = G.smoothstep(0.6, 1.8, _noise(rng, 2.6, aniso=(1.0, 0.25), kmin=1.0))
-    img = G.add_lum(img, sheen * 14.0 + (rng.random((N, N)) < 0.03) * 10.0, (0.95, 0.97, 1.0))
-    F._save(img, "l228_floor")
-
-    rng = G.rng_for(22853)
-    # Ceiling: mid-grey board with a pinhole texture (it catches the panels' colour around them).
-    img = G.fill((104, 104, 108), (N, N))
-    img = G.add_lum(img, G.blur(_noise(rng, 2.0, kmin=2), 0.8) * 3.0 - (rng.random((N, N)) < 0.06) * 14.0)
-    F._save(img, "l228_ceiling")
 
 
 def _pane_model(name: str, texture: str, bright: bool, tint: bool) -> None:
@@ -110,6 +61,11 @@ def tex_l228_models() -> None:
     F._state("l228_light", {f"color={colour}": F._v(f"l228_light_{colour}") for colour in COLOURS})
     F._item_block("l228_light", "l228_light_blue")
 
+    # v2: a column's collision. It draws nothing (RenderShape.INVISIBLE); the model only names the
+    # particle texture, so no missing-model warning.
+    F._model("l228_post", {"textures": {"particle": F._ref("l228_panel")}})
+    F._state("l228_post", {"": F._v("l228_post")})
 
-TEXTURES = [tex_l228_blocks, tex_l228_models]
+
+TEXTURES = [tex_l228_models]
 SOUNDS = []

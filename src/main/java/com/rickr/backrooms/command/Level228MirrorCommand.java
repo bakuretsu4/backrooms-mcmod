@@ -14,8 +14,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 /**
  * Level 228's reflections on demand, for testing (they live on the client, client/level228):
  * <ul>
- *   <li>{@code /backrooms mirror lie <lag|look|walk|still>}: the next reflection of you that is on
- *       screen and within 10 blocks lies this way (instead of waiting one to three minutes).</li>
+ *   <li>{@code /backrooms mirror lie <look|lag|walk|stop|vanish|off>}: the next of your
+ *       reflections that suits it (close by, outside the final chamber and exit hallway) lies
+ *       this way, as soon as its moment comes, instead of waiting one to three minutes;
+ *       {@code off} ends the current lie.</li>
+ *   <li>{@code /backrooms mirror info}: stand-ins drawn, real bodies hidden behind mirrors, the
+ *       lie state, and what each exit mirror gets wrong (reveals the answer: testing only).</li>
  *   <li>{@code /backrooms mirror stage <entities|block_entities|solid_blocks>}: which render
  *       stage the reflections are drawn in, should a shader pack misbehave in the default one
  *       (entities).</li>
@@ -27,14 +31,19 @@ final class Level228MirrorCommand {
     static LiteralArgumentBuilder<CommandSourceStack> node() {
         return Commands.literal("mirror")
                 .then(Commands.literal("lie")
-                        .then(Commands.literal("lag").executes(ctx -> send(ctx, Level228MirrorPayload.LIE_LAG,
-                                "Your next reflection close by will be a little late.")))
                         .then(Commands.literal("look").executes(ctx -> send(ctx, Level228MirrorPayload.LIE_LOOK,
-                                "Your next reflection close by will keep watching you. Look away, then straight at it.")))
+                                "Stand still for a few seconds near your reflections; one turned away from you will slowly look at you.")))
+                        .then(Commands.literal("lag").executes(ctx -> send(ctx, Level228MirrorPayload.LIE_LAG,
+                                "Walk past your reflections: the nearest one on screen will fall a little behind.")))
                         .then(Commands.literal("walk").executes(ctx -> send(ctx, Level228MirrorPayload.LIE_WALK,
-                                "Your next reflection close by will walk off.")))
-                        .then(Commands.literal("still").executes(ctx -> send(ctx, Level228MirrorPayload.LIE_STILL,
-                                "Your next reflection close by will stay put. Walk off, look away, look back."))))
+                                "Walk, then stop in view of your reflection: it will keep walking a few steps.")))
+                        .then(Commands.literal("stop").executes(ctx -> send(ctx, Level228MirrorPayload.LIE_STOP,
+                                "Walk in view of your reflection: it will stop. Look away, look back.")))
+                        .then(Commands.literal("vanish").executes(ctx -> send(ctx, Level228MirrorPayload.LIE_VANISH,
+                                "One of your reflections out of view will be missing when you turn.")))
+                        .then(Commands.literal("off").executes(ctx -> send(ctx, Level228MirrorPayload.LIE_OFF,
+                                "Reflections honest again (until the next one)."))))
+                .then(Commands.literal("info").executes(ctx -> send(ctx, Level228MirrorPayload.INFO, "Mirror report:")))
                 .then(Commands.literal("stage")
                         .then(Commands.literal("entities").executes(ctx -> send(ctx, Level228MirrorPayload.STAGE_ENTITIES,
                                 "Reflections drawn after entities (default).")))

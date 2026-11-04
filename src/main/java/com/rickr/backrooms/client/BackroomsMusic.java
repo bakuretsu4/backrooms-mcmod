@@ -55,7 +55,11 @@ public final class BackroomsMusic {
     private static final Music LEVEL_490 = new Music(ModSounds.MUSIC_LEVEL490, 6000, 14000, true);
     /** Level 369: a little more often than most (every 2.5 to 7 minutes): it wants you to stay. */
     private static final Music LEVEL_369 = new Music(ModSounds.MUSIC_LEVEL369, 3000, 8400, true);
-    /** Level 228: a quiet maze where every tick of the glass should stand out, so every 4 to 10 minutes. */
+    /**
+     * Level 228: a quiet maze where every tick of a mirror should stand out, so every 4 to 10
+     * minutes ("Carousel Under Glass" or "Silvering"); none at all in the final chamber, which is
+     * silent (anything playing stops as you step in).
+     */
     private static final Music LEVEL_228 = new Music(ModSounds.MUSIC_LEVEL228, 4800, 12000, true);
     private static final Music LEVEL_9 = new Music(ModSounds.MUSIC_LEVEL9, 3600, 9600, true);
     /**
@@ -88,7 +92,8 @@ public final class BackroomsMusic {
                 case LEVEL_94 -> null; // its siren poles play their own tune
                 case LEVEL_490 -> LEVEL_490;
                 case LEVEL_369 -> LEVEL_369;
-                case LEVEL_228 -> LEVEL_228;
+                case LEVEL_228 -> com.rickr.backrooms.client.level228.Level228Atmosphere.zone()
+                        == com.rickr.backrooms.world.layout.Level228Plan.Zone.CHAMBER ? null : LEVEL_228;
                 case LEVEL_9 -> LEVEL_9;
                 case LEVEL_227 -> MEGAFLORA;
             });

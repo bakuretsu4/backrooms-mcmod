@@ -71,7 +71,7 @@ One path runs through every level, in the order of the wiki's level numbers (the
 Poolrooms sit between 9 and 37):
 
 ```
-Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Level 7 --sunken door--> Level 9 --underpass--> Poolrooms --the great pool hall--> Level 37 --deep pit--> Level 39 --mill window--> Level 94 --dark doorway--> Level 228 --black mirror--> Level 369 --arch of vines--> Level 490 --the leap--> Overworld
+Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Level 7 --sunken door--> Level 9 --underpass--> Poolrooms --the great pool hall--> Level 37 --deep pit--> Level 39 --mill window--> Level 94 --dark doorway--> Level 228 --the one true mirror--> Level 369 --arch of vines--> Level 490 --the leap--> Overworld
 ```
 
 Every exit looks different, but every move from one level to the next is filmed the same way:
@@ -344,61 +344,93 @@ going down into the dark, until the picture breaks up and you are in the next le
   steps going down into murk) lead to Level 7, and the light behind the throne leads to Level 1.
   And about one house in twelve has a moulded-clay front door like Level 9's: step through it
   and you are back in Level 9's suburbs.
-- **Level 228 ("Maze of Mirrors"):** reached through a dark doorway in Level 94: you step out of a
-  mirror into a maze of narrow corridors (two wide, at points one), three blocks high, walled with
-  mirror panes in dark frames and the odd dark panel, over a polished dark floor and under a low
-  ceiling. The light comes in sectors of blue, green or red: strips of panels down every corridor
-  and one over every junction, every panel its own shade, brighter pools and dimmer gaps. What you see in the glass is not a trick of the renderer: behind every pane the level
-  builds a mirrored copy of the maze out of real blocks (an "image volume", `world/layout/Level228Plan`),
-  so the reflections light, fog and shade right under any shader pack. Where both walls of a
-  corridor are glass, the copies repeat into the coloured dark, three and four deep. Half of what
-  you see is reflection: a corridor that seems to run straight on out of a junction can be a mirror
-  (you walk into glass), up to two branches of a junction can be reflections, and now and then a
-  doorway framed exactly like a mirror is open. The maze is a random spanning tree per region with
-  loops, joined region to region, so every corridor connects to every other: keep one hand on the
-  same wall and you never go round in circles for long. It is quiet and there are no spawns; the
-  danger is getting lost (bring supplies) and what lives in the glass. The way on is a mirror that
-  shows nothing (black, nothing behind it, no reflection of you in it, and it is never reflected
-  itself), set in the wall of one corridor per ~1024 x 1024 blocks; walk into it and you fall into
-  Level 369 through a skylight. You always arrive at least 300 blocks from it.
-  `/backrooms maze <facing|branch|exit>` jumps to the nearest facing mirrors, false branch or exit
-  mirror (testing).
-  - **Reflections** (`client/level228/Level228Reflections`): every player near you, you included
-    (also in first person), is drawn again inside each image volume on screen up to depth 4, where
-    the mirror map puts them: the real player's own renderer (skin, armour, held camcorder, limbs,
-    crouch) under `scale(flipX, 1, flipZ)`, quads re-wound for odd flips (`PuppetBuffers`), lit by
-    the image's mirrored lights, drawn after entities so the panes and fog lie over them. Rarely
-    (every 1-3 min, a little more often the longer you stay) a reflection of you close by lies
-    (`Level228Lies`): it lags most of a second behind you, keeps watching you until you look
-    straight at it, turns and walks off down the reflected corridor into the dark, or stays
-    standing as you leave and is gone when you look back. Testing:
-    `/backrooms mirror lie <lag|look|walk|still>`, `/backrooms mirror stage <entities|block_entities|solid_blocks>`.
-  - **The Other** (`world/Level228Hunt`, `client/level228/Level228Other`): a tall, pale figure that
-    exists only in the reflections: it walks the real maze toward one player at a time but is drawn
-    only at its images in the mirrors. It freezes while anyone has it on screen in a mirror; steps
-    come from the glass, the glass ticks when it is within 12 blocks. If it reaches you: silence,
-    your reflection vanishes, the glass cracks, white-out, and you wake 80+ blocks farther from the
-    exit (sanity -20); it leaves you alone 2-4 min. First comes after 3 min in the level, from 64-96
-    blocks, slow at first, faster the longer it stalks; it never hunts creative or spectator players.
-    Test: `/backrooms other <near|far|catch|off>`.
-  - **Look and sound** (`client/level228/Level228Atmosphere`, `Level228Ambience`,
-    `client/light/Level228Lamps`; textures and sounds from `tools/level_assets/level228_atmos.py`):
-    with Veil every ceiling panel is a short, coloured, shadowed light (its shade sets colour and
-    strength; a run of three is one light) and the copies in the image volumes light the reflections
-    the same. Without Veil and under Iris + Complementary (uncoloured block light) the colour comes
-    from the panels' tinted full-bright faces and from the air: the lightmap fill, the fog and the
-    camcorder's grade and haze all take the colour of the light around you (pulled harder under
-    a shader pack), so a red sector is red even in its gaps. Fog closes in from 8 blocks and is gone
-    by 44, so a mirror corridor shows three or four images and then sinks into dim coloured air. Each pane is a
-    faint dark-green film (about 17% cover), so every deeper image, seen through one more pane, comes
-    out a little darker and greener, like real mirrors. The exit mirror is black full-bright glass
-    with a slow cold shimmer and the faintest cold glow on the floor in front of it. Sound: a quiet
-    room tone, a low hum heard only close under a lit panel, now and then a pane settling or creaking
-    in its frame (from a real pane near you), your steps answered faintly from behind the nearest
-    pane beside you, where your reflection walks; the exit's hint is its cold draught. Bright,
-    short, fluttery glass reverb; all of it holds its breath with the Other. Music: "Silvering"
-    (below). F3 shows the light around you ("L228 light").
-- **Level 369 ("Comely"):** reached through Level 228's black exit mirror: you fall out of a skylight into
+- **Level 228 ("Hall of Mirrors"):** reached through a dark doorway in Level 94. An abandoned
+  carnival mirror maze, one per world, shared by everyone: you step out of a tall mirror in the
+  ticket hall, under a painted funhouse facade ("HALL OF MIRRORS", its marquee dead but for two
+  failing bulbs), past the cracked ticket booth and the sagging queue ropes, through the turnstile
+  and a black velvet curtain into the maze. Four mirror halls follow, each its own look, joined by
+  narrow backstage passages (plywood, crates of spare mirrors, a broken mirror stack, staff notes):
+  the **Crystal Maze** (turned-wood columns, gilt frames, dark boards), the **Alhambra Hall**
+  (slender painted columns, horseshoe arches, palm backdrops, a dense forest of columns), the
+  **Funhouse** (barber-striped columns, sagging canvas, distorting mirrors on the backdrop) and the
+  **Glass Labyrinth** (black steel posts, glass and mirror, almost no light), then the **final
+  chamber**. Every hall is a regular grid (a column every 3 blocks, full-height panels between:
+  mirror, clean glass, painted panel, an arch or an empty frame) laid out as a kaleidoscope: its
+  content is exactly mirror-symmetric across every line that carries a mirror, so what you see in
+  one is the real space beyond it, and behind the perimeter and far mirrors a sealed copy of the
+  hall runs on 24 blocks into the fog (`world/layout/Level228Plan`, `Level228Maze`). Nothing in the
+  reflections is faked by the renderer, so they light, fog and shade right under any shader pack,
+  and you can't tell a reflected corridor from a real one until you touch it: the colonnade goes on
+  forever, empty frames look exactly like mirrors, perimeter "frames" are clean glass. Now and then
+  a hall's shifting panels change (a mirror becomes an empty frame or back, the whole pattern at
+  once, only in a hall nobody is within 8 blocks of; the way through always stays). One mirror in
+  each of three halls shows a little lit parlour that isn't there; next to one twin mirror per
+  hall the reflection shows an opening where the real wall is a panel: push it for a moment and it
+  opens, for everyone. In the octagonal final chamber stand three identical antique mirrors, a
+  candle above each, nothing else: only one shows a true reflection (fixed for the world); the
+  others are subtly wrong, for everyone alike. Walk into the true one and you step out of a mirror
+  into the carnival's exit hallway ("THANK YOU FOR VISITING", cold light, leaves blown in); walk
+  into a wrong one and you quietly step out of a mirror at the start of the Glass Labyrinth again.
+  The hallway is safe (no anomalies, no imitator); go through its door into the vestibule and you
+  are ready: when every active player in the level is ready (or you are alone) everyone goes on to
+  Level 369 together (the others see "Waiting for N others..."). Leaving, disconnecting or dying
+  drops you from the count. No damage, no spawns, no random teleports. `/backrooms locate` points at
+  the final chamber (from the hallway, at its door). Testing: `/backrooms maze
+  <foyer|crystal|alhambra|funhouse|glass|chamber|exithall|backstage>` jumps to a zone's start,
+  `/backrooms maze shift` forces a shift, `/backrooms maze answer` names the true mirror.
+  - **Reflections** (`client/level228/Level228Reflections`): every player (you too, first person
+    included) is drawn again at every visible mirror image as a stand-in — same skin, layers,
+    armour, held items (mirrored hands), crouch/swim/use animations; real bodies standing beyond a
+    pane are hidden so only their reflections show; stand-ins never carry name tags (a name tag = a
+    real body). Funhouse mirrors stretch/squash/waver your reflection. Rare personal lies on your
+    own reflections only (head slowly turns to look at you while you stand still, lags behind, keeps
+    walking when you stop, stops while you walk, one reflection missing) — never in the final
+    chamber/exit hallway, never on the puzzle mirrors. The two wrong exit mirrors carry a fixed,
+    world-seeded flaw for everyone (0.4-0.7 s late, item in the wrong hand, a worn piece missing,
+    head nodding out of time, unmirrored, its candle out in the image, or the ticket stub in front
+    of it missing from the image). Debug: `/backrooms mirror lie <look|lag|walk|stop|vanish|off>`,
+    `/backrooms mirror info`, `/backrooms mirror stage <entities|block_entities|solid_blocks>`.
+  - **Props** (`client/level228/Level228Props`, `Level228MirrorSurfaces`; meshes and sheets from
+    `tools/level_assets/level228_props.py`): all architecture and decor is a static prop renderer
+    outside the full block atlas. Crystal Maze: turned walnut columns, carved gilt friezes,
+    raised-and-fielded panelled walls, coffered ceilings with gilt bosses. Alhambra Hall: slender
+    marble columns, true horseshoe arches (alternating voussoirs, soffit, alfiz, lattice) over every
+    bay, star-tile dados under carved stucco, painted beam ceilings. Funhouse: barber columns with
+    bulb sockets, scalloped crests, hand-painted carnival boards (clown, strongman, fortune-teller),
+    sagging canvas. Glass Labyrinth: riveted rusted steel posts and trusses, rubber mats, caged cold
+    work lamps. Foyer show front with marquee, ticket booth (CLOSED card, price board), stanchions,
+    posters; staff notes, crates of spare mirrors, shards, cobwebs, leaves, litter; the exit
+    hallway's signs; the chamber's antique frames. One vertex buffer per chunk and sheet (vanilla
+    entity render type drawn at AFTER_ENTITIES, so Iris packs and Veil light them), light baked per
+    vertex, built a slice per frame, rebuilt only where a shift changes something; bulbs glow per
+    frame from `Level228Bulbs.glow`. Mirror panes get an aged, tint-free silvered surface (dust,
+    smears, desilvering, cracks, shattered, funhouse chrome, clear glass) with grazing-angle
+    darkening, drawn without depth writes so the reflection keeps its depth. About 10 MB of sheets
+    (6-bit colour, cropped). Previews from the real floor plan: dump it with the test-source tool
+    `Level228PropDump`, then `level228_props.py --real <layout.json> <dir>`; `--sizes` checks the
+    texture budget; `Level228PropCoverageTest` checks every planned prop has a mesh.
+  - **The imitator** (`world/Level228Imitator`, `client/level228/Level228ImitatorClient`, drawn by
+    the reflections' stand-in renderer): rarely (a player is first due 4-7 min after arriving, then
+    every 8-15 min per group: everyone within 40 blocks shares the cooldown) something wearing one
+    of you (usually your own face, sometimes a teammate's) stands a few steps behind you in the
+    mirrors, walking your trail and copying you perfectly; then wrongly, one way per episode (a beat
+    late, stopped dead where nobody stands, or its head leaning over); then it stops and watches you,
+    with one faint glass tick; then, the next moment you look away, it is gone. Rarely it is suddenly
+    right behind you in every reflection instead, until you turn round. It exists only in images:
+    the server keeps its point in real space and every client draws it at that point's images, so
+    everyone sees the same figure in the same glass. No chase, no damage: seeing it costs a little
+    sanity (0.2/s, 0.35/s while it watches). Tells: its image is a rotated copy, not a reflection
+    (skin details and the held item on the wrong side), and its eyes catch the light. Never starts
+    in view, needs a mirror nearby, never in the exit hallway or the final chamber; it ignores
+    creative and spectator players unless forced. Test: `/backrooms imitator <show|off>`.
+  - **Light and sound**: warm ~2500 K bare bulbs (Veil point lights + invisible `l228_bulb` light
+    blocks for Iris, in the sealed images too so reflections are lit alike), ~40% dead, a few
+    failing on a game-time pattern shared by all players and their reflections, red EXIT signs,
+    cold exit-hallway tubes; dark warm-grey fog showing 4-6 colonnade repetitions; neutral-warm
+    camcorder grade per zone; per-zone reverb and floor footsteps (boards/tile/lino/plywood/
+    concrete); near-silent room tone, building creaks, mirror ticks, a far warped band organ now and
+    then, wind in the exit hallway, total silence in the final chamber (music stops there).
+- **Level 369 ("Comely"):** reached through the door at the end of Level 228's exit hallway: you fall out of a skylight into
   soft flowers (no landing ever hurts here). An endless indoor garden: rooms of pastel-painted
   plaster, every floor a lawn carpeted wall to wall with grass and flowers. Long white hallways
   with tall windows full of pale blue light down one side, closed doors down the other and blue
@@ -498,13 +530,12 @@ going down into the dark, until the picture breaks up and you are in the next le
   that is the tree drifting in the void. The mist is thick in the forest and thins out at the
   edges and in the open air. The far view is built once when you arrive (about 0.6 s in the
   background, ~34 MB of graphics memory) and freed ten seconds after you leave.
-Every floor is endless, and its way out is far away. On Levels 0, 1, 4, the Poolrooms, 369, 9
+Every floor is endless (but Level 228, one finite maze), and its way out is far away. On Levels 0, 1, 4, the Poolrooms, 369, 9
 and 94 there is about one main exit per 1000 x 1000 blocks, and wherever you arrive from another
 level, the nearest one is at least 400 blocks off (`world/Travel.clearOfExits` moves the arrival
 point away from it, the same way for everyone coming through the same exit, so friends still land
 together). Level 2's corridors have an EXIT bay about every 1000 blocks and Level 37 a pit per
-~1000 x 1000 blocks, and Level 228 an exit mirror per ~1024 x 1024 blocks; there you arrive at
-least 300 blocks from one. Side ways out (the flickering
+~1000 x 1000 blocks; Level 228's one way out is the final chamber at the far end of its maze. Side ways out (the flickering
 wall in Level 0, Level 4's exit elevators, Level 37's openings, Level 94's flooded houses) and
 Levels 7, 39, 490 and 227 keep their own spacing.
 
@@ -1215,8 +1246,8 @@ saturation, hiss and a big, empty room.
 /backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, level_7, level_9, poolrooms, level_37, level_39, level_94, level_228, level_369, level_490 (the path's order), level_227
 /backrooms time94 <day|dusk|night|dawn> jump Level 94's day/night clock (testing)
 /backrooms thing [dread]                Level 7, in the water: the Thing passes by you now at full dread (dread: full dread only) (testing)
-/backrooms maze <facing|branch|exit>   Level 228: jump to the nearest facing mirrors (3+ deep), false branch, or the exit mirror (testing)
-/backrooms other <near|far|catch|off>  Level 228: the Other enters the mirrors 9-15 / 64-96 blocks from you, takes you now, or goes away until the next of these (testing)
+/backrooms maze <foyer|crystal|alhambra|funhouse|glass|chamber|exithall|backstage|shift|answer>   Level 228: jump to a zone's start, force a shift of the panels, or name the true chamber mirror (testing)
+/backrooms imitator <show|off>         Level 228: the imitator starts behind you in the mirrors now (any game mode, no cooldown), or goes away until the next show (testing)
 /backrooms escape [players]             send players back to reality
 /backrooms battery [players] [percent]  set camcorder battery
 /backrooms locate                       where is the nearest exit? (Level 227 has none, and says so)
@@ -1285,10 +1316,12 @@ Levels 369 and 490 belong to a friend: they are only reported, in
 reality) and the rule for side ways: every side way that skips ahead has a way straight back,
 Level 227 only drops you where the line leads back, and the ways back (Level 39's sunlit dead ends
 and clay doors, Level 94's clay doors) are really generated.
-`Level228PlanTest` pins Level 228's mirror trick: image volumes never hold real space and no step
-leads out of the real maze into one, every block in an image is the mirrored real block it
-reflects, the exit mirror is never reflected, and arrivals step out of a mirror 300+ blocks from
-an exit with a walk to it.
+`Level228PlanTest` pins Level 228's mirror trick: around every twin mirror the hall is exactly
+symmetric to fog depth and every sealed image is the exact reflection of what it shows; walking
+from the foyer (every shift state) never reaches image space, cuts nothing off and reaches all
+three chamber mirrors, as does the wrong mirrors' checkpoint; rays traced physically (bouncing off
+the panes) and `Level228Plan.imagesOf` agree both ways. `Level228RulesTest` pins the group exit
+and when a body counts as pushing a pane.
 
 The `pilot` source set is a dev-only mod (`backrooms_pilot`, never in the release jar) that lets a
 script drive a dev client with real key and mouse input over a local socket, for survival

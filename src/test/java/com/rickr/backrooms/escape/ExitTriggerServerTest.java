@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mojang.authlib.GameProfile;
-import com.rickr.backrooms.registry.Level228Blocks;
 import com.rickr.backrooms.registry.Level2Blocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.BackroomsLevel;
@@ -40,6 +39,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import org.jetbrains.annotations.Nullable;
@@ -234,81 +234,140 @@ class ExitTriggerServerTest {
     }
 
     /**
-     * Level 228's black exit mirror, as generated, walked into with real collision
-     * (ServerPlayer.move against the generated blocks, the way a player's own steps go): straight
-     * at its middle, and off-centre with half the body against the frame post beside it (the post
-     * holds you outside the mirror's cell: the in-game bug where walking into it did nothing).
-     * Both go to next() = Level 369, falling in through a skylight (Level369Layout.preferredArrival).
-     * Walking past it along the corridor does nothing.
+     * Level 228's final chamber, as generated, walked into with real collision (ServerPlayer.move
+     * against the generated panes, the way a player's own steps go): the accurate mirror lets you
+     * out into the exit hallway (stepping out of its entry mirror), each wrong one quietly puts only
+     * you back at the Glass Labyrinth's checkpoint, which is walkable and in that zone.
      */
     @Test
-    void level228ExitMirrorLeadsOn() throws Exception {
+    void level228ChamberMirrorsSendYouOnOrBack() throws Exception {
         onServer(() -> {
             BackroomsLevel from = BackroomsLevel.LEVEL_228;
             ServerLevel level = level(from);
             long seed = BackroomsSeeds.layoutSeed(level, from);
-            int[] front = from.layout().exitPosition(seed, 0, 0);
-            BlockPos mirror = null;
-            Direction into = null;
-            for (Direction d : Direction.Plane.HORIZONTAL) {
-                BlockPos at = new BlockPos(front[0], Level228Plan.FEET_Y, front[1]).relative(d);
-                if (level.getBlockState(at).is(Level228Blocks.EXIT_MIRROR.get())) {
-                    mirror = at;
-                    into = d;
+            int answer = Level228Plan.correctExitMirror(seed);
+            for (int m = 0; m < 3; m++) {
+                double z = 42.0 + 3 * m; // the middle of mirror m (A, B, C from north to south)
+                ServerPlayer p = player("chamber_" + m, from, 12.5, Level228Plan.FEET_Y, z);
+                p.teleportTo(level, 12.5, Level228Plan.FEET_Y, z, -90f, 0f); // facing east, at the mirrors
+                Vec3 step = new Vec3(0.2, 0, 0);
+                for (int i = 0; i < 60 && p.getX() < 16; i++) {
+                    p.move(MoverType.SELF, step);
+                    tick(p);
+                    if (Math.abs(p.getX() - 12.5) > 20 || Math.abs(p.getZ() - z) > 3) {
+                        break; // moved by the mirror
+                    }
                 }
+                double[] to = m == answer ? Level228Plan.hallEntry(seed) : Level228Plan.checkpoint(seed);
+                assertEquals(from.dimension(), p.level().dimension(), "a chamber mirror left the level");
+                assertTrue(p.position().distanceTo(new Vec3(to[0], to[1], to[2])) < 1e-6,
+                        "mirror " + m + (m == answer ? " (accurate)" : " (wrong)") + " put you at " + p.position());
+                assertFalse(Travel.isMoving(p), "a chamber mirror started a level exit");
             }
-            assertNotNull(mirror, "no exit mirror beside Level 228's exit position " + front[0] + " " + front[1]);
-            assertTrue(level.getBlockState(mirror).getCollisionShape(level, mirror).isEmpty(), "the exit mirror can't be walked into");
-            // The run of exit cells along the wall, and the post at its low end.
-            Direction along = into.getClockWise();
-            BlockPos first = mirror;
-            while (level.getBlockState(first.relative(along.getOpposite())).is(Level228Blocks.EXIT_MIRROR.get())) {
-                first = first.relative(along.getOpposite());
-            }
-            BlockPos post = first.relative(along.getOpposite());
-            assertFalse(level.getBlockState(post).getCollisionShape(level, post).isEmpty(), "expected a frame post beside the exit at " + post);
-
-            // Walking past along the corridor in the row next to the wall, the body's side touching
-            // the exit cells (centre 0.2 off the row's middle) and facing along the corridor.
-            BlockPos lane = first.relative(into.getOpposite());
-            ServerPlayer passer = player("passer", from, 0.5, Level228Plan.FEET_Y, 0.5);
-            double side = 0.2;
-            Vec3 start = Vec3.atBottomCenterOf(lane.relative(along.getOpposite(), 3)).add(into.getStepX() * side, 0, into.getStepZ() * side);
-            passer.teleportTo(level, start.x, start.y, start.z, yawOf(along), 0f);
-            for (int i = 0; i < 60 && !Travel.isMoving(passer); i++) {
-                passer.move(MoverType.SELF, new Vec3(along.getStepX() * 0.2, 0, along.getStepZ() * 0.2));
-                tick(passer);
-            }
-            assertFalse(Travel.isMoving(passer), "walking past the exit mirror along the corridor started the exit at " + passer.position());
-
-            // Off-centre: the middle of the body on the line between the post and the first exit cell.
-            Vec3 edge = Vec3.atBottomCenterOf(lane).add(-along.getStepX() * 0.5, 0, -along.getStepZ() * 0.5);
-            walkInto(level, "exit_off_centre", edge, into, true);
-            // Straight at the middle of the mirror.
-            walkInto(level, "exit_centre", Vec3.atBottomCenterOf(mirror.relative(into.getOpposite())), into, false);
             return null;
         });
     }
 
-    /** Walks a player from {@code start} toward {@code into} with collision until the exit starts, then checks the arrival. */
-    private void walkInto(ServerLevel level, String name, Vec3 start, Direction into, boolean heldByPost) {
-        BackroomsLevel from = BackroomsLevel.LEVEL_228;
-        ServerPlayer p = player(name, from, start.x, start.y, start.z);
-        p.teleportTo(level, start.x, start.y, start.z, yawOf(into), 0f);
-        Vec3 step = new Vec3(into.getStepX() * 0.2, 0, into.getStepZ() * 0.2); // a walking step per tick
-        int ticks = 0;
-        while (!Travel.isMoving(p) && ticks++ < 40) {
-            p.move(MoverType.SELF, step);
-            tick(p);
+    /**
+     * Level 228's exit hallway door: someone alone who enters the vestibule goes on to Level 369
+     * at once; with a teammate still in the maze the ready player waits, and both go together the
+     * moment the teammate arrives too.
+     */
+    @Test
+    void level228VestibuleTakesTheGroupOnTogether() throws Exception {
+        onServer(() -> {
+            BackroomsLevel from = BackroomsLevel.LEVEL_228;
+            ServerLevel level = level(from);
+            long seed = BackroomsSeeds.layoutSeed(level, from);
+            int[] door = Level228Plan.exitDoor(seed);
+            double vx = door[0] + 0.0;
+            double vz = door[1] + 2.5;
+            assertTrue(Level228Plan.inVestibule(seed, vx, vz));
+            ServerPlayer solo = player("solo", from, vx, Level228Plan.FEET_Y, vz);
+            holdTicks(level);
+            assertTrue(Travel.isMoving(solo), "a solo player in the vestibule didn't go on");
+            int[] used = {solo.getBlockX(), solo.getBlockZ()};
+            tickUntilMoved(solo, from);
+            assertArrivedAsPromised(solo, from, BackroomsLevel.LEVEL_369, used);
+
+            double[] foyer = Level228Plan.arrival(seed);
+            ServerPlayer first = player("first", from, vx, Level228Plan.FEET_Y, vz);
+            ServerPlayer late = player("late", from, foyer[0], foyer[1], foyer[2]);
+            for (int i = 0; i < 40; i++) {
+                levelTick(level);
+            }
+            assertFalse(Travel.isMoving(first), "the ready player left without the teammate");
+            late.teleportTo(level, vx - 1, Level228Plan.FEET_Y, vz, 0f, 0f);
+            holdTicks(level);
+            assertTrue(Travel.isMoving(first) && Travel.isMoving(late), "the group didn't go on together");
+            return null;
+        });
+    }
+
+    /**
+     * The in-game sequence: A waits in the vestibule; B walks into the accurate chamber mirror and
+     * comes out at the hallway entry, 34 blocks from the door: nobody moves (for two seconds of
+     * ticks, players and level both ticking). B walks into the vestibule: both go in the same
+     * tick. And with A waiting, B logging out lets A go.
+     */
+    @Test
+    void level228GroupWaitsForTheTeammateWalkingTheHallway() throws Exception {
+        onServer(() -> {
+            BackroomsLevel from = BackroomsLevel.LEVEL_228;
+            ServerLevel level = level(from);
+            long seed = BackroomsSeeds.layoutSeed(level, from);
+            int[] door = Level228Plan.exitDoor(seed);
+            double vx = door[0];
+            double vz = door[1] + 2.5;
+            ServerPlayer a = player("a_ready", from, vx, Level228Plan.FEET_Y, vz);
+            int answer = Level228Plan.correctExitMirror(seed);
+            double mz = 42.0 + 3 * answer;
+            ServerPlayer b = player("b_walking", from, 12.5, Level228Plan.FEET_Y, mz);
+            b.teleportTo(level, 12.5, Level228Plan.FEET_Y, mz, -90f, 0f);
+            for (int i = 0; i < 60 && b.getX() < 100; i++) {
+                b.move(MoverType.SELF, new Vec3(0.2, 0, 0));
+                tick(b);
+                tick(a);
+                levelTick(level);
+            }
+            double[] hall = Level228Plan.hallEntry(seed);
+            assertTrue(b.position().distanceTo(new Vec3(hall[0], hall[1], hall[2])) < 1e-6, "B not at the hallway entry: " + b.position());
+            for (int i = 0; i < 40; i++) {
+                b.move(MoverType.SELF, new Vec3(0, 0, 0.1)); // strolling down the hallway
+                tick(b);
+                tick(a);
+                levelTick(level);
+                assertFalse(Travel.isMoving(a) || Travel.isMoving(b),
+                        "the group left while B was still in the hallway at " + b.position() + " (tick " + i + ")");
+            }
+            b.teleportTo(level, vx - 1, Level228Plan.FEET_Y, vz, 0f, 0f);
+            holdTicks(level);
+            assertTrue(Travel.isMoving(a) && Travel.isMoving(b), "the group didn't go on together");
+
+            // A waits, B disconnects in the maze: A goes.
+            ServerPlayer c = player("c_ready", from, vx, Level228Plan.FEET_Y, vz);
+            ServerPlayer d = player("d_leaves", from, 9.5, Level228Plan.FEET_Y, 45.0);
+            for (int i = 0; i < 5; i++) {
+                levelTick(level);
+            }
+            assertFalse(Travel.isMoving(c), "C left without D");
+            server.getPlayerList().remove(d);
+            players.remove(d);
+            holdTicks(level);
+            assertTrue(Travel.isMoving(c), "D logged out and C still waits");
+            return null;
+        });
+    }
+
+    /** The group exit holds until everyone has been ready this many level ticks. */
+    private static void holdTicks(ServerLevel level) {
+        for (int i = 0; i < com.rickr.backrooms.world.Level228Rules.GroupGate.READY_HOLD; i++) {
+            levelTick(level);
         }
-        assertTrue(Travel.isMoving(p), name + ": walking into the exit mirror didn't start the exit; stuck at " + p.position());
-        if (heldByPost) {
-            assertFalse(level.getBlockState(p.blockPosition()).is(Level228Blocks.EXIT_MIRROR.get()),
-                    name + ": expected the post to hold the body's middle outside the mirror's cell");
-        }
-        int[] used = {p.getBlockX(), p.getBlockZ()};
-        tickUntilMoved(p, from);
-        assertArrivedAsPromised(p, from, BackroomsLevel.LEVEL_369, used);
+    }
+
+    private static void levelTick(ServerLevel level) {
+        NeoForge.EVENT_BUS.post(new LevelTickEvent.Post(() -> true, level));
     }
 
     /** Minecraft's yaw for facing {@code d} (0 = south, 90 = west). */

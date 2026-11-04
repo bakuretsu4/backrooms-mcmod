@@ -181,19 +181,25 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_COLLAPSE = register("level490.collapse");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_WHALE_CALL = register("level490.whale_call");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_WHALE_FAR = register("level490.whale_far");
-    // Level 228's Other (client/level228/Level228Other; made by tools/level_assets/level228_other.py):
-    // its footsteps (placed at its image in a mirror), the glass ticking when it is near, the
-    // held breath just before it takes you, and the glass cracking as it does.
-    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_OTHER_STEP = register("level228.other.step");
-    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_OTHER_TICK = register("level228.other.tick");
-    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_OTHER_BREATH = register("level228.other.breath");
-    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_OTHER_CRACK = register("level228.other.crack");
-    // Level 228's own quiet: the halls' room tone, the light panels' low hum, a pane ticking or
-    // creaking now and then (client/level228/Level228Ambience, client/light/FixtureSounds).
+    // Level 228 (the Hall of Mirrors, tools/level_assets/level228_sound.py): a dead funfair
+    // building's near-silence (client/level228/Level228Ambience): its room tone, the timber frame
+    // settling, the mirrors ticking and creaking in their frames, the band organ far away now and
+    // then, the exit hallway's wind and the final chamber's silence; the bulbs' filament buzz and a
+    // failing bulb's chatter (client/light/FixtureSounds); a footstep per floor material
+    // (world/Level228Footsteps).
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_AMBIENCE = register("level228.ambience");
-    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_LIGHT_HUM = register("level228.light_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_BULB_BUZZ = register("level228.bulb_buzz");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_BULB_FAIL = register("level228.bulb_fail");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_CREAK = register("level228.creak");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_GLASS_TICK = register("level228.glass_tick");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_GLASS_CREAK = register("level228.glass_creak");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_ORGAN = register("level228.organ");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_EXIT_WIND = register("level228.exit_wind");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_CHAMBER_HUSH = register("level228.chamber_hush");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_STEP_BOARDS = register("level228.step.boards");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_STEP_TILE = register("level228.step.tile");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_STEP_LINO = register("level228.step.lino");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_STEP_PLYWOOD = register("level228.step.plywood");
     // Music (original pieces composed in code under tools/, played by client/BackroomsMusic on the
     // music channel): the main theme on the title menu, and one piece of its own for each level.
     // Each level's event (see sounds.json) mostly picks that level's piece, but now and then the

@@ -2,7 +2,6 @@ package com.rickr.backrooms.escape;
 
 import com.rickr.backrooms.block.ExitDoorBlock;
 import com.rickr.backrooms.block.SeaDoorBlock;
-import com.rickr.backrooms.registry.Level228Blocks;
 import com.rickr.backrooms.registry.Level369Blocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.BackroomsLevel;
@@ -117,9 +116,13 @@ final class Escape {
                             && grabWindowAt(w.layout, w.seed, x, z) != Integer.MIN_VALUE);
             case LEVEL_369 -> new Exit("inside the veil of an arch of vines", s -> s.is(Level369Blocks.VEIL.get()),
                     (w, x, y, z, fromY) -> touchesGoal(w, x, y, z, false));
-            // Level228Rules: walk into the black exit mirror (it has no collision).
-            case LEVEL_228 -> new Exit("inside the black exit mirror", s -> s.is(Level228Blocks.EXIT_MIRROR.get()),
-                    (w, x, y, z, fromY) -> touchesGoal(w, x, y, z, false));
+            // Level228Rules: walk into the accurate one of the final chamber's three mirrors (the
+            // exit hallway behind it and its door are checked in ExitTriggerServerTest).
+            case LEVEL_228 -> new Exit("pressed against the accurate final-chamber mirror", s -> false,
+                    (w, x, y, z, fromY) -> {
+                        int z0 = 41 + 3 * com.rickr.backrooms.world.layout.Level228Plan.correctExitMirror(w.seed);
+                        return x == 14 && (z == z0 || z == z0 + 1) && y == com.rickr.backrooms.world.layout.Level228Plan.FEET_Y;
+                    });
             // Level490Rules: airborne after leaving the collar (fall started at or above LEAP_Y - 2),
             // now below LEAP_Y - 3.
             case LEVEL_490 -> new Exit("leaping off the upper collar (fall from y>=" + (Level490Spire.LEAP_Y - 2) + ")", s -> false,

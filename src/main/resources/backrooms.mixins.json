@@ -11,9 +11,11 @@
   "client": [
     "client.CameraMixin",
     "client.ChannelAccessor",
+    "client.EntityRenderDispatcherMixin",
     "client.FrustumInvoker",
     "client.LevelRendererMixin",
     "client.LiquidBlockRendererMixin",
+    "client.LivingEntityRendererMixin",
     "client.LocalPlayerMixin",
     "client.SoundEngineAccessor",
     "client.SoundManagerAccessor",

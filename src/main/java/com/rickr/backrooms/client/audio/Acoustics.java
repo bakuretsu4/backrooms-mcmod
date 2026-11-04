@@ -49,8 +49,8 @@ import org.jetbrains.annotations.Nullable;
  *       grows harder and longer, coming back from far above), Level 1's bare concrete garage rings, Level 2's
  *       painted pipe tunnels are tight and hard. Level 39's town rings like a colossal hall
  *       (the superstructure encloses it, so open air above does not weaken the echo there),
- *       while its marble tunnels below swallow sound: short and dry. Level 228's glass corridors
- *       ring bright, short and fluttery between their parallel panes.</li>
+ *       while its marble tunnels below swallow sound: short and dry. Level 228's mirror maze sounds
+ *       like each zone's materials: wood, tile, canvas, bare glass, a dead small chamber.</li>
  *   <li>The two pool levels (the Poolrooms and Level 37) get <b>no reverb</b>: in canon nothing
  *       reverberates properly there (see client/anomaly/poolrooms/PoolAcoustics, which also
  *       makes their sounds die out). They do get muffling.</li>
@@ -146,11 +146,38 @@ public final class Acoustics {
     // Level 369's rooms: plaster walls, but a lawn and flowers wall to wall and soft acoustic
     // ceilings. A short, soft, very diffuse room sound with the highs swallowed: close and calm.
     private static final Material GARDEN = new Material(0.5f, 0.6f, 0.45f, 0.45f, 1.0f);
-    // Level 228's mirror maze: narrow corridors walled in glass, a low hard ceiling, a polished
-    // floor. Nothing soft anywhere, so the echo is bright (the highs come back) and short, but
-    // fluttery between the close parallel panes (low diffusion), with a late part that comes back
-    // from down the long mirrored runs a little louder than the corridor's size suggests.
+    // Level 228, the carnival mirror maze: one material per zone (client/level228/
+    // Level228Atmosphere#zone), eased by the room probe as you walk between them.
+    // The Glass Labyrinth: glass and steel, nothing soft. A bright, short echo, fluttery between
+    // the close parallel panes (low diffusion), its late part coming back down the mirrored runs.
     private static final Material GLASS = new Material(0.8f, 0.7f, 1.0f, 1.15f, 0.35f, 0.85f, 1.4f, 1.1f);
+    // The foyer and the Crystal Maze: old floorboards, wooden frames and a coffered wooden
+    // ceiling between the mirrors. Warmer and softer: the wood takes the top off, the slap off the
+    // glass is still there, the tail is short and smooth.
+    private static final Material MIRROR_WOOD = new Material(0.65f, 0.75f, 0.6f, 0.7f, 0.7f, 0.85f, 1.2f, 1.0f);
+    // The Alhambra Hall: plaster, tile and glass: the brightest, longest ring of the maze.
+    private static final Material MIRROR_TILE = new Material(0.8f, 0.95f, 0.85f, 1.0f, 0.55f, 0.85f, 1.35f, 1.05f);
+    // The Funhouse: a sagging canvas ceiling and linoleum swallow most of it: close and dull.
+    private static final Material CANVAS = new Material(0.5f, 0.55f, 0.4f, 0.45f, 0.9f, 0.85f, 1.0f, 0.8f);
+    // The final chamber: a small closed room, still glass on three sides; a short, close echo
+    // with almost no tail, so the silence there is "dead".
+    private static final Material CHAMBER = new Material(0.55f, 0.45f, 0.8f, 0.9f, 0.5f, 0.85f, 0.6f, 1.0f);
+    // The exit hallway: a long bare concrete corridor with leaves blown in: longer and plainer.
+    private static final Material EXIT_HALL = new Material(0.7f, 1.1f, 0.75f, 0.8f, 0.9f, 0.85f, 1.3f, 1.0f);
+    // Backstage: narrow plywood passages full of crates: dry, boxy, short.
+    private static final Material BACKSTAGE = new Material(0.5f, 0.5f, 0.5f, 0.55f, 0.8f, 0.85f, 0.8f, 0.9f);
+
+    private static Material level228() {
+        return switch (com.rickr.backrooms.client.level228.Level228Atmosphere.zone()) {
+            case FOYER, CRYSTAL, NONE -> MIRROR_WOOD;
+            case ALHAMBRA -> MIRROR_TILE;
+            case FUNHOUSE -> CANVAS;
+            case GLASS -> GLASS;
+            case CHAMBER -> CHAMBER;
+            case EXIT_HALL -> EXIT_HALL;
+            case BACKSTAGE -> BACKSTAGE;
+        };
+    }
 
     /** Level 39: the tunnels (and the holes/shafts leading down to them) lie below this height. */
     private static final double LEVEL39_TUNNEL_TOP = 60.0;
@@ -170,7 +197,7 @@ public final class Acoustics {
             case LEVEL_7 -> SEA;
             case LEVEL_227 -> FOREST;
             case LEVEL_369 -> GARDEN;
-            case LEVEL_228 -> GLASS;
+            case LEVEL_228 -> level228();
             case POOLROOMS, LEVEL_37 -> null; // nothing reverberates there (canon), muffling only
         };
     }

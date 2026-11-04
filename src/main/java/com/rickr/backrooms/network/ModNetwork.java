@@ -199,15 +199,10 @@ public final class ModNetwork {
                         com.rickr.backrooms.world.Level490Hung.key(payload.i(), payload.j()), new long[] {payload.gen(), payload.start()}));
         registrar.playToClient(Level39QuakePayload.TYPE, Level39QuakePayload.STREAM_CODEC,
                 (payload, context) -> com.rickr.backrooms.client.Level39QuakeEffects.receive(payload.x(), payload.y(), payload.z(), payload.strength()));
-        // Level 228's Other: where it is (the client draws it only in the mirrors) and, back, that
-        // someone has it on screen in a mirror (which freezes it).
-        registrar.playToClient(Level228HuntPayload.TYPE, Level228HuntPayload.STREAM_CODEC,
-                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.level228.Level228Other.receive(payload)));
-        registrar.playToServer(Level228SeenPayload.TYPE, Level228SeenPayload.STREAM_CODEC, (payload, context) -> {
-            if (context.player() instanceof ServerPlayer player) {
-                context.enqueueWork(() -> com.rickr.backrooms.world.Level228Hunt.seen(player));
-            }
-        });
+        // Level 228's imitator: one slot's state and where it stands in real space (the client
+        // draws it only at that point's images in the mirrors).
+        registrar.playToClient(Level228ImitatorPayload.TYPE, Level228ImitatorPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.level228.Level228ImitatorClient.receive(payload)));
         // Level 228 (testing): make your next close reflection lie / move the reflections' render
         // stage (command/Level228MirrorCommand; the reflections are client/level228/Level228Reflections).
         registrar.playToClient(Level228MirrorPayload.TYPE, Level228MirrorPayload.STREAM_CODEC,

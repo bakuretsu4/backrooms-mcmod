@@ -48,10 +48,12 @@ final class FixtureSounds {
      */
     private static final double SODIUM_HUM_RANGE = 12.0;
     /**
-     * Level 228's light panels: their low hum is only heard close under a panel (matches
-     * "attenuation_distance": 9 in sounds.json), so the dark stretches between them are silent.
+     * Level 228's live bulbs: their filament buzz is only heard right under a bulb (matches
+     * "attenuation_distance": 7 in sounds.json), so the dark stretches between them are silent.
      */
-    private static final double NEON_HUM_RANGE = 9.0;
+    private static final double BULB_HUM_RANGE = 7.0;
+    /** ... and a failing bulb's chatter carries this far (matches "attenuation_distance": 12). */
+    private static final double BULB_FAIL_RANGE = 12.0;
     /** A streetlamp re-striking clicks at most this often (ms), so a stutter doesn't machine-gun. */
     private static final long STREETLAMP_CLICK_GAP_MS = 220L;
     /** A lamp is "lit" for the hum above this power. */
@@ -159,10 +161,6 @@ final class FixtureSounds {
             if (light.type.hum == FixtureType.Hum.FLUORESCENT) {
                 // Level 0: the tube hum fades away as you come near the Manila Room.
                 want *= com.rickr.backrooms.client.anomaly.level0.Level0AnomalyEffects.fixtureHumScale();
-            }
-            if (light.type.hum == FixtureType.Hum.NEON) {
-                // Level 228: the hum holds its breath with the rest of the level (Level228Lamps#quiet).
-                want *= Level228Lamps.quiet();
             }
             if (tube) {
                 // On top of Minecraft's straight-line fade, fade once more with distance: together
@@ -350,7 +348,7 @@ final class FixtureSounds {
     static double humRange(FixtureType type) {
         return switch (type.hum) {
             case SODIUM -> SODIUM_HUM_RANGE;
-            case NEON -> NEON_HUM_RANGE;
+            case BULB -> BULB_HUM_RANGE;
             default -> HUM_RANGE;
         };
     }
@@ -396,6 +394,17 @@ final class FixtureSounds {
             float pitch = 0.85f + RANDOM.nextFloat() * 0.3f;
             sounds.play(new SimpleSoundInstance(ModSounds.LEVEL9_LAMP_FLICKER.get(), SoundSource.BLOCKS,
                     0.45f, pitch, RANDOM, light.soundX, light.soundY, light.soundZ));
+            return;
+        }
+        if (light.type.hum == FixtureType.Hum.BULB) {
+            // Level 228: a failing bulb's worn contact chatters as it drops out and catches again.
+            if (light.distSq > BULB_FAIL_RANGE * BULB_FAIL_RANGE) {
+                return;
+            }
+            blinksThisTick++;
+            float pitch = 0.9f + RANDOM.nextFloat() * 0.25f;
+            sounds.play(new SimpleSoundInstance(ModSounds.LEVEL228_BULB_FAIL.get(), SoundSource.BLOCKS,
+                    nowOn ? 0.32f : 0.22f, pitch, RANDOM, light.soundX, light.soundY, light.soundZ));
             return;
         }
         if (light.type.hum != FixtureType.Hum.FLUORESCENT) {

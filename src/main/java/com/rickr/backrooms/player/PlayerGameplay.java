@@ -194,6 +194,11 @@ public final class PlayerGameplay {
         if (player.level().getBlockState(player.blockPosition()).is(ModBlocks.LEAF_LITTER.get())) {
             return ModSounds.STEP_LEAVES.get(); // the litter layer sits in the same block as your feet
         }
+        // Level 228: each zone of the mirror maze has its own floor (drawn by props over one block).
+        SoundEvent maze = com.rickr.backrooms.world.Level228Footsteps.step(player, running);
+        if (maze != null) {
+            return maze;
+        }
         BlockState on = player.getBlockStateOn();
         if (isCarpet(on)) {
             return running ? ModSounds.STEP_CARPET_RUN.get() : ModSounds.STEP_CARPET_WALK.get();

@@ -267,10 +267,10 @@ public final class AtmosphereGrade {
      */
     private static final Highlights ROLLOFF_369 = new Highlights(1.0f, 0.62f, 0.95f, 0.84f, 0.5f);
     /**
-     * Level 228: the coloured light panels (full-bright, near-white cores with saturated edges)
-     * ease along the shoulder instead of clipping to white, so a blue panel stays blue on camera,
-     * and the bloom starts a little lower and fairly strong, so each panel and its reflections
-     * glow into the dark glass around them.
+     * Level 228: the bulbs' glowing glass and the red EXIT signs (full-bright) ease along the
+     * shoulder instead of clipping to white, so a bulb keeps its warm core on camera, and the bloom
+     * starts a little lower and fairly strong, so each bulb and its reflections in the mirrors
+     * glow softly into the dark around them.
      */
     private static final Highlights ROLLOFF_228 = new Highlights(1.0f, 0.60f, 0.95f, 0.80f, 0.7f);
 
@@ -328,8 +328,8 @@ public final class AtmosphereGrade {
             // Level 227: misty forest, clearing with height, black in the void, white in a sunbeam.
             case LEVEL_227 -> Level227Lighting.mood();
             case LEVEL_490 -> LEVEL_490;
-            // Level 228: the colour of the light around you (Level228Atmosphere: shadows, haze and
-            // dark take the sector's blue, green or red; harder under a shader pack).
+            // Level 228: neutral-warm with deep blacks, shifted a little per zone of the maze and
+            // by the failing bulbs under a shader pack (Level228Atmosphere).
             case LEVEL_228 -> com.rickr.backrooms.client.level228.Level228Atmosphere.mood();
             // Level 369: each kind of room its own light (Level369Atmosphere#room), lifted and
             // turned golden while its drifting light passes over you.

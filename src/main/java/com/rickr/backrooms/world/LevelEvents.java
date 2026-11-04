@@ -94,7 +94,7 @@ public final class LevelEvents {
         // and Level 490 its own storm (Level490Storm). Level 227 is a forest: its own sounds and the
         // tree's lurches belong to its atmosphere code. Level 369 is a garden where nothing happens
         // (what it does to you is quieter than any event). Level 228's mirror maze is quiet: what
-        // happens there happens in the glass (Level228Hunt), not to the lights.
+        // happens there happens in the glass (Level228Imitator), not to the lights.
         boolean calm = floor == BackroomsLevel.POOLROOMS || floor == BackroomsLevel.LEVEL_4 || floor == BackroomsLevel.LEVEL_37
                 || floor == BackroomsLevel.LEVEL_94 || floor == BackroomsLevel.LEVEL_7 || floor == BackroomsLevel.LEVEL_39
                 || floor == BackroomsLevel.LEVEL_490 || floor == BackroomsLevel.LEVEL_227 || floor == BackroomsLevel.LEVEL_369

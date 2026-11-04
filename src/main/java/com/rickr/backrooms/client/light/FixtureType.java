@@ -267,26 +267,32 @@ public enum FixtureType {
     L369_PANEL("l369_panel", Mount.CEILING_BLOCK, 2, 1.0f, 0.93f, 0.80f, 1.3f, 11.0f, Hum.NONE, false),
     // The hallways' tall bright windows: pale blue-white light laid across the grass in stripes.
     L369_WINDOW("l369_window", Mount.CUBE, 3, 0.88f, 0.94f, 1.0f, 1.1f, 9.0f, Hum.NONE, false),
-    // Level 228 (the Maze of Mirrors). Its coloured light panels in the ceiling: one block,
-    // backrooms:l228_light, whose `color` (blue|green|red) picks one of these three in of(), and
-    // whose `shade` (0 deepest and dimmest .. 3 palest and brightest) sets the light's exact colour
-    // and strength (Level228Lamps, which also tints the panel's face the same, so lens and light
-    // agree). Every corridor has a strip of two panels every five blocks (Level228Plan), and every
-    // mirror holds copies of them that shine back through the glass, so many lights overlap: each
-    // one is kept moderate and fairly short (round 2's 3.2 / 11 stacked into a washed-out, nearly
-    // white pink), giving a saturated pool under each strip that falls off to dim coloured shadow
-    // before the next. These numbers only matter with Veil (under a shader pack the panels' block
-    // light 12-15 lights the maze). A run of 3 panels is one light (a strip of two is one). A low
-    // steady electrical hum and no flicker: the maze is quiet and still. The ids of the green and
-    // red types name no block (on purpose), so no block maps to them directly. The colours here are
-    // only the defaults: the light's real colour is its shade's (Level228Lamps).
-    L228_BLUE("l228_light", Mount.CEILING_BLOCK, 3, 0.30f, 0.58f, 1.0f, 1.3f, 8.5f, Hum.NEON, false),
-    L228_GREEN("l228_light_green_color", Mount.CEILING_BLOCK, 3, 0.28f, 1.0f, 0.66f, 1.2f, 8.5f, Hum.NEON, false),
-    L228_RED("l228_light_red_color", Mount.CEILING_BLOCK, 3, 1.0f, 0.38f, 0.28f, 1.35f, 8.5f, Hum.NEON, false),
-    // The exit mirror: black glass that shows nothing. Only the faintest cold glow on the floor in
-    // front of it (the cold coming off it), silent (the draught is its exit-hint sound) and steady;
-    // a 3-tall pane is one light, set into the corridor on its open side.
-    L228_EXIT("l228_exit_mirror", Mount.CUBE, 3, 0.62f, 0.80f, 1.0f, 0.35f, 4.5f, Hum.NONE, false);
+    // Level 228 v2 (the Hall of Mirrors, an abandoned carnival mirror maze). Every live light is
+    // one invisible backrooms:l228_bulb block (the bulb, glass and glow you see are props, drawn by
+    // client/level228); its `kind` picks one of these five in of(), its `state` and `phase` how it
+    // fails (Level228Bulbs). Warm dim incandescent at ~2500 K, never coloured: the user rejected
+    // v1's green/blue/red sectors. Every mirror's twin space holds real copies of the bulbs, so
+    // the light a mirror "reflects" is real light from the twin bulb, through the pane: each bulb
+    // is kept moderate and short (pools with real darkness between them), and Veil's HIGH budget
+    // of 32 covers the nearest ones while the far ones are only their glowing glass. These numbers
+    // only matter with Veil: under an Iris shader pack the block light (Level228BulbBlock) lights
+    // the maze. The ids of all but the bare bulb name no block (on purpose).
+    // A bare bulb hanging under the ceiling: a warm pool about 9 blocks across, a faint filament
+    // buzz. 1.0 (was 1.5): with a bulb over every other cell in the Crystal Maze and the Funhouse
+    // (for the shader pack's block light) the Veil pools stacked to 93-113 / 255; the rest of the
+    // way down is Level228Atmosphere's per-zone Veil exposure.
+    L228_BULB("l228_bulb", Mount.HANGING_TUBE, 1, 1.0f, 0.70f, 0.43f, 1.0f, 9.5f, Hum.BULB, false),
+    // A candle-bulb sconce beside a final-chamber mirror (and here and there in the foyer): dimmer,
+    // deeper amber, short; silent (the chamber must be silent).
+    L228_CANDLE("l228_bulb_candle_kind", Mount.HANGING_TUBE, 1, 1.0f, 0.62f, 0.33f, 0.7f, 5.5f, Hum.NONE, false),
+    // A run of the facade's marquee bulbs: neighbours merge into one light per three, so the
+    // marquee is a few soft lights, not dozens.
+    L228_MARQUEE("l228_bulb_marquee_kind", Mount.HANGING_TUBE, 3, 1.0f, 0.72f, 0.45f, 0.55f, 6.0f, Hum.BULB, false),
+    // A red emergency EXIT sign: only a faint red glow on the wall and floor round it.
+    L228_SIGN("l228_bulb_sign_kind", Mount.HANGING_TUBE, 2, 1.0f, 0.10f, 0.06f, 0.45f, 4.5f, Hum.NONE, false),
+    // The exit hallway's cold fixtures (and the odd cold spill in the Glass Labyrinth): old
+    // fluorescent tubes, a pale blue-white that reads as "outside" after the warm maze.
+    L228_COLD("l228_bulb_cold_kind", Mount.HANGING_TUBE, 2, 0.74f, 0.84f, 1.0f, 1.2f, 11.0f, Hum.FLUORESCENT, false);
 
     /** Which looping buzz a fixture makes (positional, the nearest few lit ones play). */
     public enum Hum {
@@ -295,8 +301,8 @@ public enum FixtureType {
         FLUORESCENT,
         /** The low, quiet ballast hum of an old sodium streetlamp (Level 9). */
         SODIUM,
-        /** The low electrical hum of Level 228's coloured light panels: short reach, barely there. */
-        NEON
+        /** A bare incandescent bulb's faint filament buzz (Level 228): heard only right under it. */
+        BULB
     }
 
     /**
@@ -491,9 +497,9 @@ public enum FixtureType {
                 && state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER) {
             return null;
         }
-        // Level 228's light panels: one block, its `color` picks the blue, green or red light.
-        if (type == L228_BLUE) {
-            return Level228Lamps.typeOf(state);
+        // Level 228's light blocks: one block, its `kind` picks bulb, candle, marquee, sign or cold.
+        if (type == L228_BULB) {
+            return Level228Bulbs.typeOf(state);
         }
         return type;
     }

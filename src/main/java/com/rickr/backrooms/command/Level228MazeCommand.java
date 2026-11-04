@@ -5,6 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.rickr.backrooms.world.BackroomsLevel;
 import com.rickr.backrooms.world.BackroomsSeeds;
+import com.rickr.backrooms.world.Level228Rules;
 import com.rickr.backrooms.world.layout.Level228Plan;
 import java.util.Locale;
 import net.minecraft.commands.CommandSourceStack;
@@ -13,51 +14,88 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Level 228's sights on demand, for checking them in game (world/layout/Level228Plan). Each jumps
- * you to the nearest one:
+ * Level 228's sights on demand, for checking them in game (world/layout/Level228Plan):
  * <ul>
- *   <li>{@code /backrooms maze facing}: the middle of a corridor between two facing mirrors, at
- *       least three images deep on both sides (look sideways into the glass);</li>
- *   <li>{@code /backrooms maze branch}: the junction in front of a false branch (the corridor
- *       that seems to run on is a mirror);</li>
- *   <li>{@code /backrooms maze exit}: in front of the black exit mirror (walk into it to leave).</li>
+ *   <li>{@code /backrooms maze <foyer|crystal|alhambra|funhouse|glass|chamber|exithall|backstage>}:
+ *       jump to the start of that zone (a room's entrance cell, facing in);</li>
+ *   <li>{@code /backrooms maze shift}: force a shift now (never closes a pane on anyone);</li>
+ *   <li>{@code /backrooms maze answer}: which chamber mirror is the accurate one, and each
+ *       wrong one's flaw.</li>
  * </ul>
  */
 final class Level228MazeCommand {
-    /** How many cells (18 blocks) around you the facing mirrors and false branches are looked for. */
-    private static final int RINGS = 24;
+    private static final String[] FLAWS = {"0.5 s late", "item in the wrong hand", "a worn piece missing",
+            "head nods out of time", "not mirrored", "its candle is out", "the ticket stub is missing"};
 
     private Level228MazeCommand() {}
 
     static LiteralArgumentBuilder<CommandSourceStack> node() {
-        return Commands.literal("maze")
-                .then(Commands.literal("facing").executes(ctx -> jump(ctx, "facing")))
-                .then(Commands.literal("branch").executes(ctx -> jump(ctx, "branch")))
-                .then(Commands.literal("exit").executes(ctx -> jump(ctx, "exit")));
+        LiteralArgumentBuilder<CommandSourceStack> node = Commands.literal("maze");
+        String[] names = {"foyer", "crystal", "alhambra", "funhouse", "glass", "chamber", "exithall", "backstage"};
+        Level228Plan.Zone[] zones = {Level228Plan.Zone.FOYER, Level228Plan.Zone.CRYSTAL, Level228Plan.Zone.ALHAMBRA,
+                Level228Plan.Zone.FUNHOUSE, Level228Plan.Zone.GLASS, Level228Plan.Zone.CHAMBER, Level228Plan.Zone.EXIT_HALL,
+                Level228Plan.Zone.BACKSTAGE};
+        for (int i = 0; i < names.length; i++) {
+            Level228Plan.Zone zone = zones[i];
+            String name = names[i];
+            node.then(Commands.literal(name).executes(ctx -> jump(ctx, name, zone)));
+        }
+        return node.then(Commands.literal("shift").executes(Level228MazeCommand::shift))
+                .then(Commands.literal("answer").executes(Level228MazeCommand::answer));
     }
 
-    private static int jump(CommandContext<CommandSourceStack> ctx, String what) throws CommandSyntaxException {
+    private static ServerPlayer inLevel(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         if (BackroomsLevel.fromDimension(player.level().dimension()) != BackroomsLevel.LEVEL_228) {
             ctx.getSource().sendFailure(Component.literal("Run this in Level 228."));
+            return null;
+        }
+        return player;
+    }
+
+    private static int jump(CommandContext<CommandSourceStack> ctx, String name, Level228Plan.Zone zone) throws CommandSyntaxException {
+        ServerPlayer player = inLevel(ctx);
+        if (player == null) {
             return 0;
         }
         long seed = BackroomsSeeds.layoutSeed(player.serverLevel(), BackroomsLevel.LEVEL_228);
-        int x = player.getBlockX();
-        int z = player.getBlockZ();
-        int[] spot = switch (what) {
-            case "facing" -> Level228Plan.nearestFacingMirrors(seed, x, z, 3, RINGS);
-            case "branch" -> Level228Plan.nearestFalseBranch(seed, x, z, RINGS);
-            default -> Level228Plan.nearestExit(seed, x, z);
-        };
-        if (spot == null) {
-            ctx.getSource().sendFailure(Component.literal("None within " + RINGS * Level228Plan.CELL + " blocks."));
+        double[] at = Level228Plan.zoneStart(seed, zone);
+        player.teleportTo(player.serverLevel(), at[0], at[1], at[2], (float) at[3], 0f);
+        ctx.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+                "Level 228 %s at %.1f %.0f %.1f.", name, at[0], at[1], at[2])), false);
+        return 1;
+    }
+
+    private static int shift(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = inLevel(ctx);
+        if (player == null) {
             return 0;
         }
-        player.teleportTo(player.serverLevel(), spot[0] + 0.5, Level228Plan.FEET_Y, spot[1] + 0.5, player.getYRot(), player.getXRot());
-        double d = Math.hypot(spot[0] - x, spot[1] - z);
-        ctx.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
-                "Level 228 %s at %d %d %d (%.0f blocks from where you were).", what, spot[0], Level228Plan.FEET_Y, spot[1], d)), false);
+        int bit = Level228Rules.tryShift(player.serverLevel(), true);
+        if (bit < 0) {
+            ctx.getSource().sendFailure(Component.literal("Nothing can shift: someone stands at every shifting panel."));
+            return 0;
+        }
+        String[] rooms = {"Crystal Maze", "Alhambra Hall", "Funhouse", "Glass Labyrinth"};
+        boolean on = Level228Rules.shift(player.serverLevel()).on(bit);
+        ctx.getSource().sendSuccess(() -> Component.literal("Shifted the " + rooms[bit / 2] + "'s class " + bit % 2
+                + (on ? " (shifted)" : " (back)") + "."), false);
         return 1;
+    }
+
+    private static int answer(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = inLevel(ctx);
+        if (player == null) {
+            return 0;
+        }
+        long seed = BackroomsSeeds.layoutSeed(player.serverLevel(), BackroomsLevel.LEVEL_228);
+        StringBuilder sb = new StringBuilder("Final chamber (mirrors A, B, C from north to south): ");
+        for (int m = 0; m < 3; m++) {
+            int flaw = Level228Plan.exitFlaw(seed, m);
+            sb.append((char) ('A' + m)).append(flaw < 0 ? " ACCURATE" : " wrong (" + FLAWS[flaw] + ")").append(m < 2 ? ", " : ".");
+        }
+        String text = sb.toString();
+        ctx.getSource().sendSuccess(() -> Component.literal(text), false);
+        return Level228Plan.correctExitMirror(seed) + 1;
     }
 }

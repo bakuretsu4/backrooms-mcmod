@@ -1,7 +1,9 @@
 package com.rickr.backrooms.registry;
 
+import com.rickr.backrooms.block.Level228BulbBlock;
 import com.rickr.backrooms.block.Level228LightBlock;
 import com.rickr.backrooms.block.Level228MirrorBlock;
+import com.rickr.backrooms.block.Level228PostBlock;
 import java.util.function.Function;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -37,6 +39,23 @@ public final class Level228Blocks {
      */
     public static final DeferredBlock<Level228MirrorBlock> EXIT_MIRROR = block("l228_exit_mirror", Level228MirrorBlock::new,
             glass(MapColor.COLOR_BLACK).noCollission());
+    /**
+     * v2: the light of a live or failing bulb, sconce, marquee run, EXIT sign or exit-hallway
+     * fixture. Invisible and walk-through (the bulb itself is a prop); only its block light and
+     * the client's Veil light (client/light/Level228Bulbs). No item: the layout places it.
+     */
+    public static final DeferredBlock<Level228BulbBlock> BULB = block("l228_bulb", Level228BulbBlock::new,
+            BlockBehaviour.Properties.of().mapColor(MapColor.NONE).noCollission().noOcclusion().replaceable()
+                    .strength(-1.0f, 3_600_000.0f).sound(SoundType.EMPTY).noLootTable()
+                    .lightLevel(Level228BulbBlock::emission)
+                    .isValidSpawn((state, level, pos, type) -> false).pushReaction(PushReaction.DESTROY));
+
+    /**
+     * v2: the invisible collision of a maze column or the ticket booth (the column itself is a
+     * prop). No item: the layout places it.
+     */
+    public static final DeferredBlock<Level228PostBlock> POST = block("l228_post", Level228PostBlock::new,
+            glass(MapColor.NONE).sound(SoundType.WOOD));
 
     static {
         for (DeferredBlock<?> block : new DeferredBlock<?>[] {MIRROR, MIRROR_FRAME, PANEL, FLOOR, CEILING, LIGHT, EXIT_MIRROR}) {

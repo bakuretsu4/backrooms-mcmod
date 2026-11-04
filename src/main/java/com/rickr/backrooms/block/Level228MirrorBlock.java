@@ -14,13 +14,15 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * A pane of Level 228's mirror glass (and, without collision, its exit mirror): a thin sheet
- * through the middle of the block. The "reflection" is real geometry, a mirrored copy of the maze
- * built behind the glass (world/layout/Level228Plan); the pane only has to be see-through.
+ * A pane of Level 228 (mirror, clear glass or painted panel; v1's exit mirror without
+ * collision): a thin collidable sheet through the middle of the block. In v2 it draws nothing:
+ * the silvering, the glass, the frame and the painted panels are props
+ * (client/level228 prop renderer, world/layout/Level228Plan#propsInChunk), and the "reflection"
+ * is real geometry built behind the glass.
  *
  * <p>AXIS is the pane's NORMAL: {@code axis=x} is a pane in the plane x = blockX + 0.5 (it runs
  * north-south). Mirrored across either axis the pane stays the same pane, which is what lets an
- * image volume hold mirrored copies of the panes in front of it (the facing-mirror corridors).
+ * image volume hold mirrored copies of the panes in front of it.
  */
 public class Level228MirrorBlock extends Block {
     public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.HORIZONTAL_AXIS;
@@ -42,6 +44,12 @@ public class Level228MirrorBlock extends Block {
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return state.getValue(AXIS) == Direction.Axis.X ? SHAPE_X : SHAPE_Z;
+    }
+
+    /** The props draw the pane (aged silvering, glass or paint), so the block itself is invisible. */
+    @Override
+    protected net.minecraft.world.level.block.RenderShape getRenderShape(BlockState state) {
+        return net.minecraft.world.level.block.RenderShape.INVISIBLE;
     }
 
     /** In creative the glass faces you. */

@@ -231,6 +231,7 @@ public final class BackroomsLights {
         Vec3 eye = mc.gameRenderer.getMainCamera().getPosition();
         boolean level2 = floor == BackroomsLevel.LEVEL_2;
         boolean level0 = floor == BackroomsLevel.LEVEL_0;
+        boolean level228 = floor == BackroomsLevel.LEVEL_228;
         long gameTime = level.getGameTime();
         // Level 0: how much of the tube light right around you is out because a faulty tube is
         // dark (see level0TubeShare()). Weighted like light: nearer and stronger tubes count more.
@@ -298,11 +299,24 @@ public final class BackroomsLights {
                     mc.levelRenderer.setBlocksDirty(bulb.getX(), bulb.getY(), bulb.getZ(), bulb.getX(), bulb.getY(), bulb.getZ());
                 }
             }
-            if (on != light.on && (flickering || lampWave || light.broken || restriking || toggles)) {
+            // Level 228: every bulb burns and fails on its own pattern, shared by every client
+            // and by the bulb's mirror images (Level228Bulbs#glow); a failing one chatters on its
+            // toggles.
+            float bulbGlow = 1.0f;
+            boolean bulbFailing = false;
+            if (level228 && Level228Bulbs.isBulb(light.type)) {
+                bulbGlow = Level228Bulbs.glowOf(light, gameTime);
+                bulbFailing = Level228Bulbs.failing(light);
+                on = on && (!bulbFailing || bulbGlow > 0.3f);
+            }
+            if (on != light.on && (flickering || lampWave || light.broken || restriking || toggles || bulbFailing)) {
                 FixtureSounds.blink(light, on);
             }
             light.on = on;
-            light.level = FixturePower.levelOf(light);
+            // A failing Level 228 bulb's `on` only marks its toggles (for the chatter); its light
+            // follows the filament's smooth glow, not a hard cut at the toggle.
+            light.level = bulbFailing ? FixturePower.mainsPower() * FixturePower.alarmDim() * bulbGlow
+                    : FixturePower.levelOf(light) * bulbGlow;
             if (fault == FixturePower.TUBE_DYING) {
                 light.level *= FixturePower.dyingTubePulse(light.key, now);
             }
@@ -341,6 +355,11 @@ public final class BackroomsLights {
             }
         }
         FixtureSounds.tick(lights);
+        if (level228) {
+            Level228Bulbs.tickAround(lights);
+        } else {
+            Level228Bulbs.reset();
+        }
         if (veil) {
             // Thrown flares/glowsticks first: the fixtures get the slots they leave free.
             ThrownLights.tick(level, mc.gameRenderer.getMainCamera().getPosition());
@@ -697,9 +716,9 @@ public final class BackroomsLights {
                 BlockState state = INDEX.get(light.key);
                 light.alwaysOn = state == null || !state.hasProperty(BlockStateProperties.LIT) || state.getValue(BlockStateProperties.LIT);
             }
-            if (Level228Lamps.isPanel(light.type)) {
-                // Level 228: the panel's shade sets its colour and strength (Level228Lamps).
-                light.shade = Level228Lamps.shadeOf(INDEX.get(light.key));
+            if (Level228Bulbs.isBulb(light.type)) {
+                // Level 228: how the light burns and fails (its state and phase, Level228Bulbs).
+                light.bulb = Level228Bulbs.packed(INDEX.get(light.key));
             }
         }
         if (BackroomsLevel.fromDimension(level.dimension()) == BackroomsLevel.LEVEL_0) {

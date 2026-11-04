@@ -1,128 +1,147 @@
 package com.rickr.backrooms.client.level228;
 
-import com.rickr.backrooms.world.layout.Level228Plan;
 import java.util.Random;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
 /**
- * Reflections that lie (Level 228). Rarely (every one to three minutes, a little more often the
- * longer you stay), one of YOUR reflections close by (on screen, within {@value #CLOSE} blocks)
- * stops being quite yours:
+ * Reflections that lie (Level 228): YOUR personal hallucinations. Rarely (every one to three
+ * minutes, more often the longer you stay), one of your own reflections close by stops being
+ * quite yours:
  * <ul>
- *   <li>{@link #LAG}: it replays your movements most of a second late, for a few seconds, then
- *       catches up (a ring of your poses over the last few seconds, sampled each tick).</li>
- *   <li>{@link #LOOK}: its head stays turned to you while you look or turn away, and snaps back
- *       the moment you look straight at it.</li>
- *   <li>{@link #WALK}: it stops copying you, turns round and walks off down the reflected
- *       corridor (following the real maze's corridors, mirrored) until it fades into the dark;
- *       that reflection then stays empty while you remain in view of it.</li>
- *   <li>{@link #STILL}: it stays standing as it was when you walk off; the next time you look,
- *       it is simply gone, and that reflection stays empty for a while.</li>
+ *   <li>{@link #LOOK}: you have been standing still for a while; one reflection whose face is
+ *       turned away from you slowly turns its head to look at you, holds, and slowly turns back.
+ *       No sound, no snap. It turns back early (still slowly) if you move.</li>
+ *   <li>{@link #LAG}: while you walk, it replays your movements most of a second late, then
+ *       quietly catches up.</li>
+ *   <li>{@link #WALK_ON}: you stop; it doesn't. It takes a few more steps in the direction you
+ *       were going (inside its own space: it stops at walls and glass), then just stands there.
+ *       The next time you look away for a moment it is back where it belongs.</li>
+ *   <li>{@link #STOP}: you keep walking; it stops and stays standing where it was. Look away and
+ *       back: it is gone, and that reflection stays empty for a while.</li>
+ *   <li>{@link #VANISH}: one of your reflections is simply not there (the others are), picked
+ *       out of sight so you only notice when you turn. It comes back while you aren't looking.</li>
  * </ul>
- * Never a jump scare: nothing sudden comes at you, no sound, no flash. The lie is something you
- * notice, or don't. Everything is preallocated (state in static fields, a fixed ring of poses),
- * so nothing here allocates per frame or tick.
+ * Rules: never a jump scare (nothing comes at you, no sound, no flash, nothing appears in front of
+ * you); never on a puzzle mirror, never in the final chamber or the exit hallway (the caller
+ * passes {@code allowed}); only your own reflections (teammates are never misrepresented to you);
+ * client-only, so it can't touch anyone else's view or the shared puzzle. "Nonexistent room" and
+ * "hidden passage" mirrors (PlanAgent's sealed images) attract the lies a little: a reflection that
+ * walks on into a room that isn't there is the point of them.
  *
- * <p>The mod's sanity lives on the server and there is no client-to-server way to change it
- * (only server-side events drain it), so a lie costs no sanity: it works on the player, not the
- * bar.
+ * <p>An image is identified across frames by its mirror map: image = T + F * real, with F the
+ * flips and T a translation that doesn't change as you move ({@code T = img - F * you}).
+ * Everything is in static fields and fixed arrays: nothing allocates per frame or tick.
  */
 public final class Level228Lies {
     public static final int NONE = 0;
-    public static final int LAG = 1;
-    public static final int LOOK = 2;
-    public static final int WALK = 3;
-    public static final int STILL = 4;
-    /** After WALK or STILL: that reflection shows nothing of you. */
-    private static final int EMPTY = 5;
+    public static final int LOOK = 1;
+    public static final int LAG = 2;
+    public static final int WALK_ON = 3;
+    public static final int STOP = 4;
+    public static final int VANISH = 5;
+    /** After STOP: that reflection shows nothing of you. */
+    private static final int EMPTY = 6;
 
-    /** A lie only starts on a reflection of you on screen and at most this far from the camera. */
-    static final double CLOSE = 10.0;
-    /** Poses remembered (ticks): the longest lag plus its interpolation, with room to spare. */
-    private static final int RING = 64;
+    /** A lie only starts on a reflection at most this far from the camera (blocks). */
+    private static final double CLOSE = 12.0;
+    /** Head-turn: a neck turns this far at most from the body (degrees), and it is only worth it from MIN_TURN on. */
+    private static final float MAX_NECK = 75.0f;
+    private static final float MIN_TURN = 35.0f;
+    /** Head-turn timing (ticks): the slow turn, the hold, the slow return. */
+    private static final int TURN_TICKS = 50;
+    private static final int HOLD_MIN = 60;
+    private static final int HOLD_MAX = 110;
+    /** Standing still this long (ticks) before a reflection may turn its head. */
+    private static final int STILL_BEFORE_LOOK = 60;
     /** Between lies (seconds), before escalation. */
     private static final float MIN_GAP = 60.0f;
     private static final float MAX_GAP = 180.0f;
     /** Full escalation after this long in the level (ticks): 30 minutes. */
     private static final float ESCALATE_TICKS = 20.0f * 60.0f * 30.0f;
-    /** The walking reflection's pace (blocks per tick, about a slow 1.4 blocks a second) and limb swing. */
-    private static final double WALK_STEP = 0.07;
-    private static final float WALK_SWING = 0.3f;
-    /** Ticks it stands turning round before it walks. */
-    private static final int TURN_TICKS = 16;
-    /** Unseen ticks after which a still reflection is gone / an empty one returns to normal. */
+    /** A pending lie that found no reflection to happen to in this long (ticks) is re-rolled. */
+    private static final int PENDING_TIMEOUT = 20 * 60;
+    /** Unseen ticks after which a stopped reflection is gone / an empty one quietly returns. */
     private static final int GONE_UNSEEN = 10;
-    private static final int EMPTY_UNSEEN = 120;
-    /** The lie ends once you are this far from its image (blocks). */
-    private static final double FAR = 32.0;
+    private static final int RETURN_UNSEEN = 30;
+    /** The lie ends if you get this far from its image (blocks). */
+    private static final double FAR = 28.0;
 
     private static final Random RANDOM = new Random();
+    private static final BlockPos.MutableBlockPos PROBE = new BlockPos.MutableBlockPos();
 
-    // --- Schedule -------------------------------------------------------------------------------
+    // --- Schedule -----------------------------------------------------------------------------
     private static int ticksInLevel;
     private static int nextLieTick = -1;
-    /** The lie waiting for a reflection to happen to (0: none). */
     private static int pending;
+    private static int pendingAge;
+    private static boolean forced;
 
-    // --- The lie in progress ----------------------------------------------------------------------
+    // --- You (tick) -----------------------------------------------------------------------------
+    private static int stillTicks;
+    private static int movingTicks;
+    private static double lastX;
+    private static double lastZ;
+    private static boolean hasLast;
+    /** Your last walking step (blocks per tick), remembered for WALK_ON. */
+    private static double stepX;
+    private static double stepZ;
+
+    // --- The lie in progress --------------------------------------------------------------------
     private static int state;
     private static int age;
-    /** Which image it happens in (box, map, depth): images are refilled every frame, so matched by value. */
-    private static final int[] KEY = new int[11];
+    private static int keyFx;
+    private static int keyFz;
+    private static int keyTx;
+    private static int keyTz;
+    private static double tX;
+    private static double tZ;
     private static boolean seenFlag;
     private static int unseen;
+    private static double imgX;
+    private static double imgZ;
 
-    // LAG
-    private static float lagDelay;
-    private static int lagDuration;
     // LOOK
     private static float lookW;
     private static float lookWO;
-    private static boolean lookArmed;
-    private static int lookCap;
-    // WALK / STILL: the pose it froze in (image position, real-frame angles).
+    private static int lookHold;
+    private static boolean lookReturning;
+    // LAG
+    private static float lagDelay;
+    private static int lagDuration;
+    // WALK_ON / STOP: the reflection's own body, in image space.
     private static double fx;
     private static double fy;
     private static double fz;
+    private static double fxO;
+    private static double fzO;
     private static float fBody;
     private static float fHead;
     private static float fPitch;
     private static float fWalkPos;
+    private static float fWalkPosO;
+    private static float fWalkSpeed;
+    private static float fWalkSpeedO;
     private static boolean fCrouch;
-    // WALK: the walker.
-    private static double wx;
-    private static double wz;
-    private static double wxO;
-    private static double wzO;
-    private static float wYaw;
-    private static float wYawO;
-    private static float wPos;
-    private static float wPosO;
-    private static float wAlpha;
-    private static float wAlphaO;
-    private static int cellX;
-    private static int cellZ;
-    private static int prevX;
-    private static int prevZ;
-    private static int targetX;
-    private static int targetZ;
-    private static boolean walkEnded;
-    private static int walkedCells;
-    private static long walkSeed;
-    private static int wFlipX;
-    private static int wFlipZ;
-    private static int wOffX;
-    private static int wOffZ;
-    private static double camX;
-    private static double camZ;
+    private static double walkVx;
+    private static double walkVz;
+    private static double walkLeft;
+    private static float fade;
+    private static float fadeO;
+    // VANISH
+    private static int vanishFor;
 
-    // --- This frame's best candidate (a reflection of you a lie could start on) ------------------
+    // --- This frame's best candidate ------------------------------------------------------------
     private static boolean candValid;
-    private static double candDist;
-    private static final int[] CAND_KEY = new int[11];
+    private static double candScore;
+    private static int cFx;
+    private static int cFz;
+    private static double cTx;
+    private static double cTz;
     private static double cX;
     private static double cY;
     private static double cZ;
@@ -130,53 +149,74 @@ public final class Level228Lies {
     private static float cHead;
     private static float cPitch;
     private static float cWalkPos;
+    private static float cWalkSpeed;
     private static boolean cCrouch;
-
-    // --- Your recent poses (real space), one per tick ---------------------------------------------
-    private static final double[] RX = new double[RING];
-    private static final double[] RY = new double[RING];
-    private static final double[] RZ = new double[RING];
-    private static final float[] R_BODY = new float[RING];
-    private static final float[] R_HEAD = new float[RING];
-    private static final float[] R_PITCH = new float[RING];
-    private static final float[] R_WALK_POS = new float[RING];
-    private static final float[] R_WALK_SPEED = new float[RING];
-    private static final float[] R_ATTACK = new float[RING];
-    private static final boolean[] R_CROUCH = new boolean[RING];
-    private static int samples;
+    private static int imagesThisFrame;
+    /** From the last tick: lies may happen where you are. */
+    private static boolean allowedHere;
 
     private Level228Lies() {}
+
+    // ==========================================================================================
+    // Debug
+    // ==========================================================================================
+
+    /** {@code /backrooms mirror lie ...}: this lie next (NONE: end the current one and schedule normally). */
+    static void force(int kind) {
+        state = NONE;
+        pending = kind;
+        pendingAge = 0;
+        forced = kind != NONE;
+        if (kind == NONE) {
+            nextLieTick = ticksInLevel + gap();
+        }
+    }
+
+    /** One line for {@code /backrooms mirror info}. */
+    static String describe() {
+        return "lie: " + name(state) + (pending != NONE ? " (pending " + name(pending) + ")" : "")
+                + ", still " + stillTicks + "t, next in " + Math.max(0, nextLieTick - ticksInLevel) / 20 + "s";
+    }
+
+    static String name(int kind) {
+        return switch (kind) {
+            case LOOK -> "look";
+            case LAG -> "lag";
+            case WALK_ON -> "walk";
+            case STOP -> "stop";
+            case VANISH -> "vanish";
+            case EMPTY -> "empty";
+            default -> "none";
+        };
+    }
 
     // ==========================================================================================
     // Ticks (client thread)
     // ==========================================================================================
 
-    /** Left the level (or nobody is playing): forget everything. */
     static void reset() {
         ticksInLevel = 0;
         nextLieTick = -1;
         pending = NONE;
+        forced = false;
         state = NONE;
-        samples = 0;
+        stillTicks = 0;
+        movingTicks = 0;
+        hasLast = false;
         unseen = 0;
         seenFlag = false;
     }
 
-    /** Debug ({@code /backrooms mirror lie ...}): this lie next, as soon as a reflection of you is close and on screen. */
-    static void force(int kind) {
-        state = NONE;
-        pending = kind;
-    }
-
-    /** Once a client tick while in Level 228, after the player moved. */
-    static void tick(Player player, long seed) {
-        walkSeed = seed;
+    /**
+     * Once a client tick in Level 228. {@code allowed}: lies may happen where you are (not the
+     * final chamber or exit hallway); outside, any lie ends at once.
+     */
+    static void tick(Player player, ClientLevel level, boolean allowed) {
         ticksInLevel++;
         if (nextLieTick < 0) {
             nextLieTick = ticksInLevel + gap();
         }
-        sample(player);
-
+        trackYou(player);
         if (seenFlag) {
             unseen = 0;
         } else {
@@ -184,44 +224,56 @@ public final class Level228Lies {
         }
         seenFlag = false;
 
+        allowedHere = allowed;
+        if (!allowed) {
+            if (state != NONE) {
+                finish();
+            }
+            return;
+        }
         if (state == NONE) {
             if (pending == NONE && ticksInLevel >= nextLieTick) {
                 pending = pickKind();
+                pendingAge = 0;
+            } else if (pending != NONE && !forced && ++pendingAge > PENDING_TIMEOUT) {
+                pending = pickKind(); // it never found its moment: something else
+                pendingAge = 0;
             }
             return;
         }
         age++;
-        if (distanceToKey(player.getX(), player.getZ()) > FAR) {
+        double dx = player.getX() - imgX;
+        double dz = player.getZ() - imgZ;
+        if (dx * dx + dz * dz > FAR * FAR) {
             finish();
             return;
         }
         switch (state) {
+            case LOOK -> tickLook();
             case LAG -> {
                 if (age > lagDuration + 20) {
                     finish();
                 }
             }
-            case LOOK -> {
-                lookWO = lookW;
-                lookW = Math.min(1.0f, lookW + 1.0f / 24.0f);
-                // Time's up: it turns back only while you aren't looking (only your gaze snaps it).
-                if (age > lookCap && unseen > GONE_UNSEEN) {
-                    finish();
-                }
-            }
-            case WALK -> {
-                stepWalker();
-                if (wAlpha <= 0.0f && wAlphaO <= 0.0f) {
-                    toEmpty();
-                }
-            }
-            case STILL -> {
+            case WALK_ON -> tickWalkOn(level);
+            case STOP -> {
+                fadeO = fade;
                 if (unseen >= GONE_UNSEEN) {
                     toEmpty(); // you looked away: next time you look, it's gone
+                } else if (age > 20 * 20) {
+                    fade = Math.max(0.0f, fade - 1.0f / 40.0f); // watched for 20 s: it fades into the dark
+                    if (fade <= 0.0f) {
+                        toEmpty();
+                    }
                 }
             }
             case EMPTY -> {
-                if (unseen >= EMPTY_UNSEEN || age > 20 * 90) {
+                if ((unseen >= RETURN_UNSEEN && age > 20 * 15) || age > 20 * 90) {
+                    finish(); // back while you aren't looking
+                }
+            }
+            case VANISH -> {
+                if (age > vanishFor && unseen >= RETURN_UNSEEN) {
                     finish();
                 }
             }
@@ -229,47 +281,57 @@ public final class Level228Lies {
         }
     }
 
-    private static void sample(Player p) {
-        int i = samples % RING;
-        RX[i] = p.getX();
-        RY[i] = p.getY();
-        RZ[i] = p.getZ();
-        R_BODY[i] = p.yBodyRot;
-        R_HEAD[i] = p.yHeadRot;
-        R_PITCH[i] = p.getXRot();
-        R_WALK_POS[i] = p.walkAnimation.position();
-        R_WALK_SPEED[i] = p.walkAnimation.speed();
-        R_ATTACK[i] = p.attackAnim;
-        R_CROUCH[i] = p.isCrouching();
-        samples++;
+    private static void trackYou(Player p) {
+        double x = p.getX();
+        double z = p.getZ();
+        if (hasLast) {
+            double mx = x - lastX;
+            double mz = z - lastZ;
+            if (mx * mx + mz * mz < 0.01 * 0.01) {
+                stillTicks++;
+                movingTicks = 0;
+            } else {
+                movingTicks++;
+                if (mx * mx + mz * mz > 0.04 * 0.04) {
+                    stepX = mx;
+                    stepZ = mz;
+                }
+                stillTicks = 0;
+            }
+        }
+        lastX = x;
+        lastZ = z;
+        hasLast = true;
     }
 
-    /** 0 on arrival .. 1 after half an hour in the level. */
     private static float escalation() {
         return Math.min(1.0f, ticksInLevel / ESCALATE_TICKS);
     }
 
-    /** Ticks to the next lie: one to three minutes, down to about half that with time. */
     private static int gap() {
         float seconds = MIN_GAP + RANDOM.nextFloat() * (MAX_GAP - MIN_GAP);
         return (int) (seconds * 20.0f * (1.0f - 0.45f * escalation()));
     }
 
-    /** The subtle ones (late, watching) first; the ones that leave you alone grow likelier with time. */
+    /** The head-turn is the signature; the ones that leave you alone grow likelier with time. */
     private static int pickKind() {
         float e = escalation();
-        float lag = 3.0f;
-        float look = 3.0f;
-        float walk = 1.0f + 2.0f * e;
-        float still = 1.0f + 2.0f * e;
-        float roll = RANDOM.nextFloat() * (lag + look + walk + still);
-        if (roll < lag) {
-            return LAG;
-        }
-        if (roll < lag + look) {
+        float look = 4.0f;
+        float lag = 2.0f;
+        float walk = 2.0f;
+        float stop = 1.0f + 1.5f * e;
+        float vanish = 1.0f + 1.5f * e;
+        float roll = RANDOM.nextFloat() * (look + lag + walk + stop + vanish);
+        if ((roll -= look) < 0.0f) {
             return LOOK;
         }
-        return roll < lag + look + walk ? WALK : STILL;
+        if ((roll -= lag) < 0.0f) {
+            return LAG;
+        }
+        if ((roll -= walk) < 0.0f) {
+            return WALK_ON;
+        }
+        return roll < stop ? STOP : VANISH;
     }
 
     private static void finish() {
@@ -283,368 +345,343 @@ public final class Level228Lies {
         unseen = 0;
     }
 
-    private static double distanceToKey(double x, double z) {
-        double cx = (KEY[0] + KEY[1] + 1) * 0.5;
-        double cz = (KEY[4] + KEY[5] + 1) * 0.5;
-        double dx = Math.max(0.0, Math.abs(x - cx) - (KEY[1] - KEY[0] + 1) * 0.5);
-        double dz = Math.max(0.0, Math.abs(z - cz) - (KEY[5] - KEY[4] + 1) * 0.5);
-        return Math.sqrt(dx * dx + dz * dz);
-    }
-
-    // ==========================================================================================
-    // The walker (WALK): cell to cell through the image, along the real maze's corridors mirrored
-    // ==========================================================================================
-
-    private static void stepWalker() {
-        wxO = wx;
-        wzO = wz;
-        wYawO = wYaw;
-        wPosO = wPos;
-        wAlphaO = wAlpha;
-        if (walkEnded) {
-            wAlpha = Math.max(0.0f, wAlpha - 1.0f / 30.0f);
-            return;
+    private static void tickLook() {
+        lookWO = lookW;
+        boolean youMoved = stillTicks == 0;
+        if (!lookReturning && (youMoved || age > TURN_TICKS + lookHold)) {
+            lookReturning = true;
         }
-        double tx = targetX + 0.5 - wx;
-        double tz = targetZ + 0.5 - wz;
-        float towards = realYaw(tx, tz);
-        if (age <= TURN_TICKS) {
-            wYaw = Mth.rotLerp(0.18f, wYaw, towards); // turning round, on the spot
-            return;
-        }
-        wYaw = Mth.rotLerp(0.25f, wYaw, towards);
-        wPos += WALK_SWING;
-        double d = Math.sqrt(tx * tx + tz * tz);
-        if (d <= WALK_STEP) {
-            wx = targetX + 0.5;
-            wz = targetZ + 0.5;
-            prevX = cellX;
-            prevZ = cellZ;
-            cellX = targetX;
-            cellZ = targetZ;
-            walkedCells++;
-            if (walkedCells > 40 || !chooseNext()) {
-                walkEnded = true; // a dead end, the image's edge, or far enough: it fades where it stands
+        if (lookReturning) {
+            lookW = Math.max(0.0f, lookW - 1.0f / TURN_TICKS);
+            if (lookW <= 0.0f && lookWO <= 0.0f) {
+                finish();
             }
         } else {
-            wx += tx / d * WALK_STEP;
-            wz += tz / d * WALK_STEP;
-        }
-        double cdx = wx - camX;
-        double cdz = wz - camZ;
-        if (cdx * cdx + cdz * cdz > 20.0 * 20.0) {
-            walkEnded = true; // well into the dark already
+            lookW = Math.min(1.0f, lookW + 1.0f / TURN_TICKS);
         }
     }
 
-    /**
-     * The next cell: any corridor neighbour (asked of the REAL maze: image cell (x, z) is real cell
-     * flip * (x, z) + off, and a step is mirrored the same way), not back where it came from and
-     * still inside the image, preferring the one farthest from you: it walks AWAY.
-     */
-    private static boolean chooseNext() {
-        int realX = wFlipX * cellX + wOffX;
-        int realZ = wFlipZ * cellZ + wOffZ;
-        double best = -1.0;
-        int bx = 0;
-        int bz = 0;
-        for (int dir = 0; dir < 4; dir++) {
-            int dx = dir == 0 ? 1 : dir == 1 ? -1 : 0;
-            int dz = dir == 2 ? 1 : dir == 3 ? -1 : 0;
-            int nx = cellX + dx;
-            int nz = cellZ + dz;
-            if ((nx == prevX && nz == prevZ) || nx < KEY[0] || nx > KEY[1] || nz < KEY[4] || nz > KEY[5]) {
-                continue;
-            }
-            if (!Level228Plan.canStep(walkSeed, realX, realZ, wFlipX * dx, wFlipZ * dz)) {
-                continue;
-            }
-            double ex = nx + 0.5 - camX;
-            double ez = nz + 0.5 - camZ;
-            double score = ex * ex + ez * ez;
-            if (score > best) {
-                best = score;
-                bx = nx;
-                bz = nz;
+    private static void tickWalkOn(ClientLevel level) {
+        fxO = fx;
+        fzO = fz;
+        fWalkPosO = fWalkPos;
+        fWalkSpeedO = fWalkSpeed;
+        fadeO = fade;
+        if (walkLeft > 0.0) {
+            // Eases out over the last block: a person slowing to a stop, not a puppet cut off.
+            double v = Math.sqrt(walkVx * walkVx + walkVz * walkVz);
+            double ease = Math.min(1.0, walkLeft / 1.0);
+            double step = v * (0.35 + 0.65 * ease);
+            double nx = fx + walkVx / v * step;
+            double nz = fz + walkVz / v * step;
+            if (standable(level, nx, fy, nz)) {
+                fx = nx;
+                fz = nz;
+                walkLeft -= step;
+                fWalkSpeed = (float) Math.min(1.0, step * 4.0);
+            } else {
+                walkLeft = 0.0; // a wall or a pane: it stops there
             }
         }
-        if (best < 0.0) {
+        if (walkLeft <= 0.0) {
+            fWalkSpeed = Math.max(0.0f, fWalkSpeed - 0.12f);
+        }
+        fWalkPos += fWalkSpeed;
+        if (walkLeft <= 0.0 && unseen >= RETURN_UNSEEN) {
+            finish(); // back in step with you while you weren't looking
+        } else if (age > 20 * 30) {
+            fade = Math.max(0.0f, fade - 1.0f / 40.0f);
+            if (fade <= 0.0f) {
+                toEmpty();
+            }
+        }
+    }
+
+    /** A body could stand at these feet: two free blocks over a floor (the image's real blocks). */
+    private static boolean standable(ClientLevel level, double x, double y, double z) {
+        PROBE.set(Mth.floor(x), Mth.floor(y + 0.1), Mth.floor(z));
+        if (!level.getBlockState(PROBE).getCollisionShape(level, PROBE).isEmpty()) {
             return false;
         }
-        targetX = bx;
-        targetZ = bz;
-        return true;
-    }
-
-    /**
-     * The yaw, in the REAL player's frame, that the puppet must have to face along (dx, dz) in the
-     * image: the mirror map flips the direction, so flip it back (the map is its own inverse).
-     */
-    private static float realYaw(double dx, double dz) {
-        return (float) Math.toDegrees(Math.atan2(-dx * wFlipX, dz * wFlipZ));
+        PROBE.move(0, 1, 0);
+        if (!level.getBlockState(PROBE).getCollisionShape(level, PROBE).isEmpty()) {
+            return false;
+        }
+        PROBE.move(0, -2, 0);
+        return !level.getBlockState(PROBE).getCollisionShape(level, PROBE).isEmpty();
     }
 
     // ==========================================================================================
     // Frames (render thread)
     // ==========================================================================================
 
-    static void beginFrame(Vec3 cam) {
+    static void beginFrame() {
         candValid = false;
-        camX = cam.x;
-        camZ = cam.z;
+        imagesThisFrame = 0;
     }
 
-    /** True if the lie in progress happens in this image. */
-    static boolean isLieImage(Level228Plan.Image img) {
-        return state != NONE && matches(KEY, img);
+    private static int q(double v) {
+        return (int) Math.round(v * 4.0);
     }
 
-    /** The lie's image is on screen this frame. */
+    /** True if the lie in progress (or the empty spot it left) is this image of you. */
+    static boolean isLieImage(int flipX, int flipZ, double tx, double tz) {
+        return state != NONE && flipX == keyFx && flipZ == keyFz && q(tx) == keyTx && q(tz) == keyTz;
+    }
+
+    /** The lie's image is on screen this frame (or would be, when empty). */
     static void noteSeen() {
         seenFlag = true;
     }
 
     /**
-     * A reflection of you is drawn in {@code img}, on screen, {@code dist} blocks away, at
-     * {@code pose} (live). The nearest of the frame is where a pending lie starts.
+     * One image of you this frame (never a puzzle mirror's), with its live pose. {@code special}:
+     * it is seen through a "nonexistent room"/"hidden passage" mirror. The best candidate of the
+     * frame is where a pending lie starts at the end of the frame.
      */
-    static void offer(Level228Plan.Image img, Player p, float pt, PuppetPose pose, double dist) {
-        if (pending == NONE || state != NONE || dist > CLOSE || (candValid && dist >= candDist)) {
+    static void consider(Player you, float pt, int flipX, int flipZ, double tx, double tz, PuppetPose live, Vec3 cam,
+            Vector3f look, boolean onScreen, boolean special) {
+        imagesThisFrame++;
+        if (!allowedHere) {
             return;
         }
-        if (pending == LAG && samples < RING) {
-            return; // not enough of your past yet to replay
+        if (pending == NONE || state != NONE) {
+            return;
+        }
+        double dx = live.x - cam.x;
+        double dy = live.y + 1.5 - cam.y;
+        double dz = live.z - cam.z;
+        double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist > CLOSE || dist < 1.0) {
+            return;
+        }
+        double cosView = (look.x() * dx + look.y() * dy + look.z() * dz) / dist;
+        float body = Mth.rotLerp(pt, you.yBodyRotO, you.yBodyRot);
+        float head = Mth.rotLerp(pt, you.yHeadRotO, you.yHeadRot);
+        double score;
+        switch (pending) {
+            case LOOK -> {
+                if (!onScreen || stillTicks < STILL_BEFORE_LOOK || cosView > 0.995) {
+                    return; // dead centre is no good: it's the corner of your eye that sees it begin
+                }
+                float target = headTowards(flipX, flipZ, cam.x - live.x, cam.z - live.z);
+                float turn = Math.abs(Mth.wrapDegrees(target - head));
+                float neck = Math.abs(Mth.wrapDegrees(target - body));
+                if (turn < MIN_TURN || neck > MAX_NECK) {
+                    return;
+                }
+                score = 20.0 - dist + (special ? 4.0 : 0.0);
+            }
+            case LAG, STOP -> {
+                if (!onScreen || movingTicks < (pending == STOP ? 20 : 10) || (pending == LAG && PoseTracks.history(you.getId()) < PoseTracks.RING)) {
+                    return;
+                }
+                score = 20.0 - dist + (special ? 4.0 : 0.0);
+            }
+            case WALK_ON -> {
+                if (!onScreen || stillTicks < 2 || stillTicks > 8) {
+                    return; // the moment you stop
+                }
+                score = 20.0 - dist + (special ? 8.0 : 0.0);
+            }
+            case VANISH -> {
+                if (onScreen && cosView > 0.86) {
+                    return; // in plain view: it would vanish in front of you
+                }
+                score = (onScreen ? 10.0 : 20.0) - dist + (special ? 4.0 : 0.0);
+            }
+            default -> {
+                return;
+            }
+        }
+        if (candValid && score <= candScore) {
+            return;
         }
         candValid = true;
-        candDist = dist;
-        fill(CAND_KEY, img);
-        cX = pose.x;
-        cY = pose.y;
-        cZ = pose.z;
-        cBody = Mth.rotLerp(pt, p.yBodyRotO, p.yBodyRot);
-        cHead = Mth.rotLerp(pt, p.yHeadRotO, p.yHeadRot);
-        cPitch = Mth.lerp(pt, p.xRotO, p.getXRot());
-        cWalkPos = p.walkAnimation.position(pt);
-        cCrouch = p.isCrouching();
+        candScore = score;
+        cFx = flipX;
+        cFz = flipZ;
+        cTx = tx;
+        cTz = tz;
+        cX = live.x;
+        cY = live.y;
+        cZ = live.z;
+        cBody = body;
+        cHead = head;
+        cPitch = Mth.lerp(pt, you.xRotO, you.getXRot());
+        cWalkPos = you.walkAnimation.position(pt);
+        cWalkSpeed = you.walkAnimation.speed(pt);
+        cCrouch = you.isCrouching();
     }
 
-    /** End of the frame: start the pending lie on the nearest reflection of you, if there was one. */
+    /** End of the frame: start the pending lie on the frame's best candidate, if there was one. */
     static void endFrame() {
-        if (!candValid || pending == NONE) {
+        if (!candValid || pending == NONE || state != NONE) {
             return;
         }
-        System.arraycopy(CAND_KEY, 0, KEY, 0, KEY.length);
+        if (pending == VANISH && imagesThisFrame < 2) {
+            return; // "one image empty while others remain": not with a single reflection
+        }
         state = pending;
         pending = NONE;
+        forced = false;
         age = 0;
         unseen = 0;
+        keyFx = cFx;
+        keyFz = cFz;
+        keyTx = q(cTx);
+        keyTz = q(cTz);
+        tX = cTx;
+        tZ = cTz;
+        imgX = cX;
+        imgZ = cZ;
         float e = escalation();
-        fx = cX;
+        fx = fxO = cX;
         fy = cY;
-        fz = cZ;
+        fz = fzO = cZ;
         fBody = cBody;
         fHead = cHead;
         fPitch = cPitch;
-        fWalkPos = cWalkPos;
+        fWalkPos = fWalkPosO = cWalkPos;
+        fWalkSpeed = fWalkSpeedO = cWalkSpeed;
         fCrouch = cCrouch;
+        fade = fadeO = 1.0f;
         switch (state) {
+            case LOOK -> {
+                lookW = 0.0f;
+                lookWO = 0.0f;
+                lookReturning = false;
+                lookHold = HOLD_MIN + RANDOM.nextInt(HOLD_MAX - HOLD_MIN + 1);
+            }
             case LAG -> {
                 lagDelay = 12.0f + 6.0f * e + RANDOM.nextFloat() * 2.0f; // 0.6 .. 1.0 s late
                 lagDuration = 60 + RANDOM.nextInt(50) + (int) (40 * e);
             }
-            case LOOK -> {
-                lookW = 0.0f;
-                lookWO = 0.0f;
-                lookArmed = false;
-                lookCap = 200 + (int) (200 * e);
+            case WALK_ON -> {
+                // Your last step, through the mirror map: the way the reflection was walking.
+                double v = Math.sqrt(stepX * stepX + stepZ * stepZ);
+                double speed = Mth.clamp(v, 0.1, 0.22);
+                walkVx = v > 1e-4 ? cFx * stepX / v * speed : 0.0;
+                walkVz = v > 1e-4 ? cFz * stepZ / v * speed : 0.0;
+                walkLeft = v > 1e-4 ? 1.5 + RANDOM.nextDouble() * 2.0 : 0.0;
+                fWalkSpeed = fWalkSpeedO = Math.max(cWalkSpeed, (float) Math.min(1.0, speed * 4.0));
             }
-            case WALK -> {
-                wFlipX = KEY[6];
-                wFlipZ = KEY[7];
-                wOffX = KEY[8];
-                wOffZ = KEY[9];
-                wx = wxO = fx;
-                wz = wzO = fz;
-                wYaw = wYawO = fBody;
-                wPos = wPosO = fWalkPos;
-                wAlpha = wAlphaO = 1.0f;
-                cellX = prevX = Mth.floor(fx);
-                cellZ = prevZ = Mth.floor(fz);
-                walkedCells = 0;
-                walkEnded = !chooseNext();
-            }
+            case VANISH -> vanishFor = 200 + RANDOM.nextInt(300);
             default -> {
-                // STILL needs nothing more than the frozen pose.
+                // STOP needs nothing more than the frozen pose.
             }
         }
     }
 
     /**
-     * Turns {@code pose} (already the live reflection of {@code p} in the lie's image) into the
+     * Turns {@code pose} (the live reflection of {@code you} in the lie's image, plain) into the
      * lie. Returns false when nothing of you is to be drawn there.
      */
-    static boolean apply(Player p, float pt, Vec3 cam, Vector3f look, PuppetPose pose) {
+    static boolean apply(Player you, float pt, Vec3 cam, PuppetPose pose) {
         switch (state) {
-            case LAG -> {
-                return applyLag(p, pt, pose);
-            }
             case LOOK -> {
-                return applyLook(p, pt, cam, look, pose);
-            }
-            case WALK -> {
-                float a = Mth.lerp(pt, wAlphaO, wAlpha);
-                pose.x = Mth.lerp(pt, wxO, wx);
-                pose.y = fy;
-                pose.z = Mth.lerp(pt, wzO, wz);
-                double dx = pose.x - cam.x;
-                double dz = pose.z - cam.z;
-                double dist = Math.sqrt(dx * dx + dz * dz);
-                // Into the dark: fades out from 12 to 20 blocks (the fog takes it as it goes).
-                a *= 1.0f - (float) Mth.clamp((dist - 12.0) / 8.0, 0.0, 1.0);
-                if (a <= 0.01f) {
-                    return false;
-                }
-                float yaw = Mth.rotLerp(pt, wYawO, wYaw);
-                boolean walking = age > TURN_TICKS && !walkEnded;
-                pose.override = true;
-                pose.body = yaw;
-                pose.head = yaw;
-                pose.pitch = 8.0f; // head slightly down, walking off
-                pose.walkPos = Mth.lerp(pt, wPosO, wPos);
-                pose.walkSpeed = walking ? WALK_SWING : 0.0f;
-                pose.attack = 0.0f;
-                pose.crouch = false;
-                pose.alpha = a;
+                applyLook(you, pt, cam, pose);
                 return true;
             }
-            case STILL -> {
+            case LAG -> {
+                applyLag(you, pt, pose);
+                return true;
+            }
+            case WALK_ON -> {
+                pose.x = Mth.lerp(pt, fxO, fx);
+                pose.y = fy;
+                pose.z = Mth.lerp(pt, fzO, fz);
+                frozen(pose, Mth.lerp(pt, fWalkPosO, fWalkPos), Mth.lerp(pt, fWalkSpeedO, fWalkSpeed));
+                pose.alpha = Mth.lerp(pt, fadeO, fade);
+                return pose.alpha > 0.01f;
+            }
+            case STOP -> {
                 pose.x = fx;
                 pose.y = fy;
                 pose.z = fz;
-                pose.override = true;
-                pose.body = fBody;
-                pose.head = fHead;
-                pose.pitch = fPitch;
-                pose.walkPos = fWalkPos;
-                pose.walkSpeed = 0.0f;
-                pose.attack = 0.0f;
-                pose.crouch = fCrouch;
-                return true;
+                frozen(pose, fWalkPos, 0.0f);
+                pose.alpha = Mth.lerp(pt, fadeO, fade);
+                return pose.alpha > 0.01f;
             }
             default -> {
-                return false; // EMPTY: nothing of you there
+                return false; // VANISH / EMPTY: nothing of you there
             }
         }
     }
 
-    /** Your own movement, replayed from the ring {@code delay} ticks late (eased in and out). */
-    private static boolean applyLag(Player p, float pt, PuppetPose pose) {
+    private static void frozen(PuppetPose pose, float walkPos, float walkSpeed) {
+        pose.override = true;
+        pose.body = fBody;
+        pose.head = fHead;
+        pose.pitch = fPitch;
+        pose.walkPos = walkPos;
+        pose.walkSpeed = walkSpeed;
+        pose.attack = 0.0f;
+        pose.crouch = fCrouch;
+    }
+
+    /** Your own movement, replayed late from your pose history (eased in and out). */
+    private static void applyLag(Player you, float pt, PuppetPose pose) {
         float t = age + pt;
         float ramp;
         if (t < 10.0f) {
             ramp = smooth(t / 10.0f);
         } else if (t > lagDuration) {
-            ramp = 1.0f - smooth(Math.min(1.0f, (t - lagDuration) / 20.0f)); // catching up with you
+            ramp = 1.0f - smooth(Math.min(1.0f, (t - lagDuration) / 20.0f));
         } else {
             ramp = 1.0f;
         }
         float delay = lagDelay * ramp;
-        if (delay < 0.05f || samples < 3) {
-            return true;
+        if (delay < 0.05f || !PoseTracks.sample(you.getId(), delay, pt)) {
+            return;
         }
-        // The live pose is between samples (samples - 2) and (samples - 1) at pt; step back from there.
-        double when = samples - 2 + pt - delay;
-        double oldest = samples - RING + 1;
-        if (when < oldest) {
-            when = oldest;
-        }
-        int k0 = Mth.floor(when);
-        float f = (float) (when - k0);
-        int i0 = Math.floorMod(k0, RING);
-        int i1 = Math.floorMod(k0 + 1, RING);
-        double rx = Mth.lerp(f, RX[i0], RX[i1]);
-        double ry = Mth.lerp(f, RY[i0], RY[i1]);
-        double rz = Mth.lerp(f, RZ[i0], RZ[i1]);
-        pose.x = KEY[6] * (rx - KEY[8] - 0.5) + 0.5;
-        pose.y = ry;
-        pose.z = KEY[7] * (rz - KEY[9] - 0.5) + 0.5;
+        pose.x = tX + keyFx * PoseTracks.sx;
+        pose.y = PoseTracks.sy;
+        pose.z = tZ + keyFz * PoseTracks.sz;
         pose.override = true;
-        pose.body = Mth.rotLerp(f, R_BODY[i0], R_BODY[i1]);
-        pose.head = Mth.rotLerp(f, R_HEAD[i0], R_HEAD[i1]);
-        pose.pitch = Mth.lerp(f, R_PITCH[i0], R_PITCH[i1]);
-        pose.walkPos = Mth.lerp(f, R_WALK_POS[i0], R_WALK_POS[i1]);
-        pose.walkSpeed = Mth.lerp(f, R_WALK_SPEED[i0], R_WALK_SPEED[i1]);
-        pose.attack = Mth.lerp(f, R_ATTACK[i0], R_ATTACK[i1]);
-        pose.crouch = f < 0.5f ? R_CROUCH[i0] : R_CROUCH[i1];
-        return true;
+        pose.body = PoseTracks.sBody;
+        pose.head = PoseTracks.sHead;
+        pose.pitch = PoseTracks.sPitch;
+        pose.walkPos = PoseTracks.sWalkPos;
+        pose.walkSpeed = PoseTracks.sWalkSpeed;
+        pose.attack = PoseTracks.sAttack;
+        pose.crouch = PoseTracks.sCrouch;
     }
 
-    /** Your reflection, but its head turned to the camera; it snaps back when you look straight at it. */
-    private static boolean applyLook(Player p, float pt, Vec3 cam, Vector3f look, PuppetPose pose) {
-        float liveBody = Mth.rotLerp(pt, p.yBodyRotO, p.yBodyRot);
-        float liveHead = Mth.rotLerp(pt, p.yHeadRotO, p.yHeadRot);
-        float livePitch = Mth.lerp(pt, p.xRotO, p.getXRot());
+    /** Your reflection, its head slowly turned to look at the camera (the body stays as yours). */
+    private static void applyLook(Player you, float pt, Vec3 cam, PuppetPose pose) {
+        float liveBody = Mth.rotLerp(pt, you.yBodyRotO, you.yBodyRot);
+        float liveHead = Mth.rotLerp(pt, you.yHeadRotO, you.yHeadRot);
+        float livePitch = Mth.lerp(pt, you.xRotO, you.getXRot());
         double ex = cam.x - pose.x;
-        double ey = cam.y - (pose.y + p.getEyeHeight());
+        double ey = cam.y - (pose.y + you.getEyeHeight());
         double ez = cam.z - pose.z;
-        double len = Math.sqrt(ex * ex + ey * ey + ez * ez);
-        if (len > 1e-4) {
-            // How straight you look at its face (camera's view vs. the line to its eyes).
-            double cos = -(look.x() * ex + look.y() * ey + look.z() * ez) / len;
-            if (cos < 0.906) {
-                lookArmed = true; // more than ~25 degrees away: you have looked away from it
-            } else if (lookArmed && cos > 0.9925) {
-                finish(); // within ~7 degrees: caught it; it is just your reflection again, at once
-                return true;
-            }
-        }
+        float target = headTowards(keyFx, keyFz, ex, ez);
+        // A neck, not an owl: the turn stops where a neck would.
+        float rel = Mth.clamp(Mth.wrapDegrees(target - liveBody), -MAX_NECK, MAX_NECK);
+        target = liveBody + rel;
+        float targetPitch = (float) -Math.toDegrees(Math.atan2(ey, Math.sqrt(ex * ex + ez * ez)));
         float w = smooth(Mth.lerp(pt, lookWO, lookW));
-        // The direction to the camera, taken back into the real player's frame (flip it back).
-        double rx = ex * KEY[6];
-        double rz = ez * KEY[7];
-        float targetHead = (float) Math.toDegrees(Math.atan2(-rx, rz));
-        float targetPitch = (float) -Math.toDegrees(Math.atan2(ey, Math.sqrt(rx * rx + rz * rz)));
-        float head = Mth.rotLerp(w, liveHead, targetHead);
-        float rel = Mth.wrapDegrees(head - liveBody);
-        // The body turns with it past 50 degrees: the whole reflection keeps facing you, not an owl's neck.
-        float body = Math.abs(rel) > 50.0f ? head - Math.copySign(50.0f, rel) : liveBody;
         pose.override = true;
-        pose.body = body;
-        pose.head = head;
+        pose.body = liveBody;
+        pose.head = Mth.rotLerp(w, liveHead, target);
         pose.pitch = Mth.lerp(w, livePitch, targetPitch);
-        pose.walkPos = p.walkAnimation.position(pt);
-        pose.walkSpeed = p.walkAnimation.speed(pt);
-        pose.attack = p.getAttackAnim(pt);
-        pose.crouch = p.isCrouching();
-        return true;
+        pose.walkPos = you.walkAnimation.position(pt);
+        pose.walkSpeed = you.walkAnimation.speed(pt);
+        pose.attack = you.getAttackAnim(pt);
+        pose.crouch = you.isCrouching();
+    }
+
+    /**
+     * The head yaw, in the REAL body's frame, that makes the image look along (dx, dz) in image
+     * space: the mirror map flips the direction, so flip it back (the map is its own inverse).
+     */
+    private static float headTowards(int flipX, int flipZ, double dx, double dz) {
+        return (float) Math.toDegrees(Math.atan2(-dx * flipX, dz * flipZ));
     }
 
     private static float smooth(float t) {
         t = Mth.clamp(t, 0.0f, 1.0f);
         return t * t * (3.0f - 2.0f * t);
-    }
-
-    // ==========================================================================================
-    // Image identity
-    // ==========================================================================================
-
-    private static void fill(int[] key, Level228Plan.Image img) {
-        key[0] = img.minX;
-        key[1] = img.maxX;
-        key[2] = img.minY;
-        key[3] = img.maxY;
-        key[4] = img.minZ;
-        key[5] = img.maxZ;
-        key[6] = img.flipX;
-        key[7] = img.flipZ;
-        key[8] = img.offX;
-        key[9] = img.offZ;
-        key[10] = img.depth;
-    }
-
-    private static boolean matches(int[] key, Level228Plan.Image img) {
-        return key[0] == img.minX && key[1] == img.maxX && key[2] == img.minY && key[3] == img.maxY
-                && key[4] == img.minZ && key[5] == img.maxZ && key[6] == img.flipX && key[7] == img.flipZ
-                && key[8] == img.offX && key[9] == img.offZ && key[10] == img.depth;
     }
 }

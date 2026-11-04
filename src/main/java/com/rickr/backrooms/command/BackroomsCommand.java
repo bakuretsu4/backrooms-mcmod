@@ -65,8 +65,8 @@ import java.util.Locale;
  * /backrooms anomaly visit <kind> <point>   Level 0 / Level 2: jump to a named spot of the nearest site of that kind (for testing)
  * /backrooms house9 <plan|safe|clay_door|long_hall>   Level 9: jump to the front path of the nearest house of that plan (Level9HouseCommand)
  * /backrooms wayback [sunlit|clay]     Level 39 / 94: where the side ways back are (sunlit dead end, clay door); with an argument, go there (WayBackCommand)
- * /backrooms other <near|far|catch|off>   Level 228: the Other enters the mirrors near/far from you, takes you now, or goes away (Level228OtherCommand)
- * /backrooms maze <facing|branch|exit>   Level 228: jump to the nearest facing mirrors (3+ deep), false branch, or exit mirror (Level228MazeCommand)
+ * /backrooms imitator <show|off>       Level 228: the imitator starts behind you in the mirrors now, or goes away and stays away (Level228ImitatorCommand)
+ * /backrooms maze <foyer|crystal|alhambra|funhouse|glass|chamber|exithall|backstage|shift|answer>   Level 228: jump to a zone's start, force a shift, or show which chamber mirror is accurate (Level228MazeCommand)
  * </pre>
  */
 public final class BackroomsCommand {
@@ -171,11 +171,11 @@ public final class BackroomsCommand {
                         .then(Commands.literal("dawn").executes(ctx -> time94(ctx, Level94Clock.CYCLE - Level94Clock.DAWN_TICKS))))
                 // Level 7: make the Thing pass by you now / jump to full dread, for testing.
                 .then(Level7ThingCommand.node())
-                // Level 228: the Other in the mirrors on demand, for testing.
-                .then(Level228OtherCommand.node())
+                // Level 228: the imitator in the mirrors on demand, for testing.
+                .then(Level228ImitatorCommand.node())
                 // Level 228: make your next close reflection lie (or move the reflections' render stage), for testing.
                 .then(Level228MirrorCommand.node())
-                // Level 228: jump to the nearest facing mirrors, false branch or exit mirror, for checking them.
+                // Level 228: jump to a zone, force a shift, name the true chamber mirror, for checking them.
                 .then(Level228MazeCommand.node())
                 // Film the Bacteria's animations: force a pose on the nearest one (it stands still).
                 .then(Commands.literal("bacteria").then(bacteriaPoseNode()))
