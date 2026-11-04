@@ -323,6 +323,11 @@ public final class Level490Layout extends LevelLayout {
         if (punishParent(s, i, j) != null) {
             return PUNISH;
         }
+        // A colossal chain through a route island (and the collar of ruins round it) stood right
+        // across the way the route crosses it, from one bridge to the next: never on the route.
+        if (onRouteRow(s, i, j) || onRouteColumn(s, i, j)) {
+            return PLAIN;
+        }
         return Hash.unit(seed, i, j, 4920) < 0.025 ? CHAINED : PLAIN;
     }
 
@@ -515,7 +520,7 @@ public final class Level490Layout extends LevelLayout {
         long hc = Hash.of(seed, x, z, 4930);
         // The crumbling rim: the ground drops a block here and there, and the outermost ring is broken.
         int top = is.top;
-        if (d > 0.9) {
+        if (d > 0.9 && !bridgeMouth(seed, is, x, z)) {
             if (Hash.unit(hc) < 0.22) {
                 return;
             }
@@ -1414,12 +1419,43 @@ public final class Level490Layout extends LevelLayout {
 
     // ---- bridges ----
 
-    /** Height of the deck (in blocks, fractional) at {@code along} on the bridge from a to b. */
+    /**
+     * Height of the deck (in blocks, fractional) at {@code along} on the bridge from a to b2. It
+     * climbs from rim to rim (where the bridge leaves each island's ground, the island's own rim
+     * along the bridge's axis), so each end meets its island's ground at the island's height.
+     * Climbing from centre to centre, the deck was already part way up its slope at the rim: between
+     * islands a few blocks apart its ends stood a block or more above or below the ground, a step no
+     * one could climb, and the bridge was useless both ways (the escape tests found arrivals shut in).
+     */
     private static double deckHeight(Island a, Island b2, int along, boolean alongX) {
-        int start = alongX ? a.cx : a.cz;
-        int end = alongX ? b2.cx : b2.cz;
-        double f = Math.max(0, Math.min(1, (along - start) / (double) (end - start)));
+        double start = (alongX ? a.cx : a.cz) + rim(a, alongX ? 0.0 : Math.PI / 2);
+        double end = (alongX ? b2.cx : b2.cz) - rim(b2, alongX ? Math.PI : -Math.PI / 2);
+        double f = end > start ? Math.max(0, Math.min(1, (along - start) / (end - start))) : 0.5;
         return a.top + (b2.top - a.top) * f;
+    }
+
+    /**
+     * True where a bridge leaves island {@code is} at column (x, z): within its width (and a block
+     * either side) on the side it leaves from. The rim stays whole there (no holes, no dropped
+     * blocks), so stepping from the ground onto the deck is level.
+     */
+    private static boolean bridgeMouth(long seed, Island is, int x, int z) {
+        int dx = x - is.cx;
+        int dz = z - is.cz;
+        boolean alongX = Math.abs(dx) >= Math.abs(dz);
+        int i = is.i;
+        int j = is.j;
+        int bw = alongX ? bridge(seed, dx > 0 ? i : i - 1, j, true) : bridge(seed, i, dz > 0 ? j : j - 1, false);
+        if (bw == 0) {
+            return false;
+        }
+        Island other = alongX ? island(seed, dx > 0 ? i + 1 : i - 1, j) : island(seed, i, dz > 0 ? j + 1 : j - 1);
+        if (other == null) {
+            return false;
+        }
+        int line = alongX ? Math.round((is.cz + other.cz) / 2.0f) : Math.round((is.cx + other.cx) / 2.0f);
+        int off = alongX ? z - line : x - line;
+        return Math.abs(off) <= Math.abs(bw) + 2;
     }
 
     private void bridgeColumn(long seed, int x, int z, int ni, int nj, Column out) {

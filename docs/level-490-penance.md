@@ -466,6 +466,29 @@ nowhere"; "more violent".
   just after it lands, the rain, wind, drone and whale song fade nearly out.
 - One attack at a time; inside the tower none reach you.
 
+## The escape check (2026-11-03)
+
+The escape report (`gradlew test`, build/reports/friend-levels.txt) flagged every one of its 12
+seeds. Three real traps, all fixed, and now all 12 walk from the arrival to the leap:
+
+- **Bridges you couldn't step onto** (world/layout/Level490Layout `deckHeight`, `bridgeMouth`):
+  a bridge sloped from one island's centre to the other's, but it only exists between the rims, so
+  where it met an island it was already part way up: between islands a few blocks apart in height
+  its ends stood 1-2 blocks above or below the ground, and the bridge could be used neither way
+  (some arrival islands were shut in). Decks now slope from rim to rim, meeting each island at its
+  own height, and the crumbling rim stays whole where a bridge leaves.
+- **Flight 1's last jump unclimbable** (world/layout/Level490Spire `Flight.y`): the stair kept
+  climbing across its jump gaps, so (rounded to half steps, and up to two columns wide) the far
+  side landed 1-1.5 blocks higher, out of reach of a jump; most spires stopped at y284. Each flight
+  now runs level for 8 degrees either side of a jump gap (the rest climbs about 3% steeper, still
+  under half a block per block), so you take off and land at the same height.
+- **Chains on the route** (`kind`): one island in forty has a colossal chain through its middle,
+  ringed with ruins; on the route, the chain and its collar stood right across the way from one
+  bridge to the next. Route islands are never chained now.
+
+Worlds where these parts of Level 490 were already generated keep them as they were; delete the
+world's dimensions/backrooms/level_490 folder for the fixed layout.
+
 ## Still open: the creature, redesigned (planned after the fifth play-test, not built yet)
 
 The play-test verdict on the chase above: "still doesn't feel good enough". Diagnosis: it was built
