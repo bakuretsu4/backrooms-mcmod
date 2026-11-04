@@ -410,7 +410,9 @@ going down into the dark, until the picture breaks up and you are in the next le
   far, and now and then one goes on for nearly four hundred. Every floor is one soft meadow, thigh
   to waist high, that leans and rolls in waves of wind (not under shader packs), rustles as you
   wade through it, and sheds petals and
-  pollen into the light. Each kind of room has its own light: cool white hallways with shafts of
+  pollen into the light. Around you it is real grass: thousands of thin, smoothly shaded blades
+  and flowers on stems (no textures, no pixel edges), blending into the block meadow further off
+  (without a shader pack or Sodium). Each kind of room has its own light: cool white hallways with shafts of
   sun from their windows, pillar halls in a low golden sunset, soft daylight under the skylights.
   Nothing lives here and nothing happens. The way on is a great **arch of vines** filled
   with a curtain of hanging flowers (one per ~1000 x 1000 blocks; `/backrooms locate` points to it): walk

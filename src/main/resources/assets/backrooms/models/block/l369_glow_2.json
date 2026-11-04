@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/block",
-  "render_type": "minecraft:cutout",
+  "render_type": "minecraft:cutout_mipped",
   "ambientocclusion": false,
   "textures": {
     "cross": "backrooms:block/l369_glow_2",
@@ -41,7 +41,8 @@
             16,
             16
           ],
-          "texture": "#cross"
+          "texture": "#cross",
+          "tintindex": 0
         },
         "south": {
           "uv": [
@@ -50,7 +51,8 @@
             16,
             16
           ],
-          "texture": "#cross"
+          "texture": "#cross",
+          "tintindex": 0
         }
       }
     },
@@ -88,7 +90,8 @@
             16,
             16
           ],
-          "texture": "#cross"
+          "texture": "#cross",
+          "tintindex": 0
         },
         "west": {
           "uv": [
@@ -97,7 +100,8 @@
             16,
             16
           ],
-          "texture": "#cross"
+          "texture": "#cross",
+          "tintindex": 0
         }
       }
     }

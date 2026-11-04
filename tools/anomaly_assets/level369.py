@@ -502,12 +502,15 @@ def _bright_cube(name: str, tex: str, cutout: bool = False) -> None:
 
 
 def _bright_cross(name: str, tex: str) -> None:
-    """Vanilla's cross (two diagonal planes) drawn full-bright: the glowing plants."""
+    """Vanilla's cross (two diagonal planes) drawn full-bright: the dark rooms' glowing plants and
+    vines. Every face takes tint 0: the block colour is the glow marker
+    (client/Level369Atmosphere GLOW_MARKER), which the cutout shader draws white and leaves out
+    near the camera, where client/Level369Grass draws these plants as smooth geometry."""
     def plane(frm, to, faces):
         return {"from": frm, "to": to, "shade": False, "neoforge_data": FULL_BRIGHT,
                 "rotation": {"origin": [8, 8, 8], "axis": "y", "angle": 45, "rescale": True},
-                "faces": {f: {"uv": [0, 0, 16, 16], "texture": "#cross"} for f in faces}}
-    F._model(name, {"parent": "minecraft:block/block", "render_type": "minecraft:cutout", "ambientocclusion": False,
+                "faces": {f: {"uv": [0, 0, 16, 16], "texture": "#cross", "tintindex": 0} for f in faces}}
+    F._model(name, {"parent": "minecraft:block/block", "render_type": "minecraft:cutout_mipped", "ambientocclusion": False,
                     "textures": {"cross": F._ref(tex), "particle": F._ref(tex)},
                     "elements": [plane([0.8, 0, 8], [15.2, 16, 8], ("north", "south")),
                                  plane([8, 0, 0.8], [8, 16, 15.2], ("east", "west"))]})

@@ -104,7 +104,8 @@ public final class Level369Plan {
     // Heights
     // ==========================================================================================
     static final int FLOOR_Y = LevelLayout.FLOOR_Y;
-    static final int FEET_Y = FLOOR_Y + 1;
+    /** The feet block above the lawn: the meadow's flowers and tufts. */
+    public static final int FEET_Y = FLOOR_Y + 1;
     private static final int SOIL_FROM = 36;
     /** Doorways and side passages are open up to here (3 high); the lintel is the block above. */
     public static final int DOOR_TOP = FEET_Y + 2;
