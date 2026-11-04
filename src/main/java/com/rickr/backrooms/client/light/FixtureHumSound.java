@@ -8,11 +8,11 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 
 /**
- * The buzz of one fixture: a looping sound placed at the lamp (the fluorescent tube hum, or a
- * Level 9 streetlamp's sodium ballast hum). It fades with the lamp's power (so it cuts out with
- * the flicker) and stops itself once released and silent. Minecraft's linear attenuation makes
- * it fade out over the sound's attenuation distance (16 blocks; 12 for the sodium hum; 14 for a
- * Level 0 tube).
+ * The buzz of one fixture: a looping sound placed at the lamp (the fluorescent tube hum, a Level 9
+ * streetlamp's sodium ballast hum, or the low hum of a Level 228 light panel). It fades with the
+ * lamp's power (so it cuts out with the flicker) and stops itself once released and silent.
+ * Minecraft's linear attenuation makes it fade out over the sound's attenuation distance (16
+ * blocks; 12 for the sodium hum; 14 for a Level 0 tube; 9 for a Level 228 panel).
  *
  * <p>Level 0's tubes each sound a little different, like real ballasts of different makes and
  * ages: the sound event has four buzzes and the tube's position picks one (always the same one
@@ -23,6 +23,8 @@ final class FixtureHumSound extends AbstractTickableSoundInstance {
     static final float MAX_VOLUME = 0.4f;
     /** The sodium hum is meant to be barely there: you notice it only standing under the lamp. */
     static final float SODIUM_MAX_VOLUME = 0.22f;
+    /** Level 228's light panels: a low hum you notice standing under one, gone a few blocks on. */
+    static final float NEON_MAX_VOLUME = 0.2f;
     /**
      * A Level 0 tube: louder than other lamps' hum, because it also fades away much faster (see
      * FixtureSounds) and the level's room tone is kept low, so under a tube you hear it clearly
@@ -55,6 +57,8 @@ final class FixtureHumSound extends AbstractTickableSoundInstance {
         this.pitch = 0.94f + (float) ((FixturePower.mix(light.key) >>> 40) & 0xFF) / 255.0f * 0.12f;
         if (light.type.hum == FixtureType.Hum.SODIUM) {
             this.maxVolume = SODIUM_MAX_VOLUME;
+        } else if (light.type.hum == FixtureType.Hum.NEON) {
+            this.maxVolume = NEON_MAX_VOLUME;
         } else if (level0Tube) {
             // Some ballasts are simply louder than others (0.8-1.1), and a worn tube (lower glow,
             // see FixtureLight#tubeGlow) buzzes a little more than a fresh one.
@@ -71,6 +75,9 @@ final class FixtureHumSound extends AbstractTickableSoundInstance {
     private static SoundEvent soundFor(FixtureLight light, boolean level0Tube, boolean faulty) {
         if (light.type.hum == FixtureType.Hum.SODIUM) {
             return ModSounds.LIGHT_SODIUM_HUM.get();
+        }
+        if (light.type.hum == FixtureType.Hum.NEON) {
+            return ModSounds.LEVEL228_LIGHT_HUM.get();
         }
         if (level0Tube) {
             return faulty ? ModSounds.L0_TUBE_HUM_FAULTY.get() : ModSounds.L0_TUBE_HUM.get();

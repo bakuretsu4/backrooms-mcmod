@@ -15,6 +15,7 @@ placement), quiet and low so it reads as part of the level until you notice it s
   level_39    the sweet electric hum of a lit mill window with something living in it
   level_490   wind keening past the structure's chains, and once a loop a deep groan of iron
   level_369   leaves stirring in the arch of vines, water lapping far behind it, a faint warm chord
+  level_228   the exit mirror's cold draught (made with the level's other sounds in level228_atmos.py)
 
 Run only these with:  python tools/gen_assets.py exit_hint
 """

@@ -48,7 +48,7 @@ class SideExitTest {
     private static final List<BackroomsLevel> LINE = List.of(BackroomsLevel.LEVEL_0, BackroomsLevel.LEVEL_1,
             BackroomsLevel.LEVEL_2, BackroomsLevel.LEVEL_4, BackroomsLevel.LEVEL_7, BackroomsLevel.LEVEL_9,
             BackroomsLevel.POOLROOMS, BackroomsLevel.LEVEL_37, BackroomsLevel.LEVEL_39, BackroomsLevel.LEVEL_94,
-            BackroomsLevel.LEVEL_369, BackroomsLevel.LEVEL_490);
+            BackroomsLevel.LEVEL_228, BackroomsLevel.LEVEL_369, BackroomsLevel.LEVEL_490);
 
     /** One side way off the line: where it is, where it leads, and what it is. */
     private record Side(BackroomsLevel from, BackroomsLevel to, String what) {}
@@ -121,7 +121,7 @@ class SideExitTest {
         for (int i = 0; i < 20_000; i++) {
             BackroomsLevel to = Level227Noclip.dangerousLevel(random);
             int at = LINE.indexOf(to);
-            assertTrue(at >= 0 && at <= last, "Level 227 dropped someone in " + to + ", past Level 94 or off the line");
+            assertTrue(at >= 0 && at <= last, "Level 227 dropped someone in " + to + ", past Level 94 (228, 369, 490) or off the line");
         }
     }
 

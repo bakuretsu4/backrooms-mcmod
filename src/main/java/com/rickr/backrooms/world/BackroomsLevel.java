@@ -5,6 +5,7 @@ import com.rickr.backrooms.Backrooms;
 import com.rickr.backrooms.world.layout.Level0Layout;
 import com.rickr.backrooms.world.layout.Level1Layout;
 import com.rickr.backrooms.world.layout.Level2Layout;
+import com.rickr.backrooms.world.layout.Level228Layout;
 import com.rickr.backrooms.world.layout.Level369Layout;
 import com.rickr.backrooms.world.layout.Level37Layout;
 import com.rickr.backrooms.world.layout.Level4Layout;
@@ -30,8 +31,8 @@ import org.jetbrains.annotations.Nullable;
  * Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --exit door-->
  * Level 4 --emergency stairwell--> Level 7 --the door on the sea floor--> Level 9 --the
  * underpass--> Poolrooms --the exit hall--> Level 37 --a deep pool--> Level 39's flooded tunnels
- * --a superstructure window--> Level 94 --a dark-doored house--> Level 369 --the arch of
- * vines--> Level 490 --the leap from the structure--> Overworld. Every move between floors
+ * --a superstructure window--> Level 94 --a dark-doored house--> Level 228 --the black exit
+ * mirror--> Level 369 --the arch of vines--> Level 490 --the leap from the structure--> Overworld. Every move between floors
  * datamoshes ({@link Travel}); only the last one, back to reality, stops the tape.
  *
  * <p>Rare side ways off the line. The rule for them: the level you land in always has a way back
@@ -76,7 +77,7 @@ public enum BackroomsLevel implements StringRepresentable {
     /**
      * "Motion": endless sunny hills, a toy-like town, siren poles playing cartoon music and a castle
      * on a glass mountain. Day/night cycle ({@link Level94Clock}); Smilers come out at night. No
-     * Bacteria. Its dark-doored houses lead on to Level 369. Never left by falling: see {@code Level94Rules}.
+     * Bacteria. Its dark-doored houses lead on to Level 228. Never left by falling: see {@code Level94Rules}.
      */
     LEVEL_94("level_94", new Level94Layout(), Integer.MIN_VALUE, 0, 1),
     /**
@@ -110,12 +111,21 @@ public enum BackroomsLevel implements StringRepresentable {
     LEVEL_227("level_227", new Level227Layout(), Integer.MIN_VALUE, 0, 1),
     /**
      * "Comely": an endless indoor garden of pastel rooms with flowers for floors. No monsters (cap
-     * 0): the level itself makes you forget. You fall in through a skylight from Level 94's
-     * dark-doored houses and leave through an arch of vines to Level 490 ({@code Level369Rules});
+     * 0): the level itself makes you forget. You fall in through a skylight from Level 228's
+     * exit mirror and leave through an arch of vines to Level 490 ({@code Level369Rules});
      * never by falling. See
      * {@code docs/level-369-comely.md}.
      */
-    LEVEL_369("level_369", new Level369Layout(), Integer.MIN_VALUE, 0, 1);
+    LEVEL_369("level_369", new Level369Layout(), Integer.MIN_VALUE, 0, 1),
+    /**
+     * "Maze of Mirrors": narrow corridors walled with mirrors, lit in blue, green and red. What you
+     * see in the glass is a mirrored copy of the maze built behind it ({@code Level228Plan}), and
+     * your reflections walk in it. No Bacteria (cap 0) and no spawns: the danger is getting lost,
+     * and the thing that lives in the reflections. You step out of a mirror from Level 94's
+     * dark-doored houses and leave through the black mirror that shows nothing, to Level 369
+     * ({@code Level228Rules}); never by falling.
+     */
+    LEVEL_228("level_228", new Level228Layout(), Integer.MIN_VALUE, 0, 1);
 
     public static final Codec<BackroomsLevel> CODEC = StringRepresentable.fromEnum(BackroomsLevel::values);
 
@@ -179,7 +189,8 @@ public enum BackroomsLevel implements StringRepresentable {
             case POOLROOMS -> LEVEL_37;
             case LEVEL_37 -> LEVEL_39;
             case LEVEL_39 -> LEVEL_94;
-            case LEVEL_94 -> LEVEL_369;
+            case LEVEL_94 -> LEVEL_228;
+            case LEVEL_228 -> LEVEL_369;
             case LEVEL_369 -> LEVEL_490;
             // Level 227 has no exit of its own (you leave by noclipping to a random level); this is
             // only a fallback should anything ever call useExit there.

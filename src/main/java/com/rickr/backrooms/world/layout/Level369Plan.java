@@ -115,7 +115,7 @@ public final class Level369Plan {
     private static final int ROOF_TOP = 53;
     /** The highest block the plan ever places. */
     public static final int HIGHEST_Y = ROOF_TOP;
-    /** Where someone falling in through a skylight from Level 94 appears (feet), high in a shaft. */
+    /** Where someone falling in through a skylight from Level 228 appears (feet), high in a shaft. */
     public static final int SKYLIGHT_ARRIVAL_Y = 50;
 
     // ==========================================================================================
@@ -201,7 +201,7 @@ public final class Level369Plan {
     }
 
     /**
-     * Where someone coming through Level 94's dark door falls in: high in the skylight shaft of the skylit
+     * Where someone coming through Level 228's exit mirror falls in: high in the skylight shaft of the skylit
      * room nearest to (x, z) (not the one with the way out), or null if there is none close by.
      */
     @Nullable

@@ -697,6 +697,10 @@ public final class BackroomsLights {
                 BlockState state = INDEX.get(light.key);
                 light.alwaysOn = state == null || !state.hasProperty(BlockStateProperties.LIT) || state.getValue(BlockStateProperties.LIT);
             }
+            if (Level228Lamps.isPanel(light.type)) {
+                // Level 228: the panel's shade sets its colour and strength (Level228Lamps).
+                light.shade = Level228Lamps.shadeOf(INDEX.get(light.key));
+            }
         }
         if (BackroomsLevel.fromDimension(level.dimension()) == BackroomsLevel.LEVEL_0) {
             findFaultyTubes(built);

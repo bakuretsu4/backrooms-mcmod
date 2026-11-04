@@ -57,6 +57,8 @@ public final class Backrooms {
         com.rickr.backrooms.registry.Level490Mobs.bootstrap();
         // Level 369 "Comely": plaster, lawn, flowers, skylights and the arch of vines.
         com.rickr.backrooms.registry.Level369Blocks.bootstrap();
+        // Level 228 "Maze of Mirrors": mirror glass, frames, panels, coloured ceiling lights, the exit mirror.
+        com.rickr.backrooms.registry.Level228Blocks.bootstrap();
         // Level 0's street hall: the yellow centre line, red siding, the stop sign and the ceiling fans.
         com.rickr.backrooms.registry.Level0StreetBlocks.bootstrap();
         // Level 39: the town/tunnel ambience, the indoor storm, echo quakes and far-off sounds.

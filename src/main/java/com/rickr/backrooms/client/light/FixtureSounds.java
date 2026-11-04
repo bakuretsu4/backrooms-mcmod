@@ -47,6 +47,11 @@ final class FixtureSounds {
      * silent between lamps (matches "attenuation_distance": 12 in sounds.json).
      */
     private static final double SODIUM_HUM_RANGE = 12.0;
+    /**
+     * Level 228's light panels: their low hum is only heard close under a panel (matches
+     * "attenuation_distance": 9 in sounds.json), so the dark stretches between them are silent.
+     */
+    private static final double NEON_HUM_RANGE = 9.0;
     /** A streetlamp re-striking clicks at most this often (ms), so a stutter doesn't machine-gun. */
     private static final long STREETLAMP_CLICK_GAP_MS = 220L;
     /** A lamp is "lit" for the hum above this power. */
@@ -154,6 +159,10 @@ final class FixtureSounds {
             if (light.type.hum == FixtureType.Hum.FLUORESCENT) {
                 // Level 0: the tube hum fades away as you come near the Manila Room.
                 want *= com.rickr.backrooms.client.anomaly.level0.Level0AnomalyEffects.fixtureHumScale();
+            }
+            if (light.type.hum == FixtureType.Hum.NEON) {
+                // Level 228: the hum holds its breath with the rest of the level (Level228Lamps#quiet).
+                want *= Level228Lamps.quiet();
             }
             if (tube) {
                 // On top of Minecraft's straight-line fade, fade once more with distance: together
@@ -339,7 +348,11 @@ final class FixtureSounds {
 
     /** How far a fixture's hum carries (blocks). */
     static double humRange(FixtureType type) {
-        return type.hum == FixtureType.Hum.SODIUM ? SODIUM_HUM_RANGE : HUM_RANGE;
+        return switch (type.hum) {
+            case SODIUM -> SODIUM_HUM_RANGE;
+            case NEON -> NEON_HUM_RANGE;
+            default -> HUM_RANGE;
+        };
     }
 
     /** A Level 0 ceiling tube (a single troffer or a corridor strip), whose buzz and clicks are its own. */

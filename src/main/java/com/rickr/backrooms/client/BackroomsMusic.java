@@ -55,6 +55,8 @@ public final class BackroomsMusic {
     private static final Music LEVEL_490 = new Music(ModSounds.MUSIC_LEVEL490, 6000, 14000, true);
     /** Level 369: a little more often than most (every 2.5 to 7 minutes): it wants you to stay. */
     private static final Music LEVEL_369 = new Music(ModSounds.MUSIC_LEVEL369, 3000, 8400, true);
+    /** Level 228: a quiet maze where every tick of the glass should stand out, so every 4 to 10 minutes. */
+    private static final Music LEVEL_228 = new Music(ModSounds.MUSIC_LEVEL228, 4800, 12000, true);
     private static final Music LEVEL_9 = new Music(ModSounds.MUSIC_LEVEL9, 3600, 9600, true);
     /**
      * Level 227: its own piece (wonder turning into dread), every 4 to 10 minutes; the forest and
@@ -86,6 +88,7 @@ public final class BackroomsMusic {
                 case LEVEL_94 -> null; // its siren poles play their own tune
                 case LEVEL_490 -> LEVEL_490;
                 case LEVEL_369 -> LEVEL_369;
+                case LEVEL_228 -> LEVEL_228;
                 case LEVEL_9 -> LEVEL_9;
                 case LEVEL_227 -> MEGAFLORA;
             });

@@ -1,0 +1,11 @@
+{
+  "type": "backrooms:mirrors",
+  "generator": {
+    "type": "backrooms:backrooms",
+    "level": "level_228",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "backrooms:level_228"
+    }
+  }
+}

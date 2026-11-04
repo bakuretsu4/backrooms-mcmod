@@ -179,6 +179,9 @@ public final class ModNetwork {
         // Level 369: its layout seed (for the drifting light) and how much you have forgotten.
         registrar.playToClient(Level369StatePayload.TYPE, Level369StatePayload.STREAM_CODEC,
                 (payload, context) -> com.rickr.backrooms.client.Level369ClientState.receive(payload));
+        // Level 228: its layout seed, so the client knows where the image volumes behind the glass are.
+        registrar.playToClient(Level228StatePayload.TYPE, Level228StatePayload.STREAM_CODEC,
+                (payload, context) -> com.rickr.backrooms.client.Level228ClientState.receive(payload));
         // Level 490's creature: where it is, its hands coming for you, and the chains it leaves you in.
         registrar.playToClient(Level490HuntPayload.TYPE, Level490HuntPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.Level490Creature.receive(payload)));
@@ -196,6 +199,19 @@ public final class ModNetwork {
                         com.rickr.backrooms.world.Level490Hung.key(payload.i(), payload.j()), new long[] {payload.gen(), payload.start()}));
         registrar.playToClient(Level39QuakePayload.TYPE, Level39QuakePayload.STREAM_CODEC,
                 (payload, context) -> com.rickr.backrooms.client.Level39QuakeEffects.receive(payload.x(), payload.y(), payload.z(), payload.strength()));
+        // Level 228's Other: where it is (the client draws it only in the mirrors) and, back, that
+        // someone has it on screen in a mirror (which freezes it).
+        registrar.playToClient(Level228HuntPayload.TYPE, Level228HuntPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.level228.Level228Other.receive(payload)));
+        registrar.playToServer(Level228SeenPayload.TYPE, Level228SeenPayload.STREAM_CODEC, (payload, context) -> {
+            if (context.player() instanceof ServerPlayer player) {
+                context.enqueueWork(() -> com.rickr.backrooms.world.Level228Hunt.seen(player));
+            }
+        });
+        // Level 228 (testing): make your next close reflection lie / move the reflections' render
+        // stage (command/Level228MirrorCommand; the reflections are client/level228/Level228Reflections).
+        registrar.playToClient(Level228MirrorPayload.TYPE, Level228MirrorPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> com.rickr.backrooms.client.level228.Level228Reflections.receive(payload)));
 
         // Level 227: the tree moving (a lurch, the shudder before it shakes you loose, the drag in
         // from another level's forest); the client plays the groans, the leaves and the shake.

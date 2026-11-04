@@ -193,7 +193,8 @@ public final class Travel {
     /**
      * Where someone sent to (x, z) of this level lands. Some floors pick the spot themselves
      * depending on where you come from (Level 39: Level 37's pits and the Poolrooms' archway bring
-     * you up in its tunnels; Level 369: Level 94's dark doors drop you through a skylight); otherwise the nearest safe column.
+     * you up in its tunnels; Level 228: you step out of a mirror; Level 369: Level 228's exit
+     * mirror drops you through a skylight); otherwise the nearest safe column.
      * With {@code keepClear} (arriving from another level) the spot keeps the level's
      * {@link LevelLayout#arrivalExitClearance} from the nearest exit: the start point is pushed away
      * first, and since the level's own pick can wander off it, a spot that still lands too close
@@ -314,6 +315,11 @@ public final class Travel {
      * (you can't respawn back up there).
      */
     public static void useExit(ServerPlayer player, BackroomsLevel from) {
+        useExit(player, from, null);
+    }
+
+    /** As above, with {@code noteKey} (a lang key, or null) as the arrival card's "how you got here" line. */
+    public static void useExit(ServerPlayer player, BackroomsLevel from, @Nullable String noteKey) {
         if (isMoving(player)) {
             return; // already on the way
         }
@@ -325,7 +331,7 @@ public final class Travel {
         }
         long seed = BackroomsSeeds.layoutSeed(player.serverLevel(), from);
         int[] exit = from.layout().exits().nearest(seed, player.getBlockX(), player.getBlockZ());
-        sendTo(player, next, exit[0], exit[1]);
+        sendTo(player, next, exit[0], exit[1], noteKey);
     }
 
     /** Back to reality at world spawn. "...or did you?" */

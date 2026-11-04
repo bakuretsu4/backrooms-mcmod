@@ -580,8 +580,8 @@ public final class ClientLighting {
         return CameraClientState.battery > 0.0f && CameraClientState.nightShot ? NIGHTSHOT_LIFT : 0.0f;
     }
 
-    /** NightShot lifts everything toward white; a dead battery darkens it all. Level 94's own lightmap uses it too. */
-    static void applyCamcorder(Vector3f colors) {
+    /** NightShot lifts everything toward white; a dead battery darkens it all. Level 94's and Level 228's own lightmaps use it too. */
+    public static void applyCamcorder(Vector3f colors) {
         if (CameraClientState.battery <= 0.0f) {
             colors.mul(0.25f);
         } else if (CameraClientState.nightShot) {
