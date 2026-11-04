@@ -56,25 +56,7 @@ ZOOM_MAX = 1.12
 # JPEGs built from them. Re-shoot a level by replacing its PNG and running with --only <id>.
 SHOTS: list[dict] = [
     dict(id="level0_rooms", level="level_0", src="menu/level0_rooms.png", focus=(0.585, 0.520), move="in"),
-    dict(id="level0_stack", level="level_0", src="menu/level0_stack.png", focus=(0.550, 0.580), move="out"),
-    dict(id="level0_street", level="level_0", src="menu/level0_street.png", focus=(0.600, 0.440), move="in"),
-    dict(id="level1_hall", level="level_1", src="menu/level1_hall.png", focus=(0.550, 0.500), move="left"),
-    dict(id="level1_wet", level="level_1", src="menu/level1_wet.png", focus=(0.580, 0.480), move="in"),
-    dict(id="level2_pipes", level="level_2", src="menu/level2_pipes.png", focus=(0.550, 0.470), move="in"),
-    dict(id="level4_office", level="level_4", src="menu/level4_office.png", focus=(0.600, 0.550), move="in"),
     dict(id="poolrooms_skycourt", level="poolrooms", src="menu/poolrooms_skycourt.png", focus=(0.580, 0.480), move="in"),
-    dict(id="poolrooms_tiles", level="poolrooms", src="menu/poolrooms_tiles.png", focus=(0.560, 0.420), move="left"),
-    dict(id="level37_pool", level="level_37", src="menu/level37_pool.png", focus=(0.620, 0.420), move="in"),
-    dict(id="level39_facade", level="level_39", src="menu/level39_facade.png", focus=(0.570, 0.420), move="up"),
-    dict(id="level39_tunnel", level="level_39", src="menu/level39_tunnel.png", focus=(0.550, 0.620), move="in"),
-    dict(id="level7_thing", level="level_7", src="menu/level7_thing.png", focus=(0.660, 0.720), move="in"),
-    dict(id="level9_street", level="level_9", src="menu/level9_street.png", focus=(0.520, 0.550), move="in"),
-    dict(id="level94_castle", level="level_94", src="menu/level94_castle.png", focus=(0.620, 0.320), move="in"),
-    dict(id="level94_road", level="level_94", src="menu/level94_road.png", focus=(0.560, 0.480), move="right"),
-    dict(id="level227_branch", level="level_227", src="menu/level227_branch.png", focus=(0.600, 0.480), move="left"),
-    dict(id="level227_forest", level="level_227", src="menu/level227_forest_iris.png", focus=(0.620, 0.550), move="in"),
-    dict(id="level228_arcade", level="level_228", src="menu/level228_arcade.png", focus=(0.580, 0.500), move="in"),
-    dict(id="level369_meadow", level="level_369", src="menu/level369_meadow.png", focus=(0.570, 0.500), move="in"),
     dict(id="level490_islands", level="level_490", src="menu/level490_islands.png", focus=(0.520, 0.550), move="in"),
 ]
 

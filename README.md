@@ -1094,8 +1094,8 @@ cuts where a tracking band rolls through the picture; fine grain, faint scanline
 tape imperfection) with the REC overlay, the logo, a camcorder-style menu and a taped note, while
 the main theme plays (see Music below). Each shot is framed so its focal point sits in the open
 space between the menu and the note. Every shot is a real in-game capture (no edits, nothing
-built for the camera): 21 shots across all 14 levels, one to three each, mostly with the mod's own
-Veil lighting and a few under a shader pack where it shows the level better. The shots are
+built for the camera): three shots, Level 0's yellow rooms, the Poolrooms' sky court and Level
+490's chained islands, lit by the mod's own Veil lighting. The shots are
 1920x1080 JPEGs in `textures/gui/menu/shots/`, listed in `shots.json` there; `tools/menu_shots.py`
 builds both from the full-size screenshots (edit its `SHOTS` list and run it). **FIELD NOTES** is
 a short in-game guide for new players.

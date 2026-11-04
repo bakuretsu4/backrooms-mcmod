@@ -1,23 +1,5 @@
 [
   {"id": "level0_rooms", "level": "level_0", "caption": "menu.backrooms.scene.level_0", "focus": [0.585, 0.52], "move": "in"},
-  {"id": "level0_stack", "level": "level_0", "caption": "menu.backrooms.scene.level_0", "focus": [0.55, 0.58], "move": "out"},
-  {"id": "level0_street", "level": "level_0", "caption": "menu.backrooms.scene.level_0", "focus": [0.6, 0.44], "move": "in"},
-  {"id": "level1_hall", "level": "level_1", "caption": "menu.backrooms.scene.level_1", "focus": [0.55, 0.5], "move": "left"},
-  {"id": "level1_wet", "level": "level_1", "caption": "menu.backrooms.scene.level_1", "focus": [0.58, 0.48], "move": "in"},
-  {"id": "level2_pipes", "level": "level_2", "caption": "menu.backrooms.scene.level_2", "focus": [0.55, 0.47], "move": "in"},
-  {"id": "level4_office", "level": "level_4", "caption": "menu.backrooms.scene.level_4", "focus": [0.6, 0.55], "move": "in"},
   {"id": "poolrooms_skycourt", "level": "poolrooms", "caption": "menu.backrooms.scene.poolrooms", "focus": [0.58, 0.48], "move": "in"},
-  {"id": "poolrooms_tiles", "level": "poolrooms", "caption": "menu.backrooms.scene.poolrooms", "focus": [0.56, 0.42], "move": "left"},
-  {"id": "level37_pool", "level": "level_37", "caption": "menu.backrooms.scene.level_37", "focus": [0.62, 0.42], "move": "in"},
-  {"id": "level39_facade", "level": "level_39", "caption": "menu.backrooms.scene.level_39", "focus": [0.57, 0.42], "move": "up"},
-  {"id": "level39_tunnel", "level": "level_39", "caption": "menu.backrooms.scene.level_39", "focus": [0.55, 0.62], "move": "in"},
-  {"id": "level7_thing", "level": "level_7", "caption": "menu.backrooms.scene.level_7", "focus": [0.66, 0.72], "move": "in"},
-  {"id": "level9_street", "level": "level_9", "caption": "menu.backrooms.scene.level_9", "focus": [0.52, 0.55], "move": "in"},
-  {"id": "level94_castle", "level": "level_94", "caption": "menu.backrooms.scene.level_94", "focus": [0.62, 0.32], "move": "in"},
-  {"id": "level94_road", "level": "level_94", "caption": "menu.backrooms.scene.level_94", "focus": [0.56, 0.48], "move": "right"},
-  {"id": "level227_branch", "level": "level_227", "caption": "menu.backrooms.scene.level_227", "focus": [0.6, 0.48], "move": "left"},
-  {"id": "level227_forest", "level": "level_227", "caption": "menu.backrooms.scene.level_227", "focus": [0.62, 0.55], "move": "in"},
-  {"id": "level228_arcade", "level": "level_228", "caption": "menu.backrooms.scene.level_228", "focus": [0.58, 0.5], "move": "in"},
-  {"id": "level369_meadow", "level": "level_369", "caption": "menu.backrooms.scene.level_369", "focus": [0.57, 0.5], "move": "in"},
   {"id": "level490_islands", "level": "level_490", "caption": "menu.backrooms.scene.level_490", "focus": [0.52, 0.55], "move": "in"}
 ]
