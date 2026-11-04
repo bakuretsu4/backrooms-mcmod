@@ -16,10 +16,16 @@ uniform int FogShape;
 uniform float GameTime;
 // x: how far the blades reach from the camera, y: where they start to thin out (blocks).
 uniform vec2 Meadow;
+// 1 for the meadow (wind, and sinking into the lawn past Meadow.y); 0 for the dark rooms'
+// glowing vines, which hang still from the ceiling and simply stop at Meadow.x.
+uniform float Sway;
 
 out float vertexDistance;
 out vec4 vertexColor;
 out vec3 viewPos;
+// How much of this vertex still shows (1 inside the reach, 0 past it): the fragment shader drops
+// what is gone, so a vine (which can't sink into the lawn) ends there too.
+out float shownPart;
 
 // The Backrooms (Level 369's meadow up close, client/Level369Grass): real grass blades and
 // flowers, one mesh per 16 x 16 tile. Position is relative to the tile's corner on the lawn
@@ -38,9 +44,10 @@ void main() {
     float dist = length((Position + ChunkOffset).xz);
     float density = 1.0 - smoothstep(Meadow.y, Meadow.x, dist);
     float shown = clamp((density * 1.2 - Color.a) / 0.2, 0.0, 1.0);
-    pos.y -= (1.0 - shown) * SINK;
+    pos.y -= (1.0 - shown) * SINK * Sway;
+    shownPart = shown;
     float h = pos.y;
-    if (h > 0.02) {
+    if (h > 0.02 && Sway > 0.5) {
         float along = (Position.x + Position.z) / 8.0;
         float across = (Position.x - Position.z) / 16.0;
         float gust = 0.6 + 0.4 * sin(TAU * (GameTime * 37.0 + across));

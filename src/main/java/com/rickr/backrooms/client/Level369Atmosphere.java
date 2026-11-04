@@ -225,9 +225,16 @@ public final class Level369Atmosphere {
      * pack) the plants are 1/255 less green, which nobody can see.
      */
     public static final int SWAY_MARKER = 0xFFFEFF;
+    /**
+     * The dark rooms' glowing plants and vines: white with green two steps down. The same cutout
+     * shader draws them white, and leaves them out near the camera, where client/Level369Grass
+     * draws them as smooth geometry instead.
+     */
+    public static final int GLOW_MARKER = 0xFFFDFF;
 
     @SubscribeEvent
     public static void onRegisterBlockColors(RegisterColorHandlersEvent.Block event) {
         event.register((state, level, pos, tintIndex) -> SWAY_MARKER, Level369Blocks.FLOWER.get(), Level369Blocks.TUFT.get());
+        event.register((state, level, pos, tintIndex) -> GLOW_MARKER, Level369Blocks.GLOW.get(), Level369Blocks.GLOW_VINE.get());
     }
 }

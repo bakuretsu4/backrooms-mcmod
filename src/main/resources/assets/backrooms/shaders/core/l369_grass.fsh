@@ -11,10 +11,14 @@ uniform vec4 FogColor;
 in float vertexDistance;
 in vec4 vertexColor;
 in vec3 viewPos;
+in float shownPart;
 
 out vec4 fragColor;
 
 void main() {
+    if (shownPart < 0.02) {
+        discard; // past the reach: the block version shows here instead
+    }
     // For Veil's lights: the blade's own face, turned toward the camera (both sides are drawn)
     // and, if that is its underside, mirrored to the top (thin leaves and petals let the light
     // through), then leaning a little up so a light overhead still grazes it. Unused without Veil.

@@ -164,7 +164,11 @@ The user's choices:
   sunlit tip with no texture and no cutout edges, plus flower heads of petal fans on stems; past
   20 blocks they thin out while the block panels rise, so the far field stays the panels (under a
   shader pack or Sodium the panels stay everywhere). Frame rate in the huge pillar hall on the
-  test machine: 330-360 steady (295 at worst), about what the block meadow alone cost.
+  test machine: 330-360 steady (295 at worst), about what the block meadow alone cost. The dark
+  rooms' glowing plants and vines are smooth geometry up close too (same renderer, full-bright,
+  no wind): cyan bells on an arching stem, green paper lanterns on threads, violet fronds with
+  glowing tips, glowing moss with bright beads, and vines of wavering strands with small leaves
+  and pale-blue glowing flowers; their old flat sprites only show beyond 32 blocks.
 - **The light, per kind of room** (client/Level369Atmosphere, client/AtmosphereGrade): window
   hallways cool white, their windows throwing shafts of light (client/light/SunBeams: only the
   six nearest windows, only while you are in a hallway); pillar halls a low golden sunset with
