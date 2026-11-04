@@ -49,7 +49,8 @@ import org.jetbrains.annotations.Nullable;
  *       grows harder and longer, coming back from far above), Level 1's bare concrete garage rings, Level 2's
  *       painted pipe tunnels are tight and hard. Level 39's town rings like a colossal hall
  *       (the superstructure encloses it, so open air above does not weaken the echo there),
- *       while its marble tunnels below swallow sound: short and dry.</li>
+ *       while its marble tunnels below swallow sound: short and dry. Level 228's glass corridors
+ *       ring bright, short and fluttery between their parallel panes.</li>
  *   <li>The two pool levels (the Poolrooms and Level 37) get <b>no reverb</b>: in canon nothing
  *       reverberates properly there (see client/anomaly/poolrooms/PoolAcoustics, which also
  *       makes their sounds die out). They do get muffling.</li>
@@ -145,6 +146,11 @@ public final class Acoustics {
     // Level 369's rooms: plaster walls, but a lawn and flowers wall to wall and soft acoustic
     // ceilings. A short, soft, very diffuse room sound with the highs swallowed: close and calm.
     private static final Material GARDEN = new Material(0.5f, 0.6f, 0.45f, 0.45f, 1.0f);
+    // Level 228's mirror maze: narrow corridors walled in glass, a low hard ceiling, a polished
+    // floor. Nothing soft anywhere, so the echo is bright (the highs come back) and short, but
+    // fluttery between the close parallel panes (low diffusion), with a late part that comes back
+    // from down the long mirrored runs a little louder than the corridor's size suggests.
+    private static final Material GLASS = new Material(0.8f, 0.7f, 1.0f, 1.15f, 0.35f, 0.85f, 1.4f, 1.1f);
 
     /** Level 39: the tunnels (and the holes/shafts leading down to them) lie below this height. */
     private static final double LEVEL39_TUNNEL_TOP = 60.0;
@@ -164,6 +170,7 @@ public final class Acoustics {
             case LEVEL_7 -> SEA;
             case LEVEL_227 -> FOREST;
             case LEVEL_369 -> GARDEN;
+            case LEVEL_228 -> GLASS;
             case POOLROOMS, LEVEL_37 -> null; // nothing reverberates there (canon), muffling only
         };
     }

@@ -266,7 +266,27 @@ public enum FixtureType {
     // under each, quiet (no tube hum here: nothing in this level wants to disturb you).
     L369_PANEL("l369_panel", Mount.CEILING_BLOCK, 2, 1.0f, 0.93f, 0.80f, 1.3f, 11.0f, Hum.NONE, false),
     // The hallways' tall bright windows: pale blue-white light laid across the grass in stripes.
-    L369_WINDOW("l369_window", Mount.CUBE, 3, 0.88f, 0.94f, 1.0f, 1.1f, 9.0f, Hum.NONE, false);
+    L369_WINDOW("l369_window", Mount.CUBE, 3, 0.88f, 0.94f, 1.0f, 1.1f, 9.0f, Hum.NONE, false),
+    // Level 228 (the Maze of Mirrors). Its coloured light panels in the ceiling: one block,
+    // backrooms:l228_light, whose `color` (blue|green|red) picks one of these three in of(), and
+    // whose `shade` (0 deepest and dimmest .. 3 palest and brightest) sets the light's exact colour
+    // and strength (Level228Lamps, which also tints the panel's face the same, so lens and light
+    // agree). Every corridor has a strip of two panels every five blocks (Level228Plan), and every
+    // mirror holds copies of them that shine back through the glass, so many lights overlap: each
+    // one is kept moderate and fairly short (round 2's 3.2 / 11 stacked into a washed-out, nearly
+    // white pink), giving a saturated pool under each strip that falls off to dim coloured shadow
+    // before the next. These numbers only matter with Veil (under a shader pack the panels' block
+    // light 12-15 lights the maze). A run of 3 panels is one light (a strip of two is one). A low
+    // steady electrical hum and no flicker: the maze is quiet and still. The ids of the green and
+    // red types name no block (on purpose), so no block maps to them directly. The colours here are
+    // only the defaults: the light's real colour is its shade's (Level228Lamps).
+    L228_BLUE("l228_light", Mount.CEILING_BLOCK, 3, 0.30f, 0.58f, 1.0f, 1.3f, 8.5f, Hum.NEON, false),
+    L228_GREEN("l228_light_green_color", Mount.CEILING_BLOCK, 3, 0.28f, 1.0f, 0.66f, 1.2f, 8.5f, Hum.NEON, false),
+    L228_RED("l228_light_red_color", Mount.CEILING_BLOCK, 3, 1.0f, 0.38f, 0.28f, 1.35f, 8.5f, Hum.NEON, false),
+    // The exit mirror: black glass that shows nothing. Only the faintest cold glow on the floor in
+    // front of it (the cold coming off it), silent (the draught is its exit-hint sound) and steady;
+    // a 3-tall pane is one light, set into the corridor on its open side.
+    L228_EXIT("l228_exit_mirror", Mount.CUBE, 3, 0.62f, 0.80f, 1.0f, 0.35f, 4.5f, Hum.NONE, false);
 
     /** Which looping buzz a fixture makes (positional, the nearest few lit ones play). */
     public enum Hum {
@@ -274,7 +294,9 @@ public enum FixtureType {
         /** The fluorescent tube buzz of Levels 0-2. */
         FLUORESCENT,
         /** The low, quiet ballast hum of an old sodium streetlamp (Level 9). */
-        SODIUM
+        SODIUM,
+        /** The low electrical hum of Level 228's coloured light panels: short reach, barely there. */
+        NEON
     }
 
     /**
@@ -468,6 +490,10 @@ public enum FixtureType {
         if (type == VENDING_MACHINE && state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
                 && state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER) {
             return null;
+        }
+        // Level 228's light panels: one block, its `color` picks the blue, green or red light.
+        if (type == L228_BLUE) {
+            return Level228Lamps.typeOf(state);
         }
         return type;
     }

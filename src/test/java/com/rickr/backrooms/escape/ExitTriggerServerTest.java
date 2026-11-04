@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mojang.authlib.GameProfile;
+import com.rickr.backrooms.registry.Level228Blocks;
 import com.rickr.backrooms.registry.Level2Blocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.BackroomsLevel;
@@ -13,6 +14,7 @@ import com.rickr.backrooms.world.BackroomsSeeds;
 import com.rickr.backrooms.world.ClayDoors;
 import com.rickr.backrooms.world.Level7Rules;
 import com.rickr.backrooms.world.Travel;
+import com.rickr.backrooms.world.layout.Level228Plan;
 import com.rickr.backrooms.world.layout.Level39Layout;
 import com.rickr.backrooms.world.layout.Level39Tunnels;
 import com.rickr.backrooms.world.layout.Level490Spire;
@@ -32,6 +34,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -213,7 +216,7 @@ class ExitTriggerServerTest {
         });
     }
 
-    /** The dark door goes to next() = Level 369, falling in through a skylight (Level369Layout.preferredArrival). */
+    /** The dark door goes to next() = Level 228, stepping out of a mirror (Level228Layout.preferredArrival). */
     @Test
     void level94DarkDoorLeadsOn() throws Exception {
         onServer(() -> {
@@ -225,9 +228,92 @@ class ExitTriggerServerTest {
             tick(p);
             assertTrue(Travel.isMoving(p), "standing in l94_dark_void didn't start the exit");
             tickUntilMoved(p, BackroomsLevel.LEVEL_94);
-            assertArrivedAsPromised(p, BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_369, spot);
+            assertArrivedAsPromised(p, BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_228, spot);
             return null;
         });
+    }
+
+    /**
+     * Level 228's black exit mirror, as generated, walked into with real collision
+     * (ServerPlayer.move against the generated blocks, the way a player's own steps go): straight
+     * at its middle, and off-centre with half the body against the frame post beside it (the post
+     * holds you outside the mirror's cell: the in-game bug where walking into it did nothing).
+     * Both go to next() = Level 369, falling in through a skylight (Level369Layout.preferredArrival).
+     * Walking past it along the corridor does nothing.
+     */
+    @Test
+    void level228ExitMirrorLeadsOn() throws Exception {
+        onServer(() -> {
+            BackroomsLevel from = BackroomsLevel.LEVEL_228;
+            ServerLevel level = level(from);
+            long seed = BackroomsSeeds.layoutSeed(level, from);
+            int[] front = from.layout().exitPosition(seed, 0, 0);
+            BlockPos mirror = null;
+            Direction into = null;
+            for (Direction d : Direction.Plane.HORIZONTAL) {
+                BlockPos at = new BlockPos(front[0], Level228Plan.FEET_Y, front[1]).relative(d);
+                if (level.getBlockState(at).is(Level228Blocks.EXIT_MIRROR.get())) {
+                    mirror = at;
+                    into = d;
+                }
+            }
+            assertNotNull(mirror, "no exit mirror beside Level 228's exit position " + front[0] + " " + front[1]);
+            assertTrue(level.getBlockState(mirror).getCollisionShape(level, mirror).isEmpty(), "the exit mirror can't be walked into");
+            // The run of exit cells along the wall, and the post at its low end.
+            Direction along = into.getClockWise();
+            BlockPos first = mirror;
+            while (level.getBlockState(first.relative(along.getOpposite())).is(Level228Blocks.EXIT_MIRROR.get())) {
+                first = first.relative(along.getOpposite());
+            }
+            BlockPos post = first.relative(along.getOpposite());
+            assertFalse(level.getBlockState(post).getCollisionShape(level, post).isEmpty(), "expected a frame post beside the exit at " + post);
+
+            // Walking past along the corridor in the row next to the wall, the body's side touching
+            // the exit cells (centre 0.2 off the row's middle) and facing along the corridor.
+            BlockPos lane = first.relative(into.getOpposite());
+            ServerPlayer passer = player("passer", from, 0.5, Level228Plan.FEET_Y, 0.5);
+            double side = 0.2;
+            Vec3 start = Vec3.atBottomCenterOf(lane.relative(along.getOpposite(), 3)).add(into.getStepX() * side, 0, into.getStepZ() * side);
+            passer.teleportTo(level, start.x, start.y, start.z, yawOf(along), 0f);
+            for (int i = 0; i < 60 && !Travel.isMoving(passer); i++) {
+                passer.move(MoverType.SELF, new Vec3(along.getStepX() * 0.2, 0, along.getStepZ() * 0.2));
+                tick(passer);
+            }
+            assertFalse(Travel.isMoving(passer), "walking past the exit mirror along the corridor started the exit at " + passer.position());
+
+            // Off-centre: the middle of the body on the line between the post and the first exit cell.
+            Vec3 edge = Vec3.atBottomCenterOf(lane).add(-along.getStepX() * 0.5, 0, -along.getStepZ() * 0.5);
+            walkInto(level, "exit_off_centre", edge, into, true);
+            // Straight at the middle of the mirror.
+            walkInto(level, "exit_centre", Vec3.atBottomCenterOf(mirror.relative(into.getOpposite())), into, false);
+            return null;
+        });
+    }
+
+    /** Walks a player from {@code start} toward {@code into} with collision until the exit starts, then checks the arrival. */
+    private void walkInto(ServerLevel level, String name, Vec3 start, Direction into, boolean heldByPost) {
+        BackroomsLevel from = BackroomsLevel.LEVEL_228;
+        ServerPlayer p = player(name, from, start.x, start.y, start.z);
+        p.teleportTo(level, start.x, start.y, start.z, yawOf(into), 0f);
+        Vec3 step = new Vec3(into.getStepX() * 0.2, 0, into.getStepZ() * 0.2); // a walking step per tick
+        int ticks = 0;
+        while (!Travel.isMoving(p) && ticks++ < 40) {
+            p.move(MoverType.SELF, step);
+            tick(p);
+        }
+        assertTrue(Travel.isMoving(p), name + ": walking into the exit mirror didn't start the exit; stuck at " + p.position());
+        if (heldByPost) {
+            assertFalse(level.getBlockState(p.blockPosition()).is(Level228Blocks.EXIT_MIRROR.get()),
+                    name + ": expected the post to hold the body's middle outside the mirror's cell");
+        }
+        int[] used = {p.getBlockX(), p.getBlockZ()};
+        tickUntilMoved(p, from);
+        assertArrivedAsPromised(p, from, BackroomsLevel.LEVEL_369, used);
+    }
+
+    /** Minecraft's yaw for facing {@code d} (0 = south, 90 = west). */
+    private static float yawOf(Direction d) {
+        return d.toYRot();
     }
 
     /** The leap off the top of Level 490's spire is the last exit: back to reality, at once (the tape stops). */

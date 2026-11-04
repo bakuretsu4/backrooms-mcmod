@@ -228,7 +228,7 @@ final class VeilFixtures {
                 // Level 2's lamps get the spin's orbit on top every frame (see frame).
                 entry.orbits = floor == BackroomsLevel.LEVEL_2;
                 entry.base = light.type.brightnessOn(floor) * tubeBrightness(light, floor) * level2Age(light, floor)
-                        * light.level * scale * edgeFade(light, fadeEnd, fadeFrom);
+                        * Level228Lamps.strength(light) * light.level * scale * edgeFade(light, fadeEnd, fadeFrom);
                 setBrightness(entry, entry.orbits ? entry.base * entry.orbit : entry.base);
             }
             // The nearest few streetlamps (selected is nearest first) get their glow cone.
@@ -463,6 +463,12 @@ final class VeilFixtures {
             r *= tone[0];
             g *= tone[1];
             b *= tone[2];
+        }
+        if (Level228Lamps.isPanel(type)) {
+            // Level 228: the panel's own shade of its colour (a deeper version of its face's tint).
+            r = Level228Lamps.red(type, light.shade);
+            g = Level228Lamps.green(type, light.shade);
+            b = Level228Lamps.blue(type, light.shade);
         }
         // Level 0's and Level 2's lamps are our own light types: our shaders, shadows from the wall map.
         PointLightData point = floor == null || floor == BackroomsLevel.LEVEL_0 ? new Level0LightData()

@@ -2,6 +2,7 @@ package com.rickr.backrooms.escape;
 
 import com.rickr.backrooms.block.ExitDoorBlock;
 import com.rickr.backrooms.block.SeaDoorBlock;
+import com.rickr.backrooms.registry.Level228Blocks;
 import com.rickr.backrooms.registry.Level369Blocks;
 import com.rickr.backrooms.registry.ModBlocks;
 import com.rickr.backrooms.world.BackroomsLevel;
@@ -115,6 +116,9 @@ final class Escape {
                     (w, x, y, z, fromY) -> y >= Level39Layout.GROUND_Y - 1 && y < Level39Sites.glassBottom(0) + Level39Sites.GLASS_HEIGHT
                             && grabWindowAt(w.layout, w.seed, x, z) != Integer.MIN_VALUE);
             case LEVEL_369 -> new Exit("inside the veil of an arch of vines", s -> s.is(Level369Blocks.VEIL.get()),
+                    (w, x, y, z, fromY) -> touchesGoal(w, x, y, z, false));
+            // Level228Rules: walk into the black exit mirror (it has no collision).
+            case LEVEL_228 -> new Exit("inside the black exit mirror", s -> s.is(Level228Blocks.EXIT_MIRROR.get()),
                     (w, x, y, z, fromY) -> touchesGoal(w, x, y, z, false));
             // Level490Rules: airborne after leaving the collar (fall started at or above LEAP_Y - 2),
             // now below LEAP_Y - 3.

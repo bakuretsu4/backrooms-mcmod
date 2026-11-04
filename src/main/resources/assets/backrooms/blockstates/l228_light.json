@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "color=blue": {
+      "model": "backrooms:block/l228_light_blue"
+    },
+    "color=green": {
+      "model": "backrooms:block/l228_light_green"
+    },
+    "color=red": {
+      "model": "backrooms:block/l228_light_red"
+    }
+  }
+}

@@ -36,6 +36,7 @@ class LevelEscapabilityTest {
             {BackroomsLevel.LEVEL_37, BackroomsLevel.POOLROOMS},
             {BackroomsLevel.LEVEL_39, BackroomsLevel.LEVEL_37},
             {BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_39},
+            {BackroomsLevel.LEVEL_228, BackroomsLevel.LEVEL_94},
     };
 
     @TestFactory
@@ -90,7 +91,8 @@ class LevelEscapabilityTest {
         assertEquals(BackroomsLevel.LEVEL_37, BackroomsLevel.POOLROOMS.next());
         assertEquals(BackroomsLevel.LEVEL_39, BackroomsLevel.LEVEL_37.next());
         assertEquals(BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_39.next());
-        assertEquals(BackroomsLevel.LEVEL_369, BackroomsLevel.LEVEL_94.next());
+        assertEquals(BackroomsLevel.LEVEL_228, BackroomsLevel.LEVEL_94.next());
+        assertEquals(BackroomsLevel.LEVEL_369, BackroomsLevel.LEVEL_228.next());
         assertEquals(BackroomsLevel.LEVEL_490, BackroomsLevel.LEVEL_369.next());
         assertEquals(null, BackroomsLevel.LEVEL_490.next(), "Level 490's leap leads back to reality");
         // Every level is reached exactly once along the path (except Level 227, which is off it).
@@ -113,7 +115,7 @@ class LevelEscapabilityTest {
         }
         for (BackroomsLevel level : new BackroomsLevel[] {BackroomsLevel.LEVEL_2, BackroomsLevel.POOLROOMS, BackroomsLevel.LEVEL_7,
                 BackroomsLevel.LEVEL_9, BackroomsLevel.LEVEL_94, BackroomsLevel.LEVEL_227, BackroomsLevel.LEVEL_369,
-                BackroomsLevel.LEVEL_490}) {
+                BackroomsLevel.LEVEL_490, BackroomsLevel.LEVEL_228}) {
             assertEquals(Integer.MIN_VALUE, level.transferBelowY(), level.getSerializedName() + " is never left by falling");
         }
     }

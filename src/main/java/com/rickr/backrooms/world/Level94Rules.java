@@ -17,9 +17,9 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * <ul>
  *   <li><b>In:</b> Level 39's exit, or (a side way) a rare clay door on a Level 9 house
  *       ({@link ClayDoors}): you arrive on a road among the hills.</li>
- *   <li><b>Out to Level 369:</b> a dark-door house, the way on ({@code BackroomsLevel.next}). It looks
+ *   <li><b>Out to Level 228:</b> a dark-door house, the way on ({@code BackroomsLevel.next}). It looks
  *       like every other house, but behind the door is solid black ({@code l94_dark_void}). Walk
- *       into the dark and you fall into Level 369 through a skylight.</li>
+ *       into the dark and you step out of a mirror into Level 228's maze of mirrors.</li>
  *   <li><b>Out to Level 7:</b> a flooded house: knee-deep water inside and steps going down into
  *       murky dark ({@code l94_flood_dark}). Wade down into it and you come up in Level 7.</li>
  *   <li><b>Out to Level 1:</b> the light behind the empty throne in the castle.</li>
@@ -41,10 +41,11 @@ public final class Level94Rules {
             throneExit(player);
             return;
         }
-        // Into the dark of a dark-door house (feet or head in it): on to Level 369 (BackroomsLevel.next).
+        // Into the dark of a dark-door house (feet or head in it): on to Level 228 (BackroomsLevel.next),
+        // out of a mirror (the arrival card says so).
         if (player.level().getBlockState(feet).is(ModBlocks.L94_DARK_VOID.get())
                 || player.level().getBlockState(feet.above()).is(ModBlocks.L94_DARK_VOID.get())) {
-            Travel.useExit(player, BackroomsLevel.LEVEL_94);
+            Travel.useExit(player, BackroomsLevel.LEVEL_94, "message.backrooms.level94.mirror");
             return;
         }
         // Down the flooded house's stairs into the murk: Level 7.

@@ -11,11 +11,13 @@
   "client": [
     "client.CameraMixin",
     "client.ChannelAccessor",
+    "client.FrustumInvoker",
     "client.LevelRendererMixin",
     "client.LiquidBlockRendererMixin",
     "client.LocalPlayerMixin",
     "client.SoundEngineAccessor",
-    "client.SoundManagerAccessor"
+    "client.SoundManagerAccessor",
+    "client.WalkAnimationStateAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

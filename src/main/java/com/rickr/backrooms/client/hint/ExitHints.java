@@ -100,6 +100,8 @@ public final class ExitHints {
             case LEVEL_37 -> new Guidance(0.12, 60);
             case LEVEL_39 -> new Guidance(0.10, 100);
             case LEVEL_94 -> new Guidance(0.07, 80);
+            // Every exit mirror is ~1000 blocks from the next; the marks show only on the way in.
+            case LEVEL_228 -> new Guidance(0.06, 80);
             // Its arches are 140 blocks apart; the marks show only on the way to the nearest one.
             case LEVEL_369 -> new Guidance(0.05, 60);
             case LEVEL_490 -> new Guidance(0.03, 60);
@@ -191,6 +193,7 @@ public final class ExitHints {
             case LEVEL_227 -> ModSounds.EXIT_HINT_LEVEL_94;
             case LEVEL_490 -> ModSounds.EXIT_HINT_LEVEL_490;
             case LEVEL_369 -> ModSounds.EXIT_HINT_LEVEL_369;
+            case LEVEL_228 -> ModSounds.EXIT_HINT_LEVEL_228;
         }).get();
     }
 

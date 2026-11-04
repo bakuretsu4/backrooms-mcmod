@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "backrooms:block/l228_exit_mirror"
+    },
+    "axis=z": {
+      "model": "backrooms:block/l228_exit_mirror",
+      "y": 90
+    }
+  }
+}

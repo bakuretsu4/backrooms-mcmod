@@ -164,6 +164,7 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_39 = register("exit_hint.level_39");
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_490 = register("exit_hint.level_490");
     public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_369 = register("exit_hint.level_369");
+    public static final DeferredHolder<SoundEvent, SoundEvent> EXIT_HINT_LEVEL_228 = register("exit_hint.level_228");
     // Level 490: the storm's thunder at three distances, and the air (client/Level490Lightning, Level490Ambience).
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_THUNDER_CLOSE = register("level490.thunder_close");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_THUNDER_ROLL = register("level490.thunder_roll");
@@ -180,6 +181,19 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_COLLAPSE = register("level490.collapse");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_WHALE_CALL = register("level490.whale_call");
     public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL490_WHALE_FAR = register("level490.whale_far");
+    // Level 228's Other (client/level228/Level228Other; made by tools/level_assets/level228_other.py):
+    // its footsteps (placed at its image in a mirror), the glass ticking when it is near, the
+    // held breath just before it takes you, and the glass cracking as it does.
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_OTHER_STEP = register("level228.other.step");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_OTHER_TICK = register("level228.other.tick");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_OTHER_BREATH = register("level228.other.breath");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_OTHER_CRACK = register("level228.other.crack");
+    // Level 228's own quiet: the halls' room tone, the light panels' low hum, a pane ticking or
+    // creaking now and then (client/level228/Level228Ambience, client/light/FixtureSounds).
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_AMBIENCE = register("level228.ambience");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_LIGHT_HUM = register("level228.light_hum");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_GLASS_TICK = register("level228.glass_tick");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LEVEL228_GLASS_CREAK = register("level228.glass_creak");
     // Music (original pieces composed in code under tools/, played by client/BackroomsMusic on the
     // music channel): the main theme on the title menu, and one piece of its own for each level.
     // Each level's event (see sounds.json) mostly picks that level's piece, but now and then the
@@ -195,6 +209,7 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL39 = register("music.level39");
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL490 = register("music.level490");
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL369 = register("music.level369");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL228 = register("music.level228");
     public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_LEVEL9 = register("music.level9");
     // Level 94 anomalies: the high, glassy hum of the blinding hall's light (looped by the client
     // while you are in it) and the coin rattling in a furniture-pile sink.

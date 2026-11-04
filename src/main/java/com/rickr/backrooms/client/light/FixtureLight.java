@@ -47,6 +47,11 @@ public final class FixtureLight {
     public boolean alwaysOn = true;
     /** A standby emergency lamp: when its relay clicks over (0 = power is fine, not counting down). */
     public long relayAtMs;
+    /**
+     * Level 228 light panels: the block's {@code shade} (0 deepest .. 3 palest, see Level228Lamps),
+     * read from the block when the lights are rebuilt; it sets the light's colour and strength.
+     */
+    public int shade = Level228Lamps.PALEST;
 
     // Runtime state, updated every client tick by BackroomsLights.
     /** 0..1 power from events (blackout fade, flicker, alarm dimming). */

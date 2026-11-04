@@ -71,7 +71,7 @@ One path runs through every level, in the order of the wiki's level numbers (the
 Poolrooms sit between 9 and 37):
 
 ```
-Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Level 7 --sunken door--> Level 9 --underpass--> Poolrooms --the great pool hall--> Level 37 --deep pit--> Level 39 --mill window--> Level 94 --dark doorway--> Level 369 --arch of vines--> Level 490 --the leap--> Overworld
+Overworld --noclip--> Level 0 --stairwell--> Level 1 --stairwell--> Level 2 --EXIT door--> Level 4 --stairwell--> Level 7 --sunken door--> Level 9 --underpass--> Poolrooms --the great pool hall--> Level 37 --deep pit--> Level 39 --mill window--> Level 94 --dark doorway--> Level 228 --black mirror--> Level 369 --arch of vines--> Level 490 --the leap--> Overworld
 ```
 
 Every exit looks different, but every move from one level to the next is filmed the same way:
@@ -340,11 +340,65 @@ going down into the dark, until the picture breaks up and you are in the next le
   climbing frame, a looping upstairs hall, an animation studio and an empty throne room. Day lasts
   8 minutes (the last 30 s is dusk), night 3: at night the music stops and Smilers come out on the
   hills, so get inside a house (they can't follow you in; your sanity holds steady there). Ways
-  out: houses whose doorway is pure black lead on to Level 369, flooded houses (knee-deep water,
+  out: houses whose doorway is pure black lead on to Level 228, flooded houses (knee-deep water,
   steps going down into murk) lead to Level 7, and the light behind the throne leads to Level 1.
   And about one house in twelve has a moulded-clay front door like Level 9's: step through it
   and you are back in Level 9's suburbs.
-- **Level 369 ("Comely"):** reached through a dark doorway in Level 94: you fall out of a skylight into
+- **Level 228 ("Maze of Mirrors"):** reached through a dark doorway in Level 94: you step out of a
+  mirror into a maze of narrow corridors (two wide, at points one), three blocks high, walled with
+  mirror panes in dark frames and the odd dark panel, over a polished dark floor and under a low
+  ceiling. The light comes in sectors of blue, green or red: strips of panels down every corridor
+  and one over every junction, every panel its own shade, brighter pools and dimmer gaps. What you see in the glass is not a trick of the renderer: behind every pane the level
+  builds a mirrored copy of the maze out of real blocks (an "image volume", `world/layout/Level228Plan`),
+  so the reflections light, fog and shade right under any shader pack. Where both walls of a
+  corridor are glass, the copies repeat into the coloured dark, three and four deep. Half of what
+  you see is reflection: a corridor that seems to run straight on out of a junction can be a mirror
+  (you walk into glass), up to two branches of a junction can be reflections, and now and then a
+  doorway framed exactly like a mirror is open. The maze is a random spanning tree per region with
+  loops, joined region to region, so every corridor connects to every other: keep one hand on the
+  same wall and you never go round in circles for long. It is quiet and there are no spawns; the
+  danger is getting lost (bring supplies) and what lives in the glass. The way on is a mirror that
+  shows nothing (black, nothing behind it, no reflection of you in it, and it is never reflected
+  itself), set in the wall of one corridor per ~1024 x 1024 blocks; walk into it and you fall into
+  Level 369 through a skylight. You always arrive at least 300 blocks from it.
+  `/backrooms maze <facing|branch|exit>` jumps to the nearest facing mirrors, false branch or exit
+  mirror (testing).
+  - **Reflections** (`client/level228/Level228Reflections`): every player near you, you included
+    (also in first person), is drawn again inside each image volume on screen up to depth 4, where
+    the mirror map puts them: the real player's own renderer (skin, armour, held camcorder, limbs,
+    crouch) under `scale(flipX, 1, flipZ)`, quads re-wound for odd flips (`PuppetBuffers`), lit by
+    the image's mirrored lights, drawn after entities so the panes and fog lie over them. Rarely
+    (every 1-3 min, a little more often the longer you stay) a reflection of you close by lies
+    (`Level228Lies`): it lags most of a second behind you, keeps watching you until you look
+    straight at it, turns and walks off down the reflected corridor into the dark, or stays
+    standing as you leave and is gone when you look back. Testing:
+    `/backrooms mirror lie <lag|look|walk|still>`, `/backrooms mirror stage <entities|block_entities|solid_blocks>`.
+  - **The Other** (`world/Level228Hunt`, `client/level228/Level228Other`): a tall, pale figure that
+    exists only in the reflections: it walks the real maze toward one player at a time but is drawn
+    only at its images in the mirrors. It freezes while anyone has it on screen in a mirror; steps
+    come from the glass, the glass ticks when it is within 12 blocks. If it reaches you: silence,
+    your reflection vanishes, the glass cracks, white-out, and you wake 80+ blocks farther from the
+    exit (sanity -20); it leaves you alone 2-4 min. First comes after 3 min in the level, from 64-96
+    blocks, slow at first, faster the longer it stalks; it never hunts creative or spectator players.
+    Test: `/backrooms other <near|far|catch|off>`.
+  - **Look and sound** (`client/level228/Level228Atmosphere`, `Level228Ambience`,
+    `client/light/Level228Lamps`; textures and sounds from `tools/level_assets/level228_atmos.py`):
+    with Veil every ceiling panel is a short, coloured, shadowed light (its shade sets colour and
+    strength; a run of three is one light) and the copies in the image volumes light the reflections
+    the same. Without Veil and under Iris + Complementary (uncoloured block light) the colour comes
+    from the panels' tinted full-bright faces and from the air: the lightmap fill, the fog and the
+    camcorder's grade and haze all take the colour of the light around you (pulled harder under
+    a shader pack), so a red sector is red even in its gaps. Fog closes in from 8 blocks and is gone
+    by 44, so a mirror corridor shows three or four images and then sinks into dim coloured air. Each pane is a
+    faint dark-green film (about 17% cover), so every deeper image, seen through one more pane, comes
+    out a little darker and greener, like real mirrors. The exit mirror is black full-bright glass
+    with a slow cold shimmer and the faintest cold glow on the floor in front of it. Sound: a quiet
+    room tone, a low hum heard only close under a lit panel, now and then a pane settling or creaking
+    in its frame (from a real pane near you), your steps answered faintly from behind the nearest
+    pane beside you, where your reflection walks; the exit's hint is its cold draught. Bright,
+    short, fluttery glass reverb; all of it holds its breath with the Other. Music: "Silvering"
+    (below). F3 shows the light around you ("L228 light").
+- **Level 369 ("Comely"):** reached through Level 228's black exit mirror: you fall out of a skylight into
   soft flowers (no landing ever hurts here). An endless indoor garden: rooms of pastel-painted
   plaster, every floor a lawn carpeted wall to wall with grass and flowers. Long white hallways
   with tall windows full of pale blue light down one side, closed doors down the other and blue
@@ -447,7 +501,8 @@ and 94 there is about one main exit per 1000 x 1000 blocks, and wherever you arr
 level, the nearest one is at least 400 blocks off (`world/Travel.clearOfExits` moves the arrival
 point away from it, the same way for everyone coming through the same exit, so friends still land
 together). Level 2's corridors have an EXIT bay about every 1000 blocks and Level 37 a pit per
-~1000 x 1000 blocks; there you arrive at least 300 blocks from one. Side ways out (the flickering
+~1000 x 1000 blocks, and Level 228 an exit mirror per ~1024 x 1024 blocks; there you arrive at
+least 300 blocks from one. Side ways out (the flickering
 wall in Level 0, Level 4's exit elevators, Level 37's openings, Level 94's flooded houses) and
 Levels 7, 39, 490 and 227 keep their own spacing.
 
@@ -1007,9 +1062,10 @@ the main theme plays (see Music below). **FIELD NOTES** is a short in-game guide
 
 ### Music
 
-Fourteen original pieces, composed in code (the first three in `tools/gen_assets.py`,
+Fifteen original pieces, composed in code (the first three in `tools/gen_assets.py`,
 `snd_music_*`; the rest in `tools/anomaly_assets/`: Level 227's in `level227_audio.py`, the
-per-level pieces in `music_*.py`) and played on the game's music channel, so the Music volume
+per-level pieces in `music_*.py`; Level 228's with its other sounds in
+`tools/level_assets/level228_atmos.py`) and played on the game's music channel, so the Music volume
 slider controls them (`client/BackroomsMusic`). Every level has a piece in its own style; now and
 then the main theme plays instead, so it runs through the whole soundtrack:
 
@@ -1023,6 +1079,7 @@ then the main theme plays instead, so it runs through the whole soundtrack:
 | `poolrooms` | The Poolrooms | "Chlorine": slowed, chorused dream pads and a glassy arpeggio in F Lydian that dip underwater and come back; a childhood indoor pool at dusk |
 | `level37` | Level 37 | "Sublimity": airy synthesized choir and glass-harmonica shimmer, bright and almost bassless; near the end one voice drifts out of tune |
 | `level369` | Level 369 | "Comely": a music-box waltz, a lullaby in F over a soft harp and a warm pad, played three times; each time more of its notes are gone, and at the end it starts once more and stops |
+| `level228` | Level 228 | "Silvering": a glass harmonica sings a tune in E minor and, half a bar later, a glassy electric piano answers with its mirror image (the same tune upside down), bouncing in a ping-pong echo like two facing mirrors; then everything plays backward; in the last part the tune stops and its reflection goes on alone, and lies |
 | `level7` | Level 7 | "Thalassophobia": huge, very low drones swelling like waves, far whale-like glides, sonar pings, and once a low brass cluster rising from the deep |
 | `level39` | Level 39, every 10 to 25 minutes | "Megalophobia": a small-town waltz on a music box or piano from impossibly far away in a gigantic echo, interrupted by enormous metallic groans |
 | `level490` | Level 490 | "Penance": a slow processional on a synthesized pipe organ, a low male-choir drone, a tolling bell, thunder, chain rattles and a bowed lament |
@@ -1033,7 +1090,7 @@ then the main theme plays instead, so it runs through the whole soundtrack:
 
 In the levels a piece plays only every 3 to 8 minutes, like Minecraft's own music; in between
 you hear only the level. Level 7's sea is loud and Level 490 is meant to be near-silent, so there
-it's every 5 to 12 minutes. Level 94 has
+it's every 5 to 12 minutes; in Level 228's quiet glass maze every 4 to 10. Level 94 has
 no music because its siren poles play their own tune.
 Everything goes through a worn-tape sound: a slow pitch wobble shared by every note, soft
 saturation, hiss and a big, empty room.
@@ -1153,9 +1210,11 @@ saturation, hiss and a big, empty room.
 ## Operator commands
 
 ```
-/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, level_7, level_9, poolrooms, level_37, level_39, level_94, level_369, level_490 (the path's order), level_227
+/backrooms enter [players] [level]      send players in: level_0, level_1, level_2, level_4, level_7, level_9, poolrooms, level_37, level_39, level_94, level_228, level_369, level_490 (the path's order), level_227
 /backrooms time94 <day|dusk|night|dawn> jump Level 94's day/night clock (testing)
 /backrooms thing [dread]                Level 7, in the water: the Thing passes by you now at full dread (dread: full dread only) (testing)
+/backrooms maze <facing|branch|exit>   Level 228: jump to the nearest facing mirrors (3+ deep), false branch, or the exit mirror (testing)
+/backrooms other <near|far|catch|off>  Level 228: the Other enters the mirrors 9-15 / 64-96 blocks from you, takes you now, or goes away until the next of these (testing)
 /backrooms escape [players]             send players back to reality
 /backrooms battery [players] [percent]  set camcorder battery
 /backrooms locate                       where is the nearest exit? (Level 227 has none, and says so)
@@ -1224,6 +1283,10 @@ Levels 369 and 490 belong to a friend: they are only reported, in
 reality) and the rule for side ways: every side way that skips ahead has a way straight back,
 Level 227 only drops you where the line leads back, and the ways back (Level 39's sunlit dead ends
 and clay doors, Level 94's clay doors) are really generated.
+`Level228PlanTest` pins Level 228's mirror trick: image volumes never hold real space and no step
+leads out of the real maze into one, every block in an image is the mirrored real block it
+reflects, the exit mirror is never reflected, and arrivals step out of a mirror 300+ blocks from
+an exit with a walk to it.
 
 The `pilot` source set is a dev-only mod (`backrooms_pilot`, never in the release jar) that lets a
 script drive a dev client with real key and mouse input over a local socket, for survival

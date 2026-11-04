@@ -65,6 +65,19 @@ All other textures and sounds are generated procedurally by `tools/gen_assets.py
   not downloaded reference images. The Level 94 setting adaptation above is shared under
   CC BY-SA 3.0; this attribution does not relicense unrelated mod code or third-party assets.
 
+## Level 228 references
+
+- Level 228's setting is adapted from ["Level 228 — Maze of Mirrors"](https://backrooms-wiki.wikidot.com/level-228)
+  by BlueSignet, The Backrooms Wiki, licensed [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)
+  (the idea only: mirror mazes lit in blues, greens and reds, narrow passages, the right-hand rule,
+  exits through mirrors). Changes include a Minecraft lattice-maze adaptation in which every
+  reflection is a mirrored copy of the maze built behind the glass, false branches and framed
+  gaps, a black exit mirror leading to Level 369, a dark doorway in Level 94 as the way in,
+  reflections that lie (after the wiki's Level 365, your reflection walking off on its own) and a
+  figure that lives in the reflections. No text or images from the pages are used; every texture
+  and sound is generated in code (`tools/level_assets/level228.py`, `tools/level_assets/level228_atmos.py`).
+  The page's photograph ("Mirror" by HiP 1, CC BY 2.0) was not used.
+
 ## Level 369 references
 
 - Level 369's setting is adapted from ["Level 369 — Comely"](https://backrooms-wiki.wikidot.com/level-369)
