@@ -117,9 +117,14 @@ public final class Level490Spire {
 
     /**
      * A flight of the outside stair: from feet height {@code y0} at angle {@code deg0} round the
-     * outside (angles growing) up to {@code y1}, rising {@code rise} blocks a turn.
+     * outside (angles growing) up to {@code y1}, about {@code rise} blocks a turn. Where it is broken
+     * right across ({@code jumps}, fractions of its sweep) it runs level for {@link #PLATEAU_DEG}
+     * either side, so you take off and land at the same height: climbing on across the gap, the far
+     * side came out a block or a block and a half higher (after rounding to half steps), a jump no
+     * one can make, and most spires couldn't be climbed past flight 1's last gap. The rest of the
+     * flight climbs that little bit steeper to arrive at the same height.
      */
-    private record Flight(int y0, int y1, double deg0, double rise) {
+    private record Flight(int y0, int y1, double deg0, double rise, double[] jumps) {
         double sweep() {
             return (y1 - y0) / rise * 360.0;
         }
@@ -129,18 +134,34 @@ public final class Level490Spire {
         }
 
         double y(double s) {
-            return y0 + s / 360.0 * rise;
+            double sweep = sweep();
+            double flat = 0;
+            for (double j : jumps) {
+                double from = j * sweep - PLATEAU_DEG;
+                flat += Math.max(0, Math.min(s, from + 2 * PLATEAU_DEG) - from);
+            }
+            return y0 + (y1 - y0) * (s - flat) / (sweep - jumps.length * 2 * PLATEAU_DEG);
         }
     }
 
     /**
-     * Flight 1 from the island to the half-way room, flight 2 from the inside stair's top to the top.
-     * 34 blocks a turn: hugging a body 11 or more blocks across, that is under half a block of rise
-     * per block walked, so every step is a half step (none to jump).
+     * Half the level stretch round each jump gap, in degrees: the gap (a block and a half along the
+     * middle of the stair, 3.3 degrees either side where the stair hugs the slimmest body) and a
+     * block or more to run up and to land on.
      */
-    private static final Flight F1 = new Flight(201, ROOM_FLOOR, 15, 34);
-    private static final Flight F2 = new Flight(357, TOP, 300, 34);
+    private static final double PLATEAU_DEG = 8.0;
+
+    /**
+     * Flight 1 from the island to the half-way room, flight 2 from the inside stair's top to the top.
+     * About 34 blocks a turn (35 with the level stretches): hugging a body 11 or more blocks across,
+     * that is under half a block of rise per block walked, so every step is a half step (none to
+     * jump, but for the gaps).
+     */
+    private static final Flight F1 = new Flight(201, ROOM_FLOOR, 15, 34, new double[] {0.21, 0.79});
+    private static final Flight F2 = new Flight(357, TOP, 300, 34, new double[] {0.14, 0.62});
     private static final Flight[] FLIGHTS = {F1, F2};
+    /** Where each flight has fallen away but for a ledge along the wall (fractions of its sweep). */
+    private static final double[][] LEDGES = {{0.5}, {0.38, 0.86}};
     /** The outside stair is drawn every this many degrees round its sweep. */
     private static final double STEP_DEG = 0.25;
     private static final double STAIR_WIDTH = 3.0;
@@ -1484,8 +1505,6 @@ public final class Level490Spire {
         wide[f] = new double[n];
         double len = fl.sweep();
         long h = Hash.of(seed, cx + f * 7, cz, 4980);
-        // Where it is broken (fractions of the flight), different for each spire.
-        double[] gaps = f == 0 ? new double[] {0.21, 0.5, 0.79} : new double[] {0.14, 0.38, 0.62, 0.86};
         double[][] narrow = f == 0 ? new double[][] {{0.3, 0.36}} : new double[][] {{0.52, 0.58}, {0.9, 0.94}};
         double[] rotten = f == 0 ? new double[] {0.6, 0.67} : new double[] {0.7, 0.78};
         double[] fallen = f == 0 ? new double[] {0.43, 0.47} : new double[] {0.25, 0.29};
@@ -1550,17 +1569,21 @@ public final class Level490Spire {
             double r0 = smooth[k];
             boolean wood = frac >= rotten[0] && frac <= rotten[1];
             boolean plankOnly = frac >= fallen[0] && frac <= fallen[1];
-            // Where it has fallen away, a block and a half long. Every other one (after the play-test
-            // brought jumping back for this level) is broken right across: a jump. The others leave a
-            // ledge along the wall.
+            // Where it has fallen away, a block and a half long. The jumps (after the play-test
+            // brought jumping back for this level) are broken right across, on a level stretch of
+            // the flight (Flight.y); the ledges leave the inner lane along the wall.
             boolean gap = false;
             boolean jump = false;
-            for (int gi = 0; gi < gaps.length; gi++) {
-                boolean real = gi % 2 == 0;
-                double reach = Math.toDegrees(0.75 / (r0 + 1.5)) / len;
-                if (Math.abs(frac - gaps[gi]) < reach) {
+            double reach = Math.toDegrees(0.75 / (r0 + 1.5)) / len;
+            for (double j : fl.jumps()) {
+                if (Math.abs(frac - j) < reach) {
                     gap = true;
-                    jump |= real;
+                    jump = true;
+                }
+            }
+            for (double j : LEDGES[f]) {
+                if (Math.abs(frac - j) < reach) {
+                    gap = true;
                 }
             }
             boolean outer = d >= width - 0.75;
