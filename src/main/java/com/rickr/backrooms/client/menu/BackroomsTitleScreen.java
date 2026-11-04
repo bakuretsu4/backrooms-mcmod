@@ -187,6 +187,31 @@ public class BackroomsTitleScreen extends Screen {
 
         this.addCopyright();
         this.layoutNote(Math.max(buttonX + buttonW, Math.max(this.logoX + this.logoW, this.left + taglineMaxW)));
+        this.layoutFootage(Math.max(buttonX + buttonW, this.logoX + this.logoW), taglineH);
+    }
+
+    /**
+     * Tells the footage where our UI is, so each shot's focal point lands in the open space between
+     * the menu column and the note (a little below the middle, where the eye rests) and never
+     * drifts under the logo, the menu, the note or the OSD.
+     */
+    private void layoutFootage(int columnRight, int taglineH) {
+        int taglineW = 0;
+        for (FormattedCharSequence line : this.taglineLines) {
+            taglineW = Math.max(taglineW, this.font.width(line));
+        }
+        int menuRight = Math.max(columnRight, this.left + Math.round(taglineW * this.taglineScale));
+        int freeRight = this.noteW > 0 ? this.noteX : this.width - MARGIN;
+        int lineH = Math.round(this.font.lineHeight * this.osdScale);
+        int osdTop = MARGIN + 3 * (lineH + 2) + 4; // PLAY + caption on the left; REC, counter, battery on the right
+        int osdBottom = this.height - MARGIN - lineH - 34; // versions, copyright and date stamp
+        FootageBackground.Rect column = new FootageBackground.Rect(0, this.logoY, menuRight, this.taglineY + taglineH);
+        FootageBackground.Rect note = this.noteW > 0
+                ? new FootageBackground.Rect(this.noteX, this.noteY, this.noteX + this.noteW + 3, this.noteY + this.noteH + 4)
+                : null;
+        FootageBackground.setLayout((menuRight + freeRight) / 2.0f, this.height * 0.53f, column, note,
+                new FootageBackground.Rect(0, 0, this.width, osdTop),
+                new FootageBackground.Rect(0, osdBottom, this.width, this.height));
     }
 
     /** The "Copyright Mojang AB. Do not distribute!" line vanilla shows (click it for the credits). */

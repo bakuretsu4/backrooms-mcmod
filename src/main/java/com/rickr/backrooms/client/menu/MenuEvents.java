@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 
 /**
@@ -42,6 +43,12 @@ public final class MenuEvents {
                     .bounds(6, 6, 140, 20)
                     .build());
         }
+    }
+
+    /** The menu footage keeps two 1080p shots in memory: free them while you're playing. */
+    @SubscribeEvent
+    public static void onClientTick(ClientTickEvent.Post event) {
+        FootageBackground.releaseIfIdle();
     }
 
     private MenuEvents() {}

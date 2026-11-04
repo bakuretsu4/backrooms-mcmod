@@ -176,7 +176,9 @@ public final class CamcorderEffect {
     /** Once per frame, before rendering: push live values into the shader. */
     public static void updateUniforms(Minecraft mc) {
         PostChain chain = activeChain(mc);
-        if (chain == null) {
+        // On disconnect the level and player are gone a frame before the tick drops the effect;
+        // the uniforms below read both, so skip that last frame instead of crashing.
+        if (chain == null || mc.level == null || mc.player == null) {
             return;
         }
         long now = System.currentTimeMillis();

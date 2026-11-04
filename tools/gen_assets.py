@@ -3742,11 +3742,12 @@ def tex_menu_noise() -> None:
 
 
 def tex_menu_vignette() -> None:
-    """512x288 black vignette: clear in the middle, ~75% black in the corners."""
+    """512x288 black vignette: clear over the middle ~half of the picture (the menu shots must stay
+    readable there), easing to ~58% black in the corners so the frame still feels like an old tube."""
     w, h = 512, 288
     y, x = np.mgrid[0:h, 0:w]
     d = np.hypot((x - w / 2) / (w / 2), (y - h / 2) / (h / 2)) / np.sqrt(2)
-    a = 255 * 0.78 * np.clip((d - 0.35) / 0.65, 0, 1) ** 1.6
+    a = 255 * 0.58 * np.clip((d - 0.45) / 0.55, 0, 1) ** 1.8
     z = np.zeros((h, w))
     save_png(np.stack([z, z, z, a], axis=2), MENU / "vignette.png")
 

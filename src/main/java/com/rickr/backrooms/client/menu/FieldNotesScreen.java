@@ -73,8 +73,14 @@ public class FieldNotesScreen extends Screen {
 
         Component back = VhsText.translatable("menu.backrooms.back");
         int buttonX = Math.max(2, this.panelX0 - VhsButton.textInset(buttonScale));
-        this.addRenderableWidget(new VhsButton(buttonX, buttonY, VhsButton.widthFor(this.font, back, buttonScale), buttonH,
-                back, buttonScale, this::onClose));
+        int buttonW = VhsButton.widthFor(this.font, back, buttonScale);
+        this.addRenderableWidget(new VhsButton(buttonX, buttonY, buttonW, buttonH, back, buttonScale, this::onClose));
+
+        // The panel hides the middle of the footage: frame each shot so its focal point leans
+        // into the free strip on its own side, clear of the title, panel and BACK button.
+        FootageBackground.setLayoutEitherSide(this.panelX0 / 2.0f, this.height * 0.53f,
+                new FootageBackground.Rect(this.panelX0, 0, this.panelX1, this.panelY1),
+                new FootageBackground.Rect(buttonX, buttonY, buttonX + buttonW, buttonY + buttonH));
 
         this.layoutText();
         this.setScroll(this.scroll);
